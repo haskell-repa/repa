@@ -44,7 +44,6 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 		-> sh   
 
 	-- | Check whether a given index is in the range of an array shape. 
-	--   The following property holds:
 	inRange	:: sh 	-- ^ Start index for range.
 		-> sh 	-- ^ Final index for range.
 		-> sh 	-- ^ Index to check for.

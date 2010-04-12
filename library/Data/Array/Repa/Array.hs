@@ -14,7 +14,11 @@ module Data.Array.Repa.Array
 	 -- * Computations
 	, fold
 	, zipWith
+	, sum
 	, sumAll
+	
+	 -- * Testing
+	, arbitrarySmallArray
 	, tests_DataArrayRepaArray)
 where
 import Data.Array.Repa.Index
@@ -24,7 +28,8 @@ import Data.Array.Repa.Shape			(Shape)
 import Data.Array.Parallel.Unlifted		(Elt)
 import qualified Data.Array.Repa.Shape		as S
 import qualified Data.Array.Parallel.Unlifted	as U
-import Prelude					as P hiding (zipWith)	
+import Prelude					hiding (sum, zipWith)	
+import qualified Prelude			as P
 
 stage	= "Data.Array.Repa.Array"
 	
@@ -124,6 +129,10 @@ toList arr
 
 -- Instances --------------------------------------------------------------------------------------
 
+-- Show
+instance (Elt e, Shape dim, Show e) => Show (Array dim e) where
+ 	show arr = show $ toList arr
+
 -- Eq
 instance (Elt e, Eq e, Shape sh) => Eq (Array sh e) where
 	(==) arr1  arr2 
@@ -176,7 +185,7 @@ fold f x arr
 
 
 -- | Combine two arrays, element-wise, with a binary operator.
---	If the size of two array arguments differ in a dimension, the resulting
+--	If the size of the two array arguments differ in shape, then the resulting
 --   	array's shape is their intersection.
 zipWith :: (Elt a, Elt b, Elt c, Shape sh) 
 	=> (a -> b -> c) 
@@ -191,7 +200,15 @@ zipWith f arr1 arr2
    in	Delayed sh' fn
 
 
--- | Sum all the elements in the array.
+-- | Sum the innermost dimension.
+sum	:: (Elt e, Shape dim, Num e)
+	=> Array (dim :. Int) e
+	-> Array dim e
+
+sum arr	= fold (+) 0 arr
+
+
+-- | Sum all the elements.
 sumAll	:: (Elt e, Shape dim, Num e)
 	=> Array dim e
 	-> e
@@ -204,6 +221,21 @@ sumAll arr
 		((S.size $ shape arr) - 1)
 
 
+-- Arbitrary --------------------------------------------------------------------------------------
+-- | Create an arbitrary small array, restricting the size of each of the dimensions.
+arbitrarySmallArray 
+	:: forall sh e
+	.  (Shape sh, Elt e, Arbitrary e)
+	=> Int 				-- ^ Maximum size of each dimension.
+	-> Gen (Array (sh :. Int) e)
+
+arbitrarySmallArray maxDim
+ = do	sh	<- arbitrarySmallShape maxDim
+	xx	<- arbitraryListOfLength (S.size sh)
+	return	$ fromList sh xx
+
+
+
 -- Tests ------------------------------------------------------------------------------------------
 
 -- | QuickCheck Properties.
@@ -211,28 +243,24 @@ tests_DataArrayRepaArray :: [(String, Property)]
 tests_DataArrayRepaArray
  = 	[ ("forceIsId/DIM5",		property prop_forceIsId_DIM5)
 	, ("toListFromList/DIM3",	property prop_toListFromList_DIM3) 
-	, ("sumIsSum/DIM3",		property prop_sumIsSum_DIM3) ]
+	, ("sumAllIsSum/DIM3",		property prop_sumAllIsSum_DIM3) ]
 
 
 -- The Eq instance uses fold and zipWith.
 prop_forceIsId_DIM5
- = 	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM5)  ->
-	forAll (arbitraryListOfLength  (S.size sh))	$ \(xx :: [Int]) ->
-	let arr	= fromList sh xx
-	in  arr == force arr
-
+ = 	forAll (arbitrarySmallArray 10)			$ \(arr :: Array DIM5 Int) ->
+	arr == force arr
+	
 
 prop_toListFromList_DIM3
- = 	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM3) ->
+ =	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM3) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) ->
 	toList (fromList sh xx) == xx
 
 
-prop_sumIsSum_DIM3
+prop_sumAllIsSum_DIM3
  = 	forAll (arbitrarySmallShape 100)		$ \(sh :: DIM2) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) -> 
 	sumAll (fromList sh xx) == P.sum xx
-
-
 
 

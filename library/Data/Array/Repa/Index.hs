@@ -9,6 +9,8 @@ module Data.Array.Repa.Index
 	, DIM3
 	, DIM4
 	, DIM5 
+	
+	-- * Testing.
 	, arbitraryShape
 	, arbitrarySmallShape
 	, tests_DataArrayRepaIndex)
@@ -196,6 +198,7 @@ genInShape2 (Z :. yMax :. xMax)
 
 
 -- Tests ------------------------------------------------------------------------------------------
+tests_DataArrayRepaIndex :: [(String, Property)]
 tests_DataArrayRepaIndex
  = 	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
 	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]

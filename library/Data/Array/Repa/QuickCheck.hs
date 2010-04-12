@@ -7,7 +7,7 @@ import Test.QuickCheck
 	
 	
 arbitraryListOfLength 
-	:: (Arbitrary a, Num a)
+	:: Arbitrary a
 	=> Int -> Gen [a]
 
 arbitraryListOfLength n
