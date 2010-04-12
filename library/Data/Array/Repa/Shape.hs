@@ -59,6 +59,13 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 	deepSeq :: sh -> a -> a
 
 
+	-- | Convert a shape to a list of dimensions.
+	toList	:: sh -> [Int]
+	
+	-- | Convert a list of dimensions to a shape
+	fromList :: [Int] -> sh
+	
+
 	-- | Check whether an index is a part of a given shape.
 	inShape :: sh	-- ^ Shape.
 		-> sh	-- ^ Index.
