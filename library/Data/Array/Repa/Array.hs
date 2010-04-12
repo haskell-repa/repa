@@ -2,18 +2,28 @@
 
 module Data.Array.Repa.Array
 	( Array	(..)
+	 -- * Basic Operations
 	, force
+	, (!:)
+	
+	 -- * Conversion
 	, fromList
 	, toList
+	
+	 -- * Computations
+	, zipWith
+	 
 	, tests_DataArrayRepaArray)
 where
-import qualified Data.Array.Repa.Shape		as S
 import Data.Array.Repa.Index
-import Data.Array.Repa.Shape			(Shape)
 import Data.Array.Repa.QuickCheck
 import Test.QuickCheck
+import Data.Array.Repa.Shape			(Shape)
+import Data.Array.Parallel.Unlifted		(Elt)
+import qualified Data.Array.Repa.Shape		as S
 import qualified Data.Array.Parallel.Unlifted	as U
-	
+import Prelude					hiding (zipWith)	
+
 stage	= "Data.Array.Repa.Array"
 	
 	
@@ -23,9 +33,20 @@ data Array sh e
 	| Delayed  sh (sh -> e)
 
 
+
+-- Basic Operations -------------------------------------------------------------------------------
+
+-- | Take the shape of an `Array`.
+shape	:: Array sh e -> sh
+shape arr
+ = case arr of
+	Manifest sh _	-> sh
+	Delayed  sh _	-> sh
+
+
 -- | Force an array, so that it becomes `Manifest`.
 force
-	:: (Shape sh, U.Elt e)
+	:: (Shape sh, Elt e)
 	=> Array sh e
 	-> Array sh e
 	
@@ -40,11 +61,27 @@ force (Delayed sh fn)
 		(S.size sh - 1)
 
 
+-- | Lookup the value in an array.
+(!:) 	:: (Shape sh, Elt e)
+	=> Array sh e
+	-> sh				-- ^ Index.
+	-> e
+
+{-# INLINE (!:) #-}
+(!:) arr ix
+ = case arr of
+	Delayed  _  fn	-> fn ix
+	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
+
+
+
+-- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an `Array`.
+--	The length of the list must be exactly the size of the shape.
 fromList 
-	:: (Shape sh, U.Elt e)
-	=> sh
-	-> [e]
+	:: (Shape sh, Elt e)
+	=> sh				-- ^ Shape of resulting array.
+	-> [e]				-- ^ List to convert.
 	-> Array sh e
 	
 fromList sh xx
@@ -61,7 +98,7 @@ fromList sh xx
 	
 	
 -- | Convert an `Array` to a list.
-toList 	:: (Shape sh, U.Elt e)
+toList 	:: (Shape sh, Elt e)
 	=> Array sh e
 	-> [e]
 
@@ -70,6 +107,30 @@ toList arr
 	Manifest _ uarr	-> U.toList uarr
 	_		-> error $ stage ++ ".toList: force failed"
 
+
+-- Instances --------------------------------------------------------------------------------------
+
+-- Traversal --------------------------------------------------------------------------------------
+
+
+
+
+-- Computations ----------------------------------------------------------------------------------
+
+-- | Combine two arrays, element-wise, with a binary operator.
+--	If the size of two array arguments differ in a dimension, the resulting
+--   	array's shape is the intersection.
+zipWith :: (Elt a, Elt b, Elt c, Shape sh) 
+	=> (a -> b -> c) 
+	-> Array sh a
+	-> Array sh b
+	-> Array sh c
+
+{-# INLINE zipWith #-}
+zipWith f arr1 arr2
+ = let	sh'	= S.intersectDim (shape arr1) (shape arr2)
+	fn i	= f (arr1 !: i) (arr2 !: i)
+   in	Delayed sh' fn
 
 
 -- Tests ------------------------------------------------------------------------------------------
