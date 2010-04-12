@@ -1,0 +1,28 @@
+Name:                repa
+Version:             1.0.0.0
+License:             MIT
+Author:              The DPH Team
+Maintainer:          ndp@cse.unsw.edu.au
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           provisional
+Category:            Data Structures
+Homepage:            http://trac.haskell.org/repa
+Bug-reports:         http://trac.haskell.org/repa/newticket
+Description:
+        Repa provides high performance, regular, shape polymorphic parallel arrays.
+
+Synopsis:
+        High performane, regular, shape polymorphic parallel arrays.
+
+Tested-with: GHC == 6.13.2010030
+
+Library
+  Build-Depends: 
+        base       >= 4 && < 5
+
+  ghc-options:
+        -Odph
+
+  Exposed-modules:
+        Data.Array.Repa.Shape
