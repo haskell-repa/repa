@@ -51,7 +51,7 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 		-> Bool
 
 
-	-- | What does this do?
+	-- | ??? What is this for?
 	next	:: sh -> sh -> Maybe sh
 
 	-- | Ensure that a `Shape` is completely evaluated.

@@ -29,3 +29,4 @@ Library
   Exposed-modules:
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
+        Data.Array.Repa.Slice
