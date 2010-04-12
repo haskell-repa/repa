@@ -27,6 +27,8 @@ Library
         -Odph -Wall -fno-warn-missing-signatures
 
   Exposed-modules:
+        Data.Array.Repa.Array
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
+       
