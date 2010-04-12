@@ -153,7 +153,7 @@ arbitraryShape
 
 
 genInShape2 :: DIM2 -> Gen DIM2
-genInShape2 sh@(Z :. yMax :. xMax)
+genInShape2 (Z :. yMax :. xMax)
  = do	y	<- liftM (`mod` yMax) $ arbitrary
 	x	<- liftM (`mod` xMax) $ arbitrary
 	return	$ Z :. y :. x

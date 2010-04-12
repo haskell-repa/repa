@@ -16,7 +16,12 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 	-- | The shape of an array of size zero, with a particular dimensionality.
 	zeroDim	:: sh
 
+	-- | The shape of an array with size one, with a particular dimensionality.
 	unitDim :: sh
+
+	-- | Compute the intersection of two shapes.
+	intersectDim :: sh -> sh -> sh
+
 
 	-- | Get the total number of elements in an array with this `Shape`.
 	size	:: sh -> Int           
@@ -24,6 +29,7 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 	-- | Check whether the size of this shape is small enough to be represented
 	--	as an integer index.
 	sizeIsValid :: sh -> Bool
+
 
 	-- | Compute an index into the linear representation of an array.
 	toIndex :: sh	-- ^ Shape of the array.
@@ -39,15 +45,11 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 
 	-- | Check whether a given index is in the range of an array shape. 
 	--   The following property holds:
-	--
-	--	@inRange sh ind == elem ind (range sh)@
 	inRange	:: sh 	-- ^ Start index for range.
 		-> sh 	-- ^ Final index for range.
 		-> sh 	-- ^ Index to check for.
 		-> Bool
 
-	-- | Compute the intersection of two shapes.
-	intersectDim :: sh -> sh -> sh
 
 	-- | What does this do?
 	next	:: sh -> sh -> Maybe sh
