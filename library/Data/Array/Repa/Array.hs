@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, TypeOperators #-}
 
 module Data.Array.Repa.Array
 	( Array	(..)
@@ -33,7 +33,6 @@ data Array sh e
 	| Delayed  sh (sh -> e)
 
 
-
 -- Basic Operations -------------------------------------------------------------------------------
 
 -- | Take the shape of an `Array`.
@@ -45,8 +44,7 @@ shape arr
 
 
 -- | Force an array, so that it becomes `Manifest`.
-force
-	:: (Shape sh, Elt e)
+force	:: (Shape sh, Elt e)
 	=> Array sh e
 	-> Array sh e
 	
@@ -73,6 +71,13 @@ force (Delayed sh fn)
 	Delayed  _  fn	-> fn ix
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
 
+
+-- | Convert a zero dimensional array into a scalar value.
+toScalar :: Elt e => Array Z e -> e
+toScalar arr
+ = case arr of
+	Delayed  _ fn		-> fn Z
+	Manifest _ uarr		-> uarr U.!: 0
 
 
 -- Conversion -------------------------------------------------------------------------------------
@@ -110,12 +115,56 @@ toList arr
 
 -- Instances --------------------------------------------------------------------------------------
 
+-- Eq
+instance (Elt e, Eq e, Shape sh) => Eq (Array sh e) where
+	(==) arr1  arr2 
+		= toScalar 
+		$ fold (&&) True 
+		$ (flip reshape) (Z :. (S.size $ shape arr1)) 
+		$ zipWith (==) arr1 arr2
+		
+	(/=) a1 a2 
+		= not $ (==) a1 a2
+
+
+-- Reshaping --------------------------------------------------------------------------------------
+reshape	:: (Shape sh, Shape sh', Elt e) 
+	=> Array sh e 			-- ^ Source Array.
+	-> sh'				-- ^ New Shape.
+	-> Array sh' e
+
+{-# INLINE reshape #-}
+reshape arr newShape
+	| not $ S.size newShape == S.size (shape arr)
+	= error $ stage ++ ".reshape: reshaped array will not match size of the original"
+	
+	| otherwise
+	= Delayed newShape $ ((arr !:) . (S.fromIndex (shape arr)) . (S.toIndex newShape))
+
+
 -- Traversal --------------------------------------------------------------------------------------
 
 
 
-
 -- Computations ----------------------------------------------------------------------------------
+
+-- | Fold the innermost dimension. 
+--	Combine with `transpose` to fold any other dimension.
+fold 	:: (Elt e, Shape dim) 
+	=> (e -> e -> e) 
+	-> e 
+	-> Array (dim :. Int)  e 
+	-> Array dim e
+
+{-# INLINE fold #-}
+fold f x arr
+ = let	sh' :. n	= shape arr
+	elemFn i 	= U.fold f x
+			$ U.map (\ix -> arr !: (i :. ix)) 
+				(U.enumFromTo 0 (n - 1))
+
+   in	Delayed sh' elemFn
+
 
 -- | Combine two arrays, element-wise, with a binary operator.
 --	If the size of two array arguments differ in a dimension, the resulting
@@ -135,7 +184,17 @@ zipWith f arr1 arr2
 
 -- Tests ------------------------------------------------------------------------------------------
 tests_DataArrayRepaArray
- = 	[ ("toListFromList/DIM3",	property prop_toListFromList_DIM3) ]
+ = 	[ ("forceIsId/DIM5",		property prop_forceIsId_DIM5)
+	, ("toListFromList/DIM3",	property prop_toListFromList_DIM3) ]
+
+
+-- The Eq instance uses fold and zipWith.
+prop_forceIsId_DIM5
+ = 	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM5)  ->
+	forAll (arbitraryListOfLength  (S.size sh))	$ \(xx :: [Int]) ->
+	let arr	= fromList sh xx
+	in  arr == force arr
+
 
 prop_toListFromList_DIM3
  = 	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM3) ->
