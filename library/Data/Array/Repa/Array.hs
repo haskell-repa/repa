@@ -14,11 +14,14 @@ module Data.Array.Repa.Array
 	, fromFunction
 	, unit
 
-	 -- * Basic Operations
+	 -- * Projections
 	, shape
-	, force
+	, toUArray
 	, (!:)
 	, toScalar
+
+	 -- * Basic Operations
+	, force
 	, deepSeqArray
 	
 	 -- * Conversion
@@ -63,7 +66,7 @@ stage	= "Data.Array.Repa.Array"
 	
 -- | Possibly delayed arrays.
 data Array sh a
-	= -- | An array represented as some concrete data.
+	= -- | An array represented as some concrete unboxed data.
 	  Manifest sh (U.Array a)
 
           -- | An array represented as a function that computes each element.
@@ -71,7 +74,8 @@ data Array sh a
 
 -- Constructors ----------------------------------------------------------------------------------
 
--- | Create a `Manifest` array from an unboxed `U.Array`.
+-- | Create a `Manifest` array from an unboxed `U.Array`. 
+--	The elements are in row-major order.
 fromUArray
 	:: Shape sh
 	=> sh
@@ -103,10 +107,10 @@ unit :: Elt a => a -> Array Z a
 unit 	= Delayed Z . const
 
 
--- Basic Operations -------------------------------------------------------------------------------
+-- Projections ------------------------------------------------------------------------------------
+
 -- | Take the shape of an array.
 shape	:: Array sh a -> sh
-
 {-# INLINE shape #-}
 shape arr
  = case arr of
@@ -114,21 +118,18 @@ shape arr
 	Delayed  sh _	-> sh
 
 
--- | Force an array, so that it becomes `Manifest`.
-force	:: (Shape sh, Elt a)
-	=> Array sh a -> Array sh a
+-- | Convert an array to an unboxed `U.Array`, forcing it if required.
+--	The elements come out in row-major order.
+toUArray 
+	:: (Shape sh, Elt a)
+	=> Array sh a 
+	-> U.Array a
 	
-{-# INLINE force #-}
-force arr@Manifest{}	
-	= arr
+toUArray arr
+ = case force arr of
+	Manifest _ uarr	-> uarr
+	_		-> error $ stage ++ ".toList: force failed"
 
-force (Delayed sh fn)
- 	= Manifest sh
-	$ U.map (fn . S.fromIndex sh)
-	$ U.enumFromTo 
-		(0 :: Int)
-		(S.size sh - 1)
-	
 
 -- | Get an indexed element from an array.
 --
@@ -149,8 +150,6 @@ force (Delayed sh fn)
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
 
 
-
-
 -- | Take the scalar value from a singleton array.
 toScalar :: Elt a => Array Z a -> a
 {-# INLINE toScalar #-}
@@ -160,6 +159,24 @@ toScalar arr
 	Manifest _ uarr		-> uarr U.!: 0
 
 
+-- Basic Operations -------------------------------------------------------------------------------
+
+-- | Force an array, so that it becomes `Manifest`.
+force	:: (Shape sh, Elt a)
+	=> Array sh a -> Array sh a
+	
+{-# INLINE force #-}
+force arr@Manifest{}	
+	= arr
+
+force (Delayed sh fn)
+ 	= Manifest sh
+	$ U.map (fn . S.fromIndex sh)
+	$ U.enumFromTo 
+		(0 :: Int)
+		(S.size sh - 1)
+	
+	
 -- | Ensure an array's structure is fully evaluated.
 --	This evaluates the shape and outer constructor, but does not `force` the elements.
 infixr 0 `deepSeqArray`
