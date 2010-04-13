@@ -3,7 +3,7 @@
 -- | High-performance, regular, shape-polymorphic parallel arrays. 
 --
 --   WARNING: 	Most of the functions that operate on indices don't perform bounds checks.
---		Performing these checks would interfere with code optimisation and reduce performance.		
+--		Doing these checks would interfere with code optimisation and reduce performance.		
 --		Indexing outside arrays, or failing to meet the stated obligations will
 --		likely cause heap corruption.
 module Data.Array.Repa.Array
