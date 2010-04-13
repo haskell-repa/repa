@@ -4,11 +4,10 @@
 module Data.Array.Repa.Shape
 	(Shape(..))
 where
-import Test.QuickCheck.Arbitrary
 	
 -- Shape ------------------------------------------------------------------------------------------	
 -- | Class of types that can be used as array shapes and indices.
-class (Eq sh, Arbitrary sh) => Shape sh where
+class Eq sh => Shape sh where
 
 	-- | Get the number of dimensions in a `Shape`.
 	dim	:: sh -> Int           

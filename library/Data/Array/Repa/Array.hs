@@ -444,7 +444,7 @@ traverse2 arrA arrB fnShape fnElem
 -- | Create an arbitrary small array, restricting the size of each of the dimensions.
 arbitrarySmallArray 
 	:: forall sh a
-	.  (Shape sh, Elt a, Arbitrary a)
+	.  (Shape sh, Elt a, Arbitrary sh, Arbitrary a)
 	=> Int 				-- ^ Maximum size of each dimension.
 	-> Gen (Array (sh :. Int) a)
 
