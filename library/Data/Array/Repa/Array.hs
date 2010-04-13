@@ -89,8 +89,8 @@ force (Delayed sh fn)
 	
 
 -- | Get an indexed element from an array.
---	WARNING: There's no bounds checking with this. 
---               Indexing outside the array will yield badness.
+--   WARNING: There's no bounds checking with this, so indexing outside the array
+--            will yield badness.
 (!:) 	:: (Shape sh, Elt a)
 	=> Array sh a -> sh -> a
 
@@ -132,13 +132,13 @@ deepSeqArray arr x
 
 
 -- Conversion -------------------------------------------------------------------------------------
--- | Convert a list to an `Array`.
---	The length of the list must be exactly the size of the shape, 
---	else an exception will be thrown.
+-- | Convert a list to an array.
+--	The length of the list must be exactly the `size` of the shape, 
+--	else `error`.
 fromList 
 	:: forall sh a
 	.  (Shape sh, Elt a)
-	=> sh				-- ^ Shape of resulting array.
+	=> sh				-- ^ Shape of result array.
 	-> [a]				-- ^ List to convert.
 	-> Array sh a
 	
@@ -156,8 +156,9 @@ fromList sh xx
 	where	uarr	= U.fromList xx
 	
 	
--- | Convert an `Array` to a list.
-toList 	:: (Shape sh, Elt a)
+-- | Convert an array to a list.
+toList 	:: forall sh a
+	.  (Shape sh, Elt a)
 	=> Array sh a
 	-> [a]
 
@@ -204,9 +205,12 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 
 -- Index space transformations --------------------------------------------------------------------
 -- | Impose a new shape on the same elements.
-reshape	:: (Shape sh, Shape sh', Elt a) 
-	=> Array sh a 			-- ^ Source Array.
-	-> sh'				-- ^ New Shape.
+--	The size of the result array is the same as the original.
+--	Attempting to reshape an array to one of a different size in an `error`.
+reshape	:: forall sh sh' a
+	.  (Shape sh, Shape sh', Elt a) 
+	=> Array sh a 			-- ^ Source array.
+	-> sh'				-- ^ Shape of result array.
 	-> Array sh' a
 
 {-# INLINE reshape #-}
@@ -215,7 +219,8 @@ reshape arr newShape
 	= error $ stage ++ ".reshape: reshaped array will not match size of the original"
 	
 	| otherwise
-	= Delayed newShape $ ((arr !:) . (S.fromIndex (shape arr)) . (S.toIndex newShape))
+	= Delayed newShape 
+	$ ((arr !:) . (S.fromIndex (shape arr)) . (S.toIndex newShape))
 
 {-
 -- | Append two arrays
@@ -240,13 +245,15 @@ append arr1 arr2
 -}
 
 
--- | Backwards permutation.
+-- | Backwards permutation. 
+--	The result array is the same shape as the original.
 backpermute
-	:: (Shape sh, Shape sh', Elt a) 
+	:: forall sh sh' a
+	.  (Shape sh, Shape sh', Elt a) 
 	=> Array sh a 			-- ^ Source array.
-	-> sh' 				-- ^ Target shape.
-	-> (sh' -> sh) 			-- ^ Fn mapping each index in the target shape range
-					--	to an index of the source array range.
+	-> sh' 				-- ^ Shape of result array.
+	-> (sh' -> sh) 			-- ^ Function mapping each index in the target array
+					--	to an index of the source array.
 	-> Array sh' a
 
 {-# INLINE backpermute #-}
@@ -254,10 +261,12 @@ backpermute arr newShape fnIndex
 	= Delayed newShape ((arr !:) . fnIndex)
 
 
--- | Transpose the lowest two dimensions of a matrix.
+-- | Transpose the lowest two dimensions of an array. 
+--	Transposing an array twice yields the original.
 transpose 
-	:: (Shape sh, Elt a) 
-	=> Array (sh :. Int :. Int) a
+	:: forall sh a
+	.  (Shape sh, Elt a) 
+	=> Array (sh :. Int :. Int) a	-- ^ Source array.
 	-> Array (sh :. Int :. Int) a
 
 {-# INLINE transpose #-}
@@ -268,9 +277,10 @@ transpose arr
 
 
 -- Structure Preserving Operations ----------------------------------------------------------------
--- | Map a worker function over each element of n-dim CArray.
-map	:: (Shape sh, Elt a, Elt b) 
-	=> (a -> b) 			-- ^ Worker function.
+-- | Apply a worked function to each element of an array, yielding an array of the same shape.
+map	:: forall sh a b
+	.  (Shape sh, Elt a, Elt b) 
+	=> (a -> b) 			-- ^ Function to transform each element.
 	-> Array sh a			-- ^ Source array.
 	-> Array sh b
 
@@ -398,8 +408,8 @@ tests_DataArrayRepaArray
     <-	[ ("id_force/DIM5",			property prop_id_force_DIM5)
 	, ("id_toScalarUnit",			property prop_id_toScalarUnit)
 	, ("id_toListFromList/DIM3",		property prop_id_toListFromList_DIM3) 
---	, ("id_toScalarFromInteger/DIM3",	property prop_id_toScalarFromInteger_DIM3)
 	, ("id_transpose/DIM4",			property prop_id_transpose_DIM4)
+	, ("id_reshapeTransposeSize/DIM3",	property prop_reshapeTranspose_DIM3)
 	, ("sumAllIsSum/DIM3",			property prop_sumAllIsSum_DIM3) ]]
 
 
@@ -411,20 +421,26 @@ prop_id_force_DIM5
 prop_id_toScalarUnit (x :: Int)
  =	toScalar (unit x) == x
 
+-- Conversions ------------------------
 prop_id_toListFromList_DIM3
  =	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM3) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) ->
 	toList (fromList sh xx) == xx
 
-{- This doesn't work... 
-prop_id_toScalarFromInteger_DIM3 (n :: Integer)
- =	n == (toScalar $ (fromInteger n :: Array DIM3 Int))
--}
-
+-- Index Space Transforms -------------
 prop_id_transpose_DIM4
  = 	forAll (arbitrarySmallArray 20)			$ \(arr :: Array DIM3 Int) ->
 	transpose (transpose arr) == arr
 
+-- A reshaped array has the same size and sum as the original
+prop_reshapeTranspose_DIM3
+ = 	forAll (arbitrarySmallArray 20)			$ \(arr :: Array DIM3 Int) ->
+   let	arr'	= transpose arr
+   	sh'	= shape arr'
+   in	(S.size $ shape arr) == S.size (shape (reshape arr sh'))
+     && (sumAll arr          == sumAll arr')
+
+-- Reductions --------------------------
 prop_sumAllIsSum_DIM3
  = 	forAll (arbitrarySmallShape 100)		$ \(sh :: DIM2) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) -> 
