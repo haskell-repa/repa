@@ -24,11 +24,10 @@ Library
         QuickCheck           >= 2.1.0.3 && < 2.2.0.0
 
   ghc-options:
-        -Odph -Wall -fno-warn-missing-signatures
+        -Odph -Wall -Werror -fno-warn-missing-signatures
 
   Exposed-modules:
         Data.Array.Repa
-        Data.Array.Repa.Array
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice

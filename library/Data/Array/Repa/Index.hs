@@ -10,7 +10,7 @@ module Data.Array.Repa.Index
 	, DIM4
 	, DIM5 
 	
-	-- * Testing.
+	-- * Testing
 	, arbitraryShape
 	, arbitrarySmallShape
 	, props_DataArrayRepaIndex)
@@ -190,7 +190,7 @@ genInShape2 (Z :. yMax :. xMax)
 
 
 -- Properties -------------------------------------------------------------------------------------
--- | QuickCheck properties.
+-- | QuickCheck properties for this module.
 props_DataArrayRepaIndex :: [(String, Property)]
 props_DataArrayRepaIndex
   = [(stage ++ "." ++ name, test) | (name, test)
