@@ -32,6 +32,7 @@ module Data.Array.Repa.Array
 	, reshape
 	, append
 	, backpermute
+	, backpermuteDft
 	, transpose
 
          -- * Structure preserving operations
@@ -320,13 +321,35 @@ backpermute
 	.  (Shape sh, Shape sh', Elt a) 
 	=> Array sh a 			-- ^ Source array.
 	-> sh' 				-- ^ Shape of result array.
-	-> (sh' -> sh) 			-- ^ Function mapping each index in the target array
+	-> (sh' -> sh) 			-- ^ Function mapping each index in the result array
 					--	to an index of the source array.
 	-> Array sh' a
 
 {-# INLINE backpermute #-}
 backpermute arr newShape fnIndex
 	= Delayed newShape ((arr !:) . fnIndex)
+
+
+-- | Default backwards permutation.
+--	If the function returns `Nothing` then the value at that index is taken
+--	from the default array (@arrDft@)
+backpermuteDft
+	:: forall sh sh' a
+	.  (Shape sh, Shape sh', Elt a) 
+	=> Array sh  a			-- ^ Source array.
+	-> Array sh' a			-- ^ Default values (@arrDft@)
+	-> (sh' -> Maybe sh) 		-- ^ Function mapping each index in the result array
+					--	to an index in the source array.
+	-> Array sh' a
+
+{-# INLINE backpermuteDft #-}
+backpermuteDft arrSrc arrDft fnIndex
+	= Delayed (shape arrDft) fnElem
+	where	fnElem ix	
+		 = case fnIndex ix of
+			Just ix'	-> arrSrc !: ix'
+			Nothing		-> arrDft !: ix
+				
 
 
 -- | Transpose the lowest two dimensions of an array. 
