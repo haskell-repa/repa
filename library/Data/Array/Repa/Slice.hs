@@ -3,9 +3,11 @@
 
 -- | Index space transformation between arrays and slices.
 module Data.Array.Repa.Slice
-	( All	(..)
-	, Any	(..)
-	, Slice	(..))
+	( All		(..)
+	, Any		(..)
+	, FullShape
+	, SliceShape
+	, Slice		(..))
 where
 import Data.Array.Repa.Index
 import Prelude					hiding (replicate, drop)
