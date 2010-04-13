@@ -70,7 +70,7 @@ import qualified Data.Array.Parallel.Unlifted	as U
 import Prelude					hiding (sum, map, zipWith, replicate)	
 import qualified Prelude			as P
 
-stage	= "Data.Array.Repa.Array"
+stage	= "Data.Array.Repa"
 	
 	
 -- | Possibly delayed arrays.
