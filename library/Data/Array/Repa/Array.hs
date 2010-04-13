@@ -50,7 +50,7 @@ module Data.Array.Repa.Array
 		
 	 -- * Testing
 	, arbitrarySmallArray
-	, tests_DataArrayRepaArray)
+	, props_DataArrayRepaArray)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.QuickCheck
@@ -501,11 +501,11 @@ arbitrarySmallArray maxDim
 
 
 
--- Tests ------------------------------------------------------------------------------------------
+-- Properties -------------------------------------------------------------------------------------
 
 -- | QuickCheck Properties.
-tests_DataArrayRepaArray :: [(String, Property)]
-tests_DataArrayRepaArray
+props_DataArrayRepaArray :: [(String, Property)]
+props_DataArrayRepaArray
  = [(stage ++ "." ++ name, test) | (name, test)
     <-	[ ("id_force/DIM5",			property prop_id_force_DIM5)
 	, ("id_toScalarUnit",			property prop_id_toScalarUnit)

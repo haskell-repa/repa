@@ -13,7 +13,7 @@ module Data.Array.Repa.Index
 	-- * Testing.
 	, arbitraryShape
 	, arbitrarySmallShape
-	, tests_DataArrayRepaIndex)
+	, props_DataArrayRepaIndex)
 where
 import Data.Array.Repa.Shape
 import Test.QuickCheck
@@ -197,9 +197,10 @@ genInShape2 (Z :. yMax :. xMax)
 	return	$ Z :. y :. x
 
 
--- Tests ------------------------------------------------------------------------------------------
-tests_DataArrayRepaIndex :: [(String, Property)]
-tests_DataArrayRepaIndex
+-- Properties -------------------------------------------------------------------------------------
+-- | QuickCheck properties.
+props_DataArrayRepaIndex :: [(String, Property)]
+props_DataArrayRepaIndex
   = [(stage ++ "." ++ name, test) | (name, test)
      <-	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
 	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]]
