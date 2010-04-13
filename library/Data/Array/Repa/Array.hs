@@ -16,6 +16,7 @@ module Data.Array.Repa.Array
 
 	 -- * Projections
 	, extent
+	, delay
 	, toUArray
 	, index, (!:)
 	, toScalar
@@ -117,6 +118,17 @@ extent arr
  = case arr of
 	Manifest sh _	-> sh
 	Delayed  sh _	-> sh
+
+-- | Unpack an array into delayed form.
+delay 	:: (Shape sh, Elt a) 
+	=> Array sh a 
+	-> (sh, sh -> a)
+
+{-# INLINE delay #-}	
+delay arr
+ = case arr of
+	Manifest sh uarr	-> (sh, \i -> uarr U.!: S.toIndex sh i)
+	Delayed  sh fn		-> (sh, fn)
 
 
 -- | Convert an array to an unboxed `U.Array`, forcing it if required.
@@ -332,9 +344,9 @@ backpermute
 	-> Array sh' a
 
 {-# INLINE backpermute #-}
-backpermute arr newExtent fnIndex
-	= Delayed newExtent ((arr !:) . fnIndex)
-
+backpermute arr newExtent perm
+	= traverse arr (const newExtent) (. perm) 
+	
 
 -- | Default backwards permutation.
 --	If the function returns `Nothing` then the value at that index is taken
