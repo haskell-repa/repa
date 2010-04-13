@@ -9,11 +9,15 @@
 module Data.Array.Repa.Array
 	( Array	(..)
 
+	 -- * Constructors
+	, fromUArray
+	, fromFunction
+	, unit
+
 	 -- * Basic Operations
 	, shape
 	, force
 	, (!:)
-	, unit
 	, toScalar
 	, deepSeqArray
 	
@@ -65,6 +69,39 @@ data Array sh a
           -- | An array represented as a function that computes each element.
 	| Delayed  sh (sh -> a)
 
+-- Constructors ----------------------------------------------------------------------------------
+
+-- | Create a `Manifest` array from an unboxed `U.Array`.
+fromUArray
+	:: Shape sh
+	=> sh
+	-> U.Array a
+	-> Array sh a
+
+{-# INLINE fromUArray #-}
+fromUArray sh uarr
+	= sh   `S.deepSeq` 
+	  uarr `seq`
+	  Manifest sh uarr
+
+
+-- | Create a `Delayed` array from a function.
+fromFunction 
+	:: Shape sh
+	=> sh
+	-> (sh -> a)
+	-> Array sh a
+	
+{-# INLINE fromFunction #-}
+fromFunction sh fnElems
+	= sh `S.deepSeq` Delayed sh fnElems
+
+
+-- | Wrap a scalar into a singleton array.
+unit :: Elt a => a -> Array Z a
+{-# INLINE unit #-}
+unit 	= Delayed Z . const
+
 
 -- Basic Operations -------------------------------------------------------------------------------
 -- | Take the shape of an array.
@@ -112,10 +149,6 @@ force (Delayed sh fn)
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
 
 
--- | Wrap a scalar into a singleton array.
-unit :: Elt a => a -> Array Z a
-{-# INLINE unit #-}
-unit 	= Delayed Z . const
 
 
 -- | Take the scalar value from a singleton array.
@@ -147,7 +180,7 @@ deepSeqArray arr x
 -- 
 --	The length of the list must be exactly the `size` of the shape, else `error`.
 --
-fromList 
+fromList
 	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> sh				-- ^ Shape of result array.
@@ -296,10 +329,9 @@ transpose arr
 
 -- Structure Preserving Operations ----------------------------------------------------------------
 -- | Apply a worker function to each element of an array, yielding a new array with the same shape.
-map	:: forall sh a b
-	.  (Shape sh, Elt a, Elt b) 
-	=> (a -> b) 			-- ^ Function to transform each element.
-	-> Array sh a			-- ^ Source array.
+map	:: (Shape sh, Elt a, Elt b) 
+	=> (a -> b)
+	-> Array sh a
 	-> Array sh b
 
 {-# INLINE map #-}
