@@ -15,9 +15,9 @@ module Data.Array.Repa.Array
 	, unit
 
 	 -- * Projections
-	, shape
+	, extent
 	, toUArray
-	, (!:)
+	, index, (!:)
 	, toScalar
 
 	 -- * Basic Operations
@@ -30,7 +30,7 @@ module Data.Array.Repa.Array
 
 	 -- * Index space transformations
 	, reshape
-	, append
+	, append, (+:+)
 	, backpermute
 	, backpermuteDft
 	, transpose
@@ -110,10 +110,10 @@ unit 	= Delayed Z . const
 
 -- Projections ------------------------------------------------------------------------------------
 
--- | Take the shape of an array.
-shape	:: Array sh a -> sh
-{-# INLINE shape #-}
-shape arr
+-- | Take the extent of an array.
+extent	:: Array sh a -> sh
+{-# INLINE extent #-}
+extent arr
  = case arr of
 	Manifest sh _	-> sh
 	Delayed  sh _	-> sh
@@ -125,7 +125,7 @@ toUArray
 	:: (Shape sh, Elt a)
 	=> Array sh a 
 	-> U.Array a
-	
+{-# INLINE toUArray #-}
 toUArray arr
  = case force arr of
 	Manifest _ uarr	-> uarr
@@ -138,17 +138,20 @@ toUArray arr
 --
 -- 	@inRange zeroDim (shape arr) ix == True@
 --
-(!:) 	:: forall sh a
+index, (!:)
+	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> Array sh a 		-- ^ Source array (@arr@).
 	-> sh 			-- ^ Index (@ix@).
 	-> a
 
-{-# INLINE (!:) #-}
-(!:) arr ix
+{-# INLINE index #-}
+index arr ix
  = case arr of
 	Delayed  _  fn	-> fn ix
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
+
+(!:) arr ix = index arr ix
 
 
 -- | Take the scalar value from a singleton array.
@@ -179,7 +182,7 @@ force (Delayed sh fn)
 	
 	
 -- | Ensure an array's structure is fully evaluated.
---	This evaluates the shape and outer constructor, but does not `force` the elements.
+--	This evaluates the extent and outer constructor, but does not `force` the elements.
 infixr 0 `deepSeqArray`
 deepSeqArray 
 	:: Shape sh
@@ -196,12 +199,12 @@ deepSeqArray arr x
 -- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an array.
 -- 
---	The length of the list must be exactly the `size` of the shape, else `error`.
+--	The length of the list must be exactly the `size` of the extent, else `error`.
 --
 fromList
 	:: forall sh a
 	.  (Shape sh, Elt a)
-	=> sh				-- ^ Shape of result array.
+	=> sh				-- ^ Extent of result array.
 	-> [a]				-- ^ List to convert.
 	-> Array sh a
 	
@@ -245,7 +248,7 @@ instance (Shape sh, Elt a, Eq a) => Eq (Array sh a) where
 	(==) arr1  arr2 
 		= toScalar 
 		$ fold (&&) True 
-		$ (flip reshape) (Z :. (S.size $ shape arr1)) 
+		$ (flip reshape) (Z :. (S.size $ extent arr1)) 
 		$ zipWith (==) arr1 arr2
 		
 	{-# INLINE (/=) #-}
@@ -267,9 +270,9 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 
 
 -- Index space transformations --------------------------------------------------------------------
--- | Impose a new shape on the same elements.
+-- | Impose a new extent on the same elements.
 --
---	The new shape must be the same size as the original, else `error`.
+--	The new extent must be the same size as the original, else `error`.
 --
 reshape	:: forall sh sh' a
 	.  (Shape sh, Shape sh', Elt a) 
@@ -278,22 +281,22 @@ reshape	:: forall sh sh' a
 	-> Array sh' a
 
 {-# INLINE reshape #-}
-reshape arr newShape
-	| not $ S.size newShape == S.size (shape arr)
+reshape arr newExtent
+	| not $ S.size newExtent == S.size (extent arr)
 	= error $ stage ++ ".reshape: reshaped array will not match size of the original"
 	
 	| otherwise
-	= Delayed newShape 
-	$ ((arr !:) . (S.fromIndex (shape arr)) . (S.toIndex newShape))
+	= Delayed newExtent
+	$ ((arr !:) . (S.fromIndex (extent arr)) . (S.toIndex newExtent))
 
 
 -- | Append two arrays.
 --
---   OBLIGATION: The higher dimensions of both arrays must have the same shape and size.
+--   OBLIGATION: The higher dimensions of both arrays must have the same extent.
 --
 --   @tail (listOfShape (shape arr1)) == tail (listOfShape (shape arr2))@
 --
-append	
+append, (+:+)	
 	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> Array (sh :. Int) a		-- ^ First array (@arr1@)
@@ -302,32 +305,35 @@ append
 
 {-# INLINE append #-}
 append arr1 arr2 
- = traverse2 arr1 arr2 fnShape fnElem
+ = traverse2 arr1 arr2 fnExtent fnElem
  where
- 	(_ :. n) 	= shape arr1
+ 	(_ :. n) 	= extent arr1
 
-	fnShape (sh :. i) (_  :. j) 
+	fnExtent (sh :. i) (_  :. j) 
 		= sh :. (i + j)
 
 	fnElem f1 f2 (sh :. i)
       		| i < n		= f1 (sh :. i)
   		| otherwise	= f2 (sh :. (i - n))
 
+{-# INLINE (+:+) #-}
+(+:+) arr1 arr2 = append arr1 arr2
+
 
 -- | Backwards permutation. 
---	The result array has the same shape as the original.
+--	The result array has the same extent as the original.
 backpermute
 	:: forall sh sh' a
 	.  (Shape sh, Shape sh', Elt a) 
 	=> Array sh a 			-- ^ Source array.
-	-> sh' 				-- ^ Shape of result array.
+	-> sh' 				-- ^ Extent of result array.
 	-> (sh' -> sh) 			-- ^ Function mapping each index in the result array
 					--	to an index of the source array.
 	-> Array sh' a
 
 {-# INLINE backpermute #-}
-backpermute arr newShape fnIndex
-	= Delayed newShape ((arr !:) . fnIndex)
+backpermute arr newExtent fnIndex
+	= Delayed newExtent ((arr !:) . fnIndex)
 
 
 -- | Default backwards permutation.
@@ -344,7 +350,7 @@ backpermuteDft
 
 {-# INLINE backpermuteDft #-}
 backpermuteDft arrSrc arrDft fnIndex
-	= Delayed (shape arrDft) fnElem
+	= Delayed (extent arrDft) fnElem
 	where	fnElem ix	
 		 = case fnIndex ix of
 			Just ix'	-> arrSrc !: ix'
@@ -368,7 +374,8 @@ transpose arr
 
 
 -- Structure Preserving Operations ----------------------------------------------------------------
--- | Apply a worker function to each element of an array, yielding a new array with the same shape.
+-- | Apply a worker function to each element of an array, 
+--	yielding a new array with the same extent.
 map	:: (Shape sh, Elt a, Elt b) 
 	=> (a -> b)
 	-> Array sh a
@@ -376,12 +383,12 @@ map	:: (Shape sh, Elt a, Elt b)
 
 {-# INLINE map #-}
 map f arr
-	= Delayed (shape arr) (f . (arr !:))
+	= Delayed (extent arr) (f . (arr !:))
 
 
 -- | Combine two arrays, element-wise, with a binary operator.
---	If the size of the two array arguments differ in shape, then the resulting
---   	array's shape is their intersection.
+--	If the extent of the two array arguments differ, 
+--	then the resulting array's extent is their intersection.
 zipWith :: (Shape sh, Elt a, Elt b, Elt c) 
 	=> (a -> b -> c) 
 	-> Array sh a
@@ -390,7 +397,7 @@ zipWith :: (Shape sh, Elt a, Elt b, Elt c)
 
 {-# INLINE zipWith #-}
 zipWith f arr1 arr2
- = let	sh'	= S.intersectDim (shape arr1) (shape arr2)
+ = let	sh'	= S.intersectDim (extent arr1) (extent arr2)
 	fn i	= f (arr1 !: i) (arr2 !: i)
    in	Delayed sh' fn
 
@@ -407,7 +414,7 @@ fold 	:: (Shape sh, Elt a)
 
 {-# INLINE fold #-}
 fold f x arr
- = let	sh' :. n	= shape arr
+ = let	sh' :. n	= extent arr
 	elemFn i 	= U.fold f x
 			$ U.map (\ix -> arr !: (i :. ix)) 
 				(U.enumFromTo 0 (n - 1))
@@ -432,29 +439,28 @@ sumAll	:: (Shape sh, Elt a, Num a)
 {-# INLINE sumAll #-}
 sumAll arr
 	= U.fold (+) 0
-	$ U.map ((arr !:) . (S.fromIndex (shape arr)))
+	$ U.map ((arr !:) . (S.fromIndex (extent arr)))
 	$ U.enumFromTo
 		0
-		((S.size $ shape arr) - 1)
+		((S.size $ extent arr) - 1)
 
 
 -- Generic Traversal -----------------------------------------------------------------------------
 -- | Unstructured traversal.
---
 traverse
 	:: forall sh sh' a b
 	.  (Shape sh, Shape sh', Elt a)
 	=> Array sh a				-- ^ Source array.
-	-> (sh  -> sh')				-- ^ Function to produce the shape of the result.
+	-> (sh  -> sh')				-- ^ Function to produce the extent of the result.
 	-> ((sh -> a) -> sh' -> b)		-- ^ Function to produce elements of the result. 
 	 					--   It is passed a lookup function to get elements of the source.
 	-> Array sh' b
 	
 {-# INLINE traverse #-}
-traverse arr transformShape newElem
+traverse arr transExtent newElem
 	= Delayed 
-		(transformShape (shape arr)) 
-		(newElem        (arr !:))
+		(transExtent (extent arr)) 
+		(newElem     (arr !:))
 
 
 -- | Unstructured traversal over two arrays at once.
@@ -464,7 +470,7 @@ traverse2
 	   , Elt a,    Elt b,     Elt c)
         => Array sh a 				-- ^ First source array.
 	-> Array sh' b				-- ^ Second source array.
-        -> (sh -> sh' -> sh'')			-- ^ Function to produce the shape of the result.
+        -> (sh -> sh' -> sh'')			-- ^ Function to produce the extent of the result.
         -> ((sh -> a) -> (sh' -> b) 		
                       -> (sh'' -> c))		-- ^ Function to produce elements of the result.
 						--   It is passed lookup functions to get elements of the 
@@ -472,11 +478,11 @@ traverse2
         -> Array sh'' c 
 
 {-# INLINE traverse2 #-}
-traverse2 arrA arrB fnShape fnElem
+traverse2 arrA arrB transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray`
    	  Delayed 
-		(fnShape (shape arrA) (shape arrB)) 
-		(fnElem ((!:) arrA) ((!:) arrB))
+		(transExtent (extent arrA) (extent arrB)) 
+		(newElem     ((!:) arrA) ((!:) arrB))
 
 
 
@@ -533,8 +539,8 @@ prop_id_transpose_DIM4
 prop_reshapeTranspose_DIM3
  = 	forAll (arbitrarySmallArray 20)			$ \(arr :: Array DIM3 Int) ->
    let	arr'	= transpose arr
-   	sh'	= shape arr'
-   in	(S.size $ shape arr) == S.size (shape (reshape arr sh'))
+   	sh'	= extent arr'
+   in	(S.size $ extent arr) == S.size (extent (reshape arr sh'))
      && (sumAll arr          == sumAll arr')
 
 prop_appendIsAppend_DIM3

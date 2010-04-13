@@ -30,6 +30,10 @@ class Slice ss where
 		-> ss
 		-> Array (SliceShape ss) e
 
-
-
-
+{-
+instance Slice Z where
+	type FullShape  Z	= Z
+	type SliceShape Z	= Z
+	
+	replicate	
+-}
