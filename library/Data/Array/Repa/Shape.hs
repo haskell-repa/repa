@@ -48,22 +48,17 @@ class Eq sh => Shape sh where
 		-> sh 	-- ^ Index to check for.
 		-> Bool
 
-
-	-- | ??? What is this for?
-	next	:: sh -> sh -> Maybe sh
-
-	-- | Ensure that a `Shape` is completely evaluated.
-	infixr 0 `deepSeq`
-	deepSeq :: sh -> a -> a
-
-
 	-- | Convert a shape to a list of dimensions.
 	listOfShape	:: sh -> [Int]
 	
 	-- | Convert a list of dimensions to a shape
 	shapeOfList	:: [Int] -> sh
-	
 
+	-- | Ensure that a `Shape` is completely evaluated.
+	infixr 0 `deepSeq`
+	deepSeq :: sh -> a -> a
+
+	
 	-- | Check whether an index is a part of a given shape.
 	inShape :: sh	-- ^ Shape.
 		-> sh	-- ^ Index.

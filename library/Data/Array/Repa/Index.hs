@@ -46,17 +46,17 @@ instance Shape Z where
 	dim _			= 0
 	zeroDim			= Z
 	unitDim			= Z
+	intersectDim _ _	= Z
+
 	size _			= 1
 	sizeIsValid _		= True
+
 	toIndex _ _		= 0
 	fromIndex _ _		= Z
 
 	inRange Z Z Z		= True
-	intersectDim _ _	= Z
-	next _ _		= Nothing
 
 	listOfShape _		= []
-
 	shapeOfList []		= Z
 	shapeOfList _		= error $ stage ++ ".fromList: non-empty list when converting to Z."
 
@@ -73,6 +73,10 @@ instance Shape sh => Shape (sh :. Int) where
 
 	{-# INLINE unitDim #-}
 	unitDim = unitDim :. 1
+
+	{-# INLINE intersectDim #-}
+	intersectDim (sh1 :. n1) (sh2 :. n2) 
+		= (intersectDim sh1 sh2 :. (min n1 n2))
 
 	{-# INLINE size #-}
 	size  (sh1 :. n)
@@ -105,18 +109,6 @@ instance Shape sh => Shape (sh :. Int) where
 	inRange (zs :. z) (sh1 :. n1) (sh2 :. n2) 
 		= (n2 >= z) && (n2 < n1) && (inRange zs sh1 sh2)
 
-	{-# INLINE intersectDim #-}
-	intersectDim (sh1 :. n1) (sh2 :. n2) 
-		= (intersectDim sh1 sh2 :. (min n1 n2))
-
-	{-# INLINE next #-}
-	next  sh@(sh' :. s) msh@(msh' :. ms) 
-		| sh == msh     = Nothing
-		| s  < (ms-1)   = Just (sh' :. (s+1))    
-		| otherwise 
-		= case next sh' msh' of
-			Just shNext -> Just (shNext :. 0)
-			Nothing     -> Nothing
 
        	listOfShape (sh :. n)
 	 = n : listOfShape sh
