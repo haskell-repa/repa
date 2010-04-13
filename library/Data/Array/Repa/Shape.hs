@@ -59,10 +59,10 @@ class (Eq sh, Arbitrary sh) => Shape sh where
 
 
 	-- | Convert a shape to a list of dimensions.
-	toList	:: sh -> [Int]
+	listOfShape	:: sh -> [Int]
 	
 	-- | Convert a list of dimensions to a shape
-	fromList :: [Int] -> sh
+	shapeOfList	:: [Int] -> sh
 	
 
 	-- | Check whether an index is a part of a given shape.

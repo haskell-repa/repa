@@ -1,7 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables, TypeOperators #-}
 
--- | TODO: the fromInteger instance doesn't make sense.
-
+-- | High-performance, regular, shape-polymorphic parallel arrays. 
+--
+--   WARNING: 	Most of the functions that operate on indices don't perform bounds checks.
+--		Performing these checks would interfere with code optimisation and reduce performance.		
+--		Indexing outside arrays, or failing to meet the stated obligations will
+--		likely cause heap corruption.
 module Data.Array.Repa.Array
 	( Array	(..)
 
@@ -19,6 +23,7 @@ module Data.Array.Repa.Array
 
 	 -- * Index space transformations
 	, reshape
+	, append
 	, backpermute
 	, transpose
 
@@ -89,10 +94,16 @@ force (Delayed sh fn)
 	
 
 -- | Get an indexed element from an array.
---   WARNING: There's no bounds checking with this, so indexing outside the array
---            will yield badness.
-(!:) 	:: (Shape sh, Elt a)
-	=> Array sh a -> sh -> a
+--
+--   OBLIGATION: The index must be within the array. 
+--
+-- 	@inRange zeroDim (shape arr) ix == True@
+--
+(!:) 	:: forall sh a
+	.  (Shape sh, Elt a)
+	=> Array sh a 		-- ^ Source array (@arr@).
+	-> sh 			-- ^ Index (@ix@).
+	-> a
 
 {-# INLINE (!:) #-}
 (!:) arr ix
@@ -133,8 +144,9 @@ deepSeqArray arr x
 
 -- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an array.
---	The length of the list must be exactly the `size` of the shape, 
---	else `error`.
+-- 
+--	The length of the list must be exactly the `size` of the shape, else `error`.
+--
 fromList 
 	:: forall sh a
 	.  (Shape sh, Elt a)
@@ -199,14 +211,15 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	abs		= map abs
 	signum 		= map signum
 
-	fromInteger n	= Delayed fail (\_ -> fromInteger n) 
-	 where fail	= error $ stage ++ ".fromInteger: Constructed array has no shape."
+	fromInteger n	 = Delayed failShape (\_ -> fromInteger n) 
+	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
 
 
 -- Index space transformations --------------------------------------------------------------------
 -- | Impose a new shape on the same elements.
---	The size of the result array is the same as the original.
---	Attempting to reshape an array to one of a different size in an `error`.
+--
+--	The new shape must be the same size as the original, else `error`.
+--
 reshape	:: forall sh sh' a
 	.  (Shape sh, Shape sh', Elt a) 
 	=> Array sh a 			-- ^ Source array.
@@ -222,31 +235,36 @@ reshape arr newShape
 	= Delayed newShape 
 	$ ((arr !:) . (S.fromIndex (shape arr)) . (S.toIndex newShape))
 
-{-
--- | Append two arrays
-append	:: (Elt e, Shape sh)
-	=> Array (sh :. Int) e
-	-> Array (sh :. Int) e
-	-> Array (sh :. Int) e
+
+-- | Append two arrays.
+--
+--   OBLIGATION: The higher dimensions of both arrays must have the same shape and size.
+--
+--   @tail (listOfShape (shape arr1)) == tail (listOfShape (shape arr2))@
+--
+append	
+	:: forall sh a
+	.  (Shape sh, Elt a)
+	=> Array (sh :. Int) a		-- ^ First array (@arr1@)
+	-> Array (sh :. Int) a		-- ^ Second array (@arr2@)
+	-> Array (sh :. Int) a
 
 {-# INLINE append #-}
 append arr1 arr2 
-  = traverse2CArray arr1 arr2 shFn f
-  where
-   	(_ :. n) 	= carrayShape arr1
-    	(_ :. m) 	= carrayShape arr2
+ = traverse2 arr1 arr2 fnShape fnElem
+ where
+ 	(_ :. n) 	= shape arr1
 
-	shFn (sh :. n) (_  :. m) 
-			= sh :. (n + m)
+	fnShape (sh :. i) (_  :. j) 
+		= sh :. (i + j)
 
-	f f1 f2 (sh :. i)
-          | i < n	= f1 (sh :. i)
-	  | otherwise	= f2 (sh :. (i - n))
--}
+	fnElem f1 f2 (sh :. i)
+      		| i < n		= f1 (sh :. i)
+  		| otherwise	= f2 (sh :. (i - n))
 
 
 -- | Backwards permutation. 
---	The result array is the same shape as the original.
+--	The result array has the same shape as the original.
 backpermute
 	:: forall sh sh' a
 	.  (Shape sh, Shape sh', Elt a) 
@@ -277,7 +295,7 @@ transpose arr
 
 
 -- Structure Preserving Operations ----------------------------------------------------------------
--- | Apply a worked function to each element of an array, yielding an array of the same shape.
+-- | Apply a worker function to each element of an array, yielding a new array with the same shape.
 map	:: forall sh a b
 	.  (Shape sh, Elt a, Elt b) 
 	=> (a -> b) 			-- ^ Function to transform each element.
@@ -350,29 +368,35 @@ sumAll arr
 
 -- Generic Traversal -----------------------------------------------------------------------------
 -- | Unstructured traversal.
+--
 traverse
-	:: (Shape sh, Shape sh', Elt a)
-	=> Array sh a			-- ^ Source array.
-	-> (sh  -> sh')			-- ^ Fn to transform the shape of the array.
-	-> ((sh -> a) -> sh' -> b)	-- ^ Fn to produce elements of the result array, 
-					--	it is passed a fn to get elements of the source array.
+	:: forall sh sh' a b
+	.  (Shape sh, Shape sh', Elt a)
+	=> Array sh a				-- ^ Source array.
+	-> (sh  -> sh')				-- ^ Function to produce the shape of the result.
+	-> ((sh -> a) -> sh' -> b)		-- ^ Function to produce elements of the result. 
+	 					--   It is passed a lookup function to get elements of the source.
 	-> Array sh' b
 	
 {-# INLINE traverse #-}
-traverse arr fnShape fnElem
+traverse arr transformShape newElem
 	= Delayed 
-		(fnShape (shape arr)) 
-		(fnElem (arr !:))
+		(transformShape (shape arr)) 
+		(newElem        (arr !:))
 
 
 -- | Unstructured traversal over two arrays at once.
 traverse2
-	:: ( Shape sh, Shape sh', Shape sh''
+	:: forall sh sh' sh'' a b c
+	.  ( Shape sh, Shape sh', Shape sh''
 	   , Elt a,    Elt b,     Elt c)
-        => Array sh a 
-	-> Array sh' b
-        -> (sh -> sh' -> sh'')
-        -> ((sh -> a) -> (sh' -> b) -> (sh'' -> c))
+        => Array sh a 				-- ^ First source array.
+	-> Array sh' b				-- ^ Second source array.
+        -> (sh -> sh' -> sh'')			-- ^ Function to produce the shape of the result.
+        -> ((sh -> a) -> (sh' -> b) 		
+                      -> (sh'' -> c))		-- ^ Function to produce elements of the result.
+						--   It is passed lookup functions to get elements of the 
+						--   source arrays.
         -> Array sh'' c 
 
 {-# INLINE traverse2 #-}
@@ -409,7 +433,8 @@ tests_DataArrayRepaArray
 	, ("id_toScalarUnit",			property prop_id_toScalarUnit)
 	, ("id_toListFromList/DIM3",		property prop_id_toListFromList_DIM3) 
 	, ("id_transpose/DIM4",			property prop_id_transpose_DIM4)
-	, ("id_reshapeTransposeSize/DIM3",	property prop_reshapeTranspose_DIM3)
+	, ("reshapeTransposeSize/DIM3",		property prop_reshapeTranspose_DIM3)
+	, ("appendIsAppend/DIM3",		property prop_appendIsAppend_DIM3)
 	, ("sumAllIsSum/DIM3",			property prop_sumAllIsSum_DIM3) ]]
 
 
@@ -439,6 +464,10 @@ prop_reshapeTranspose_DIM3
    	sh'	= shape arr'
    in	(S.size $ shape arr) == S.size (shape (reshape arr sh'))
      && (sumAll arr          == sumAll arr')
+
+prop_appendIsAppend_DIM3
+ = 	forAll (arbitrarySmallArray 20)			$ \(arr1 :: Array DIM3 Int) ->
+	sumAll (append arr1 arr1) == (2 * sumAll arr1)
 
 -- Reductions --------------------------
 prop_sumAllIsSum_DIM3

@@ -55,10 +55,10 @@ instance Shape Z where
 	intersectDim _ _	= Z
 	next _ _		= Nothing
 
-	toList _		= []
+	listOfShape _		= []
 
-	fromList []		= Z
-	fromList _		= error $ stage ++ ".fromList: non-empty list when converting to Z."
+	shapeOfList []		= Z
+	shapeOfList _		= error $ stage ++ ".fromList: non-empty list when converting to Z."
 
 	deepSeq Z x		= x
 
@@ -118,13 +118,13 @@ instance Shape sh => Shape (sh :. Int) where
 			Just shNext -> Just (shNext :. 0)
 			Nothing     -> Nothing
 
-       	toList (sh :. n)
-	 = n : toList sh
+       	listOfShape (sh :. n)
+	 = n : listOfShape sh
 
-	fromList xx
+	shapeOfList xx
 	 = case xx of
 		[]	-> error $ stage ++ ".toList: empty list when converting to  (_ :. Int)"
-		x:xs	-> fromList xs :. x			
+		x:xs	-> shapeOfList xs :. x			
 
 	{-# INLINE deepSeq #-} 
 	deepSeq (sh :. n) x = deepSeq sh (n `seq` x)
@@ -178,7 +178,7 @@ arbitrarySmallShape
 
 arbitrarySmallShape maxDim
  = do	sh		<- arbitraryShape
-	let dims	= toList sh
+	let dims	= listOfShape sh
 
 	let clamp x
 		= case x `mod` maxDim of
@@ -186,7 +186,7 @@ arbitrarySmallShape maxDim
 			n	-> n
 						
 	return	$ if True 
-			then fromList $ map clamp dims
+			then shapeOfList $ map clamp dims
 			else sh
 
 
