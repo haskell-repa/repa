@@ -200,8 +200,9 @@ genInShape2 (Z :. yMax :. xMax)
 -- Tests ------------------------------------------------------------------------------------------
 tests_DataArrayRepaIndex :: [(String, Property)]
 tests_DataArrayRepaIndex
- = 	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
-	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]
+  = [(stage ++ "." ++ name, test) | (name, test)
+     <-	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
+	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]]
 
 prop_toIndexFromIndex_DIM1 sh ix
 	=   (sizeIsValid sh)

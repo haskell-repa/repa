@@ -6,8 +6,12 @@ module Data.Array.Repa.Array
 	( Array	(..)
 
 	 -- * Basic Operations
+	, shape
 	, force
 	, (!:)
+	, unit
+	, toScalar
+	, deepSeqArray
 	
 	 -- * Conversion
 	, fromList
@@ -15,6 +19,7 @@ module Data.Array.Repa.Array
 
 	 -- * Index space transformations
 	, reshape
+	, backpermute
 	, transpose
 
          -- * Structure preserving operations
@@ -28,6 +33,7 @@ module Data.Array.Repa.Array
 	
 	 -- * Generic traversal
 	, traverse
+	, traverse2
 		
 	 -- * Testing
 	, arbitrarySmallArray
@@ -56,8 +62,7 @@ data Array sh e
 
 
 -- Basic Operations -------------------------------------------------------------------------------
-
--- | Take the shape of an `Array`.
+-- | Take the shape of an array.
 shape	:: Array sh e -> sh
 
 {-# INLINE shape #-}
@@ -81,7 +86,7 @@ force (Delayed sh fn)
 	$ U.enumFromTo 
 		(0 :: Int)
 		(S.size sh - 1)
-
+	
 
 -- | Get an indexed element from an array.
 --	WARNING: There's no bounds checking with this. 
@@ -96,13 +101,34 @@ force (Delayed sh fn)
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
 
 
--- | Convert a zero dimensional array into a scalar value.
+-- | Wrap a scalar into a singleton array.
+unit :: Elt e => e -> Array Z e
+{-# INLINE unit #-}
+unit 	= Delayed Z . const
+
+
+-- | Take the scalar value from a singleton array.
 toScalar :: Elt e => Array Z e -> e
 {-# INLINE toScalar #-}
 toScalar arr
  = case arr of
 	Delayed  _ fn		-> fn Z
 	Manifest _ uarr		-> uarr U.!: 0
+
+
+-- | Ensure an array's structure is fully evaluated.
+--	This evaluates the shape and outer constructor, but does not `force` the elements.
+infixr 0 `deepSeqArray`
+deepSeqArray 
+	:: Shape sh
+	=> Array sh a 
+	-> b -> b
+
+{-# INLINE deepSeqArray #-}
+deepSeqArray arr x 
+ = case arr of
+	Delayed  sh _		-> sh `S.deepSeq` x
+	Manifest sh uarr	-> sh `S.deepSeq` uarr `seq` x
 
 
 -- Conversion -------------------------------------------------------------------------------------
@@ -177,7 +203,7 @@ instance (Elt e, Shape sh, Num e) => Num (Array sh e) where
 
 
 -- Index space transformations --------------------------------------------------------------------
--- | Change the shape of an array.
+-- | Impose a new shape on the same elements.
 reshape	:: (Shape sh, Shape sh', Elt e) 
 	=> Array sh e 			-- ^ Source Array.
 	-> sh'				-- ^ New Shape.
@@ -190,6 +216,42 @@ reshape arr newShape
 	
 	| otherwise
 	= Delayed newShape $ ((arr !:) . (S.fromIndex (shape arr)) . (S.toIndex newShape))
+
+{-
+-- | Append two arrays
+append	:: (Elt e, Shape sh)
+	=> Array (sh :. Int) e
+	-> Array (sh :. Int) e
+	-> Array (sh :. Int) e
+
+{-# INLINE append #-}
+append arr1 arr2 
+  = traverse2CArray arr1 arr2 shFn f
+  where
+   	(_ :. n) 	= carrayShape arr1
+    	(_ :. m) 	= carrayShape arr2
+
+	shFn (sh :. n) (_  :. m) 
+			= sh :. (n + m)
+
+	f f1 f2 (sh :. i)
+          | i < n	= f1 (sh :. i)
+	  | otherwise	= f2 (sh :. (i - n))
+-}
+
+
+-- | Backwards permutation.
+backpermute
+	:: (Elt e, Shape sh, Shape sh') 
+	=> Array sh e 			-- ^ Source array.
+	-> sh' 				-- ^ Target shape.
+	-> (sh' -> sh) 			-- ^ Fn mapping each index in the target shape range
+					--	to an index of the source array range.
+	-> Array sh' e
+
+{-# INLINE backpermute #-}
+backpermute arr newShape fnIndex
+	= Delayed newShape ((arr !:) . fnIndex)
 
 
 -- | Transpose the lowest two dimensions of a matrix.
@@ -253,21 +315,6 @@ fold f x arr
    in	Delayed sh' elemFn
 
 
--- Generic Traversal -----------------------------------------------------------------------------
--- | Transform and traverse all the elements of an array.
-traverse
-	:: (Elt a, Shape sh, Shape sh')
-	=> Array sh a			-- ^ Source array.
-	-> (sh  -> sh')			-- ^ Fn to transform the shape of the array.
-	-> ((sh -> a) -> sh' -> b)	-- ^ Fn to produce elements of the result array, 
-					--	it is passed a fn to get elements of the source array.
-	-> Array sh' b
-	
-{-# INLINE traverse #-}
-traverse arr fnShape fnElem
-	= Delayed (fnShape (shape arr)) (fnElem (arr !:))
-
-
 -- | Sum the innermost dimension.
 sum	:: (Elt e, Shape dim, Num e)
 	=> Array (dim :. Int) e
@@ -278,7 +325,7 @@ sum arr	= fold (+) 0 arr
 
 
 -- | Sum all the elements.
-sumAll	:: (Elt e, Shape dim, Num e)
+sumAll	:: (Shape dim, Elt e, Num e)
 	=> Array dim e
 	-> e
 
@@ -289,6 +336,42 @@ sumAll arr
 	$ U.enumFromTo
 		0
 		((S.size $ shape arr) - 1)
+
+
+-- Generic Traversal -----------------------------------------------------------------------------
+-- | Unstructured traversal.
+traverse
+	:: (Shape sh, Shape sh', Elt a)
+	=> Array sh a			-- ^ Source array.
+	-> (sh  -> sh')			-- ^ Fn to transform the shape of the array.
+	-> ((sh -> a) -> sh' -> b)	-- ^ Fn to produce elements of the result array, 
+					--	it is passed a fn to get elements of the source array.
+	-> Array sh' b
+	
+{-# INLINE traverse #-}
+traverse arr fnShape fnElem
+	= Delayed 
+		(fnShape (shape arr)) 
+		(fnElem (arr !:))
+
+
+-- | Unstructured traversal over two arrays at once.
+traverse2
+	:: ( Shape sh, Shape sh', Shape sh''
+	   , Elt a,    Elt b,     Elt c)
+        => Array sh a 
+	-> Array sh' b
+        -> (sh -> sh' -> sh'')
+        -> ((sh -> a) -> (sh' -> b) -> (sh'' -> c))
+        -> Array sh'' c 
+
+{-# INLINE traverse2 #-}
+traverse2 arrA arrB fnShape fnElem
+	= arrA `deepSeqArray` arrB `deepSeqArray`
+   	  Delayed 
+		(fnShape (shape arrA) (shape arrB)) 
+		(fnElem ((!:) arrA) ((!:) arrB))
+
 
 
 -- Arbitrary --------------------------------------------------------------------------------------
@@ -311,11 +394,13 @@ arbitrarySmallArray maxDim
 -- | QuickCheck Properties.
 tests_DataArrayRepaArray :: [(String, Property)]
 tests_DataArrayRepaArray
- = 	[ ("id_force/DIM5",			property prop_id_force_DIM5)
+ = [(stage ++ "." ++ name, test) | (name, test)
+    <-	[ ("id_force/DIM5",			property prop_id_force_DIM5)
+	, ("id_toScalarUnit",			property prop_id_toScalarUnit)
 	, ("id_toListFromList/DIM3",		property prop_id_toListFromList_DIM3) 
 --	, ("id_toScalarFromInteger/DIM3",	property prop_id_toScalarFromInteger_DIM3)
 	, ("id_transpose/DIM4",			property prop_id_transpose_DIM4)
-	, ("sumAllIsSum/DIM3",			property prop_sumAllIsSum_DIM3) ]
+	, ("sumAllIsSum/DIM3",			property prop_sumAllIsSum_DIM3) ]]
 
 
 -- The Eq instance uses fold and zipWith.
@@ -323,6 +408,8 @@ prop_id_force_DIM5
  = 	forAll (arbitrarySmallArray 10)			$ \(arr :: Array DIM5 Int) ->
 	arr == force arr
 	
+prop_id_toScalarUnit (x :: Int)
+ =	toScalar (unit x) == x
 
 prop_id_toListFromList_DIM3
  =	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM3) ->
