@@ -349,9 +349,9 @@ transpose arr
 
 -- | Replicate an array according to a given slice specification.
 replicate
-	:: ( Shape (FullShape sl)
+	:: ( Slice sl
+	   , Shape (FullShape sl)
 	   , Shape (SliceShape sl)
-	   , Slice sl
 	   , Elt e)
 	=> sl
 	-> Array (SliceShape sl) e
