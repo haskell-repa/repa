@@ -6,7 +6,7 @@ main	= mapM_ test props_DataArrayRepa
 	
 
 test (name, prop)
- = do	putStr $ "Test " ++ name ++ "\n"
+ = do	putStr $ name ++ "\n"
 	putStr $ "     "
 	quickCheck prop
 	putStr $ "\n"
