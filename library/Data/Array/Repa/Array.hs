@@ -53,17 +53,17 @@ stage	= "Data.Array.Repa.Array"
 	
 	
 -- | Possibly delayed arrays.
-data Array sh e 
+data Array sh a
 	= -- | An array represented as some concrete data.
-	  Manifest sh (U.Array e)
+	  Manifest sh (U.Array a)
 
           -- | An array represented as a function that computes each element.
-	| Delayed  sh (sh -> e)
+	| Delayed  sh (sh -> a)
 
 
 -- Basic Operations -------------------------------------------------------------------------------
 -- | Take the shape of an array.
-shape	:: Array sh e -> sh
+shape	:: Array sh a -> sh
 
 {-# INLINE shape #-}
 shape arr
@@ -73,8 +73,8 @@ shape arr
 
 
 -- | Force an array, so that it becomes `Manifest`.
-force	:: (Shape sh, Elt e)
-	=> Array sh e -> Array sh e
+force	:: (Shape sh, Elt a)
+	=> Array sh a -> Array sh a
 	
 {-# INLINE force #-}
 force arr@Manifest{}	
@@ -91,8 +91,8 @@ force (Delayed sh fn)
 -- | Get an indexed element from an array.
 --	WARNING: There's no bounds checking with this. 
 --               Indexing outside the array will yield badness.
-(!:) 	:: (Shape sh, Elt e)
-	=> Array sh e -> sh -> e
+(!:) 	:: (Shape sh, Elt a)
+	=> Array sh a -> sh -> a
 
 {-# INLINE (!:) #-}
 (!:) arr ix
@@ -102,13 +102,13 @@ force (Delayed sh fn)
 
 
 -- | Wrap a scalar into a singleton array.
-unit :: Elt e => e -> Array Z e
+unit :: Elt a => a -> Array Z a
 {-# INLINE unit #-}
 unit 	= Delayed Z . const
 
 
 -- | Take the scalar value from a singleton array.
-toScalar :: Elt e => Array Z e -> e
+toScalar :: Elt a => Array Z a -> a
 {-# INLINE toScalar #-}
 toScalar arr
  = case arr of
@@ -136,11 +136,11 @@ deepSeqArray arr x
 --	The length of the list must be exactly the size of the shape, 
 --	else an exception will be thrown.
 fromList 
-	:: forall sh e
-	.  (Shape sh, Elt e)
+	:: forall sh a
+	.  (Shape sh, Elt a)
 	=> sh				-- ^ Shape of resulting array.
-	-> [e]				-- ^ List to convert.
-	-> Array sh e
+	-> [a]				-- ^ List to convert.
+	-> Array sh a
 	
 {-# INLINE fromList #-}
 fromList sh xx
@@ -157,9 +157,9 @@ fromList sh xx
 	
 	
 -- | Convert an `Array` to a list.
-toList 	:: (Shape sh, Elt e)
-	=> Array sh e
-	-> [e]
+toList 	:: (Shape sh, Elt a)
+	=> Array sh a
+	-> [a]
 
 {-# INLINE toList #-}
 toList arr
@@ -171,11 +171,11 @@ toList arr
 -- Instances --------------------------------------------------------------------------------------
 
 -- Show
-instance (Elt e, Shape dim, Show e) => Show (Array dim e) where
+instance (Shape sh, Elt a, Show a) => Show (Array sh a) where
  	show arr = show $ toList arr
 
 -- Eq
-instance (Elt e, Eq e, Shape sh) => Eq (Array sh e) where
+instance (Shape sh, Elt a, Eq a) => Eq (Array sh a) where
 
 	{-# INLINE (==) #-}
 	(==) arr1  arr2 
@@ -190,7 +190,7 @@ instance (Elt e, Eq e, Shape sh) => Eq (Array sh e) where
 
 -- Num
 -- All operators apply elementwise.
-instance (Elt e, Shape sh, Num e) => Num (Array sh e) where
+instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	(+)		= zipWith (+)
 	(-)		= zipWith (-)
 	(*)		= zipWith (*)
@@ -204,10 +204,10 @@ instance (Elt e, Shape sh, Num e) => Num (Array sh e) where
 
 -- Index space transformations --------------------------------------------------------------------
 -- | Impose a new shape on the same elements.
-reshape	:: (Shape sh, Shape sh', Elt e) 
-	=> Array sh e 			-- ^ Source Array.
+reshape	:: (Shape sh, Shape sh', Elt a) 
+	=> Array sh a 			-- ^ Source Array.
 	-> sh'				-- ^ New Shape.
-	-> Array sh' e
+	-> Array sh' a
 
 {-# INLINE reshape #-}
 reshape arr newShape
@@ -242,12 +242,12 @@ append arr1 arr2
 
 -- | Backwards permutation.
 backpermute
-	:: (Elt e, Shape sh, Shape sh') 
-	=> Array sh e 			-- ^ Source array.
+	:: (Shape sh, Shape sh', Elt a) 
+	=> Array sh a 			-- ^ Source array.
 	-> sh' 				-- ^ Target shape.
 	-> (sh' -> sh) 			-- ^ Fn mapping each index in the target shape range
 					--	to an index of the source array range.
-	-> Array sh' e
+	-> Array sh' a
 
 {-# INLINE backpermute #-}
 backpermute arr newShape fnIndex
@@ -269,7 +269,7 @@ transpose arr
 
 -- Structure Preserving Operations ----------------------------------------------------------------
 -- | Map a worker function over each element of n-dim CArray.
-map	:: (Elt a, Elt b, Shape sh) 
+map	:: (Shape sh, Elt a, Elt b) 
 	=> (a -> b) 			-- ^ Worker function.
 	-> Array sh a			-- ^ Source array.
 	-> Array sh b
@@ -282,7 +282,7 @@ map f arr
 -- | Combine two arrays, element-wise, with a binary operator.
 --	If the size of the two array arguments differ in shape, then the resulting
 --   	array's shape is their intersection.
-zipWith :: (Elt a, Elt b, Elt c, Shape sh) 
+zipWith :: (Shape sh, Elt a, Elt b, Elt c) 
 	=> (a -> b -> c) 
 	-> Array sh a
 	-> Array sh b
@@ -299,11 +299,11 @@ zipWith f arr1 arr2
 -- Reductions -------------------------------------------------------------------------------------
 -- | Fold the innermost dimension. 
 --	Combine this with `transpose` to fold any other dimension.
-fold 	:: (Elt e, Shape dim) 
-	=> (e -> e -> e) 
-	-> e 
-	-> Array (dim :. Int)  e 
-	-> Array dim e
+fold 	:: (Shape sh, Elt a)
+	=> (a -> a -> a)
+	-> a 
+	-> Array (sh :. Int) a
+	-> Array sh a
 
 {-# INLINE fold #-}
 fold f x arr
@@ -316,18 +316,18 @@ fold f x arr
 
 
 -- | Sum the innermost dimension.
-sum	:: (Elt e, Shape dim, Num e)
-	=> Array (dim :. Int) e
-	-> Array dim e
+sum	:: (Shape sh, Elt a, Num a)
+	=> Array (sh :. Int) a
+	-> Array sh a
 
 {-# INLINE sum #-}
 sum arr	= fold (+) 0 arr
 
 
 -- | Sum all the elements.
-sumAll	:: (Shape dim, Elt e, Num e)
-	=> Array dim e
-	-> e
+sumAll	:: (Shape sh, Elt a, Num a)
+	=> Array sh a
+	-> a
 
 {-# INLINE sumAll #-}
 sumAll arr
@@ -377,10 +377,10 @@ traverse2 arrA arrB fnShape fnElem
 -- Arbitrary --------------------------------------------------------------------------------------
 -- | Create an arbitrary small array, restricting the size of each of the dimensions.
 arbitrarySmallArray 
-	:: forall sh e
-	.  (Shape sh, Elt e, Arbitrary e)
+	:: forall sh a
+	.  (Shape sh, Elt a, Arbitrary a)
 	=> Int 				-- ^ Maximum size of each dimension.
-	-> Gen (Array (sh :. Int) e)
+	-> Gen (Array (sh :. Int) a)
 
 arbitrarySmallArray maxDim
  = do	sh	<- arbitrarySmallShape maxDim
