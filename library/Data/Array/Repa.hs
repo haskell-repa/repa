@@ -39,6 +39,7 @@ module Data.Array.Repa
 	, append, (+:+)
 	, transpose
 	, replicate
+	, slice
 	, backpermute
 	, backpermuteDft
 
@@ -358,12 +359,28 @@ replicate
 	-> Array (FullShape sl) e
 
 {-# INLINE replicate #-}
-replicate slice arr
+replicate sl arr
 	= backpermute 
-		(fullOfSlice slice (extent arr)) 
-		(sliceOfFull slice)
+		(fullOfSlice sl (extent arr)) 
+		(sliceOfFull sl)
 		arr
-		
+
+-- | Take a slice from an array.
+slice	:: ( Slice sl
+	   , Shape (FullShape sl)
+	   , Shape (SliceShape sl)
+	   , Elt e)
+	=> Array (FullShape sl) e
+	-> sl
+	-> Array (SliceShape sl) e
+
+{-# INLINE slice #-}
+slice arr sl
+	= backpermute 
+		(sliceOfFull sl (extent arr))
+		(fullOfSlice sl)
+		arr
+
 
 -- | Backwards permutation of an array's elements.
 --	The result array has the same extent as the original.
