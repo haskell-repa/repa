@@ -9,14 +9,11 @@ module PPM
 where
 import qualified Data.Array.Parallel.Unlifted 	as U
 import Data.List				as L
-import Array					as A
+import Data.Array.Repa				as A
 import Prelude					as P
 import System.IO
 import Control.Monad
 import Data.Char
-import Debug.Trace
-import Data.ByteString.Char8			(ByteString)
-import qualified Data.ByteString.Char8		as BC
 
 
 -- Write ------------------------------------------------------------------------------------------
@@ -30,7 +27,7 @@ writeMatrixAsNormalisedPPM
 
 writeMatrixAsNormalisedPPM fileName colorFn arr
  = let	-- Use the maximum elem in the array as the white value.
-	vals	= U.toList $ fromArray arr
+	vals	= U.toList $ toUArray arr
 	maxVal	= maximum vals
 
 	-- Normalise the array to the range [0..1] for display.
@@ -50,18 +47,16 @@ writeMatrixAsPPM
 writeMatrixAsPPM fileName colorFn arr
  = let		
 	-- Break flat array data into individual rows
-	() :. width :. height	 
-		= arrayShape arr
-
-	-- PPM header for pixmap image
-	header	= "P3"
+	Z :. width :. height	 
+		= extent arr
 
    in do
 	file	<- openFile fileName WriteMode
 	hPutStrLn file $ "P3"
 	hPutStrLn file $ show width ++ " " ++ show height
 	hPutStrLn file $ "255"
-	hWritePixels file colorFn $ U.toList $ fromArray arr
+		
+	hWritePixels file colorFn $ toList arr
 	hClose file
 
 
@@ -89,16 +84,6 @@ hWritePixels h colorFn !xx
 showInt :: Int -> String
 showInt i	= show i
 
--- | Break flat list into rows of a given width.
-takeRows :: Int -> [a] -> [[a]]
-takeRows width []	= []
-takeRows width xx	= take width xx : takeRows width (drop width xx)
-
-	
--- | Pad a string into a right justified column of a given width.
-padR :: Int -> String -> String
-padR width str	= L.replicate (width - length str) ' ' ++ str
-
 
 -- Read -------------------------------------------------------------------------------------------
 readPPMAsMatrix 
@@ -111,12 +96,11 @@ readPPMAsMatrix pointFn fileName
 	
 	"P3"		<- hGetLine file
 	[width, height]	<- liftM (P.map read . words) $ hGetLine file
-	(maxVal :: Int)	<- liftM read $ hGetLine file
-
+	_maxVal		<- hGetLine file
 	vals		<- loadPixels pointFn file
 
-	let dim	= () :. width :. height
-	let mat	= toArray dim $ U.fromList vals
+	let dims	= Z :. width :. height
+	let mat		= fromList dims vals
 
 	return mat
 
@@ -134,13 +118,12 @@ readPPMAsMatrix2 pointFn fileName
 	
 	"P3"		<- hGetLine file
 	[width, height]	<- liftM (P.map read . words) $ hGetLine file
-	(maxVal :: Int)	<- liftM read $ hGetLine file
-
+	_maxVal		<- hGetLine file
 	vals		<- loadPixels pointFn file
 
-	let dim	= () :. width :. height
-	let mat1	= toArray dim $ U.fromList $ P.map fst vals
-	let mat2	= toArray dim $ U.fromList $ P.map snd vals
+	let dims	= Z :. width :. height
+	let mat1	= fromList dims $ P.map fst vals
+	let mat2	= fromList dims $ P.map snd vals
 
 	return (mat1, mat2)
 	
@@ -168,7 +151,7 @@ convertLine fn vs
  = case vs of
 	[]			-> []
 	r : g : b : rest	-> fn r g b : convertLine fn rest
-
+	_			-> error "PPM.convertLine: bad pixel"
 	
 -- | Read a string containing ints separated by whitespace.	
 readInts :: String -> [Int]

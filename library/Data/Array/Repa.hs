@@ -7,6 +7,9 @@
 --		Doing these checks would interfere with code optimisation and reduce performance.		
 --		Indexing outside arrays, or failing to meet the stated obligations will
 --		likely cause heap corruption.
+--
+--  NOTE: 	To get good performance you need to use at least GHC 6.13.20100309 
+--
 module Data.Array.Repa
 	( module Data.Array.Repa.Shape
 	, module Data.Array.Repa.Index
@@ -58,7 +61,7 @@ module Data.Array.Repa
 		
 	 -- * Testing
 	, arbitrarySmallArray
-	, props_DataArrayRepaArray)
+	, props_DataArrayRepa)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
@@ -348,7 +351,7 @@ transpose arr
 	(\f -> \(sh :. i :. j) 	-> f (sh :. j :. i))
 
 
--- | Replicate an array according to a given slice specification.
+-- | Replicate an array, according to a given slice specification.
 replicate
 	:: ( Slice sl
 	   , Shape (FullShape sl)
@@ -365,7 +368,7 @@ replicate sl arr
 		(sliceOfFull sl)
 		arr
 
--- | Take a slice from an array.
+-- | Take a slice from an array, according to a given specification.
 slice	:: ( Slice sl
 	   , Shape (FullShape sl)
 	   , Shape (SliceShape sl)
@@ -504,7 +507,8 @@ traverse
 	
 {-# INLINE traverse #-}
 traverse arr transExtent newElem
-	= Delayed 
+	= arr `deepSeqArray` 
+	  Delayed 
 		(transExtent (extent arr)) 
 		(newElem     (arr !:))
 
@@ -549,8 +553,8 @@ arbitrarySmallArray maxDim
 -- Properties -------------------------------------------------------------------------------------
 
 -- | QuickCheck properties for this module and its children.
-props_DataArrayRepaArray :: [(String, Property)]
-props_DataArrayRepaArray
+props_DataArrayRepa :: [(String, Property)]
+props_DataArrayRepa
  =  props_DataArrayRepaIndex
  ++ [(stage ++ "." ++ name, test) | (name, test)
     <-	[ ("id_force/DIM5",			property prop_id_force_DIM5)

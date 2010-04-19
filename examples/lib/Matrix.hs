@@ -17,14 +17,13 @@ module Matrix
 	, writeMatrixAsTextFile
 	, genRandomMatrix)
 where
-import qualified Data.Array.Parallel.Unlifted 	as U
 import Data.List				as L
-import Array					as A
+import Data.Array.Repa				as A
+import qualified Data.Array.Parallel.Unlifted	as U
 import Prelude					as P
 import System.IO
 import Control.Monad
 import Data.Char
-import Debug.Trace
 import System.Random
 
 
@@ -43,8 +42,8 @@ readMatrixFromTextFile fileName
 	str		<- hGetContents handle
 	let vals	= readValues str
 
-	let dim		= () :. width :. height
-	let mat		= toArray dim $ U.fromList vals
+	let dims	= Z :. width :. height
+	let mat		= fromList dims vals
 
 	return mat
 
@@ -78,12 +77,12 @@ writeMatrixAsTextFile arr fileName
 
 	hPutStrLn file "MATRIX"
 
-	let () :. width :. height	
-		= arrayShape arr
+	let Z :. width :. height	
+		= extent arr
 
 	hPutStrLn file $ show width ++ " " ++ show height
-	
-	hWriteValues file $ U.toList $ fromArray arr
+		
+	hWriteValues file $ toList arr
 	hClose file
 	
 
@@ -111,7 +110,7 @@ genRandomMatrix
 
 genRandomMatrix sh
  = do	uarr	<- generateVector (A.size sh)
-	return	$ toArray sh uarr
+	return	$ fromUArray sh uarr
 			
 
 generateVector :: Int -> IO (U.Array Double)
@@ -125,13 +124,5 @@ generateVector n =
     return vec
   where
     k = 1000
-
-
-
-
-
-
-
-
 
 
