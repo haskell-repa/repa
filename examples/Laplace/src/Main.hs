@@ -55,18 +55,17 @@ laplace steps fileInput fileOutput
 	(matBoundMask, matBoundValue)	
 		<- readPPMAsMatrix2 loadPixel fileInput
 
-        matBoundMask
-          `deepSeqArray` matBoundValue
-          `deepSeqArray` return ()
-
 	-- Use the boundary condition values as the initial matrix.
 	let matInitial	= matBoundValue
 
 	-- Run the solver.
-	let matFinal	= solveLaplace steps matBoundMask matBoundValue matInitial
+	let matFinal	= solveLaplace
+				steps
+				matBoundMask
+				matBoundValue
+				matInitial
 
-	matFinal
-	  `deepSeqArray` return ()
+	matFinal `deepSeqArray` return ()
 
 	-- Write out the matrix as a colorised PPM image	
 	writeMatrixAsNormalisedPPM

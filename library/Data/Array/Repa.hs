@@ -31,6 +31,7 @@ module Data.Array.Repa
 
 	 -- * Basic Operations
 	, force
+	, isManifest
 	, deepSeqArray
 	
 	 -- * Conversion
@@ -193,15 +194,25 @@ force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 	
 {-# INLINE force #-}
-force arr@Manifest{}
-	= arr
+force arr
+ = case arr of
+	Manifest sh uarr
+	 -> sh `S.deepSeq` uarr `seq` 
+	    Manifest sh uarr
 
-force (Delayed sh fn)
- 	= Manifest sh
-	$ U.map (fn . S.fromIndex sh)
-	$ U.enumFromTo 
-		(0 :: Int)
-		(S.size sh - 1)
+	Delayed sh fn
+	 -> sh `S.deepSeq` 
+ 	    Manifest sh
+		$ U.map (fn . S.fromIndex sh)
+		$ U.enumFromTo 
+			(0 :: Int)
+			(S.size sh - 1)
+
+isManifest :: Array sh a -> Array sh a
+isManifest arr
+ = case arr of
+	Manifest{}	-> arr
+	_		-> error "not manifest"
 	
 	
 -- | Ensure an array's structure is fully evaluated.
