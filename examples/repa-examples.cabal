@@ -25,7 +25,9 @@ Executable repa-laplace
         repa            >= 1.0 && < 1.1
 
   Main-is: Laplace/src/Main.hs
+  other-modules: Solver
+  hs-source-dirs: Laplace/src . lib
 
-  hs-source-dirs: . lib
+  ghc-options: -threaded -Odph -fsimplifier-phases=3 -fcpr-off -funbox-strict-fields -funfolding-use-threshold=30
 
-  ghc-options: -Odph -threaded -Wall -Werror -fno-warn-missing-signatures
+

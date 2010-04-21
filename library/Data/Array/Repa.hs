@@ -171,7 +171,7 @@ index, (!:)
 {-# INLINE index #-}
 index arr ix
  = case arr of
-	Delayed  _  fn	-> fn ix
+	Delayed  _  fn		-> fn ix
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
 
 (!:) arr ix = index arr ix
@@ -193,7 +193,7 @@ force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 	
 {-# INLINE force #-}
-force arr@Manifest{}	
+force arr@Manifest{}
 	= arr
 
 force (Delayed sh fn)
@@ -446,10 +446,10 @@ zipWith :: (Shape sh, Elt a, Elt b, Elt c)
 
 {-# INLINE zipWith #-}
 zipWith f arr1 arr2
- = let	sh'	= S.intersectDim (extent arr1) (extent arr2)
-	fn i	= f (arr1 !: i) (arr2 !: i)
-   in	Delayed sh' fn
-
+ 	= arr1 `deepSeqArray` 
+	  arr2 `deepSeqArray`
+	  Delayed	(S.intersectDim (extent arr1) (extent arr2))
+			(\ix -> f (arr1 !: ix) (arr2 !: ix))
 
 
 -- Reductions -------------------------------------------------------------------------------------
@@ -507,7 +507,7 @@ traverse
 	
 {-# INLINE traverse #-}
 traverse arr transExtent newElem
-	= arr `deepSeqArray` 
+	= arr `deepSeqArray`
 	  Delayed 
 		(transExtent (extent arr)) 
 		(newElem     (arr !:))
