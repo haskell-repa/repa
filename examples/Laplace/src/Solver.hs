@@ -13,19 +13,14 @@ solveLaplace
 	-> Array DIM2 Double
 
 {-# INLINE solveLaplace #-}
-solveLaplace 
-	steps 
-	arrBoundMask@Manifest{}
-	arrBoundValue@Manifest{}
-	arrInit
-
+solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} !arrInit
  = go steps arrInit
- where	go s arr@Manifest{}
-          | s == 0	= arr
-          | otherwise	= go (s-1) 
-			$! force 
-			$! applyBoundary arrBoundMask arrBoundValue 
-	  		$! relaxLaplace arr
+ where	go i arr@Manifest{}
+	   | i == 0	= arr
+	   | otherwise	= go (i - 1) 
+			$ force 
+			$ applyBoundary arrBoundMask arrBoundValue
+			$ relaxLaplace arr
 
 
 -- | Perform matrix relaxation for the Laplace equation,

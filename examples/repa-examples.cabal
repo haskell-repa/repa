@@ -15,19 +15,29 @@ Description:
 Synopsis:
         Examples using the Repa array library.
 
-
 Executable repa-laplace
   Build-depends: 
         base            >= 3   && < 5, 
         random          >= 1.0 && < 1.1,
         bytestring      >= 0.9 && < 1.0,
-        dph-prim-par    >= 0.4.0   && < 0.5.0,
+        dph-prim-seq    >= 0.4.0   && < 0.5.0,
         repa            >= 1.0 && < 1.1
 
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
   hs-source-dirs: Laplace/src . lib
+  ghc-options: -Odph
 
-  ghc-options: -threaded -Odph -fsimplifier-phases=3 -fcpr-off -funbox-strict-fields -funfolding-use-threshold=30
+Executable repa-mmult
+  Build-depends: 
+        base            >= 3   && < 5, 
+        random          >= 1.0 && < 1.1,
+        bytestring      >= 0.9 && < 1.0,
+        dph-prim-seq    >= 0.4.0   && < 0.5.0,
+        repa            >= 1.0 && < 1.1
+
+  Main-is: MMult/src/Main.hs
+  hs-source-dirs: MMult/src . lib
+  ghc-options: -Odph
 
 

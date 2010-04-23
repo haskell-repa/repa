@@ -1,3 +1,4 @@
+{-# LANGAUGE PatternGuards #-}
 {-# LANGUAGE ScopedTypeVariables, RankNTypes #-}
 {-# LANGUAGE TypeOperators, FlexibleContexts #-}
 
@@ -175,6 +176,7 @@ index arr ix
 	Delayed  _  fn		-> fn ix
 	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
 
+{-# INLINE (!:) #-}
 (!:) arr ix = index arr ix
 
 
@@ -208,7 +210,9 @@ force arr
 			(0 :: Int)
 			(S.size sh - 1)
 
+
 isManifest :: Array sh a -> Array sh a
+{-# INLINE isManifest #-}
 isManifest arr
  = case arr of
 	Manifest{}	-> arr
@@ -474,13 +478,23 @@ fold 	:: (Shape sh, Elt a)
 
 {-# INLINE fold #-}
 fold f x arr
+ = x `seq` arr `deepSeqArray` 
+   case extent arr of
+    sh' :. n
+     -> Delayed sh' 
+		(\i -> U.fold f x
+			$! U.map (\ix -> arr !: (i :. ix)) 
+				 (U.enumFromTo 0 (n - 1)))
+
+		
+{-
  = let	sh' :. n	= extent arr
 	elemFn i 	= U.fold f x
 			$ U.map (\ix -> arr !: (i :. ix)) 
 				(U.enumFromTo 0 (n - 1))
 
    in	Delayed sh' elemFn
-
+-}
 
 -- | Sum the innermost dimension of an array.
 sum	:: (Shape sh, Elt a, Num a)
