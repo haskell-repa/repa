@@ -1,91 +1,92 @@
-{-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE ParallelListComp, PatternGuards #-}
 
-module Main
-where
+module Main where
 
-import FFTCArray
+import FFT
+import Roots
 import StrictComplex
-import Data.Array.Parallel.Base ( (:*:)(..) )
-import Array			((:.)(..), DIM1, DIM3, Shape(..), Subshape(..))
 
-import CArray			as CA
-import Array 			as A
-
-import Bench.Benchmark 		( timeFn_, showTime )
-import Data.Char 		( toLower )
-import System.Environment 	( getArgs )
-import Prelude			as P
-import Data.List		as L
-import qualified Data.Array.Parallel.Unlifted as U
+import Data.Array.Repa	as A
+import Data.List	as L
+import Prelude		as P
+import Control.Monad
+import System.Environment
 
 
-wrapFFT3d
-	:: (Int -> CArray DIM3 Complex -> CArray DIM3 Complex)
-	-> (Int, U.Array Double, U.Array Double) 	-- iterations, real part, imaginary paty
-	-> U.Array Double
-
-{-# NOINLINE wrapFFT3d #-}
-wrapFFT3d f (n, xs, ys) 
-	= U.snds
-        $ carrayData
-        $ f 1
-        $ mkCArray (() :. n :. n :. n)
-        $ U.zip xs ys
-
-algs
- = 	[ ('d', fft3D)
-	, ('s', fft3DS)
-	, ('c', fft3DC)]
+-- Arg Parsing ------------------------------------------------------------------------------------
+data Arg
+	= ArgVector	Int
+	| ArgRandom
+	| ArgStep	Int
+	deriving Show
 
 
+parseArgs []		= []
+parseArgs (flag:xx)
+	| "-vector"	<- flag
+	, len:rest	<- xx
+	= ArgVector (read len) : parseArgs rest
+	
+	| "-random"	<- flag
+	, rest		<- xx
+	= ArgRandom : parseArgs rest
+	
+	| "-step"	<- flag
+	, onlen:rest		<- xx
+	= ArgStep (read onlen) : parseArgs rest
+	
+	| otherwise	
+	= error $ "bad arg " ++ flag ++ "\n"
+
+help	= unlines
+	[ "Usage: fft [args..]"
+	, ""
+	, "  -vector <length>           Transform a 1D vector."
+	, ""
+	, "  -random                    Use random data for the input."
+	, "  -step   <on-length>        Use a step function for the input."
+	, ""]
+
+
+-- Main -------------------------------------------------------------------------------------------
+main :: IO ()
 main 
- = do	args	<- getArgs
-	case args of
-	 ["check"]	-> putStrLn check
-	 [[c],s] 
-	  -> do	let n  = read s
-             	    xs = U.map fromIntegral
-                	$ U.enumFromTo 1 (n*n*n)
+ = do	args	<- liftM parseArgs $ getArgs
+	main' args
 
-             	    fn = case lookup (toLower c) algs of
-                    		Just f  -> f
-                    		Nothing -> error $ "Unknown algorithm " ++ [c]
+main' args
 
-                xs `seq` fn `seq` return ()
- 		t <- timeFn_ (wrapFFT3d fn) (`seq` ()) (n,xs,xs)
-		putStrLn (showTime t)
-		
-
-check
- = let	
 	-- A real-valued step function 
-	step_real	= P.replicate 10 1 ++ P.replicate 118 0
-	step		= P.map (:*: 0) step_real
+	| [vecLength]	<- [vecLength | ArgVector vecLength 	<- args]
+	, [onLength]	<- [onLength  | ArgStep   onLength	<- args]
+	= let
+		offLength	= vecLength - onLength
+		step_real	= P.replicate onLength 1 ++ P.replicate offLength 0
+		step		= P.map (:*: 0) step_real
+
+		-- Calculate roots to use for this lengthed vector
+		shape :: DIM1 
+		shape	= Z :. length step	
+
+		roots :: Array DIM1 Complex
+		roots	= calcRofu shape
+
+		-- Convert input to an Array so we can feed it to the algs.
+		arrInput = A.fromList shape step
+
+		-- Compute DFT and FFT and to compare.
+		fftMags	 = P.map mag $ A.toList $ fft roots arrInput
+
+		str	= P.concat
+			$ [show i ++ " " ++ show s ++ " " ++ show f ++ "\n"
+				| i <- [0..]
+				| s <- step_real
+				| f <- fftMags ]
+		
+	  in	putStr str
+
+	-- Not sure what you mean...
+	| otherwise
+	= putStr help
 	
-
-	-- Calculate roots to use for this lengthed vector
-	shape :: DIM1 
-	shape	= () :. length step	
-
-	roots :: CArray DIM1 Complex
-	roots	= calcRofu shape
-
-	-- Convert input to a CArray so we can feed it to the algs.
-	arrInput = CA.toCArray $ A.toArray shape $ U.fromList step
 	
-	-- Compute DFT and FFT and to compare.
- 	dftMags	 = P.map mag $ CA.toList $ dft roots arrInput
-	fftMags	 = P.map mag $ CA.toList $ fft roots arrInput
-	fftSMags = P.map mag $ CA.toList $ fftS roots arrInput
-	
-	str	= P.concat
-		$ L.intersperse "\n"
-		$ [show i ++ " " ++ show s ++ " " ++ show d ++ " " ++ show f ++ " " ++ show g
-			| i <- [0..]
-			| s <- step_real
-			| d <- dftMags
-			| f <- fftMags 
-			| g <- fftSMags ]
-
-  in	str
-
