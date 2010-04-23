@@ -3,6 +3,7 @@
 module Main where
 
 import FFT
+import DFT
 import Roots
 import StrictComplex
 
@@ -15,36 +16,43 @@ import System.Environment
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg
-	= ArgVector	Int
-	| ArgRandom
-	| ArgStep	Int
-	deriving Show
+	-- | Use DFT instead of FFT
+	= ArgDFT			
+	
+	-- | Use a vector step function for input.
+	| ArgVectorStep	
+		Int		-- length of 'on' part
+		Int		-- total length of vector
+
+	-- | Use a random vector for input
+	| ArgVectorRandom
+		Int		-- length of vector.
+
+	deriving (Show, Eq)
 
 
 parseArgs []		= []
 parseArgs (flag:xx)
-	| "-vector"	<- flag
-	, len:rest	<- xx
-	= ArgVector (read len) : parseArgs rest
+	| "-dft"		<- flag
+	= ArgDFT : parseArgs xx
+
+	| "-vector-step"	<- flag
+	, onlen:len:rest	<- xx
+	= ArgVectorStep (read onlen) (read len) : parseArgs rest
 	
-	| "-random"	<- flag
-	, rest		<- xx
-	= ArgRandom : parseArgs rest
-	
-	| "-step"	<- flag
-	, onlen:rest		<- xx
-	= ArgStep (read onlen) : parseArgs rest
-	
+	| "-vector-random"	<- flag
+	, len:rest		<- xx
+	= ArgVectorRandom (read len) : parseArgs rest
+		
 	| otherwise	
 	= error $ "bad arg " ++ flag ++ "\n"
 
 help	= unlines
 	[ "Usage: fft [args..]"
 	, ""
-	, "  -vector <length>           Transform a 1D vector."
-	, ""
-	, "  -random                    Use random data for the input."
-	, "  -step   <on-length>        Use a step function for the input."
+	, "  -dft                                  Use (slow) DFT instead of (fast) FFT."
+	, "  -vector-step   <on-length> <length>   Use a step function for input."
+	, "  -vector-random <length>               Use a random vector for input."
 	, ""]
 
 
@@ -52,13 +60,19 @@ help	= unlines
 main :: IO ()
 main 
  = do	args	<- liftM parseArgs $ getArgs
-	main' args
+	
+	-- Decide which algorithm to use
+	let alg
+		| elem ArgDFT args	= dft
+		| otherwise		= fft
 
-main' args
+	main' args alg
 
-	-- A real-valued step function 
-	| [vecLength]	<- [vecLength | ArgVector vecLength 	<- args]
-	, [onLength]	<- [onLength  | ArgStep   onLength	<- args]
+
+main' args alg
+
+	-- Transform a real-valued step function 
+	| [(onLength, vecLength)]	 <- [(ol, vl) | ArgVectorStep ol vl <- args]
 	= let
 		offLength	= vecLength - onLength
 		step_real	= P.replicate onLength 1 ++ P.replicate offLength 0
@@ -75,7 +89,7 @@ main' args
 		arrInput = A.fromList shape step
 
 		-- Compute DFT and FFT and to compare.
-		fftMags	 = P.map mag $ A.toList $ fft roots arrInput
+		fftMags	 = P.map mag $ A.toList $ alg roots arrInput
 
 		str	= P.concat
 			$ [show i ++ " " ++ show s ++ " " ++ show f ++ "\n"

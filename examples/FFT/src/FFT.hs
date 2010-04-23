@@ -6,7 +6,7 @@ import Data.Ratio
 import StrictComplex
 
 
--- | Compute the FFT of a vector
+-- | Compute the Fast Fourier Transform (FFT) of a vector
 fft	:: Shape sh
 	=> Array (sh :. Int) Complex		-- ^ Roots of unity.
 	-> Array (sh :. Int) Complex		-- ^ Input values.
@@ -48,12 +48,12 @@ fft_split rofu v vLen
  = let 	fft_lr = force $ fft' (splitRofu rofu) (splitVector v)
 
 	fft_l  = traverse2 fft_lr rofu 
- 			(\(sh :. 2 :. n) _ -> sh :. n)
-			(\f r (sh :. i)    -> f (sh :. 0 :. i) + r (sh :. i) * f (sh :. 1 :. i))
+ 		   (\(sh :. 2 :. n) _ -> sh :. n)
+		   (\f r (sh :. i)    -> f (sh :. 0 :. i) + r (sh :. i) * f (sh :. 1 :. i))
 
 	fft_r  = traverse2 fft_lr rofu 
-			(\(sh :. 2 :. n) _ -> sh :. n)
-			(\f r (sh :. i)    -> f (sh :. 0 :. i) - r (sh :. i) * f (sh :. 1 :. i))
+		   (\(sh :. 2 :. n) _ -> sh :. n)
+		   (\f r (sh :. i)    -> f (sh :. 0 :. i) - r (sh :. i) * f (sh :. 1 :. i))
 
    in	fft_l +:+ fft_r
 

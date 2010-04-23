@@ -468,6 +468,12 @@ zipWith f arr1 arr2
 
 
 -- Reductions -------------------------------------------------------------------------------------
+
+-- IMPORTANT: 
+--	These reductions use the sequential version of foldU, mapU and enumFromToU.
+--	If we use parallel versions then we'll end up with nested parallelism
+--	and the gang will abort at runtime.
+
 -- | Fold the innermost dimension of an array.
 --	Combine this with `transpose` to fold any other dimension.
 fold 	:: (Shape sh, Elt a)
@@ -477,12 +483,6 @@ fold 	:: (Shape sh, Elt a)
 	-> Array sh a
 
 {-# INLINE fold #-}
--- IMPORTANT: 
---	We have to use the sequential foldU, mapU and enumFromToU here
---	because the individual elements of the array being folded may 
---	themselves be evaluated in parallel. If we use the fns from this
---	module we'll end up with nested parallelism, and The Gang will 
---	abort at runtime.
 fold f x arr
  = x `seq` arr `deepSeqArray` 
    let	sh' :. n	= extent arr
@@ -509,9 +509,9 @@ sumAll	:: (Shape sh, Elt a, Num a)
 
 {-# INLINE sumAll #-}
 sumAll arr
-	= U.fold (+) 0
-	$ U.map ((arr !:) . (S.fromIndex (extent arr)))
-	$ U.enumFromTo
+	= USeq.foldU (+) 0
+	$ USeq.mapU ((arr !:) . (S.fromIndex (extent arr)))
+	$ USeq.enumFromToU
 		0
 		((S.size $ extent arr) - 1)
 
