@@ -1,4 +1,4 @@
-{-# LANGAUGE PatternGuards #-}
+{-# LANGUAGE PatternGuards, PackageImports #-}
 {-# LANGUAGE ScopedTypeVariables, RankNTypes #-}
 {-# LANGUAGE TypeOperators, FlexibleContexts #-}
 
@@ -69,15 +69,17 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
 import Data.Array.Repa.Shape
 import Data.Array.Repa.QuickCheck
+import qualified Data.Array.Repa.Shape	as S
+
+import Data.Array.Parallel.Unlifted				(Elt)
+import qualified Data.Array.Parallel.Unlifted			as U
+import qualified Data.Array.Parallel.Unlifted.Gabi		as USeq
+
 import Test.QuickCheck
-import Data.Array.Parallel.Unlifted		(Elt)
-import qualified Data.Array.Repa.Shape		as S
-import qualified Data.Array.Parallel.Unlifted	as U
-import Prelude					hiding (sum, map, zipWith, replicate)	
-import qualified Prelude			as P
+import Prelude				hiding (sum, map, zipWith, replicate)	
+import qualified Prelude		as P
 
 stage	= "Data.Array.Repa"
-	
 	
 -- | Possibly delayed arrays.
 data Array sh a
@@ -203,13 +205,11 @@ force arr
 	    Manifest sh uarr
 
 	Delayed sh fn
-	 -> sh `S.deepSeq` 
- 	    Manifest sh
-		$ U.map (fn . S.fromIndex sh)
-		$ U.enumFromTo 
-			(0 :: Int)
-			(S.size sh - 1)
-
+	 -> let uarr	=  U.map (fn . S.fromIndex sh) 
+			$! U.enumFromTo (0 :: Int) (S.size sh - 1)
+	    in	sh `S.deepSeq` uarr `seq`
+		Manifest sh uarr
+		
 
 isManifest :: Array sh a -> Array sh a
 {-# INLINE isManifest #-}
@@ -477,24 +477,21 @@ fold 	:: (Shape sh, Elt a)
 	-> Array sh a
 
 {-# INLINE fold #-}
+-- IMPORTANT: 
+--	We have to use the sequential foldU, mapU and enumFromToU here
+--	because the individual elements of the array being folded may 
+--	themselves be evaluated in parallel. If we use the fns from this
+--	module we'll end up with nested parallelism, and The Gang will 
+--	abort at runtime.
 fold f x arr
  = x `seq` arr `deepSeqArray` 
-   case extent arr of
-    sh' :. n
-     -> Delayed sh' 
-		(\i -> U.fold f x
-			$! U.map (\ix -> arr !: (i :. ix)) 
-				 (U.enumFromTo 0 (n - 1)))
-
-		
-{-
- = let	sh' :. n	= extent arr
-	elemFn i 	= U.fold f x
-			$ U.map (\ix -> arr !: (i :. ix)) 
-				(U.enumFromTo 0 (n - 1))
-
+   let	sh' :. n	= extent arr
+	elemFn i 	= USeq.foldU f x
+			$ USeq.mapU
+				(\ix -> arr !: (i :. ix)) 
+				(USeq.enumFromToU 0 (n - 1))
    in	Delayed sh' elemFn
--}
+
 
 -- | Sum the innermost dimension of an array.
 sum	:: (Shape sh, Elt a, Num a)
