@@ -3,6 +3,10 @@ module Solver
 	(solveLaplace)
 where	
 import Data.Array.Repa		as A
+import qualified Data.Array.Repa.Shape	as S
+import Data.Array.Parallel.Unlifted				(Elt)
+import qualified Data.Array.Parallel.Unlifted			as U
+
 
 -- | Solver for the Laplace equation.
 solveLaplace
@@ -13,12 +17,12 @@ solveLaplace
 	-> Array DIM2 Double
 
 {-# INLINE solveLaplace #-}
-solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} !arrInit
+solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} arrInit
  = go steps arrInit
  where	go i arr@Manifest{}
 	   | i == 0	= arr
 	   | otherwise	= go (i - 1) 
-			$ force 
+			$ force
 			$ applyBoundary arrBoundMask arrBoundValue
 			$ relaxLaplace arr
 

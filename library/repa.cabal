@@ -1,6 +1,7 @@
 Name:                repa
 Version:             1.0.0.0
 License:             MIT
+License-file:        LICENSE
 Author:              The DPH Team
 Maintainer:          ndp@cse.unsw.edu.au
 Build-Type:          Simple
@@ -13,7 +14,7 @@ Description:
         Repa provides high performance, regular, shape polymorphic parallel arrays.
 
 Synopsis:
-        High performane, regular, shape polymorphic parallel arrays.
+        High performance, regular, shape polymorphic parallel arrays.
 
 Tested-with: GHC == 6.13.20100309
 
@@ -24,7 +25,7 @@ Library
         QuickCheck           >= 2.1.0.3 && < 2.2.0.0
 
   ghc-options:
-        -Odph -threaded -Wall -fno-warn-missing-signatures
+        -Odph -Wall -threaded -fno-warn-missing-signatures
 
   Exposed-modules:
         Data.Array.Repa

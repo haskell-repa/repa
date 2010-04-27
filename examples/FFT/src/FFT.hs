@@ -1,18 +1,49 @@
 {-# LANGUAGE TypeOperators #-}
 
-module FFT (fft) where
-import Data.Array.Repa
+-- | Computation of Fast Fourier Transforms using the Cooley-Tuckey algorithm.
+module FFT 
+	( fft
+	, ifft
+	, fftWithRoots )
+where
+import Data.Array.Repa		as A
 import Data.Ratio
 import StrictComplex
+import Roots
 
 
--- | Compute the Fast Fourier Transform (FFT) of a vector
+-- | Compute the (fast) Discrete Fourier Transform of a vector.
 fft	:: Shape sh
+	=> Array (sh :. Int) Complex
+	-> Array (sh :. Int) Complex
+
+fft v
+ = let	rofu	= calcRofu (extent v)
+   in	force $ fftWithRoots rofu v
+
+
+-- | Compute the (fast) Inverse Discrete Fourier Transform of a vector.
+ifft	:: Shape sh
+	=> Array (sh :. Int) Complex
+	-> Array (sh :. Int) Complex
+
+ifft v
+ = let	_ :. len	= extent v
+	scale		= fromIntegral len :*: 0
+	rofu		= calcInverseRofu (extent v)
+   in	force $ A.map (/ scale) $ fftWithRoots rofu v
+
+
+-- | Generic function for computation of forward or inverse Discrete Fourier Transforms.
+--	The length of the roots vector must be the same as the values vector.
+--	The length of these vectors must be a power of two.
+fftWithRoots	
+	:: Shape sh
 	=> Array (sh :. Int) Complex		-- ^ Roots of unity.
 	-> Array (sh :. Int) Complex		-- ^ Input values.
         -> Array (sh :. Int) Complex
 
-fft rofu v
+fftWithRoots rofu v
 	| not $ (denominator $ toRational (logBase 2 $ fromIntegral vLen)) == 1
 	= error $ "fft: vector length of " ++ show vLen ++ " is not a power of 2"
 	
@@ -20,19 +51,20 @@ fft rofu v
 	= error $ "fft: length of vector is not the length of the roots"
 	
 	| otherwise
-	= fft' rofu v
+	= fftWithRoots' rofu v
 
 	where	_ :. rLen	= extent rofu
 		_ :. vLen	= extent v
 
 
-fft'	:: Shape sh
+fftWithRoots'
+	:: Shape sh
 	=> Array (sh :. Int) Complex
 	-> Array (sh :. Int) Complex
         -> Array (sh :. Int) Complex
 
-{-# INLINE fft' #-}
-fft' rofu v
+{-# INLINE fftWithRoots' #-}
+fftWithRoots' rofu v
  = case extent v of
 	_ :. 2	-> fft_two   rofu v
 	dim	-> fft_split rofu v dim
@@ -45,7 +77,7 @@ fft_two rofu v
 	
 {-# INLINE fft_split #-}
 fft_split rofu v vLen
- = let 	fft_lr = force $ fft' (splitRofu rofu) (splitVector v)
+ = let 	fft_lr = force $ fftWithRoots' (splitRofu rofu) (splitVector v)
 
 	fft_l  = traverse2 fft_lr rofu 
  		   (\(sh :. 2 :. n) _ -> sh :. n)

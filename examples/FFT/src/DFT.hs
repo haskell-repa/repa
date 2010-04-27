@@ -1,37 +1,45 @@
 {-# LANGUAGE TypeOperators #-}
 
-module DFT (dft) where
+module DFT 
+	( dft
+	, idft
+	, dftWithRoots)
+where
 import Data.Array.Repa		as A
 import Data.Ratio
 import StrictComplex
-
+import Roots
 
 -- | Compute the (non-fast) Discrete Fourier Transform of a vector.
-dft	:: Shape sh
-	=> Array (sh :. Int) Complex		-- ^ Roots of unity.
-	-> Array (sh :. Int) Complex		-- ^ Input values.
-        -> Array (sh :. Int) Complex
+dft 	:: Shape sh
+	=> Array (sh :. Int) Complex
+	-> Array (sh :. Int) Complex
 
-dft rofu v
-	| not $ (denominator $ toRational (logBase 2 $ fromIntegral vLen)) == 1
-	= error $ "fft: vector length of " ++ show vLen ++ " is not a power of 2"
-	
-	| rLen /= vLen
-	= error $ "fft: length of vector is not the length of the roots"
-	
-	| otherwise
-	= dft' rofu v
-
-	where	_ :. rLen	= extent rofu
-		_ :. vLen	= extent v
+dft v
+ = let	rofu	= calcRofu (extent v)
+   in	force $ dftWithRoots rofu v
 
 
-dft'	:: Shape sh
+-- | Compute the inverse (non-fast) Discrete Fourier Transform of a vector.
+idft 	:: Shape sh
+	=> Array (sh :. Int) Complex
+	-> Array (sh :. Int) Complex
+
+idft v
+ = let	_ :. len	= extent v
+	scale		= fromIntegral len :*: 0
+	rofu		= calcInverseRofu (extent v)
+   in	force $ A.map (/ scale) $ dftWithRoots rofu v
+
+
+-- | Generic function for computation of forward or inverse Discrete Fourier Transforms.
+dftWithRoots
+	:: Shape sh
 	=> Array (sh :. Int) Complex		-- ^ Roots of unity for this vector length.
 	-> Array (sh :. Int) Complex		-- ^ Input vector.
 	-> Array (sh :. Int) Complex
 
-dft' rofu arr
+dftWithRoots rofu arr
  = traverse arr id (\_ k -> dftK rofu arr k)
  
 
