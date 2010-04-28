@@ -27,6 +27,7 @@ import System.IO
 import Control.Monad
 import Data.Char
 import System.Random
+import Vector
 
 
 -- Reading ----------------------------------------------------------------------------------------

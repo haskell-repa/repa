@@ -23,7 +23,7 @@ calcRofu sh@(_ :. n)
     f (_ :. i) =      (cos  (2 * pi * (fromIntegral i) / len))
 		:*: (- sin  (2 * pi * (fromIntegral i) / len))
 
-    len	= fromIntegral $ size sh
+    len	= fromIntegral n
 
 
 -- | Fill a vector with roots of unity (Rofu)
@@ -40,4 +40,4 @@ calcInverseRofu sh@(_ :. n)
     f (_ :. i) =      (cos  (2 * pi * (fromIntegral i) / len))
 		:*:   (sin  (2 * pi * (fromIntegral i) / len))
 
-    len	= fromIntegral $ size sh
+    len	= fromIntegral n

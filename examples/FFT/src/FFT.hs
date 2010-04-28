@@ -1,9 +1,10 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, PatternGuards #-}
 
 -- | Computation of Fast Fourier Transforms using the Cooley-Tuckey algorithm.
 module FFT 
 	( fft
 	, ifft
+	, fft2d
 	, fftWithRoots )
 where
 import Data.Array.Repa		as A
@@ -11,7 +12,7 @@ import Data.Ratio
 import StrictComplex
 import Roots
 
-
+-- Vector Transform -------------------------------------------------------------------------------
 -- | Compute the (fast) Discrete Fourier Transform of a vector.
 fft	:: Shape sh
 	=> Array (sh :. Int) Complex
@@ -34,6 +35,36 @@ ifft v
    in	force $ A.map (/ scale) $ fftWithRoots rofu v
 
 
+-- Matrix Transform -------------------------------------------------------------------------------
+-- | Compute the (fast) Discrete Fourier Transform of a square matrix.
+fft2d 	:: Array DIM2 Complex
+	-> Array DIM2 Complex
+
+fft2d arr
+ = let	rofu		= calcRofu (extent arr)
+  	fftTrans	= transpose . fftWithRoots rofu
+   in	fftTrans $ fftTrans arr
+
+
+-- Cube Transform ---------------------------------------------------------------------------------
+-- | Compute the (fast) Discrete Fourier Transform of a 3d array.
+fft3d 	:: Array DIM3 Complex
+	-> Array DIM3 Complex
+
+fft3d arr
+ = let	rofu		= calcRofu (extent arr)
+
+	transpose3 arr
+	 = traverse arr 
+        	(\(Z :. k :. l :. m)   -> (Z :. l :. m :. k)) 
+            	(\f (Z :. l :. m :. k) -> f (Z :. k :. l :. m)) 
+
+	fftTrans	= transpose3 . fftWithRoots rofu
+	
+  in	fftTrans $ fftTrans $ fftTrans arr
+
+	
+-- Worker -----------------------------------------------------------------------------------------
 -- | Generic function for computation of forward or inverse Discrete Fourier Transforms.
 --	The length of the roots vector must be the same as the values vector.
 --	The length of these vectors must be a power of two.
