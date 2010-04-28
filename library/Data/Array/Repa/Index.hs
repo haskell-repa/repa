@@ -1,8 +1,13 @@
 {-# LANGUAGE TypeOperators, FlexibleInstances, ScopedTypeVariables #-}
 
+-- | Index types.
 module Data.Array.Repa.Index
-	( Z	(..)
+	( 
+	-- * Index types
+	  Z	(..)
 	, (:.)	(..)
+
+	-- * Common dimensions.
 	, DIM0
 	, DIM1
 	, DIM2

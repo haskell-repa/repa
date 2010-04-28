@@ -2,15 +2,18 @@
 {-# LANGUAGE ScopedTypeVariables, RankNTypes #-}
 {-# LANGUAGE TypeOperators, FlexibleContexts #-}
 
--- | High-performance, regular, shape-polymorphic parallel arrays. 
+-- | See the repa-examples package for examples.
+--   
+--   More information is also at http://code.haskell.org/trac/repa  
+-- 
+--   NOTE: 	To get decent performance you must use GHC head branch > 6.13.20100309.
 --
 --   WARNING: 	Most of the functions that operate on indices don't perform bounds checks.
 --		Doing these checks would interfere with code optimisation and reduce performance.		
 --		Indexing outside arrays, or failing to meet the stated obligations will
 --		likely cause heap corruption.
 --
---  NOTE: 	To get good performance you need to use at least GHC 6.13.20100309 
---
+--   
 module Data.Array.Repa
 	( module Data.Array.Repa.Shape
 	, module Data.Array.Repa.Index

@@ -1,6 +1,7 @@
 Name:                repa-examples
 Version:             1.0.0.0
 License:             MIT
+License-file:        LICENSE
 Author:              The DPH Team
 Maintainer:          ndp@cse.unsw.edu.au
 Build-Type:          Simple

@@ -11,12 +11,16 @@ Category:            Data Structures
 Homepage:            http://trac.haskell.org/repa
 Bug-reports:         http://trac.haskell.org/repa/newticket
 Description:
-        Repa provides high performance, regular, shape polymorphic parallel arrays.
+        NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
+        Repa provides high performance, regular, multi-dimensional, shape polymorphic parallel arrays.
+        All numeric data is stored unboxed. Functions written with the Repa combinators
+        are automatically parallel provided you supply +RTS -Nwhatever on the command
+        line when running the program.
 
 Synopsis:
-        High performance, regular, shape polymorphic parallel arrays.
+        High performance, regular, multi-dimensional, shape polymorphic parallel arrays.
 
-Tested-with: GHC == 6.13.20100309
+Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 
 Library
   Build-Depends: 
