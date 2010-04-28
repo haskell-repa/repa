@@ -3,7 +3,7 @@ Version:             1.0.0.0
 License:             MIT
 License-file:        LICENSE
 Author:              The DPH Team
-Maintainer:          ndp@cse.unsw.edu.au
+Maintainer:          Ben Lippmeier <repa@ouroborus.net>
 Build-Type:          Simple
 Cabal-Version:       >=1.6
 Stability:           experimental
@@ -21,12 +21,11 @@ Executable repa-laplace
   Build-depends: 
         base            >= 3   && < 5, 
         random          >= 1.0 && < 1.1,
-        bytestring      >= 0.9 && < 1.0,
         dph-prim-par    >= 0.4 && < 0.5,
         repa            >= 1.0 && < 1.1
 
   Main-is: Laplace/src/Main.hs
-  other-modules: Solver
+  other-modules: Solver Matrix Vector ColorRamp PPM
   hs-source-dirs: Laplace/src . lib
   ghc-options: -Odph -threaded 
 
@@ -35,11 +34,11 @@ Executable repa-mmult
   Build-depends: 
         base            >= 3   && < 5, 
         random          >= 1.0 && < 1.1,
-        bytestring      >= 0.9 && < 1.0,
         dph-prim-par    >= 0.4 && < 0.5,
         repa            >= 1.0 && < 1.1
 
   Main-is: MMult/src/Main.hs
+  other-modules: Solver Matrix Vector ColorRamp PPM
   hs-source-dirs: MMult/src . lib
   ghc-options: -Odph -threaded 
 
@@ -48,12 +47,12 @@ Executable repa-fft
   Build-depends: 
         base            >= 3   && < 5, 
         random          >= 1.0 && < 1.1,
-        bytestring      >= 0.9 && < 1.0,
         dph-prim-par    >= 0.4 && < 0.5,
         dph-base        >= 0.4 && < 0.5,
         repa            >= 1.0 && < 1.1
 
   Main-is: FFT/src/Main.hs
+  other-modules: FFT DFT Roots StrictComplex Matrix Vector ColorRamp PPM
   hs-source-dirs: FFT/src . lib
   ghc-options: -Odph -threaded 
 
