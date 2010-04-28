@@ -18,7 +18,7 @@ Description:
         line when running the program.
 
 Synopsis:
-        High performance, regular, multi-dimensional, shape polymorphic parallel arrays.
+        High performance, regular, shape polymorphic parallel arrays.
 
 Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 
@@ -30,7 +30,7 @@ Library
         QuickCheck           >= 2.1.0.3 && < 2.2.0.0
 
   ghc-options:
-        -Odph -Wall -threaded -fno-warn-missing-signatures
+        -Odph -Wall -fno-warn-missing-signatures
 
   Exposed-modules:
         Data.Array.Repa
