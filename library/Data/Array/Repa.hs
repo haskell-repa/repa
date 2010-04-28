@@ -71,9 +71,9 @@ import Data.Array.Repa.Shape
 import Data.Array.Repa.QuickCheck
 import qualified Data.Array.Repa.Shape	as S
 
-import Data.Array.Parallel.Unlifted				(Elt)
-import qualified Data.Array.Parallel.Unlifted			as U
-import qualified Data.Array.Parallel.Unlifted.Gabi		as USeq
+import "dph-prim-par" Data.Array.Parallel.Unlifted			(Elt)
+import qualified "dph-prim-par" Data.Array.Parallel.Unlifted		as U
+import qualified "dph-prim-seq" Data.Array.Parallel.Unlifted.Sequential	as USeq
 
 import Test.QuickCheck
 import Prelude				hiding (sum, map, zipWith, replicate)	

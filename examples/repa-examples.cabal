@@ -49,7 +49,7 @@ Executable repa-fft
         random          >= 1.0 && < 1.1,
         bytestring      >= 0.9 && < 1.0,
         dph-prim-par    >= 0.4 && < 0.5,
-        dph-base        >= 0.4 && < 0.5,   
+        dph-base        >= 0.4 && < 0.5,
         repa            >= 1.0 && < 1.1
 
   Main-is: FFT/src/Main.hs
