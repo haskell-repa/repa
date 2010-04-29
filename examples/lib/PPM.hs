@@ -58,7 +58,7 @@ writeMatrixAsPPM fileName colorFn arr
 		
 	hWritePixels file colorFn $ toList arr
 	hClose file
-
+	hFlush file
 
 -- | Write out pixel values to a file.
 hWritePixels 

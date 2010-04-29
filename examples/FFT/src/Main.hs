@@ -9,6 +9,7 @@ import StrictComplex
 import Vector
 import Matrix
 import PPM
+import BMP
 import ColorRamp
 
 import Data.Array.Repa	as A
@@ -45,11 +46,11 @@ data Arg
 		FilePath
 
 	-- | Write the magnitude of the transformed matrix as a PPM file.
-	| ArgOutPPMMagnitude
+	| ArgOutBMPMagnitude
 		FilePath
 		
 	-- | Clip tranformed values to this level.
-	| ArgOutPPMClip
+	| ArgOutBMPClip
 		Double
 		
 	deriving (Show, Eq)
@@ -74,22 +75,18 @@ parseArgs (flag:xx)
 	| "-ppm"		<- flag
 	, fileName:rest		<- xx
 	= ArgPPM fileName : parseArgs rest
-
-	| "-ppm-clip"		<- flag
-	, num:rest		<- xx
-	= ArgOutPPMClip (read num) : parseArgs rest
 	
 	| "-out-magnitude"	<- flag
 	, fileName:rest		<- xx
 	= ArgOutMagnitude fileName : parseArgs rest
 	
-	| "-out-ppm-magnitude"	<- flag
+	| "-out-bmp-magnitude"	<- flag
 	, fileName:rest		<- xx
-	= ArgOutPPMMagnitude fileName : parseArgs rest
+	= ArgOutBMPMagnitude fileName : parseArgs rest
 	
-	| "-out-ppm-clip"	<- flag
+	| "-out-bmp-clip"	<- flag
 	, level:rest		<- xx
-	= ArgOutPPMClip (read level) : parseArgs rest
+	= ArgOutBMPClip (read level) : parseArgs rest
 	
 	| otherwise	
 	= error $ "bad arg " ++ flag ++ "\n"
@@ -108,8 +105,8 @@ help	= unlines
 	, ""
 	, "OUTPUT:"
 	, "  -out-vector-magnitude <file-name>         Write the magnitute of the transformed vector to file."
-	, "  -out-ppm-magnitude    <file-name>         Write transformed matrix to a ppm file."
-	, "  -out-ppm-clip         <val::Int>           ... while clipping transformed values to this level."                  
+	, "  -out-bmp-magnitude    <file-name>         Write transformed matrix to a ppm file."
+	, "  -out-bmp-clip         <val::Int>           ... while clipping transformed values to this level."                  
 	, ""
 	, "NOTE:" 
 	, "  - For the fast algorithm, the length of the input vector/dimensions of the array"
@@ -162,7 +159,7 @@ main' args alg
 		let arr_real	= (A.map (\r -> r :*: 0) arr_double) :: Array DIM2 Complex
 		let arrT 	= fft2d arr_real
 
-		outPPM args arrT
+		outBMP args arrT
 	
 	-- Not sure what you mean...
 	| otherwise
@@ -176,19 +173,16 @@ outVector args vec
 	| otherwise
 	= return ()
 
-outPPM :: [Arg] -> Array DIM2 Complex -> IO ()
-outPPM args arr
-	| [fileName]	<- [f | ArgOutPPMMagnitude f <- args ]
-	, mClipLevel	<- listToMaybe [l | ArgOutPPMClip l <- args]
+outBMP :: [Arg] -> Array DIM2 Complex -> IO ()
+outBMP args arr
+	| [fileName]	<- [f | ArgOutBMPMagnitude f <- args ]
+	, mClipLevel	<- listToMaybe [l | ArgOutBMPClip l <- args]
 	= do	let arr_mag	= A.map mag arr
 		let arr_clipped	= maybe arr_mag
 					(\level -> A.map (\x -> if x > level then level else x) arr_mag)
 					mClipLevel
 					
-		writeMatrixAsNormalisedPPM fileName 
-		 	pixelGrey arr_clipped
-		
-		
-pixelColor x = (x, x, x)
-pixelGrey  x = (x, x, x)
+		writeMatrixAsNormalisedGreyscaleBMP 
+			fileName arr_clipped
+
 

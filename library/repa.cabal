@@ -1,6 +1,6 @@
 Name:                repa
 Version:             1.0.0.0
-License:             MIT
+License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
 Maintainer:          Ben Lippmeier <repa@ouroborus.net>
@@ -25,8 +25,9 @@ Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 Library
   Build-Depends: 
         base                 >= 4       && < 5,
-        dph-prim-par         >= 0.4   && < 0.5,
-        dph-prim-seq         >= 0.4   && < 0.5,
+        dph-prim-par         >= 0.4     && < 0.5,
+        dph-prim-seq         >= 0.4     && < 0.5,
+        bytestring           >= 0.9.1.5 && < 1.0.0.0,
         QuickCheck           >= 2.1.0.3 && < 2.2.0.0
 
   ghc-options:

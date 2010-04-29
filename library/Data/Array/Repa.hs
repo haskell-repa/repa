@@ -35,12 +35,12 @@ module Data.Array.Repa
 
 	 -- * Basic Operations
 	, force
-	, isManifest
 	, deepSeqArray
 	
 	 -- * Conversion
 	, fromList
 	, toList
+	, toByteString
 
 	 -- * Index space transformations
 	, reshape
@@ -56,13 +56,16 @@ module Data.Array.Repa
 	, zipWith
 
 	 -- * Reductions
-	, fold
-	, sum
-	, sumAll
+	, fold,	foldAll
+	, sum,	sumAll
 	
 	 -- * Generic traversal
 	, traverse
 	, traverse2
+	, traverse4
+		
+	 -- * Interleaving
+	, interleave4
 		
 	 -- * Testing
 	, arbitrarySmallArray
@@ -77,6 +80,15 @@ import qualified Data.Array.Repa.Shape	as S
 import "dph-prim-par" Data.Array.Parallel.Unlifted			(Elt)
 import qualified "dph-prim-par" Data.Array.Parallel.Unlifted		as U
 import qualified "dph-prim-seq" Data.Array.Parallel.Unlifted.Sequential	as USeq
+
+import Data.Word
+import qualified Data.ByteString	as BS
+import Data.ByteString			(ByteString)
+
+import Foreign.Marshal.Alloc
+import Foreign.Ptr
+import Foreign.Storable
+import System.IO.Unsafe
 
 import Test.QuickCheck
 import Prelude				hiding (sum, map, zipWith, replicate)	
@@ -212,15 +224,7 @@ force arr
 			$! U.enumFromTo (0 :: Int) (S.size sh - 1)
 	    in	sh `S.deepSeq` uarr `seq`
 		Manifest sh uarr
-		
-
-isManifest :: Array sh a -> Array sh a
-{-# INLINE isManifest #-}
-isManifest arr
- = case arr of
-	Manifest{}	-> arr
-	_		-> error "not manifest"
-	
+			
 	
 -- | Ensure an array's structure is fully evaluated.
 --	This evaluates the extent and outer constructor, but does not `force` the elements.
@@ -271,6 +275,31 @@ toList arr
  = case force arr of
 	Manifest _ uarr	-> U.toList uarr
 	_		-> error $ stage ++ ".toList: force failed"
+
+
+-- | Convert an array to a (strict) ByteString.
+toByteString 
+	:: Shape sh
+	=> Array sh Word8
+	-> ByteString
+	
+toByteString arr
+ = unsafePerformIO
+ $ allocaBytes (size $ extent arr)	$ \(bufDest :: Ptr Word8) ->
+   let 	uarr	= toUArray arr
+	len	= size $ extent arr
+
+	copy offset
+	 | offset >= len
+	 = return ()
+
+	 | otherwise
+	 = do	pokeByteOff bufDest offset (uarr U.!: offset)
+		copy (offset + 1)
+
+    in do
+	copy 0
+	BS.packCStringLen (castPtr bufDest, len)
 
 
 -- Instances --------------------------------------------------------------------------------------
@@ -496,6 +525,23 @@ fold f x arr
    in	Delayed sh' elemFn
 
 
+-- | Fold all the elements of an array.
+foldAll :: (Shape sh, Elt a, Num a)
+	=> (a -> a -> a)
+	-> a
+	-> Array sh a
+	-> a
+	
+{-# INLINE foldAll #-}
+foldAll f x arr
+	= USeq.foldU f x
+	$ USeq.mapU ((arr !:) . (S.fromIndex (extent arr)))
+	$ USeq.enumFromToU
+		0
+		((S.size $ extent arr) - 1)
+
+
+
 -- | Sum the innermost dimension of an array.
 sum	:: (Shape sh, Elt a, Num a)
 	=> Array (sh :. Int) a
@@ -559,6 +605,64 @@ traverse2 arrA arrB transExtent newElem
 		(transExtent (extent arrA) (extent arrB)) 
 		(newElem     ((!:) arrA) ((!:) arrB))
 
+
+
+-- | Unstructured traversal over four arrays at once.
+traverse4
+	:: forall sh1 sh2 sh3 sh4 sh5 
+	          a   b   c   d   e
+	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4, Shape sh5
+	   , Elt a,     Elt b,     Elt c,     Elt d,     Elt e)
+        => Array sh1 a 				-- ^ First  source array.
+	-> Array sh2 b				-- ^ Second source array.
+	-> Array sh3 c				-- ^ Third  source array.
+	-> Array sh4 d				-- ^ Fourth source array.
+        -> (sh1 -> sh2 -> sh3 -> sh4 -> sh5 )	-- ^ Function to produce the extent of the result.
+        -> (  (sh1 -> a) -> (sh2 -> b) 
+           -> (sh3 -> c) -> (sh4 -> d)
+           ->  sh5 -> e )			-- ^ Function to produce elements of the result.
+						--   It is passed lookup functions to get elements of the 
+						--   source arrays.
+        -> Array sh5 e 
+
+{-# INLINE traverse4 #-}
+traverse4 arrA arrB arrC arrD transExtent newElem
+	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray` arrD `deepSeqArray` 
+   	  Delayed 
+		(transExtent (extent arrA) (extent arrB) (extent arrC) (extent arrD)) 
+		(newElem     (arrA !:) (arrB !:) (arrC !:) (arrD !:))
+
+
+-- Interleaving -----------------------------------------------------------------------------------
+
+interleave4
+	:: (Shape sh, Elt a)
+	=> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	
+interleave4 arr1 arr2 arr3 arr4
+ = traverse4 arr1 arr2 arr3 arr4 shapeFn elemFn
+ where
+	shapeFn dim1 dim2 dim3 dim4
+	 | dim1 == dim2
+	 , dim1 == dim3
+	 , dim1 == dim4
+	 , sh :. len	<- dim1
+	 = sh :. (len * 4)
+	
+	 | otherwise
+	 = error "Data.Array.Repa.interleave4: arrays must have same shape"
+		
+	elemFn get1 get2 get3 get4 (sh :. ix)
+	 = case ix `mod` 4 of
+		0	-> get1 (sh :. ix `div` 4)
+		1	-> get2 (sh :. ix `div` 4)
+		2	-> get3 (sh :. ix `div` 4)
+		3	-> get4 (sh :. ix `div` 4)
+		_	-> error "Data.Array.Repa.interleave4: this never happens :-P"
 
 
 -- Arbitrary --------------------------------------------------------------------------------------
