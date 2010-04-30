@@ -41,9 +41,15 @@ fft2d 	:: Array DIM2 Complex
 	-> Array DIM2 Complex
 
 fft2d arr
- = let	rofu		= calcRofu (extent arr)
-  	fftTrans	= transpose . fftWithRoots rofu
-   in	fftTrans $ fftTrans arr
+ 	| Z :. height :. width	<- extent arr
+ 	, height /= width	
+	= error $ "fft2d: height of matrix (" ++ show height ++ ")"
+		++  " does not match width (" ++ show width  ++ ")"
+
+	| otherwise
+	= let	rofu		= calcRofu (extent arr)
+  		fftTrans	= transpose . fftWithRoots rofu
+   	  in	fftTrans $ fftTrans arr
 
 
 -- Cube Transform ---------------------------------------------------------------------------------
@@ -79,7 +85,8 @@ fftWithRoots rofu v
 	= error $ "fft: vector length of " ++ show vLen ++ " is not a power of 2"
 	
 	| rLen /= vLen
-	= error $ "fft: length of vector is not the length of the roots"
+	= error $  "fft: length of vector (" ++ show vLen ++ ")"
+		++ " does not match the length of the roots (" ++ show rLen ++ ")"
 	
 	| otherwise
 	= fftWithRoots' rofu v

@@ -41,6 +41,7 @@ module Data.Array.Repa
 	, fromList
 	, toList
 	, toByteString
+	, fromByteString
 
 	 -- * Index space transformations
 	, reshape
@@ -302,8 +303,25 @@ toByteString arr
 	BS.packCStringLen (castPtr bufDest, len)
 
 
--- Instances --------------------------------------------------------------------------------------
+-- | Convert a (strict) ByteString to an array.
+--	The given array size must match the length of the ByteString, else error.
+fromByteString 
+	:: Shape sh
+	=> sh
+	-> ByteString 
+	-> Array sh Word8
 
+-- TODO: Use an intermediate CString when we do this, to avoid
+--	 the overhead from bounds checks in ByteString
+fromByteString sh str
+	| size sh /= BS.length str
+	= error "Data.Array.Repa.fromByteString: given array size does not match length of string"
+	
+	| otherwise
+	= fromFunction sh (\ix -> str `BS.index` toIndex sh ix)
+
+
+-- Instances --------------------------------------------------------------------------------------
 -- Show
 instance (Shape sh, Elt a, Show a) => Show (Array sh a) where
  	show arr = show $ toList arr

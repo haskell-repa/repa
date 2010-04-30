@@ -28,6 +28,9 @@ data Arg
 	-- | Compute the inverse transform.
 	| ArgInverse
 	
+	-- | Put the zero frequency in the center of the transformed vector / matrix.
+	| ArgCentered
+	
 	-- | Use a vector step function for input.
 	| ArgVectorRealStep	
 		Int		-- length of 'on' part
@@ -38,7 +41,7 @@ data Arg
 		FilePath
 
 	-- | Read a PPM file as input.
-	| ArgPPM 
+	| ArgBMP
 		FilePath
 
 	-- | Write the result to this file.
@@ -64,6 +67,9 @@ parseArgs (flag:xx)
 	| "-inverse"		<- flag
 	= ArgInverse : parseArgs xx
 
+	| "-centered"		<- flag
+	= ArgCentered : parseArgs xx
+
 	| "-vector-real-step"	<- flag
 	, onlen:len:rest	<- xx
 	= ArgVectorRealStep (read onlen) (read len) : parseArgs rest
@@ -72,9 +78,9 @@ parseArgs (flag:xx)
 	, fileName:rest		<- xx
 	= ArgVectorReal fileName : parseArgs rest
 		
-	| "-ppm"		<- flag
+	| "-bmp"		<- flag
 	, fileName:rest		<- xx
-	= ArgPPM fileName : parseArgs rest
+	= ArgBMP fileName : parseArgs rest
 	
 	| "-out-magnitude"	<- flag
 	, fileName:rest		<- xx
@@ -95,24 +101,25 @@ parseArgs (flag:xx)
 help	= unlines
 	[ "Usage: fft [args..]"
 	, ""
-	, "  -dft                                      Use (slow) DFT instead of (fast) FFT."
-	, "  -inverse                                  Compute the inverse transform."
+	, "  -dft               Use (slow) DFT instead of (fast) FFT."
+	, "  -inverse           Compute the inverse transform."
+	, "  -centered          Put the zero frequency in the center of the transformed vector/matrix."
 	, ""
 	, "INPUT:"
 	, "  -vector-real      <filename>              Read a real valued input vector from this file."
 	, "  -vector-real-step <onlen::Int> <len::Int> Use a real valued step function for input."
-	, "  -ppm              <filename>              Use a PPM file for input."
+	, "  -bmp              <filename>              Use a BMP file for input."
 	, ""
 	, "OUTPUT:"
 	, "  -out-vector-magnitude <file-name>         Write the magnitute of the transformed vector to file."
-	, "  -out-bmp-magnitude    <file-name>         Write transformed matrix to a ppm file."
+	, "  -out-bmp-magnitude    <file-name>         Write transformed matrix to a bmp file."
 	, "  -out-bmp-clip         <val::Int>           ... while clipping transformed values to this level."                  
 	, ""
 	, "NOTE:" 
 	, "  - For the fast algorithm, the length of the input vector/dimensions of the array"
 	, "    must be powers of two."
 	, ""
-	, "  - When using PPM input files, pixels are converted to grey-scale and then used as"
+	, "  - When using BMP input files, pixels are converted to grey-scale and then used as"
 	, "    the real values of the input matrix." ]
 	
 -- Main -------------------------------------------------------------------------------------------
@@ -152,12 +159,16 @@ main' args alg
 		let arrT	= alg arr
 		outVector args arrT
 	
-	-- | Transform a PPM file.
-	| [fileName]	<- [f	| ArgPPM f <- args]
-	= do	let loadPixel r g b = sqrt (fromIntegral r^2 + fromIntegral g^2 + fromIntegral b^2)
-		arr_double	<- readPPMAsMatrix loadPixel fileName
+	-- | Transform a BMP file.
+	| [fileName]	<- [f	| ArgBMP f <- args]
+	= do	arr_double	<- readMatrixFromBMP fileName
 		let arr_real	= (A.map (\r -> r :*: 0) arr_double) :: Array DIM2 Complex
-		let arrT 	= fft2d arr_real
+		let arr_centered
+			= if elem ArgCentered args 
+				then centerifyMatrix arr_real
+				else arr_real
+					
+		let arrT = fft2d arr_centered
 
 		outBMP args arrT
 	
@@ -173,16 +184,26 @@ outVector args vec
 	| otherwise
 	= return ()
 
+
+centerifyMatrix
+	:: Array DIM2 Complex
+	-> Array DIM2 Complex
+centerifyMatrix arr
+ = traverse arr id
+	(\get ix@(_ :. y :. x) -> ((-1) ^ (y + x)) * get ix)
+
+
 outBMP :: [Arg] -> Array DIM2 Complex -> IO ()
 outBMP args arr
 	| [fileName]	<- [f | ArgOutBMPMagnitude f <- args ]
 	, mClipLevel	<- listToMaybe [l | ArgOutBMPClip l <- args]
 	= do	let arr_mag	= A.map mag arr
-		let arr_clipped	= maybe arr_mag
-					(\level -> A.map (\x -> if x > level then level else x) arr_mag)
-					mClipLevel
+		let arr_clipped	
+			= maybe arr_mag
+				(\level -> A.map (\x -> if x > level then level else x) arr_mag)
+				mClipLevel
 					
-		writeMatrixAsNormalisedGreyscaleBMP 
+		writeMatrixToGreyscaleBMP 
 			fileName arr_clipped
 
 
