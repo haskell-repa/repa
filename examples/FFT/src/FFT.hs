@@ -2,9 +2,8 @@
 
 -- | Computation of Fast Fourier Transforms using the Cooley-Tuckey algorithm.
 module FFT 
-	( fft
-	, ifft
-	, fft2d
+	( fft,   ifft
+	, fft2d, ifft2d
 	, fftWithRoots )
 where
 import Data.Array.Repa		as A
@@ -13,7 +12,7 @@ import StrictComplex
 import Roots
 
 -- Vector Transform -------------------------------------------------------------------------------
--- | Compute the (fast) Discrete Fourier Transform of a vector.
+-- | Compute the DFT of a vector.
 fft	:: Shape sh
 	=> Array (sh :. Int) Complex
 	-> Array (sh :. Int) Complex
@@ -23,7 +22,7 @@ fft v
    in	force $ fftWithRoots rofu v
 
 
--- | Compute the (fast) Inverse Discrete Fourier Transform of a vector.
+-- | Compute the inverse DFT of a vector.
 ifft	:: Shape sh
 	=> Array (sh :. Int) Complex
 	-> Array (sh :. Int) Complex
@@ -36,7 +35,7 @@ ifft v
 
 
 -- Matrix Transform -------------------------------------------------------------------------------
--- | Compute the (fast) Discrete Fourier Transform of a square matrix.
+-- | Compute the DFT of a square matrix.
 fft2d 	:: Array DIM2 Complex
 	-> Array DIM2 Complex
 
@@ -48,12 +47,30 @@ fft2d arr
 
 	| otherwise
 	= let	rofu		= calcRofu (extent arr)
-  		fftTrans	= transpose . fftWithRoots rofu
+  		fftTrans 	= transpose . fftWithRoots rofu
    	  in	fftTrans $ fftTrans arr
 
 
+-- | Compute the inverse DFT of a square matrix.
+ifft2d	:: Array DIM2 Complex
+	-> Array DIM2 Complex
+	
+ifft2d arr
+ 	| Z :. height :. width	<- extent arr
+ 	, height /= width	
+	= error $ "fft2d: height of matrix (" ++ show height ++ ")"
+		++  " does not match width (" ++ show width  ++ ")"
+
+	| otherwise
+	= let	_ :. height :. width = extent arr
+		scale		= fromIntegral (height * width) :*: 0
+		rofu		= calcInverseRofu (extent arr)
+		fftTrans	= transpose . fftWithRoots rofu
+	  in	force $ A.map (/ scale) $ fftTrans $ fftTrans arr
+	
+
 -- Cube Transform ---------------------------------------------------------------------------------
--- | Compute the (fast) Discrete Fourier Transform of a 3d array.
+-- | Compute the DFT of a 3d array.
 fft3d 	:: Array DIM3 Complex
 	-> Array DIM3 Complex
 

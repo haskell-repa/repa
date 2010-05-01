@@ -22,188 +22,277 @@ import System.Environment
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg
-	-- | Use DFT instead of FFT
+	-- General Setup ------------------------
+	-- | Use DFT instead of FFT (very slow)
 	= ArgDFT			
 
-	-- | Compute the inverse transform.
+	-- | Compute the inverse transform initially.
 	| ArgInverse
-	
-	-- | Put the zero frequency in the center of the transformed vector / matrix.
-	| ArgCentered
-	
+
+	-- Input --------------------------------
 	-- | Use a vector step function for input.
-	| ArgVectorRealStep	
+	| ArgInVectorStep	
 		Int		-- length of 'on' part
 		Int		-- total length of vector
 
 	-- | Read the a real valued vector from this file.
-	| ArgVectorReal
+	| ArgInVectorReal
 		FilePath
 
-	-- | Read a PPM file as input.
-	| ArgBMP
+	-- | Read a file as an input matrix.
+	| ArgInMatrixReal
 		FilePath
 
-	-- | Write the result to this file.
-	| ArgOutMagnitude
-		FilePath
-
-	-- | Write the magnitude of the transformed matrix as a PPM file.
-	| ArgOutBMPMagnitude
-		FilePath
-		
-	-- | Clip tranformed values to this level.
-	| ArgOutBMPClip
+	-- Transforms ---------------------------
+	-- | Clip transformed values to this level.
+	| ArgTransClip
 		Double
+
+	-- Output ------------------------------
+	-- | Write the magnitue of the transformed values.
+	| ArgOutTransMag
+		FilePath
+
+	-- | Clip the magnitude of transformed values to this level
+	| ArgOutTransMagClip
+		Double
+
+	-- | Put the zero value in the center of the transformed image / vector.
+	| ArgOutTransCentered
 		
+	-- | Perform the inverse transform
+	--	and write the the magnitude of the result to this file.
+	| ArgOutInverseMag
+		FilePath
+	
 	deriving (Show, Eq)
 
 
 parseArgs []		= []
 parseArgs (flag:xx)
+
+	-- General Setup ------------------------
 	| "-dft"		<- flag
 	= ArgDFT : parseArgs xx
 
 	| "-inverse"		<- flag
 	= ArgInverse : parseArgs xx
 
-	| "-centered"		<- flag
-	= ArgCentered : parseArgs xx
 
-	| "-vector-real-step"	<- flag
+	-- Input --------------------------------
+	| "-in-vector-real-step"<- flag
 	, onlen:len:rest	<- xx
-	= ArgVectorRealStep (read onlen) (read len) : parseArgs rest
+	= ArgInVectorStep (read onlen) (read len) : parseArgs rest
 
-	| "-vector-real"   	<- flag
+	| "-in-vector-real"   	<- flag
 	, fileName:rest		<- xx
-	= ArgVectorReal fileName : parseArgs rest
+	= ArgInVectorReal fileName : parseArgs rest
+
+	| "-in-matrix-real"	<- flag
+	, fileName:rest		<- xx
+	= ArgInMatrixReal fileName : parseArgs rest
 		
-	| "-bmp"		<- flag
-	, fileName:rest		<- xx
-	= ArgBMP fileName : parseArgs rest
-	
-	| "-out-magnitude"	<- flag
-	, fileName:rest		<- xx
-	= ArgOutMagnitude fileName : parseArgs rest
-	
-	| "-out-bmp-magnitude"	<- flag
-	, fileName:rest		<- xx
-	= ArgOutBMPMagnitude fileName : parseArgs rest
-	
-	| "-out-bmp-clip"	<- flag
+	-- Transforms ---------------------------
+	| "-trans-clip"	<- flag
 	, level:rest		<- xx
-	= ArgOutBMPClip (read level) : parseArgs rest
+	= ArgTransClip (read level) : parseArgs rest
 	
+	-- Output -------------------------------
+	| "-out-trans-mag"	<- flag
+	, fileName:rest		<- xx
+	= ArgOutTransMag fileName : parseArgs rest
+
+	| "-out-trans-mag-clip"	<- flag
+	, level:rest		<- xx
+	= ArgOutTransMagClip (read level) : parseArgs rest
+
+	| "-out-trans-centered"		<- flag
+	= ArgOutTransCentered : parseArgs xx
+	
+	| "-out-inverse-mag"	<- flag
+	, fileName:rest		<- xx
+	= ArgOutInverseMag fileName : parseArgs rest
+	
+	-- Sorry
 	| otherwise	
-	= error $ "bad arg " ++ flag ++ "\n"
+	= error $ "unknown argument " ++ flag ++ "\n"
 
 
 help	= unlines
 	[ "Usage: fft [args..]"
-	, ""
-	, "  -dft               Use (slow) DFT instead of (fast) FFT."
-	, "  -inverse           Compute the inverse transform."
-	, "  -centered          Put the zero frequency in the center of the transformed vector/matrix."
+	, "  -inverse                                 Compute the inverse transform initially."
 	, ""
 	, "INPUT:"
-	, "  -vector-real      <filename>              Read a real valued input vector from this file."
-	, "  -vector-real-step <onlen::Int> <len::Int> Use a real valued step function for input."
-	, "  -bmp              <filename>              Use a BMP file for input."
+	, "  -in-vector-real  <filename>              Read a real valued input vector from this file."
+	, "  -in-vector-step  <onlen::Int> <len::Int> Use a real valued step function for input."
+	, "  -in-matrix-real  <filename>              Read a real valued input matrix from this file."
+	, ""
+	, "FREQUENCY SPACE TRANSFORMS:"
+	, "  -trans-clip      <level::Double>         Clip both re/im values to this level"
 	, ""
 	, "OUTPUT:"
-	, "  -out-vector-magnitude <file-name>         Write the magnitute of the transformed vector to file."
-	, "  -out-bmp-magnitude    <file-name>         Write transformed matrix to a bmp file."
-	, "  -out-bmp-clip         <val::Int>           ... while clipping transformed values to this level."                  
+	, "  -out-trans-mag      <filename>           Write the magnitute of the transformed values to file."
+        , "  -out-trans-mag-clip <level::Double>      Clip the output values to this level."
+	, "  -out-trans-ceneted                       Place the zero frequency in the center of the output."
+	, "  -out-inverse-mag    <filename>           Also perform the inverse transform and write to file."
 	, ""
 	, "NOTE:" 
-	, "  - For the fast algorithm, the length of the input vector/dimensions of the array"
-	, "    must be powers of two."
-	, ""
+	, "  - For the fast algorithm, the dimensions of the input must be powers of two."
 	, "  - When using BMP input files, pixels are converted to grey-scale and then used as"
-	, "    the real values of the input matrix." ]
+	, "    the real values of the input matrix." 
+	, "" ]
 	
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()
 main 
  = do	args	<- liftM parseArgs $ getArgs
-	
-	-- Decide which algorithm to use
-	let alg	| elem ArgDFT args	
-		, elem ArgInverse args	= idft
+	mainInput args
 
-		| elem ArgDFT args	= dft
+
+mainInput args
+	-- Generate a real valued step vector.
+	| [(onLength, vecLength)]	
+		<- [(ol, vl) | ArgInVectorStep ol vl <- args]
+	= let	
+		offLength	= vecLength - onLength
+		list_real	= P.replicate onLength 1 ++ P.replicate offLength 0
+		list_complex	= P.map (:*: 0) list_real
+		arr		= A.fromList (Z :. vecLength) list_complex
+	  in	mainTransVector args arr
 		
-		| elem ArgInverse args	= ifft
-			
-		| otherwise		= fft
-
-	main' args alg
-
-
-main' args alg
-
-	-- | Transform a real-valued step function 
-	| [(onLength, vecLength)]	<- [(ol, vl) | ArgVectorRealStep ol vl <- args]
-	= let	offLength	= vecLength - onLength
-		step_real	= P.replicate onLength 1 ++ P.replicate offLength 0
-		step		= P.map (:*: 0) step_real
-		
-		arr	= A.fromList (Z :. vecLength) step
-		arrT	= alg arr
-	  in	outVector args arrT
+	-- Read a matrix from a file.
+	| [fileName]	
+		<- [f	| ArgInVectorReal f <- args]
+	= do	arr_real :: Array DIM1 Double	
+			<- readVectorFromTextFile fileName 
+		let arr	= A.map (\r -> r :*: 0) arr_real
+		mainTransVector args arr
 	
-	-- | Transform some vector from a file
-	| [fileName]	<- [f	| ArgVectorReal f <- args]
-	= do	arr_real :: Array DIM1 Double	<- readVectorFromTextFile fileName 
-		let arr		= A.map (\r -> r :*: 0) arr_real
-		let arrT	= alg arr
-		outVector args arrT
-	
-	-- | Transform a BMP file.
-	| [fileName]	<- [f	| ArgBMP f <- args]
-	= do	arr_double	<- readMatrixFromBMP fileName
-		let arr_real	= (A.map (\r -> r :*: 0) arr_double) :: Array DIM2 Complex
-		let arr_centered
-			= if elem ArgCentered args 
-				then centerifyMatrix arr_real
-				else arr_real
-					
-		let arrT = fft2d arr_centered
+	-- Read a matrix from a file.
+	| [fileName]	
+		<- [f	| ArgInMatrixReal f <- args]
+	= do	arr_real	<- readMatrixFromBMP fileName
+		let arr		= force $ (A.map (\r -> r :*: 0) arr_real) :: Array DIM2 Complex		
+		mainTransMatrix args arr
 
-		outBMP args arrT
-	
-	-- Not sure what you mean...
+	-- Dunno...
 	| otherwise
 	= putStr help
+
+-- Trans ------------------------------------------------------------------------------------------	
+-- Apply the centering transform if needed.
+
+mainTransVector args arr
+	| elem ArgOutTransCentered args
+	= mainFFTVector args (error "finish me") -- centerifyMatrix arr)
 	
+	| otherwise
+	= mainFFTVector args arr
+
+mainTransMatrix :: [Arg] -> Array DIM2 Complex -> IO ()	
+mainTransMatrix args arr
+	| elem ArgOutTransCentered args
+	= mainFFTMatrix args (centerifyMatrix arr)
 	
-outVector args vec
-	| [fileName]	<- [f | ArgOutMagnitude f <- args ]
-	= writeVectorAsTextFile (A.map mag vec) fileName
+	| otherwise
+	= mainFFTMatrix args arr
+
+
+-- | Apply a transform to the input matrix that causes the output
+--	image to be centered on the zero value.
+centerifyMatrix
+	:: Array DIM2 Complex
+	-> Array DIM2 Complex
+
+{-# INLINE centerifyMatrix #-}
+centerifyMatrix arr
+ = traverse arr id
+	(\get ix@(_ :. y :. x) -> ((-1) ^ (y + x)) * get ix)
+	
+
+-- FFT --------------------------------------------------------------------------------------------
+-- Transform to frequency space.
+
+mainFFTVector args arr
+ = let	alg	= if elem ArgInverse args
+			then fft
+			else ifft
+				
+	arrT	= alg arr
+   in	mainMungeVector args arrT
+
+mainFFTMatrix :: [Arg] -> Array DIM2 Complex -> IO ()
+mainFFTMatrix args arr
+ = let	alg	= if elem ArgInverse args
+			then ifft2d
+			else fft2d
+	
+	arrT	= force (alg arr)
+   in 	mainMungeMatrix args arrT
+
+
+-- Munge ------------------------------------------------------------------------------------------
+-- Munge the values in frequency space.
+
+mainMungeVector args arr
+	= mainOutVector args arr
+	
+
+mainMungeMatrix :: [Arg] -> Array DIM2 Complex -> IO ()	
+mainMungeMatrix args arr
+ = arr `deepSeqArray` 
+   let	mungeClip :: Array DIM2 Complex -> Array DIM2 Complex
+	mungeClip 
+		= maybe id
+			(\level -> A.map (clipComplex level))
+			(listToMaybe [l | ArgTransClip l <- args])
+
+   in	mainOutMatrix args (mungeClip arr)
+
+	
+{-# INLINE clipComplex #-}
+clipComplex level (r :*: i)
+ = let	r'	= if r > level then level else r
+	i'	= if i > level then level else i
+   in	(r' :*: i')
+	
+
+-- Output -----------------------------------------------------------------------------------------	
+-- Write transformed values to a file.
+
+mainOutVector args arr
+	| [fileName]	<- [f | ArgOutTransMag f <- args ]
+	= writeVectorAsTextFile (A.map mag arr) fileName
 			
 	| otherwise
 	= return ()
 
+mainOutMatrix args arr
+	| [fileName]	<- [f | ArgOutTransMag f <- args ]
+	= let	clip	= maybe id
+				(\level -> (\x -> if x > level then level else x))
+				(listToMaybe [l | ArgOutTransMagClip l <- args])
+		
+		arr'	= force $ A.map (clip . mag) arr
+	  in do	
+		arr' `deepSeqArray`
+		 writeMatrixToGreyscaleBMP fileName arr'
 
-centerifyMatrix
-	:: Array DIM2 Complex
-	-> Array DIM2 Complex
-centerifyMatrix arr
- = traverse arr id
-	(\get ix@(_ :. y :. x) -> ((-1) ^ (y + x)) * get ix)
+		mainOutInverseMatrix args arr
 
+	| otherwise
+	= mainOutInverseMatrix args arr
 
-outBMP :: [Arg] -> Array DIM2 Complex -> IO ()
-outBMP args arr
-	| [fileName]	<- [f | ArgOutBMPMagnitude f <- args ]
-	, mClipLevel	<- listToMaybe [l | ArgOutBMPClip l <- args]
-	= do	let arr_mag	= A.map mag arr
-		let arr_clipped	
-			= maybe arr_mag
-				(\level -> A.map (\x -> if x > level then level else x) arr_mag)
-				mClipLevel
-					
-		writeMatrixToGreyscaleBMP 
-			fileName arr_clipped
+-- Inverse ----------------------------------------------------------------------------------------
+mainOutInverseMatrix args arr
+	| [fileName]	<- [f | ArgOutInverseMag f <- args]
+	= let	alg	= if elem ArgInverse args
+				then fft2d
+				else ifft2d
+				
+		arrT	= force $ alg arr
+		arrMag	= arrT `deepSeqArray` A.map mag arrT
+	  in	writeMatrixToGreyscaleBMP fileName arrMag
 
-
+	| otherwise
+	= return ()
