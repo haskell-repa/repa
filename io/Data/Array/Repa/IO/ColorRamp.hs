@@ -1,10 +1,9 @@
 
-module ColorRamp
+-- | Hyprometric color ramps, for making pretty images from scalar data.
+module	Data.Array.Repa.IO.ColorRamp
 	(rampColorHotToCold)
 where
 
-
--- Color Ramps  -----------------------------------------------------------------------------------
 -- | Standard Hot -> Cold hypsometric color ramp.
 --	Sequence is red, yellow, green, cyan, blue.
 rampColorHotToCold 
