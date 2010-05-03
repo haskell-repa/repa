@@ -20,7 +20,7 @@
 module Data.Array.Repa.Algorithms.FFT
 	( fft,   ifft
 	, fft2d, ifft2d
-	, fft3d
+	, fft3d, ifft3d
 	, fftWithRoots )
 where
 import Data.Array.Repa.Algorithms.DFT.Roots
@@ -66,7 +66,7 @@ fft2d arr
 	| otherwise
 	= let	rofu		= calcRootsOfUnity (extent arr)
   		fftTrans 	= transpose . fftWithRoots rofu
-   	  in	fftTrans $ fftTrans arr
+   	  in	force $ fftTrans $ fftTrans arr
 
 
 -- | Compute the inverse DFT of a square matrix. 
@@ -94,16 +94,47 @@ fft3d 	:: Array DIM3 Complex
 	-> Array DIM3 Complex
 
 fft3d arrIn
- = let	rofu		= calcRootsOfUnity (extent arrIn)
+ 	| Z :. depth :. height :. width	<- extent arrIn
+ 	, (height /= width) || (height /= depth)
+	= error $ "fft3d: array is not a cube"
 
-	transpose3 arr
-	 = traverse arr 
-        	(\(Z :. k :. l :. m)   -> (Z :. l :. m :. k)) 
-            	(\f (Z :. l :. m :. k) -> f (Z :. k :. l :. m)) 
+	| otherwise
+	= let	rofu		= calcRootsOfUnity (extent arrIn)
 
-	fftTrans	= transpose3 . fftWithRoots rofu
+		transpose3 arr
+	 	 = traverse arr 
+        		(\(Z :. k :. l :. m)   -> (Z :. l :. m :. k)) 
+            		(\f (Z :. l :. m :. k) -> f (Z :. k :. l :. m)) 
+
+		fftTrans	= transpose3 . fftWithRoots rofu
 	
-  in	fftTrans $ fftTrans $ fftTrans arrIn
+  	  in	force $ fftTrans $ fftTrans $ fftTrans arrIn
+
+
+-- | Compute the inverse DFT of a 3d cube.
+--   If the array is not a cube then `error`.
+ifft3d 	:: Array DIM3 Complex
+	-> Array DIM3 Complex
+
+ifft3d arrIn
+ 	| Z :. depth :. height :. width	<- extent arrIn
+ 	, (height /= width) || (height /= depth)
+	= error $ "ifft3d: array is not a cube"
+
+	| otherwise
+	= let	rofu		= calcInverseRootsOfUnity (extent arrIn)
+
+		transpose3 arr
+	 	 = traverse arr 
+        		(\(Z :. k :. l :. m)   -> (Z :. l :. m :. k)) 
+            		(\f (Z :. l :. m :. k) -> f (Z :. k :. l :. m)) 
+
+		_ :. depth :. height :. width 
+				= extent arrIn
+		scale		= fromIntegral (height * width * depth) :*: 0
+
+		fftTrans	= transpose3 . fftWithRoots rofu
+	  in	force $ A.map (/ scale) $ fftTrans $ fftTrans $ fftTrans arrIn
 
 	
 -- Worker -----------------------------------------------------------------------------------------

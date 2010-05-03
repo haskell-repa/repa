@@ -35,6 +35,7 @@ Library
   Exposed-modules:
         Data.Array.Repa.Algorithms.DFT
         Data.Array.Repa.Algorithms.DFT.Roots
+        Data.Array.Repa.Algorithms.DFT.Center
         Data.Array.Repa.Algorithms.FFT
         Data.Array.Repa.Algorithms.Complex
 
