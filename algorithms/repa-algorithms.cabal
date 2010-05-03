@@ -1,0 +1,41 @@
+Name:                repa-algorithms
+Version:             1.0.0.0
+License:             BSD3
+License-file:        LICENSE
+Author:              The DPH Team
+Maintainer:          Ben Lippmeier <repa@ouroborus.net>
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           experimental
+Category:            Data Structures
+Homepage:            http://trac.haskell.org/repa
+Bug-reports:         http://trac.haskell.org/repa/newticket
+Description:
+        NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
+        Reusable algorithms using the Repa array library.
+
+Synopsis:
+        Algorithms using the Repa array library.
+
+Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
+
+Library
+  Build-Depends: 
+        base                 >= 4       && < 5,
+        dph-prim-par         >= 0.4     && < 0.5,
+        dph-prim-seq         >= 0.4     && < 0.5,
+        dph-base             >= 0.4     && < 0.5,
+        bytestring           >= 0.9.1.5 && < 1.0.0.0,
+        QuickCheck           >= 2.1.0.3 && < 2.2.0.0,
+        repa                 >= 1.0.0   && < 1.1.0
+
+  ghc-options:
+        -Odph -Wall -fno-warn-missing-signatures
+
+  Exposed-modules:
+        Data.Array.Repa.Algorithms.DFT
+        Data.Array.Repa.Algorithms.DFT.Roots
+        Data.Array.Repa.Algorithms.FFT
+        Data.Array.Repa.Algorithms.Complex
+
+       

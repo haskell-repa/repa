@@ -93,7 +93,7 @@ readComponentsFromBMP' bmp
  = let	(width, height) = bmpDimensions bmp
 
 	arr		= A.fromByteString (Z :. height :. width * 4)
-			$ packBMPToRGBA32 bmp
+			$ unpackBMPToRGBA32 bmp
 
 	shapeFn _ 	= Z :. height :. width
 

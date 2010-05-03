@@ -2,16 +2,16 @@
 
 module Main where
 
-import FFT
-import DFT
-import Roots
-import StrictComplex
 import Vector
 import Matrix
 import PPM
 import BMP
 import ColorRamp
 
+import Data.Array.Repa.Algorithms.FFT
+import Data.Array.Repa.Algorithms.DFT
+import Data.Array.Repa.Algorithms.DFT.Roots
+import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa	as A
 import Data.List	as L
 import Data.Maybe	

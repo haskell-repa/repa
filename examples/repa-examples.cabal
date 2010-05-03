@@ -19,10 +19,10 @@ Synopsis:
 
 Executable repa-laplace
   Build-depends: 
-        base            >= 3   && < 5, 
-        random          >= 1.0 && < 1.1,
-        dph-prim-par    >= 0.4 && < 0.5,
-        repa            >= 1.0 && < 1.1
+        base            >= 3     && < 5, 
+        random          >= 1.0   && < 1.1,
+        dph-prim-par    >= 0.4   && < 0.5,
+        repa            >= 1.0.0 && < 1.1.0
 
   Main-is: Laplace/src/Main.hs
   other-modules: Solver Matrix Vector ColorRamp PPM
@@ -32,10 +32,10 @@ Executable repa-laplace
 
 Executable repa-mmult
   Build-depends: 
-        base            >= 3   && < 5, 
-        random          >= 1.0 && < 1.1,
-        dph-prim-par    >= 0.4 && < 0.5,
-        repa            >= 1.0 && < 1.1
+        base            >= 3     && < 5, 
+        random          >= 1.0   && < 1.1,
+        dph-prim-par    >= 0.4   && < 0.5,
+        repa            >= 1.0.0 && < 1.1.0
 
   Main-is: MMult/src/Main.hs
   other-modules: Solver Matrix Vector ColorRamp PPM
@@ -45,14 +45,16 @@ Executable repa-mmult
 
 Executable repa-fft
   Build-depends: 
-        base            >= 3   && < 5, 
-        random          >= 1.0 && < 1.1,
-        dph-prim-par    >= 0.4 && < 0.5,
-        dph-base        >= 0.4 && < 0.5,
-        repa            >= 1.0 && < 1.1
+        base            >= 3     && < 5, 
+        random          >= 1.0   && < 1.1,
+        dph-prim-par    >= 0.4   && < 0.5,
+        dph-base        >= 0.4   && < 0.5,
+        repa            >= 1.0.0 && < 1.1,
+        repa-algorithms >= 1.0.0 && < 1.1.0,
+        bmp             >= 1.0   && < 1.1
 
   Main-is: FFT/src/Main.hs
-  other-modules: FFT DFT Roots StrictComplex Matrix Vector ColorRamp PPM
+  other-modules: Matrix Vector ColorRamp PPM
   hs-source-dirs: FFT/src . lib
   ghc-options: -Odph -threaded 
 

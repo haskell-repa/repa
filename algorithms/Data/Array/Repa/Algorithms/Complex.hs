@@ -1,7 +1,8 @@
 {-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
 
-module StrictComplex
-	( Complex(..)
+-- | Strict complex doubles.
+module Data.Array.Repa.Algorithms.Complex
+	( Complex
 	, mag
 	, (:*:)(..))
 where

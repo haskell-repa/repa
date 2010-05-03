@@ -1,15 +1,16 @@
 {-# LANGUAGE TypeOperators, PatternGuards #-}
 
--- | Computation of Fast Fourier Transforms using the Cooley-Tuckey algorithm.
-module FFT 
+-- | Computation of Fast Fourier Transform using the Cooley-Tuckey algorithm.
+module Data.Array.Repa.Algorithms.FFT
 	( fft,   ifft
 	, fft2d, ifft2d
+	, fft3d
 	, fftWithRoots )
 where
-import Data.Array.Repa		as A
+import Data.Array.Repa.Algorithms.DFT.Roots
+import Data.Array.Repa.Algorithms.Complex
+import Data.Array.Repa				as A
 import Data.Ratio
-import StrictComplex
-import Roots
 
 -- Vector Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a vector.
@@ -18,7 +19,7 @@ fft	:: Shape sh
 	-> Array (sh :. Int) Complex
 
 fft v
- = let	rofu	= calcRofu (extent v)
+ = let	rofu	= calcRootsOfUnity (extent v)
    in	force $ fftWithRoots rofu v
 
 
@@ -30,7 +31,7 @@ ifft	:: Shape sh
 ifft v
  = let	_ :. len	= extent v
 	scale		= fromIntegral len :*: 0
-	rofu		= calcInverseRofu (extent v)
+	rofu		= calcInverseRootsOfUnity (extent v)
    in	force $ A.map (/ scale) $ fftWithRoots rofu v
 
 
@@ -46,7 +47,7 @@ fft2d arr
 		++  " does not match width (" ++ show width  ++ ")"
 
 	| otherwise
-	= let	rofu		= calcRofu (extent arr)
+	= let	rofu		= calcRootsOfUnity (extent arr)
   		fftTrans 	= transpose . fftWithRoots rofu
    	  in	fftTrans $ fftTrans arr
 
@@ -64,7 +65,7 @@ ifft2d arr
 	| otherwise
 	= let	_ :. height :. width = extent arr
 		scale		= fromIntegral (height * width) :*: 0
-		rofu		= calcInverseRofu (extent arr)
+		rofu		= calcInverseRootsOfUnity (extent arr)
 		fftTrans	= transpose . fftWithRoots rofu
 	  in	force $ A.map (/ scale) $ fftTrans $ fftTrans arr
 	
@@ -74,8 +75,8 @@ ifft2d arr
 fft3d 	:: Array DIM3 Complex
 	-> Array DIM3 Complex
 
-fft3d arr
- = let	rofu		= calcRofu (extent arr)
+fft3d arrIn
+ = let	rofu		= calcRootsOfUnity (extent arrIn)
 
 	transpose3 arr
 	 = traverse arr 
@@ -84,7 +85,7 @@ fft3d arr
 
 	fftTrans	= transpose3 . fftWithRoots rofu
 	
-  in	fftTrans $ fftTrans $ fftTrans arr
+  in	fftTrans $ fftTrans $ fftTrans arrIn
 
 	
 -- Worker -----------------------------------------------------------------------------------------
@@ -98,7 +99,7 @@ fftWithRoots
         -> Array (sh :. Int) Complex
 
 fftWithRoots rofu v
-	| not $ (denominator $ toRational (logBase 2 $ fromIntegral vLen)) == 1
+	| not $ (denominator $ toRational (logBase (2 :: Double) $ fromIntegral vLen)) == 1
 	= error $ "fft: vector length of " ++ show vLen ++ " is not a power of 2"
 	
 	| rLen /= vLen
@@ -121,17 +122,18 @@ fftWithRoots'
 {-# INLINE fftWithRoots' #-}
 fftWithRoots' rofu v
  = case extent v of
-	_ :. 2	-> fft_two   rofu v
-	dim	-> fft_split rofu v dim
+	_ :. 2	-> fft_two   v
+	_	-> fft_split rofu v
 
 {-# INLINE fft_two #-}
-fft_two rofu v
+fft_two v
  = let	vFn' vFn (sh :. 0)  = vFn (sh :. 0) + vFn (sh :. 1)
 	vFn' vFn (sh :. 1)  = vFn (sh :. 0) - vFn (sh :. 1)
+	vFn' _   _          = error "Data.Array.Repa.Algorithms.FFT fft_two fail"
    in	traverse v id vFn'
 	
 {-# INLINE fft_split #-}
-fft_split rofu v vLen
+fft_split rofu v
  = let 	fft_lr = force $ fftWithRoots' (splitRofu rofu) (splitVector v)
 
 	fft_l  = traverse2 fft_lr rofu 
@@ -154,6 +156,8 @@ splitRofu rofu
 splitVector v 
  = let	vFn' vFn (sh :. 0 :. i) = vFn (sh :. 2*i)
 	vFn' vFn (sh :. 1 :. i) = vFn (sh :. 2*i+1)
+	vFn' _   _              = error "Data.Array.Repa.Algorithms.FFT splitVector fail"
+
    in	traverse v
 		(\(vSh :. vLen)    -> vSh :. 2 :. (vLen `div` 2)) 
 		vFn'
