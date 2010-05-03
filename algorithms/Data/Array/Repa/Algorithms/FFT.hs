@@ -1,6 +1,22 @@
-{-# LANGUAGE TypeOperators, PatternGuards #-}
+{-# LANGUAGE TypeOperators, PatternGuards, RankNTypes #-}
 
--- | Computation of Fast Fourier Transform using the Cooley-Tuckey algorithm.
+-- | Fast computation of Discrete Fourier Transforms using the Cooley-Tuckey algorithm.
+--
+--   Time complexity is O(n log n) in the size of the input.
+--
+--   Input dimensions must be powers of two, else `error`.
+--
+--   The `fft` and `ifft` functions (and friends) also compute the roots of unity needed.
+--   If you need to transform several arrays with the same extent then it is faster to
+--   compute the roots once using `calcRootsOfUnity` or `calcInverseRootsOfUnity`, 
+--   then call `fftWithRoots` directly.
+--
+--   The inverse transforms provided also perform post-scaling so that `ifft` is the true inverse of `fft`. 
+--   If you don't want that then call `fftWithRoots` directly.
+--
+--   The functions `fft2d` and `fft3d` require their inputs to be squares (and cubes) respectively. 
+--   This allows them to reuse the same roots-of-unity when transforming along each axis. If you 
+--   need to transform rectanglular arrays then call `fftWithRoots` directly.
 module Data.Array.Repa.Algorithms.FFT
 	( fft,   ifft
 	, fft2d, ifft2d
@@ -13,7 +29,7 @@ import Data.Array.Repa				as A
 import Data.Ratio
 
 -- Vector Transform -------------------------------------------------------------------------------
--- | Compute the DFT of a vector.
+-- | Compute the DFT along the low order dimension of an array.
 fft	:: Shape sh
 	=> Array (sh :. Int) Complex
 	-> Array (sh :. Int) Complex
@@ -23,7 +39,7 @@ fft v
    in	force $ fftWithRoots rofu v
 
 
--- | Compute the inverse DFT of a vector.
+-- | Compute the inverse DFT along the low order dimension of an array.
 ifft	:: Shape sh
 	=> Array (sh :. Int) Complex
 	-> Array (sh :. Int) Complex
@@ -37,6 +53,7 @@ ifft v
 
 -- Matrix Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a square matrix.
+--   If the matrix is not square then `error`.
 fft2d 	:: Array DIM2 Complex
 	-> Array DIM2 Complex
 
@@ -52,7 +69,7 @@ fft2d arr
    	  in	fftTrans $ fftTrans arr
 
 
--- | Compute the inverse DFT of a square matrix.
+-- | Compute the inverse DFT of a square matrix. 
 ifft2d	:: Array DIM2 Complex
 	-> Array DIM2 Complex
 	
@@ -71,7 +88,8 @@ ifft2d arr
 	
 
 -- Cube Transform ---------------------------------------------------------------------------------
--- | Compute the DFT of a 3d array.
+-- | Compute the DFT of a 3d cube.
+--   If the array is not a cube then `error`.
 fft3d 	:: Array DIM3 Complex
 	-> Array DIM3 Complex
 
@@ -90,10 +108,10 @@ fft3d arrIn
 	
 -- Worker -----------------------------------------------------------------------------------------
 -- | Generic function for computation of forward or inverse Discrete Fourier Transforms.
---	The length of the roots vector must be the same as the values vector.
---	The length of these vectors must be a power of two.
+--	Computation is along the low order dimension of the array.
 fftWithRoots	
-	:: Shape sh
+	:: forall sh
+	.  Shape sh
 	=> Array (sh :. Int) Complex		-- ^ Roots of unity.
 	-> Array (sh :. Int) Complex		-- ^ Input values.
         -> Array (sh :. Int) Complex
@@ -111,7 +129,6 @@ fftWithRoots rofu v
 
 	where	_ :. rLen	= extent rofu
 		_ :. vLen	= extent v
-
 
 fftWithRoots'
 	:: Shape sh

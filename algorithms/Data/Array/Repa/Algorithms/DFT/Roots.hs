@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, RankNTypes #-}
 
 -- | Calculation of roots of unity for the forward and inverse DFT\/FFT.
 module Data.Array.Repa.Algorithms.DFT.Roots
