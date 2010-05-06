@@ -8,9 +8,11 @@
 --
 import Solver
 import Data.Array.Repa		as A
-import ColorRamp
-import PPM
+import Data.Array.Repa.IO.BMP	
+import Data.Array.Repa.IO.ColorRamp
 import System.Environment
+import Data.Word
+import Control.Monad
 
 main :: IO ()
 main 
@@ -27,7 +29,7 @@ main
 -- | Command line usage information.
 usage	:: String
 usage	= unlines
-	[ "Usage: laplace <iterations> <input.ppm> <output.ppm>"
+	[ "Usage: laplace <iterations> <input.bmp> <output.bmp>"
 	, ""
 	, "  iterations  :: Int       Number of iterations to use in the solver."
 	, "  input.ppm   :: FileName  ASCII 8 bit RGB PPM file for initial and boundary values."
@@ -52,38 +54,95 @@ laplace :: Int			-- ^ Number of iterations to use.
 laplace steps fileInput fileOutput
  = do
 	-- Load up the file containing boundary conditions.
-	(matBoundMask, matBoundValue)	
-		<- readPPMAsMatrix2 loadPixel fileInput
+	arrImage		<- liftM (either (error . show) id)
+				$  readImageFromBMP fileInput
 
+	let arrBoundValue	= force $ slurpDoublesFromImage slurpBoundValue arrImage
+	let arrBoundMask	= force $ slurpDoublesFromImage slurpBoundMask  arrImage
+		
 	-- Use the boundary condition values as the initial matrix.
-	let matInitial	= matBoundValue
+	let arrInitial	= arrBoundValue
 
 	-- Run the solver.
-	let matFinal	= solveLaplace
+	let arrFinal	= solveLaplace
 				steps
-				matBoundMask
-				matBoundValue
-				matInitial
+				arrBoundMask
+				arrBoundValue
+				arrInitial
 
-	matFinal `deepSeqArray` return ()
+	arrFinal `deepSeqArray` return ()
 
-	-- Write out the matrix as a colorised PPM image	
-	writeMatrixAsNormalisedPPM
+	-- Make the result image
+	let arrImageOut		= makeImageFromDoubles (rampColorHotToCold 0.0 1.0) arrFinal
+
+	-- Write out the image to file.	
+	writeImageToBMP
 		fileOutput
-		(rampColorHotToCold 0.0 1.0)
-		matFinal
+		arrImageOut
 
 
--- | Extract boundary mask and value from a pixel value.
-loadPixel :: Int -> Int -> Int -> (Double, Double)
-loadPixel r g b
+
+slurpDoublesFromImage
+	:: (Word8 -> Word8 -> Word8 -> Double)
+	-> Array DIM3 Word8
+	-> Array DIM2 Double
+	
+slurpDoublesFromImage mkDouble arrBound
+ = traverse arrBound
+	(\(Z :. height :. width :. _)	
+		-> Z :. height :. width)
+
+	(\get (Z :. y :. x)
+		-> mkDouble
+			(get (Z :. y :. x :. 0))
+			(get (Z :. y :. x :. 1))
+			(get (Z :. y :. x :. 2)))
+
+
+makeImageFromDoubles
+	:: (Double -> (Double, Double, Double))
+	-> Array DIM2 Double
+	-> Array DIM3 Word8
+	
+makeImageFromDoubles fnColor arrDoubles
+ = traverse arrDoubles
+	(\(Z :. height :. width)
+		-> Z :. height :. width :. 4)
+		
+	(\get (Z :. y :. x :. c)
+		-> let (r, g, b) = rampColorHotToCold 0 1 (get (Z :. y :. x))
+		   in	case c of
+			  0	-> truncate (r * 255)
+			  1	-> truncate (g * 255)
+			  2	-> truncate (b * 255)
+			  3	-> 0)
+
+
+-- | Extract the boundary value from a RGB triple.
+slurpBoundValue :: Word8 -> Word8 -> Word8 -> Double
+slurpBoundValue r g b
 	-- A non-boundary value.
  	| r == 0 && g == 0 && b == 255	
-	= (1, 0)
+	= 0
 
 	-- A boundary value.
 	| (r == g) && (r == b) 
-	= (0, (fromIntegral r) / 255)
+	= fromIntegral r / 255
+	
+	| otherwise
+	= error $ "Unhandled pixel value in input " ++ show (r, g, b)
+
+
+-- | Extract boundary mask from a RGB triple.
+slurpBoundMask :: Word8 -> Word8 -> Word8 -> Double
+slurpBoundMask r g b
+	-- A non-boundary value.
+ 	| r == 0 && g == 0 && b == 255	
+	= 1
+
+	-- A boundary value.
+	| (r == g) && (r == b) 
+	= 0
 	
 	| otherwise
 	= error $ "Unhandled pixel value in input " ++ show (r, g, b)

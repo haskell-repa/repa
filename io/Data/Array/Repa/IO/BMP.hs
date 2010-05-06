@@ -4,8 +4,10 @@
 module Data.Array.Repa.IO.BMP
 	( readMatrixFromGreyscaleBMP
 	, readComponentsFromBMP
+	, readImageFromBMP
 	, writeMatrixToGreyscaleBMP
-	, writeComponentsToBMP)
+	, writeComponentsToBMP
+	, writeImageToBMP)
 where
 import qualified "dph-prim-par" Data.Array.Parallel.Unlifted 	as U
 import Data.Array.Repa				as A
@@ -71,6 +73,27 @@ readComponentsFromBMP' bmp
    in	(arrRed, arrGreen, arrBlue)
 
 
+-- | Read a RGBA image from a BMP file.
+--	In the returned array, the higher two dimensions are the height and width,
+--	and the lower indexes the RGBA components. The A (alpha) value is always zero.
+readImageFromBMP 
+	:: FilePath
+	-> IO (Either Error (Array DIM3 Word8))
+
+readImageFromBMP filePath
+ = do	ebmp	<- readBMP filePath
+	case ebmp of
+	 Left err	-> return $ Left err
+	 Right bmp	-> return $ Right (readImageFromBMP' bmp)
+	
+readImageFromBMP' bmp
+ = let	(width, height)	= bmpDimensions bmp
+	arr		= fromByteString (Z :. height :. width :. 4)
+			$ unpackBMPToRGBA32 bmp
+   in	arr
+
+
+
 -- Write ------------------------------------------------------------------------------------------
 -- | Write a matrix to a BMP file.
 --	Negative values are discarded. Positive values are normalised to the maximum 
@@ -105,17 +128,38 @@ writeComponentsToBMP fileName arrRed arrGreen arrBlue
  = error "Data.Array.Repa.IO.BMP.writeComponentsToBMP: arrays don't have same extent"
 
  | otherwise
- = do	let Z :. width :. height	
+ = do	let Z :. height :. width	
 			= extent arrRed
 		
 	-- Build image data from the arrays.
 	let arrAlpha	= fromFunction (extent arrRed) (\_ -> 255)
 	let arrRGBA	= interleave4 arrRed arrGreen arrBlue arrAlpha
-	let bmp		= packRGBA32ToBMP height width 
+	let bmp		= packRGBA32ToBMP width height
 			$ A.toByteString arrRGBA
 	
 	writeBMP fileName bmp
 
+
+-- | Write a RGBA image to a BMP file.
+--	The higher two dimensions are the height and width of the image, 
+--	and the lowest dimension be 4, corresponding to the RGBA components of each pixel.
+writeImageToBMP 
+	:: FilePath
+	-> Array DIM3 Word8
+	-> IO ()
+
+writeImageToBMP fileName arrImage
+	| comps /= 4
+	= error "Data.Array.Repa.IO.BMP: lowest order dimension must be 4"
+
+	| otherwise
+	= let 	bmp	= packRGBA32ToBMP height width 
+			$ A.toByteString arrImage
+	  in	writeBMP fileName bmp
+	
+	where	Z :. height :. width :. comps	
+			= extent arrImage
+	
 
 -- Normalise --------------------------------------------------------------------------------------
 -- | Normalise a matrix to to [0 .. 1], discarding negative values.
