@@ -1,5 +1,5 @@
-Name:                repa
-Version:             1.0.0.0
+Name:                repa-io
+Version:             1.1.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -12,13 +12,10 @@ Homepage:            http://trac.haskell.org/repa
 Bug-reports:         http://trac.haskell.org/repa/newticket
 Description:
         NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
-        Repa provides high performance, regular, multi-dimensional, shape polymorphic parallel arrays.
-        All numeric data is stored unboxed. Functions written with the Repa combinators
-        are automatically parallel provided you supply +RTS -Nwhatever on the command
-        line when running the program.
+        Read and write Repa arrays in various formats.
 
 Synopsis:
-        High performance, regular, shape polymorphic parallel arrays.
+        Read and write Repa arrays in various formats.
 
 Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 
@@ -27,18 +24,20 @@ Library
         base                 >= 4       && < 5,
         dph-prim-par         >= 0.4     && < 0.5,
         dph-prim-seq         >= 0.4     && < 0.5,
+        QuickCheck           >= 2.1.0.3 && < 2.2.0.0,
         bytestring           >= 0.9.1.5 && < 1.0.0.0,
-        QuickCheck           >= 2.1.0.3 && < 2.2.0.0
+        random               >= 1.0.0.2 && < 1.1.0.0,
+        bmp                  >= 1.1.0.0 && < 1.2.0.0,
+        repa                 >= 1.1.0.0 && < 1.2.0.0
 
   ghc-options:
         -Odph -Wall -fno-warn-missing-signatures
 
   Exposed-modules:
-        Data.Array.Repa
-        Data.Array.Repa.Index
-        Data.Array.Repa.Shape
-        Data.Array.Repa.Slice
-
+        Data.Array.Repa.IO.ColorRamp
+        Data.Array.Repa.IO.BMP
+        Data.Array.Repa.IO.Vector
+        Data.Array.Repa.IO.Matrix
+      
   Other-modules:
-        Data.Array.Repa.QuickCheck
-       
+        Data.Array.Repa.IO.Internals.Text

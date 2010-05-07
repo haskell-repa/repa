@@ -1,8 +1,8 @@
 {-# LANGUAGE PatternGuards #-}
 
-import Solver
 import Data.Array.Repa			as A
 import Data.Array.Repa.IO.Matrix
+import Data.Array.Repa.Algorithms.Matrix
 import Data.Maybe
 import System.Environment
 import Control.Monad
@@ -109,7 +109,7 @@ main' args
           	 `deepSeqArray` return ()
 		
 		-- Run the solver.
-		let matResult	= mmMult mat1 mat2
+		let matResult	= multiplyMM mat1 mat2
 
 		matResult `deepSeqArray` return ()
 

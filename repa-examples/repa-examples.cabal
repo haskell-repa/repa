@@ -1,0 +1,74 @@
+Name:                repa-examples
+Version:             1.1.0.0
+License:             BSD3
+License-file:        LICENSE
+Author:              The DPH Team
+Maintainer:          Ben Lippmeier <benl@ouroborus.net>
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           experimental
+Category:            Data Structures
+Homepage:            http://trac.haskell.org/repa
+Bug-reports:         http://trac.haskell.org/repa/newticket
+Description:
+        Examples using the Repa array library.
+
+Synopsis:
+        Examples using the Repa array library.
+
+Executable repa-fft2d
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.4.*,
+        dph-base             == 0.4.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*,
+        repa-io              == 1.1.*
+
+  Main-is: FFT/src/FFT2d/Main.hs
+  hs-source-dirs: FFT/src .
+  ghc-options: -Odph -threaded 
+
+
+Executable repa-fft2d-highpass
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.4.*,
+        dph-base             == 0.4.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*,
+        repa-io              == 1.1.*
+
+  Main-is: FFT/src/HighPass/Main.hs
+  hs-source-dirs: FFT/src .
+  ghc-options: -Odph -threaded 
+
+
+Executable repa-laplace
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.4.*,
+        dph-base             == 0.4.*,
+        repa                 == 1.1.*,
+        repa-io              == 1.1.*
+
+  Main-is: Laplace/src/Main.hs
+  other-modules: Solver
+  hs-source-dirs: Laplace/src .
+  ghc-options: -Odph -threaded 
+
+
+Executable repa-mmult
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.4.*,
+        dph-base             == 0.4.*,
+        repa                 == 1.1.*,
+        repa-io              == 1.1.*,
+        repa-algorithms      == 1.1.*,
+        random               == 1.0.*
+
+  Main-is: MMult/src/Main.hs
+  hs-source-dirs: MMult/src .
+  ghc-options: -Odph -threaded 
+
