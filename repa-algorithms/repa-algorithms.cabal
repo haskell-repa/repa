@@ -21,13 +21,9 @@ Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 
 Library
   Build-Depends: 
-        base                 >= 4       && < 5,
-        dph-prim-par         >= 0.4     && < 0.5,
-        dph-prim-seq         >= 0.4     && < 0.5,
-        dph-base             >= 0.4     && < 0.5,
-        bytestring           >= 0.9.1.5 && < 1.0.0.0,
-        QuickCheck           >= 2.1.0.3 && < 2.2.0.0,
-        repa                 >= 1.1.0   && < 1.2.0
+        base                 == 4.*,
+        dph-base             == 0.4.*,
+        repa                 == 1.1.*
 
   ghc-options:
         -Odph -Wall -fno-warn-missing-signatures

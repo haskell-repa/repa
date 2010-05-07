@@ -9,8 +9,9 @@ module Data.Array.Repa.IO.BMP
 	, writeComponentsToBMP
 	, writeImageToBMP)
 where
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted 	as U
+import qualified  Data.Array.Parallel.Unlifted 	as U
 import Data.Array.Repa				as A
+import Data.Array.Repa.ByteString               as A
 import Prelude					as P
 import Codec.BMP
 import Data.Word
