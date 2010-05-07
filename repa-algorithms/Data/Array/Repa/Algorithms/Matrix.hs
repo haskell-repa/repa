@@ -3,7 +3,7 @@
 -- | Algorithms operating on matrices.
 -- 
 --   These functions should give performance comparable with nested loop C
---   implementations, but not block-based, cache friendly, SIMD using vendor
+--   implementations, but not block-based, cache friendly, SIMD using, vendor
 --   optimised implementions. 
 --   If you care deeply about runtime performance then you may be better off using 
 --   a binding to LAPACK, such as hvector.

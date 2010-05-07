@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables, PackageImports #-}
 
--- | Convert Repa Arrays to and from ByteStrings.
+-- | Conversions between Repa Arrays and ByteStrings.
 module Data.Array.Repa.ByteString
 	( toByteString
 	, fromByteString)
@@ -16,7 +16,7 @@ import Data.ByteString			(ByteString)
 import qualified "dph-prim-par" Data.Array.Parallel.Unlifted as U
 
 
--- | Convert an array to a (strict) ByteString.
+-- | Convert an `Array` to a (strict) `ByteString`.
 toByteString 
 	:: Shape sh
 	=> Array sh Word8
@@ -41,8 +41,8 @@ toByteString arr
 	BS.packCStringLen (castPtr bufDest, len)
 
 
--- | Convert a (strict) ByteString to an array.
---	The given array size must match the length of the ByteString, else error.
+-- | Convert a (strict) `ByteString` to an `Array`.
+--	The given array size must match the length of the `ByteString`, else `error`.
 fromByteString 
 	:: Shape sh
 	=> sh

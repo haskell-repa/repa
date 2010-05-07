@@ -1,16 +1,18 @@
+{-# LANGUAGE RankNTypes #-}
 
 -- | Hyprometric color ramps, for making pretty images from scalar data.
 module	Data.Array.Repa.IO.ColorRamp
 	(rampColorHotToCold)
 where
 
--- | Standard Hot -> Cold hypsometric color ramp.
---	Sequence is red, yellow, green, cyan, blue.
+-- | Standard Hot to Cold hypsometric color ramp.
+--	Color sequence is red, yellow, green, cyan, blue.
 rampColorHotToCold 
-	:: (Ord a, Floating a) 
-	=> a 
-	-> a 
-	-> a 
+	:: forall a
+	.  (Ord a, Floating a) 
+	=> a 	-- ^ Minimum value of range.
+	-> a 	-- ^ Maximum value of range.
+	-> a 	-- ^ Data value.
 	-> (a, a, a)
 	
 {-# INLINE rampColorHotToCold #-}

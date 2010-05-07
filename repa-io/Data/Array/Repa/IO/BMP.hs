@@ -1,13 +1,13 @@
 {-# LANGUAGE PackageImports #-} 
 
--- | Reading and writing arrays as uncompressed 24 bit Windows BMP files.
+-- | Reading and writing arrays as uncompressed 24 and 32 bit Windows BMP files.
 module Data.Array.Repa.IO.BMP
-	( readMatrixFromGreyscaleBMP
+	( readImageFromBMP
 	, readComponentsFromBMP
-	, readImageFromBMP
-	, writeMatrixToGreyscaleBMP
+	, readMatrixFromGreyscaleBMP
+	, writeImageToBMP
 	, writeComponentsToBMP
-	, writeImageToBMP)
+	, writeMatrixToGreyscaleBMP)
 where
 import qualified  Data.Array.Parallel.Unlifted 	as U
 import Data.Array.Repa				as A
@@ -21,7 +21,7 @@ import Data.Word
 --	Each pixel is converted to greyscale, normalised to [0..1] and used
 --	as the corresponding array element. If anything goes wrong when loading the file then `Error`.
 readMatrixFromGreyscaleBMP
-	:: FilePath 		-- ^ Name of output file.
+	:: FilePath
 	-> IO (Either Error (Array DIM2 Double))
 
 readMatrixFromGreyscaleBMP filePath
@@ -39,9 +39,9 @@ readMatrixFromGreyscaleBMP filePath
 
 -- | Read RGB components from a BMP file.
 --	Returns arrays of red, green and blue components, all with the same extent.
---	If anything goes wrong when loading the file then `Error`.
+--	If anything goes wrong when loading the file then then `Error`.
 readComponentsFromBMP
-	:: FilePath 		-- ^ Name of output file.
+	:: FilePath
 	-> IO (Either Error (Array DIM2 Word8, Array DIM2 Word8, Array DIM2 Word8))
 
 {-# INLINE readComponentsFromBMP #-}
@@ -75,8 +75,10 @@ readComponentsFromBMP' bmp
 
 
 -- | Read a RGBA image from a BMP file.
---	In the returned array, the higher two dimensions are the height and width,
---	and the lower indexes the RGBA components. The A (alpha) value is always zero.
+--	In the result, the higher two dimensions are the height and width,
+--	and the lower indexes the RGBA component of each pixel. 
+--      If the BMP read has no alpha channel then alpha of the resulting pixels is set to 255.
+--	If anything goes wrong when loading the file then `Error`.
 readImageFromBMP 
 	:: FilePath
 	-> IO (Either Error (Array DIM3 Word8))
@@ -100,8 +102,8 @@ readImageFromBMP' bmp
 --	Negative values are discarded. Positive values are normalised to the maximum 
 --	value in the matrix and used as greyscale pixels.
 writeMatrixToGreyscaleBMP 
-	:: FilePath		-- ^ Name of input file.
-	-> Array DIM2 Double	-- ^ Matrix of values (need not be normalised).
+	:: FilePath
+	-> Array DIM2 Double
 	-> IO ()
 
 writeMatrixToGreyscaleBMP fileName arr
@@ -118,9 +120,9 @@ writeMatrixToGreyscaleBMP fileName arr
 --	All arrays must have the same extent, else `error`.
 writeComponentsToBMP
 	:: FilePath
-	-> Array DIM2 Word8	-- ^ Red   components.
-	-> Array DIM2 Word8	-- ^ Green components.
-	-> Array DIM2 Word8	-- ^ Blue  components.
+	-> Array DIM2 Word8
+	-> Array DIM2 Word8
+	-> Array DIM2 Word8
 	-> IO ()
 
 writeComponentsToBMP fileName arrRed arrGreen arrBlue
@@ -142,8 +144,9 @@ writeComponentsToBMP fileName arrRed arrGreen arrBlue
 
 
 -- | Write a RGBA image to a BMP file.
---	The higher two dimensions are the height and width of the image, 
---	and the lowest dimension be 4, corresponding to the RGBA components of each pixel.
+--	The higher two dimensions are the height and width of the image. 
+--	The lowest dimension must have size 4, corresponding to the RGBA components
+--	of each pixel, else `error`. 
 writeImageToBMP 
 	:: FilePath
 	-> Array DIM3 Word8
