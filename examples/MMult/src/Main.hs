@@ -1,11 +1,13 @@
 {-# LANGUAGE PatternGuards #-}
 
 import Solver
-import Data.Array.Repa	
+import Data.Array.Repa			as A
+import Data.Array.Repa.IO.Matrix
 import Data.Maybe
-import Matrix
 import System.Environment
 import Control.Monad
+import System.Random
+import qualified Data.Array.Parallel.Unlifted as U
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg
@@ -64,6 +66,28 @@ getMatrix arg
 	ArgMatrixRandom height width	
 	 -> genRandomMatrix (Z :. height :. width)	
 
+
+-- Random -----------------------------------------------------------------------------------------
+-- | Generate a random(ish) matrix.
+genRandomMatrix 
+	:: DIM2 
+	-> IO (Array DIM2 Double)
+
+genRandomMatrix sh
+ = do	uarr	<- genRandomUArray (A.size sh)
+	return	$ fromUArray sh uarr
+
+-- | Generate a random(ish) UArray of doubles.
+-- The std random function is too slow to generate really big vectors
+-- with.  Instead, we generate a short random vector and repeat that.
+genRandomUArray :: Int -> IO (U.Array Double)
+genRandomUArray n 
+ = do	let k		= 1000
+    	rg		<- newStdGen
+    	let randvec	= U.randomRs k (-100, 100) rg
+	let vec		= U.map (\i -> randvec U.!: (i `mod` k)) (U.enumFromTo 0 (n-1))
+	return vec
+
 			
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()
@@ -92,11 +116,9 @@ main' args
 		-- Write the output to file if requested.
 		case mArgOut of 
 		 Nothing	-> return ()
-		 Just fileOut	-> writeMatrixAsTextFile matResult fileOut
+		 Just fileOut	-> writeMatrixToTextFile fileOut matResult
 					
 	| otherwise
 	= printHelp
 
 
-
-	

@@ -1,10 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 
 -- | Solver for the Laplace equation
---	Writes a PPM file of the completed solution.
---
---	You can use the ImageMagick convert program to make a png
---	with	"convert out.ppm out.png"
+--	You supply a BMP files specifying the boundary conditions.
+--	The output is written back to another BMP file.
 --
 import Solver
 import Data.Array.Repa		as A
@@ -32,8 +30,8 @@ usage	= unlines
 	[ "Usage: laplace <iterations> <input.bmp> <output.bmp>"
 	, ""
 	, "  iterations  :: Int       Number of iterations to use in the solver."
-	, "  input.ppm   :: FileName  ASCII 8 bit RGB PPM file for initial and boundary values."
-	, "  output.ppm  :: FileName  PPM file to write output to."
+	, "  input.bmp   :: FileName  Uncompressed RGB24 or RGBA32 BMP file for initial and boundary values."
+	, "  output.bmp  :: FileName  BMP file to write output to."
 	, "" 
 	, "  Format of input file:"
 	, "      Boundary values are indicated in greyscale,"
