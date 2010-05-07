@@ -4,7 +4,7 @@
 
 -- | See the repa-examples package for examples.
 --   
---   More information is also at http://code.haskell.org/trac/repa  
+--   More information is also at <http://trac.haskell.org/repa>
 -- 
 --   NOTE: 	To get decent performance you must use GHC head branch > 6.13.20100309.
 --
@@ -61,9 +61,12 @@ module Data.Array.Repa
 	 -- * Generic traversal
 	, traverse
 	, traverse2
+	, traverse3
 	, traverse4
 		
 	 -- * Interleaving
+	, interleave2
+	, interleave3
 	, interleave4
 		
 	 -- * Testing
@@ -490,7 +493,7 @@ fold f x arr
 
 
 -- | Fold all the elements of an array.
-foldAll :: (Shape sh, Elt a, Num a)
+foldAll :: (Shape sh, Elt a)
 	=> (a -> a -> a)
 	-> a
 	-> Array sh a
@@ -570,6 +573,28 @@ traverse2 arrA arrB transExtent newElem
 		(newElem     ((!:) arrA) ((!:) arrB))
 
 
+-- | Unstructured traversal over three arrays at once.
+traverse3
+	:: forall sh1 sh2 sh3 sh4
+	          a   b   c   d 
+	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4
+	   , Elt a,     Elt b,     Elt c,     Elt d)
+        => Array sh1 a 		
+	-> Array sh2 b			
+	-> Array sh3 c			
+        -> (sh1 -> sh2 -> sh3 -> sh4)	
+        -> (  (sh1 -> a) -> (sh2 -> b) 
+           -> (sh3 -> c)
+           ->  sh4 -> d )		
+        -> Array sh4 d
+
+{-# INLINE traverse3 #-}
+traverse3 arrA arrB arrC transExtent newElem
+	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray`
+   	  Delayed 
+		(transExtent (extent arrA) (extent arrB) (extent arrC)) 
+		(newElem     (arrA !:) (arrB !:) (arrC !:))
+
 
 -- | Unstructured traversal over four arrays at once.
 traverse4
@@ -577,16 +602,14 @@ traverse4
 	          a   b   c   d   e
 	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4, Shape sh5
 	   , Elt a,     Elt b,     Elt c,     Elt d,     Elt e)
-        => Array sh1 a 				-- ^ First  source array.
-	-> Array sh2 b				-- ^ Second source array.
-	-> Array sh3 c				-- ^ Third  source array.
-	-> Array sh4 d				-- ^ Fourth source array.
-        -> (sh1 -> sh2 -> sh3 -> sh4 -> sh5 )	-- ^ Function to produce the extent of the result.
+        => Array sh1 a 			
+	-> Array sh2 b			
+	-> Array sh3 c			
+	-> Array sh4 d				
+        -> (sh1 -> sh2 -> sh3 -> sh4 -> sh5 )	
         -> (  (sh1 -> a) -> (sh2 -> b) 
            -> (sh3 -> c) -> (sh4 -> d)
-           ->  sh5 -> e )			-- ^ Function to produce elements of the result.
-						--   It is passed lookup functions to get elements of the 
-						--   source arrays.
+           ->  sh5 -> e )		
         -> Array sh5 e 
 
 {-# INLINE traverse4 #-}
@@ -598,7 +621,72 @@ traverse4 arrA arrB arrC arrD transExtent newElem
 
 
 -- Interleaving -----------------------------------------------------------------------------------
+-- | Interleave the elments of two arrays. 
+--   All the input arrays must have the same extent, else `error`.
+--   The lowest dimenion of the result array is twice the size of the inputs.
+--
+-- @
+--  interleave2 a1 a2   b1 b2  =>  a1 b1 a2 b2
+--              a3 a4   b3 b4      a3 b3 a4 b4
+-- @
+--
+interleave2
+	:: (Shape sh, Elt a)
+	=> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	
+{-# INLINE interleave2 #-}
+interleave2 arr1 arr2
+ = arr1 `deepSeqArray` arr2 `deepSeqArray`
+   traverse2 arr1 arr2 shapeFn elemFn
+ where
+	shapeFn dim1 dim2
+	 | dim1 == dim2
+	 , sh :. len	<- dim1
+	 = sh :. (len * 2)
+	
+	 | otherwise
+	 = error "Data.Array.Repa.interleave2: arrays must have same extent"
+		
+	elemFn get1 get2 (sh :. ix)
+	 = case ix `mod` 3 of
+		0	-> get1 (sh :. ix `div` 2)
+		1	-> get2 (sh :. ix `div` 2)
+		_	-> error "Data.Array.Repa.interleave2: this never happens :-P"
 
+
+-- | Interleave the elments of three arrays. 
+interleave3
+	:: (Shape sh, Elt a)
+	=> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	
+{-# INLINE interleave3 #-}
+interleave3 arr1 arr2 arr3
+ = arr1 `deepSeqArray` arr2 `deepSeqArray` arr3 `deepSeqArray`
+   traverse3 arr1 arr2 arr3 shapeFn elemFn
+ where
+	shapeFn dim1 dim2 dim3
+	 | dim1 == dim2
+	 , dim1 == dim3
+	 , sh :. len	<- dim1
+	 = sh :. (len * 3)
+	
+	 | otherwise
+	 = error "Data.Array.Repa.interleave3: arrays must have same extent"
+		
+	elemFn get1 get2 get3 (sh :. ix)
+	 = case ix `mod` 3 of
+		0	-> get1 (sh :. ix `div` 3)
+		1	-> get2 (sh :. ix `div` 3)
+		2	-> get3 (sh :. ix `div` 3)
+		_	-> error "Data.Array.Repa.interleave3: this never happens :-P"
+
+
+-- | Interleave the elments of four arrays. 
 interleave4
 	:: (Shape sh, Elt a)
 	=> Array (sh :. Int) a
@@ -607,8 +695,10 @@ interleave4
 	-> Array (sh :. Int) a
 	-> Array (sh :. Int) a
 	
+{-# INLINE interleave4 #-}
 interleave4 arr1 arr2 arr3 arr4
- = traverse4 arr1 arr2 arr3 arr4 shapeFn elemFn
+ = arr1 `deepSeqArray` arr2 `deepSeqArray` arr3 `deepSeqArray` arr4 `deepSeqArray`
+   traverse4 arr1 arr2 arr3 arr4 shapeFn elemFn
  where
 	shapeFn dim1 dim2 dim3 dim4
 	 | dim1 == dim2
@@ -618,7 +708,7 @@ interleave4 arr1 arr2 arr3 arr4
 	 = sh :. (len * 4)
 	
 	 | otherwise
-	 = error "Data.Array.Repa.interleave4: arrays must have same shape"
+	 = error "Data.Array.Repa.interleave4: arrays must have same extent"
 		
 	elemFn get1 get2 get3 get4 (sh :. ix)
 	 = case ix `mod` 4 of
