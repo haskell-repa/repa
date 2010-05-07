@@ -85,6 +85,7 @@ slurpDoublesFromImage
 	-> Array DIM3 Word8
 	-> Array DIM2 Double
 	
+{-# INLINE slurpDoublesFromImage #-}
 slurpDoublesFromImage mkDouble arrBound
  = traverse arrBound
 	(\(Z :. height :. width :. _)	
@@ -102,13 +103,14 @@ makeImageFromDoubles
 	-> Array DIM2 Double
 	-> Array DIM3 Word8
 	
+{-# INLINE makeImageFromDoubles #-}
 makeImageFromDoubles fnColor arrDoubles
  = traverse arrDoubles
 	(\(Z :. height :. width)
 		-> Z :. height :. width :. 4)
 		
 	(\get (Z :. y :. x :. c)
-		-> let (r, g, b) = rampColorHotToCold 0 1 (get (Z :. y :. x))
+		-> let (r, g, b) = fnColor (get (Z :. y :. x))
 		   in	case c of
 			  0	-> truncate (r * 255)
 			  1	-> truncate (g * 255)
@@ -118,6 +120,7 @@ makeImageFromDoubles fnColor arrDoubles
 
 -- | Extract the boundary value from a RGB triple.
 slurpBoundValue :: Word8 -> Word8 -> Word8 -> Double
+{-# INLINE slurpBoundValue #-}
 slurpBoundValue r g b
 	-- A non-boundary value.
  	| r == 0 && g == 0 && b == 255	
@@ -133,6 +136,7 @@ slurpBoundValue r g b
 
 -- | Extract boundary mask from a RGB triple.
 slurpBoundMask :: Word8 -> Word8 -> Word8 -> Double
+{-# INLINE slurpBoundMask #-}
 slurpBoundMask r g b
 	-- A non-boundary value.
  	| r == 0 && g == 0 && b == 255	
