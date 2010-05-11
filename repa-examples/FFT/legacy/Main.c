@@ -9,7 +9,6 @@
 extern void highpass2d_fftw(int width, int height, u_int8_t* image);
 extern void highpass2d_jones(int width, int height, u_int8_t* image);
 
-
 int main(int argc, char** argv)
 {
 	if(argc != 4) {

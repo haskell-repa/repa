@@ -3,28 +3,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-/**********************************************************/
-/* fft.c                                                  */
-/* (c) Douglas L. Jones                                   */
-/* University of Illinois at Urbana-Champaign             */
-/* January 19, 1992                                       */
-/*                                                        */
-/*   fft: in-place radix-2 DIT DFT of a complex input     */
-/*                                                        */
-/*   input:                                               */
-/* n: length of FFT: must be a power of two               */
-/* m: n = 2**m                                            */
-/*   input/output                                         */
-/* x: double array of length n with real part of data     */
-/* y: double array of length n with imag part of data     */
-/*                                                        */
-/*   Permission to copy and use this program is granted   */
-/*   under a Creative Commons "Attribution" license       */
-/*   http://creativecommons.org/licenses/by/1.0/          */
-/**********************************************************/
-
-void	fft (int n, int m, double x[], double y[], double sign)
+// Based on 1d FFT code (c) Douglas L. Jones
+// University of Illinois at Urbana-Champaign
+// January 19, 1992. Creative Commons "Attribution" license.
+void fft 	
+	( int n		// length of vector.
+	, int m		// log2 of length of vector.
+	, double x[]	// real values.
+	, double y[]	// imaginary values.
+	, double sign)	// sign of transform. +1 fwd, -1 reverse.
 {
 	int 	i, j, k, n1, n2;
 	double 	c, s, e, a, t1, t2;
@@ -65,7 +52,7 @@ void	fft (int n, int m, double x[], double y[], double sign)
                                              
   		for (j=0; j < n1; j++)
    		{
-    			c = cos(a);
+    			c =        cos(a);
     			s = sign * sin(a);
     			a = a + e;
                                             
@@ -82,7 +69,7 @@ void	fft (int n, int m, double x[], double y[], double sign)
 	}                                      
 }                          
 
-
+// ----------------------------------------------------------------------------
 // Transpose a square matrix.
 void	transpose (int width, int height, double* dest, double* src)
 {
@@ -94,40 +81,53 @@ void	transpose (int width, int height, double* dest, double* src)
 
 
 // Do a 2D fft of a square matrix.
-void	fft2d (int width, int height, int m, double* x, double* y, double sign)
+void	fft2d (int width, int height, int m, double* re, double* im, double sign)
 {
+	// TODO: Not finished for rectangular matrices.
+	//       Also check that width and height are multiples of 2.
+	if (width != height) {
+		printf("jones_fft2d: matrix not square\n");
+		exit(1);
+	}
+
 	// Allocate temp buffers.
 	int size	= width * height;
-	double* xbuf	= (double*)malloc(sizeof(double) * size);
-	double* ybuf	= (double*)malloc(sizeof(double) * size);
+	double* rebuf	= (double*)malloc(sizeof(double) * size);
+	double* imbuf	= (double*)malloc(sizeof(double) * size);
+
+	// Get the log of the width and height.
+	double log2width  = log2(width);
+	double log2height = log2(height);
 
 	// Transform every row.
 	for(int j = 0; j < height; j++)
-		fft(width, m, x + j*width, y + j*width, sign);
+		fft(width, log2width, re + j*width, im + j*width, sign);
 
 	// Transpose into new buffers.
-	transpose(width, height, xbuf, x);
-	transpose(width, height, ybuf, y);
+	transpose(width, height, rebuf, re);
+	transpose(width, height, imbuf, im);
 	
 	// Transform transposed columns.
 	for(int j = 0; j < height; j++)
-		fft(width, m, xbuf + j*width, ybuf + j*width, sign);
+		fft(width, log2height, rebuf + j*width, imbuf + j*width, sign);
 
 	// Transpose back into the original buffers.
-	transpose(width, height, x, xbuf);
-	transpose(width, height, y, ybuf);		
+	transpose(width, height, re, rebuf);
+	transpose(width, height, im, imbuf);		
 	
 	// Cleanup
-	free(xbuf);
-	free(ybuf);
+	free(rebuf);
+	free(imbuf);
 	
 }
 
 
+// Do highpass filtering on a square image.
+//	The DC value is set to zero, but the higher frequencies are kept.	
 void highpass2d_jones(int width, int height, u_int8_t* image)
 {
-	// Sanity checks
-	// TODO: Also check that width and hight are multiples of 2
+	// TODO: Not finished for rectangular matrices.
+	//       Also check that width and height are multiples of 2.
 	if (width != height) {
 		printf("jones_highpass2d: matrix not square\n");
 		exit(1);
@@ -148,14 +148,14 @@ void highpass2d_jones(int width, int height, u_int8_t* image)
 		im[i]	= 0;
 	}
 
-	// Transform to frequency space
+	// Transform to frequency space.
 	fft2d (width, height, m, re, im, 1);
 	
-	// Zap the DC value
+	// Zap the DC value.
 	re[0]	= 0;
 	im[0]	= 0;
 
-	// Transform back to image space
+	// Transform back to image space.
 	fft2d (width, height, m, re, im, -1);
 	
 	// Have to scale the output values to get back to the original.
