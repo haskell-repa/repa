@@ -5,7 +5,7 @@
 #include "BMP.h"
 
 
-// gettin' and putttin' 
+// gettin' and puttin' 
 u_int32_t getWord32le(u_int8_t* buf)
 {
 	return	  ((u_int32_t)buf[3]) << 24
@@ -35,8 +35,10 @@ void putWord16le(u_int8_t* buf, u_int16_t x)
 }
 
 	
+// Header sizes.
 #define FILE_HEADER_SIZE  14
 #define IMAGE_HEADER_SIZE 40
+
 
 // Read an uncompressed 24bit BMP file.
 ImageRGB* readBMP24(char* fileName)
@@ -151,26 +153,27 @@ void	writeBMP24(char* fileName, ImageRGB* image)
 	u_int8_t* buf	= (u_int8_t*)malloc(filesize);
 	
 	// Make the file header
-	buf[0]		= 'B';						// magic
+	buf[0]		= 'B';				// magic
 	buf[1]		= 'M';
-	putWord32le(buf+2, 	filesize);				// size of whole file
-	putWord16le(buf+6, 	0);					// reserved
-	putWord16le(buf+8,	0);					// reserved
-	putWord32le(buf+10, 	FILE_HEADER_SIZE + IMAGE_HEADER_SIZE);	// offset to start of pixel data
+	putWord32le(buf+2, 	filesize);		// size of whole file
+	putWord16le(buf+6, 	0);			// reserved
+	putWord16le(buf+8,	0);			// reserved
+	putWord32le(buf+10, 	FILE_HEADER_SIZE + IMAGE_HEADER_SIZE);	
+							// offset to start of pixel data
 	
 	// Make the image header
 	u_int8_t* bufi	= buf + FILE_HEADER_SIZE;
-	putWord32le(bufi, 	IMAGE_HEADER_SIZE);			// size of header
-	putWord32le(bufi+4,	image->width);				// width of image
-	putWord32le(bufi+8,	image->height);				// height of image
-	putWord16le(bufi+12,	1);					// number of planes
-	putWord16le(bufi+14,	24);					// bits per pixel
-	putWord16le(bufi+16,	0);					// compression mode
-	putWord32le(bufi+20,	imagesize);				// size of image data
-	putWord32le(bufi+24,	2834);					// pels per meter (X)
-	putWord32le(bufi+28,	2834);					// pels per meter (Y)
-	putWord32le(bufi+32,	0);					// colors used
-	putWord32le(bufi+36,	0);					// colors important
+	putWord32le(bufi, 	IMAGE_HEADER_SIZE);	// size of header
+	putWord32le(bufi+4,	image->width);		// width of image
+	putWord32le(bufi+8,	image->height);		// height of image
+	putWord16le(bufi+12,	1);			// number of planes
+	putWord16le(bufi+14,	24);			// bits per pixel
+	putWord16le(bufi+16,	0);			// compression mode
+	putWord32le(bufi+20,	imagesize);		// size of image data
+	putWord32le(bufi+24,	2834);			// pels per meter (X)
+	putWord32le(bufi+28,	2834);			// pels per meter (Y)
+	putWord32le(bufi+32,	0);			// colors used
+	putWord32le(bufi+36,	0);			// colors important
 	
 	// Make the image data
 	u_int8_t* optr		= buf + FILE_HEADER_SIZE + IMAGE_HEADER_SIZE;

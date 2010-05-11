@@ -5,9 +5,9 @@
 
 // Perform high-pass filtering on a 2d image.
 //	The DC value is set to zero, but the other frequencies are kept.
-void fftw_highpass2d(int width, int height, u_int8_t* image)
+void highpass2d_fftw(int width, int height, u_int8_t* image)
 {
-	// Setup input and output buffers.
+	// The size of the whole image.
 	int size		= height * width;
 
 	// Allocate input and output buffers
