@@ -5,19 +5,6 @@
 --
 --   Time complexity is O(n log n) in the size of the input.
 --
---   Input dimensions must be powers of two, else `error`.
---
---   The `fft` and `ifft` functions (and friends) also compute the roots of unity needed.
---   If you need to transform several arrays with the same extent then it is faster to
---   compute the roots once using `calcRootsOfUnity` or `calcInverseRootsOfUnity`, 
---   then call `fftWithRoots` directly.
---
---   The inverse transforms provided also perform post-scaling so that `ifft` is the true inverse of `fft`. 
---   If you don't want that then call `fftWithRoots` directly.
---
---   The functions `fft2d` and `fft3d` require their inputs to be squares (and cubes) respectively. 
---   This allows them to reuse the same roots-of-unity when transforming along each axis. If you 
---   need to transform rectanglular arrays then call `fftWithRoots` directly.
 module Data.Array.Repa.Algorithms.FFT
 	( Mode(..)
 	, fft3d
