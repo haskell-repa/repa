@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeOperators, PatternGuards, RankNTypes #-}
+{-# LANGUAGE TypeOperators, PatternGuards, RankNTypes, ScopedTypeVariables, BangPatterns, FlexibleContexts #-}
+{-# OPTIONS -fno-warn-incomplete-patterns #-}
 
 -- | Fast computation of Discrete Fourier Transforms using the Cooley-Tuckey algorithm.
 --
@@ -18,195 +19,160 @@
 --   This allows them to reuse the same roots-of-unity when transforming along each axis. If you 
 --   need to transform rectanglular arrays then call `fftWithRoots` directly.
 module Data.Array.Repa.Algorithms.FFT
-	( fft,   ifft
-	, fft2d, ifft2d
-	, fft3d, ifft3d
-	, fftWithRoots )
+	( Mode(..)
+	, fft3d
+	, fft2d
+	, fft1d)
 where
-import Data.Array.Repa.Algorithms.DFT.Roots
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
-import Data.Ratio
 
--- Vector Transform -------------------------------------------------------------------------------
--- | Compute the DFT along the low order dimension of an array.
-fft	:: Shape sh
-	=> Array (sh :. Int) Complex
-	-> Array (sh :. Int) Complex
+data Mode
+	= Forward
+	| Reverse
+	| Inverse
+	deriving (Show, Eq)
 
-fft v
- = let	rofu	= calcRootsOfUnity (extent v)
-   in	force $ fftWithRoots rofu v
+{-# INLINE signOfMode #-}
+signOfMode :: Mode -> Double
+signOfMode mode
+ = case mode of
+	Forward		-> (-1)
+	Reverse		->   1
+	Inverse		->   1
 
 
--- | Compute the inverse DFT along the low order dimension of an array.
-ifft	:: Shape sh
-	=> Array (sh :. Int) Complex
-	-> Array (sh :. Int) Complex
+-- 3D Transform -----------------------------------------------------------------------------------
+-- | Compute the DFT of a 3d array.
+fft3d 	:: Mode
+	-> Array DIM3 Complex
+	-> Array DIM3 Complex
 
-ifft v
- = let	_ :. len	= extent v
-	scale		= fromIntegral len :*: 0
-	rofu		= calcInverseRootsOfUnity (extent v)
-   in	force $ A.map (/ scale) $ fftWithRoots rofu v
+fft3d mode arr
+ = let	_ :. depth :. height :. width	= extent arr
+	sign	= signOfMode mode
+	scale 	= fromIntegral (depth * width * height) 
+		
+   in	arr `deepSeqArray` 
+	case mode of
+		Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+		Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+		Inverse	-> force $ A.map (/ scale) 
+				$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+
+fftTrans3d 
+	:: Double
+	-> Array DIM3 Complex 
+	-> Array DIM3 Complex
+
+{-# NOINLINE fftTrans3d #-}
+fftTrans3d sign arr'
+ = let 	arr		= force arr'
+	(sh :. len)	= extent arr
+   in	force $ rotate3d $ fft sign sh len arr
+
+
+rotate3d :: Array DIM3 Complex -> Array DIM3 Complex
+{-# INLINE rotate3d #-}
+rotate3d arr
+ = backpermute (sh :. m :. k :. l) f arr
+ where	(sh :. k :. l :. m)		= extent arr
+	f (sh' :. m' :. k' :. l')	= sh' :. k' :. l' :. m'
 
 
 -- Matrix Transform -------------------------------------------------------------------------------
--- | Compute the DFT of a square matrix.
---   If the matrix is not square then `error`.
-fft2d 	:: Array DIM2 Complex
+-- | Compute the DFT of a matrix.
+fft2d 	:: Mode
+	-> Array DIM2 Complex
 	-> Array DIM2 Complex
 
-fft2d arr
- 	| Z :. height :. width	<- extent arr
- 	, height /= width	
-	= error $ "fft2d: height of matrix (" ++ show height ++ ")"
-		++  " does not match width (" ++ show width  ++ ")"
+fft2d mode arr
+ = let	_ :. height :. width	= extent arr
+	sign	= signOfMode mode
+	scale 	= fromIntegral (width * height) 
+		
+   in	arr `deepSeqArray` 
+	case mode of
+		Forward	-> fftTrans2d sign $ fftTrans2d sign arr
+		Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
+		Inverse	-> force $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
 
-	| otherwise
-	= let	rofu		= calcRootsOfUnity (extent arr)
-  		fftTrans 	= transpose . fftWithRoots rofu
-   	  in	force $ fftTrans $ fftTrans arr
-
-
--- | Compute the inverse DFT of a square matrix. 
-ifft2d	:: Array DIM2 Complex
+fftTrans2d 
+	:: Double
+	-> Array DIM2 Complex 
 	-> Array DIM2 Complex
+
+{-# NOINLINE fftTrans2d #-}
+fftTrans2d sign arr'
+ = let 	arr		= force arr'
+	(sh :. len)	= extent arr
+   in	force $ transpose $ fft sign sh len arr
+
+
+-- Vector Transform -------------------------------------------------------------------------------
+-- | Compute the DFT of a vector.
+fft1d	:: Mode 
+	-> Array DIM1 Complex 
+	-> Array DIM1 Complex
 	
-ifft2d arr
- 	| Z :. height :. width	<- extent arr
- 	, height /= width	
-	= error $ "fft2d: height of matrix (" ++ show height ++ ")"
-		++  " does not match width (" ++ show width  ++ ")"
-
-	| otherwise
-	= let	_ :. height :. width = extent arr
-		scale		= fromIntegral (height * width) :*: 0
-		rofu		= calcInverseRootsOfUnity (extent arr)
-		fftTrans	= transpose . fftWithRoots rofu
-	  in	force $ A.map (/ scale) $ fftTrans $ fftTrans arr
+fft1d mode arr
+ = let	_ :. len	= extent arr
+	sign	= signOfMode mode
+	scale	= fromIntegral len
 	
+   in	arr `deepSeqArray`
+	case mode of
+		Forward	-> fftTrans1d sign arr
+		Reverse	-> fftTrans1d sign arr
+		Inverse -> force $ A.map (/ scale) $ fftTrans1d sign arr
 
--- Cube Transform ---------------------------------------------------------------------------------
--- | Compute the DFT of a 3d cube.
---   If the array is not a cube then `error`.
-fft3d 	:: Array DIM3 Complex
-	-> Array DIM3 Complex
+fftTrans1d
+	:: Double 
+	-> Array DIM1 Complex
+	-> Array DIM1 Complex
 
-fft3d arrIn
- 	| Z :. depth :. height :. width	<- extent arrIn
- 	, (height /= width) || (height /= depth)
-	= error $ "fft3d: array is not a cube"
+{-# NOINLINE fftTrans1d #-}
+fftTrans1d sign arr'
+ = let	arr		= force arr'
+	(sh :. len)	= extent arr
+   in	fft sign sh len arr
 
-	| otherwise
-	= let	rofu		= calcRootsOfUnity (extent arrIn)
 
-		transpose3 arr
-	 	 = traverse arr 
-        		(\(Z :. k :. l :. m)   -> (Z :. l :. m :. k)) 
-            		(\f (Z :. l :. m :. k) -> f (Z :. k :. l :. m)) 
-
-		fftTrans	= transpose3 . fftWithRoots rofu
+-- Rank Generalised Worker ------------------------------------------------------------------------
+{-# INLINE fft #-}
+fft !sign !sh !lenVec !vec
+ = go lenVec 0 1
+ where	go !len !offset !stride
+	 | len == 2
+	 = force $ fromFunction (sh :. 2) swivel
 	
-  	  in	force $ fftTrans $ fftTrans $ fftTrans arrIn
+	 | otherwise
+	 = combine len 
+		(go (len `div` 2) offset            (stride * 2))
+		(go (len `div` 2) (offset + stride) (stride * 2))
+
+	 where	swivel (sh' :. ix)
+		 = case ix of
+			0	-> vec !: (sh' :. offset) + vec !: (sh' :. (offset + stride))
+			1	-> vec !: (sh' :. offset) - vec !: (sh' :. (offset + stride))
+
+		{-# INLINE combine #-}
+		combine !len' evens@Manifest{} odds@Manifest{}
+ 	 	 = evens `deepSeqArray` odds `deepSeqArray`
+   	   	   let	odds'	= traverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
+   	   	   in	force 	$ (evens +^ odds') +:+ (evens -^ odds')
 
 
--- | Compute the inverse DFT of a 3d cube.
---   If the array is not a cube then `error`.
-ifft3d 	:: Array DIM3 Complex
-	-> Array DIM3 Complex
+-- Compute a twiddle factor.
+twiddle :: Double
+	-> Int 			-- index
+	-> Int 			-- length
+	-> Complex
 
-ifft3d arrIn
- 	| Z :. depth :. height :. width	<- extent arrIn
- 	, (height /= width) || (height /= depth)
-	= error $ "ifft3d: array is not a cube"
+{-# INLINE twiddle #-}
+twiddle sign k' n'
+ 	=  cos (2 * pi * k / n) :*: (sign * sin  (2 * pi * k / n))
+	where 	k	= fromIntegral k'
+		n	= fromIntegral n'
+      
 
-	| otherwise
-	= let	rofu		= calcInverseRootsOfUnity (extent arrIn)
-
-		transpose3 arr
-	 	 = traverse arr 
-        		(\(Z :. k :. l :. m)   -> (Z :. l :. m :. k)) 
-            		(\f (Z :. l :. m :. k) -> f (Z :. k :. l :. m)) 
-
-		_ :. depth :. height :. width 
-				= extent arrIn
-		scale		= fromIntegral (height * width * depth) :*: 0
-
-		fftTrans	= transpose3 . fftWithRoots rofu
-	  in	force $ A.map (/ scale) $ fftTrans $ fftTrans $ fftTrans arrIn
-
-	
--- Worker -----------------------------------------------------------------------------------------
--- | Generic function for computation of forward or inverse Discrete Fourier Transforms.
---	Computation is along the low order dimension of the array.
-fftWithRoots	
-	:: forall sh
-	.  Shape sh
-	=> Array (sh :. Int) Complex		-- ^ Roots of unity.
-	-> Array (sh :. Int) Complex		-- ^ Input values.
-        -> Array (sh :. Int) Complex
-
-fftWithRoots rofu v
-	| not $ (denominator $ toRational (logBase (2 :: Double) $ fromIntegral vLen)) == 1
-	= error $ "fft: vector length of " ++ show vLen ++ " is not a power of 2"
-	
-	| rLen /= vLen
-	= error $  "fft: length of vector (" ++ show vLen ++ ")"
-		++ " does not match the length of the roots (" ++ show rLen ++ ")"
-	
-	| otherwise
-	= fftWithRoots' rofu v
-
-	where	_ :. rLen	= extent rofu
-		_ :. vLen	= extent v
-
-fftWithRoots'
-	:: Shape sh
-	=> Array (sh :. Int) Complex
-	-> Array (sh :. Int) Complex
-        -> Array (sh :. Int) Complex
-
-{-# INLINE fftWithRoots' #-}
-fftWithRoots' rofu v
- = case extent v of
-	_ :. 2	-> fft_two   v
-	_	-> fft_split rofu v
-
-{-# INLINE fft_two #-}
-fft_two v
- = let	vFn' vFn (sh :. 0)  = vFn (sh :. 0) + vFn (sh :. 1)
-	vFn' vFn (sh :. 1)  = vFn (sh :. 0) - vFn (sh :. 1)
-	vFn' _   _          = error "Data.Array.Repa.Algorithms.FFT fft_two fail"
-   in	traverse v id vFn'
-	
-{-# INLINE fft_split #-}
-fft_split rofu v
- = let 	fft_lr = force $ fftWithRoots' (splitRofu rofu) (splitVector v)
-
-	fft_l  = traverse2 fft_lr rofu 
- 		   (\(sh :. 2 :. n) _ -> sh :. n)
-		   (\f r (sh :. i)    -> f (sh :. 0 :. i) + r (sh :. i) * f (sh :. 1 :. i))
-
-	fft_r  = traverse2 fft_lr rofu 
-		   (\(sh :. 2 :. n) _ -> sh :. n)
-		   (\f r (sh :. i)    -> f (sh :. 0 :. i) - r (sh :. i) * f (sh :. 1 :. i))
-
-   in	fft_l +:+ fft_r
-
-{-# INLINE splitRofu #-}
-splitRofu rofu
- = traverse rofu
-	(\(rSh :. rLen) 	-> rSh :. (2::Int) :. (rLen `div` 2))
-	(\rFn (sh :. _ :. i) 	-> rFn (sh :. 2*i))
-
-{-# INLINE splitVector #-}
-splitVector v 
- = let	vFn' vFn (sh :. 0 :. i) = vFn (sh :. 2*i)
-	vFn' vFn (sh :. 1 :. i) = vFn (sh :. 2*i+1)
-	vFn' _   _              = error "Data.Array.Repa.Algorithms.FFT splitVector fail"
-
-   in	traverse v
-		(\(vSh :. vLen)    -> vSh :. 2 :. (vLen `div` 2)) 
-		vFn'
-        

@@ -36,7 +36,7 @@ mainWithArgs fileIn clipMag fileMag filePhase
 	let arrCentered	= centerMatrix arrComplex
 		
 	-- Do the 2d transform.
-	let arrFreq	= fft2d arrCentered
+	let arrFreq	= fft2d Forward arrCentered
 		
 	-- Write out the magnitude of the transformed array, 
 	--	clipping it at the given value.

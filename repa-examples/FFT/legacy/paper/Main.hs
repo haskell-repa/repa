@@ -1,7 +1,7 @@
 {-# LANGUAGE PatternGuards #-}
 
 -- | Perform high pass filtering on a BMP image.
-import Data.Array.Repa.Algorithms.FFT
+import FFT
 import Data.Array.Repa.Algorithms.DFT.Center
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa.IO.BMP

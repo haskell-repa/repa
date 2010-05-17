@@ -1,6 +1,5 @@
-{-# LANGUAGE PatternGuards, PackageImports #-}
-{-# LANGUAGE ScopedTypeVariables, RankNTypes #-}
-{-# LANGUAGE TypeOperators, FlexibleContexts #-}
+{-# LANGUAGE PatternGuards, PackageImports, ScopedTypeVariables, RankNTypes #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts, NoMonomorphismRestriction #-}
 
 -- | See the repa-examples package for examples.
 --   
@@ -53,6 +52,7 @@ module Data.Array.Repa
          -- * Structure preserving operations
 	, map
 	, zipWith
+	, (+^), (-^), (*^), (/^)
 
 	 -- * Reductions
 	, fold,	foldAll
@@ -207,18 +207,18 @@ force	:: (Shape sh, Elt a)
 	
 {-# INLINE force #-}
 force arr
- = case arr of
-	Manifest sh uarr
-	 -> sh `S.deepSeq` uarr `seq` 
-	    Manifest sh uarr
-
-	Delayed sh fn
-	 -> let uarr	=  U.map (fn . S.fromIndex sh) 
-			$! U.enumFromTo (0 :: Int) (S.size sh - 1)
-	    in	sh `S.deepSeq` uarr `seq`
+ = Manifest sh' uarr'
+ where (sh', uarr')
+	= case arr of
 		Manifest sh uarr
-			
-	
+	 	 -> sh `S.deepSeq` uarr `seq` (sh, uarr)
+
+		Delayed sh fn
+	 	 -> let uarr	=  U.map (fn . S.fromIndex sh) 
+				$! U.enumFromTo (0 :: Int) (S.size sh - 1)
+	    	     in	sh `S.deepSeq` uarr `seq` (sh, uarr)
+
+				
 -- | Ensure an array's structure is fully evaluated.
 --	This evaluates the extent and outer constructor, but does not `force` the elements.
 infixr 0 `deepSeqArray`
@@ -464,6 +464,18 @@ zipWith f arr1 arr2
 	  arr2 `deepSeqArray`
 	  Delayed	(S.intersectDim (extent arr1) (extent arr2))
 			(\ix -> f (arr1 !: ix) (arr2 !: ix))
+
+{-# INLINE (+^) #-}
+(+^)	= zipWith (+)
+
+{-# INLINE (-^) #-}
+(-^)	= zipWith (-)
+
+{-# INLINE (*^) #-}
+(*^)	= zipWith (*)
+
+{-# INLINE (/^) #-}
+(/^)	= zipWith (/)
 
 
 -- Reductions -------------------------------------------------------------------------------------

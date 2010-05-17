@@ -67,5 +67,6 @@ inShape :: forall sh
 	-> sh		-- ^ Index.
 	-> Bool
 
+{-# INLINE inShape #-}
 inShape sh ix
 	= inRange zeroDim sh ix

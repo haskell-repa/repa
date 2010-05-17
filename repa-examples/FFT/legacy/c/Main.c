@@ -12,7 +12,9 @@ extern void highpass2d_jones(int width, int height, u_int8_t* image);
 int main(int argc, char** argv)
 {
 	if(argc != 4) {
-		printf("usage: highpass <alg> <input.bmp> <output.bmp>\n");
+		printf("usage: highpass <algorithm> <input.bmp> <output.bmp>\n");
+		printf("       algorithms: -fftw -jones\n");
+		
 		exit(1);
 	}
 
