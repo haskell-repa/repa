@@ -25,8 +25,8 @@ Executable repa-fft2d
         repa-algorithms      == 1.1.*,
         repa-io              == 1.1.*
 
-  Main-is: FFT/src/FFT2d/Main.hs
-  hs-source-dirs: FFT/src .
+  Main-is: FFT/FFT2d/src/Main.hs
+  hs-source-dirs: FFT/FFT2d/src .
   ghc-options: -Odph -threaded 
 
 
@@ -39,8 +39,22 @@ Executable repa-fft2d-highpass
         repa-algorithms      == 1.1.*,
         repa-io              == 1.1.*
 
-  Main-is: FFT/src/HighPass/Main.hs
-  hs-source-dirs: FFT/src .
+  Main-is: FFT/HighPass2d/src/Main.hs
+  hs-source-dirs: FFT/Highpass2d/src .
+  ghc-options: -Odph -threaded 
+
+
+Executable repa-fft3d-highpass
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.4.*,
+        dph-base             == 0.4.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*,
+        repa-io              == 1.1.*
+
+  Main-is: FFT/HighPass3d/src/Main.hs
+  hs-source-dirs: FFT/Highpass3d/src .
   ghc-options: -Odph -threaded 
 
 

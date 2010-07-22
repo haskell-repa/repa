@@ -18,7 +18,7 @@ main
 	case args of
 	 [fileNameIn, fileNameOut]	
 	   -> run fileNameIn fileNameOut
-	 _ -> putStr $ "usage: highpass <fileIn.bmp> <fileOut.bmp>"
+	 _ -> putStr $ "usage: highpass <fileIn.bmp> <fileOut.bmp>\n"
 			
 
 run :: String -> String -> IO ()

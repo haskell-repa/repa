@@ -33,7 +33,7 @@ mainWithArgs fileIn clipMag fileMag filePhase
 	
 	-- Apply the centering transform so that the output has the zero
 	--	frequency in the middle of the image.
-	let arrCentered	= centerMatrix arrComplex
+	let arrCentered	= center2d arrComplex
 		
 	-- Do the 2d transform.
 	let arrFreq	= fft2d Forward arrCentered

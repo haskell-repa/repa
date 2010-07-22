@@ -16,8 +16,8 @@ solveLaplace
 	-> Array DIM2 Double	-- ^ Initial state.
 	-> Array DIM2 Double
 
-{-# INLINE solveLaplace #-}
-solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} arrInit
+{-# NOINLINE solveLaplace #-}
+solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} arrInit@Manifest{}
  = go steps arrInit
  where	go i arr@Manifest{}
 	   | i == 0	= arr

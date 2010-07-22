@@ -42,7 +42,7 @@ transform cutoff arrReal
  = let	arrComplex	= force $ A.map (\r -> (fromIntegral r) :*: 0) arrReal
 			
 	-- Do the 2d transform.
-	arrCentered	= centerMatrix arrComplex
+	arrCentered	= center2d arrComplex
 	arrFreq		= fft2d Forward arrCentered
 
 	-- Zap out the low frequency components.
