@@ -150,8 +150,8 @@ delay 	:: (Shape sh, Elt a)
 {-# INLINE delay #-}	
 delay arr
  = case arr of
-	Manifest sh uarr	-> (sh, \i -> uarr U.!: S.toIndex sh i)
 	Delayed  sh fn		-> (sh, fn)
+	Manifest sh uarr	-> (sh, \i -> uarr U.!: S.toIndex sh i)
 
 
 -- | Convert an array to an unboxed `U.Array`, forcing it if required.
@@ -282,7 +282,7 @@ instance (Shape sh, Elt a, Eq a) => Eq (Array sh a) where
 	(==) arr1  arr2 
 		= toScalar 
 		$ fold (&&) True 
-		$ (flip reshape) (Z :. (S.size $ extent arr1)) 
+		$ reshape (Z :. (S.size $ extent arr1)) 
 		$ zipWith (==) arr1 arr2
 		
 	{-# INLINE (/=) #-}
@@ -292,13 +292,25 @@ instance (Shape sh, Elt a, Eq a) => Eq (Array sh a) where
 -- Num
 -- All operators apply elementwise.
 instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
+	{-# INLINE (+) #-}
 	(+)		= zipWith (+)
+
+	{-# INLINE (-) #-}
 	(-)		= zipWith (-)
+
+	{-# INLINE (*) #-}
 	(*)		= zipWith (*)
+
+	{-# INLINE negate #-}
 	negate  	= map negate
+
+	{-# INLINE abs #-}
 	abs		= map abs
+
+	{-# INLINE signum #-}
 	signum 		= map signum
 
+	{-# INLINE fromInteger #-}
 	fromInteger n	 = Delayed failShape (\_ -> fromInteger n) 
 	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
 
@@ -308,19 +320,20 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 --	The new extent must be the same size as the original, else `error`.
 --
 reshape	:: (Shape sh, Shape sh', Elt a) 
-	=> Array sh a
-	-> sh'
+	=> sh'
+	-> Array sh a
 	-> Array sh' a
 
 {-# INLINE reshape #-}
-reshape arr newExtent
-	| not $ S.size newExtent == S.size (extent arr)
+reshape sh' arr
+	| not $ S.size sh' == S.size (extent arr)
 	= error $ stage ++ ".reshape: reshaped array will not match size of the original"
-	
-	| otherwise
-	= Delayed newExtent
-	$ ((arr !:) . (S.fromIndex (extent arr)) . (S.toIndex newExtent))
 
+	| otherwise
+	= case arr of
+		Manifest sh uarr -> Manifest sh' uarr
+		Delayed  sh f    -> Delayed sh' (f . fromIndex sh . toIndex sh')
+	
 
 -- | Append two arrays.
 --
@@ -446,8 +459,8 @@ map	:: (Shape sh, Elt a, Elt b)
 
 {-# INLINE map #-}
 map f arr
-	= Delayed (extent arr) (f . (arr !:))
-
+	= traverse arr id (f .)
+	
 
 -- | Combine two arrays, element-wise, with a binary operator.
 --	If the extent of the two array arguments differ, 
@@ -557,10 +570,9 @@ traverse
 	
 {-# INLINE traverse #-}
 traverse arr transExtent newElem
-	= arr `deepSeqArray`
-	  Delayed 
-		(transExtent (extent arr)) 
-		(newElem     (arr !:))
+ 	= arr `deepSeqArray` 
+          Delayed (transExtent sh) (newElem f)
+ 	where	(sh, f) = delay arr
 
 
 -- | Unstructured traversal over two arrays at once.
@@ -785,7 +797,7 @@ prop_reshapeTranspose_DIM3
  = 	forAll (arbitrarySmallArray 20)			$ \(arr :: Array DIM3 Int) ->
    let	arr'	= transpose arr
    	sh'	= extent arr'
-   in	(S.size $ extent arr) == S.size (extent (reshape arr sh'))
+   in	(S.size $ extent arr) == S.size (extent (reshape sh' arr))
      && (sumAll arr          == sumAll arr')
 
 prop_appendIsAppend_DIM3

@@ -1,5 +1,5 @@
 module Timing
-	(time)
+	(time, showTime)
 where
 import GHC.Exts	(traceEvent)
 import System.CPUTime

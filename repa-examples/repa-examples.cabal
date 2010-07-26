@@ -69,7 +69,12 @@ Executable repa-laplace
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
   hs-source-dirs: Laplace/src .
-  ghc-options: -Odph -threaded 
+  ghc-options: -Odph -threaded -rtsopts 
+               -fsimplifier-phases=4 
+               -fstrictness-before=3 
+               -funfolding-use-threshold30
+               -funbox-strict-fields
+               -fcpr-off
 
 
 Executable repa-mmult
@@ -80,9 +85,10 @@ Executable repa-mmult
         repa                 == 1.1.*,
         repa-io              == 1.1.*,
         repa-algorithms      == 1.1.*,
-        random               == 1.0.*
+        random               == 1.0.*,
+        old-time             == 1.0.*
 
   Main-is: MMult/src/Main.hs
-  hs-source-dirs: MMult/src .
-  ghc-options: -Odph -threaded 
+  hs-source-dirs: MMult/src lib .
+  ghc-options: -Odph -threaded -rtsopts -fsimplifier-phases=4 -fstrictness-before=3 -funfolding-use-threshold30
 

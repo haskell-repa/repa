@@ -8,6 +8,7 @@ import System.Environment
 import Control.Monad
 import System.Random
 import qualified Data.Array.Parallel.Unlifted as U
+import Timing
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg
@@ -109,9 +110,16 @@ main' args
           	 `deepSeqArray` return ()
 		
 		-- Run the solver.
-		let matResult	= multiplyMM mat1 mat2
+		(matResult, t)	
+			<- time 
+			$  let matResult	= multiplyMM mat1 mat2
+			   in  matResult `deepSeqArray` return matResult
 
-		matResult `deepSeqArray` return ()
+		-- Print how long it took.
+		putStrLn (showTime t)
+
+		-- Print a checksum of all the elements
+		putStrLn $ "sum = " ++ show (A.toScalar $ A.sum $ A.sum matResult) ++ "\n"
 
 		-- Write the output to file if requested.
 		case mArgOut of 

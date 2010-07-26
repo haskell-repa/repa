@@ -47,31 +47,36 @@ class Slice ss where
 		
 
 instance Slice Z  where
+	{-# INLINE sliceOfFull #-}
 	sliceOfFull _ _		= Z
+
+	{-# INLINE fullOfSlice #-}
 	fullOfSlice _ _		= Z
 	
 	
 instance Slice (Any sh) where
+	{-# INLINE sliceOfFull #-}
 	sliceOfFull _ sh	= sh
+
+	{-# INLINE fullOfSlice #-}
 	fullOfSlice _ sh	= sh
 	
 
 instance Slice sl => Slice (sl :. Int) where
+	{-# INLINE sliceOfFull #-}
 	sliceOfFull (fsl :. _) (ssl :. _)	
 		= sliceOfFull fsl ssl
 
+	{-# INLINE fullOfSlice #-}
 	fullOfSlice (fsl :. n) ssl		
 		= fullOfSlice fsl ssl :. n
 	
 	
 instance Slice sl => Slice (sl :. All) where	
+	{-# INLINE sliceOfFull #-}
 	sliceOfFull (fsl :. All) (ssl :. s)
 		= sliceOfFull fsl ssl :. s
 
+	{-# INLINE fullOfSlice #-}
 	fullOfSlice (fsl :. All) (ssl :. s)
 		= fullOfSlice fsl ssl :. s
-	
-	
-
-	
-	

@@ -11,7 +11,7 @@ where
 class Eq sh => Shape sh where
 
 	-- | Get the number of dimensions in a shape.
-	dim	:: sh -> Int           
+	rank	:: sh -> Int           
 
 	-- | The shape of an array of size zero, with a particular dimensionality.
 	zeroDim	:: sh

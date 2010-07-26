@@ -48,30 +48,47 @@ type DIM5	= DIM4 :. Int
 
 -- Shape ------------------------------------------------------------------------------------------
 instance Shape Z where
-	dim _			= 0
+	{-# INLINE rank #-}
+	rank _			= 0
+
+	{-# INLINE zeroDim #-}
 	zeroDim			= Z
+
+	{-# INLINE unitDim #-}
 	unitDim			= Z
+
+	{-# INLINE intersectDim #-}
 	intersectDim _ _	= Z
 
+	{-# INLINE size #-}
 	size _			= 1
+
+	{-# INLINE sizeIsValid #-}
 	sizeIsValid _		= True
 
+
+	{-# INLINE toIndex #-}
 	toIndex _ _		= 0
+
+	{-# INLINE fromIndex #-}
 	fromIndex _ _		= Z
 
+
+	{-# INLINE inRange #-}
 	inRange Z Z Z		= True
 
 	listOfShape _		= []
 	shapeOfList []		= Z
 	shapeOfList _		= error $ stage ++ ".fromList: non-empty list when converting to Z."
 
+	{-# INLINE deepSeq #-}
 	deepSeq Z x		= x
 
 	
 instance Shape sh => Shape (sh :. Int) where
-	{-# INLINE dim #-}
-	dim   (sh  :. _)
-		= dim sh + 1
+	{-# INLINE rank #-}
+	rank   (sh  :. _)
+		= rank sh + 1
 
 	{-# INLINE zeroDim #-}
 	zeroDim = zeroDim :. 0
@@ -107,7 +124,7 @@ instance Shape sh => Shape (sh :. Int) where
 		-- in computing the remainder for the highest dimension since
 		-- n < d must hold. This saves one remInt per element access which
 		-- is quite a big deal.
-		r 	| dim ds == 0	= n
+		r 	| rank ds == 0	= n
 			| otherwise	= n `remInt` d
 
 	{-# INLINE inRange #-}
