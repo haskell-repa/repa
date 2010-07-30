@@ -92,10 +92,10 @@ stage	= "Data.Array.Repa"
 -- | Possibly delayed arrays.
 data Array sh a
 	= -- | An array represented as some concrete unboxed data.
-	  Manifest sh (U.Array a)
+	  Manifest !sh !(U.Array a)
 
           -- | An array represented as a function that computes each element.
-	| Delayed  sh (sh -> a)
+	| Delayed  !sh !(sh -> a)
 
 -- Constructors ----------------------------------------------------------------------------------
 
