@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE PatternGuards, PackageImports  #-}
 
 import Data.Array.Repa			as A
 import Data.Array.Repa.IO.Matrix
@@ -7,7 +7,7 @@ import Data.Maybe
 import System.Environment
 import Control.Monad
 import System.Random
-import qualified Data.Array.Parallel.Unlifted as U
+import qualified "dph-prim-par" Data.Array.Parallel.Unlifted as U
 import Timing
 
 -- Arg Parsing ------------------------------------------------------------------------------------
@@ -83,8 +83,9 @@ genRandomMatrix sh
 -- with.  Instead, we generate a short random vector and repeat that.
 genRandomUArray :: Int -> IO (U.Array Double)
 genRandomUArray n 
- = do	let k		= 1000
-    	rg		<- newStdGen
+ = do	let seed	= 42742
+	let k		= 100
+	let rg		= mkStdGen seed
     	let randvec	= U.randomRs k (-100, 100) rg
 	let vec		= U.map (\i -> randvec U.!: (i `mod` k)) (U.enumFromTo 0 (n-1))
 	return vec
@@ -119,7 +120,7 @@ main' args
 		putStrLn (showTime t)
 
 		-- Print a checksum of all the elements
-		putStrLn $ "sum = " ++ show (A.toScalar $ A.sum $ A.sum matResult) ++ "\n"
+		putStrLn $ "sum = " ++ show (A.sumAll matResult) ++ "\n"
 
 		-- Write the output to file if requested.
 		case mArgOut of 
@@ -128,5 +129,4 @@ main' args
 					
 	| otherwise
 	= printHelp
-
 
