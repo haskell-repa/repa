@@ -23,8 +23,8 @@ benchmarks
 		
 	, Benchmark
 		"fft2d-highpass"
-		"repa-examples/dist/build/repa-fft2d-highpass"
-		(words "1 repa-examples/FFT/data/Lena.bmp bench-fft2d-highpass-out.bmp +RTS")
+		"repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
+		(words "1 repa-examples/FFT/data/lena.bmp bench-fft2d-highpass-out.bmp +RTS")
 	]
 
 

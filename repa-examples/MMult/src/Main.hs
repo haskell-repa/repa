@@ -2,13 +2,13 @@
 
 import Data.Array.Repa			as A
 import Data.Array.Repa.IO.Matrix
+import Data.Array.Repa.IO.Timing
 import Data.Array.Repa.Algorithms.Matrix
 import Data.Maybe
 import System.Environment
 import Control.Monad
 import System.Random
 import qualified "dph-prim-par" Data.Array.Parallel.Unlifted as U
-import Timing
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg

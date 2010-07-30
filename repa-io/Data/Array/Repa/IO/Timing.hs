@@ -1,4 +1,4 @@
-module Timing
+module Data.Array.Repa.IO.Timing
 	(time, showTime, prettyTime)
 where
 import GHC.Exts	(traceEvent)
@@ -20,22 +20,13 @@ zipT f (Time cpu1 wall1) (Time cpu2 wall2)
 minus :: Time -> Time -> Time
 minus = zipT (-)
 
-plus :: Time -> Time -> Time
-plus = zipT (+)
-
 
 -- TimeUnit -------------------------------------------------------------------
 type TimeUnit 
 	= Integer -> Integer
 
-picoseconds :: TimeUnit
-picoseconds = id
-
 milliseconds :: TimeUnit
 milliseconds n = n `div` 1000000000
-
-seconds :: TimeUnit
-seconds n = n `div` 1000000000000
 
 cpuTime :: TimeUnit -> Time -> Integer
 cpuTime f = f . cpu_time

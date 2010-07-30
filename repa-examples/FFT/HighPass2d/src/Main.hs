@@ -5,10 +5,11 @@ import Data.Array.Repa.Algorithms.FFT
 import Data.Array.Repa.Algorithms.DFT.Center
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa.IO.BMP
+import Data.Array.Repa.IO.Timing
 import Data.Array.Repa				as A
 import System.Environment
 import Control.Monad
-import Timing
+
 
 main :: IO ()
 main 

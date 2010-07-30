@@ -5,10 +5,10 @@
 --	The output is written back to another BMP file.
 --
 import Solver
-import Timing
 import Data.Array.Repa		as A
 import Data.Array.Repa.IO.BMP	
 import Data.Array.Repa.IO.ColorRamp
+import Data.Array.Repa.IO.Timing
 import System.Environment
 import Data.Word
 import Control.Monad

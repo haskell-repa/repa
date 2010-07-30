@@ -16,6 +16,19 @@ Description:
 Synopsis:
         Examples using the Repa array library.
 
+
+Executable repa-benchmark
+  Build-depends: 
+        base                 == 4.*,
+        unix                 == 2.4.*,
+        process              == 1.0.*,
+        directory            == 1.0.*
+
+  Main-is: Benchmark/src/Main.hs
+  hs-source-dirs: Benchmark/src lib .
+  ghc-options: -O
+
+
 Executable repa-fft2d
   Build-depends: 
         base                 == 4.*,
@@ -24,10 +37,17 @@ Executable repa-fft2d
         repa                 == 1.1.*,
         repa-algorithms      == 1.1.*,
         repa-io              == 1.1.*
-
   Main-is: FFT/FFT2d/src/Main.hs
   hs-source-dirs: FFT/FFT2d/src .
-  ghc-options: -Odph -threaded 
+  ghc-options: 
+        -threaded -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
 
 
 Executable repa-fft2d-highpass
@@ -37,18 +57,20 @@ Executable repa-fft2d-highpass
         dph-base             == 0.4.*,
         repa                 == 1.1.*,
         repa-algorithms      == 1.1.*,
-        repa-io              == 1.1.*,
-        old-time             == 1.0.*
+        repa-io              == 1.1.*
 
   Main-is: FFT/HighPass2d/src/Main.hs
   hs-source-dirs: FFT/Highpass2d/src lib .
-  ghc-options: -threaded -rtsopts 
-               -Odph
-               -fsimplifier-phases=4 
-               -fstrictness-before=3 
-               -funfolding-use-threshold30
-               -funbox-strict-fields
-               -fcpr-off
+  ghc-options: 
+        -threaded -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+
 
 Executable repa-fft3d-highpass
   Build-depends: 
@@ -56,12 +78,19 @@ Executable repa-fft3d-highpass
         dph-prim-par         == 0.4.*,
         dph-base             == 0.4.*,
         repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*,
-        repa-io              == 1.1.*
+        repa-algorithms      == 1.1.*
 
   Main-is: FFT/HighPass3d/src/Main.hs
   hs-source-dirs: FFT/Highpass3d/src .
-  ghc-options: -Odph -threaded 
+  ghc-options: 
+        -threaded -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
 
 
 Executable repa-laplace
@@ -70,20 +99,20 @@ Executable repa-laplace
         dph-prim-par         == 0.4.*,
         dph-base             == 0.4.*,
         repa                 == 1.1.*,
-        repa-io              == 1.1.*,
-        old-time             == 1.0.*
+        repa-io              == 1.1.*
 
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
   hs-source-dirs: Laplace/src lib .
-  ghc-options: -threaded -rtsopts 
-               -Odph
-               -fsimplifier-phases=4 
-               -fstrictness-before=3 
-               -funfolding-use-threshold30
-               -funbox-strict-fields
-               -fcpr-off
-               -fllvm
+  ghc-options: 
+        -threaded -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
 
 
 Executable repa-mmult
@@ -94,30 +123,17 @@ Executable repa-mmult
         repa                 == 1.1.*,
         repa-io              == 1.1.*,
         repa-algorithms      == 1.1.*,
-        random               == 1.0.*,
-        old-time             == 1.0.*
+        random               == 1.0.*
 
   Main-is: MMult/src/Main.hs
   hs-source-dirs: MMult/src lib .
-  ghc-options: -threaded -rtsopts
-               -Odph
-               -fsimplifier-phases=4
-               -fstrictness-before=3
-               -funfolding-use-threshold30
-               -funbox-strict-fields
-               -fcpr-off
-               -fllvm
+  ghc-options: 
+        -threaded -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
 
-
-Executable repa-benchmark
-  Build-depends: 
-        base                 == 4.*,
-        unix                 == 2.4.*,
-        process              == 1.0.*,
-        directory            == 1.0.*,
-        old-time             == 1.0.*
-
-
-  Main-is: Benchmark/src/Main.hs
-  hs-source-dirs: Benchmark/src lib .
-  ghc-options: -O

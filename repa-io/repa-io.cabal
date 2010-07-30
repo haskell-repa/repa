@@ -25,7 +25,8 @@ Library
         dph-prim-par         == 0.4.*,
         repa                 == 1.1.*,
         repa-bytestring      == 1.1.*,
-        bmp                  == 1.1.*
+        bmp                  == 1.1.*,
+        old-time             == 1.0.*
 
   ghc-options:
         -Odph -Wall -fno-warn-missing-signatures
@@ -35,6 +36,7 @@ Library
         Data.Array.Repa.IO.BMP
         Data.Array.Repa.IO.Vector
         Data.Array.Repa.IO.Matrix
+        Data.Array.Repa.IO.Timing
       
   Other-modules:
         Data.Array.Repa.IO.Internals.Text
