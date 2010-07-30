@@ -38,7 +38,7 @@ relaxLaplace
 	-> Array DIM2 Double
 
 {-# INLINE relaxLaplace #-}
-relaxLaplace !arr
+relaxLaplace !arr@Manifest{}
  = traverse arr id elemFn
  where
 	_ :. height :. width	
