@@ -69,12 +69,14 @@ Executable repa-laplace
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
   hs-source-dirs: Laplace/src .
-  ghc-options: -Odph -threaded -rtsopts 
+  ghc-options: -threaded -rtsopts 
+               -Odph
                -fsimplifier-phases=4 
                -fstrictness-before=3 
                -funfolding-use-threshold30
                -funbox-strict-fields
                -fcpr-off
+               -fllvm
 
 
 Executable repa-mmult
