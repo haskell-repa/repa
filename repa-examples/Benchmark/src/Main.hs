@@ -4,6 +4,31 @@ import Run
 import System.Cmd
 import System.Directory
 
+	
+-------------------------------------------------------------------------------
+-- The benchmarks to run
+--	The arg lists all need to end in  +RTS whatever
+--
+benchmarks :: [Benchmark]
+benchmarks
+ = 	[ Benchmark
+		"mmult"
+		"repa-examples/dist/build/repa-mmult/repa-mmult"
+		(words "-random 1024 1024 -random 1024 1024 +RTS -qg")
+
+	, Benchmark
+		"laplace"
+		"repa-examples/dist/build/repa-laplace/repa-laplace"
+		(words "1000 repa-examples/Laplace/data/pls-400x400.bmp bench-laplace-out.bmp +RTS -qg")
+		
+	, Benchmark
+		"fft2d-highpass"
+		"repa-examples/dist/build/repa-fft2d-highpass"
+		(words "1 repa-examples/FFT/data/Lena.bmp bench-fft2d-highpass-out.bmp +RTS")
+	]
+
+
+-------------------------------------------------------------------------------
 main 
  = do	let config	= configDefault
 	runMMult config
@@ -17,17 +42,8 @@ runMMult config
 		[ "Repa Benchmarking"
 		, "    max threads = " ++ (show $ configMaxThreads config) ]
 	
-	bMMult		<- runBench config 
-				"mmult 1024x1024"
-				"repa-examples/dist/build/repa-mmult/repa-mmult"
-				$ words "-random 1024 1024 -random 1024 1024 +RTS -qg"
-
-	bLaplace	<- runBench config 
-				"laplace 1000,400x400"
-				"repa-examples/dist/build/repa-laplace/repa-laplace"
-				$ words "1000 repa-examples/Laplace/data/pls-400x400.bmp bench-laplace-out.bmp +RTS -qg"
-
-		
+	-- Run the benchmarks
+	bs	<- mapM (runBench config) benchmarks		
 	return ()
 
 

@@ -1,8 +1,11 @@
 
 module Run
-	( BenchResult(..)
+	( Benchmark(..)
+	
+	, BenchResult(..)
 	, makeBenchResult
 	, runBench
+
 	, RunResult(..)
 	, resultSpeedup
 	, runExample
@@ -21,6 +24,15 @@ import Data.List
 import Data.Function
 
 -- Benchmark ------------------------------------------------------------------
+data Benchmark
+	= Benchmark
+	{ benchmarkName		:: String
+	, benchmarkCommand	:: FilePath
+	, benchmarkArgs		:: [String] }
+	
+
+
+-- Bench Result ---------------------------------------------------------------
 data BenchResult
 	= BenchResult
 	{ benchResultName		:: String
@@ -43,14 +55,16 @@ makeBenchResult name runs@[r1, r2]
 
 runBench 
 	:: Config 
-	-> String		-- pretty name of benchmark
-	-> String 		-- executable to run
-	-> [String]		-- args
+	-> Benchmark
 	-> IO BenchResult
 
-runBench config name cmd args
- = do	verb config $ "** " ++ name
+runBench config bench
+ = do	
+	let name	= benchmarkName bench
+	let cmd		= benchmarkCommand bench
+	let args	= benchmarkArgs bench
 	
+	verb config $ "** " ++ name
 	result1		<- runExample config cmd (args ++ words "-N1")
 	resultN		<- runExample config cmd (args ++ words ("-N" ++ (show $ configMaxThreads config)))
 	let result	= makeBenchResult name [result1, resultN]

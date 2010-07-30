@@ -8,6 +8,7 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa				as A
 import System.Environment
 import Control.Monad
+import Timing
 
 main :: IO ()
 main 
@@ -27,11 +28,25 @@ mainWithArgs cutoff fileIn fileOut
 	(arrRed, arrGreen, arrBlue)
 		<- liftM (either (\e -> error $ show e) id)
 		$  readComponentsFromBMP fileIn
+	
+	-- The deepSeqs are to make sure we're just measuring the transform time.
+	arrRed 
+	 `deepSeqArray` arrGreen
+	 `deepSeqArray` arrBlue
+	 `deepSeqArray` return ()
 		
 	-- Do the transform on each component individually
-	let arrRed'	= transform cutoff arrRed
-	let arrGreen'	= transform cutoff arrGreen
-	let arrBlue'	= transform cutoff arrBlue
+	((arrRed', arrGreen', arrBlue'), t)
+		<- time
+		$ let	arrRed'		= transform cutoff arrRed
+			arrGreen'	= transform cutoff arrGreen
+			arrBlue'	= transform cutoff arrBlue
+		  in	arrRed' 
+		         `deepSeqArray` arrGreen'
+			 `deepSeqArray` arrBlue'
+			 `deepSeqArray` return (arrRed', arrGreen', arrBlue')
+	
+	putStr (prettyTime t)
 	
 	-- Write it back to file.
 	writeComponentsToBMP fileOut
