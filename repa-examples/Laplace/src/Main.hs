@@ -5,6 +5,7 @@
 --	The output is written back to another BMP file.
 --
 import Solver
+import Timing
 import Data.Array.Repa		as A
 import Data.Array.Repa.IO.BMP	
 import Data.Array.Repa.IO.ColorRamp
@@ -61,17 +62,27 @@ laplace steps fileInput fileOutput
 	-- Use the boundary condition values as the initial matrix.
 	let arrInitial	= arrBoundValue
 
-	-- Run the solver.
-	let arrFinal	= solveLaplace
-				steps
-				arrBoundMask
-				arrBoundValue
-				arrInitial
+	arrBoundValue 
+	 `deepSeqArray` arrBoundMask
+	 `deepSeqArray` arrInitial
+	 `deepSeqArray` return ()
 
-	arrFinal `deepSeqArray` return ()
+	-- Run the solver.
+	(arrFinal, t)
+		<- time
+		$  let arrFinal	= solveLaplace
+					steps
+					arrBoundMask
+					arrBoundValue
+					arrInitial
+		    in	arrFinal `deepSeqArray` return arrFinal
+
+	-- Print how long it took
+	putStr (prettyTime t)
 
 	-- Make the result image
-	let arrImageOut		= makeImageFromDoubles (rampColorHotToCold 0.0 1.0) arrFinal
+	let arrImageOut		
+		= makeImageFromDoubles (rampColorHotToCold 0.0 1.0) arrFinal
 
 	-- Write out the image to file.	
 	writeImageToBMP

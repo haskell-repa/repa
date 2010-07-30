@@ -117,10 +117,10 @@ main' args
 			   in  matResult `deepSeqArray` return matResult
 
 		-- Print how long it took.
-		putStrLn (showTime t)
+		putStr (prettyTime t)
 
 		-- Print a checksum of all the elements
-		putStrLn $ "sum = " ++ show (A.sumAll matResult) ++ "\n"
+		putStrLn $ "checkSum        = " ++ show (A.sumAll matResult)
 
 		-- Write the output to file if requested.
 		case mArgOut of 

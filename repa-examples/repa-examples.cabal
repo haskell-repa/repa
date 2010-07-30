@@ -64,11 +64,12 @@ Executable repa-laplace
         dph-prim-par         == 0.4.*,
         dph-base             == 0.4.*,
         repa                 == 1.1.*,
-        repa-io              == 1.1.*
+        repa-io              == 1.1.*,
+        old-time
 
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
-  hs-source-dirs: Laplace/src .
+  hs-source-dirs: Laplace/src lib .
   ghc-options: -threaded -rtsopts 
                -Odph
                -fsimplifier-phases=4 
@@ -92,5 +93,25 @@ Executable repa-mmult
 
   Main-is: MMult/src/Main.hs
   hs-source-dirs: MMult/src lib .
-  ghc-options: -Odph -threaded -rtsopts -fsimplifier-phases=4 -fstrictness-before=3 -funfolding-use-threshold30
+  ghc-options: -threaded -rtsopts
+               -Odph
+               -fsimplifier-phases=4
+               -fstrictness-before=3
+               -funfolding-use-threshold30
+               -funbox-strict-fields
+               -fcpr-off
+               -fllvm
 
+
+Executable repa-benchmark
+  Build-depends: 
+        base                 == 4.*,
+        unix                 == 2.4.*,
+        process              == 1.0.*,
+        directory            == 1.0.*,
+        old-time             == 1.0.*
+
+
+  Main-is: Benchmark/src/Main.hs
+  hs-source-dirs: Benchmark/src lib .
+  ghc-options: -O

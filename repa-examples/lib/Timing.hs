@@ -1,5 +1,5 @@
 module Timing
-	(time, showTime)
+	(time, showTime, prettyTime)
 where
 import GHC.Exts	(traceEvent)
 import System.CPUTime
@@ -59,6 +59,12 @@ showTime t = (show $ wallTime milliseconds t)
           ++ "/"
           ++ (show $ cpuTime  milliseconds t)
 
+-- | Pretty print the times.
+prettyTime :: Time -> String
+prettyTime t
+	= unlines
+	[ "elapsedTimeMS   = " ++ (show $ wallTime milliseconds t)
+	, "cpuTimeMS       = " ++ (show $ cpuTime  milliseconds t) ]
 
 -- Timing benchmarks ----------------------------------------------------------
 time :: IO a -> IO (a, Time)
