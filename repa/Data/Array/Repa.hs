@@ -331,7 +331,7 @@ reshape sh' arr
 
 	| otherwise
 	= case arr of
-		Manifest sh uarr -> Manifest sh' uarr
+		Manifest _  uarr -> Manifest sh' uarr
 		Delayed  sh f    -> Delayed sh' (f . fromIndex sh . toIndex sh')
 	
 
