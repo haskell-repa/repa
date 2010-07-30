@@ -16,6 +16,11 @@ import Prelude					as P
 import Codec.BMP
 import Data.Word
 
+-- NOTE: We set most of these functions as NOINLINE so it's easier to understand
+--       what's going on in the core programs. The top-level IO functions are
+--       only called a few times each, so it doesn't matter if they're not
+--       worker/wrappered etc.
+	
 -- Read -------------------------------------------------------------------------------------------
 -- | Read a matrix from a `BMP` file.
 --	Each pixel is converted to greyscale, normalised to [0..1] and used
@@ -24,6 +29,7 @@ readMatrixFromGreyscaleBMP
 	:: FilePath
 	-> IO (Either Error (Array DIM2 Double))
 
+{-# NOINLINE readMatrixFromGreyscaleBMP #-}
 readMatrixFromGreyscaleBMP filePath
  = do	eComps	<- readComponentsFromBMP filePath
 	case eComps of 
@@ -44,7 +50,7 @@ readComponentsFromBMP
 	:: FilePath
 	-> IO (Either Error (Array DIM2 Word8, Array DIM2 Word8, Array DIM2 Word8))
 
-{-# INLINE readComponentsFromBMP #-}
+{-# NOINLINE readComponentsFromBMP #-}
 readComponentsFromBMP filePath
  = do	ebmp	<- readBMP filePath
 	case ebmp of
@@ -83,6 +89,7 @@ readImageFromBMP
 	:: FilePath
 	-> IO (Either Error (Array DIM3 Word8))
 
+{-# NOINLINE readImageFromBMP #-}
 readImageFromBMP filePath
  = do	ebmp	<- readBMP filePath
 	case ebmp of
@@ -106,6 +113,7 @@ writeMatrixToGreyscaleBMP
 	-> Array DIM2 Double
 	-> IO ()
 
+{-# NOINLINE writeMatrixToGreyscaleBMP #-}
 writeMatrixToGreyscaleBMP fileName arr
  = let	arrNorm		= normalisePositive01 arr
 
@@ -125,6 +133,7 @@ writeComponentsToBMP
 	-> Array DIM2 Word8
 	-> IO ()
 
+{-# NOINLINE writeComponentsToBMP #-}
 writeComponentsToBMP fileName arrRed arrGreen arrBlue
  | not $ (  extent arrRed   == extent arrGreen       
          && extent arrGreen == extent arrBlue)
@@ -152,6 +161,7 @@ writeImageToBMP
 	-> Array DIM3 Word8
 	-> IO ()
 
+{-# NOINLINE writeImageToBMP #-}
 writeImageToBMP fileName arrImage
 	| comps /= 4
 	= error "Data.Array.Repa.IO.BMP: lowest order dimension must be 4"

@@ -21,7 +21,7 @@ toByteString
 	:: Shape sh
 	=> Array sh Word8
 	-> ByteString
-	
+
 toByteString arr
  = unsafePerformIO
  $ allocaBytes (size $ extent arr)	$ \(bufDest :: Ptr Word8) ->
