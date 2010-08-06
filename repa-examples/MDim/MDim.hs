@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeOperators #-}
-module MDim where
+module Main where
 
 import Data.Array.Repa as R
 import Data.Array.Parallel.Unlifted (Elt)
@@ -73,10 +73,10 @@ decouple x = y
     y       = dimDown $ R.multiplyMM gG $ dimUp $ R.map log x
 
 dimUp :: Elt a => R.Array DIM1 a -> R.Array DIM2 a
-dimUp arr = R.reshape arr (Z:.2:.1)
+dimUp arr = R.reshape (Z:.2:.1) arr
 
 dimDown :: Elt a => R.Array DIM2 a -> R.Array DIM1 a
-dimDown arr = R.reshape arr (Z:.2)
+dimDown arr = R.reshape (Z:.2) arr
 
 
 -- step 3: forward step
@@ -86,14 +86,17 @@ evaluation n = do
     let alpha = 2
 
     -- step 2
-    let y  = decouple startPrices
+    let y    = decouple startPrices
 
     -- step 3
-    let yn = R.force $ R.fromFunction (Z:.n:.2) (initYn y)
-    let temp = R.fromFunction (Z:.2:.2:.n) (initTemp yn)
+
+    let yn   = R.force $ R.fromFunction (Z:.n:.2) (initYn y)
+--    let temp = R.fromFunction (Z:.2:.2:.n) (initTemp yn)
+
+    return y
 
     -- step 4
-    let sn = R.fromFunction (Z:.n:.n:.2) (initSn temp)
+{-    let sn = R.fromFunction (Z:.n:.n:.2) (initSn temp)
     vr <- newSTRef $ R.fromFunction (Z:.n:.n) (initV sn g)
 
     -- step 5
@@ -105,7 +108,7 @@ evaluation n = do
     -- return result
     v <- readSTRef vr
     return $ v !: (Z:.0:.0)
-
+-}
   where
 
     initTemp :: R.Array DIM2 Double
@@ -129,6 +132,7 @@ evaluation n = do
 
     newV v (Z:.l0:.l1) = 0.25 * ((v!:(Z:.l0+1:.l1+1)) + (v!:(Z:.l0+1:.l1  ))
                                + (v!:(Z:.l0  :.l1+1)) + (v!:(Z:.l0  :.l1  )))
+
 
 initYn :: R.Array (Z:.Int) Double
        -> (Z:.Int:.Int)

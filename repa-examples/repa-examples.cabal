@@ -40,7 +40,8 @@ Executable repa-fft2d
   Main-is: FFT/FFT2d/src/Main.hs
   hs-source-dirs: FFT/FFT2d/src .
   ghc-options: 
-        -threaded -rtsopts 
+        -threaded 
+        -rtsopts 
         -Odph
         -fsimplifier-phases=4 
         -fstrictness-before=3 
@@ -48,7 +49,6 @@ Executable repa-fft2d
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-
 
 Executable repa-fft2d-highpass
   Build-depends: 
@@ -62,7 +62,8 @@ Executable repa-fft2d-highpass
   Main-is: FFT/HighPass2d/src/Main.hs
   hs-source-dirs: FFT/Highpass2d/src lib .
   ghc-options: 
-        -threaded -rtsopts 
+        -threaded 
+        -rtsopts 
         -Odph
         -fsimplifier-phases=4 
         -fstrictness-before=3 
@@ -70,7 +71,6 @@ Executable repa-fft2d-highpass
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-
 
 Executable repa-fft3d-highpass
   Build-depends: 
@@ -83,7 +83,8 @@ Executable repa-fft3d-highpass
   Main-is: FFT/HighPass3d/src/Main.hs
   hs-source-dirs: FFT/Highpass3d/src .
   ghc-options: 
-        -threaded -rtsopts 
+        -threaded 
+        -rtsopts 
         -Odph
         -fsimplifier-phases=4 
         -fstrictness-before=3 
@@ -105,7 +106,8 @@ Executable repa-laplace
   other-modules: Solver
   hs-source-dirs: Laplace/src lib .
   ghc-options: 
-        -threaded -rtsopts 
+        -threaded
+        -rtsopts 
         -Odph
         -fsimplifier-phases=4 
         -fstrictness-before=3 
@@ -128,7 +130,8 @@ Executable repa-mmult
   Main-is: MMult/src/Main.hs
   hs-source-dirs: MMult/src lib .
   ghc-options: 
-        -threaded -rtsopts 
+        -threaded
+        -rtsopts 
         -Odph
         -fsimplifier-phases=4 
         -fstrictness-before=3 

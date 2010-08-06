@@ -26,8 +26,16 @@ import Data.Function
 -- Benchmark ------------------------------------------------------------------
 data Benchmark
 	= Benchmark
-	{ benchmarkName		:: String
+	{ -- ^ Name of the benchmark.
+	  benchmarkName		:: String
+
+	  -- ^ Some shell command to run before the main benchmarks.
+	, benchmarkCommandSetup	:: Maybe String	
+
+	  -- ^ Benchmark to run
 	, benchmarkCommand	:: FilePath
+
+	  -- ^ Args to pass to the benchmark command.
 	, benchmarkArgs		:: [String] }
 	
 
@@ -61,10 +69,18 @@ runBench
 runBench config bench
  = do	
 	let name	= benchmarkName bench
+	let cmdSetup	= benchmarkCommandSetup bench
 	let cmd		= benchmarkCommand bench
 	let args	= benchmarkArgs bench
 	
+	
 	verb config $ "** " ++ name
+
+	-- Run any setup command.
+	maybe 	(return ())
+		(\s -> system s >> return ())
+		cmdSetup
+
 	result1		<- runExample config cmd (args ++ words "-N1")
 	resultN		<- runExample config cmd (args ++ words ("-N" ++ (show $ configMaxThreads config)))
 	let result	= makeBenchResult name [result1, resultN]

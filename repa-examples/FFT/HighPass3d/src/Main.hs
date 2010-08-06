@@ -15,38 +15,25 @@ main :: IO ()
 main 
  = do	args	<- getArgs
 	case args of
-	 [size]			-> mainWithArgs (read size) Nothing
-	 [size, fileOut]	-> mainWithArgs (read size) (Just fileOut)
+	 [size, prefix]	-> mainWithArgs (read size) prefix
 
          _ -> putStr $ unlines
-		[ "Usage: repa-fft2d <size> [file.bmp]"
+		[ "Usage: repa-fft3d-highpass <size> <prefix>"
 		, "" ]
 			
 			
-mainWithArgs size mFileOut
+mainWithArgs size prefixOut
  = let
-	-- Generate a cube holding a checkerboard pattern.
+	-- Generate a cube for initial data.
 	shape	= Z :. size :. size :. size
-	checkSize	= size `div` 4
+	cubeSize	= size `div` 4
 	center		= size `div` 2
 
-
 	arrInit :: Array DIM3 Complex
-
--- 	A checkerboard pattern
-{-	arrInit	
-		= force 
-		$ fromFunction shape 
-			(\(Z :. z :. y :. x)
-			 -> let	isOn	=     ((z `div` checkSize) `mod` 2 == 0)
-					`xor` ((y `div` checkSize) `mod` 2 == 0)
-					`xor` ((x `div` checkSize) `mod` 2 == 0)
-			    in	if isOn then 1 :*: 0 else 0 :*: 0)
--}
 	arrInit	
 		= force 
 		$ fromFunction shape 
-			(\ix -> if isInCenteredCube center checkSize ix 
+			(\ix -> if isInCenteredCube center cubeSize ix 
 					then 1 :*: 0 else 0 :*: 0)
 
 	-- Transform to frequency space.
@@ -59,15 +46,13 @@ mainWithArgs size mFileOut
 	
 	-- Do the inverse transform to get back to image space.
 	arrInv		= fft3d Inverse arrFilt
-	arrFinal	= arrFilt
+	arrFinal	= arrInv
 		
    in 	arrFinal `deepSeqArray`
-	 do 	case mFileOut of
-		 Just fileOut	-> mapM_ (dumpSlice "out" arrFinal) [0..size - 1]
-		 Nothing 	-> return ()
+	 do 	mapM_ (dumpSlice prefixOut arrFinal) [0..size - 1]
 
 
--- | Dump a numberd slice of this array to a BMP file.
+-- | Dump a numbered slice of this array to a BMP file.
 dumpSlice 
 	:: FilePath
 	-> Array DIM3 Complex
@@ -86,14 +71,6 @@ pad0 n str
  = P.replicate  (n - length str) '0' ++ str
 
 
-xor a b
- = case (a, b) of
-	(True, True)	-> False
-	(True, False)	-> True
-	(False, True)	-> True
-	(False, False)	-> False
-
-
 {-# INLINE isInCenteredCube #-}
 isInCenteredCube center cutoff ix@(_ :. z :. y :. x)
  = let	high	= center + cutoff
@@ -107,10 +84,4 @@ isInCenteredCube center cutoff ix@(_ :. z :. y :. x)
 highpass center cutoff get ix
 	| isInCenteredCube center cutoff ix	= 0
 	| otherwise				= get ix
-
-{-# INLINE lowpass #-}
-lowpass center cutoff get ix
-	| isInCenteredCube center cutoff ix	= get ix
-	| otherwise				= 0
-
 

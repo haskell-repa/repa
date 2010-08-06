@@ -13,30 +13,39 @@ benchmarks :: [Benchmark]
 benchmarks
  = 	[ Benchmark
 		"mmult"
+		Nothing
 		"repa-examples/dist/build/repa-mmult/repa-mmult"
 		(words "-random 1024 1024 -random 1024 1024 +RTS -qg")
 
 	, Benchmark
 		"laplace"
+		(Just "mkdir -p bench/laplace")
 		"repa-examples/dist/build/repa-laplace/repa-laplace"
-		(words "1000 repa-examples/Laplace/data/pls-400x400.bmp bench-laplace-out.bmp +RTS -qg")
+		(words "1000 repa-examples/Laplace/data/pls-400x400.bmp output/laplace/out.bmp +RTS -qg")
 		
 	, Benchmark
 		"fft2d-highpass"
+		(Just "mkdir -p bench/fft2d-highpass")
 		"repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
-		(words "1 repa-examples/FFT/data/lena.bmp bench-fft2d-highpass-out.bmp +RTS")
+		(words "1 repa-examples/FFT/data/lena.bmp output/fft2d-highpass/out.bmp +RTS")
+
+	, Benchmark
+		"fft3d-highpass"
+		(Just "mkdir -p bench/fft3d-highpass")
+		"repa-examples/dist/build/repa-fft3d-highpass/repa-fft3d-highpass"
+		(words "128 bench/fft3d-highpass/out +RTS")
 	]
 
 
 -------------------------------------------------------------------------------
 main 
  = do	let config	= configDefault
-	runMMult config
+	runBenchmarks config
 	
 
 -- Run the Matrix-Matrix multiply example.	
-runMMult :: Config -> IO ()
-runMMult config
+runBenchmarks :: Config -> IO ()
+runBenchmarks config
  = do	verb config 	
  		$ unlines 
 		[ "Repa Benchmarking"
