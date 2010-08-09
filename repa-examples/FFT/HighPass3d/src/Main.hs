@@ -5,6 +5,7 @@ import Data.Array.Repa.Algorithms.DFT.Center
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.ColorRamp
+import Data.Array.Repa.IO.Timing
 import Data.Array.Repa				as A
 import Data.Word
 import System.Environment
@@ -23,33 +24,47 @@ main
 			
 			
 mainWithArgs size prefixOut
- = let
+ = do
 	-- Generate a cube for initial data.
-	shape	= Z :. size :. size :. size
-	cubeSize	= size `div` 4
-	center		= size `div` 2
+	let shape	= Z :. size :. size :. size
+	let cubeSize	= size `div` 4
+	let center	= size `div` 2
+	let cutoff		= 4
 
-	arrInit :: Array DIM3 Complex
-	arrInit	
-		= force 
+	let arrInit	= force 
 		$ fromFunction shape 
 			(\ix -> if isInCenteredCube center cubeSize ix 
 					then 1 :*: 0 else 0 :*: 0)
 
-	-- Transform to frequency space.
+	arrInit `deepSeqArray` return ()
+
+	(arrFinal, t)
+	 	<- time 
+	 	$  let arrFinal'	= transform arrInit center cutoff
+	  	   in  arrFinal' `deepSeqArray` return arrFinal'
+
+	putStr (prettyTime t)
+
+ 	mapM_ (dumpSlice prefixOut arrFinal) [0..size - 1]
+
+
+-- | To the high pass transform.
+transform
+	:: Array DIM3 Complex
+	-> Int
+	-> Int
+	-> Array DIM3 Complex
+transform arrInit center cutoff
+ = let	-- Transform to frequency space.
 	arrCentered	= center3d arrInit
 	arrFreq		= fft3d Forward arrCentered
 	
 	-- Zap out the high frequency components
-	cutoff		= 4
 	arrFilt		= traverse arrFreq id (highpass center cutoff)
 	
 	-- Do the inverse transform to get back to image space.
 	arrInv		= fft3d Inverse arrFilt
-	arrFinal	= arrInv
-		
-   in 	arrFinal `deepSeqArray`
-	 do 	mapM_ (dumpSlice prefixOut arrFinal) [0..size - 1]
+   in	arrInv
 
 
 -- | Dump a numbered slice of this array to a BMP file.
