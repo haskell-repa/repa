@@ -1,0 +1,31 @@
+Name:                repa-bot
+Version:             1.1.1.0
+License:             BSD3
+License-file:        LICENSE
+Author:              The DPH Team
+Maintainer:          Ben Lippmeier <benl@ouroborus.net>
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           experimental
+Category:            Data Structures
+Homepage:            http://trac.haskell.org/repa
+Bug-reports:         http://trac.haskell.org/repa/newticket
+Description:
+        Examples using the Repa array library.
+
+Synopsis:
+        Examples using the Repa array library.
+
+
+Executable repa-bot
+  Build-depends: 
+        base                == 4.*,
+        directory           == 1.0.*,
+        time                == 1.1.*,
+        parseargs           == 0.1.*,
+        buildbox            == 1.0.*
+
+  Main-is: Main.hs
+  hs-source-dirs: src
+  ghc-options: -O
+
