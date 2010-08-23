@@ -16,10 +16,7 @@ import Control.Monad
 -- | Download the Repa package from code.haskell.org,
 repaUnpack :: Config -> Build ()
 repaUnpack config
- = do	outCheckFalseOk "* Checking build directory is empty"
-	 $ HasDir $ (configScratchDir config) ++ "/repa-head"
-	
-	outCheckOk "* Checking Google is reachable"
+ = do	outCheckOk "* Checking Google is reachable"
 	 $ HostReachable "www.google.com"
 
 	outCheckOk "* Checking code.haskell.org is reachable"
@@ -30,13 +27,15 @@ repaUnpack config
 	
 	out "\n"
 	inDir (configScratchDir config)
-	 $ do	outLn "* Getting Darcs Package"
+	 $ do	clobberDir "repa-head"
+		
+		outLn  "* Getting Darcs Package"
 		system "darcs get http://code.haskell.org/repa/repa-head"
 	
 
 
 -- Building ---------------------------------------------------------------------------------------	
--- | Build the packages and register then with the given compiler.
+-- | Build the packages and register them with the given compiler.
 repaBuild :: Config -> Build ()
 repaBuild config
  = inDir (configScratchDir config)

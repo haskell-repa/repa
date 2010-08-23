@@ -12,9 +12,7 @@ ghcUnpack :: Config -> Build ()
 ghcUnpack config
  = inDir (configScratchDir config)
  $ do	outLn "* Unpacking GHC"
-	outCheckFalseOk "  - Checking build directory is empty"
-	 $ HasDir $ "ghc-head"
-
+	clobberDir "ghc-head"
 	let Just snapshot = configWithGhcSnapshot config
 
 	outLn $ "  - Unpacking snapshot " ++ snapshot
