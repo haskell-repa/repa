@@ -14,6 +14,8 @@ data BuildArg
 
 	-- Run the process every day
 	| ArgDaily
+	| ArgDailyNow
+	| ArgDailyTomorrow
 
 	-- Recipies
 	| ArgDoTotal
@@ -115,6 +117,18 @@ buildArgs
 		, argName	= Just "daily"
 		, argData	= argDataOptional "time" ArgtypeString
 		, argDesc	= "Run the given build commands every day at this time. fmt: HH:MM:SS" }
+
+	, Arg	{ argIndex	= ArgDailyNow
+		, argAbbr	= Nothing
+		, argName	= Just "now"
+		, argData	= Nothing
+		, argDesc	= "(opt. for --daily) Also run the build right now." }
+
+	, Arg	{ argIndex	= ArgDailyTomorrow
+		, argAbbr	= Nothing
+		, argName	= Just "tomorrow"
+		, argData	= Nothing
+		, argDesc	= "(opt. for --daily) Run the first build tomorrow." }
 
 	, Arg	{ argIndex	= ArgScratchDir
 		, argAbbr	= Nothing

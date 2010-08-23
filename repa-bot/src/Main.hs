@@ -3,8 +3,6 @@
 -- Repa buildbot
 -- 	Used to automate building and performance testing of GHC and Repa
 --
---	TODO: Add sleeping / build-at-midnight mode.
---
 --	TODO: Capture output of system commands for logging on website.
 --	      Make a log file for each of the stages, and post to web site along with results file.
 --	      We might need to write a "tee" function in Haskell
@@ -87,17 +85,49 @@ mainWithArgs args
 	| otherwise
 	= usageError args "Nothing to do...\n"
 
+
 -- | Run the build every day.
 mainDaily :: Args BuildArg -> Config -> BuildConfig -> IO ()
-mainDaily _args _config _buildConfig
- = do	putStrLn "Fucker\n"
-	return ()
+mainDaily args config buildConfig
+ = do	putStrLn "* Repa-bot starting up."
 
+	curTime	<- getZonedTime
+	putStrLn $ "  - current time is " ++ show curTime
+	putStrLn $ "  - waiting for build time..."
+	
+	-- We're assuming the time on the cmd line is specified
+	-- in the machines local time.
+	let Just strTimeOfDay	= getArg args ArgDaily
+	buildUTC	<- readLocalTimeOfDayAsUTC strTimeOfDay
+
+	mtmUTC 		<- getMidnightTomorrowUTC
+
+	-- Build the schedule.
+	let whenModifier
+		| gotArg args ArgDailyNow 	= Just Immediate
+		| gotArg args ArgDailyTomorrow	= Just (WaitUntil mtmUTC)
+		| otherwise			= Nothing
+	
+	let schedule
+		= makeSchedule 
+			[ ("build"
+			  , Daily buildUTC
+			  , whenModifier
+			  , runTotal config) ]
+	
+	-- Run the loop.
+	-- NOTE: We need to seq on buildUTC incase the string isn't going to parse.
+	_ 	<-    buildUTC 
+		`seq` runBuildPrintWithConfig buildConfig
+			$ cronLoop schedule
+	return ()
+	
 
 -- | Run a single-shot build.
 mainBuild :: Args BuildArg -> Config -> BuildConfig -> IO ()
 mainBuild _args config buildConfig
- = do	_	<- runBuildPrintWithConfig buildConfig (runTotal config)
+ = do	_	<- runBuildPrintWithConfig buildConfig 
+			$ runTotal config
 	return ()
 
 
@@ -105,8 +135,8 @@ mainBuild _args config buildConfig
 --   This only runs the stages set in the config.
 runTotal :: Config -> Build ()
 runTotal config
- = do	outLine
-	outLn "Repa BuildBot\n"
+ = do	outLINE
+	outLn "* Starting Build\n"
 	
 	-- Check the current environment.
 	env	<- getEnvironmentWith 
@@ -115,7 +145,6 @@ runTotal config
 			
 	outLn $ render $ ppr $ env
 	
-	outLine
 	outBlank
 	
 	-- Unpack GHC
@@ -148,3 +177,6 @@ runTotal config
 	when (configDoRepaTest configNew)
 	 $ repaTest configNew env
 
+	outLn "* Build finished"
+	outLINE
+	
