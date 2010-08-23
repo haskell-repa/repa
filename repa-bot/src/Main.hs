@@ -22,7 +22,6 @@ import BuildRepa
 import BuildGhc
 import Control.Monad
 import System.Console.ParseArgs	hiding (args)
-import System.Directory
 import System.IO
 import Data.Maybe
 
@@ -58,95 +57,54 @@ mainWithArgs args
 
 		putStrLn $ render $ pprComparisons baseline current
 		
-	-- Do some building or testing process.
+	
+	-- Run some build process.
 	| or $ map (gotArg args) 
-		[ ArgDoNightly
+		[ ArgDoTotal
 		, ArgDoGhcUnpack,  ArgDoGhcBuild,  ArgDoGhcLibs
 		, ArgDoRepaUnpack, ArgDoRepaBuild, ArgDoRepaTest]
-	= do	
-		let tmpDir = fromMaybe 
-				(error "You must specify --scratch-dir with --repa-unpack, --repa-build or --repa-test.")
-				(getArg args ArgScratchDir)
 
+	= do	-- All the build commands require a scratch dir.
+		let tmpDir = fromMaybe 
+			(error "You must specify --scratch with this command.")
+			(getArg args ArgScratchDir)
+
+		tmpDir `seq` return ()
+
+		-- Load up cmd line args into our config structure.
 		config	<- slurpConfig args tmpDir
 		let buildConfig
 			= BuildConfig
 			{ buildConfigLogSystem	= if gotArg args ArgVerbose
-				 			then Just stdout
+			 				then Just stdout
 							else Nothing }
-
-		_	<- runBuildPrintWithConfig buildConfig (nightly config)
-		return ()
+							
+		-- Decide if we're doing a daily, or one-shot build.
+		if gotArg args ArgDaily
+		 then	mainDaily args config buildConfig
+		 else	mainBuild args config buildConfig
 
 	| otherwise
 	= usageError args "Nothing to do...\n"
 
-
--- | Slurp configuration information from the command line arguments.
-slurpConfig :: Args BuildArg -> FilePath -> IO Config
-slurpConfig args scratchDir
- = do 	let Just iterations	= getArg args ArgTestIterations
-	
-	-- canonicalize all the paths we were given.
-	withScratchDir	<- canonicalizePath scratchDir
-	
-	withGhc		<- maybe 
-				(return "ghc")
-				(\dir -> canonicalizePath $ dir ++ "/inplace/bin/ghc-stage2")
-				(getArg args ArgWithGhcBuild)
-				
-	withGhcPkg	<- maybe
-				(return "ghc-pkg")
-				(\dir -> canonicalizePath $ dir ++ "/inplace/bin/ghc-pkg")
-				(getArg args ArgWithGhcBuild)
-
-	withGhcSnapshot	<- if gotArg args ArgDoGhcUnpack
-			     then maybe (return Nothing)
-					(liftM Just . canonicalizePath)
-					(getArg args ArgDoGhcUnpack)
-					
-			     else maybe	(return Nothing)
-					(liftM Just . canonicalizePath)
-					(getArg args ArgWithGhcSnapshot)
-	
-    	return $ Config
-		{ configVerbose		= gotArg args ArgVerbose
-		, configScratchDir	= withScratchDir
-		, configWithGhcBuild	= getArg args ArgWithGhcBuild
-		, configWithGhc 	= withGhc
-		, configWithGhcPkg	= withGhcPkg
-		, configWithGhcSnapshot	= withGhcSnapshot
-
-		-- What stages to run.
-		-- If --nightly is set then do them all.
-		, configDoGhcUnpack	= gotArg args ArgDoGhcUnpack  || gotArg args ArgDoNightly
-		, configDoGhcBuild	= gotArg args ArgDoGhcBuild   || gotArg args ArgDoNightly
-		, configDoGhcLibs	= gotArg args ArgDoGhcLibs    || gotArg args ArgDoNightly
-		, configDoRepaUnpack	= gotArg args ArgDoRepaUnpack || gotArg args ArgDoNightly
-		, configDoRepaBuild	= gotArg args ArgDoRepaBuild  || gotArg args ArgDoNightly
-		, configDoRepaTest	= gotArg args ArgDoRepaTest   || gotArg args ArgDoNightly
-
-		-- Testing config.
-		, configIterations	= iterations 
-		, configWriteResults	= getArg args ArgWriteResults
-		, configAgainstResults	= getArg args ArgAgainstResults
-
-		-- TODO: check we have both args
-		, configMailFromTo	= let result	
-						| Just from	<- getArg args ArgMailFrom
-						, Just to	<- getArg args ArgMailTo
-						= Just (from, to)
-							
-						| otherwise
-						= Nothing
-				  		in	result
-		}
+-- | Run the build every day.
+mainDaily :: Args BuildArg -> Config -> BuildConfig -> IO ()
+mainDaily _args _config _buildConfig
+ = do	putStrLn "Fucker\n"
+	return ()
 
 
--- | The nightly build.
+-- | Run a single-shot build.
+mainBuild :: Args BuildArg -> Config -> BuildConfig -> IO ()
+mainBuild _args config buildConfig
+ = do	_	<- runBuildPrintWithConfig buildConfig (runTotal config)
+	return ()
+
+
+-- | The total build.
 --   This only runs the stages set in the config.
-nightly :: Config -> Build ()
-nightly config
+runTotal :: Config -> Build ()
+runTotal config
  = do	outLine
 	outLn "Repa BuildBot\n"
 	

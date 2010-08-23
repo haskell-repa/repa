@@ -12,8 +12,11 @@ data BuildArg
 	| ArgVerbose
 	| ArgScratchDir
 
+	-- Run the process every day
+	| ArgDaily
+
 	-- Recipies
-	| ArgDoNightly
+	| ArgDoTotal
 
 	-- GHC building
 	| ArgWithGhcSnapshot
@@ -53,23 +56,23 @@ buildArgs
 		, argData	= Nothing
 		, argDesc	= "Verbose logging of build commands." }
 
-	, Arg	{ argIndex	= ArgScratchDir
+	, Arg	{ argIndex	= ArgDoDump
 		, argAbbr	= Nothing
-		, argName	= Just "scratch-dir"
-		, argData	= argDataOptional "dir" ArgtypeString
-		, argDesc	= "Scratch dir to do the build in." }
-
-	, Arg	{ argIndex	= ArgDoNightly
-		, argAbbr	= Nothing
-		, argName	= Just "nightly"
-		, argData	= Nothing
-		, argDesc	= "Run the entire nightly build." }
-
-	, Arg	{ argIndex	= ArgWithGhcSnapshot
-		, argAbbr	= Nothing
-		, argName	= Just "with-ghc-snapshot"
+		, argName	= Just "dump"
 		, argData	= argDataOptional "file" ArgtypeString
-		, argDesc	= "Use this GHC snapshot, something like ghc-head-DATE.tgz" }
+		, argDesc	= "Dump a test results file in human readable format." }
+
+	, Arg	{ argIndex	= ArgDoCompare 
+		, argAbbr	= Nothing
+		, argName	= Just "compare"
+		, argData	= Nothing
+		, argDesc	= "Compare two test results files." }
+
+	, Arg	{ argIndex	= ArgDoTotal
+		, argAbbr	= Nothing
+		, argName	= Just "total"
+		, argData	= Nothing
+		, argDesc	= "Run the total build. All ghc and repa stages." }
 
 	, Arg	{ argIndex	= ArgDoGhcUnpack
 		, argAbbr	= Nothing
@@ -89,12 +92,6 @@ buildArgs
 		, argData	= Nothing
 		, argDesc	= "Download and install base libraries into a GHC build." }
 
-	, Arg	{ argIndex	= ArgWithGhcBuild
-		, argAbbr	= Nothing
-		, argName	= Just "with-ghc-build"
-		, argData	= argDataOptional "dir" ArgtypeString
-		, argDesc	= "Use this existing GHC build." }
-
 	, Arg	{ argIndex	= ArgDoRepaUnpack
 		, argAbbr	= Nothing
 		, argName	= Just "repa-unpack"
@@ -113,17 +110,41 @@ buildArgs
 		, argData	= Nothing
 		, argDesc	= "Run Repa regression tests." }
 
-	, Arg	{ argIndex	= ArgDoDump
+	, Arg	{ argIndex	= ArgDaily
 		, argAbbr	= Nothing
-		, argName	= Just "dump"
-		, argData	= argDataOptional "file" ArgtypeString
-		, argDesc	= "Dump a results file in human readable format." }
+		, argName	= Just "daily"
+		, argData	= argDataOptional "time" ArgtypeString
+		, argDesc	= "Run the given build commands every day at this time. fmt: HH:MM:SS" }
 
-	, Arg	{ argIndex	= ArgDoCompare 
+	, Arg	{ argIndex	= ArgScratchDir
 		, argAbbr	= Nothing
-		, argName	= Just "compare"
-		, argData	= Nothing
-		, argDesc	= "Compare two results files." }
+		, argName	= Just "scratch"
+		, argData	= argDataOptional "dir" ArgtypeString
+		, argDesc	= "Scratch dir to do the build in." }
+
+	, Arg	{ argIndex	= ArgWithGhcSnapshot
+		, argAbbr	= Nothing
+		, argName	= Just "with-ghc-snapshot"
+		, argData	= argDataOptional "file" ArgtypeString
+		, argDesc	= "Use this GHC snapshot, something like ghc-head-DATE.tgz" }
+
+	, Arg	{ argIndex	= ArgWithGhcBuild
+		, argAbbr	= Nothing
+		, argName	= Just "with-ghc-build"
+		, argData	= argDataOptional "dir" ArgtypeString
+		, argDesc	= "Use this existing GHC build." }
+
+	, Arg	{ argIndex	= ArgMailFrom
+		, argAbbr	= Nothing
+		, argName	= Just "mailfrom"
+		, argData	= argDataOptional "address" ArgtypeString
+		, argDesc	= "(opt. for repa-test mode) Use \"msmtp\" to mail results from this address." }
+
+	, Arg	{ argIndex	= ArgMailTo
+		, argAbbr	= Nothing
+		, argName	= Just "mailto"
+		, argData	= argDataOptional "address" ArgtypeString
+		, argDesc	= "(opt. for repa-test mode) ...to this address." }	
 
 	, Arg	{ argIndex	= ArgTestIterations
 		, argAbbr	= Just 'i'
@@ -143,17 +164,6 @@ buildArgs
 		, argData	= argDataOptional "file" ArgtypeString
 		, argDesc	= "(opt. for repa-test mode) Print running comparison against results in this file." }
 		
-	, Arg	{ argIndex	= ArgMailFrom
-		, argAbbr	= Nothing
-		, argName	= Just "mailfrom"
-		, argData	= argDataOptional "address" ArgtypeString
-		, argDesc	= "(opt. for repa-test mode) Mail results from this address." }
-
-	, Arg	{ argIndex	= ArgMailTo
-		, argAbbr	= Nothing
-		, argName	= Just "mailto"
-		, argData	= argDataOptional "address" ArgtypeString
-		, argDesc	= "(opt. for repa-test mode) ...to this address." }	
 	]
 	
 	

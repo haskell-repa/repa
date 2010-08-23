@@ -15,6 +15,7 @@ import Control.Monad
 
 -- Unpack -----------------------------------------------------------------------------------------
 -- | Download the Repa package from code.haskell.org,
+repaUnpack :: Config -> Build ()
 repaUnpack config
  = do	outCheckFalseOk "* Checking build directory is empty"
 	 $ HasDir $ (configScratchDir config) ++ "/repa-head"
@@ -37,6 +38,7 @@ repaUnpack config
 
 -- Building ---------------------------------------------------------------------------------------	
 -- | Build the packages and register then with the given compiler.
+repaBuild :: Config -> Build ()
 repaBuild config
  = inDir (configScratchDir config)
  $ inDir "repa-head"
@@ -51,6 +53,7 @@ repaBuild config
 	repaBuildPackage False config "repa-examples"
 
 
+repaBuildPackage :: Bool -> Config -> FilePath -> Build ()
 repaBuildPackage install config dirPackage
  = inDir dirPackage
  $ do	outLine
