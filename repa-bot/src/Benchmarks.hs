@@ -13,9 +13,9 @@ benchmarks config
 	[ let	mmult 	= "repa-examples/dist/build/repa-mmult/repa-mmult"
 	  in	Benchmark
 			"mmult"
-			(test $ HasExecutable mmult)
+			(return ())
 			(systemWithTimings' $ mmult ++ " -random 1024 1024 -random 1024 1024 +RTS -N4 -qg")
-			(return True)
+			(return ())
 	
 	-- laplace
 	, let	laplace = "repa-examples/dist/build/repa-laplace/repa-laplace"
@@ -24,14 +24,13 @@ benchmarks config
 
 	  in  	Benchmark
 		 	"laplace"
-			(do	makeDirIfNeeded "output"
+			(do	ensureDir "output"
 				check $ HasExecutable laplace
 				whenM (test $ HasFile inputgz)
-				 $ system $ "gzip -d " ++ inputgz
-				test $ HasFile input)								
+				 $ qssystem $ "gzip -d " ++ inputgz)
 
 			(systemWithTimings' $ laplace ++ " 1000 " ++ input ++ " output/laplace.bmp +RTS -N4 -qg")
-			(return True)
+			(return ())
 
 	-- fft2d-highpass
 	, let	fft2d	= "repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
@@ -40,23 +39,21 @@ benchmarks config
 		
 	  in	Benchmark 
 			"fft2d-highpass"
-			(do	makeDirIfNeeded "output"
+			(do	ensureDir "output"
 				check $ HasExecutable fft2d
 				whenM (test $ HasFile inputgz)
-				 $ system $ "gzip -d " ++ inputgz
-				test $ HasFile input)
+				 $ qssystem $ "gzip -d " ++ inputgz)
 
 			(systemWithTimings' $ fft2d ++ " 1 " ++ input ++ " output/fft2d.bmp +RTS -N4 -qg")
-			(return True)
+			(return ())
 
 	-- fft3d-highpass
 	, let	fft3d	= "repa-examples/dist/build/repa-fft3d-highpass/repa-fft3d-highpass"
 	  in	Benchmark
 			"fft3d-highpass"
-			(do	makeDirIfNeeded "output/fft3d"
-				test $ HasExecutable fft3d)
+			(ensureDir "output/fft3d")
 			(systemWithTimings' $ fft3d ++ " 128 " ++ " output/fft3d/slice +RTS -N4 -qg")
-			(return True)			
+			(return ())			
 	]
 
 
@@ -65,7 +62,7 @@ systemWithTimings :: Bool -> String -> Build (Maybe Timing)
 systemWithTimings verbose cmd
  = do	when verbose
 	 $ outLn $ "\n    " ++ cmd
-	result	<- systemWithStdout cmd
+	result	<- qssystemOut cmd
 	return	$ Just $ parseTimings result
 
 -- | Parse kernel timings from a repa example program.

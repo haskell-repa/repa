@@ -30,7 +30,7 @@ repaUnpack config
 	 $ do	clobberDir "repa-head"
 		
 		outLn  "* Getting Darcs Package"
-		system "darcs get http://code.haskell.org/repa/repa-head"
+		ssystem "darcs get http://code.haskell.org/repa/repa-head"
 	
 
 
@@ -56,16 +56,16 @@ repaBuildPackage install config dirPackage
  = inDir dirPackage
  $ do	outLine
 
-	system	"runghc Setup.hs clean"
-	system	$ "runghc Setup.hs configure"
+	ssystem	$ "runghc Setup.hs clean"
+	ssystem	$ "runghc Setup.hs configure"
 		++ " --user "
 		++ " --with-compiler=" ++ configWithGhc config
 		++ " --with-hc-pkg="   ++ configWithGhcPkg config
 		
-	system	"runghc Setup.hs build"
+	ssystem	"runghc Setup.hs build"
 
 	when install
-	 $ system	"runghc Setup.hs install"
+	 $ ssystem "runghc Setup.hs install"
 
 	outBlank
 	
@@ -123,9 +123,16 @@ repaTest config env
 
 	-- Write results to a file if requested.	
 	maybe 	(return ())
-		(\fileName -> do
-			outLn $ "  - Writing results to " ++ fileName
-			io $ writeFile fileName $ show buildResults)
+		(\(fileName, shouldStamp) -> do
+			stamp	<- if shouldStamp
+				 	then io $ getStampyTime
+					else return ""
+					
+			
+			let fileName'	= fileName ++ stamp
+			
+			outLn $ "  - Writing results to " ++ fileName'
+			io $ writeFile fileName' $ show buildResults)
 		(configWriteResults config)
 	
 	-- Mail results to recipient if requested.
@@ -133,9 +140,9 @@ repaTest config env
 	maybe 	(return ())
 		(\(from, to) -> do
 			outLn $ "  - Mailing results to " ++ to 
-			mail	<- createMailWithCurrentTime from to "Repa build"
+			mail	<- createMailWithCurrentTime from to "[nightly] Repa Performance Test Succeeded"
 				$ render $ vcat
-				[ text "Repa Nightly Build"
+				[ text "Repa Performance Test Succeeded"
 				, blank
 				, ppr env
 				, blank

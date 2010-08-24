@@ -38,6 +38,7 @@ data BuildArg
 	| ArgDoDump
 	| ArgDoCompare
 	| ArgWriteResults
+	| ArgWriteResultsStamped
 	| ArgAgainstResults
 	| ArgMailFrom 
 	| ArgMailTo
@@ -158,7 +159,7 @@ buildArgs
 		, argAbbr	= Nothing
 		, argName	= Just "mailto"
 		, argData	= argDataOptional "address" ArgtypeString
-		, argDesc	= "(opt. for repa-test mode) ...to this address." }	
+		, argDesc	= "(opt. for repa-test mode)  ... to this address." }	
 
 	, Arg	{ argIndex	= ArgTestIterations
 		, argAbbr	= Just 'i'
@@ -171,6 +172,12 @@ buildArgs
 		, argName	= Just "write"
 		, argData	= argDataOptional "file" ArgtypeString
 		, argDesc	= "(opt. for repa-test mode) Write results to this file." }
+
+	, Arg	{ argIndex	= ArgWriteResultsStamped
+		, argAbbr	= Just 's'
+		, argName	= Just "write-stamped"
+		, argData	= argDataOptional "file" ArgtypeString
+		, argDesc	= "(opt. for repa-test mode)  ... appending a time stamp to the name." }
 		
 	, Arg	{ argIndex	= ArgAgainstResults
 		, argAbbr	= Just 'a'

@@ -16,11 +16,11 @@ ghcUnpack config
 	let Just snapshot = configWithGhcSnapshot config
 
 	outLn $ "  - Unpacking snapshot " ++ snapshot
-	system $ "tar zxf " ++ snapshot
+	ssystem $ "tar zxf " ++ snapshot
 	
 	outLn $ "  - Updating snapshot"
 	inDir "ghc-head"
-	 $ system "./darcs-all pull -av"
+	 $ ssystem "./darcs-all pull -av"
 	
 
 ghcBuild :: Config -> Build ()
@@ -29,15 +29,16 @@ ghcBuild config
  $ inDir "ghc-head"
  $ do	outLn "* Building GHC"
 	
-	system $ "perl boot"
-	system $ "./configure"
-	system $ "make"
-	
+	ssystem "perl boot"
+	ssystem "./configure"
+	ssystem "make"
+			
 	inDir "inplace/bin"
-	 $ system $ "ln -s ghc-stage2 ghc"
+	 $ ssystem $ "ln -s ghc-stage2 ghc"
 	
 	outBlank
 	outBlank
+
 
 ghcLibs :: Config -> Build ()
 ghcLibs config
@@ -50,11 +51,11 @@ ghcLibs config
 			++ " --with-hc-pkg="   ++ configWithGhcPkg config
 
 	outLn " - Updating cabal package database"
-	systemNull $ "cabal update"
+	qssystem $ "cabal update"
 		
 	let cabalInstall pkg
-		= do	outLn   $ "  - Building " ++ pkg
-			system	$ cabal ++ " install " ++ pkg
+		= do	outLn    $ "  - Building " ++ pkg
+			qssystem $ cabal ++ " install " ++ pkg
 			outBlank
 		
 	mapM_ cabalInstall basePackages

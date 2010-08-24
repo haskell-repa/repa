@@ -19,6 +19,7 @@ import Config
 import BuildRepa
 import BuildGhc
 import Control.Monad
+import Control.Monad.Error.Class
 import System.Console.ParseArgs	hiding (args)
 import System.IO
 import Data.Maybe
@@ -27,6 +28,7 @@ main :: IO ()
 main 
  = do	args	<- parseArgsIO ArgsTrailing buildArgs
 	mainWithArgs args
+
 
 -- | Decide what to do
 mainWithArgs :: Args BuildArg -> IO ()
@@ -113,7 +115,7 @@ mainDaily args config buildConfig
 			[ ("build"
 			  , Daily buildUTC
 			  , whenModifier
-			  , runTotal config) ]
+			  , runTotalCatch config) ]
 	
 	-- Run the loop.
 	-- NOTE: We need to seq on buildUTC incase the string isn't going to parse.
@@ -131,7 +133,37 @@ mainBuild _args config buildConfig
 	return ()
 
 
--- | The total build.
+-- | A wrapper for the build that sends mail if it fails.
+runTotalCatch :: Config -> Build ()
+runTotalCatch config
+ = do	catchError (runTotal config)
+ 	 $ \err -> do
+		outBlank
+		outLine
+		outLn "* Build Failed"
+		outBlank
+		outLn $ render $ ppr err
+		maybe 	(return ())
+			(\(from, to) -> do
+				outBlank
+				outLn $ "* Mailing result to " ++ to 
+
+				mail	<- createMailWithCurrentTime from to "[nightly] Repa Performance Test FAILED :-("
+					$ render $ vcat
+					[ text "Repa Performance Build Failed :-("
+					, blank
+					, ppr err
+					, blank ]
+
+				sendMailWithMailer mail defaultMailer				
+				return ())
+			(configMailFromTo config)
+
+	outLn "* Build finished"
+	outLINE
+
+			
+-- | The total build. 
 --   This only runs the stages set in the config.
 runTotal :: Config -> Build ()
 runTotal config
@@ -177,6 +209,5 @@ runTotal config
 	when (configDoRepaTest configNew)
 	 $ repaTest configNew env
 
-	outLn "* Build finished"
-	outLINE
+
 	

@@ -40,7 +40,7 @@ data Config
 	, configAgainstResults	:: Maybe FilePath 
 
 	-- What do with the results.
-	, configWriteResults	:: Maybe FilePath
+	, configWriteResults	:: Maybe (FilePath, Bool)
 	, configMailFromTo	:: Maybe (String, String) }
 	deriving Show
 
@@ -110,7 +110,17 @@ slurpConfig args scratchDir
 
 		-- Testing config.
 		, configIterations	= iterations 
-		, configWriteResults	= getArg args ArgWriteResults
+		, configWriteResults	= let result
+						| Just name	<- getArg args ArgWriteResultsStamped
+						= Just (name, True)
+
+						| Just name	<- getArg args ArgWriteResults
+						= Just (name, False)
+						
+						| otherwise
+						= Nothing
+					  in  result
+						
 		, configAgainstResults	= getArg args ArgAgainstResults
 
 		-- TODO: check we have both args
