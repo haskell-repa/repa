@@ -16,19 +16,6 @@ Description:
 Synopsis:
         Examples using the Repa array library.
 
-
-Executable repa-benchmark
-  Build-depends: 
-        base                 == 4.*,
-        unix                 == 2.4.*,
-        process              == 1.0.*,
-        directory            == 1.0.*
-
-  Main-is: Benchmark/src/Main.hs
-  hs-source-dirs: Benchmark/src lib .
-  ghc-options: -O
-
-
 Executable repa-fft2d
   Build-depends: 
         base                 == 4.*,
