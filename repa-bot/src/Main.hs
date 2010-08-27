@@ -7,10 +7,6 @@
 --	      Make a log file for each of the stages, and post to web site along with results file.
 --	      We might need to write a "tee" function in Haskell
 --
---	TODO: Rewrite system cmds without using shell hacks.
---
---	TODO: Timestamp "current" build results file. Rename to results-DATE.
---
 --	TODO: Set number of threads to test with for Repa on cmd line.
 --
 import BuildBox

@@ -11,8 +11,12 @@ import BuildBox
 ghcUnpack :: Config -> Build ()
 ghcUnpack config
  = inDir (configScratchDir config)
- $ do	outLn "* Unpacking GHC"
+ $ do	
+	outLn "* Cleaning house"
 	clobberDir "ghc-head"
+	
+	outLn "* Unpacking GHC"
+
 	let Just snapshot = configWithGhcSnapshot config
 
 	outLn $ "  - Unpacking snapshot " ++ snapshot
@@ -32,7 +36,7 @@ ghcBuild config
 	ssystem "perl boot"
 	ssystem "./configure"
 	ssystem "make"
-			
+	 
 	inDir "inplace/bin"
 	 $ ssystem $ "ln -s ghc-stage2 ghc"
 	

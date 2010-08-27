@@ -131,7 +131,7 @@ repaTest config env
 			
 			let fileName'	= fileName ++ stamp
 			
-			outLn $ "  - Writing results to " ++ fileName'
+			outLn $ "* Writing results to " ++ fileName'
 			io $ writeFile fileName' $ show buildResults)
 		(configWriteResults config)
 	
@@ -139,7 +139,7 @@ repaTest config env
 	let spaceHack = text . unlines . map (\l -> " " ++ l) . lines . render
 	maybe 	(return ())
 		(\(from, to) -> do
-			outLn $ "  - Mailing results to " ++ to 
+			outLn $ "* Mailing results to " ++ to 
 			mail	<- createMailWithCurrentTime from to "[nightly] Repa Performance Test Succeeded"
 				$ render $ vcat
 				[ text "Repa Performance Test Succeeded"
