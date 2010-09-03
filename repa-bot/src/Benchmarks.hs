@@ -38,7 +38,7 @@ benchmarksRepa config
 		inputgz	= input ++ ".gz"
 		
 	  in	Benchmark 
-			"repa-fft2d-highpass"
+			"repa-fft2d"
 			(do	ensureDir "output"
 				check $ HasExecutable fft2d
 				whenM (test $ HasFile inputgz)
@@ -50,7 +50,7 @@ benchmarksRepa config
 	-- fft3d-highpass
 	, let	fft3d	= "repa-examples/dist/build/repa-fft3d-highpass/repa-fft3d-highpass"
 	  in	Benchmark
-			"repa-fft3d-highpass"
+			"repa-fft3d"
 			(ensureDir "output/fft3d")
 			(systemWithTimings' $ fft3d ++ " 128 " ++ " output/fft3d/slice +RTS -N4 -qg")
 			(return ())			
