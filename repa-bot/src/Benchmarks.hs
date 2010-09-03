@@ -12,7 +12,7 @@ benchmarksRepa config
 	-- mmult
 	[ let	mmult 	= "repa-examples/dist/build/repa-mmult/repa-mmult"
 	  in	Benchmark
-			"mmult"
+			"repa-mmult"
 			(return ())
 			(systemWithTimings' $ mmult ++ " -random 1024 1024 -random 1024 1024 +RTS -N4 -qg")
 			(return ())
@@ -23,7 +23,7 @@ benchmarksRepa config
 		inputgz	= input ++ ".gz"
 
 	  in  	Benchmark
-		 	"laplace"
+		 	"repa-laplace"
 			(do	ensureDir "output"
 				check $ HasExecutable laplace
 				whenM (test $ HasFile inputgz)
@@ -38,7 +38,7 @@ benchmarksRepa config
 		inputgz	= input ++ ".gz"
 		
 	  in	Benchmark 
-			"fft2d-highpass"
+			"repa-fft2d-highpass"
 			(do	ensureDir "output"
 				check $ HasExecutable fft2d
 				whenM (test $ HasFile inputgz)
@@ -50,7 +50,7 @@ benchmarksRepa config
 	-- fft3d-highpass
 	, let	fft3d	= "repa-examples/dist/build/repa-fft3d-highpass/repa-fft3d-highpass"
 	  in	Benchmark
-			"fft3d-highpass"
+			"repa-fft3d-highpass"
 			(ensureDir "output/fft3d")
 			(systemWithTimings' $ fft3d ++ " 128 " ++ " output/fft3d/slice +RTS -N4 -qg")
 			(return ())			
@@ -65,7 +65,7 @@ benchmarksDPH config
 	-- quickhull
 	[ let	quickhull = "dph-examples/dist/build/dph-quickhull/dph-quickhull"
 	  in	Benchmark
-			"quickhull"
+			"dph-quickhull"
 			(return ())
 			(systemWithTimings' $ quickhull ++ " 1000000 -N4")
 			(return ())
