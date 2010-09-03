@@ -14,6 +14,8 @@ import Args
 import Config
 import BuildRepa
 import BuildGhc
+import BuildDPH
+import BuildTest
 import Control.Monad
 import Control.Monad.Error.Class
 import System.Console.ParseArgs	hiding (args)
@@ -58,7 +60,8 @@ mainWithArgs args
 	| or $ map (gotArg args) 
 		[ ArgDoTotal
 		, ArgDoGhcUnpack,  ArgDoGhcBuild,  ArgDoGhcLibs
-		, ArgDoRepaUnpack, ArgDoRepaBuild, ArgDoRepaTest]
+		, ArgDoRepaUnpack, ArgDoRepaBuild, ArgDoDPHBuild
+		, ArgDoTestRepa,   ArgDoTestDPH]
 
 	= do	-- All the build commands require a scratch dir.
 		let tmpDir = fromMaybe 
@@ -200,10 +203,14 @@ runTotal config
 	-- Build Repa packages and register then with the current compiler.
 	when (configDoRepaBuild configNew)
 	 $ repaBuild configNew
+
+	-- Build DPH examples package.
+	when (configDoDPHBuild configNew)
+	 $ dphBuild configNew
 		
-	-- Test Repa and write results to file, or mail them to the list.
-	when (configDoRepaTest configNew)
-	 $ repaTest configNew env
+	-- Run benchmarks and write results to file, or mail them to the list.
+	when (configDoTestRepa configNew || configDoTestDPH configNew)
+	 $ buildTest configNew env
 
 
 	

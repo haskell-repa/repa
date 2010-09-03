@@ -5,8 +5,8 @@ import BuildBox
 import Control.Monad
 
 -- | Repa benchmark configuration.
-benchmarks :: Config -> [Benchmark]
-benchmarks config
+benchmarksRepa :: Config -> [Benchmark]
+benchmarksRepa config
  = let	systemWithTimings' = systemWithTimings (configVerbose config)
    in	
 	-- mmult
@@ -57,6 +57,21 @@ benchmarks config
 	]
 
 
+-- | DPH benchmark configuation.
+benchmarksDPH :: Config -> [Benchmark]
+benchmarksDPH config
+ = let	systemWithTimings' = systemWithTimings (configVerbose config)
+   in	
+	-- quickhull
+	[ let	quickhull = "dph-examples/dist/build/dph-quickhull/dph-quickhull"
+	  in	Benchmark
+			"quickhull"
+			(return ())
+			(systemWithTimings' $ quickhull ++ " 1000000 -N4")
+			(return ())
+	]
+
+
 -- | Run a system command, expecing it to print the kernel timings to stdout.
 systemWithTimings :: Bool -> String -> Build (Maybe Timing)
 systemWithTimings verbose cmd
@@ -64,6 +79,7 @@ systemWithTimings verbose cmd
 	 $ outLn $ "\n    " ++ cmd
 	result	<- qssystemOut cmd
 	return	$ Just $ parseTimings result
+
 
 -- | Parse kernel timings from a repa example program.
 --   Format is  elapsedTime/systemTime  in milliseconds.

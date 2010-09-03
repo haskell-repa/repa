@@ -31,7 +31,12 @@ data BuildArg
 	| ArgDoRepaUnpack
 	| ArgDoRepaBuild
 
-	| ArgDoRepaTest
+	-- DPH building
+	| ArgDoDPHBuild
+
+	-- Testing
+	| ArgDoTestRepa
+	| ArgDoTestDPH
 	| ArgTestIterations
 
 	-- Working with results files
@@ -107,11 +112,23 @@ buildArgs
 		, argData	= Nothing
 		, argDesc	= "Build and register the Repa packages with a GHC build." }
 
-	, Arg	{ argIndex	= ArgDoRepaTest
+	, Arg	{ argIndex	= ArgDoDPHBuild
 		, argAbbr	= Nothing
-		, argName	= Just "repa-test"
+		, argName	= Just "dph-build"
+		, argData	= Nothing
+		, argDesc	= "Build the DPH examples package." }
+
+	, Arg	{ argIndex	= ArgDoTestRepa
+		, argAbbr	= Nothing
+		, argName	= Just "test-repa"
 		, argData	= Nothing
 		, argDesc	= "Run Repa regression tests." }
+
+	, Arg	{ argIndex	= ArgDoTestDPH
+		, argAbbr	= Nothing
+		, argName	= Just "test-dph"
+		, argData	= Nothing
+		, argDesc	= "Run DPH regression tests." }
 
 	, Arg	{ argIndex	= ArgDaily
 		, argAbbr	= Nothing

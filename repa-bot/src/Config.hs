@@ -33,7 +33,11 @@ data Config
 	, configDoGhcLibs	:: Bool
 	, configDoRepaUnpack	:: Bool
 	, configDoRepaBuild	:: Bool
-	, configDoRepaTest	:: Bool 
+	, configDoDPHBuild	:: Bool
+
+	-- Test stages
+	, configDoTestRepa	:: Bool 
+	, configDoTestDPH	:: Bool
 
 	-- Testing config.
 	, configIterations	:: Int
@@ -106,7 +110,11 @@ slurpConfig args scratchDir
 		, configDoGhcLibs	= gotArg args ArgDoGhcLibs    || gotArg args ArgDoTotal
 		, configDoRepaUnpack	= gotArg args ArgDoRepaUnpack || gotArg args ArgDoTotal
 		, configDoRepaBuild	= gotArg args ArgDoRepaBuild  || gotArg args ArgDoTotal
-		, configDoRepaTest	= gotArg args ArgDoRepaTest   || gotArg args ArgDoTotal
+		, configDoDPHBuild	= gotArg args ArgDoDPHBuild   || gotArg args ArgDoTotal
+
+		-- Testing stages
+		, configDoTestRepa	= gotArg args ArgDoTestRepa   || gotArg args ArgDoTotal
+		, configDoTestDPH	= gotArg args ArgDoTestDPH    || gotArg args ArgDoTotal
 
 		-- Testing config.
 		, configIterations	= iterations 
