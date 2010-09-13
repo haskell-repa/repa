@@ -23,7 +23,7 @@ Executable repa-bot
         directory           == 1.0.*,
         time                == 1.1.*,
         parseargs           == 0.1.*,
-        buildbox            == 1.0.1.*,
+        buildbox            == 1.0.*,
         mtl                 == 1.1.*
 
   Main-is: Main.hs
