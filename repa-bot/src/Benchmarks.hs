@@ -3,6 +3,7 @@ module Benchmarks where
 import Config
 import BuildBox	
 import Control.Monad
+import qualified BuildBox.Data.Log	as Log
 
 -- | Repa benchmark configuration.
 benchmarksRepa :: Config -> [Benchmark]
@@ -73,12 +74,18 @@ benchmarksDPH config
 
 
 -- | Run a system command, expecing it to print the kernel timings to stdout.
+--   We ignore whatever is printed to stderr.
 systemWithTimings :: Bool -> String -> Build (Maybe Timing)
 systemWithTimings verbose cmd
  = do	when verbose
 	 $ outLn $ "\n    " ++ cmd
-	result	<- qssystemOut cmd
-	return	$ Just $ parseTimings result
+
+	(code, logOut, logErr)
+		<- systemTeeLog False cmd Log.empty 
+
+	if code == ExitSuccess
+	 then	return	$ Just $ parseTimings (Log.toString logOut)
+	 else	throw   $ ErrorSystemCmdFailed cmd code logOut logErr
 
 
 -- | Parse kernel timings from a repa example program.
