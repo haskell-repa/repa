@@ -15,7 +15,7 @@ benchmarksRepa config
 	  in	Benchmark
 			"repa-mmult"
 			(return ())
-			(systemWithTimings' $ mmult ++ " -random 1024 1024 -random 1024 1024 +RTS -N4 -qg")
+			(systemWithTimings' $ mmult ++ " -random 1024 1024 -random 1024 1024 +RTS -N4")
 			(return ())
 	
 	-- laplace
