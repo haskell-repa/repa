@@ -34,7 +34,7 @@ mainWithArgs size prefixOut
 	let arrInit	= force 
 		$ fromFunction shape 
 			(\ix -> if isInCenteredCube center cubeSize ix 
-					then 1 :*: 0 else 0 :*: 0)
+					then (1, 0) else (0, 0))
 
 	arrInit `deepSeqArray` return ()
 

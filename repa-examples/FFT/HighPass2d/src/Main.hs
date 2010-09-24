@@ -55,7 +55,7 @@ mainWithArgs cutoff fileIn fileOut
 		
 
 transform cutoff arrReal
- = let	arrComplex	= force $ A.map (\r -> (fromIntegral r) :*: 0) arrReal
+ = let	arrComplex	= force $ A.map (\r -> (fromIntegral r, 0)) arrReal
 			
 	-- Do the 2d transform.
 	arrCentered	= center2d arrComplex

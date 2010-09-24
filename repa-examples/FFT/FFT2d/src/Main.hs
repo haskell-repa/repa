@@ -29,7 +29,7 @@ mainWithArgs fileIn clipMag fileMag filePhase
 	-- Load in the matrix.
 	arrReal		<- liftM (either (\e -> error $ show e) id)
 			$  readMatrixFromGreyscaleBMP fileIn
-	let arrComplex	= force $ A.map (\r -> r :*: 0) arrReal
+	let arrComplex	= force $ A.map (\r -> (r, 0)) arrReal
 	
 	-- Apply the centering transform so that the output has the zero
 	--	frequency in the middle of the image.
