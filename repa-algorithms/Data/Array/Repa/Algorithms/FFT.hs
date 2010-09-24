@@ -159,7 +159,7 @@ twiddle :: Double
 
 {-# INLINE twiddle #-}
 twiddle sign k' n'
- 	=  cos (2 * pi * k / n) :*: (sign * sin  (2 * pi * k / n))
+ 	=  (cos (2 * pi * k / n), sign * sin  (2 * pi * k / n))
 	where 	k	= fromIntegral k'
 		n	= fromIntegral n'
       

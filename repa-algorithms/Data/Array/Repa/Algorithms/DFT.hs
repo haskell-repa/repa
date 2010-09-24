@@ -42,7 +42,7 @@ idft 	:: forall sh
 
 idft v
  = let	_ :. len	= extent v
-	scale		= fromIntegral len :*: 0
+	scale		= (fromIntegral len, 0)
 	rofu		= calcInverseRootsOfUnity (extent v)
    in	force $ A.map (/ scale) $ dftWithRoots rofu v
 

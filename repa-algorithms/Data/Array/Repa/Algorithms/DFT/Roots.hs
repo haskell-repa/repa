@@ -19,8 +19,9 @@ calcRootsOfUnity sh@(_ :. n)
  = force $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
-    f (_ :. i) =      (cos  (2 * pi * (fromIntegral i) / len))
-		:*: (- sin  (2 * pi * (fromIntegral i) / len))
+    f (_ :. i) 
+	= ( cos  (2 * pi * (fromIntegral i) / len)
+	  , - sin  (2 * pi * (fromIntegral i) / len))
 
     len	= fromIntegral n
 
@@ -36,7 +37,8 @@ calcInverseRootsOfUnity sh@(_ :. n)
  = force $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
-    f (_ :. i) =      (cos  (2 * pi * (fromIntegral i) / len))
-		:*:   (sin  (2 * pi * (fromIntegral i) / len))
+    f (_ :. i) 
+	= ( cos  (2 * pi * (fromIntegral i) / len)
+	  , sin  (2 * pi * (fromIntegral i) / len))
 
     len	= fromIntegral n
