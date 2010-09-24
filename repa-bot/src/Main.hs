@@ -108,7 +108,7 @@ mainDaily args config buildConfig
 		| gotArg args ArgDailyNow 	= Just Immediate
 		| gotArg args ArgDailyTomorrow	= Just (WaitUntil mtmUTC)
 		| otherwise			= Nothing
-	
+
 	let schedule
 		= makeSchedule 
 			[ ("build"
@@ -128,7 +128,7 @@ mainDaily args config buildConfig
 mainBuild :: Args BuildArg -> Config -> BuildConfig -> IO ()
 mainBuild _args config buildConfig
  = do	_	<- runBuildPrintWithConfig buildConfig 
-			$ runTotal config
+			$ runTotalCatch config
 	return ()
 
 
