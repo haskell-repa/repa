@@ -79,9 +79,9 @@ import Data.Array.Repa.Shape
 import Data.Array.Repa.QuickCheck
 import qualified Data.Array.Repa.Shape	as S
 
-import "dph-prim-par" Data.Array.Parallel.Unlifted			(Elt)
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted		as U
-import qualified "dph-prim-seq" Data.Array.Parallel.Unlifted.Sequential	as USeq
+import "dph-prim-par" Data.Array.Parallel.Unlifted		(Elt)
+import qualified "dph-prim-par" Data.Array.Parallel.Unlifted	as U
+import qualified "dph-prim-seq" Data.Array.Parallel.Unlifted.Sequential.Vector	as USeq
 
 import Test.QuickCheck
 import Prelude				hiding (sum, map, zipWith, replicate)	
@@ -510,10 +510,10 @@ fold 	:: (Shape sh, Elt a)
 fold f x arr
  = x `seq` arr `deepSeqArray` 
    let	sh' :. n	= extent arr
-	elemFn i 	= USeq.foldU f x
-			$ USeq.mapU
+	elemFn i 	= USeq.fold f x
+			$ USeq.map
 				(\ix -> arr !: (i :. ix)) 
-				(USeq.enumFromToU 0 (n - 1))
+				(USeq.enumFromTo 0 (n - 1))
    in	Delayed sh' elemFn
 
 
@@ -526,9 +526,9 @@ foldAll :: (Shape sh, Elt a)
 	
 {-# INLINE foldAll #-}
 foldAll f x arr
-	= USeq.foldU f x
-	$ USeq.mapU ((arr !:) . (S.fromIndex (extent arr)))
-	$ USeq.enumFromToU
+	= USeq.fold f x
+	$ USeq.map ((arr !:) . (S.fromIndex (extent arr)))
+	$ USeq.enumFromTo
 		0
 		((S.size $ extent arr) - 1)
 
@@ -550,9 +550,9 @@ sumAll	:: (Shape sh, Elt a, Num a)
 
 {-# INLINE sumAll #-}
 sumAll arr
-	= USeq.foldU (+) 0
-	$ USeq.mapU ((arr !:) . (S.fromIndex (extent arr)))
-	$ USeq.enumFromToU
+	= USeq.fold (+) 0
+	$ USeq.map ((arr !:) . (S.fromIndex (extent arr)))
+	$ USeq.enumFromTo
 		0
 		((S.size $ extent arr) - 1)
 
