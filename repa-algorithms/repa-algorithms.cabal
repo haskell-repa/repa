@@ -34,7 +34,6 @@ Library
         -funfolding-use-threshold=30
         -funbox-strict-fields
         -fcpr-off
-        -fllvm
 
   Exposed-modules:
         Data.Array.Repa.Algorithms.Complex
