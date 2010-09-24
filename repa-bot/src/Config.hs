@@ -64,7 +64,7 @@ defaultMailer
 basePackages :: [String]
 basePackages
  = 	[ "bmp-1.1.1.1"
-	, "QuickCheck-2.1.1.1" ]
+	, "QuickCheck-2.3.0.2" ]
 
 
 -- Slurp ------------------------------------------------------------------------------------------
