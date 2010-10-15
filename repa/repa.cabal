@@ -27,7 +27,7 @@ Library
         base                 == 4.*,
         dph-prim-par         == 0.5.*,
         dph-prim-seq         == 0.5.*,
-        QuickCheck           == 2.3.*
+        QuickCheck           >= 2.3 && < 2.5
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
