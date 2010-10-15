@@ -3,7 +3,6 @@
 module Config 
 	( Config(..)
 	, defaultMailer
-	, basePackages
 	, slurpConfig)
 where
 import BuildBox
@@ -11,6 +10,7 @@ import Args
 import System.Console.ParseArgs	hiding (args)
 import System.Directory
 import Control.Monad
+import Data.Maybe
 
 
 -- Config -----------------------------------------------------------------------------------------
@@ -18,22 +18,26 @@ import Control.Monad
 data Config
 	= Config
 	{ configVerbose		:: Bool
-	, configScratchDir	:: String
 
-	-- GHC config
-	, configWithGhcBuild	:: Maybe FilePath
+	-- Building GHC and its libs
+	, configScratchDir	:: Maybe String
+	, configGhcUnpack	:: Maybe FilePath
+	, configGhcBuild	:: Maybe FilePath
+
+	-- Depending on the above options, these will get filled in with 
+	-- paths to the actual ghc and ghc-pkg binaries we should be using.
 	, configWithGhc		:: FilePath
 	, configWithGhcPkg	:: FilePath
 
-	, configWithGhcSnapshot	:: Maybe FilePath
-
-	-- Build stages
-	, configDoGhcUnpack	:: Bool
-	, configDoGhcBuild	:: Bool
-	, configDoGhcLibs	:: Bool
-	, configDoRepaUnpack	:: Bool
-	, configDoRepaBuild	:: Bool
-	, configDoDPHBuild	:: Bool
+	-- What libraries we should install into the GHC tree.
+	--   The libraries are installed in the order they appear on the command line.
+	--   syntax of args spec is like:
+	--     package:bmp-1.1.1.1       -- cabal install some package, downloading it off Hackage.
+	--     checkout:libs/QuickCheck  -- cabal configure ; build ; install a package from a local dir.
+	-- 
+	--   TODO: If we had a better options parser we wouldn't have to hack everything into the same arg.
+	-- 
+	, configLibs		:: Maybe String
 
 	-- Test stages
 	, configDoTestRepa	:: Bool 
@@ -59,62 +63,72 @@ defaultMailer
 	{ mailerPath	= "msmtp"
 	, mailerPort	= Just 587 }
 	
--- | These are non-repa packages we always want to download and install
---   into a fresh GHC build.
-basePackages :: [String]
-basePackages
- = 	[ "bmp-1.1.1.1"
-	, "QuickCheck-2.3.0.2" ]
-
 
 -- Slurp ------------------------------------------------------------------------------------------
 -- | Slurp configuration information from the command line arguments.
-slurpConfig :: Args BuildArg -> FilePath -> IO Config
-slurpConfig args scratchDir
+slurpConfig :: Args BuildArg -> IO Config
+slurpConfig args 
  = do 	let Just iterations	= getArg args ArgTestIterations
+
+	mScratchDir	<- maybe
+				(return Nothing)
+				(liftM Just . canonicalizePath)
+				(getArg args ArgScratchDir)	
 	
-	-- canonicalize all the paths we were given.
-	withScratchDir	<- canonicalizePath scratchDir
-	
+	-- If we've been given the --ghc-use flag then use that compiler first off.
+	-- Otherwise use whatever is in the PATH.
 	withGhc		<- maybe 
 				(return "ghc")
 				(\dir -> canonicalizePath $ dir ++ "/inplace/bin/ghc-stage2")
-				(getArg args ArgWithGhcBuild)
+				(getArg args ArgGhcUse)
 				
 	withGhcPkg	<- maybe
 				(return "ghc-pkg")
 				(\dir -> canonicalizePath $ dir ++ "/inplace/bin/ghc-pkg")
-				(getArg args ArgWithGhcBuild)
+				(getArg args ArgGhcUse)
 
-	withGhcSnapshot	<- if gotArg args ArgDoGhcUnpack
-			     then maybe (return Nothing)
-					(liftM Just . canonicalizePath)
-					(getArg args ArgDoGhcUnpack)
-					
-			     else maybe	(return Nothing)
-					(liftM Just . canonicalizePath)
-					(getArg args ArgWithGhcSnapshot)
+
+	-- If we're supposed to unpack a GHC snapshot tarball, 
+	-- 	then canonicalize its path.
+	let ghcUnpack'
+		| Just path	<- getArg args ArgGhcUnpack
+		= liftM Just $ canonicalizePath path
+		
+		| Just path	<- getArg args ArgGhcUnpackBuild
+		= liftM Just $ canonicalizePath path
+		
+		| otherwise
+		= return Nothing
+
+	ghcUnpack	<- ghcUnpack'
 	
+	-- If we're supposed to build a GHC, then determine where the build tree will be.
+	let ghcBuild'
+		| Just path	<- getArg args ArgGhcBuild
+		= liftM Just $ canonicalizePath path
+		
+		| Just _	<- (getArg args ArgGhcUnpackBuild) :: Maybe String
+		, scratchDir	<- fromMaybe (error "must specifiy --scratch with --ghc-unpack-build") mScratchDir
+		= return $ Just $ scratchDir ++ "/ghc-head"
+		
+		| otherwise
+		= return Nothing
+	
+	ghcBuild	<- ghcBuild'
+
+	-- Build the final condif
     	return $ Config
 		{ configVerbose		= gotArg args ArgVerbose
-		, configScratchDir	= withScratchDir
-		, configWithGhcBuild	= getArg args ArgWithGhcBuild
+		, configScratchDir	= mScratchDir
+		, configGhcUnpack	= ghcUnpack
+		, configGhcBuild	= ghcBuild
 		, configWithGhc 	= withGhc
 		, configWithGhcPkg	= withGhcPkg
-		, configWithGhcSnapshot	= withGhcSnapshot
-
-		-- What stages to run.
-		-- If --total is set then do them all.
-		, configDoGhcUnpack	= gotArg args ArgDoGhcUnpack  || gotArg args ArgDoTotal
-		, configDoGhcBuild	= gotArg args ArgDoGhcBuild   || gotArg args ArgDoTotal
-		, configDoGhcLibs	= gotArg args ArgDoGhcLibs    || gotArg args ArgDoTotal
-		, configDoRepaUnpack	= gotArg args ArgDoRepaUnpack || gotArg args ArgDoTotal
-		, configDoRepaBuild	= gotArg args ArgDoRepaBuild  || gotArg args ArgDoTotal
-		, configDoDPHBuild	= gotArg args ArgDoDPHBuild   || gotArg args ArgDoTotal
+		, configLibs		= getArg args ArgLibs
 
 		-- Testing stages
-		, configDoTestRepa	= gotArg args ArgDoTestRepa   || gotArg args ArgDoTotal
-		, configDoTestDPH	= gotArg args ArgDoTestDPH    || gotArg args ArgDoTotal
+		, configDoTestRepa	= gotArg args ArgDoTestRepa
+		, configDoTestDPH	= gotArg args ArgDoTestDPH
 
 		-- Testing config.
 		, configIterations	= iterations 

@@ -12,9 +12,8 @@
 import BuildBox
 import Args
 import Config
-import BuildRepa
 import BuildGhc
-import BuildDPH
+import BuildLibs
 import BuildTest
 import Control.Monad
 import Control.Monad.Error.Class
@@ -57,21 +56,13 @@ mainWithArgs args
 		
 	
 	-- Run some build process.
-	| or $ map (gotArg args) 
-		[ ArgDoTotal
-		, ArgDoGhcUnpack,  ArgDoGhcBuild,  ArgDoGhcLibs
-		, ArgDoRepaUnpack, ArgDoRepaBuild, ArgDoDPHBuild
-		, ArgDoTestRepa,   ArgDoTestDPH]
+	| (or $ map (gotArg args)
+		[ ArgGhcUnpack,  ArgGhcBuild,  ArgGhcUnpackBuild
+		, ArgLibs
+		, ArgDoTestRepa, ArgDoTestDPH])
 
-	= do	-- All the build commands require a scratch dir.
-		let tmpDir = fromMaybe 
-			(error "You must specify --scratch with this command.")
-			(getArg args ArgScratchDir)
-
-		tmpDir `seq` return ()
-
-		-- Load up cmd line args into our config structure.
-		config	<- slurpConfig args tmpDir
+	= do	-- Load up cmd line args into our config structure.
+		config	<- slurpConfig args
 		let buildConfig
 			= BuildConfig
 			{ buildConfigLogSystem	= if gotArg args ArgVerbose
@@ -179,35 +170,35 @@ runTotal config
 	outBlank
 	
 	-- Unpack GHC
-	when (configDoGhcUnpack config)
-	 $ ghcUnpack config
-	
+	let ghcUnpack'
+		| Just snapShot		<- configGhcUnpack config
+		, Just scratchDir	<- configScratchDir config
+		= ghcUnpack snapShot scratchDir
+		
+		| otherwise
+		= return ()
+		
+	ghcUnpack'
+			
 	-- If we've been told to build GHC, then use
 	-- 	the completed build as the default compiler.
-	configNew
-	  <- if configDoGhcBuild config
-	      then do ghcBuild config
-		      return config
-				{ configWithGhc	   = configScratchDir config ++ "/ghc-head/inplace/bin/ghc-stage2"
-				, configWithGhcPkg = configScratchDir config ++ "/ghc-head/inplace/bin/ghc-pkg" }
-	      else return config
+	let ghcBuild'
+		| Just buildPath	<- configGhcBuild config
+		= do	ghcBuild buildPath
+			return config
+				{ configWithGhc	   = buildPath ++ "/inplace/bin/ghc-stage2"
+				, configWithGhcPkg = buildPath ++ "/inplace/bin/ghc-pkg" }
 			
-	-- Use cabal to install base libs into a GHC build.
-	when (configDoGhcLibs configNew)
-	 $ ghcLibs configNew
-			
-	-- Download the latest Repa repo.
-	when (configDoRepaUnpack configNew)
-	 $ repaUnpack configNew
-	
-	-- Build Repa packages and register then with the current compiler.
-	when (configDoRepaBuild configNew)
-	 $ repaBuild configNew
-
-	-- Build DPH examples package.
-	when (configDoDPHBuild configNew)
-	 $ dphBuild configNew
+		| otherwise
+		= return config
 		
+	configNew	<- ghcBuild'
+	
+			
+	-- Install libraries into the GHC build.
+	when (isJust $ configLibs configNew)
+	 $ libsBuild configNew
+						
 	-- Run benchmarks and write results to file, or mail them to the list.
 	when (configDoTestRepa configNew || configDoTestDPH configNew)
 	 $ buildTest configNew env

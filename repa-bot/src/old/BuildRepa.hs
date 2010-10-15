@@ -7,6 +7,7 @@ where
 import Config
 import BuildBox
 import Control.Monad
+import Data.Maybe
 
 
 -- Unpack -----------------------------------------------------------------------------------------
@@ -22,8 +23,9 @@ repaUnpack config
 	outCheckOk "* Checking code.haskell.org web server is up"
 	 $ UrlGettable "http://code.haskell.org"
 	
+	let scratchDir	= fromMaybe ("repaUnpack: must specify --scratch") $ configScratchDir config
 	out "\n"
-	inDir (configScratchDir config)
+	inDir scratchDir
 	 $ do	clobberDir "repa-head"
 		
 		outLn  "* Getting Darcs Package"
@@ -35,7 +37,7 @@ repaUnpack config
 -- | Build the packages and register them with the given compiler.
 repaBuild :: Config -> Build ()
 repaBuild config
- = inDir (configScratchDir config)
+ = inDir (fromMaybe ("repaBuild: must specify --scratch") $ configScratchDir config)
  $ inDir "repa-head"
  $ do	outLn "* Building Packages"
 

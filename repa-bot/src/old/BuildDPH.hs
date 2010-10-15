@@ -5,11 +5,12 @@ module BuildDPH
 where
 import Config
 import BuildBox
+import Data.Maybe
 
 -- | Build the examples package
 dphBuild :: Config -> Build ()
 dphBuild config
- = inDir (configScratchDir config)
+ = inDir (fromMaybe ("dphBuild: must specify --scratch") $ configScratchDir config)
  $ inDir "ghc-head/libraries/dph/dph-examples"
  $ do	outLn "* Building DPH Examples"
 

@@ -6,6 +6,7 @@ where
 import Benchmarks
 import Config
 import BuildBox
+import Data.Maybe
 
 data BuildResults
 	= BuildResults
@@ -43,11 +44,14 @@ buildTest config env
 		= maybe []
 			(\contents -> buildResultBench $ read contents)
 			mBaseline
+	let scratchDir 
+		= fromMaybe ("buildTest: must specify --scratch") 
+		$ configScratchDir config
 
 	-- Run the Repa benchmarks
 	benchResultsRepa
 	 <- if (configDoTestRepa config)
-	     then inDir (configScratchDir config ++ "/repa-head") $
+	     then inDir (scratchDir ++ "/repa-head") $
  	 	  do	mapM 	(outRunBenchmarkWith (configIterations config)  resultsPrior)
 				(benchmarksRepa config)
 	     else return []
@@ -55,7 +59,7 @@ buildTest config env
 	-- Run the DPH benchmarks
 	benchResultsDPH
 	 <- if (configDoTestDPH config)
-	     then inDir (configScratchDir config ++ "/ghc-head/libraries/dph") $
+	     then inDir (scratchDir ++ "/ghc-head/libraries/dph") $
  	  	  do	mapM 	(outRunBenchmarkWith (configIterations config)  resultsPrior)
 				(benchmarksDPH config)
 	     else return []
