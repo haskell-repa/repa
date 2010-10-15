@@ -47,7 +47,7 @@ Executable repa-fft2d-highpass
         repa-io              == 1.1.*
 
   Main-is: FFT/HighPass2d/src/Main.hs
-  hs-source-dirs: FFT/Highpass2d/src lib .
+  hs-source-dirs: FFT/Highpass2d/src .
   ghc-options: 
         -threaded 
         -rtsopts 
@@ -91,7 +91,7 @@ Executable repa-laplace
 
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
-  hs-source-dirs: Laplace/src lib .
+  hs-source-dirs: Laplace/src .
   ghc-options: 
         -threaded
         -rtsopts 
@@ -115,7 +115,7 @@ Executable repa-mmult
         random               == 1.0.*
 
   Main-is: MMult/src/Main.hs
-  hs-source-dirs: MMult/src lib .
+  hs-source-dirs: MMult/src .
   ghc-options: 
         -threaded
         -rtsopts 
