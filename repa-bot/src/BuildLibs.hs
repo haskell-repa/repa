@@ -70,7 +70,6 @@ libsBuild config
  = do	outLn "* Building base libraries."
 
 	let specs	= loadLibSpecs libspec
-	outLn	$ show  specs
 
 	outCheckOk "  - Checking for cabal."
 	 $ HasExecutable "cabal"
