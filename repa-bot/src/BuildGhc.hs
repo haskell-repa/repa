@@ -24,9 +24,8 @@ ghcUnpack fileSnapShot dirScratch
 	
 
 ghcBuild :: String -> Build ()
-ghcBuild dirScratch
- = inDir dirScratch
- $ inDir "ghc-head"
+ghcBuild buildPath
+ = inDir buildPath
  $ do	outLn "* Building GHC"
 	
 	ssystem "perl boot"
