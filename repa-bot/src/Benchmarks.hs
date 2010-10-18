@@ -5,97 +5,107 @@ import BuildBox
 import Control.Monad
 import qualified BuildBox.Data.Log	as Log
 
+-- | DPH benchmark configuation.
+benchmarksDPH :: Config -> [Benchmark]
+benchmarksDPH config
+ =	
+ 	[ -- dot product
+	  bench config
+		"dph-dotp"
+		"dph-examples/dist/build/dph-dotp/dph-dotp dph 10000000 +RTS -N4"
+		
+	, bench config
+		"dph-dotp[vector-seq]"
+		"dph-examples/dist/build/dph-dotp/dph-dotp vector 10000000 +RTS -N4"
+
+	-- quicksort
+	, bench config 
+		"dph-quicksort"
+		"dph-examples/dist/build/dph-quicksort/dph-quicksort 100000 +RTS -N4"
+
+	  -- quickhull 
+	, bench config 
+		"dph-quickhull"
+		"dph-examples/dist/build/dph-quickhull/dph-quickhull 1000000 +RTS -N4"
+
+	, bench config
+		"dph-quickhull[vector-seq]"
+		"dph-examples/dist/build/dph-quickhull-vector/dph-quickhull-vector vector 1000000"
+
+	, bench config
+		"dph-quickhull[vector-forkIO]"
+		"dph-examples/dist/build/dph-quickhull-vector/dph-quickhull-vector io 1000000 +RTS -N4"
+
+	, benchUp config
+	 	"dph-quickhull[c-seq]"
+		(inDir "dph-examples/spectral/QuickHull/c" $ qssystem "make")
+		"dph-examples/spectral/QuickHull/c/quickhull 1000000"				
+	]
+
+
 -- | Repa benchmark configuration.
 benchmarksRepa :: Config -> [Benchmark]
 benchmarksRepa config
- = let	systemWithTimings' = systemWithTimings (configVerbose config)
-   in	
-	-- mmult
-	[ let	mmult 	= "repa-examples/dist/build/repa-mmult/repa-mmult"
-	  in	Benchmark
-			"repa-mmult"
-			(return ())
-			(systemWithTimings' $ mmult ++ " -random 1024 1024 -random 1024 1024 +RTS -N4")
-			(return ())
+ =	-- mmult
+	[ bench config
+		"repa-mmult"
+		"repa-examples/dist/build/repa-mmult/repa-mmult -random 1024 1024 -random 1024 1024 +RTS -N4"
 	
 	-- laplace
 	, let	laplace = "repa-examples/dist/build/repa-laplace/repa-laplace"
 		input	= "repa-examples/Laplace/data/pls-400x400.bmp"
 		inputgz	= input ++ ".gz"
 
-	  in  	Benchmark
+	  in  	benchUp config
 		 	"repa-laplace"
 			(do	ensureDir "output"
 				check $ HasExecutable laplace
 				whenM (test $ HasFile inputgz)
 				 $ qssystem $ "gzip -d " ++ inputgz)
 
-			(systemWithTimings' $ laplace ++ " 1000 " ++ input ++ " output/laplace.bmp +RTS -N4 -qg")
-			(return ())
+			(laplace ++ " 1000 " ++ input ++ " output/laplace.bmp +RTS -N4 -qg")
 
 	-- fft2d-highpass
 	, let	fft2d	= "repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
 		input	= "repa-examples/FFT/data/lena.bmp"
 		inputgz	= input ++ ".gz"
 		
-	  in	Benchmark 
+	  in	benchUp config
 			"repa-fft2d"
 			(do	ensureDir "output"
 				check $ HasExecutable fft2d
 				whenM (test $ HasFile inputgz)
 				 $ qssystem $ "gzip -d " ++ inputgz)
-
-			(systemWithTimings' $ fft2d ++ " 1 " ++ input ++ " output/fft2d.bmp +RTS -N4 -qg")
-			(return ())
+			(fft2d ++ " 1 " ++ input ++ " output/fft2d.bmp +RTS -N4 -qg")
 
 	-- fft3d-highpass
-	, let	fft3d	= "repa-examples/dist/build/repa-fft3d-highpass/repa-fft3d-highpass"
-	  in	Benchmark
-			"repa-fft3d"
-			(ensureDir "output/fft3d")
-			(systemWithTimings' $ fft3d ++ " 128 " ++ " output/fft3d/slice +RTS -N4 -qg")
-			(return ())			
+	, benchUp config
+		"repa-fft3d"
+		(ensureDir "output/fft3d")
+		"repa-examples/dist/build/repa-fft3d-highpass/repa-fft3d-highpass 128 output/fft3d/slice +RTS -N4 -qg"
 	]
 
 
--- | DPH benchmark configuation.
-benchmarksDPH :: Config -> [Benchmark]
-benchmarksDPH config
- = let	systemWithTimings' = systemWithTimings (configVerbose config)
-   in	
-	-- quickhull
-	[ let	quickhull = "dph-examples/dist/build/dph-quickhull/dph-quickhull"
-	  in	Benchmark
-			"dph-quickhull"
-			(return ())
-			(systemWithTimings' $ quickhull ++ " 1000000 +RTS -N4")
-			(return ())
+-- | Define a plain benchmark with no setup or teardown command
+bench :: Config -> String -> String -> Benchmark
+bench config name cmd
+ = Benchmark
+	name
+	(return ())
+	(systemWithTimings (configVerbose config) cmd)
+	(return ())
 
-	, let	quickhull = "dph-examples/dist/build/dph-quickhull-vector/dph-quickhull-vector"
-	  in	Benchmark
-			"dph-quickhull[vector-seq]"
-			(return ())
-			(systemWithTimings' $ quickhull ++ " vector 1000000")
-			(return ())
 
-	, let	quickhull = "dph-examples/dist/build/dph-quickhull-vector/dph-quickhull-vector"
-	  in	Benchmark
-			"dph-quickhull[vector-forkIO]"
-			(return ())
-			(systemWithTimings' $ quickhull ++ " io 1000000 +RTS -N4")
-			(return ())
+-- | Define a benchmark with a setup command
+benchUp :: Config -> String -> Build () -> String -> Benchmark
+benchUp config name cmdUp cmdBench
+ = Benchmark
+	name
+	cmdUp
+	(systemWithTimings (configVerbose config) cmdBench)
+	(return ())
 
-	, let	quickhull = "dph-examples/spectral/QuickHull/c/quickhull"
-	  in	Benchmark
-			"dph-quickhull[c-seq]"
-			(inDir "dph-examples/spectral/QuickHull/c"
-			 $ qssystem "make")
-			(systemWithTimings' $ quickhull ++ " 1000000")
-			(return ())
 	
-	]
-
-
 -- | Run a system command, expecing it to print the kernel timings to stdout.
 --   We ignore whatever is printed to stderr.
 systemWithTimings :: Bool -> String -> Build (Maybe Timing)
