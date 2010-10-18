@@ -70,6 +70,29 @@ benchmarksDPH config
 			(return ())
 			(systemWithTimings' $ quickhull ++ " 1000000 +RTS -N4")
 			(return ())
+
+	, let	quickhull = "dph-examples/dist/build/dph-quickhull-vector/dph-quickhull-vector"
+	  in	Benchmark
+			"dph-quickhull[vector-seq]"
+			(return ())
+			(systemWithTimings' $ quickhull ++ " vector 1000000")
+			(return ())
+
+	, let	quickhull = "dph-examples/dist/build/dph-quickhull-vector/dph-quickhull-vector"
+	  in	Benchmark
+			"dph-quickhull[vector-forkIO]"
+			(return ())
+			(systemWithTimings' $ quickhull ++ " io 1000000 +RTS -N4")
+			(return ())
+
+	, let	quickhull = "dph-examples/spectral/QuickHull/c/quickhull"
+	  in	Benchmark
+			"dph-quickhull[c-seq]"
+			(inDir "dph-examples/spectral/QuickHull/c"
+			 $ qssystem "make")
+			(systemWithTimings' $ quickhull ++ " 1000000")
+			(return ())
+	
 	]
 
 
