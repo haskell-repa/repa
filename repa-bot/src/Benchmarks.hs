@@ -68,7 +68,7 @@ benchmarksDPH config
 	  in	Benchmark
 			"dph-quickhull"
 			(return ())
-			(systemWithTimings' $ quickhull ++ " 1000000 +RTS -N4"
+			(systemWithTimings' $ quickhull ++ " 1000000 +RTS -N4")
 			(return ())
 	]
 
