@@ -129,7 +129,10 @@ int main(int argc, char** argv)
         sub_timeval( &finish_ru.ru_stime, &start_ru.ru_stime );
         add_timeval( &finish_ru.ru_utime, &finish_ru.ru_stime );
 
-        print_timeval( &finish ); putchar( '/' );
+	printf("elapsedTimeMS   = ");
+        print_timeval( &finish ); putchar( '\n' );
+
+ 	printf("cpuTimeMS       = ");
         print_timeval( &finish_ru.ru_utime); putchar( '\n' );
 
 	// Dump checksum

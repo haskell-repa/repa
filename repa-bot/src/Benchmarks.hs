@@ -18,7 +18,12 @@ benchmarksDPH config
 		"dph-dotp[vector-seq]"
 		"dph-examples/dist/build/dph-dotp/dph-dotp vector 10000000 +RTS -N4"
 
-	-- quicksort
+	  -- evens
+        , bench config
+		"dph-evens"
+		"dph-examples/dist/build/dph-evens/dph-evens 10000000 +RTS -N4"
+	
+	  -- quicksort
 	, bench config 
 		"dph-quicksort"
 		"dph-examples/dist/build/dph-quicksort/dph-quicksort 100000 +RTS -N4"
@@ -50,6 +55,11 @@ benchmarksRepa config
 	[ bench config
 		"repa-mmult"
 		"repa-examples/dist/build/repa-mmult/repa-mmult -random 1024 1024 -random 1024 1024 +RTS -N4"
+	
+	, benchUp config
+		"repa-mmult[c-seq]"
+		(inDir "repa-examples/MMult/legacy" $ qssystem "make")
+		"repa-examples/MMult/legacy/mmult -random 1024 1024 -random 1024 1024"
 	
 	-- laplace
 	, let	laplace = "repa-examples/dist/build/repa-laplace/repa-laplace"
