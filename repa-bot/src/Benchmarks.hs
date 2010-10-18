@@ -75,6 +75,11 @@ benchmarksRepa config
 
 			(laplace ++ " 1000 " ++ input ++ " output/laplace.bmp +RTS -N4 -qg")
 
+	, benchUp config
+		"repa-laplace[c-seq]"
+		(inDir "repa-examples/Laplace/legacy" $ qssystem "make")
+		"repa-examples/Laplace/legacy/laplace 400 400 1000 output/laplace_c-seq.ppm"
+
 	-- fft2d-highpass
 	, let	fft2d	= "repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
 		input	= "repa-examples/FFT/data/lena.bmp"
