@@ -48,6 +48,14 @@ buildTest config env
 		= fromMaybe ("buildTest: must specify --scratch") 
 		$ configScratchDir config
 
+	-- Run the DPH benchmarks
+	benchResultsDPH
+	 <- if (configDoTestDPH config)
+	     then inDir (scratchDir ++ "/ghc-head/libraries/dph") $
+ 	  	  do	mapM 	(outRunBenchmarkWith (configIterations config)  resultsPrior)
+				(benchmarksDPH config)
+	     else return []
+
 	-- Run the Repa benchmarks
 	benchResultsRepa
 	 <- if (configDoTestRepa config)
@@ -56,17 +64,9 @@ buildTest config env
 				(benchmarksRepa config)
 	     else return []
 
-	-- Run the DPH benchmarks
-	benchResultsDPH
-	 <- if (configDoTestDPH config)
-	     then inDir (scratchDir ++ "/ghc-head/libraries/dph") $
- 	  	  do	mapM 	(outRunBenchmarkWith (configIterations config)  resultsPrior)
-				(benchmarksDPH config)
-	     else return []
-	
 	let benchResults
-		= benchResultsRepa ++ benchResultsDPH
-	
+		= benchResultsDPH ++ benchResultsRepa	
+
 	-- Make the build results.
 	let buildResults
 		= BuildResults
