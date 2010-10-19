@@ -11,6 +11,7 @@ import System.Environment
 import Data.Array.Repa 			as Repa
 import Data.Array.Repa.Algorithms.Convolve
 import Data.Array.Repa.IO.BMP
+import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
 -- Constants ------------------------------------------------------------------
@@ -35,10 +36,16 @@ main
 run fileIn fileOut
  = do	inputImage 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
-			
-	writeImageToBMP fileOut 
-		$ floatToRgb 
-		$ canny inputImage
+	
+	inputImage `seq` return ()
+	
+	(arrResult, tElapsed)
+		<- time $ let result	= floatToRgb $ canny inputImage
+			  in  result `seq` return result
+	
+	putStr $ prettyTime tElapsed
+	
+	writeImageToBMP fileOut arrResult
 
 usage
  = putStr $ unlines
