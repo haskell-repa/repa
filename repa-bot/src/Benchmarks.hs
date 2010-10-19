@@ -18,6 +18,15 @@ benchmarksDPH config
 		"dph-dotp[vector-seq]"
 		"dph-examples/dist/build/dph-dotp/dph-dotp vector 10000000 +RTS -N4"
 
+	  -- sum of squares
+	, bench config
+		"dph-sumsq"
+		"dph-examples/dist/build/dph-sumsq/dph-sumsq dph 100000000 +RTS -N4"
+		
+	, bench config
+		"dph-sumsq[vector-seq]"
+		"dph-examples/dist/build/dph-sumsq/dph-sumsq vector 100000000 +RTS -N4"
+
 	  -- evens
         , bench config
 		"dph-evens"
