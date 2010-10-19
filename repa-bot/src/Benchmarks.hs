@@ -89,9 +89,35 @@ benchmarksRepa config
 		(inDir "repa-examples/Laplace/legacy" $ qssystem "make")
 		"repa-examples/Laplace/legacy/laplace 400 400 1000 output/laplace_c-seq.ppm"
 
+	-- blur
+	, let	blur	= "repa-examples/dist/build/repa-blur/repa-blur"
+		input	= "repa-examples/data/lena.bmp"
+		inputgz	= input ++ ".gz"
+		
+	  in	benchUp config
+			"repa-blur"
+			(do	ensureDir "output"
+				check $ HasExecutable blur
+				whenM (test $ HasFile inputgz)
+				 $ qssystem $ "gzip -d " ++ inputgz)
+			(blur ++ " 5 " ++ input ++ " output/lena-blur.bmp +RTS -N4 -qg")
+
+	-- edgedetect
+	, let	edgedetect = "repa-examples/dist/build/repa-edgedetect/repa-edgedetect"
+		input	   = "repa-examples/data/lena.bmp"
+		inputgz	   = input ++ ".gz"
+		
+	  in	benchUp config
+			"repa-edgedetect"
+			(do	ensureDir "output"
+				check $ HasExecutable edgedetect
+				whenM (test $ HasFile inputgz)
+				 $ qssystem $ "gzip -d " ++ inputgz)
+			(edgedetect ++ " " ++ input ++ " output/lena-edgedetect.bmp +RTS -N4 -qg")
+
 	-- fft2d-highpass
 	, let	fft2d	= "repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
-		input	= "repa-examples/FFT/data/lena.bmp"
+		input	= "repa-examples/data/lena.bmp"
 		inputgz	= input ++ ".gz"
 		
 	  in	benchUp config
