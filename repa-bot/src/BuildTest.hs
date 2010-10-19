@@ -93,9 +93,9 @@ buildTest config env
 	maybe 	(return ())
 		(\(from, to) -> do
 			outLn $ "* Mailing results to " ++ to 
-			mail	<- createMailWithCurrentTime from to "[nightly] Repa Performance Test Succeeded"
+			mail	<- createMailWithCurrentTime from to "[nightly] DPH Performance Test Succeeded"
 				$ render $ vcat
-				[ text "Repa Performance Test Succeeded"
+				[ text "DPH Performance Test Succeeded"
 				, blank
 				, ppr env
 				, blank

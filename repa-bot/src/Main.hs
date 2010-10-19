@@ -138,9 +138,9 @@ runTotalCatch config
 				outBlank
 				outLn $ "* Mailing result to " ++ to 
 
-				mail	<- createMailWithCurrentTime from to "[nightly] Repa Performance Test FAILED :-("
+				mail	<- createMailWithCurrentTime from to "[nightly] DPH Performance Test FAILED :-("
 					$ render $ vcat
-					[ text "Repa Performance Build Failed :-("
+					[ text "DPH Performance Build Failed :-("
 					, blank
 					, ppr err
 					, blank ]
