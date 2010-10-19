@@ -1,4 +1,5 @@
 -- | Canny edge detector
+--   TODO: This deadlocks with > 2 threads.
 
 {-# LANGUAGE PackageImports, BangPatterns #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
@@ -7,9 +8,9 @@ import Data.List
 import Data.Word
 import Control.Monad
 import System.Environment
-import Data.Array.Repa as Repa
+import Data.Array.Repa 			as Repa
+import Data.Array.Repa.Algorithms.Convolve
 import Data.Array.Repa.IO.BMP
-import qualified Data.Array.Repa.Shape	as S
 import Prelude				hiding (compare)
 
 -- Constants ------------------------------------------------------------------
@@ -53,50 +54,11 @@ canny input@Manifest{}
  = force output
     where
       output 	= nonMaximumSupression (force mag) (force orient)
-      blured 	= blur $ toGrayScale input
+      blured 	= blur $ toGreyScale input
       mag 	= gradientIntensityCompute dX dY
       orient 	= gradientOrientationCompute dX dY
       dX 	= gradientXCompute blured
       dY 	= gradientYCompute blured
-
-
--- | Image convolution.
-imageConvolveKernel
-	:: Repa.Array DIM2 Double
-	-> Repa.Array DIM2 Double
-	-> Repa.Array DIM2 Double 
-
-{-# NOINLINE imageConvolveKernel #-}
-imageConvolveKernel kernel@Manifest{} input@Manifest{}
- = kernel `deepSeqArray` input `deepSeqArray`
-   force $ traverse input usableRegion update
- where
-      _ :. height  :. width 	= extent input
-      _ :. kHeight :. kWidth 	= extent kernel 
-
-      !kHeight2	= div kHeight 2
-      !kWidth2	= div kWidth  2
-
-      !kExtent	= extent kernel
-      !kSize	= S.size kExtent
-
-      usableRegion (sh :. _ :. _)
-	= sh :. height - (kHeight - 1) :. width - (kWidth - 1)
-
-      update _ (_ :. i :. j)
-        = let	!ikHeight'	= i - kHeight2
-		!jkWidth'	= j - kWidth2
-
-	        integrate :: Int -> Double -> Double
-		integrate !count !acc
-		 | count == kSize		= acc
-		 | otherwise
-		 = let	!ix@(sh :. x :. y)	= S.fromIndex kExtent count
-			!ix'			= sh :. x + ikHeight' :. y + jkWidth'
-			!here			= kernel !: ix * input !: ix'
-		   in	integrate (count + 1) (acc + here)
-
-	  in	integrate 0 0
 
 
 -- | Maximum suppression	
@@ -138,7 +100,7 @@ nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
 gradientXCompute :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double
 {-# NOINLINE gradientXCompute #-}
 gradientXCompute input@Manifest{}
- = imageConvolveKernel kernel input
+ = kernel `deepSeqArray` convolve (const 0) kernel input
  where kernel 
 	= force $ Repa.fromList 
 		(Z :. 3 :. 3)	[ -1, 0, 1, 
@@ -149,7 +111,7 @@ gradientXCompute input@Manifest{}
 gradientYCompute :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double
 {-# NOINLINE gradientYCompute #-}
 gradientYCompute input@Manifest{}
- = imageConvolveKernel kernel input
+ = kernel `deepSeqArray` convolve (const 0) kernel input
  where kernel
 	= force $ Repa.fromList
 		(Z :. 3 :. 3)	[ 1,  2,  1, 
@@ -184,7 +146,7 @@ gradientOrientationCompute dX@Manifest{} dY@Manifest{}
 {-# NOINLINE blur #-}
 blur :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double
 blur input@Manifest{}
- = imageConvolveKernel kernel input
+ = kernel `deepSeqArray` convolve (const 0) kernel input
  where kernel 	= force 
 		$ Repa.fromList (Z :. 5 :. 5) 
 		$ Data.List.map (\x -> x / 159) 
@@ -196,18 +158,11 @@ blur input@Manifest{}
 
 
 -- | RGB to greyscale conversion.
-rgbToLuminance :: Word8 -> Word8 -> Word8 -> Double
-{-# INLINE rgbToLuminance #-}
-rgbToLuminance r g b 
-	= fromIntegral r * 0.3
-	+ fromIntegral g * 0.59
-	+ fromIntegral b * 0.11
-
-rgbToFloat
+toGreyScale
         :: Repa.Array DIM3 Word8
         -> Repa.Array DIM2 Double
         
-rgbToFloat arrBound@Manifest{}
+toGreyScale arrBound@Manifest{}
  = force $ traverse arrBound
         (\(sh :. height :. width :. _)   
                 -> sh :. height :. width)
@@ -219,9 +174,16 @@ rgbToFloat arrBound@Manifest{}
                         (get (sh :. y :. x :. 2)))
 
 
-toGrayScale rgbFrame
-     = rgbToFloat rgbFrame
+-- | Convert a RGB value to a luminance.
+rgbToLuminance :: Word8 -> Word8 -> Word8 -> Double
+{-# INLINE rgbToLuminance #-}
+rgbToLuminance r g b 
+	= fromIntegral r * 0.3
+	+ fromIntegral g * 0.59
+	+ fromIntegral b * 0.11
 
+
+-- | Convert a float array to greyscale components.
 floatToRgb :: Repa.Array DIM2 Double -> Repa.Array DIM3 Word8
 floatToRgb arrDoubles@Manifest{}
  = force $ traverse arrDoubles
@@ -235,4 +197,3 @@ floatToRgb arrDoubles@Manifest{}
                           1     -> truncate i
                           2     -> truncate i
                           3     -> 0)
-
