@@ -24,6 +24,7 @@ Library
         base                 == 4.*,
         dph-base             == 0.5.*,
         dph-prim-par         == 0.5.*,
+        vector               == 0.7.*,
         repa                 == 1.1.*
 
   ghc-options:
@@ -42,3 +43,4 @@ Library
         Data.Array.Repa.Algorithms.DFT.Center
         Data.Array.Repa.Algorithms.FFT
         Data.Array.Repa.Algorithms.Matrix
+        Data.Array.Repa.Algorithms.Convolve

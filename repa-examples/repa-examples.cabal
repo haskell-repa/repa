@@ -16,61 +16,21 @@ Description:
 Synopsis:
         Examples using the Repa array library.
 
-Executable repa-fft2d
+
+Executable repa-mmult
   Build-depends: 
         base                 == 4.*,
         dph-prim-par         == 0.5.*,
         dph-base             == 0.5.*,
         repa                 == 1.1.*,
+        repa-io              == 1.1.*,
         repa-algorithms      == 1.1.*,
-        repa-io              == 1.1.*
-  Main-is: FFT/FFT2d/src/Main.hs
-  hs-source-dirs: FFT/FFT2d/src .
+        random               == 1.0.*
+
+  Main-is: MMult/src/Main.hs
+  hs-source-dirs: MMult/src .
   ghc-options: 
-        -threaded 
-        -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
-        -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-
-Executable repa-fft2d-highpass
-  Build-depends: 
-        base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*,
-        repa-io              == 1.1.*
-
-  Main-is: FFT/HighPass2d/src/Main.hs
-  hs-source-dirs: FFT/Highpass2d/src .
-  ghc-options: 
-        -threaded 
-        -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
-        -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-
-Executable repa-fft3d-highpass
-  Build-depends: 
-        base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*
-
-  Main-is: FFT/HighPass3d/src/Main.hs
-  hs-source-dirs: FFT/Highpass3d/src .
-  ghc-options: 
-        -threaded 
+        -threaded
         -rtsopts 
         -Odph
         -fsimplifier-phases=4 
@@ -104,20 +64,18 @@ Executable repa-laplace
         -fllvm
 
 
-Executable repa-mmult
+Executable repa-fft2d
   Build-depends: 
         base                 == 4.*,
         dph-prim-par         == 0.5.*,
         dph-base             == 0.5.*,
         repa                 == 1.1.*,
-        repa-io              == 1.1.*,
         repa-algorithms      == 1.1.*,
-        random               == 1.0.*
-
-  Main-is: MMult/src/Main.hs
-  hs-source-dirs: MMult/src .
+        repa-io              == 1.1.*
+  Main-is: FFT/FFT2d/src/Main.hs
+  hs-source-dirs: FFT/FFT2d/src .
   ghc-options: 
-        -threaded
+        -threaded 
         -rtsopts 
         -Odph
         -fsimplifier-phases=4 
@@ -126,4 +84,95 @@ Executable repa-mmult
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+
+
+Executable repa-fft2d-highpass
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.5.*,
+        dph-base             == 0.5.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*,
+        repa-io              == 1.1.*
+
+  Main-is: FFT/HighPass2d/src/Main.hs
+  hs-source-dirs: FFT/Highpass2d/src .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+
+
+Executable repa-fft3d-highpass
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.5.*,
+        dph-base             == 0.5.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*
+
+  Main-is: FFT/HighPass3d/src/Main.hs
+  hs-source-dirs: FFT/Highpass3d/src .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+
+
+Executable repa-blur
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.5.*,
+        dph-base             == 0.5.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*,
+        vector               == 0.7.*
+
+  Main-is: Blur/src/Main.hs
+  hs-source-dirs: Blur/src .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+
+
+Executable repa-edgedetect
+  Build-depends: 
+        base                 == 4.*,
+        dph-prim-par         == 0.5.*,
+        dph-base             == 0.5.*,
+        repa                 == 1.1.*,
+        repa-algorithms      == 1.1.*
+
+  Main-is: broken/EdgeDetect/src/Main.hs
+  hs-source-dirs: broken/EdgeDetect/src .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+
 
