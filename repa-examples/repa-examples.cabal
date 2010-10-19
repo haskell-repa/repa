@@ -162,8 +162,8 @@ Executable repa-edgedetect
         repa                 == 1.1.*,
         repa-algorithms      == 1.1.*
 
-  Main-is: broken/EdgeDetect/src/Main.hs
-  hs-source-dirs: broken/EdgeDetect/src .
+  Main-is: EdgeDetect/src/Main.hs
+  hs-source-dirs: EdgeDetect/src .
   ghc-options: 
         -threaded 
         -rtsopts 
