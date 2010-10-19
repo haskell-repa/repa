@@ -101,7 +101,11 @@ buildTest config env
 				, blank
 				, spaceHack $ pprComparisons resultsPrior benchResults
 				, blank ]
+			
+			outLn $ "  - Writing mail file"
+			io $ writeFile "repa-bot.mail" $ render $ renderMail mail
 				
+			outLn $ "  - Sending mail"
 			sendMailWithMailer mail defaultMailer				
 			return ())
 		(configMailFromTo config)
