@@ -113,7 +113,7 @@ benchmarksRepa config
 				check $ HasExecutable edgedetect
 				whenM (test $ HasFile inputgz)
 				 $ qssystem $ "gzip -d " ++ inputgz)
-			(edgedetect ++ " " ++ input ++ " output/lena-edgedetect.bmp +RTS -N4 -qg")
+			(edgedetect ++ " " ++ input ++ " output/lena-edgedetect.bmp +RTS -N2 -qg")
 
 	-- fft2d-highpass
 	, let	fft2d	= "repa-examples/dist/build/repa-fft2d-highpass/repa-fft2d-highpass"
