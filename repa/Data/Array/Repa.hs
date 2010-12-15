@@ -79,6 +79,7 @@ import Data.Array.Repa.Shape
 import Data.Array.Repa.QuickCheck
 import qualified Data.Array.Repa.Shape	as S
 
+import qualified Data.Vector.Unboxed				as V
 import "dph-prim-par" Data.Array.Parallel.Unlifted		(Elt)
 import qualified "dph-prim-par" Data.Array.Parallel.Unlifted	as U
 import qualified "dph-prim-seq" Data.Array.Parallel.Unlifted.Sequential.Vector	as USeq
@@ -184,7 +185,7 @@ index, (!:)
 index arr ix
  = case arr of
 	Delayed  _  fn		-> fn ix
-	Manifest sh uarr	-> uarr U.!: (S.toIndex sh ix)
+	Manifest sh uarr	-> uarr `V.unsafeIndex` (S.toIndex sh ix)
 
 {-# INLINE (!:) #-}
 (!:) arr ix = index arr ix
