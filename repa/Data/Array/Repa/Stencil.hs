@@ -1,14 +1,14 @@
 {-# LANGUAGE PackageImports, MagicHash #-}
+{-# OPTIONS -Wnot #-}
 
 -- | Class of types that can be used as array shapes and indices.
 module Data.Array.Repa.Stencil
 	( Stencil(..)
 	, relaxLaplace)
 where
-import Data.Array.Repa					as R
+import Data.Array.Repa			as R
 import qualified Data.Array.Repa.Shape	as S
 import GHC.Exts
-import "dph-prim-par" Data.Array.Parallel.Unlifted		(Elt)
 
 data Stencil sh a b
 	= Stencil

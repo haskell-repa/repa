@@ -1,5 +1,5 @@
 {-# LANGUAGE PatternGuards, PackageImports, ScopedTypeVariables, RankNTypes #-}
-{-# LANGUAGE TypeOperators, FlexibleContexts, NoMonomorphismRestriction #-}
+{-# LANGUAGE TypeOperators, FlexibleContexts, NoMonomorphismRestriction, FlexibleInstances, UndecidableInstances #-}
 
 -- | See the repa-examples package for examples.
 --   
@@ -17,28 +17,10 @@ module Data.Array.Repa
 	( module Data.Array.Repa.Shape
 	, module Data.Array.Repa.Index
 	, module Data.Array.Repa.Slice
+	, module Data.Array.Repa.Array
 	
-	, Array	(..)
-
-	 -- * Constructors
-	, fromUArray
-	, fromFunction
-	, unit
-
 	 -- * Projections
-	, extent
-	, delay
-	, toUArray
 	, index, (!:)
-	, toScalar
-
-	 -- * Basic Operations
-	, force
-	, deepSeqArray
-	
-	 -- * Conversion
-	, fromList
-	, toList
 
 	 -- * Index space transformations
 	, reshape
@@ -76,96 +58,17 @@ where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
 import Data.Array.Repa.Shape
+import Data.Array.Repa.Array
 import Data.Array.Repa.QuickCheck
 import qualified Data.Array.Repa.Shape	as S
-
-import qualified Data.Vector.Unboxed				as V
-import "dph-prim-par" Data.Array.Parallel.Unlifted		(Elt)
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted	as U
-import qualified "dph-prim-seq" Data.Array.Parallel.Unlifted.Sequential.Vector	as USeq
+import qualified Data.Vector.Unboxed	as V
 
 import Test.QuickCheck
 import Prelude				hiding (sum, map, zipWith, replicate)	
 import qualified Prelude		as P
 
 stage	= "Data.Array.Repa"
-	
--- | Possibly delayed arrays.
-data Array sh a
-	= -- | An array represented as some concrete unboxed data.
-	  Manifest !sh !(U.Array a)
 
-          -- | An array represented as a function that computes each element.
-	| Delayed  !sh !(sh -> a)
-
--- Constructors ----------------------------------------------------------------------------------
-
--- | Create a `Manifest` array from an unboxed `U.Array`. 
---	The elements are in row-major order.
-fromUArray
-	:: Shape sh
-	=> sh
-	-> U.Array a
-	-> Array sh a
-
-{-# INLINE fromUArray #-}
-fromUArray sh uarr
-	= sh   `S.deepSeq` 
-	  uarr `seq`
-	  Manifest sh uarr
-
-
--- | Create a `Delayed` array from a function.
-fromFunction 
-	:: Shape sh
-	=> sh
-	-> (sh -> a)
-	-> Array sh a
-	
-{-# INLINE fromFunction #-}
-fromFunction sh fnElems
-	= sh `S.deepSeq` Delayed sh fnElems
-
-
--- | Wrap a scalar into a singleton array.
-unit :: Elt a => a -> Array Z a
-{-# INLINE unit #-}
-unit 	= Delayed Z . const
-
-
--- Projections ------------------------------------------------------------------------------------
-
--- | Take the extent of an array.
-extent	:: Array sh a -> sh
-{-# INLINE extent #-}
-extent arr
- = case arr of
-	Manifest sh _	-> sh
-	Delayed  sh _	-> sh
-
--- | Unpack an array into delayed form.
-delay 	:: (Shape sh, Elt a) 
-	=> Array sh a 
-	-> (sh, sh -> a)
-
-{-# INLINE delay #-}	
-delay arr
- = case arr of
-	Delayed  sh fn		-> (sh, fn)
-	Manifest sh uarr	-> (sh, \i -> uarr U.!: S.toIndex sh i)
-
-
--- | Convert an array to an unboxed `U.Array`, forcing it if required.
---	The elements come out in row-major order.
-toUArray 
-	:: (Shape sh, Elt a)
-	=> Array sh a 
-	-> U.Array a
-{-# INLINE toUArray #-}
-toUArray arr
- = case force arr of
-	Manifest _ uarr	-> uarr
-	_		-> error $ stage ++ ".toList: force failed"
 
 
 -- | Get an indexed element from an array.
@@ -191,84 +94,6 @@ index arr ix
 (!:) arr ix = index arr ix
 
 
--- | Take the scalar value from a singleton array.
-toScalar :: Elt a => Array Z a -> a
-{-# INLINE toScalar #-}
-toScalar arr
- = case arr of
-	Delayed  _ fn		-> fn Z
-	Manifest _ uarr		-> uarr U.!: 0
-
-
--- Basic Operations -------------------------------------------------------------------------------
-
--- | Force an array, so that it becomes `Manifest`.
-force	:: (Shape sh, Elt a)
-	=> Array sh a -> Array sh a
-	
-{-# INLINE force #-}
-force arr
- = Manifest sh' uarr'
- where (sh', uarr')
-	= case arr of
-		Manifest sh uarr
-	 	 -> sh `S.deepSeq` uarr `seq` (sh, uarr)
-
-		Delayed sh fn
-	 	 -> let uarr	=  U.map (fn . S.fromIndex sh) 
-				$! U.enumFromTo (0 :: Int) (S.size sh - 1)
-	    	     in	sh `S.deepSeq` uarr `seq` (sh, uarr)
-
-				
--- | Ensure an array's structure is fully evaluated.
---	This evaluates the extent and outer constructor, but does not `force` the elements.
-infixr 0 `deepSeqArray`
-deepSeqArray 
-	:: Shape sh
-	=> Array sh a 
-	-> b -> b
-
-{-# INLINE deepSeqArray #-}
-deepSeqArray arr x 
- = case arr of
-	Delayed  sh _		-> sh `S.deepSeq` x
-	Manifest sh uarr	-> sh `S.deepSeq` uarr `seq` x
-
-
--- Conversion -------------------------------------------------------------------------------------
--- | Convert a list to an array.
---	The length of the list must be exactly the `size` of the extent given, else `error`.
---
-fromList
-	:: (Shape sh, Elt a)
-	=> sh
-	-> [a]
-	-> Array sh a
-	
-{-# INLINE fromList #-}
-fromList sh xx
-	| U.length uarr /= S.size sh
-	= error $ unlines
-	 	[ stage ++ ".fromList: size of array shape does not match size of list"
-		, "        size of shape = " ++ (show $ S.size sh) 	++ "\n"
-		, "        size of list  = " ++ (show $ U.length uarr) 	++ "\n" ]
-	
-	| otherwise
-	= Manifest sh uarr
-
-	where	uarr	= U.fromList xx
-	
-	
--- | Convert an array to a list.
-toList 	:: (Shape sh, Elt a)
-	=> Array sh a
-	-> [a]
-
-{-# INLINE toList #-}
-toList arr
- = case force arr of
-	Manifest _ uarr	-> U.toList uarr
-	_		-> error $ stage ++ ".toList: force failed"
 
 
 -- Instances --------------------------------------------------------------------------------------
@@ -281,8 +106,7 @@ instance (Shape sh, Elt a, Eq a) => Eq (Array sh a) where
 
 	{-# INLINE (==) #-}
 	(==) arr1  arr2 
-		= toScalar 
-		$ fold (&&) True 
+		= foldAll (&&) True 
 		$ reshape (Z :. (S.size $ extent arr1)) 
 		$ zipWith (==) arr1 arr2
 		
@@ -499,7 +323,7 @@ zipWith f arr1 arr2
 --	If we use parallel versions then we'll end up with nested parallelism
 --	and the gang will abort at runtime.
 
--- | Fold the innermost dimension of an array.
+-- | Sequentially fold the innermost dimension of an array.
 --	Combine this with `transpose` to fold any other dimension.
 fold 	:: (Shape sh, Elt a)
 	=> (a -> a -> a)
@@ -511,14 +335,13 @@ fold 	:: (Shape sh, Elt a)
 fold f x arr
  = x `seq` arr `deepSeqArray` 
    let	sh' :. n	= extent arr
-	elemFn i 	= USeq.fold f x
-			$ USeq.map
-				(\ix -> arr !: (i :. ix)) 
-				(USeq.enumFromTo 0 (n - 1))
+	elemFn i 	= V.foldl' f x
+			$ V.map	(\ix -> arr !: (i :. ix)) 
+				(V.enumFromTo 0 (n - 1))
    in	Delayed sh' elemFn
 
 
--- | Fold all the elements of an array.
+-- | Sequentially fold all the elements of an array.
 foldAll :: (Shape sh, Elt a)
 	=> (a -> a -> a)
 	-> a
@@ -527,9 +350,9 @@ foldAll :: (Shape sh, Elt a)
 	
 {-# INLINE foldAll #-}
 foldAll f x arr
-	= USeq.fold f x
-	$ USeq.map ((arr !:) . (S.fromIndex (extent arr)))
-	$ USeq.enumFromTo
+	= V.foldl' f x
+	$ V.map ((arr !:) . (S.fromIndex (extent arr)))
+	$ V.enumFromTo
 		0
 		((S.size $ extent arr) - 1)
 
@@ -551,9 +374,9 @@ sumAll	:: (Shape sh, Elt a, Num a)
 
 {-# INLINE sumAll #-}
 sumAll arr
-	= USeq.fold (+) 0
-	$ USeq.map ((arr !:) . (S.fromIndex (extent arr)))
-	$ USeq.enumFromTo
+	= V.foldl' (+) 0
+	$ V.map ((arr !:) . (S.fromIndex (extent arr)))
+	$ V.enumFromTo
 		0
 		((S.size $ extent arr) - 1)
 
@@ -780,7 +603,7 @@ prop_id_force_DIM5
 	arr == force arr
 	
 prop_id_toScalarUnit (x :: Int)
- =	toScalar (unit x) == x
+ =	toScalar (singleton x) == x
 
 -- Conversions ------------------------
 prop_id_toListFromList_DIM3
