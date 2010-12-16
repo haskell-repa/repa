@@ -54,10 +54,10 @@ module Data.Array.Repa
 
 	-- from Data.Array.Repa.Operators.Traverse ------------------
 	-- * Generic Traversal
-	, traverse
-	, traverse2
-	, traverse3
-	, traverse4
+	, traverse,  unsafeTraverse
+	, traverse2, unsafeTraverse2
+	, traverse3, unsafeTraverse3
+	, traverse4, unsafeTraverse4
 
 	-- from Data.Array.Repa.Operators.Interleave ----------------
 	-- * Interleaving

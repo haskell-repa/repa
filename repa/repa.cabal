@@ -50,4 +50,5 @@ Library
         Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Operators.Reduction
         Data.Array.Repa.Internals.Gang
+        Data.Array.Repa.Internals.Evaluate
        

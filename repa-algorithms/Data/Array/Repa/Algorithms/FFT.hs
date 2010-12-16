@@ -141,13 +141,13 @@ fft !sign !sh !lenVec !vec
 
 	 where	swivel (sh' :. ix)
 		 = case ix of
-			0	-> vec ! (sh' :. offset) + vec ! (sh' :. (offset + stride))
-			1	-> vec ! (sh' :. offset) - vec ! (sh' :. (offset + stride))
+			0	-> (vec `unsafeIndex` (sh' :. offset)) + (vec `unsafeIndex` (sh' :. (offset + stride)))
+			1	-> (vec `unsafeIndex` (sh' :. offset)) - (vec `unsafeIndex` (sh' :. (offset + stride)))
 
 		{-# INLINE combine #-}
 		combine !len' evens@Manifest{} odds@Manifest{}
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
-   	   	   let	odds'	= traverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
+   	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
    	   	   in	force 	$ (evens +^ odds') +:+ (evens -^ odds')
 
 
@@ -163,4 +163,3 @@ twiddle sign k' n'
 	where 	k	= fromIntegral k'
 		n	= fromIntegral n'
       
-

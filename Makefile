@@ -77,8 +77,7 @@ repa-examples :
 	@cd $@ ; \
 		runghc Setup.hs clean ; \
 		runghc Setup.hs configure --user ; \
-		runghc Setup.hs build ; \
-		runghc Setup.hs install
+		runghc Setup.hs build 
 	@echo 
 
 

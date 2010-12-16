@@ -24,7 +24,7 @@ map	:: (Shape sh, Elt a, Elt b)
 
 {-# INLINE map #-}
 map f arr
-	= traverse arr id (f .)
+	= unsafeTraverse arr id (f .)
 	
 
 -- | Combine two arrays, element-wise, with a binary operator.
@@ -41,7 +41,7 @@ zipWith f arr1 arr2
  	= arr1 `deepSeqArray` 
 	  arr2 `deepSeqArray`
 	  Delayed	(S.intersectDim (extent arr1) (extent arr2))
-			(\ix -> f (arr1 ! ix) (arr2 ! ix))
+			(\ix -> f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix))
 
 {-# INLINE (+^) #-}
 (+^)	= zipWith (+)

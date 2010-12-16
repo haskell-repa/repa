@@ -30,7 +30,7 @@ convolve makeOut
   	 image@(Manifest imgSh@(_ :. imgHeight :. imgWidth) imgVec)
 
  = kernel `deepSeqArray` image `deepSeqArray` 
-   force $ traverse image id update
+   force $ unsafeTraverse image id update
  where	
 	!krnHeight2	= krnHeight `div` 2
 	!krnWidth2	= krnWidth  `div` 2
@@ -120,7 +120,7 @@ convolveOut getOut
   	 image@(Manifest imgSh@(_ :. imgHeight :. imgWidth) _)
 
  = kernel `deepSeqArray` image `deepSeqArray` 
-   force $ traverse image id stencil
+   force $ unsafeTraverse image id stencil
  where	
 	!krnHeight2	= krnHeight `div` 2
 	!krnWidth2	= krnWidth  `div` 2
@@ -154,7 +154,7 @@ convolveOut getOut
 		 | otherwise
 		 = let	!ix@(sh :. y :. x)	= S.fromIndex krnSh count
 			!ix'			= sh :. y + jkrnHeight' :. x + ikrnWidth'
-			!here			= kernel ! ix * (get' ix')
+			!here			= kernel `unsafeIndex` ix * (get' ix')
 		   in	integrate (count + 1) (acc + here)
 
 	   in	integrate 0 0

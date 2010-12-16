@@ -53,7 +53,7 @@ append, (+:+)
 
 {-# INLINE append #-}
 append arr1 arr2 
- = traverse2 arr1 arr2 fnExtent fnElem
+ = unsafeTraverse2 arr1 arr2 fnExtent fnElem
  where
  	(_ :. n) 	= extent arr1
 
@@ -77,7 +77,7 @@ transpose
 
 {-# INLINE transpose #-}
 transpose arr 
- = traverse arr
+ = unsafeTraverse arr
 	(\(sh :. m :. n) 	-> (sh :. n :.m))
 	(\f -> \(sh :. i :. j) 	-> f (sh :. j :. i))
 

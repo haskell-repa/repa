@@ -22,9 +22,10 @@ module Data.Array.Repa.Base
 	, force)
 where
 import Data.Array.Repa.Index
-import Data.Array.Repa.Shape		as S
-import qualified Data.Vector.Unboxed	as V
-import Data.Vector.Unboxed		(Vector)
+import Data.Array.Repa.Internals.Evaluate
+import Data.Array.Repa.Shape			as S
+import qualified Data.Vector.Unboxed		as V
+import Data.Vector.Unboxed			(Vector)
 
 stage	= "Data.Array.Repa.Array"
 
@@ -233,10 +234,23 @@ toList arr
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 	
--- TODO: make this parallel again
---	change V.map and V.enumFromTo
 {-# INLINE force #-}
 force arr
+ = Manifest sh' vec'
+ where	(sh', vec')
+	 = case arr of
+		Manifest sh vec
+		 -> sh `S.deepSeq` vec `seq` (sh, vec)
+		
+		Delayed sh getElem
+		 -> let vec	= evalParLinear sh (getElem . fromIndex sh)
+		    in  sh `S.deepSeq` vec `seq` (sh, vec)
+
+{-
+-- TODO: make this parallel again
+--	change V.map and V.enumFromTo
+force arr
+
  = Manifest sh' uarr'
  where (sh', uarr')
 	= case arr of
@@ -247,6 +261,8 @@ force arr
 	 	 -> let uarr	=  V.map (fn . S.fromIndex sh) 
 				$! V.enumFromTo (0 :: Int) (S.size sh - 1)
 	    	     in	sh `S.deepSeq` uarr `seq` (sh, uarr)
+-}
+
 
 
 -- Elements ---------------------------------------------------------------------------------------

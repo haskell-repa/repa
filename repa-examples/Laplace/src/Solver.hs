@@ -36,7 +36,7 @@ relaxLaplace
 
 {-# INLINE relaxLaplace #-}
 relaxLaplace !arr@Manifest{}
- = traverse arr id elemFn
+ = unsafeTraverse arr id elemFn
  where
 	_ :. height :. width	
 		= extent arr
