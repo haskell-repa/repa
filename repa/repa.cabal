@@ -1,5 +1,5 @@
 Name:                repa
-Version:             1.1.1.0
+Version:             1.2.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -11,7 +11,6 @@ Category:            Data Structures
 Homepage:            http://trac.haskell.org/repa
 Bug-reports:         http://trac.haskell.org/repa/newticket
 Description:
-        NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
         Repa provides high performance, regular, multi-dimensional, shape polymorphic parallel arrays.
         All numeric data is stored unboxed. Functions written with the Repa combinators
         are automatically parallel provided you supply +RTS -Nwhatever on the command
@@ -20,7 +19,7 @@ Description:
 Synopsis:
         High performance, regular, shape polymorphic parallel arrays.
 
-Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
+Tested-with: GHC == 7.0.1
 
 Library
   Build-Depends: 
@@ -39,9 +38,14 @@ Library
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
-        Data.Array.Repa.Array
+        Data.Array.Repa.Base
         Data.Array.Repa.Stencil
+        Data.Array.Repa.Arbitrary
 
   Other-modules:
-        Data.Array.Repa.QuickCheck
+        Data.Array.Repa.Operators.IndexSpace
+        Data.Array.Repa.Operators.Traverse
+        Data.Array.Repa.Operators.Interleave
+        Data.Array.Repa.Operators.Mapping
+        Data.Array.Repa.Operators.Reduction
        

@@ -1,11 +1,14 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE ExplicitForAll, FlexibleInstances, UndecidableInstances #-}
 
-module Data.Array.Repa.Array
+module Data.Array.Repa.Base
 	( Elt
 	, Array(..)
 	, deepSeqArray
 	, singleton, toScalar
 	, extent,    delay
+
+	-- * Indexing
+	, index, (!:)
 
 	-- * Conversions 
 	, fromFunction	
@@ -47,7 +50,6 @@ deepSeqArray arr x
 	Manifest sh uarr	-> sh `S.deepSeq` uarr `seq` x
 
 
-
 -- Singletons -------------------------------------------------------------------------------------
 -- | Wrap a scalar into a singleton array.
 singleton :: Elt a => a -> Array Z a
@@ -84,6 +86,31 @@ delay arr
  = case arr of
 	Delayed  sh fn	-> (sh, fn)
 	Manifest sh vec	-> (sh, \ix -> vec V.! S.toIndex sh ix)
+
+
+-- Indexing ---------------------------------------------------------------------------------------
+
+-- | Get an indexed element from an array.
+--
+--   OBLIGATION: The index must be within the array. 
+--
+-- 	@inRange zeroDim (shape arr) ix == True@
+--
+index, (!:)
+	:: forall sh a
+	.  (Shape sh, Elt a)
+	=> Array sh a
+	-> sh 
+	-> a
+
+{-# INLINE index #-}
+index arr ix
+ = case arr of
+	Delayed  _  fn		-> fn ix
+	Manifest sh uarr	-> uarr `V.unsafeIndex` (S.toIndex sh ix)
+
+{-# INLINE (!:) #-}
+(!:) arr ix = index arr ix
 
 
 -- Conversions ------------------------------------------------------------------------------------
