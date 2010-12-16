@@ -24,7 +24,7 @@ fold f x arr
  = x `seq` arr `deepSeqArray` 
    let	sh' :. n	= extent arr
 	elemFn i 	= V.foldl' f x
-			$ V.map	(\ix -> arr !: (i :. ix)) 
+			$ V.map	(\ix -> arr ! (i :. ix)) 
 				(V.enumFromTo 0 (n - 1))
    in	Delayed sh' elemFn
 
@@ -39,7 +39,7 @@ foldAll :: (Shape sh, Elt a)
 {-# INLINE foldAll #-}
 foldAll f x arr
 	= V.foldl' f x
-	$ V.map ((arr !:) . (S.fromIndex (extent arr)))
+	$ V.map ((arr !) . (S.fromIndex (extent arr)))
 	$ V.enumFromTo
 		0
 		((S.size $ extent arr) - 1)
@@ -63,7 +63,7 @@ sumAll	:: (Shape sh, Elt a, Num a)
 {-# INLINE sumAll #-}
 sumAll arr
 	= V.foldl' (+) 0
-	$ V.map ((arr !:) . (S.fromIndex (extent arr)))
+	$ V.map ((arr !) . (S.fromIndex (extent arr)))
 	$ V.enumFromTo
 		0
 		((S.size $ extent arr) - 1)

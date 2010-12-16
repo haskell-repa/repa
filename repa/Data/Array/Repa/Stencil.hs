@@ -62,7 +62,7 @@ unsafeAppStencil2 stencil@(Stencil sExtent zero load) arr ix@(Z :. y :. x)
 
  where	{-# INLINE oload #-}
 	oload oy ox	
-	 = load (Z :. oy :. ox) (arr !: (Z :. y + oy :. x + ox))
+	 = load (Z :. oy :. ox) (arr `unsafeIndex` (Z :. y + oy :. x + ox))
 
 
 

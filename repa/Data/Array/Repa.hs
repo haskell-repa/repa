@@ -25,7 +25,9 @@ module Data.Array.Repa
 	, extent,    delay
 
 	-- * Indexing
-	, index, (!:)
+	, (!),  index
+	, (!?), safeIndex
+	, unsafeIndex
 
 	-- * Conversions 
 	, fromFunction	

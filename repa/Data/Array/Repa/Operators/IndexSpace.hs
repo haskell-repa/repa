@@ -148,5 +148,5 @@ backpermuteDft arrDft fnIndex arrSrc
 	= Delayed (extent arrDft) fnElem
 	where	fnElem ix	
 		 = case fnIndex ix of
-			Just ix'	-> arrSrc !: ix'
-			Nothing		-> arrDft !: ix
+			Just ix'	-> arrSrc ! ix'
+			Nothing		-> arrDft ! ix

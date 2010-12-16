@@ -47,7 +47,7 @@ traverse2 arrA arrB transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray`
    	  Delayed 
 		(transExtent (extent arrA) (extent arrB)) 
-		(newElem     ((!:) arrA) ((!:) arrB))
+		(newElem     (arrA !) (arrB !))
 
 
 -- | Unstructured traversal over three arrays at once.
@@ -70,7 +70,7 @@ traverse3 arrA arrB arrC transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray`
    	  Delayed 
 		(transExtent (extent arrA) (extent arrB) (extent arrC)) 
-		(newElem     (arrA !:) (arrB !:) (arrC !:))
+		(newElem     (arrA !) (arrB !) (arrC !))
 
 
 -- | Unstructured traversal over four arrays at once.
@@ -94,5 +94,5 @@ traverse4 arrA arrB arrC arrD transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray` arrD `deepSeqArray` 
    	  Delayed 
 		(transExtent (extent arrA) (extent arrB) (extent arrC) (extent arrD)) 
-		(newElem     (arrA !:) (arrB !:) (arrC !:) (arrD !:))
+		(newElem     (arrA !) (arrB !) (arrC !) (arrD !))
 

@@ -40,7 +40,7 @@ zipWith f arr1 arr2
  	= arr1 `deepSeqArray` 
 	  arr2 `deepSeqArray`
 	  Delayed	(S.intersectDim (extent arr1) (extent arr2))
-			(\ix -> f (arr1 !: ix) (arr2 !: ix))
+			(\ix -> f (arr1 ! ix) (arr2 ! ix))
 
 {-# INLINE (+^) #-}
 (+^)	= zipWith (+)

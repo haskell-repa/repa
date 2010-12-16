@@ -8,7 +8,9 @@ module Data.Array.Repa.Base
 	, extent,    delay
 
 	-- * Indexing
-	, index, (!:)
+	, (!),  index
+	, (!?), safeIndex
+	, unsafeIndex
 
 	-- * Conversions 
 	, fromFunction	
@@ -91,26 +93,63 @@ delay arr
 -- Indexing ---------------------------------------------------------------------------------------
 
 -- | Get an indexed element from an array.
+--   This uses the same level of bounds checking as your Data.Vector installation.
 --
---   OBLIGATION: The index must be within the array. 
---
--- 	@inRange zeroDim (shape arr) ix == True@
---
-index, (!:)
+(!), index
 	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> Array sh a
 	-> sh 
 	-> a
 
+{-# INLINE (!) #-}
+(!) arr ix = index arr ix
+
 {-# INLINE index #-}
 index arr ix
  = case arr of
 	Delayed  _  fn		-> fn ix
+	Manifest sh vec		-> vec V.! (S.toIndex sh ix)
+
+
+-- | Get an indexed element from an array.
+--   If the element is out of range then `Nothing`.
+(!?), safeIndex
+	:: forall sh a
+	.  (Shape sh, Elt a)
+	=> Array sh a
+	-> sh 
+	-> Maybe a
+
+{-# INLINE (!?) #-}
+(!?) arr ix = safeIndex arr ix
+
+{-# INLINE safeIndex #-}
+safeIndex arr ix
+ = case arr of
+	Delayed  _  fn		-> Just (fn ix)
+	Manifest sh vec		-> vec V.!? (S.toIndex sh ix)
+
+
+-- | Get an indexed element from an array, without bounds checking.
+--
+--   OBLIGATION: The index must be within the array. 
+--
+-- 	@inRange zeroDim (shape arr) ix == True@
+-- 
+unsafeIndex
+	:: forall sh a
+	.  (Shape sh, Elt a)
+	=> Array sh a
+	-> sh 
+	-> a
+
+{-# INLINE unsafeIndex #-}
+unsafeIndex arr ix
+ = case arr of
+	Delayed  _  fn		-> fn ix
 	Manifest sh uarr	-> uarr `V.unsafeIndex` (S.toIndex sh ix)
 
-{-# INLINE (!:) #-}
-(!:) arr ix = index arr ix
 
 
 -- Conversions ------------------------------------------------------------------------------------
