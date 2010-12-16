@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE ExplicitForAll, FlexibleInstances, UndecidableInstances #-}
 
 module Data.Array.Repa.Base

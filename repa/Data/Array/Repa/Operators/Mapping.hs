@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Data.Array.Repa.Operators.Mapping

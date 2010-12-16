@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE ExplicitForAll #-}
 
 module Data.Array.Repa.Operators.Traverse

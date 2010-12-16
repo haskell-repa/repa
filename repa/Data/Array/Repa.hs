@@ -4,13 +4,7 @@
 
 -- | See the repa-examples package for examples.
 --   
---   More information is also at <http://trac.haskell.org/repa>
---
---   WARNING: 	Most of the functions that operate on indices don't perform bounds checks.
---		Doing these checks would interfere with code optimisation and reduce performance.		
---		Indexing outside arrays, or failing to meet the stated obligations will
---		likely cause heap corruption.
-
+--   More information at <http://trac.haskell.org/repa>
 --  
 module Data.Array.Repa
 	( module Data.Array.Repa.Shape

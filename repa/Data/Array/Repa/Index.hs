@@ -13,16 +13,9 @@ module Data.Array.Repa.Index
 	, DIM2
 	, DIM3
 	, DIM4
-	, DIM5 
-	
-	-- * Testing
-	, arbitraryShape
-	, arbitrarySmallShape
-	, props_DataArrayRepaIndex)
+	, DIM5)
 where
 import Data.Array.Repa.Shape
-import Test.QuickCheck
-import Control.Monad
 import GHC.Base 		(quotInt, remInt)
 
 stage	= "Data.Array.Repa.Index"
@@ -146,90 +139,6 @@ instance Shape sh => Shape (sh :. Int) where
 
 
 
--- Arbitrary --------------------------------------------------------------------------------------
-instance Arbitrary Z where
-	arbitrary	= return Z
-
--- | Generate an arbitrary index, which may have 0's for some components.
-instance (Shape sh, Arbitrary sh) => Arbitrary (sh :. Int)  where
-	arbitrary 
-	 = do	sh1		<- arbitrary
-		let sh1Unit	= if size sh1 == 0 then unitDim else sh1
-		
-		-- Make sure not to create an index so big that we get
-		--	integer overflow when converting it to the linear form.
-		n		<- liftM abs $ arbitrary
-		let nMax	= maxBound `div` (size sh1Unit)
-		let nMaxed	= n `mod` nMax
-		
-		return	$ sh1 :. nMaxed 
-
--- | Generate an aribrary shape that does not have 0's for any component.
-arbitraryShape 
-	:: (Shape sh, Arbitrary sh) 
-	=> Gen (sh :. Int)
-
-arbitraryShape 
- = do	sh1		<- arbitrary
-	let sh1Unit	= if size sh1 == 0 then unitDim else sh1
-
-	-- Make sure not to create an index so big that we get
-	--	integer overflow when converting it to the linear form.
-	n		<- liftM abs $ arbitrary
-	let nMax	= maxBound `div` size sh1Unit
-	let nMaxed	= n `mod` nMax
-	let nClamped	= if nMaxed == 0 then 1 else nMaxed
-	
-	return $ sh1Unit :. nClamped
-	
-	
--- | Generate an arbitrary shape where each dimension is more than zero, 
---	but less than a specific value.
-arbitrarySmallShape 
-	:: (Shape sh, Arbitrary sh)
-	=> Int
-	-> Gen (sh :. Int)
-
-arbitrarySmallShape maxDim
- = do	sh		<- arbitraryShape
-	let dims	= listOfShape sh
-
-	let clamp x
-		= case x `mod` maxDim of
-			0	-> 1
-			n	-> n
-						
-	return	$ if True 
-			then shapeOfList $ map clamp dims
-			else sh
-
-
-genInShape2 :: DIM2 -> Gen DIM2
-genInShape2 (Z :. yMax :. xMax)
- = do	y	<- liftM (`mod` yMax) $ arbitrary
-	x	<- liftM (`mod` xMax) $ arbitrary
-	return	$ Z :. y :. x
-
-
--- Properties -------------------------------------------------------------------------------------
--- | QuickCheck properties for this module.
-props_DataArrayRepaIndex :: [(String, Property)]
-props_DataArrayRepaIndex
-  = [(stage ++ "." ++ name, test) | (name, test)
-     <-	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
-	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]]
-
-prop_toIndexFromIndex_DIM1 sh ix
-	=   (sizeIsValid sh)
-	==> (inShape sh ix)
-	==> fromIndex sh (toIndex sh ix) == ix
-	where	_types	= ( sh :: DIM1
-			  , ix :: DIM1)
-
-prop_toIndexFromIndex_DIM2
- =	forAll arbitraryShape   $ \(sh :: DIM2) ->
-   	forAll (genInShape2 sh) $ \(ix :: DIM2) ->
-	fromIndex sh (toIndex sh ix) == ix
 
 
 

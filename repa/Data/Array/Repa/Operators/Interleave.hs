@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeOperators, PatternGuards #-}
 
 module Data.Array.Repa.Operators.Interleave

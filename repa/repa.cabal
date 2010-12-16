@@ -38,11 +38,12 @@ Library
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
-        Data.Array.Repa.Base
         Data.Array.Repa.Stencil
         Data.Array.Repa.Arbitrary
+        Data.Array.Repa.Properties
 
   Other-modules:
+        Data.Array.Repa.Base
         Data.Array.Repa.Operators.IndexSpace
         Data.Array.Repa.Operators.Traverse
         Data.Array.Repa.Operators.Interleave
