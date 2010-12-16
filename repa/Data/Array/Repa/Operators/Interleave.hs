@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, PatternGuards #-}
 
 module Data.Array.Repa.Operators.Interleave
 	( interleave2

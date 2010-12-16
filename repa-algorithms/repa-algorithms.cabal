@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             1.1.1.0
+Version:             1.2.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -11,21 +11,16 @@ Category:            Data Structures
 Homepage:            http://trac.haskell.org/repa
 Bug-reports:         http://trac.haskell.org/repa/newticket
 Description:
-        NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
         Reusable algorithms using the Repa array library.
 
 Synopsis:
         Algorithms using the Repa array library.
 
-Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
-
 Library
   Build-Depends: 
         base                 == 4.*,
-        dph-base             == 0.5.*,
-        dph-prim-par         == 0.5.*,
         vector               == 0.7.*,
-        repa                 == 1.1.*
+        repa                 == 1.2.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -38,6 +33,7 @@ Library
 
   Exposed-modules:
         Data.Array.Repa.Algorithms.Complex
+        Data.Array.Repa.Algorithms.Randomish
         Data.Array.Repa.Algorithms.DFT
         Data.Array.Repa.Algorithms.DFT.Roots
         Data.Array.Repa.Algorithms.DFT.Center

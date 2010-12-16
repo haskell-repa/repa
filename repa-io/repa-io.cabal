@@ -1,5 +1,5 @@
 Name:                repa-io
-Version:             1.1.1.0
+Version:             1.2.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -22,9 +22,8 @@ Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 Library
   Build-Depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        repa                 == 1.1.*,
-        repa-bytestring      == 1.1.*,
+        repa                 == 1.2.*,
+        repa-bytestring      == 1.2.*,
         bmp                  == 1.1.*,
         old-time             == 1.0.*
 

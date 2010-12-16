@@ -93,7 +93,7 @@ dftWithRootsSingle rofu arrX (_ :. k)
 		-- All the roots we need to multiply with.
 		wroots		= fromFunction sh elemFn
 		elemFn (sh' :. n) 
-			= rofu !: (sh' :. (k * n) `mod` len)
+			= rofu ! (sh' :. (k * n) `mod` len)
 
 	  in  A.sumAll $ A.zipWith (*) arrX wroots
 

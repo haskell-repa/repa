@@ -4,9 +4,6 @@ module Solver
 where	
 import Data.Array.Repa		as A
 import qualified Data.Array.Repa.Shape	as S
-import Data.Array.Parallel.Unlifted				(Elt)
-import qualified Data.Array.Parallel.Unlifted			as U
-
 
 -- | Solver for the Laplace equation.
 solveLaplace

@@ -19,7 +19,6 @@ import System.IO
 import Data.List				as L
 import Data.Array.Repa				as A
 import Prelude					as P
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted	as U
 
 
 -- | Read a matrix from a text file.
@@ -27,7 +26,7 @@ import qualified "dph-prim-par" Data.Array.Parallel.Unlifted	as U
 --   WARNING: This doesn't do graceful error handling. If the file has the wrong format
 --   you'll get a confusing `error`.
 readMatrixFromTextFile
-	:: (U.Elt a, Num a, Read a)
+	:: (Elt a, Num a, Read a)
 	=> FilePath
 	-> IO (Array DIM2 a)	
 
@@ -47,7 +46,7 @@ readMatrixFromTextFile fileName
 
 -- | Write a matrix as a text file.
 writeMatrixToTextFile 
-	:: (U.Elt a, Show a)
+	:: (Elt a, Show a)
 	=> FilePath
 	-> Array DIM2 a
 	-> IO ()

@@ -4,11 +4,11 @@ import Data.Array.Repa			as A
 import Data.Array.Repa.IO.Matrix
 import Data.Array.Repa.IO.Timing
 import Data.Array.Repa.Algorithms.Matrix
+import Data.Array.Repa.Algorithms.Randomish
 import Data.Maybe
 import System.Environment
 import Control.Monad
 import System.Random
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted as U
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg
@@ -65,30 +65,7 @@ getMatrix arg
 	 -> readMatrixFromTextFile fileName
 
 	ArgMatrixRandom height width	
-	 -> genRandomMatrix (Z :. height :. width)	
-
-
--- Random -----------------------------------------------------------------------------------------
--- | Generate a random(ish) matrix.
-genRandomMatrix 
-	:: DIM2 
-	-> IO (Array DIM2 Double)
-
-genRandomMatrix sh
- = do	uarr	<- genRandomUArray (A.size sh)
-	return	$ fromUArray sh uarr
-
--- | Generate a random(ish) UArray of doubles.
--- The std random function is too slow to generate really big vectors
--- with.  Instead, we generate a short random vector and repeat that.
-genRandomUArray :: Int -> IO (U.Array Double)
-genRandomUArray n 
- = do	let seed	= 42742
-	let k		= 100
-	let rg		= mkStdGen seed
-    	let randvec	= U.randomRs k (-100, 100) rg
-	let vec		= U.map (\i -> randvec U.!: (i `mod` k)) (U.enumFromTo 0 (n-1))
-	return vec
+	 -> return $ randomishDoubleArray (Z :. height :. width) (-100) 100 12345
 
 			
 -- Main -------------------------------------------------------------------------------------------

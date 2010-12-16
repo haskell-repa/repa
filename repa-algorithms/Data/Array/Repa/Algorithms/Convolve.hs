@@ -9,10 +9,9 @@ module Data.Array.Repa.Algorithms.Convolve
 	, convolveOut )
 where
 import Data.Array.Repa 					as A
-import qualified Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed			as V
+import qualified Data.Array.Repa.Shape			as S
 import Prelude						as P
-import "dph-prim-par" Data.Array.Parallel.Unlifted	(Elt)
 
 
 -- Plain Convolve ---------------------------------------------------------------------------------
@@ -155,7 +154,7 @@ convolveOut getOut
 		 | otherwise
 		 = let	!ix@(sh :. y :. x)	= S.fromIndex krnSh count
 			!ix'			= sh :. y + jkrnHeight' :. x + ikrnWidth'
-			!here			= kernel !: ix * (get' ix')
+			!here			= kernel ! ix * (get' ix')
 		   in	integrate (count + 1) (acc + here)
 
 	   in	integrate 0 0

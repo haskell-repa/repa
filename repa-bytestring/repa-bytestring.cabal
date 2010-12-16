@@ -1,5 +1,5 @@
 Name:                repa-bytestring
-Version:             1.1.1.0
+Version:             1.2.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -11,19 +11,16 @@ Category:            Data Structures
 Homepage:            http://trac.haskell.org/repa
 Bug-reports:         http://trac.haskell.org/repa/newticket
 Description:
-        NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
         Conversions between Repa Arrays and ByteStrings.
 
 Synopsis:
         Conversions between Repa Arrays and ByteStrings.
 
-Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
-
 Library
   Build-Depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        repa                 == 1.1.*,
+        repa                 == 1.2.*,
+        vector               == 0.7.*,
         bytestring           == 0.9.1.*
 
   ghc-options:

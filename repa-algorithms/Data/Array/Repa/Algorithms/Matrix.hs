@@ -13,7 +13,6 @@ module Data.Array.Repa.Algorithms.Matrix
 	(multiplyMM)
 where
 import Data.Array.Repa	as A
-import "dph-prim-par" Data.Array.Parallel.Unlifted			(Elt)
 
 -- | Matrix-matrix multiply.
 multiplyMM

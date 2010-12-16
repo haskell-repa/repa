@@ -11,9 +11,9 @@ import Foreign.Marshal.Alloc
 import Foreign.Ptr
 import Foreign.Storable
 import System.IO.Unsafe
+import qualified Data.Vector.Unboxed	as V
 import qualified Data.ByteString	as BS
 import Data.ByteString			(ByteString)
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted as U
 
 
 -- | Convert an `Array` to a (strict) `ByteString`.
@@ -25,7 +25,7 @@ toByteString
 toByteString arr
  = unsafePerformIO
  $ allocaBytes (size $ extent arr)	$ \(bufDest :: Ptr Word8) ->
-   let 	uarr	= toUArray arr
+   let 	vec	= toVector arr
 	len	= size $ extent arr
 
 	copy offset
@@ -33,7 +33,7 @@ toByteString arr
 	 = return ()
 
 	 | otherwise
-	 = do	pokeByteOff bufDest offset (uarr U.!: offset)
+	 = do	pokeByteOff bufDest offset (vec `V.unsafeIndex` offset)
 		copy (offset + 1)
 
     in do

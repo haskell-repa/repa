@@ -141,8 +141,8 @@ fft !sign !sh !lenVec !vec
 
 	 where	swivel (sh' :. ix)
 		 = case ix of
-			0	-> vec !: (sh' :. offset) + vec !: (sh' :. (offset + stride))
-			1	-> vec !: (sh' :. offset) - vec !: (sh' :. (offset + stride))
+			0	-> vec ! (sh' :. offset) + vec ! (sh' :. (offset + stride))
+			1	-> vec ! (sh' :. offset) - vec ! (sh' :. (offset + stride))
 
 		{-# INLINE combine #-}
 		combine !len' evens@Manifest{} odds@Manifest{}

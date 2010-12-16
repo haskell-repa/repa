@@ -20,14 +20,13 @@ import Prelude					as P
 import System.IO
 import Control.Monad
 import Data.Char
-import qualified "dph-prim-par" Data.Array.Parallel.Unlifted	as U
 
 
 -- | Read a vector from a text file.
 --   WARNING: This doesn't do graceful error handling. If the file has the wrong format
 --   you'll get a confusing `error`.
 readVectorFromTextFile
-	:: (U.Elt a, Num a, Read a)
+	:: (Elt a, Num a, Read a)
 	=> FilePath
 	-> IO (Array DIM1 a)	
 
@@ -55,7 +54,7 @@ readInt str
 	
 -- | Write a vector as a text file.
 writeVectorToTextFile 
-	:: (U.Elt a, Show a)
+	:: (Elt a, Show a)
 	=> Array DIM1 a
 	-> FilePath
 	-> IO ()

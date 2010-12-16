@@ -9,7 +9,6 @@ module Data.Array.Repa.IO.BMP
 	, writeComponentsToBMP
 	, writeMatrixToGreyscaleBMP)
 where
-import qualified  Data.Array.Parallel.Unlifted 	as U
 import Data.Array.Repa				as A
 import Data.Array.Repa.ByteString               as A
 import Prelude					as P
@@ -37,9 +36,9 @@ readMatrixFromGreyscaleBMP filePath
   	 Right (arrRed, arrGreen, arrBlue)
  	  -> let arr	= force 
 			$ A.fromFunction (extent arrRed)
-			   (\ix -> sqrt ( (fromIntegral (arrRed   !: ix) / 255) ^ (2 :: Int)
-					+ (fromIntegral (arrGreen !: ix) / 255) ^ (2 :: Int)
-					+ (fromIntegral (arrBlue  !: ix) / 255) ^ (2 :: Int)))
+			   (\ix -> sqrt ( (fromIntegral (arrRed   ! ix) / 255) ^ (2 :: Int)
+					+ (fromIntegral (arrGreen ! ix) / 255) ^ (2 :: Int)
+					+ (fromIntegral (arrBlue  ! ix) / 255) ^ (2 :: Int)))
 	     in	arr `deepSeqArray` return (Right arr)
 		
 
@@ -179,7 +178,7 @@ writeImageToBMP fileName arrImage
 -- | Normalise a matrix to to [0 .. 1], discarding negative values.
 --	If the maximum value is 0 then return the array unchanged.
 normalisePositive01
-	:: (Shape sh, U.Elt a, Fractional a, Ord a)
+	:: (Shape sh, Elt a, Fractional a, Ord a)
 	=> Array sh a
 	-> Array sh a
 

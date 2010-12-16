@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             1.1.1.0
+Version:             1.2.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -20,11 +20,9 @@ Synopsis:
 Executable repa-mmult
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-io              == 1.1.*,
-        repa-algorithms      == 1.1.*,
+        repa                 == 1.2.*,
+        repa-io              == 1.2.*,
+        repa-algorithms      == 1.2.*,
         random               == 1.0.*
 
   Main-is: MMult/src/Main.hs
@@ -44,10 +42,8 @@ Executable repa-mmult
 Executable repa-laplace
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-io              == 1.1.*
+        repa                 == 1.2.*,
+        repa-io              == 1.2.*
 
   Main-is: Laplace/src/Main.hs
   other-modules: Solver
@@ -67,11 +63,9 @@ Executable repa-laplace
 Executable repa-fft2d
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*,
-        repa-io              == 1.1.*
+        repa                 == 1.2.*,
+        repa-algorithms      == 1.2.*,
+        repa-io              == 1.2.*
   Main-is: FFT/FFT2d/src/Main.hs
   hs-source-dirs: FFT/FFT2d/src .
   ghc-options: 
@@ -89,11 +83,9 @@ Executable repa-fft2d
 Executable repa-fft2d-highpass
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*,
-        repa-io              == 1.1.*
+        repa                 == 1.2.*,
+        repa-algorithms      == 1.2.*,
+        repa-io              == 1.2.*
 
   Main-is: FFT/HighPass2d/src/Main.hs
   hs-source-dirs: FFT/Highpass2d/src .
@@ -112,10 +104,8 @@ Executable repa-fft2d-highpass
 Executable repa-fft3d-highpass
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*
+        repa                 == 1.2.*,
+        repa-algorithms      == 1.2.*
 
   Main-is: FFT/HighPass3d/src/Main.hs
   hs-source-dirs: FFT/Highpass3d/src .
@@ -134,10 +124,8 @@ Executable repa-fft3d-highpass
 Executable repa-blur
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*,
+        repa                 == 1.2.*,
+        repa-algorithms      == 1.2.*,
         vector               == 0.7.*
 
   Main-is: Blur/src/Main.hs
@@ -157,10 +145,8 @@ Executable repa-blur
 Executable repa-edgedetect
   Build-depends: 
         base                 == 4.*,
-        dph-prim-par         == 0.5.*,
-        dph-base             == 0.5.*,
-        repa                 == 1.1.*,
-        repa-algorithms      == 1.1.*
+        repa                 == 1.2.*,
+        repa-algorithms      == 1.2.*
 
   Main-is: EdgeDetect/src/Main.hs
   hs-source-dirs: EdgeDetect/src .
