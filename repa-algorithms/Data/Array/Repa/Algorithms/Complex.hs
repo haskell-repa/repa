@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, TypeSynonymInstances #-}
+{-# LANGUAGE TypeOperators, TypeSynonymInstances, FlexibleInstances #-}
 
 -- | Strict complex doubles.
 module Data.Array.Repa.Algorithms.Complex
