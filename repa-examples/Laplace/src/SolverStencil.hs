@@ -1,8 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
-module Solver 
+module SolverStencil
 	(solveLaplace)
 where	
 import Data.Array.Repa		as A
+import Data.Array.Repa.Stencil	as A
 import qualified Data.Array.Repa.Shape	as S
 
 -- | Solver for the Laplace equation.
@@ -14,48 +15,43 @@ solveLaplace
 	-> Array DIM2 Double
 
 {-# NOINLINE solveLaplace #-}
-solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} arrInit@Manifest{}
- = go steps arrInit
- where	go i arr@Manifest{}
+solveLaplace steps
+	arrBoundMask@(Manifest shBoundMask vecBoundMask)
+	arrBoundValue@(Manifest shBoundValue vecBoundValue)
+	arrInit@(Manifest _ vecInit)
+ = arrBoundMask `deepSeqArray` arrBoundValue `deepSeqArray` arrInit `deepSeqArray`
+   vecBoundMask `seq` vecBoundValue `seq` vecInit `seq`
+   shBoundMask  `seq` shBoundValue `seq`
+   go steps arrInit
+ where	go !i !arr@Manifest{}
 	   | i == 0	= arr
-	   | otherwise	= go (i - 1) 
-			$ force
+	   | otherwise	
+	   = let vec'	= forceBlockwise
 			$ applyBoundary arrBoundMask arrBoundValue
 			$ relaxLaplace arr
+	
+	     in	 vec' `seq` go (i - 1) vec'
 
 
--- | Perform matrix relaxation for the Laplace equation,
---	using a stencil function.
---
---   Computation fn is
---	u'(i,j) = (u(i-1,j) + u(i+1,j) + u(i,j-1) + u(i,j+1)) / 4
---
-relaxLaplace
-	:: Array DIM2 Double
-	-> Array DIM2 Double
-
+-- Make a generic version that works on stencils of arbitrary dimension.
+-- | Also provide versions specific to array dimensions.
+relaxLaplace :: Array DIM2 Double -> Array DIM2 Double
 {-# INLINE relaxLaplace #-}
-relaxLaplace !arr@Manifest{}
- = unsafeTraverse arr id elemFn
- where
-	_ :. height :. width	
-		= extent arr
+relaxLaplace arr@Manifest{} 
+	= A.map (/ 4) (mapStencil2 laplace (BoundConst 0) arr)
 
-	{-# INLINE elemFn #-}
-	elemFn get d@(sh :. i :. j)
-	 = if isBorder i j
-		 then  get d
-		 else (get (sh :. (i-1) :. j)
-		   +   get (sh :. i     :. (j-1))
-		   +   get (sh :. (i+1) :. j)
-	 	   +   get (sh :. i     :. (j+1))) / 4
 
-	-- Check if this element is on the border of the matrix.
-	-- If so we can't apply the stencil because we don't have all the neighbours.
-	{-# INLINE isBorder #-}
-	isBorder i j
-	 	=  (i == 0) || (i >= width  - 1) 
-	 	|| (j == 0) || (j >= height - 1) 
+-- | Stencil function for laplace equation.
+laplace :: (Elt a, Num a) => Stencil DIM2 a a
+{-# INLINE laplace #-}
+laplace 
+ = makeConvolution (Z :. 3 :. 3)
+ $ \ix -> case ix of
+		Z :.  0  :.  1	-> Just 1
+		Z :.  0  :. -1	-> Just 1
+		Z :.  1  :.  0	-> Just 1
+		Z :. -1  :.  0	-> Just 1
+		_		-> Nothing
 
 
 -- | Apply the boundary conditions to this matrix.
@@ -75,5 +71,3 @@ applyBoundary
 applyBoundary arrBoundMask arrBoundValue arr
 	= A.zipWith (+) arrBoundValue
 	$ A.zipWith (*) arrBoundMask  arr
-
-

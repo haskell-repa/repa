@@ -17,12 +17,12 @@ import GHC.Conc                  (forkOnIO)
 import Control.Concurrent.MVar
 import Control.Exception         (assert)
 import Control.Monad             (zipWithM, zipWithM_)
+import System.IO
 
 #if TRACE_GANG
 import GHC.Exts                  (traceEvent)
 import System.Time ( ClockTime(..), getClockTime )
 #endif
-
 
 -- Requests ---------------------------------------------------------------------------------------
 -- | The 'Req' type encapsulates work requests for individual members of a gang. 
@@ -155,22 +155,21 @@ gangIO	:: Gang
 	-> (Int -> IO ())
 	-> IO ()
 
-#if SEQ_IF_GANG_BUSY
+{-# INLINE [2] gangIO #-}
 gangIO (Gang n mvs busy) p 
  = do	traceGang   "gangIO: issuing work requests (SEQ_IF_GANG_BUSY)"
 	b <- swapMVar busy True
 
 	traceGang $ "gangIO: gang is currently " ++ (if b then "busy" else "idle")
 	if b
-	 then mapM_ p [0 .. n-1]
+	 then do
+		hPutStr stderr $ "Data.Array.Repa: warning - evaluating nested parallel computation sequentially"
+		mapM_ p [0 .. n-1]
+
 	 else do
 		parIO n mvs p
-		swapMVar busy False
+		_ <- swapMVar busy False
 		return ()
-#else
-gangIO (Gang n []  _)  p = mapM_ p [0 .. n-1]
-gangIO (Gang n mvs _)  p = parIO n mvs p
-#endif
 
 
 -- | Issue some requests to the worker threads and wait for them to complete.

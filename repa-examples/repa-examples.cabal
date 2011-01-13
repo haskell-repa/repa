@@ -46,7 +46,7 @@ Executable repa-laplace
         repa-io              == 1.2.*
 
   Main-is: Laplace/src/Main.hs
-  other-modules: Solver
+  other-modules: SolverGet SolverStencil
   hs-source-dirs: Laplace/src .
   ghc-options: 
         -threaded

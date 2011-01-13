@@ -30,6 +30,7 @@ module Data.Array.Repa
 	
 	-- * Forcing
 	, force
+	, forceBlockwise
 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
 	-- * Index space transformations

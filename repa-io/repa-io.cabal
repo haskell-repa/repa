@@ -11,13 +11,10 @@ Category:            Data Structures
 Homepage:            http://trac.haskell.org/repa
 Bug-reports:         http://trac.haskell.org/repa/newticket
 Description:
-        NOTE: You must use the GHC head branch > 6.13.20100309 to get decent performance.
         Read and write Repa arrays in various formats.
 
 Synopsis:
         Read and write Repa arrays in various formats.
-
-Tested-with: GHC == 6.13.20100309, GHC == 6.12.1
 
 Library
   Build-Depends: 

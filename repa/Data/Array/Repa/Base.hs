@@ -1,5 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE ExplicitForAll, FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE ExplicitForAll, TypeOperators, FlexibleInstances, UndecidableInstances, BangPatterns #-}
 
 module Data.Array.Repa.Base
 	( Elt
@@ -7,6 +7,11 @@ module Data.Array.Repa.Base
 	, deepSeqArray
 	, singleton, toScalar
 	, extent,    delay
+
+	-- * Predicates
+	, isManifest
+	, isDelayed
+	, isSegmented
 
 	-- * Indexing
 	, (!),  index
@@ -19,13 +24,16 @@ module Data.Array.Repa.Base
 	, fromList,   toList
 	
 	-- * Forcing
-	, force)
+	, force
+	, forceBlockwise)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Evaluate
 import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
+import Data.Vector.Unboxed.Mutable		as VM
 import Data.Vector.Unboxed			(Vector)
+import System.IO.Unsafe	
 
 stage	= "Data.Array.Repa.Array"
 
@@ -33,11 +41,19 @@ stage	= "Data.Array.Repa.Array"
 -- | Possibly delayed arrays.
 data Array sh a
 	= -- | An array represented as some concrete unboxed data.
-	  Manifest !sh !(Vector a)
+	  Manifest  !sh !(Vector a)
 
           -- | An array represented as a function that computes each element.
-	| Delayed  !sh !(sh -> a)
+	| Delayed   !sh !(sh -> a)
 
+	  -- | An delayed array broken into subranges.
+	  --   INVARIANT: the ranges to not overlap.
+	  --   TODO:      Try to store the ranges in a vector. We might need more instances.
+	| Segmented !sh				-- extent of whole array.
+		!(sh -> Bool)			-- fn to decide if we're in the first or second segment.
+		![(sh, sh)] !(sh -> a)		-- if we're in any of these ranges then use this fn.
+		!(sh, sh)   !(sh -> a)	--   otherwise use this other one.
+	
 
 -- | Ensure an array's structure is fully evaluated.
 --   This evaluates the extent and outer constructor, but does not `force` the elements.
@@ -50,8 +66,28 @@ deepSeqArray
 {-# INLINE deepSeqArray #-}
 deepSeqArray arr x 
  = case arr of
-	Delayed  sh _		-> sh `S.deepSeq` x
 	Manifest sh uarr	-> sh `S.deepSeq` uarr `seq` x
+	Delayed  sh _		-> sh `S.deepSeq` x
+
+
+-- Predicates -------------------------------------------------------------------------------------
+isManifest  :: Array sh a -> Bool
+isManifest arr
+ = case arr of
+	Manifest{}	-> True
+	_		-> False
+	
+isDelayed   :: Array sh a -> Bool
+isDelayed arr
+ = case arr of
+	Delayed{}	-> True
+	_		-> False
+
+isSegmented :: Array sh a -> Bool
+isSegmented arr
+ = case arr of
+	Segmented{}	-> True
+	_		-> False
 
 
 -- Singletons -------------------------------------------------------------------------------------
@@ -149,9 +185,8 @@ unsafeIndex
 {-# INLINE unsafeIndex #-}
 unsafeIndex arr ix
  = case arr of
-	Delayed  _  fn		-> fn ix
 	Manifest sh uarr	-> uarr `V.unsafeIndex` (S.toIndex sh ix)
-
+	Delayed  _  fn		-> fn ix
 
 
 -- Conversions ------------------------------------------------------------------------------------
@@ -230,7 +265,7 @@ toList arr
 
 -- Forcing ----------------------------------------------------------------------------------------
 -- | Force an array, so that it becomes `Manifest`.
---   This evaluates all elements in parallel.
+--   The array is chunked up and evaluated in parallel.
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 	
@@ -243,26 +278,61 @@ force arr
 		 -> sh `S.deepSeq` vec `seq` (sh, vec)
 		
 		Delayed sh getElem
-		 -> let vec	= evalParLinear sh (getElem . fromIndex sh)
-		    in  sh `S.deepSeq` vec `seq` (sh, vec)
+		 -> let vec	= unsafePerformIO
+				$ do	mvec	<- VM.unsafeNew (S.size sh)
+					fillVectorP mvec (getElem . (fromIndex sh))
+					V.unsafeFreeze mvec
 
-{-
--- TODO: make this parallel again
---	change V.map and V.enumFromTo
-force arr
+		    in sh `S.deepSeq` vec `seq` (sh, vec)
 
- = Manifest sh' uarr'
- where (sh', uarr')
-	= case arr of
-		Manifest sh uarr
-	 	 -> sh `S.deepSeq` uarr `seq` (sh, uarr)
 
-		Delayed sh fn
-	 	 -> let uarr	=  V.map (fn . S.fromIndex sh) 
-				$! V.enumFromTo (0 :: Int) (S.size sh - 1)
-	    	     in	sh `S.deepSeq` uarr `seq` (sh, uarr)
--}
+-- | Force an array, so that it becomes `Manifest`.
+--
+--   The array is evaluated in parallel in a blockwise manner, where each block is
+--   evaluated independently and in a separate thread. For delayed arrays which access
+--   their source elements from the local neighbourhood, `forceBlockwise` should give
+--   better cache performance than plain `force`.
+--
+forceBlockwise	
+	:: Elt a
+	=> Array DIM2 a -> Array DIM2 a
+	
+{-# INLINE forceBlockwise #-}
+forceBlockwise arr
+ = Manifest sh' vec'
+ where	(sh', vec')
+	 = case arr of
+		Manifest sh vec
+		 -> sh `S.deepSeq` vec `seq` (sh, vec)
+		
+		Delayed sh@(_ :. width) getElemFromDelayed
+		 -> let vec	= newVectorBlockwiseP (getElemFromDelayed . fromIndex sh) (S.size sh) width
+		    in	sh `S.deepSeq` vec `seq` (sh, vec)
 
+		-- TODO: This needs the index to be DIM2 becase we call fillVectorBlock directly
+		--       XXX no: Could fix this by looking at the total size of the array and determining 
+		--               how many "pages" it has. Then call fillVectorBlock for each page.
+		--       Need to skip pages at beginning and end, it's a range after all.
+		Segmented sh@(_ :. width) 
+			_inBorder
+			_rngsBorder _getElemBorder
+			(shInner1, shInner2)  getElemInner
+
+		 -> shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq`
+	            let	(_ :. y0 :. x0)	= shInner1
+			(_ :. y1 :. x1) = shInner2
+
+			vec	= y0 `seq` x0 `seq` y1 `seq` x1 `seq`
+				  unsafePerformIO
+		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
+
+					-- fill the inner segment
+					fillVectorBlock mvec (getElemInner . fromIndex sh)
+							width x0 y0 x1 y1
+
+					-- TODO: fill border segs
+					V.unsafeFreeze mvec
+		    in	vec `seq` (sh, vec)
 
 
 -- Elements ---------------------------------------------------------------------------------------

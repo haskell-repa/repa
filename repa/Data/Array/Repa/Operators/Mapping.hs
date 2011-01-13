@@ -1,5 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE NoMonomorphismRestriction, PatternGuards #-}
 
 module Data.Array.Repa.Operators.Mapping
 	( map
@@ -24,8 +24,20 @@ map	:: (Shape sh, Elt a, Elt b)
 
 {-# INLINE map #-}
 map f arr
-	= unsafeTraverse arr id (f .)
-	
+ = case arr of
+	Manifest{}
+	 -> unsafeTraverse arr id (f .)
+
+	Delayed sh getElem
+	 -> Delayed sh (f . getElem)
+
+	Segmented sh inBorder
+		rngsBorder getBorder
+		rngInner   getInner
+	 -> Segmented sh inBorder
+		rngsBorder (f . getBorder)
+		rngInner   (f . getInner)
+
 
 -- | Combine two arrays, element-wise, with a binary operator.
 --	If the extent of the two array arguments differ, 
@@ -38,10 +50,35 @@ zipWith :: (Shape sh, Elt a, Elt b, Elt c)
 
 {-# INLINE zipWith #-}
 zipWith f arr1 arr2
- 	= arr1 `deepSeqArray` 
-	  arr2 `deepSeqArray`
-	  Delayed	(S.intersectDim (extent arr1) (extent arr2))
-			(\ix -> f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix))
+ 	| not $ isSegmented arr1
+ 	, not $ isSegmented arr2
+ 	= Delayed
+		(S.intersectDim (extent arr1) (extent arr2))
+		(\ix -> f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix))
+
+	-- TODO: intersect array ranges
+	| not $ isSegmented arr1
+	, Segmented sh inBorder rngsBorder fnBorder rngInner fnInner <- arr2
+	= Segmented sh inBorder
+		rngsBorder (\ix -> f (arr1 `unsafeIndex` ix) (fnBorder ix))
+		rngInner   (\ix -> f (arr1 `unsafeIndex` ix) (fnInner  ix))
+
+	-- TODO: intersect array ranges
+	| Segmented sh inBorder rngsBorder fnBorder rngInner fnInner <- arr1
+	, not $ isSegmented arr2
+	= Segmented sh inBorder
+		rngsBorder (\ix -> f (fnBorder ix) (arr2 `unsafeIndex` ix))
+		rngInner   (\ix -> f (fnInner  ix) (arr2 `unsafeIndex` ix))
+	
+	-- TODO: convert to flattened form before zip/
+	--       or we could be tricky and clip the ranges against each other.
+	| Segmented{} <- arr1
+	, Segmented{} <- arr2
+	= error "finish this"
+
+	| otherwise
+	= error "zipWith: this doesn't happen :-P"
+
 
 {-# INLINE (+^) #-}
 (+^)	= zipWith (+)

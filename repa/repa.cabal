@@ -24,6 +24,7 @@ Tested-with: GHC == 7.0.1
 Library
   Build-Depends: 
         base                 == 4.*,
+        ghc-prim             == 0.2.*,
         vector               >= 0.7 && < 0.8,
         QuickCheck           >= 2.3 && < 2.5
 
