@@ -42,7 +42,7 @@ reshape sh' arr
 		 -> Delayed sh' (f . fromIndex sh . toIndex sh')
 
 		-- TODO: we need to reshape all of the contained functions.
-		Segmented{}
+		Partitioned{}
 		 -> error $ stage ++ ".reshape: not finished for segmented"
 
 

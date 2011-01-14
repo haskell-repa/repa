@@ -68,7 +68,8 @@ mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
 	rngInternal	= ( Z :. yMin :. xMin
 			  , Z :. yMax :. xMax )
 			
-   in	Segmented (extent arr)
+   in	Partitioned 
+		(extent arr)
 		(const False)
 		[]		(unsafeAppStencilBorder2   stencil boundary arr)
 		rngInternal	(unsafeAppStencilInternal2 stencil arr)

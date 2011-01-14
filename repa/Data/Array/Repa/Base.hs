@@ -11,7 +11,7 @@ module Data.Array.Repa.Base
 	-- * Predicates
 	, isManifest
 	, isDelayed
-	, isSegmented
+	, isPartitioned
 
 	-- * Indexing
 	, (!),  index
@@ -54,7 +54,7 @@ data Array sh a
 	  --   INVARIANT: the ranges to not overlap.
 	  --   INVARIANT: for a singleton array both elem fns return the same result.
 	  --   TODO:      Try to store the ranges in a vector. We might need more instances.
-	| Segmented 
+	| Partitioned 
 		{ arrayExtent		:: !sh			-- extent of whole array.
 		, arrayChoose		:: !(sh -> Bool)	-- fn to decide if we're in the first or second segment.
 		, arrayBorderRanges	:: ![(sh, sh)] 
@@ -64,7 +64,7 @@ data Array sh a
 
 -- | Ensure an array's structure is fully evaluated.
 --   This evaluates the extent and outer constructor, but does not `force` the elements.
---   TODO: Force the list in the Segmented version.
+--   TODO: Force the list in the Partitioned version.
 infixr 0 `deepSeqArray`
 deepSeqArray 
 	:: Shape sh
@@ -76,7 +76,7 @@ deepSeqArray arr x
  = case arr of
 	Manifest  sh uarr	-> sh `S.deepSeq` uarr `seq` x
 	Delayed   sh _		-> sh `S.deepSeq` x
-	Segmented sh _ _ _ _ _	-> sh `S.deepSeq` x
+	Partitioned sh _ _ _ _ _	-> sh `S.deepSeq` x
 
 
 -- Predicates -------------------------------------------------------------------------------------
@@ -92,10 +92,10 @@ isDelayed arr
 	Delayed{}	-> True
 	_		-> False
 
-isSegmented :: Array sh a -> Bool
-isSegmented arr
+isPartitioned :: Array sh a -> Bool
+isPartitioned arr
  = case arr of
-	Segmented{}	-> True
+	Partitioned{}	-> True
 	_		-> False
 
 
@@ -113,7 +113,7 @@ toScalar arr
  = case arr of
 	Delayed   _ fn		-> fn Z
 	Manifest  _ uarr	-> uarr V.! 0
-	Segmented{}		-> arrayInnerGetElem arr Z
+	Partitioned{}		-> arrayInnerGetElem arr Z
 	
 
 -- Projections ------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ delay arr
 	Manifest  sh vec
 	 -> (sh, \ix -> vec V.! S.toIndex sh ix)
 
-	Segmented{}
+	Partitioned{}
 	 -> ( arrayExtent arr
 	    , \ix -> if arrayChoose arr ix
 			   then arrayBorderGetElem arr ix
@@ -168,7 +168,7 @@ index arr ix
 	Manifest  sh vec
 	 -> vec V.! (S.toIndex sh ix)
 
-	Segmented{}
+	Partitioned{}
 	 -> if arrayChoose arr ix
 		then arrayBorderGetElem arr ix
 		else arrayInnerGetElem  arr ix
@@ -195,7 +195,7 @@ safeIndex arr ix
 	Manifest sh vec		
 	 -> vec V.!? (S.toIndex sh ix)
 
-	Segmented{}
+	Partitioned{}
 	 -> Just (if arrayChoose arr ix
 		  	then arrayBorderGetElem arr ix
 			else arrayInnerGetElem  arr ix)
@@ -223,7 +223,7 @@ unsafeIndex arr ix
 	Manifest sh uarr
 	 -> uarr `V.unsafeIndex` (S.toIndex sh ix)
 
-	Segmented{}
+	Partitioned{}
 	 -> if arrayChoose arr ix
 		then arrayBorderGetElem arr ix
 		else arrayInnerGetElem  arr ix
@@ -326,7 +326,7 @@ force arr
 
 		    in sh `S.deepSeq` vec `seq` (sh, vec)
 
-		Segmented{}
+		Partitioned{}
 		 -> let	sh	= arrayExtent arr
 			vec	= unsafePerformIO
 				$ do	mvec	<- VM.unsafeNew (S.size sh)
@@ -363,7 +363,7 @@ forceBlockwise arr
 		--       XXX no: Could fix this by looking at the total size of the array and determining 
 		--               how many "pages" it has. Then call fillVectorBlock for each page.
 		--       Need to skip pages at beginning and end, it's a range after all.
-		Segmented sh@(_ :. width) 
+		Partitioned sh@(_ :. width) 
 			_inBorder
 			_rngsBorder _getElemBorder
 			(shInner1, shInner2)  getElemInner
