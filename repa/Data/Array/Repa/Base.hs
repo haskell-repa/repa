@@ -41,22 +41,30 @@ stage	= "Data.Array.Repa.Array"
 -- | Possibly delayed arrays.
 data Array sh a
 	= -- | An array represented as some concrete unboxed data.
-	  Manifest  !sh !(Vector a)
+	  Manifest  
+		{ arrayExtent		:: !sh 
+		, arrayVector		:: !(Vector a) }
 
           -- | An array represented as a function that computes each element.
-	| Delayed   !sh !(sh -> a)
+	| Delayed 
+		{ arrayExtent		:: !sh
+		, arrayGetElem		:: !(sh -> a) }
 
 	  -- | An delayed array broken into subranges.
 	  --   INVARIANT: the ranges to not overlap.
+	  --   INVARIANT: for a singleton array both elem fns return the same result.
 	  --   TODO:      Try to store the ranges in a vector. We might need more instances.
-	| Segmented !sh				-- extent of whole array.
-		!(sh -> Bool)			-- fn to decide if we're in the first or second segment.
-		![(sh, sh)] !(sh -> a)		-- if we're in any of these ranges then use this fn.
-		!(sh, sh)   !(sh -> a)	--   otherwise use this other one.
-	
+	| Segmented 
+		{ arrayExtent		:: !sh			-- extent of whole array.
+		, arrayChoose		:: !(sh -> Bool)	-- fn to decide if we're in the first or second segment.
+		, arrayBorderRanges	:: ![(sh, sh)] 
+		, arrayBorderGetElem	:: !(sh -> a)		-- if we're in any of these ranges then use this fn.
+		, arrayInnerRange	:: !(sh, sh)
+		, arrayInnerGetElem	:: !(sh -> a) }		--   otherwise use this other one.
 
 -- | Ensure an array's structure is fully evaluated.
 --   This evaluates the extent and outer constructor, but does not `force` the elements.
+--   TODO: Force the list in the Segmented version.
 infixr 0 `deepSeqArray`
 deepSeqArray 
 	:: Shape sh
@@ -66,8 +74,9 @@ deepSeqArray
 {-# INLINE deepSeqArray #-}
 deepSeqArray arr x 
  = case arr of
-	Manifest sh uarr	-> sh `S.deepSeq` uarr `seq` x
-	Delayed  sh _		-> sh `S.deepSeq` x
+	Manifest  sh uarr	-> sh `S.deepSeq` uarr `seq` x
+	Delayed   sh _		-> sh `S.deepSeq` x
+	Segmented sh _ _ _ _ _	-> sh `S.deepSeq` x
 
 
 -- Predicates -------------------------------------------------------------------------------------
@@ -102,18 +111,16 @@ toScalar :: Elt a => Array Z a -> a
 {-# INLINE toScalar #-}
 toScalar arr
  = case arr of
-	Delayed  _ fn		-> fn Z
-	Manifest _ uarr		-> uarr V.! 0
-
+	Delayed   _ fn		-> fn Z
+	Manifest  _ uarr	-> uarr V.! 0
+	Segmented{}		-> arrayInnerGetElem arr Z
+	
 
 -- Projections ------------------------------------------------------------------------------------
 -- | Take the extent of an array.
 extent	:: Array sh a -> sh
 {-# INLINE extent #-}
-extent arr
- = case arr of
-	Manifest sh _	-> sh
-	Delayed  sh _	-> sh
+extent arr	= arrayExtent arr
 
 
 -- | Unpack an array into delayed form.
@@ -124,8 +131,17 @@ delay 	:: (Shape sh, Elt a)
 {-# INLINE delay #-}	
 delay arr
  = case arr of
-	Delayed  sh fn	-> (sh, fn)
-	Manifest sh vec	-> (sh, \ix -> vec V.! S.toIndex sh ix)
+	Delayed   sh fn	
+	 -> (sh, fn)
+
+	Manifest  sh vec
+	 -> (sh, \ix -> vec V.! S.toIndex sh ix)
+
+	Segmented{}
+	 -> ( arrayExtent arr
+	    , \ix -> if arrayChoose arr ix
+			   then arrayBorderGetElem arr ix
+			   else arrayInnerGetElem  arr ix)
 
 
 -- Indexing ---------------------------------------------------------------------------------------
@@ -146,8 +162,16 @@ delay arr
 {-# INLINE index #-}
 index arr ix
  = case arr of
-	Delayed  _  fn		-> fn ix
-	Manifest sh vec		-> vec V.! (S.toIndex sh ix)
+	Delayed   _  fn
+	 -> fn ix
+
+	Manifest  sh vec
+	 -> vec V.! (S.toIndex sh ix)
+
+	Segmented{}
+	 -> if arrayChoose arr ix
+		then arrayBorderGetElem arr ix
+		else arrayInnerGetElem  arr ix
 
 
 -- | Get an indexed element from an array.
@@ -165,8 +189,16 @@ index arr ix
 {-# INLINE safeIndex #-}
 safeIndex arr ix
  = case arr of
-	Delayed  _  fn		-> Just (fn ix)
-	Manifest sh vec		-> vec V.!? (S.toIndex sh ix)
+	Delayed  _  fn
+	 -> Just (fn ix)
+
+	Manifest sh vec		
+	 -> vec V.!? (S.toIndex sh ix)
+
+	Segmented{}
+	 -> Just (if arrayChoose arr ix
+		  	then arrayBorderGetElem arr ix
+			else arrayInnerGetElem  arr ix)
 
 
 -- | Get an indexed element from an array, without bounds checking.
@@ -185,8 +217,16 @@ unsafeIndex
 {-# INLINE unsafeIndex #-}
 unsafeIndex arr ix
  = case arr of
-	Manifest sh uarr	-> uarr `V.unsafeIndex` (S.toIndex sh ix)
-	Delayed  _  fn		-> fn ix
+	Delayed  _  fn
+	 -> fn ix
+
+	Manifest sh uarr
+	 -> uarr `V.unsafeIndex` (S.toIndex sh ix)
+
+	Segmented{}
+	 -> if arrayChoose arr ix
+		then arrayBorderGetElem arr ix
+		else arrayInnerGetElem  arr ix
 
 
 -- Conversions ------------------------------------------------------------------------------------
@@ -263,6 +303,7 @@ toList arr
 	Manifest _ vec	-> V.toList vec
 	_		-> error $ stage ++ ".toList: force failed"
 
+
 -- Forcing ----------------------------------------------------------------------------------------
 -- | Force an array, so that it becomes `Manifest`.
 --   The array is chunked up and evaluated in parallel.
@@ -280,9 +321,18 @@ force arr
 		Delayed sh getElem
 		 -> let vec	= unsafePerformIO
 				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					fillVectorP mvec (getElem . (fromIndex sh))
+					fillVectorP mvec (getElem . fromIndex sh)
 					V.unsafeFreeze mvec
 
+		    in sh `S.deepSeq` vec `seq` (sh, vec)
+
+		Segmented{}
+		 -> let	sh	= arrayExtent arr
+			vec	= unsafePerformIO
+				$ do	mvec	<- VM.unsafeNew (S.size sh)
+					fillVectorP mvec (index arr . fromIndex sh)
+					V.unsafeFreeze mvec
+					
 		    in sh `S.deepSeq` vec `seq` (sh, vec)
 
 

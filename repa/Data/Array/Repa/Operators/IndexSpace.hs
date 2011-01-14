@@ -35,9 +35,16 @@ reshape sh' arr
 
 	| otherwise
 	= case arr of
-		Manifest _  uarr -> Manifest sh' uarr
-		Delayed  sh f    -> Delayed sh' (f . fromIndex sh . toIndex sh')
-	
+		Manifest _  uarr 
+		 -> Manifest sh' uarr
+
+		Delayed  sh f
+		 -> Delayed sh' (f . fromIndex sh . toIndex sh')
+
+		-- TODO: we need to reshape all of the contained functions.
+		Segmented{}
+		 -> error $ stage ++ ".reshape: not finished for segmented"
+
 
 -- | Append two arrays.
 --
