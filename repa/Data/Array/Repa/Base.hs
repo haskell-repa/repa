@@ -42,25 +42,25 @@ stage	= "Data.Array.Repa.Array"
 data Array sh a
 	= -- | An array represented as some concrete unboxed data.
 	  Manifest  
-		{ arrayExtent		:: !sh 
-		, arrayVector		:: !(Vector a) }
+		{ arrayExtent		:: sh 
+		, arrayVector		:: (Vector a) }
 
           -- | An array represented as a function that computes each element.
 	| Delayed 
-		{ arrayExtent		:: !sh
-		, arrayGetElem		:: !(sh -> a) }
+		{ arrayExtent		:: sh
+		, arrayGetElem		:: (sh -> a) }
 
 	  -- | An delayed array broken into subranges.
 	  --   INVARIANT: the ranges to not overlap.
 	  --   INVARIANT: for a singleton array both elem fns return the same result.
 	  --   TODO:      Try to store the ranges in a vector. We might need more instances.
 	| Partitioned 
-		{ arrayExtent		:: !sh			-- extent of whole array.
-		, arrayChoose		:: !(sh -> Bool)	-- fn to decide if we're in the first or second segment.
-		, arrayBorderRanges	:: ![(sh, sh)] 
-		, arrayBorderGetElem	:: !(sh -> a)		-- if we're in any of these ranges then use this fn.
-		, arrayInnerRange	:: !(sh, sh)
-		, arrayInnerGetElem	:: !(sh -> a) }		--   otherwise use this other one.
+		{ arrayExtent		:: sh		-- extent of whole array.
+		, arrayChoose		:: (sh -> Bool)	-- fn to decide if we're in the first or second segment.
+		, arrayBorderRanges	:: [(sh, sh)] 
+		, arrayBorderGetElem	:: (sh -> a)	-- if we're in any of these ranges then use this fn.
+		, arrayInnerRange	:: (sh, sh)
+		, arrayInnerGetElem	:: (sh -> a) }	--   otherwise use this other one.
 
 -- | Ensure an array's structure is fully evaluated.
 --   This evaluates the extent and outer constructor, but does not `force` the elements.
@@ -347,7 +347,7 @@ forceBlockwise
 	:: Elt a
 	=> Array DIM2 a -> Array DIM2 a
 	
-{-# INLINE forceBlockwise #-}
+{-# INLINE [0] forceBlockwise #-}
 forceBlockwise arr
  = Manifest sh' vec'
  where	(sh', vec')
@@ -366,9 +366,9 @@ forceBlockwise arr
 		Partitioned sh@(_ :. width) 
 			_inBorder
 			_rngsBorder _getElemBorder
-			(shInner1, shInner2)  getElemInner
+			(shInner1, shInner2)  getElemInner_fromPartitioned
 
-		 -> shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq`
+		 -> shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq` 
 	            let	(_ :. y0 :. x0)	= shInner1
 			(_ :. y1 :. x1) = shInner2
 
@@ -377,8 +377,12 @@ forceBlockwise arr
 		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
 
 					-- fill the inner segment
-					fillVectorBlock mvec (getElemInner . fromIndex sh)
-							width x0 y0 x1 y1
+--					fillVectorBlock mvec (getElemInner . fromIndex sh)
+--							width x0 y0 x1 y1
+
+					fillVectorBlockwiseP mvec
+						(getElemInner_fromPartitioned . fromIndex sh)
+						width
 
 					-- TODO: fill border segs
 					V.unsafeFreeze mvec

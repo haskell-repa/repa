@@ -68,13 +68,16 @@ mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
 	rngInternal	= ( Z :. yMin :. xMin
 			  , Z :. yMax :. xMax )
 			
+	{-# INLINE getInner_mapStencil2 #-}	
+	getInner_mapStencil2 ix	
+			= unsafeAppStencilInternal2 stencil arr ix
+						
    in	Partitioned 
 		(extent arr)
 		(const False)
 		[]		(unsafeAppStencilBorder2   stencil boundary arr)
-		rngInternal	(unsafeAppStencilInternal2 stencil arr)
+		rngInternal	getInner_mapStencil2
 		
-
 
 -- | Apply a stenil to a single position in an image.
 --	This version can be applied close to the border, or even outside the image.

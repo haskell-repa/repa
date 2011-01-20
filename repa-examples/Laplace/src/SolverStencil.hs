@@ -16,21 +16,18 @@ solveLaplace
 
 {-# NOINLINE solveLaplace #-}
 solveLaplace steps
-	arrBoundMask@(Manifest shBoundMask vecBoundMask)
-	arrBoundValue@(Manifest shBoundValue vecBoundValue)
-	arrInit@(Manifest _ vecInit)
- = arrBoundMask `deepSeqArray` arrBoundValue `deepSeqArray` arrInit `deepSeqArray`
-   vecBoundMask `seq` vecBoundValue `seq` vecInit `seq`
-   shBoundMask  `seq` shBoundValue `seq`
-   go steps arrInit
- where	go !i !arr@Manifest{}
-	   | i == 0	= arr
-	   | otherwise	
-	   = let vec'	= forceBlockwise
-			$ applyBoundary arrBoundMask arrBoundValue
-			$ relaxLaplace arr
-	
-	     in	 vec' `seq` go (i - 1) vec'
+	 arrBoundMask@Manifest{}
+	arrBoundValue@Manifest{}
+	      arrInit@Manifest{}
+ = arrBoundMask `deepSeqArray` arrBoundValue `deepSeqArray` arrInit `deepSeqArray` 
+   goSolve steps arrInit
+ where	goSolve !i !arrCurrent
+	 = if i == 0 
+		then arrCurrent
+		else let arrNew	= forceBlockwise
+				$ applyBoundary arrBoundMask arrBoundValue
+				$ relaxLaplace arrCurrent
+		     in  arrNew `deepSeqArray` goSolve (i - 1) arrNew
 
 
 -- Make a generic version that works on stencils of arbitrary dimension.
@@ -69,5 +66,6 @@ applyBoundary
 
 {-# INLINE applyBoundary #-}
 applyBoundary arrBoundMask arrBoundValue arr
-	= A.zipWith (+) arrBoundValue
-	$ A.zipWith (*) arrBoundMask  arr
+ 	= arrBoundMask `seq` arrBoundValue 
+  	`seq` A.zipWith (+) arrBoundValue
+	$     A.zipWith (*) arrBoundMask  arr
