@@ -19,7 +19,7 @@ import Debug.Trace
 --	   Add       StencilDense and StencilSparse.
 --
 data Stencil sh a b
-	= Stencil
+	= StencilStatic
 	{ stencilExtent	:: !sh
 	, stencilZero	:: !b 
 	, stencilAcc	:: !(sh -> a -> b -> b) }
@@ -37,7 +37,7 @@ makeConvolution
 
 {-# INLINE makeConvolution #-}
 makeConvolution ex getCoeff
- = Stencil ex 0 
+ = StencilStatic ex 0 
  $ \ix val acc
 	-> case getCoeff ix of
 		Nothing		-> acc
@@ -53,7 +53,7 @@ mapStencil2
 	-> Array DIM2 a -> Array DIM2 b
 
 {-# INLINE mapStencil2 #-}
-mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
+mapStencil2 stencil@(StencilStatic sExtent zero load) boundary arr
  = let	(_ :. aHeight :. aWidth) = extent arr
 	(_ :. sHeight :. sWidth) = sExtent
 
@@ -97,7 +97,7 @@ unsafeAppStencilInternal2
 
 {-# INLINE unsafeAppStencilInternal2 #-}
 unsafeAppStencilInternal2 
-	stencil@(Stencil  sExtent zero load)
+	stencil@(StencilStatic sExtent zero load)
 	    arr@(Manifest aExtent vec) 
 	     ix@(Z :. y :. x)
 
@@ -131,7 +131,7 @@ unsafeAppStencilBorder2
 
 {-# INLINE unsafeAppStencilBorder2 #-}
 unsafeAppStencilBorder2
-	 stencil@(Stencil  sExtent zero load)
+	 stencil@(StencilStatic  sExtent zero load)
 	boundary@(BoundConst bZero)
 	     arr@(Manifest aExtent vec)
 	ix@(Z :. y :. x)
