@@ -152,10 +152,10 @@ fillVectorBlockP
 	=> IOVector a		-- ^ vector to write elements into
 	-> (Int -> a)		-- ^ fn to evaluate an element at the given index.
 	-> Int			-- ^ width of whole image
-	-> Int			-- ^ x0
-	-> Int			-- ^ y0
-	-> Int			-- ^ x1
-	-> Int			-- ^ y1
+	-> Int			-- ^ x0 lower left corner of block to fill
+	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ x1 upper right corner of block to fill
+	-> Int			-- ^ y1 (high x and y value)
 	-> IO ()
 
 {-# INLINE fillVectorBlockP #-}
@@ -165,7 +165,6 @@ fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
 	!vecLen		= VM.length vec
 	!imageHeight	= vecLen `div` imageWidth
 
---	!blockHeight	= y1 - y0
 	!blockWidth	= x1 - x0
 	
 	-- All columns have at least this many pixels.
@@ -191,7 +190,6 @@ fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
 	   in	fillVectorBlock vec getElem imageWidth x0' y0' x1' y1'
 
 
-
 -- | Fill a block in a 2D image.
 --   Coordinates given are of the filled edges of the block.
 fillVectorBlock
@@ -199,16 +197,15 @@ fillVectorBlock
 	=> IOVector a		-- ^ vector to write elements into.
 	-> (Int -> a)		-- ^ fn to evaluate an element at the given index.
 	-> Int			-- ^ width of whole image
-	-> Int			-- ^ x0 
-	-> Int			-- ^ y0
-	-> Int			-- ^ x1
-	-> Int			-- ^ y1
+	-> Int			-- ^ x0 lower left corner of block to fill 
+	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ x1 upper right corner of block to fill
+	-> Int			-- ^ y1 (high x and y value)
 	-> IO ()
 
 {-# INLINE fillVectorBlock #-}
 fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
- = trace ("fillVectorBlock " List.++ show (x0, y0, x1, y1, ixStart, ixFinal))
- $ fillBlock ixStart (ixStart + (x1 - x0))
+ = fillBlock ixStart (ixStart + (x1 - x0))
  where	
 	-- offset from end of one line to the start of the next.
 	!ixStart	= x0 + y0 * imageWidth
@@ -216,7 +213,7 @@ fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
 	
 	{-# INLINE fillBlock #-}
 	fillBlock !ixLineStart !ixLineEnd
-	 | ixLineStart >= ixFinal	= return ()
+	 | ixLineStart > ixFinal	= return ()
 	 | otherwise
 	 = do	fillLine ixLineStart
 		fillBlock (ixLineStart + imageWidth) (ixLineEnd + imageWidth)

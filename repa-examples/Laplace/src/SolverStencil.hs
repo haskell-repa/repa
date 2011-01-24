@@ -33,7 +33,7 @@ solveLaplace steps
 		 then arrCurrent
 		 else let Manifest shNew vecNew
 		 		= forceBlockwise
---				$ applyBoundary arrBoundMask arrBoundValue
+				$ applyBoundary arrBoundMask arrBoundValue
 				$ relaxLaplace arrCurrent
 		      in  goSolve (i - 1) shNew vecNew
 

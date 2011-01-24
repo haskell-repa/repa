@@ -369,17 +369,16 @@ forceBlockwise arr
 		 -> arr `deepSeqArray` shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq` 
 	            let	vec	= unsafePerformIO
 		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
-					VM.set mvec 100
 
 					-- fill the inner partition
 					let (_ :. y0 :. x0)	= shInner1
 					let (_ :. y1 :. x1)	= shInner2
 
-{-					fillVectorBlock mvec
+					fillVectorBlockP mvec
 						(getElemInner . fromIndex sh)
 						width
 						x0 y0 x1 y1
--}
+
 					-- fill the border partition
 					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
 						= fillVectorBlock mvec 

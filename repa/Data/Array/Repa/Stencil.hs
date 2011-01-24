@@ -72,7 +72,7 @@ mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
 	 = 	[ ((Z :. 0        :. 0),        (Z :. yMin -1        :. aWidth - 1))	-- bot 
 	   	, ((Z :. yMax + 1 :. 0),        (Z :. aHeight - 1    :. aWidth - 1)) 	-- top
 		, ((Z :. yMin     :. 0),        (Z :. yMax           :. xMin - 1))	-- left
-		, ((Z :. yMin     :. xMax + 1), (Z :. yMax           :. aWidth - 1)) ]  -- right
+	   	, ((Z :. yMin     :. xMax + 1), (Z :. yMax           :. aWidth - 1)) ]  -- right
 			
 	{-# INLINE getBorder' #-}
 	getBorder' ix	= unsafeAppStencilBorder2   stencil boundary arr ix
@@ -132,7 +132,7 @@ unsafeAppStencilBorder2
 		 | outside	= load ix' bZero
 		 | otherwise	= load ix' (arr `unsafeIndex` (Z :. yy :. xx))
 		
-	   in	trace ("value " ++ show (yy, xx, outside)) result
+	   in	result
 
 
 -- | Apply a stencil to a single, internal position in an image.
