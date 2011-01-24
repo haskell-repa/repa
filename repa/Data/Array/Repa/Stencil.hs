@@ -1,7 +1,8 @@
 {-# LANGUAGE MagicHash, PatternGuards, BangPatterns  #-}
 {-# OPTIONS -Wnot #-}
 
--- | Class of types that can be used as array shapes and indices.
+-- | Efficient computation of stencil based convolutions.
+--   TODO: Also handle stencils larger than 5x5.
 module Data.Array.Repa.Stencil
 	( Stencil	(..)
 	, Boundary	(..)
@@ -42,8 +43,8 @@ makeStencil ex getCoeff
 		Just coeff	-> acc + val * coeff
 	
 
--- | Apply a stencil to every element of an array
---   This is specialised for stencils with extent up to 5x5.
+-- | Apply a stencil to every element of an array.
+--   This is specialised for stencils of extent up to 5x5.
 mapStencil2 
 	:: (Elt a, Elt b)
 	=> Stencil DIM2 a b

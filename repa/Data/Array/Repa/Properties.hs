@@ -15,7 +15,7 @@ stage	= "Data.Array.Repa.Properties"
 
 
 -- Data.Array.Repa.Index --------------------------------------------------------------------------
--- | QuickCheck properties for this module.
+-- | QuickCheck properties for "Data.Array.Repa.Index".
 props_DataArrayRepaIndex :: [(String, Property)]
 props_DataArrayRepaIndex
   = [(stage ++ "." ++ name, test) | (name, test)
@@ -38,7 +38,7 @@ prop_toIndexFromIndex_DIM2
 	
 
 -- Data.Array.Repa --------------------------------------------------------------------------------
--- | QuickCheck properties for this module and its children.
+-- | QuickCheck properties for "Data.Array.Repa" and its children.
 props_DataArrayRepa :: [(String, Property)]
 props_DataArrayRepa
  =  props_DataArrayRepaIndex
