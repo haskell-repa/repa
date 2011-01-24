@@ -60,14 +60,17 @@ mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
 	sHeight2	= sHeight `div` 2
 	sWidth2		= sWidth  `div` 2
 
+	-- minimum and maximum indicies of values in the inner part of the image.
 	xMin		= sWidth2
 	yMin		= sHeight2
 	xMax		= aWidth  - sWidth2  - 1
 	yMax		= aHeight - sHeight2 - 1
 	
+	-- range of values where we don't need to worry about the border
 	rngInternal	= ( Z :. yMin :. xMin
 			  , Z :. yMax :. xMax )
-			
+
+	-- range of values where some of the data needed by the stencil is outside the image.
 	rngsBorder
 	 = 	[ ((Z :. 0        :. 0),        (Z :. yMin -1        :. aWidth - 1))	-- bot 
 	   	, ((Z :. yMax + 1 :. 0),        (Z :. aHeight - 1    :. aWidth - 1)) 	-- top
@@ -80,11 +83,41 @@ mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
 	{-# INLINE getInner' #-}	
 	getInner' ix	= unsafeAppStencilInternal2 stencil arr ix
 						
-   in	Partitioned 
-		(extent arr)
-		(const False)
-		rngsBorder	getBorder'
-		rngInternal	getInner'
+   in	Partitioned (extent arr) (const False)
+		rngsBorder  getBorder'
+		rngInternal getInner'
+
+
+-- | Apply a stencil to a single, internal position in an image.
+--	Applying it too close to the border yields badness.
+--	TODO: force delayed arrays before processing them.
+unsafeAppStencilInternal2
+	:: (Elt a, Elt b)
+	=> Stencil DIM2 a b -> Array DIM2 a -> DIM2 -> b
+
+{-# INLINE unsafeAppStencilInternal2 #-}
+unsafeAppStencilInternal2 
+	stencil@(Stencil  sExtent zero load)
+	    arr@(Manifest aExtent vec) 
+	     ix@(Z :. y :. x)
+
+	| _ :. sHeight :. sWidth	<- sExtent
+	, _ :. aHeight :. aWidth	<- aExtent
+	, sHeight <= 5, sWidth <= 5
+	= let	-- We want to go access the vector directly here so we don't 
+		-- have to calculate incides for every access of the source array.
+		!center	= x + y * aWidth
+
+		-- Build a function to pass data from the array to our stencil.
+		{-# INLINE oload #-}
+		oload oy ox	
+		 = let	!ix'	= Z :. oy :. ox
+		   in	load ix' (vec `V.unsafeIndex` (center + ox + oy * aWidth))
+	
+	   in	template5x5 oload zero
+	
+	| otherwise
+	= error "unsafeAppStencil2: finish this for larger stencils"
 		
 
 -- | Apply a stencil to a single position in an image.
@@ -100,73 +133,48 @@ unsafeAppStencilBorder2
 unsafeAppStencilBorder2
 	 stencil@(Stencil  sExtent zero load)
 	boundary@(BoundConst bZero)
-	     arr@(Manifest (_ :. height :. width) vec)
+	     arr@(Manifest aExtent vec)
 	ix@(Z :. y :. x)
- = case sExtent of
-    _ :. sHeight :. sWidth
-       | sHeight <= 5
-       , sWidth  <= 5
-       -> oload (-2) (-2)  $ oload (-2) (-1)  $  oload (-2)   0  $  oload (-2)   1  $  oload (-2)   2 
-	$ oload (-1) (-2)  $ oload (-1) (-1)  $  oload (-1)   0  $  oload (-1)   1  $  oload (-1)   2 
-	$ oload   0  (-2)  $ oload   0  (-1)  $  oload   0    0  $  oload   0    1  $  oload   0    2  
-	$ oload   1  (-2)  $ oload   1  (-1)  $  oload   1    0  $  oload   1    1  $  oload   1    2 
-	$ oload   2  (-2)  $ oload   2  (-1)  $  oload   2    0  $  oload   2    1  $  oload   2    2 
-	$ zero
-
-    _ -> error "unsafeAppStencil2: finish this for larger stencils"
-
- where	{-# INLINE oload #-}
-	oload oy ox
-	 = let 	!yy 	= y + oy
-		!xx 	= x + ox
-		!ix'	= Z :. oy :. ox
-		
-		outside
-		 | yy < 0	= True
-		 | yy >= height	= True
-		 | xx < 0	= True
-		 | xx >= width	= True
-		 | otherwise	= False
-		
-		result
-		 | outside	= load ix' bZero
-		 | otherwise	= load ix' (arr `unsafeIndex` (Z :. yy :. xx))
-		
-	   in	result
-
-
--- | Apply a stencil to a single, internal position in an image.
---	Applying it too close to the border yields badness.
---	TODO: fold the loading stuff into code for unsafeAppStencilBorder.
---	TODO: force delayed arrays before processing them.
-
-unsafeAppStencilInternal2
-	:: (Elt a, Elt b)
-	=> Stencil DIM2 a b -> Array DIM2 a -> DIM2 -> b
-
-{-# INLINE unsafeAppStencilInternal2 #-}
-unsafeAppStencilInternal2 
-	stencil@(Stencil sExtent zero load)
-	    arr@(Manifest (_ :. height :. width) vec) 
-	     ix@(Z :. y :. x)
- = case sExtent of
-    _ :. sHeight :. sWidth
-       | sHeight <= 5
-       , sWidth  <= 5
-       -> oload (-2) (-2)  $ oload (-2) (-1)  $  oload (-2)   0  $  oload (-2)   1  $  oload (-2)   2 
-	$ oload (-1) (-2)  $ oload (-1) (-1)  $  oload (-1)   0  $  oload (-1)   1  $  oload (-1)   2 
-	$ oload   0  (-2)  $ oload   0  (-1)  $  oload   0    0  $  oload   0    1  $  oload   0    2  
-	$ oload   1  (-2)  $ oload   1  (-1)  $  oload   1    0  $  oload   1    1  $  oload   1    2 
-	$ oload   2  (-2)  $ oload   2  (-1)  $  oload   2    0  $  oload   2    1  $  oload   2    2 
-	$ zero
-
-    _ -> error "unsafeAppStencil2: finish this for larger stencils"
-
- where	-- We want to go access the vector directly here so we don't 
-	-- have to calculate incides for every access of the source array.
-	!center	= x + y * width
 	
-	{-# INLINE oload #-}
-	oload oy ox	
-	 = load (Z :. oy :. ox) (vec `V.unsafeIndex` (center + ox + oy * width))
-			
+	| _ :. sHeight :. sWidth	<- sExtent
+	, _ :. aHeight :. aWidth	<- aExtent
+	, sHeight <= 5, sWidth <= 5
+	= let
+		{-# INLINE outside #-}
+		outside xx yy
+		 | yy < 0	 = True
+		 | yy >= aHeight = True
+		 | xx < 0	 = True
+		 | xx >= aWidth	 = True
+		 | otherwise	 = False
+	
+		{-# INLINE oload #-}
+		oload oy ox
+	 	 = let	!yy 	 = y + oy
+			!xx 	 = x + ox
+			!ix'	 = Z :. oy :. ox
+	
+		   in	if outside xx yy 
+			 	then load ix' bZero
+				else load ix' (arr `unsafeIndex` (Z :. yy :. xx))
+
+	  in	template5x5 oload zero
+	
+	| otherwise
+	= error "unsafeAppStencil2: finish this for larger stencils"
+
+
+-- | Data template for stencils up to 5x5.
+template5x5
+	:: (Int -> Int -> a -> a)
+	-> a -> a
+
+{-# INLINE template5x5 #-}
+template5x5 f zero
+ 	= f (-2) (-2)  $  f (-2) (-1)  $  f (-2)   0  $  f (-2)   1  $  f (-2)   2 
+	$ f (-1) (-2)  $  f (-1) (-1)  $  f (-1)   0  $  f (-1)   1  $  f (-1)   2 
+	$ f   0  (-2)  $  f   0  (-1)  $  f   0    0  $  f   0    1  $  f   0    2  
+	$ f   1  (-2)  $  f   1  (-1)  $  f   1    0  $  f   1    1  $  f   1    2 
+	$ f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2 
+	$ zero
+
