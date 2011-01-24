@@ -3,7 +3,8 @@ module Data.Array.Repa.Internals.Evaluate
 	( fillVector
 	, fillVectorP,          newVectorP
 	, fillVectorBlockwiseP, newVectorBlockwiseP
-	, fillVectorBlock)
+	, fillVectorBlock
+	, fillVectorBlockP)
 where
 import Data.Array.Repa.Internals.Gang
 import Data.Vector.Unboxed			as V
@@ -12,6 +13,8 @@ import System.IO.Unsafe
 import GHC.Base					(remInt, quotInt)
 import GHC.Conc					(numCapabilities)
 import Prelude					as P
+import Debug.Trace
+import qualified Data.List			as List
 
 -- TheGang ----------------------------------------------------------------------------------------
 -- | The gang is shared by all computations.
@@ -121,6 +124,7 @@ fillVectorBlockwiseP !vec !getElemFVBP !imageWidth
 	!imageHeight	= vecLen `div` imageWidth
 	!colChunkLen	= imageWidth `quotInt` threads
 	!colChunkSlack	= imageWidth `remInt`  threads
+
 	
 	{-# INLINE colIx #-}
 	colIx !ix
@@ -139,6 +143,57 @@ fillVectorBlockwiseP !vec !getElemFVBP !imageWidth
 	   in	fillVectorBlock vec getElemFVBP imageWidth x0 y0 x1 y1
 
 
+-- Block filling ----------------------------------------------------------------------------------
+-- | Fill a block in a 2D image, in parallel.
+--   Coordinates given are of the filled edges of the block.
+--   We divide the block into columns, and give one column to each thread.
+fillVectorBlockP
+	:: Unbox a
+	=> IOVector a		-- ^ vector to write elements into
+	-> (Int -> a)		-- ^ fn to evaluate an element at the given index.
+	-> Int			-- ^ width of whole image
+	-> Int			-- ^ x0
+	-> Int			-- ^ y0
+	-> Int			-- ^ x1
+	-> Int			-- ^ y1
+	-> IO ()
+
+{-# INLINE fillVectorBlockP #-}
+fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
+ = 	gangIO theGang fillBlock
+ where	!threads	= gangSize theGang
+	!vecLen		= VM.length vec
+	!imageHeight	= vecLen `div` imageWidth
+
+--	!blockHeight	= y1 - y0
+	!blockWidth	= x1 - x0
+	
+	-- All columns have at least this many pixels.
+	!colChunkLen	= blockWidth `quotInt` threads
+
+	-- Extra pixels that we have to divide between some of the threads.
+	!colChunkSlack	= blockWidth `remInt` threads
+	
+	-- Get the starting pixel of a column in the image.
+	{-# INLINE colIx #-}
+	colIx !ix
+	 | ix < colChunkSlack	= x0 + ix * (colChunkLen + 1)
+	 | otherwise		= x0 + ix * colChunkLen + colChunkSlack
+ 
+	-- Give one column to each thread
+	{-# INLINE fillBlock #-}
+	fillBlock :: Int -> IO ()
+	fillBlock !ix
+	 = let	!x0'	= colIx ix
+		!x1'	= colIx (ix + 1)
+		!y0'	= y0
+		!y1'	= y1
+	   in	fillVectorBlock vec getElem imageWidth x0' y0' x1' y1'
+
+
+
+-- | Fill a block in a 2D image.
+--   Coordinates given are of the filled edges of the block.
 fillVectorBlock
 	:: Unbox a
 	=> IOVector a		-- ^ vector to write elements into.
@@ -152,7 +207,8 @@ fillVectorBlock
 
 {-# INLINE fillVectorBlock #-}
 fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
- = fillBlock ixStart (ixStart + (x1 - x0))
+ = trace ("fillVectorBlock " List.++ show (x0, y0, x1, y1, ixStart, ixFinal))
+ $ fillBlock ixStart (ixStart + (x1 - x0))
  where	
 	-- offset from end of one line to the start of the next.
 	!ixStart	= x0 + y0 * imageWidth
@@ -167,7 +223,7 @@ fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
 	
 	 where	{-# INLINE fillLine #-}
 		fillLine !ix
- 	   	 | ix >= ixLineEnd	= return ()
+ 	   	 | ix > ixLineEnd	= return ()
 	   	 | otherwise
 	   	 = do	VM.unsafeWrite vec ix (getElemFVB ix)
 			fillLine (ix + 1)

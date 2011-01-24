@@ -29,14 +29,24 @@ map f arr
 	 -> unsafeTraverse arr id (f .)
 
 	Delayed sh getElem
-	 -> Delayed sh (f . getElem)
+	 -> let {-# INLINE getElem' #-}
+	    	getElem'	= f . getElem
+
+	    in	Delayed sh getElem'
 
 	Partitioned sh inBorder
 		rngsBorder getBorder
 		rngInner   getInner
-	 -> Partitioned sh inBorder
-		rngsBorder (f . getBorder)
-		rngInner   (f . getInner)
+		
+	 -> let	{-# INLINE getBorder' #-}
+		getBorder' 	= f . getBorder
+
+		{-# INLINE getInner' #-}
+		getInner' 	= f . getInner
+
+	    in	Partitioned sh inBorder
+			rngsBorder getBorder'
+			rngInner   getInner'
 
 
 -- | Combine two arrays, element-wise, with a binary operator.
@@ -52,23 +62,36 @@ zipWith :: (Shape sh, Elt a, Elt b, Elt c)
 zipWith f arr1 arr2
  	| not $ isPartitioned arr1
  	, not $ isPartitioned arr2
- 	= Delayed
-		(S.intersectDim (extent arr1) (extent arr2))
-		(\ix -> f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix))
+ 	= let	{-# INLINE getElem' #-}
+		getElem' ix	= f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
+	  in	Delayed	(S.intersectDim (extent arr1) (extent arr2))
+			getElem'
 
 	-- TODO: intersect array ranges
 	| not $ isPartitioned arr1
 	, Partitioned sh inBorder rngsBorder fnBorder rngInner fnInner <- arr2
-	= Partitioned sh inBorder
-		rngsBorder (\ix -> f (arr1 `unsafeIndex` ix) (fnBorder ix))
-		rngInner   (\ix -> f (arr1 `unsafeIndex` ix) (fnInner  ix))
+	= let	{-# INLINE getBorder'  #-}
+		getBorder' ix = f (arr1 `unsafeIndex` ix) (fnBorder ix)
+		
+		{-# INLINE getInner' #-}
+		getInner'  ix = f (arr1 `unsafeIndex` ix) (fnInner  ix)
+
+	  in 	Partitioned sh inBorder
+			rngsBorder getBorder'
+			rngInner   getInner'
 
 	-- TODO: intersect array ranges
 	| Partitioned sh inBorder rngsBorder fnBorder rngInner fnInner <- arr1
 	, not $ isPartitioned arr2
-	= Partitioned sh inBorder
-		rngsBorder (\ix -> f (fnBorder ix) (arr2 `unsafeIndex` ix))
-		rngInner   (\ix -> f (fnInner  ix) (arr2 `unsafeIndex` ix))
+	= let	{-# INLINE getElemBorder #-}
+		getElemBorder ix = f (fnBorder ix) (arr2 `unsafeIndex` ix)
+
+		{-# INLINE getElemInner #-}
+		getElemInner  ix = f (fnInner  ix) (arr2 `unsafeIndex` ix)
+
+	  in	Partitioned sh inBorder
+			rngsBorder getElemBorder
+			rngInner   getElemInner
 	
 	-- TODO: convert to flattened form before zip/
 	--       or we could be tricky and clip the ranges against each other.

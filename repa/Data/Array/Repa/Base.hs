@@ -33,6 +33,7 @@ import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
 import Data.Vector.Unboxed.Mutable		as VM
 import Data.Vector.Unboxed			(Vector)
+import GHC.Exts					(inline)
 import System.IO.Unsafe	
 
 stage	= "Data.Array.Repa.Array"
@@ -344,7 +345,7 @@ force arr
 --   better cache performance than plain `force`.
 --
 forceBlockwise	
-	:: Elt a
+	:: (Elt a, Num a)
 	=> Array DIM2 a -> Array DIM2 a
 	
 {-# INLINE [0] forceBlockwise #-}
@@ -355,36 +356,40 @@ forceBlockwise arr
 		Manifest sh vec
 		 -> sh `S.deepSeq` vec `seq` (sh, vec)
 		
-		Delayed sh@(_ :. width) getElemFromDelayed
-		 -> let vec	= newVectorBlockwiseP (getElemFromDelayed . fromIndex sh) (S.size sh) width
+		Delayed sh@(_ :. width) getElem_FBW_Delayed
+		 -> let vec	= newVectorBlockwiseP (getElem_FBW_Delayed . fromIndex sh) (S.size sh) width
 		    in	sh `S.deepSeq` vec `seq` (sh, vec)
 
 		-- TODO: This needs the index to be DIM2 becase we call fillVectorBlock directly
-		--       XXX no: Could fix this by looking at the total size of the array and determining 
-		--               how many "pages" it has. Then call fillVectorBlock for each page.
-		--       Need to skip pages at beginning and end, it's a range after all.
 		Partitioned sh@(_ :. width) 
 			_inBorder
-			_rngsBorder _getElemBorder
-			(shInner1, shInner2)  getElemInner_fromPartitioned
+			rngsBorder getElemBorder
+			(shInner1, shInner2)  getElemInner
 
-		 -> shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq` 
-	            let	(_ :. y0 :. x0)	= shInner1
-			(_ :. y1 :. x1) = shInner2
-
-			vec	= y0 `seq` x0 `seq` y1 `seq` x1 `seq`
-				  unsafePerformIO
+		 -> arr `deepSeqArray` shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq` 
+	            let	vec	= unsafePerformIO
 		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
+					VM.set mvec 100
 
-					-- fill the inner segment
---					fillVectorBlock mvec (getElemInner . fromIndex sh)
---							width x0 y0 x1 y1
+					-- fill the inner partition
+					let (_ :. y0 :. x0)	= shInner1
+					let (_ :. y1 :. x1)	= shInner2
 
-					fillVectorBlockwiseP mvec
-						(getElemInner_fromPartitioned . fromIndex sh)
+{-					fillVectorBlock mvec
+						(getElemInner . fromIndex sh)
 						width
+						x0 y0 x1 y1
+-}
+					-- fill the border partition
+					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
+						= fillVectorBlock mvec 
+							(getElemBorder . fromIndex sh)
+							width
+							x0' y0' x1' y1'
+	
+					mapM_ fillBorderBlock rngsBorder
 
-					-- TODO: fill border segs
+					-- All done, freeze the sucker.
 					V.unsafeFreeze mvec
 		    in	vec `seq` (sh, vec)
 

@@ -12,6 +12,7 @@ import Data.Array.Repa			as R
 import qualified Data.Array.Repa.Shape	as S
 import qualified Data.Vector.Unboxed	as V
 import GHC.Exts
+import Debug.Trace
 
 -- | Represents a stencil we can apply to an array.
 --   TODO: Change to StencilStatic.
@@ -44,8 +45,7 @@ makeConvolution ex getCoeff
 	
 
 -- Apply a stencil to every element of an array
---   This is specialised for 3x3 and 5x5 stencils. 
---   Smaller kernels that fit into one of the specialised sizes are still specialised (like 3x2)
+--   This is specialised for kernels up to 5x5.
 mapStencil2 
 	:: (Elt a, Elt b)
 	=> Stencil DIM2 a b
@@ -60,26 +60,34 @@ mapStencil2 stencil@(Stencil sExtent zero load) boundary arr
 	sHeight2	= sHeight `div` 2
 	sWidth2		= sWidth  `div` 2
 
-	xMin		= sWidth2  + 1
-	yMin		= sHeight2 + 1
+	xMin		= sWidth2
+	yMin		= sHeight2
 	xMax		= aWidth  - sWidth2  - 1
 	yMax		= aHeight - sHeight2 - 1
 	
 	rngInternal	= ( Z :. yMin :. xMin
 			  , Z :. yMax :. xMax )
 			
-	{-# INLINE getInner_mapStencil2 #-}	
-	getInner_mapStencil2 ix	
-			= unsafeAppStencilInternal2 stencil arr ix
+	rngsBorder
+	 = 	[ ((Z :. 0        :. 0),        (Z :. yMin -1        :. aWidth - 1))	-- bot 
+	   	, ((Z :. yMax + 1 :. 0),        (Z :. aHeight - 1    :. aWidth - 1)) 	-- top
+		, ((Z :. yMin     :. 0),        (Z :. yMax           :. xMin - 1))	-- left
+		, ((Z :. yMin     :. xMax + 1), (Z :. yMax           :. aWidth - 1)) ]  -- right
+			
+	{-# INLINE getBorder' #-}
+	getBorder' ix	= unsafeAppStencilBorder2   stencil boundary arr ix
+			
+	{-# INLINE getInner' #-}	
+	getInner' ix	= unsafeAppStencilInternal2 stencil arr ix
 						
    in	Partitioned 
 		(extent arr)
 		(const False)
-		[]		(unsafeAppStencilBorder2   stencil boundary arr)
-		rngInternal	getInner_mapStencil2
+		rngsBorder	getBorder'
+		rngInternal	getInner'
 		
 
--- | Apply a stenil to a single position in an image.
+-- | Apply a stencil to a single position in an image.
 --	This version can be applied close to the border, or even outside the image.
 unsafeAppStencilBorder2
 	:: (Elt a, Elt b)
@@ -92,35 +100,39 @@ unsafeAppStencilBorder2
 unsafeAppStencilBorder2
 	 stencil@(Stencil  sExtent zero load)
 	boundary@(BoundConst bZero)
-	arr ix@(Z :. y :. x)
- | height <= 5
- , width  <= 5
- = 	  oload (-2) (-2)  $ oload (-2) (-1)  $  oload (-2)   0  $  oload (-2)   1  $  oload (-2)   2 
+	     arr@(Manifest (_ :. height :. width) vec)
+	ix@(Z :. y :. x)
+ = case sExtent of
+    _ :. sHeight :. sWidth
+       | sHeight <= 5
+       , sWidth  <= 5
+       -> oload (-2) (-2)  $ oload (-2) (-1)  $  oload (-2)   0  $  oload (-2)   1  $  oload (-2)   2 
 	$ oload (-1) (-2)  $ oload (-1) (-1)  $  oload (-1)   0  $  oload (-1)   1  $  oload (-1)   2 
 	$ oload   0  (-2)  $ oload   0  (-1)  $  oload   0    0  $  oload   0    1  $  oload   0    2  
 	$ oload   1  (-2)  $ oload   1  (-1)  $  oload   1    0  $  oload   1    1  $  oload   1    2 
 	$ oload   2  (-2)  $ oload   2  (-1)  $  oload   2    0  $  oload   2    1  $  oload   2    2 
 	$ zero
 
- | otherwise
- = error "unsafeAppStencil2: finish this for larger stencils"
+    _ -> error "unsafeAppStencil2: finish this for larger stencils"
 
- where	_ :. height :. width	= sExtent
-	
-	{-# INLINE oload #-}
-	oload ox oy
+ where	{-# INLINE oload #-}
+	oload oy ox
 	 = let 	!yy 	= y + oy
 		!xx 	= x + ox
 		!ix'	= Z :. oy :. ox
 		
+		outside
+		 | yy < 0	= True
+		 | yy >= height	= True
+		 | xx < 0	= True
+		 | xx >= width	= True
+		 | otherwise	= False
+		
 		result
-		 | yy < 0	= load ix' bZero
-		 | yy >= height	= load ix' bZero
-		 | xx < 0	= load ix' bZero
-		 | xx >= width	= load ix' bZero
+		 | outside	= load ix' bZero
 		 | otherwise	= load ix' (arr `unsafeIndex` (Z :. yy :. xx))
 		
-	   in	result
+	   in	trace ("value " ++ show (yy, xx, outside)) result
 
 
 -- | Apply a stencil to a single, internal position in an image.
@@ -138,9 +150,9 @@ unsafeAppStencilInternal2
 	    arr@(Manifest (_ :. height :. width) vec) 
 	     ix@(Z :. y :. x)
  = case sExtent of
-    Z :. height :. width
-       | height <= 5
-       , width  <= 5
+    _ :. sHeight :. sWidth
+       | sHeight <= 5
+       , sWidth  <= 5
        -> oload (-2) (-2)  $ oload (-2) (-1)  $  oload (-2)   0  $  oload (-2)   1  $  oload (-2)   2 
 	$ oload (-1) (-2)  $ oload (-1) (-1)  $  oload (-1)   0  $  oload (-1)   1  $  oload (-1)   2 
 	$ oload   0  (-2)  $ oload   0  (-1)  $  oload   0    0  $  oload   0    1  $  oload   0    2  

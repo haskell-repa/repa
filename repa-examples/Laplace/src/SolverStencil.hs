@@ -18,30 +18,37 @@ solveLaplace
 solveLaplace steps
 	 arrBoundMask@Manifest{}
 	arrBoundValue@Manifest{}
-	      arrInit@Manifest{}
+	      arrInit@(Manifest shInit vecInit)
+
  = arrBoundMask `deepSeqArray` arrBoundValue `deepSeqArray` arrInit `deepSeqArray` 
-   goSolve steps arrInit
- where	goSolve !i !arrCurrent
-	 = if i == 0 
-		then arrCurrent
-		else let arrNew	= forceBlockwise
-				$ applyBoundary arrBoundMask arrBoundValue
+   goSolve steps shInit vecInit
+	
+ where	-- NOTE: We manually unpack the current array into its shape and vector to
+	--	 stop GHC from unboxing the vector again for every loop. deepSeqing
+	--	 the arrays at the start of solveLaplace makes the unboxings happen
+	--	 at that point in the corresponding core code.
+	goSolve !i !shCurrent !vecCurrent
+	 = let	!arrCurrent	= Manifest shCurrent vecCurrent
+	   in   if i == 0 
+		 then arrCurrent
+		 else let Manifest shNew vecNew
+		 		= forceBlockwise
+--				$ applyBoundary arrBoundMask arrBoundValue
 				$ relaxLaplace arrCurrent
-		     in  arrNew `deepSeqArray` goSolve (i - 1) arrNew
+		      in  goSolve (i - 1) shNew vecNew
 
 
--- Make a generic version that works on stencils of arbitrary dimension.
--- | Also provide versions specific to array dimensions.
+-- | Perform one step of the relaxation for the Laplace equation.
 relaxLaplace :: Array DIM2 Double -> Array DIM2 Double
 {-# INLINE relaxLaplace #-}
 relaxLaplace arr@Manifest{} 
-	= A.map (/ 4) (mapStencil2 laplace (BoundConst 0) arr)
+	= A.map (/ 4) (mapStencil2 stencilLaplace (BoundConst 0) arr)
 
 
--- | Stencil function for laplace equation.
-laplace :: (Elt a, Num a) => Stencil DIM2 a a
-{-# INLINE laplace #-}
-laplace 
+-- | Stencil function for Laplace equation.
+stencilLaplace :: (Elt a, Num a) => Stencil DIM2 a a
+{-# INLINE stencilLaplace #-}
+stencilLaplace
  = makeConvolution (Z :. 3 :. 3)
  $ \ix -> case ix of
 		Z :.  0  :.  1	-> Just 1
@@ -66,6 +73,5 @@ applyBoundary
 
 {-# INLINE applyBoundary #-}
 applyBoundary arrBoundMask arrBoundValue arr
- 	= arrBoundMask `seq` arrBoundValue 
-  	`seq` A.zipWith (+) arrBoundValue
-	$     A.zipWith (*) arrBoundMask  arr
+	= A.zipWith (+) arrBoundValue
+	$ A.zipWith (*) arrBoundMask  arr
