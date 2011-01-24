@@ -5,7 +5,7 @@
 module Data.Array.Repa.Stencil
 	( Stencil	(..)
 	, Boundary	(..)
-	, makeConvolution
+	, makeStencil
 	, mapStencil2)
 where
 import Data.Array.Repa			as R
@@ -15,28 +15,26 @@ import GHC.Exts
 import Debug.Trace
 
 -- | Represents a stencil we can apply to an array.
---   TODO: Change to StencilStatic.
---	   Add       StencilDense and StencilSparse.
---
 data Stencil sh a b
 	= StencilStatic
 	{ stencilExtent	:: !sh
 	, stencilZero	:: !b 
 	, stencilAcc	:: !(sh -> a -> b -> b) }
 
+
+-- | What values to use when the stencil is partly outside the input image.
 data Boundary a
 	= BoundConst a
 
-
--- | Make a convolution stencil.
-makeConvolution
+-- | Make a stencil from a function yielding coefficients at each index.
+makeStencil
 	:: (Elt a, Num a) 
-	=> sh			-- zero value of output
-	-> (sh -> Maybe a) 	-- fn to get coefficients for each value of the stencil.
+	=> sh			-- ^ Extent of stencil.
+	-> (sh -> Maybe a) 	-- ^ Get the coefficient at this index.
 	-> Stencil sh a a
 
-{-# INLINE makeConvolution #-}
-makeConvolution ex getCoeff
+{-# INLINE makeStencil #-}
+makeStencil ex getCoeff
  = StencilStatic ex 0 
  $ \ix val acc
 	-> case getCoeff ix of
@@ -44,8 +42,8 @@ makeConvolution ex getCoeff
 		Just coeff	-> acc + val * coeff
 	
 
--- Apply a stencil to every element of an array
---   This is specialised for kernels up to 5x5.
+-- | Apply a stencil to every element of an array
+--   This is specialised for stencils with extent up to 5x5.
 mapStencil2 
 	:: (Elt a, Elt b)
 	=> Stencil DIM2 a b

@@ -33,7 +33,6 @@ import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
 import Data.Vector.Unboxed.Mutable		as VM
 import Data.Vector.Unboxed			(Vector)
-import GHC.Exts					(inline)
 import System.IO.Unsafe	
 
 stage	= "Data.Array.Repa.Array"

@@ -13,8 +13,6 @@ import System.IO.Unsafe
 import GHC.Base					(remInt, quotInt)
 import GHC.Conc					(numCapabilities)
 import Prelude					as P
-import Debug.Trace
-import qualified Data.List			as List
 
 -- TheGang ----------------------------------------------------------------------------------------
 -- | The gang is shared by all computations.
@@ -162,9 +160,6 @@ fillVectorBlockP
 fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
-	!vecLen		= VM.length vec
-	!imageHeight	= vecLen `div` imageWidth
-
 	!blockWidth	= x1 - x0
 	
 	-- All columns have at least this many pixels.
