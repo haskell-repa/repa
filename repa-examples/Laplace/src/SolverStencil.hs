@@ -33,16 +33,25 @@ solveLaplace steps
 		 then arrCurrent
 		 else let Manifest shNew vecNew
 		 		= forceBlockwise
-				$ applyBoundary arrBoundMask arrBoundValue
-				$ relaxLaplace arrCurrent
+				$ relaxLaplace arrBoundMask arrBoundValue arrCurrent
 		      in  goSolve (i - 1) shNew vecNew
 
 
 -- | Perform one step of the relaxation for the Laplace equation.
-relaxLaplace :: Array DIM2 Double -> Array DIM2 Double
+relaxLaplace 
+	:: Array DIM2 Double	-- ^ Boundary condition mask.
+	-> Array DIM2 Double	-- ^ Boundary condition values.
+	-> Array DIM2 Double	-- ^ Initial matrix.
+	-> Array DIM2 Double
+
 {-# INLINE relaxLaplace #-}
-relaxLaplace arr@Manifest{} 
-	= A.map (/ 4) (mapStencil2 stencilLaplace (BoundConst 0) arr)
+relaxLaplace arrBoundMask@Manifest{} arrBoundValue@Manifest{} arr@Manifest{} 
+	-- apply boundary conditions
+	= A.zipWith (+) arrBoundValue
+	$ A.zipWith (*) arrBoundMask
+	
+	-- apply stencil 
+	$ A.map (/ 4) (mapStencil2 stencilLaplace (BoundConst 0) arr)
 
 
 -- | Stencil function for Laplace equation.
@@ -57,21 +66,3 @@ stencilLaplace
 		Z :. -1  :.  0	-> Just 1
 		_		-> Nothing
 
-
--- | Apply the boundary conditions to this matrix.
---	The mask  matrix has 0 in places where boundary conditions hold
---	and 1 otherwise.
---
---	The value matrix has the boundary condition value in places where it holds,
---	and 0 otherwise.
--- 
-applyBoundary
-	:: Array DIM2 Double	-- ^ Boundary condition mask.
-	-> Array DIM2 Double	-- ^ Boundary condition values.
-	-> Array DIM2 Double	-- ^ Initial matrix.
-	-> Array DIM2 Double	-- ^ Matrix with boundary conditions applied.
-
-{-# INLINE applyBoundary #-}
-applyBoundary arrBoundMask arrBoundValue arr
-	= A.zipWith (+) arrBoundValue
-	$ A.zipWith (*) arrBoundMask  arr
