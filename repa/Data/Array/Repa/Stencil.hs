@@ -1,4 +1,5 @@
-{-# LANGUAGE MagicHash, PatternGuards, BangPatterns, TemplateHaskell, QuasiQuotes, ParallelListComp #-}
+{-# LANGUAGE 	MagicHash, PatternGuards, BangPatterns, TemplateHaskell, QuasiQuotes, 
+		ParallelListComp, TypeOperators #-}
 {-# OPTIONS -Wnot #-}
 
 -- | Efficient computation of stencil based convolutions.
@@ -29,7 +30,11 @@ data Stencil sh a b
 
 -- | What values to use when the stencil is partly outside the input image.
 data Boundary a
-	= BoundConst a
+	-- | Treat points outside as having a constant value.
+	= BoundConst a	
+
+	-- | Treat points outside as having the same value as the edge pixel.
+	| BoundClamp
 
 makeStencil2
 	:: (Elt a, Num a)
@@ -152,29 +157,88 @@ unsafeAppStencilBorder2	boundary
 	, _ :. aHeight :. aWidth	<- aExtent
 	, sHeight <= 5, sWidth <= 5
 	= let
-		{-# INLINE outside #-}
-		outside xx yy
-		 | yy < 0	 = True
-		 | yy >= aHeight = True
-		 | xx < 0	 = True
-		 | xx >= aWidth	 = True
-		 | otherwise	 = False
-	
 		{-# INLINE oload #-}
+		-- takes the offset into the stencil, produces data from the input array.
 		oload oy ox
-		 | BoundConst bZero	<- boundary
-	 	 = let	!yy 	 = y + oy
-			!xx 	 = x + ox
-			!ix'	 = Z :. oy :. ox
-	
-		   in	if outside xx yy 
-			 	then load ix' bZero
-				else load ix' (arr `unsafeIndex` (Z :. yy :. xx))
+		 = let	!yy		= y + oy
+			!xx 		= x + ox
+			!ixStencil	= Z :. oy :. ox
+			!ixArray	= Z :. yy :. xx
+			
+			result
+			 | False	<- isOutside2 ixArray arr
+			 = load ixStencil (arr `unsafeIndex` ixArray)
+			
+			 | BoundConst bZero	<- boundary
+			 = load ixStencil bZero
+			
+			 | BoundClamp		<- boundary
+			 , ixArray_clamped	<- clampIxToBorder2 (extent arr) ixArray
+			 = load ixStencil (arr `unsafeIndex` ixArray_clamped)
+			
+		   in	result		
 
 	  in	template5x5 oload zero
 	
 	| otherwise
 	= error "unsafeAppStencil2: finish this for larger stencils"
+
+
+-- | Check if an index lies outside the given array.
+isOutside2 :: DIM2 -> Array DIM2 a -> Bool
+{-# INLINE isOutside2 #-}
+isOutside2 (_ :. yy :. xx) arr
+	| yy < 0		= True
+	| yy >= height arr	= True
+	| xx < 0		= True
+	| xx >= width arr	= True
+	| otherwise		= False
+
+
+-- | Given the extent of an array, clamp the components of an index so they
+--   lie within the given array. Outlying indices are clamped to the index
+--   of the nearest border element.
+clampIxToBorder2 
+	:: DIM2 	-- ^ Extent of array.
+	-> DIM2		-- ^ Index to clamp.
+	-> DIM2
+clampIxToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
+ = clampX j i
+ where 	{-# INLINE clampX #-}
+	clampX !y !x
+	  | x < 0	= clampY y 0
+	  | x >= xLen	= clampY y (xLen - 1)
+	  | otherwise	= clampY y x
+		
+	{-# INLINE clampY #-}
+	clampY !y !x
+	  | y < 0	= sh :. 0	   :. x
+	  | y >= yLen	= sh :. (yLen - 1) :. x
+	  | otherwise	= sh :. y	   :. x
+
+
+
+-- split this out somewhere else ------------------------------------------------------------------
+width :: Array (sh :. Int) a -> Int
+{-# INLINE width #-}
+width arr
+ = let	_ :.  width		= extent arr
+   in	width
+
+
+height :: Array (sh :. Int :. Int) a -> Int
+{-# INLINE height #-}
+height arr
+ = let	_ :. height :. _	= extent arr
+   in	height
+
+
+depth :: Array (sh :. Int :. Int :. Int) a -> Int
+{-# INLINE depth #-}
+depth arr
+ = let	_ :. depth :. _ :. _	= extent arr
+   in	depth
+	
 
 
 -- | Data template for stencils up to 5x5.
