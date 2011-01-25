@@ -20,12 +20,12 @@ where
 import Data.Array.Repa			as R
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
+import Data.Array.Repa.Specialised.Dim2
 import qualified Data.Array.Repa.Shape	as S
 import qualified Data.Vector.Unboxed	as V
 import Data.List			as List
 import GHC.Exts
 import Debug.Trace
-
 
 
 -- | Apply a stencil to every element of an array.
@@ -132,14 +132,14 @@ unsafeAppStencilBorder2	boundary
 			!ixArray	= Z :. yy :. xx
 			
 			result
-			 | False	<- isOutside2 ixArray arr
+			 | False	<- isOutside2 ixArray (extent arr)
 			 = load ixStencil (arr `unsafeIndex` ixArray)
 			
 			 | BoundConst bZero	<- boundary
 			 = load ixStencil bZero
 			
 			 | BoundClamp		<- boundary
-			 , ixArray_clamped	<- clampIxToBorder2 (extent arr) ixArray
+			 , ixArray_clamped	<- clampToBorder2 (extent arr) ixArray
 			 = load ixStencil (arr `unsafeIndex` ixArray_clamped)
 			
 		   in	result		
@@ -150,44 +150,7 @@ unsafeAppStencilBorder2	boundary
 	= error "unsafeAppStencil2: finish this for larger stencils"
 
 
--- | Check if an index lies outside the given array.
-isOutside2 :: DIM2 -> Array DIM2 a -> Bool
-{-# INLINE isOutside2 #-}
-isOutside2 (_ :. yy :. xx) arr
-	| yy < 0		= True
-	| yy >= height arr	= True
-	| xx < 0		= True
-	| xx >= width arr	= True
-	| otherwise		= False
-
-
--- | Given the extent of an array, clamp the components of an index so they
---   lie within the given array. Outlying indices are clamped to the index
---   of the nearest border element.
-clampIxToBorder2 
-	:: DIM2 	-- ^ Extent of array.
-	-> DIM2		-- ^ Index to clamp.
-	-> DIM2
-clampIxToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
- = clampX j i
- where 	{-# INLINE clampX #-}
-	clampX !y !x
-	  | x < 0	= clampY y 0
-	  | x >= xLen	= clampY y (xLen - 1)
-	  | otherwise	= clampY y x
-		
-	{-# INLINE clampY #-}
-	clampY !y !x
-	  | y < 0	= sh :. 0	   :. x
-	  | y >= yLen	= sh :. (yLen - 1) :. x
-	  | otherwise	= sh :. y	   :. x
-
-
-
--- split this out somewhere else ------------------------------------------------------------------
 	
-
-
 -- | Data template for stencils up to 5x5.
 --   TODO: we probably don't need to statically define this if we're using TH to defined the stencils.
 template5x5
