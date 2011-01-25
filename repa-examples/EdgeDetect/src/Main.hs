@@ -1,8 +1,7 @@
--- | Canny edge detector
-
 {-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
+-- | Canny edge detector
 import Data.List
 import Data.Word
 import Control.Monad
@@ -13,12 +12,14 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
+type Image	= Array DIM2 Double
+
 -- Constants ------------------------------------------------------------------
-orientUndef	= 0	:: Double
-orientHoriz	= 1	:: Double
-orientVert	= 2	:: Double
-orientPosDiag	= 3	:: Double
-orientNegDiag	= 4	:: Double
+orientPosDiag	= 0	:: Double
+orientVert	= 1	:: Double
+orientNegDiag	= 2	:: Double
+orientHoriz	= 3	:: Double
+orientUndef	= 4	:: Double
 
 edge False	= 0 	:: Double
 edge True	= 200 	:: Double
@@ -37,14 +38,12 @@ run fileIn fileOut
 			$ readImageFromBMP fileIn
 	
 	inputImage `deepSeqArray` return ()
-	
 	(arrResult, tElapsed)
-		<- time $ let result	= floatToRgb $ canny inputImage
+		<- time $ let result	= canny inputImage
 			  in  result `deepSeqArray` return result
 	
 	putStr $ prettyTime tElapsed
-
-	writeImageToBMP fileOut arrResult
+	writeMatrixToGreyscaleBMP fileOut arrResult
 
 usage
  = putStr $ unlines
@@ -57,25 +56,19 @@ canny 	:: Array DIM3 Word8
 
 {-# NOINLINE canny #-}
 canny input@Manifest{}
- = force output
-    where
-      blured 	= blur $ toGreyScale input
-      dX 	= gradientXCompute blured
-      dY 	= gradientYCompute blured
-      mag 	= gradientIntensityCompute   dX dY
-      orient 	= gradientOrientationCompute dX dY
-      output 	= nonMaximumSupression (force mag) (force orient)
+ = output
+ where	blured		= blur $ toGreyScale input
+	(dX, dY)	= gradientXY blured
+	(int, orient)	= gradientIntOrient dX dY
+	output		= nonMaximumSupression int orient
 
 
 -- | Maximum suppression	
-nonMaximumSupression 
-	:: Array DIM2 Double
-	-> Array DIM2 Double
-	-> Array DIM2 Double
-
+--   TODO: can't force this blockwise, get indexing
 {-# INLINE nonMaximumSupression #-}
+nonMaximumSupression :: Image -> Image -> Image
 nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
- = dMag `deepSeqArray` dOrient `deepSeqArray` force
+ = [dMag, dOrient] `deepSeqArrays` force
  $ traverse2 dMag dOrient const compare
  where
 	{-# INLINE isBoundary #-}
@@ -88,8 +81,8 @@ nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
 	{-# INLINE compare #-}
 	compare get1 get2 d@(sh :. i :. j)
          | isBoundary i j      = edge False 
-         | o == orientHoriz    = isMaximum (get1 (sh :. i - 1 :. j))     (get1 (sh :. i + 1 :. j)) 
-         | o == orientVert     = isMaximum (get1 (sh :. i     :. j - 1)) (get1 (sh :. i     :. j + 1)) 
+         | o == orientHoriz    = isMaximum (get1 (sh :. i     :. j - 1)) (get1 (sh :. i     :. j + 1)) 
+         | o == orientVert     = isMaximum (get1 (sh :. i - 1 :. j))     (get1 (sh :. i + 1 :. j)) 
          | o == orientPosDiag  = isMaximum (get1 (sh :. i - 1 :. j - 1)) (get1 (sh :. i + 1 :. j + 1)) 
          | o == orientNegDiag  = isMaximum (get1 (sh :. i - 1 :. j + 1)) (get1 (sh :. i + 1 :. j - 1)) 
          | otherwise           = edge False  
@@ -105,60 +98,81 @@ nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
             | otherwise              = edge True
 
 
--- XY Gradient calculation
-gradientXCompute :: Array DIM2 Double -> Array DIM2 Double
-gradientXCompute arr@Manifest{}
-	= arr `deepSeqArray` forceBlockwise
-	$ forStencil2 BoundClamp arr
+{-# INLINE gradientXY #-}
+gradientXY :: Image -> (Image, Image)
+gradientXY img@Manifest{}
+ 	= img `deepSeqArray` 
+ 	( forceBlockwise $ forStencil2 BoundClamp img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
 
-gradientYCompute :: Array DIM2 Double -> Array DIM2 Double
-gradientYCompute arr@Manifest{}
-	= arr `deepSeqArray` forceBlockwise 
-	$ forStencil2 BoundClamp arr
+	, forceBlockwise $ forStencil2 BoundClamp img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
+	)
 
 
-gradientIntensityCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DIM2 Double
-{-# INLINE gradientIntensityCompute #-}
-gradientIntensityCompute dX@Manifest{} dY@Manifest{}
-	= dX `deepSeqArray` dY `deepSeqArray` force
-	$ Repa.zipWith (\x y -> sqrt(x*x + y*y)) dX dY
+{-# INLINE gradientIntOrient #-}
+gradientIntOrient :: Image -> Image -> (Image, Image)
+gradientIntOrient dX@Manifest{} dY@Manifest{}
+	= [dX, dY] `deepSeqArrays`
+	( forceBlockwise $ Repa.zipWith magnitude   dX dY
+	, forceBlockwise $ Repa.zipWith orientation dX dY)
 
 
-gradientOrientationCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DIM2 Double
-{-# INLINE gradientOrientationCompute #-}
-gradientOrientationCompute dX@Manifest{} dY@Manifest{}
-	= dX `deepSeqArray` dY `deepSeqArray` force
-	$ Repa.zipWith orientation dX dY
+-- | Determine the squared magnitude of a vector.
+magnitude :: Double -> Double -> Double
+{-# INLINE magnitude #-}
+magnitude x y
+	= x * x + y * y
 
 
+-- | Classify the orientation of a vector.
 orientation :: Double -> Double -> Double
 {-# INLINE orientation #-}
-orientation x y 
-	| x >= -40, x < 40, y > -40, y < 40	= orientUndef
-	| d >= (-7 * pi8), d < (-5 * pi8)	= orientPosDiag
-	| d >= (-5 * pi8), d < (-3 * pi8)	= orientVert
-	| d >= (-3 * pi8), d < (-1 * pi8)	= orientNegDiag
-	| d >= (-1 * pi8), d < ( 1 * pi8)	= orientHoriz
-	| d >= ( 1 * pi8), d < ( 3 * pi8)	= orientPosDiag
-	| d >= ( 3 * pi8), d < ( 5 * pi8)	= orientVert
-	| d >= ( 5 * pi8), d < ( 7 * pi8)	= orientNegDiag
-	| otherwise				= orientHoriz
+orientation x y
+ | x >= -40, x < 40
+ , y >= -40, y < 40	= orientUndef
+
+ | otherwise
+ = let	!pi8	= pi / 8
+	!pi4	= pi / 4
+
+	!d	= atan2 y x 
+	!dRot	= d - pi8
 	
-	where	!d	= atan2 y x
-		!pi8	= pi / 8
+	-- normalise
+	!dNorm	= (if dRot < 0 then dRot + pi * 2 else dRot) / pi4
+
+	-- doing tests seems to be faster than using floor.
+   in	if dNorm >= 4
+	 then if dNorm >= 6
+		then if dNorm >= 7
+			then orientHoriz   -- 7
+			else orientNegDiag -- 6
+
+		else if dNorm >= 5
+			then orientVert    -- 5
+			else orientPosDiag -- 4
+
+	 else if dNorm >= 2
+		then if dNorm >= 3
+			then orientHoriz   -- 3
+			else orientNegDiag -- 2
+
+		else if dNorm >= 1
+			then orientVert    -- 1
+			else orientPosDiag -- 0
 
 
-{-# NOINLINE blur #-}
+-- | Perform a Gaussian blur to the image.
 blur 	:: Array DIM2 Double -> Array DIM2 Double
+{-# NOINLINE blur #-}
 blur arr@Manifest{}	
 	= arr `deepSeqArray` Repa.forceBlockwise
-	$ Repa.map (/ 159)
+	$ Repa.map (/ 159) 
 	$ forStencil2  BoundClamp arr
 	  [stencil2|	2  4  5  4  2
 			4  9 12  9  4
@@ -168,13 +182,12 @@ blur arr@Manifest{}
 
 
 -- | RGB to greyscale conversion.
-toGreyScale
-        :: Array DIM3 Word8
-        -> Array DIM2 Double
-        
+--   TODO: trying to blockwise force this breaks.
+--         Doesn't handle reading DIM3 arrays.
+toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
 {-# NOINLINE toGreyScale #-}
 toGreyScale arr@Manifest{}
-  = arr `deepSeqArray` force 
+  = arr `deepSeqArray` force
   $ traverse arr
 	(\(sh :. _) -> sh)
 	(\get ix    -> rgbToLuminance 
@@ -192,14 +205,3 @@ rgbToLuminance r g b
 	+ fromIntegral b * 0.11
 
 
--- | Convert a float array to greyscale components.
-floatToRgb :: Array DIM2 Double -> Array DIM3 Word8
-floatToRgb arrDoubles@Manifest{}
- = force $ traverse arrDoubles
-        (\sh -> sh :. 4)                
-        (\get (ix :. c) 
-	  -> case c of
-     		0	-> truncate (get ix)
-		1	-> truncate (get ix)
-		2	-> truncate (get ix)
-		3	-> 0)
