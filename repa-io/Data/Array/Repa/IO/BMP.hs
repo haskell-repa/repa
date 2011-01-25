@@ -4,9 +4,13 @@
 module Data.Array.Repa.IO.BMP
 	( readImageFromBMP
 	, readComponentsFromBMP
+	, readComponentsListFromBMP
 	, readMatrixFromGreyscaleBMP
+
+	-- Writing.
 	, writeImageToBMP
 	, writeComponentsToBMP
+	, writeComponentsListToBMP
 	, writeMatrixToGreyscaleBMP)
 where
 import Data.Array.Repa				as A
@@ -40,7 +44,22 @@ readMatrixFromGreyscaleBMP filePath
 					+ (fromIntegral (arrGreen ! ix) / 255) ^ (2 :: Int)
 					+ (fromIntegral (arrBlue  ! ix) / 255) ^ (2 :: Int)))
 	     in	arr `deepSeqArray` return (Right arr)
-		
+
+
+-- | Like `readComponentsFromBMP`, but return the components as a list.
+readComponentsListFromBMP
+	:: FilePath
+	-> IO (Either Error [Array DIM2 Word8])
+
+readComponentsListFromBMP filePath
+ = do	eComps	<- readComponentsFromBMP filePath
+	case eComps of
+	 Left err
+	  -> return $ Left err
+
+	 Right (arrRed, arrGreen, arrBlue)	
+	  -> return $ Right [arrRed, arrGreen, arrBlue]
+
 
 -- | Read RGB components from a BMP file.
 --	Returns arrays of red, green and blue components, all with the same extent.
@@ -122,6 +141,22 @@ writeMatrixToGreyscaleBMP fileName arr
 	arrWord8	= A.map scale arrNorm
    in	writeComponentsToBMP fileName arrWord8 arrWord8 arrWord8
 		
+		
+-- | Like `writeComponentsToBMP` but take the components as a list.
+--   The list must have 3 arrays, for the red, green blue components
+--   respectively, else `error`.
+writeComponentsListToBMP
+	:: FilePath 
+	-> [Array DIM2 Word8]
+	-> IO ()
+
+writeComponentsListToBMP filePath comps
+	| [red, green, blue]	<- comps
+	= writeComponentsToBMP filePath red green blue
+	
+	| otherwise
+	= error "Data.Array.Repa.IO.BMP.writeComponentsListToBMP: wrong number of components"
+	
 
 -- | Write RGB components to a BMP file.
 --	All arrays must have the same extent, else `error`.

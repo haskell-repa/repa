@@ -20,44 +20,28 @@ main
 usage 	= putStr $ unlines
 	[ "repa-blur <iterations> <fileIn.bmp> <fileOut.bmp>" ]
 	
--- TODO: component-wise is filthy.
---       do this with a DIM3 array.
 run iterations fileIn fileOut
- = do	(arrRed, arrGreen, arrBlue)
-		<- liftM (either (error . show) id) 
-		$  readComponentsFromBMP fileIn
+ = do	comps	<- liftM (either (error . show) id) 
+		$  readComponentsListFromBMP fileIn
 
-	arrRed `deepSeqArray` arrGreen `deepSeqArray` arrBlue `deepSeqArray` return ()
+	comps `deepSeqArrays` return ()
+	
+	let process arr
+		= force $ A.map truncate 
+		$ blur iterations
+		$ force	$ A.map fromIntegral $ arr
 
-	((arrRed', arrGreen', arrBlue'), tElapsed)
-		<- time $ let result	= blurComponents iterations arrRed arrGreen arrBlue
-			  in  result `seq` return result
+	(comps', tElapsed)
+	 <- time $ let	comps' = P.map process comps
+		   in	comps' `deepSeqArrays` return comps'
 	
 	putStr $ prettyTime tElapsed
 			
-	writeComponentsToBMP fileOut arrRed' arrGreen' arrBlue'
+	writeComponentsListToBMP fileOut comps'
 
 
-
--- | Blur all the components of an image.
-blurComponents iterations arrRed arrGreen arrBlue
- = let	process arr	
-		= force 
-		$ A.map truncate 
-		$ blurs iterations
-		$ force
-		$ A.map fromIntegral 
-		$ arr
-
-	[arrRed', arrGreen', arrBlue']
-		= P.map process [arrRed, arrGreen, arrBlue]
- 
-   in	arrRed' `deepSeqArray` arrGreen' `deepSeqArray` arrBlue' `deepSeqArray`
-         (arrRed', arrGreen', arrBlue')
-
-
-blurs 	:: Int -> Array DIM2 Double -> Array DIM2 Double
-blurs steps arr
+blur 	:: Int -> Array DIM2 Double -> Array DIM2 Double
+blur steps arr
  	= iterateBlockwise' steps arr
 	$ A.map (/ 159)
 	. mapStencil2 BoundClamp
@@ -67,12 +51,12 @@ blurs steps arr
 			4  9 12  9  4
 			2  4  5  4  2 |]
 			
-{-
--- | Run several iterations of blurring.
-blurs 	:: Int -> Array DIM2 Double -> Array DIM2 Double
-blurs 0 arr	= arr
-blurs n arr	= blurs (n - 1) (force $ blur arr)
 
+{- version using convolveOut
+-- | Run several iterations of blurring.
+blur 	:: Int -> Array DIM2 Double -> Array DIM2 Double
+blur 0 arr	= arr
+blur n arr	= blurs (n - 1) (force $ blur arr)
 
 -- | Run a single iteration of blurring.
 blur :: Array DIM2 Double -> Array DIM2 Double

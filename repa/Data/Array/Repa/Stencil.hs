@@ -12,7 +12,7 @@ module Data.Array.Repa.Stencil
 	, makeStencil, makeStencil2
 
 	-- * Stencil operators.
-	, mapStencil2
+	, mapStencil2, forStencil2
 
 	-- * Template haskell code.
 	, stencil2)
@@ -26,6 +26,19 @@ import qualified Data.Vector.Unboxed	as V
 import Data.List			as List
 import GHC.Exts
 import Debug.Trace
+
+
+-- | Like `mapStencil2` but with the parameters flipped.
+forStencil2
+	:: (Elt a, Elt b)
+	=> Boundary a
+	-> Array DIM2 a 
+	-> Stencil DIM2 a b
+	-> Array DIM2 b
+
+{-# INLINE forStencil2 #-}
+forStencil2 boundary arr stencil
+	= mapStencil2 boundary stencil arr
 
 
 -- | Apply a stencil to every element of an array.
@@ -165,8 +178,4 @@ template5x5 f zero
 	$ f   1  (-2)  $  f   1  (-1)  $  f   1    0  $  f   1    1  $  f   1    2 
 	$ f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2 
 	$ zero
-
-
-
-		
 

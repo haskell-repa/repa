@@ -1,7 +1,6 @@
 -- | Canny edge detector
---   TODO: This deadlocks with > 2 threads.
 
-{-# LANGUAGE PackageImports, BangPatterns #-}
+{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 import Data.List
@@ -9,20 +8,20 @@ import Data.Word
 import Control.Monad
 import System.Environment
 import Data.Array.Repa 			as Repa
-import Data.Array.Repa.Algorithms.Convolve
+import Data.Array.Repa.Stencil
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
 -- Constants ------------------------------------------------------------------
-orientUndef   = 0	:: Double
-orientHoriz   = 1	:: Double
-orientVert    = 2	:: Double
-orientPosDiag = 3	:: Double
-orientNegDiag = 4	:: Double
+orientUndef	= 0	:: Double
+orientHoriz	= 1	:: Double
+orientVert	= 2	:: Double
+orientPosDiag	= 3	:: Double
+orientNegDiag	= 4	:: Double
 
-edge False = 0 		:: Double
-edge True  = 200 	:: Double
+edge False	= 0 	:: Double
+edge True	= 200 	:: Double
 
 
 -- Main routine ---------------------------------------------------------------
@@ -31,20 +30,20 @@ main
 	case args of
 	 [fileIn, fileOut]	-> run fileIn fileOut
 	 _			-> usage
-	
+
 
 run fileIn fileOut
  = do	inputImage 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
 	
-	inputImage `seq` return ()
+	inputImage `deepSeqArray` return ()
 	
 	(arrResult, tElapsed)
 		<- time $ let result	= floatToRgb $ canny inputImage
-			  in  result `seq` return result
+			  in  result `deepSeqArray` return result
 	
 	putStr $ prettyTime tElapsed
-	
+
 	writeImageToBMP fileOut arrResult
 
 usage
@@ -53,37 +52,35 @@ usage
 
 
 -- Edge detection -------------------------------------------------------------
-canny 	:: Repa.Array DIM3 Word8 
-	-> Repa.Array DIM2 Double
+canny 	:: Array DIM3 Word8 
+	-> Array DIM2 Double
 
 {-# NOINLINE canny #-}
 canny input@Manifest{}
  = force output
     where
-      output 	= nonMaximumSupression (force mag) (force orient)
       blured 	= blur $ toGreyScale input
-      mag 	= gradientIntensityCompute dX dY
-      orient 	= gradientOrientationCompute dX dY
       dX 	= gradientXCompute blured
       dY 	= gradientYCompute blured
+      mag 	= gradientIntensityCompute   dX dY
+      orient 	= gradientOrientationCompute dX dY
+      output 	= nonMaximumSupression (force mag) (force orient)
 
 
 -- | Maximum suppression	
 nonMaximumSupression 
-	:: Repa.Array DIM2 Double
-	-> Repa.Array DIM2 Double
-	-> Repa.Array DIM2 Double
+	:: Array DIM2 Double
+	-> Array DIM2 Double
+	-> Array DIM2 Double
 
 {-# INLINE nonMaximumSupression #-}
 nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
     = traverse2 dMag dOrient const compare
     where
-      _ :. height :. width = extent dMag
-
       isBoundary i j 
         | i == 0 || j == 0     = True
-        | i == width - 1       = True
-        | j == height - 1      = True
+        | i == width  dMag - 1 = True
+        | j == height dMag - 1 = True
         | otherwise            = False
 
       compare get1 get2 d@(sh :. i :. j)
@@ -103,82 +100,80 @@ nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
             | otherwise              = edge True
 
 
--- | XY Gradient calculation
-gradientXCompute :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double
-{-# NOINLINE gradientXCompute #-}
-gradientXCompute input@Manifest{}
- = kernel `deepSeqArray` convolve (const 0) kernel input
- where kernel 
-	= force $ Repa.fromList 
-		(Z :. 3 :. 3)	[ -1, 0, 1, 
-				  -2, 0, 2,
-				  -1, 0, 1 ]
+-- XY Gradient calculation
+gradientXCompute :: Array DIM2 Double -> Array DIM2 Double
+gradientXCompute arr@Manifest{}
+	= arr `deepSeqArray` forceBlockwise
+	$ forStencil2 BoundClamp arr
+	  [stencil2|	-1  0  1
+			-2  0  2
+			-1  0  1 |]
+
+gradientYCompute :: Array DIM2 Double -> Array DIM2 Double
+gradientYCompute arr@Manifest{}
+	= arr `deepSeqArray` forceBlockwise 
+	$ forStencil2 BoundClamp arr
+	  [stencil2|	 1  2  1
+			 0  0  0
+			-1 -2 -1 |] 
 
 
-gradientYCompute :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double
-{-# NOINLINE gradientYCompute #-}
-gradientYCompute input@Manifest{}
- = kernel `deepSeqArray` convolve (const 0) kernel input
- where kernel
-	= force $ Repa.fromList
-		(Z :. 3 :. 3)	[ 1,  2,  1, 
-		  		  0,  0,  0, 	
-				 -1, -2, -1 ]
-
-
-gradientIntensityCompute :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double -> Repa.Array DIM2 Double
+gradientIntensityCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DIM2 Double
 {-# INLINE gradientIntensityCompute #-}
 gradientIntensityCompute dX@Manifest{} dY@Manifest{}
     = Repa.zipWith (\x y -> sqrt(x*x + y*y)) dX dY
 
 
-gradientOrientationCompute :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double -> Repa.Array DIM2 Double
+gradientOrientationCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DIM2 Double
 {-# INLINE gradientOrientationCompute #-}
 gradientOrientationCompute dX@Manifest{} dY@Manifest{}
-    = Repa.force $ Repa.zipWith orientation dX dY
-      where
-        orientation x y 
-          | (x > -40 && x < 40) && (y > -40 && y < 40)              = orientUndef
-          | atan2 y x >= (-7 * pi / 8) && atan2 y x < (-5 * pi / 8) = orientPosDiag
-          | atan2 y x >= (-5 * pi / 8) && atan2 y x < (-3 * pi / 8) = orientVert
-          | atan2 y x >= (-3 * pi / 8) && atan2 y x < (-1 * pi / 8) = orientNegDiag
-          | atan2 y x >= (-1 * pi / 8) && atan2 y x < ( 1 * pi / 8) = orientHoriz
-          | atan2 y x >= ( 1 * pi / 8) && atan2 y x < ( 3 * pi / 8) = orientPosDiag
-          | atan2 y x >= ( 3 * pi / 8) && atan2 y x < ( 5 * pi / 8) = orientVert
-          | atan2 y x >= ( 5 * pi / 8) && atan2 y x < ( 7 * pi / 8) = orientNegDiag
-          | otherwise = orientHoriz
- 
+	= dX `deepSeqArray` dY `deepSeqArray` force
+	$ Repa.zipWith orientation dX dY
 
--- | Blurring
+orientation :: Double -> Double -> Double
+{-# INLINE orientation #-}
+orientation x y 
+	| x >= -40, x < 40, y > -40, y < 40	= orientUndef
+	| d >= (-7 * pi8), d < (-5 * pi8)	= orientPosDiag
+	| d >= (-5 * pi8), d < (-3 * pi8)	= orientVert
+	| d >= (-3 * pi8), d < (-1 * pi8)	= orientNegDiag
+	| d >= (-1 * pi8), d < ( 1 * pi8)	= orientHoriz
+	| d >= ( 1 * pi8), d < ( 3 * pi8)	= orientPosDiag
+	| d >= ( 3 * pi8), d < ( 5 * pi8)	= orientVert
+	| d >= ( 5 * pi8), d < ( 7 * pi8)	= orientNegDiag
+	| otherwise				= orientHoriz
+	
+	where	!d	= atan2 y x
+		!pi8	= pi / 8
+
+
 {-# NOINLINE blur #-}
-blur :: Repa.Array DIM2 Double -> Repa.Array DIM2 Double
-blur input@Manifest{}
- = kernel `deepSeqArray` convolve (const 0) kernel input
- where kernel 	= force 
-		$ Repa.fromList (Z :. 5 :. 5) 
-		$ Data.List.map (\x -> x / 159) 
-			 [2.0,  4.0,  5.0,  4.0, 2.0,
-                          4.0,  9.0, 12.0,  9.0, 4.0,
-                          5.0, 12.0, 15.0, 12.0, 5.0,
-                          4.0,  9.0, 12.0,  9.0, 4.0,
-                          2.0,  4.0,  5.0,  4.0, 2.0]
+blur 	:: Array DIM2 Double -> Array DIM2 Double
+blur arr@Manifest{}	
+	= arr `deepSeqArray` Repa.forceBlockwise
+	$ Repa.map (/ 159)
+	$ forStencil2  BoundClamp arr
+	  [stencil2|	2  4  5  4  2
+			4  9 12  9  4
+			5 12 15 12  5
+			4  9 12  9  4
+			2  4  5  4  2 |]
 
 
 -- | RGB to greyscale conversion.
 toGreyScale
-        :: Repa.Array DIM3 Word8
-        -> Repa.Array DIM2 Double
+        :: Array DIM3 Word8
+        -> Array DIM2 Double
         
-toGreyScale arrBound@Manifest{}
- = force $ traverse arrBound
-        (\(sh :. height :. width :. _)   
-                -> sh :. height :. width)
-
-        (\get (sh :. y :. x)
-                -> rgbToLuminance
-                        (get (sh :. y :. x :. 0))
-                        (get (sh :. y :. x :. 1))
-                        (get (sh :. y :. x :. 2)))
+{-# NOINLINE toGreyScale #-}
+toGreyScale arr@Manifest{}
+  = arr `deepSeqArray` force 
+  $ traverse arr
+	(\(sh :. _) -> sh)
+	(\get ix    -> rgbToLuminance 
+				(get (ix :. 0))
+				(get (ix :. 1))
+				(get (ix :. 2)))
 
 
 -- | Convert a RGB value to a luminance.
@@ -191,16 +186,13 @@ rgbToLuminance r g b
 
 
 -- | Convert a float array to greyscale components.
-floatToRgb :: Repa.Array DIM2 Double -> Repa.Array DIM3 Word8
+floatToRgb :: Array DIM2 Double -> Array DIM3 Word8
 floatToRgb arrDoubles@Manifest{}
  = force $ traverse arrDoubles
-        (\(sh :. height :. width)
-                -> sh :. height :. width :. 4)
-                
-        (\get (sh :. y :. x :. c)
-                -> let !i = get (sh :. y :. x)
-                   in   case c of
-                          0     -> truncate i
-                          1     -> truncate i
-                          2     -> truncate i
-                          3     -> 0)
+        (\sh -> sh :. 4)                
+        (\get (ix :. c) 
+	  -> case c of
+     		0	-> truncate (get ix)
+		1	-> truncate (get ix)
+		2	-> truncate (get ix)
+		3	-> 0)

@@ -14,9 +14,9 @@ module Data.Array.Repa
 	-- from Data.Array.Repa.Base --------------------------------
 	, Elt
 	, Array(..)
-	, deepSeqArray
-	, singleton, toScalar
-	, extent,    delay
+	, deepSeqArray, deepSeqArrays
+	, singleton,    toScalar
+	, extent,       delay
 
 	-- * Simple projections
 	, width, height, depth

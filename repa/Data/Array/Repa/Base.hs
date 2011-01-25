@@ -4,7 +4,7 @@
 module Data.Array.Repa.Base
 	( Elt
 	, Array(..)
-	, deepSeqArray
+	, deepSeqArray, deepSeqArrays
 	, singleton, toScalar
 	, extent,    delay
 
@@ -76,8 +76,22 @@ deepSeqArray arr x
  = case arr of
 	Manifest  sh uarr	-> sh `S.deepSeq` uarr `seq` x
 	Delayed   sh _		-> sh `S.deepSeq` x
-	Partitioned sh _ _ _ _ _	-> sh `S.deepSeq` x
+	Partitioned sh _ _ _ _ _-> sh `S.deepSeq` x
 
+
+-- | Like `deepSeqArray` but seqs all the arrays in a list.
+infixr 0 `deepSeqArrays`
+deepSeqArrays
+	:: Shape sh
+	=> [Array sh a]
+	-> b -> b
+
+{-# INLINE deepSeqArrays #-}
+deepSeqArrays arr y
+ = case arr of
+	[]	-> y
+	x : xs	-> x `deepSeqArray` xs `deepSeqArrays` y
+	
 
 -- Predicates -------------------------------------------------------------------------------------
 isManifest  :: Array sh a -> Bool
