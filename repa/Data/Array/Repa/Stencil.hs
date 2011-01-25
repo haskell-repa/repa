@@ -7,60 +7,26 @@
 module Data.Array.Repa.Stencil
 	( Stencil	(..)
 	, Boundary	(..)
-	, makeStencil2
+
+	-- * Stencil creation.
+	, makeStencil, makeStencil2
+
+	-- * Stencil operators.
 	, mapStencil2
+
+	-- * Template haskell code.
 	, stencil2)
 where
 import Data.Array.Repa			as R
+import Data.Array.Repa.Stencil.Base
+import Data.Array.Repa.Stencil.Template
 import qualified Data.Array.Repa.Shape	as S
 import qualified Data.Vector.Unboxed	as V
 import Data.List			as List
-import Language.Haskell.TH
-import Language.Haskell.TH.Quote
 import GHC.Exts
 import Debug.Trace
 
--- | Represents a stencil we can apply to an array.
-data Stencil sh a b
-	= StencilStatic
-	{ stencilExtent	:: !sh
-	, stencilZero	:: !b 
-	, stencilAcc	:: !(sh -> a -> b -> b) }
 
-
--- | What values to use when the stencil is partly outside the input image.
-data Boundary a
-	-- | Treat points outside as having a constant value.
-	= BoundConst a	
-
-	-- | Treat points outside as having the same value as the edge pixel.
-	| BoundClamp
-
-makeStencil2
-	:: (Elt a, Num a)
-	=> Int -> Int		-- ^ extent of stencil
-	-> (DIM2 -> Maybe a)	-- ^ Get the coefficient at this index.
-	-> Stencil DIM2 a a
-
-{-# INLINE makeStencil2 #-}
-makeStencil2 height width getCoeff
- = makeStencil (Z :. height :. width) getCoeff
-
-
--- | Make a stencil from a function yielding coefficients at each index.
-makeStencil
-	:: (Elt a, Num a) 
-	=> sh			-- ^ Extent of stencil.
-	-> (sh -> Maybe a) 	-- ^ Get the coefficient at this index.
-	-> Stencil sh a a
-
-{-# INLINE makeStencil #-}
-makeStencil ex getCoeff
- = StencilStatic ex 0 
- $ \ix val acc
-	-> case getCoeff ix of
-		Nothing		-> acc
-		Just coeff	-> acc + val * coeff
 
 -- | Apply a stencil to every element of an array.
 --   This is specialised for stencils of extent up to 5x5.
@@ -219,25 +185,6 @@ clampIxToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 
 
 -- split this out somewhere else ------------------------------------------------------------------
-width :: Array (sh :. Int) a -> Int
-{-# INLINE width #-}
-width arr
- = let	_ :.  width		= extent arr
-   in	width
-
-
-height :: Array (sh :. Int :. Int) a -> Int
-{-# INLINE height #-}
-height arr
- = let	_ :. height :. _	= extent arr
-   in	height
-
-
-depth :: Array (sh :. Int :. Int :. Int) a -> Int
-{-# INLINE depth #-}
-depth arr
- = let	_ :. depth :. _ :. _	= extent arr
-   in	depth
 	
 
 
@@ -258,64 +205,5 @@ template5x5 f zero
 
 
 
--- Template Haskell Stuff -------------------------------------------------------------------------
-stencil2 :: QuasiQuoter
-stencil2 = QuasiQuoter 
-		{ quoteExp	= parseStencil2
-		, quotePat	= undefined
-		, quoteType	= undefined
-		, quoteDec	= undefined }
-
--- | Parse a stencil definition.
---   TODO: make this more robust.
-parseStencil2 :: String -> Q Exp
-parseStencil2 str 
- = let	line1 : _	= lines str
-
-	sizeX		= fromIntegral $ length $ lines str
-	sizeY		= fromIntegral $ length $ words line1
-	
-	minX		= negate (sizeX `div` 2)
-	minY		= negate (sizeY `div` 2)
-	maxX		= sizeX `div` 2
-	maxY		= sizeY `div` 2
-
-	coeffs		= List.map read $ words str
-
-	-- using scaled coeffs makes things slower because we were relying on values being == 1
-	-- scaled coeffs would be better if we don't have a lot of 1s.
-	sumCoeffs	= List.sum coeffs
---	scaledCoeffs	= List.map (/ sumCoeffs) coeffs
-	
-   in	makeStencil2' sizeX sizeY
-	 $ filter (\(x, y, v) -> v /= 0)
-	 $ [ (fromIntegral y, fromIntegral x, toRational v)
-		| y	<- [minX, minX + 1 .. maxX]
-		, x	<- [minY, minY + 1 .. maxY]
-		| v	<- coeffs ]
-
-
-makeStencil2'
-	:: Integer -> Integer
-	-> [(Integer, Integer, Rational)]
-	-> Q Exp
-
-makeStencil2' sizeX sizeY coeffs
- = do	let makeStencil' = mkName "makeStencil2"
-	let dot'	 = mkName ":."
-	let just'	 = mkName "Just"
-	ix'		<- newName "ix"
-	z'		<- [p| Z |]
-	
-	return 
-	 $ AppE  (VarE makeStencil' `AppE` (LitE (IntegerL sizeX)) `AppE` (LitE (IntegerL sizeY)))
-	 $ LamE  [VarP ix']
-	 $ CaseE (VarE ix') 
-	 $   [ Match	(InfixP (InfixP z' dot' (LitP (IntegerL oy))) dot' (LitP (IntegerL ox)))
-			(NormalB $ ConE just' `AppE` LitE (RationalL v))
-			[] | (oy, ox, v) <- coeffs ]
-	  ++ [Match WildP 
-			(NormalB $ ConE (mkName "Nothing"))
-			[]]
 		
 

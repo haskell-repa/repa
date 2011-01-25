@@ -18,6 +18,9 @@ module Data.Array.Repa
 	, singleton, toScalar
 	, extent,    delay
 
+	-- * Simple projections
+	, width, height, depth
+
 	-- * Indexing
 	, (!),  index
 	, (!?), safeIndex
@@ -127,4 +130,26 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	{-# INLINE fromInteger #-}
 	fromInteger n	 = Delayed failShape (\_ -> fromInteger n) 
 	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
+
+
+-- Projections ------------------------------------------------------------------------------------
+width :: Array (sh :. Int) a -> Int
+{-# INLINE width #-}
+width arr
+ = let	_ :.  width		= extent arr
+   in	width
+
+
+height :: Array (sh :. Int :. Int) a -> Int
+{-# INLINE height #-}
+height arr
+ = let	_ :. height :. _	= extent arr
+   in	height
+
+
+depth :: Array (sh :. Int :. Int :. Int) a -> Int
+{-# INLINE depth #-}
+depth arr
+ = let	_ :. depth :. _ :. _	= extent arr
+   in	depth
 		
