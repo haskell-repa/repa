@@ -64,7 +64,7 @@ canny input@Manifest{}
 
 
 -- | Maximum suppression	
---   TODO: can't force this blockwise, get indexing
+--   TODO: can't force this blockwise, get indexing problems.
 {-# INLINE nonMaximumSupression #-}
 nonMaximumSupression :: Image -> Image -> Image
 nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
@@ -137,14 +137,13 @@ orientation x y
  , y >= -40, y < 40	= orientUndef
 
  | otherwise
- = let	!pi8	= pi / 8
-	!pi4	= pi / 4
-
+ = let	-- determine the angle of the vector and rotate it around a bit
+	-- to make the segments easier to classify.
 	!d	= atan2 y x 
-	!dRot	= d - pi8
+	!dRot	= (d - (pi/8)) * (4/pi)
 	
-	-- normalise
-	!dNorm	= (if dRot < 0 then dRot + pi * 2 else dRot) / pi4
+	-- normalise angle to beween 0..8
+	!dNorm	= if dRot < 0 then dRot + 8 else dRot
 
 	-- doing tests seems to be faster than using floor.
    in	if dNorm >= 4
