@@ -1,4 +1,4 @@
-{-# LANGUAGE MagicHash, PatternGuards, BangPatterns  #-}
+{-# LANGUAGE MagicHash, PatternGuards, BangPatterns, TemplateHaskell, QuasiQuotes, ParallelListComp #-}
 {-# OPTIONS -Wnot #-}
 
 -- | Efficient computation of stencil based convolutions.
@@ -6,12 +6,16 @@
 module Data.Array.Repa.Stencil
 	( Stencil	(..)
 	, Boundary	(..)
-	, makeStencil
-	, mapStencil2)
+	, makeStencil2
+	, mapStencil2
+	, stencil2)
 where
 import Data.Array.Repa			as R
 import qualified Data.Array.Repa.Shape	as S
 import qualified Data.Vector.Unboxed	as V
+import Data.List			as List
+import Language.Haskell.TH
+import Language.Haskell.TH.Quote
 import GHC.Exts
 import Debug.Trace
 
@@ -27,6 +31,17 @@ data Stencil sh a b
 data Boundary a
 	= BoundConst a
 
+makeStencil2
+	:: (Elt a, Num a)
+	=> Int -> Int		-- ^ extent of stencil
+	-> (DIM2 -> Maybe a)	-- ^ Get the coefficient at this index.
+	-> Stencil DIM2 a a
+
+{-# INLINE makeStencil2 #-}
+makeStencil2 height width getCoeff
+ = makeStencil (Z :. height :. width) getCoeff
+
+
 -- | Make a stencil from a function yielding coefficients at each index.
 makeStencil
 	:: (Elt a, Num a) 
@@ -41,18 +56,17 @@ makeStencil ex getCoeff
 	-> case getCoeff ix of
 		Nothing		-> acc
 		Just coeff	-> acc + val * coeff
-	
 
 -- | Apply a stencil to every element of an array.
 --   This is specialised for stencils of extent up to 5x5.
 mapStencil2 
 	:: (Elt a, Elt b)
-	=> Stencil DIM2 a b
-	-> Boundary a
+	=> Boundary a
+	-> Stencil DIM2 a b
 	-> Array DIM2 a -> Array DIM2 b
 
 {-# INLINE mapStencil2 #-}
-mapStencil2 stencil@(StencilStatic sExtent zero load) boundary arr
+mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
  = let	(_ :. aHeight :. aWidth) = extent arr
 	(_ :. sHeight :. sWidth) = sExtent
 
@@ -77,7 +91,7 @@ mapStencil2 stencil@(StencilStatic sExtent zero load) boundary arr
 	   	, ((Z :. yMin     :. xMax + 1), (Z :. yMax           :. aWidth - 1)) ]  -- right
 			
 	{-# INLINE getBorder' #-}
-	getBorder' ix	= unsafeAppStencilBorder2   stencil boundary arr ix
+	getBorder' ix	= unsafeAppStencilBorder2   boundary stencil arr ix
 			
 	{-# INLINE getInner' #-}	
 	getInner' ix	= unsafeAppStencilInternal2 stencil arr ix
@@ -123,15 +137,14 @@ unsafeAppStencilInternal2
 --	This version can be applied close to the border, or even outside the image.
 unsafeAppStencilBorder2
 	:: (Elt a, Elt b)
-	=> Stencil DIM2 a b
-	-> Boundary a
+	=> Boundary a
+	-> Stencil DIM2 a b
 	-> Array DIM2 a
 	-> DIM2 -> b
 
 {-# INLINE unsafeAppStencilBorder2 #-}
-unsafeAppStencilBorder2
+unsafeAppStencilBorder2	boundary
 	 stencil@(StencilStatic  sExtent zero load)
-	boundary@(BoundConst bZero)
 	     arr@(Manifest aExtent vec)
 	ix@(Z :. y :. x)
 	
@@ -149,6 +162,7 @@ unsafeAppStencilBorder2
 	
 		{-# INLINE oload #-}
 		oload oy ox
+		 | BoundConst bZero	<- boundary
 	 	 = let	!yy 	 = y + oy
 			!xx 	 = x + ox
 			!ix'	 = Z :. oy :. ox
@@ -164,6 +178,7 @@ unsafeAppStencilBorder2
 
 
 -- | Data template for stencils up to 5x5.
+--   TODO: we probably don't need to statically define this if we're using TH to defined the stencils.
 template5x5
 	:: (Int -> Int -> a -> a)
 	-> a -> a
@@ -176,4 +191,67 @@ template5x5 f zero
 	$ f   1  (-2)  $  f   1  (-1)  $  f   1    0  $  f   1    1  $  f   1    2 
 	$ f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2 
 	$ zero
+
+
+
+-- Template Haskell Stuff -------------------------------------------------------------------------
+stencil2 :: QuasiQuoter
+stencil2 = QuasiQuoter 
+		{ quoteExp	= parseStencil2
+		, quotePat	= undefined
+		, quoteType	= undefined
+		, quoteDec	= undefined }
+
+-- | Parse a stencil definition.
+--   TODO: make this more robust.
+parseStencil2 :: String -> Q Exp
+parseStencil2 str 
+ = let	line1 : _	= lines str
+
+	sizeX		= fromIntegral $ length $ lines str
+	sizeY		= fromIntegral $ length $ words line1
+	
+	minX		= negate (sizeX `div` 2)
+	minY		= negate (sizeY `div` 2)
+	maxX		= sizeX `div` 2
+	maxY		= sizeY `div` 2
+
+	coeffs		= List.map read $ words str
+
+	-- using scaled coeffs makes things slower because we were relying on values being == 1
+	-- scaled coeffs would be better if we don't have a lot of 1s.
+	sumCoeffs	= List.sum coeffs
+--	scaledCoeffs	= List.map (/ sumCoeffs) coeffs
+	
+   in	makeStencil2' sizeX sizeY
+	 $ filter (\(x, y, v) -> v /= 0)
+	 $ [ (fromIntegral y, fromIntegral x, toRational v)
+		| y	<- [minX, minX + 1 .. maxX]
+		, x	<- [minY, minY + 1 .. maxY]
+		| v	<- coeffs ]
+
+
+makeStencil2'
+	:: Integer -> Integer
+	-> [(Integer, Integer, Rational)]
+	-> Q Exp
+
+makeStencil2' sizeX sizeY coeffs
+ = do	let makeStencil' = mkName "makeStencil2"
+	let dot'	 = mkName ":."
+	let just'	 = mkName "Just"
+	ix'		<- newName "ix"
+	z'		<- [p| Z |]
+	
+	return 
+	 $ AppE  (VarE makeStencil' `AppE` (LitE (IntegerL sizeX)) `AppE` (LitE (IntegerL sizeY)))
+	 $ LamE  [VarP ix']
+	 $ CaseE (VarE ix') 
+	 $   [ Match	(InfixP (InfixP z' dot' (LitP (IntegerL oy))) dot' (LitP (IntegerL ox)))
+			(NormalB $ ConE just' `AppE` LitE (RationalL v))
+			[] | (oy, ox, v) <- coeffs ]
+	  ++ [Match WildP 
+			(NormalB $ ConE (mkName "Nothing"))
+			[]]
+		
 

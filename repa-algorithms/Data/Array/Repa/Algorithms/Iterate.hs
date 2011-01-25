@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, PackageImports #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 module Data.Array.Repa.Algorithms.Iterate
-	(iterateBlockwise)
+	(iterateBlockwise, iterateBlockwise')
 where
 import Data.Array.Repa
 import Data.Vector.Unboxed
@@ -32,3 +32,8 @@ iterateBlockwise steps f arrInit@(Manifest shInit vecInit)
 		 then arrCurrent
 		 else let Manifest shNew vecNew = forceBlockwise $ f arrCurrent
 		      in  goSolve (i - 1) shNew vecNew
+
+
+{-# INLINE iterateBlockwise' #-}
+iterateBlockwise' steps arr fn
+	= iterateBlockwise steps fn arr

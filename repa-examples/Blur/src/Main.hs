@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, BangPatterns #-}
+{-# LANGUAGE PackageImports, BangPatterns, TemplateHaskell, QuasiQuotes #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 import Data.List
@@ -6,8 +6,9 @@ import Control.Monad
 import System.Environment
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
-import Data.Array.Repa.Algorithms.Convolve
+import Data.Array.Repa.Algorithms.Iterate
 import Data.Array.Repa 			as A
+import Data.Array.Repa.Stencil		as A
 import Prelude				as P
 
 main 
@@ -55,6 +56,18 @@ blurComponents iterations arrRed arrGreen arrBlue
          (arrRed', arrGreen', arrBlue')
 
 
+blurs 	:: Int -> Array DIM2 Double -> Array DIM2 Double
+blurs steps arr
+ 	= iterateBlockwise' steps arr
+	$ A.map (/ 159)
+	. mapStencil2 (BoundConst 0)
+	  [stencil2|	2  4  5  4  2
+			4  9 12  9  4
+			5 12 15 12  5
+			4  9 12  9  4
+			2  4  5  4  2 |]
+			
+{-
 -- | Run several iterations of blurring.
 blurs 	:: Int -> Array DIM2 Double -> Array DIM2 Double
 blurs 0 arr	= arr
@@ -62,7 +75,6 @@ blurs n arr	= blurs (n - 1) (force $ blur arr)
 
 
 -- | Run a single iteration of blurring.
-{-# NOINLINE blur #-}
 blur :: Array DIM2 Double -> Array DIM2 Double
 blur input@Manifest{}
  = convolveOut outClamp kernel input
@@ -74,5 +86,5 @@ blur input@Manifest{}
                           5.0, 12.0, 15.0, 12.0, 5.0,
                           4.0,  9.0, 12.0,  9.0, 4.0,
                           2.0,  4.0,  5.0,  4.0, 2.0]
-	
+-}	
 	
