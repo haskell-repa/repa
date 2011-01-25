@@ -75,25 +75,30 @@ nonMaximumSupression
 
 {-# INLINE nonMaximumSupression #-}
 nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
-    = traverse2 dMag dOrient const compare
-    where
-      isBoundary i j 
-        | i == 0 || j == 0     = True
-        | i == width  dMag - 1 = True
-        | j == height dMag - 1 = True
-        | otherwise            = False
+ = dMag `deepSeqArray` dOrient `deepSeqArray` force
+ $ traverse2 dMag dOrient const compare
+ where
+	{-# INLINE isBoundary #-}
+	isBoundary i j 
+         | i == 0 || j == 0     = True
+	 | i == width  dMag - 1 = True
+	 | j == height dMag - 1 = True
+	 | otherwise            = False
 
-      compare get1 get2 d@(sh :. i :. j)
-        | isBoundary i j      = edge False 
-        | o == orientHoriz    = isMaximum (get1 (sh :. i - 1 :. j))     (get1 (sh :. i + 1 :. j)) 
-        | o == orientVert     = isMaximum (get1 (sh :. i     :. j - 1)) (get1 (sh :. i     :. j + 1)) 
-        | o == orientPosDiag  = isMaximum (get1 (sh :. i - 1 :. j - 1)) (get1 (sh :. i + 1 :. j + 1)) 
-        | o == orientNegDiag  = isMaximum (get1 (sh :. i - 1 :. j + 1)) (get1 (sh :. i + 1 :. j - 1)) 
-        | otherwise           = edge False  
+	{-# INLINE compare #-}
+	compare get1 get2 d@(sh :. i :. j)
+         | isBoundary i j      = edge False 
+         | o == orientHoriz    = isMaximum (get1 (sh :. i - 1 :. j))     (get1 (sh :. i + 1 :. j)) 
+         | o == orientVert     = isMaximum (get1 (sh :. i     :. j - 1)) (get1 (sh :. i     :. j + 1)) 
+         | o == orientPosDiag  = isMaximum (get1 (sh :. i - 1 :. j - 1)) (get1 (sh :. i + 1 :. j + 1)) 
+         | o == orientNegDiag  = isMaximum (get1 (sh :. i - 1 :. j + 1)) (get1 (sh :. i + 1 :. j - 1)) 
+         | otherwise           = edge False  
       
-        where
-          o = get2 d  
-          intensity = get1 (Z :. i :. j)
+         where
+          !o 		= get2 d  
+          !intensity 	= get1 (Z :. i :. j)
+
+	  {-# INLINE isMaximum #-}
           isMaximum intensity1 intensity2
             | intensity < intensity1 = edge False
             | intensity < intensity2 = edge False
@@ -121,7 +126,8 @@ gradientYCompute arr@Manifest{}
 gradientIntensityCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DIM2 Double
 {-# INLINE gradientIntensityCompute #-}
 gradientIntensityCompute dX@Manifest{} dY@Manifest{}
-    = Repa.zipWith (\x y -> sqrt(x*x + y*y)) dX dY
+	= dX `deepSeqArray` dY `deepSeqArray` force
+	$ Repa.zipWith (\x y -> sqrt(x*x + y*y)) dX dY
 
 
 gradientOrientationCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DIM2 Double
@@ -129,6 +135,7 @@ gradientOrientationCompute :: Array DIM2 Double -> Array DIM2 Double -> Array DI
 gradientOrientationCompute dX@Manifest{} dY@Manifest{}
 	= dX `deepSeqArray` dY `deepSeqArray` force
 	$ Repa.zipWith orientation dX dY
+
 
 orientation :: Double -> Double -> Double
 {-# INLINE orientation #-}
