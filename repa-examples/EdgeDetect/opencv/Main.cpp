@@ -7,26 +7,30 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "Timing.h"
 
 int main(int argc, char *argv[])
 {
-	if(argc<2) {
-		printf("Usage: main <image-file-name>\n");
+	if(argc != 4) {
+		printf("Usage: main <iterations> <in.bmp> <out.bmp>\n");
 		exit(0);
 	}
+	int	iterations	= atoi(argv[1]);
+	char*	fileNameIn	= argv[2];
+	char*	fileNameOut	= argv[3];
 
 	// Load source image.  
-	IplImage* img 	= cvLoadImage(argv[1]);
-	if(!img){
-		printf("Could not load image file: %s\n",argv[1]);
+	cv::Mat src	= cv::imread(fileNameIn);
+	if(src.data == NULL) {
+		printf("Could not load image file: %s\n", fileNameIn);
 		exit(0);
 	}
-	cv::Mat src	(img);
 	int height	= src.rows;
 	int width	= src.cols;
 	int channels	= src.channels();
-	
+	assert (channels == 3);
 
+	
 	// Get luminance of source image as floats.
 	cv::Mat srcLum	(src.rows, src.cols, CV_32F);
 	for(int i = 0; i < height; i++) {
@@ -42,10 +46,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
 	// Compute Sobel of source luminance.
-	cv::Mat dst = srcLum.clone();
-	cv::Sobel (srcLum, dst
+	cv::Mat sobelX = srcLum.clone();
+	cv::Mat sobelY = srcLum.clone();
+	
+	struct benchtime *bt = bench_begin();
+
+	for(int iters = 0; iters < iterations; iters++) {
+	cv::Sobel (srcLum, sobelX
 			, srcLum.depth()
 			, 1		// xorder
 			, 0		// yorder
@@ -54,19 +62,38 @@ int main(int argc, char *argv[])
 			, 0		// delta
 			, cv::BORDER_DEFAULT);
 
+	cv::Sobel (srcLum, sobelY
+			, srcLum.depth()
+			, 0		// xorder
+			, 1		// yorder
+			, 3		// kernel size
+			, 1		// scale
+			, 0		// delta
+			, cv::BORDER_DEFAULT);
+	}
+	bench_done(bt);
 
-	// create a window
-	cvNamedWindow("mainWin", CV_WINDOW_AUTOSIZE); 
-	cvMoveWindow("mainWin", 100, 100);
 
-	// show the image
-	cv::imshow("mainWin", dst);
+	// Create output greyscale image.
+	//   The imwrite function doesn't handle float data.
+	cv::Mat matOut (src.rows, src.cols, CV_8U);
 
-	// wait for a key
-	cvWaitKey(0);
+	for(int i = 0; i < height; i++) {
+		float* rowSobelX	= (float*)sobelX.ptr(i);
+		float* rowSobelY	= (float*)sobelY.ptr(i);
+		uchar* rowOut		= matOut.ptr(i);
 
-	// release the image
-	cvReleaseImage(&img );
+		for(int j = 0; j < width; j++) {
+			float sX	= rowSobelX[j];
+			float sY	= rowSobelY[j];
+
+			rowOut[j]	= sqrt(sX * sX + sY * sY) * 100;
+		}
+	}
+
+	// Write out the data to a new image.
+	cv::imwrite(fileNameOut, matOut);
+	
 	return 0;
 }
 
