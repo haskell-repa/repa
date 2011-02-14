@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes #-}
+{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 -- | Canny edge detector

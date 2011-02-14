@@ -3,7 +3,9 @@
 -- | Conversions between Repa Arrays and ByteStrings.
 module Data.Array.Repa.ByteString
 	( toByteString
-	, fromByteString)
+	, fromByteString
+	, copyFromPtrWord8
+	, copyToPtrWord8)
 where
 import Data.Word
 import Data.Array.Repa
@@ -41,8 +43,9 @@ toByteString arr
 	BS.packCStringLen (castPtr bufDest, len)
 
 
--- | Convert a (strict) `ByteString` to an `Array`.
---	The given array size must match the length of the `ByteString`, else `error`.
+
+-- | Copy a (strict) `ByteString` to a new `Array`.
+--	The given array extent must match the length of the `ByteString`, else `error`.
 fromByteString 
 	:: Shape sh
 	=> sh
@@ -58,3 +61,42 @@ fromByteString sh str
 	| otherwise
 	= fromFunction sh (\ix -> str `BS.index` toIndex sh ix)
 
+
+-- Ptr utils ------------------------------------------------------------------
+-- | Copy some data from somewhere into a new `Array`.
+--   TODO: fake this somehow to avoid the copy. 
+--         maybe we want to allocate the array and use that as the CGContext directly.
+--         Avoid going via fromFunction in Data.Vector. Data.Vector might need some hacks.
+copyFromPtrWord8 
+	:: Shape sh
+	=> sh
+	-> Ptr Word8
+	-> IO (Array sh Word8)
+	
+copyFromPtrWord8 sh ptr
+ = do	return	$ fromFunction sh (\ix -> unsafePerformIO (peekElemOff ptr (toIndex sh ix)))
+
+
+-- | Copy some data into a buffer
+copyToPtrWord8 
+	:: Shape sh
+	=> Ptr Word8
+	-> Array sh Word8
+	-> IO ()
+	
+copyToPtrWord8 ptr arr
+ = let	vec	= toVector arr
+	len	= size $ extent arr
+	
+	copy offset
+	 | offset >= len
+	 = return ()
+	
+	 | otherwise
+	 = do	pokeByteOff ptr offset (vec `V.unsafeIndex` offset)
+		copy (offset + 1)
+
+   in do
+	copy 0
+	return ()
+	

@@ -50,6 +50,11 @@ data Array sh a
 		{ arrayExtent		:: sh
 		, arrayGetElem		:: (sh -> a) }
 
+	| Region 
+		{ arrayRange		:: (sh, sh)
+		, arrayGetElem		:: sh -> a
+		, arrayNext		:: Array sh a }
+
 	  -- | An delayed array broken into subranges.
 	  --   INVARIANT: the ranges to not overlap.
 	  --   INVARIANT: for a singleton array both elem fns return the same result.
@@ -61,6 +66,8 @@ data Array sh a
 		, arrayBorderGetElem	:: (sh -> a)	-- if we're in any of these ranges then use this fn.
 		, arrayInnerRange	:: (sh, sh)
 		, arrayInnerGetElem	:: (sh -> a) }	--   otherwise use this other one.
+
+
 
 -- | Ensure an array's structure is fully evaluated.
 --   This evaluates the extent and outer constructor, but does not `force` the elements.
@@ -392,7 +399,7 @@ forceBlockwise arr
 						width
 						x0 y0 x1 y1
 
-					-- fill the border partition
+{-					-- fill the border partition
 					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
 						= fillVectorBlock mvec 
 							(getElemBorder . fromIndex sh)
@@ -400,7 +407,7 @@ forceBlockwise arr
 							x0' y0' x1' y1'
 	
 					mapM_ fillBorderBlock rngsBorder
-
+-}
 					-- All done, freeze the sucker.
 					V.unsafeFreeze mvec
 		    in	vec `seq` (sh, vec)

@@ -37,6 +37,7 @@ Executable repa-mmult
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
 
 
 Executable repa-laplace
@@ -58,6 +59,7 @@ Executable repa-laplace
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
 
 
 Executable repa-fft2d
@@ -78,6 +80,7 @@ Executable repa-fft2d
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
 
 
 Executable repa-fft2d-highpass
@@ -99,6 +102,7 @@ Executable repa-fft2d-highpass
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
 
 
 Executable repa-fft3d-highpass
@@ -119,6 +123,7 @@ Executable repa-fft3d-highpass
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
 
 
 Executable repa-blur
@@ -140,13 +145,15 @@ Executable repa-blur
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
 
 
 Executable repa-edgedetect
   Build-depends: 
         base                 == 4.*,
         repa                 == 1.2.*,
-        repa-algorithms      == 1.2.*
+        repa-algorithms      == 1.2.*,
+        template-haskell     >= 2.5 && < 2.6
 
   Main-is: EdgeDetect/src/Main.hs
   hs-source-dirs: EdgeDetect/src .
@@ -160,5 +167,7 @@ Executable repa-edgedetect
         -funbox-strict-fields
         -fcpr-off
         -fllvm
+        -fnew-codegen
+
 
 

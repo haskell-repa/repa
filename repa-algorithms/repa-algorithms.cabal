@@ -40,3 +40,4 @@ Library
         Data.Array.Repa.Algorithms.FFT
         Data.Array.Repa.Algorithms.Matrix
         Data.Array.Repa.Algorithms.Convolve
+        Data.Array.Repa.Algorithms.Iterate

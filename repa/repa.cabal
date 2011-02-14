@@ -26,7 +26,8 @@ Library
         base                 == 4.*,
         ghc-prim             == 0.2.*,
         vector               >= 0.7 && < 0.8,
-        QuickCheck           >= 2.3 && < 2.5
+        QuickCheck           >= 2.3 && < 2.5,
+        template-haskell     >= 2.5 && < 2.6
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -52,4 +53,6 @@ Library
         Data.Array.Repa.Operators.Reduction
         Data.Array.Repa.Internals.Gang
         Data.Array.Repa.Internals.Evaluate
-       
+        Data.Array.Repa.Specialised.Dim2
+        Data.Array.Repa.Stencil.Base
+        Data.Array.Repa.Stencil.Template
