@@ -19,7 +19,7 @@ module Data.Array.Repa
 	, extent,       delay
 
 	-- * Simple projections
-	, width, height, depth
+--	, width, height, depth
 
 	-- * Indexing
 	, (!),  index
@@ -133,6 +133,7 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 
 
 -- Projections ------------------------------------------------------------------------------------
+{-
 width :: Array (sh :. Int) a -> Int
 {-# INLINE width #-}
 width arr
@@ -152,4 +153,4 @@ depth :: Array (sh :. Int :. Int :. Int) a -> Int
 depth arr
  = let	_ :. depth :. _ :. _	= extent arr
    in	depth
-		
+-}		

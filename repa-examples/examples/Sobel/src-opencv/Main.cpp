@@ -1,4 +1,6 @@
 
+// Convert an RGB image to greyscale and apply the X&Y Sobel operators.
+// Produce an image containing the magnitude of the vector at each point.
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

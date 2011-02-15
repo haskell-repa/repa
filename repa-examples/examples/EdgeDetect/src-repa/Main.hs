@@ -71,11 +71,13 @@ nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
  = [dMag, dOrient] `deepSeqArrays` force
  $ traverse2 dMag dOrient const compare
  where
+	_ :. height :. width	= extent dMag
+	
 	{-# INLINE isBoundary #-}
 	isBoundary i j 
          | i == 0 || j == 0     = True
-	 | i == width  dMag - 1 = True
-	 | j == height dMag - 1 = True
+	 | i == width  - 1	= True
+	 | j == height - 1	= True
 	 | otherwise            = False
 
 	{-# INLINE compare #-}
