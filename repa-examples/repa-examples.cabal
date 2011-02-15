@@ -170,3 +170,25 @@ Executable repa-edgedetect
         -fnew-codegen
 
 
+Executable repa-sobel
+  Build-depends: 
+        base                 == 4.*,
+        repa                 == 1.2.*,
+        repa-algorithms      == 1.2.*,
+        template-haskell     >= 2.5 && < 2.6
+
+  Main-is: examples/Sobel/src-repa/Main.hs
+  hs-source-dirs: examples/Sobel/src-repa .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph
+        -fsimplifier-phases=4 
+        -fstrictness-before=3 
+        -funfolding-use-threshold30
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+        -fnew-codegen
+
+

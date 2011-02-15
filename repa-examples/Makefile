@@ -15,7 +15,7 @@ all : 	dist/build/repa-laplace-c/repa-laplace-c \
 	dist/build/repa-highpass2d-fftw/repa-highpass2d-fftw \
 	dist/build/repa-highpass3d-fftw/repa-highpass3d-fftw \
 	dist/build/repa-mmult-c/repa-mmult-c \
-
+	dist/build/repa-sobel-opencv/repa-sobel-opencv
 
 .PHONY : clean
 clean : 
@@ -74,4 +74,14 @@ dist/build/repa-mmult-c/repa-mmult-c : $(MMULT_SRCS)
 	gcc --std=c99 -O3 $+ -Ilibc -o $@
 	@echo
 	
+
+# -- Sobel --------------------------------------------------------------------
+SOBEL_SRCS = \
+	examples/Sobel/src-opencv/Main.cpp \
+	libc/Timing.c 
+	
+dist/build/repa-sobel-opencv/repa-sobel-opencv : $(SOBEL_SRCS)
+	@echo "* Building Sobel"
+	mkdir -p dist/build/repa-sobel-opencv
+	g++ -O3 $+ -Ilibc -I$(OPENCV_INCLUDE) -L$(OPENCV_LIB) -lopencv_core -lopencv_highgui -lopencv_imgproc -o $@
 

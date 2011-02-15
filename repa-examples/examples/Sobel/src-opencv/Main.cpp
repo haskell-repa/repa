@@ -14,7 +14,7 @@
 int main(int argc, char *argv[])
 {
 	if(argc != 4) {
-		printf("Usage: main <iterations> <in.bmp> <out.bmp>\n");
+		printf("Usage: sobel <iterations> <in.bmp> <out.bmp>\n");
 		exit(0);
 	}
 	int	iterations	= atoi(argv[1]);
