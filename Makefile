@@ -9,6 +9,7 @@ all :
 	@make repa-examples
 	
 
+# == Clean ====================================================================
 .PHONY : clean
 clean :
 	@echo "-- Cleaning up -------------------------------------------------"
@@ -19,14 +20,8 @@ clean :
 	rm -Rf repa-examples/dist
 	@echo
 
-.PHONY : bench
-bench :
-	@echo "-- Running benchmarks ------------------------------------------"
-	@repa-examples/dist/build/repa-benchmark/repa-benchmark
 
-
-
-# == Packages =====================================================================================
+# == Packages =================================================================
 .PHONY : repa
 repa :
 	@echo "-- Building repa -----------------------------------------------"
@@ -79,5 +74,6 @@ repa-examples :
 		runghc Setup.hs configure --user ; \
 		runghc Setup.hs build 
 	@echo 
+
 
 

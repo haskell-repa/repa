@@ -11,8 +11,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <Matrix.h>
-#include <Timing.h>
+#include "Matrix.h"
+#include "Timing.h"
 
 
 // Boundary Conditions ----------------------------------------------------------------------------
@@ -170,19 +170,14 @@ int main(int argc, char** argv)
 	// Run the solver.
 	//	The result is either the matInitial or matBuffer, depending
 	//	on how many iterations we took.
-        struct timeval start, finish;
-        struct rusage start_ru, finish_ru;
-
-        gettimeofday( &start, NULL );
-        getrusage( RUSAGE_SELF, &start_ru );
+	struct benchtime *bt = bench_begin();
 
 	Matrix* matFinal	
 		= solve ( iterations
 			, matBoundMask, matBoundValue
 			, matInitial, matDest);
 
-        gettimeofday( &finish, NULL );
-        getrusage( RUSAGE_SELF, &finish_ru );
+	bench_done(bt);
 
 	// Write the output to a PPM file.
 	writeMatrixAsPPM(fileName, matFinal);
@@ -192,16 +187,5 @@ int main(int argc, char** argv)
 	freeMatrix (matBoundValue);
 	freeMatrix (matInitial);
 	freeMatrix (matDest);
-
-        sub_timeval( &finish, &start );
-        sub_timeval( &finish_ru.ru_utime, &start_ru.ru_utime );
-        sub_timeval( &finish_ru.ru_stime, &start_ru.ru_stime );
-        add_timeval( &finish_ru.ru_utime, &finish_ru.ru_stime );
-
-	printf("elapsedTimeMS   = ");
-        print_timeval( &finish ); putchar( '\n' );
-
- 	printf("cpuTimeMS       = ");
-        print_timeval( &finish_ru.ru_utime); putchar( '\n' );
 }
 

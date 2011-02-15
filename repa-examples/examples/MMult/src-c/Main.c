@@ -62,12 +62,12 @@ int main(int argc, char** argv)
 			int height	= 0;
 
 			if(sscanf(argv[a++], "%d", &width) != 1) {
-				printf("laplace: can't parse matrix width\n");
+				printf("mmult: can't parse matrix width\n");
 				exit(1);
 			}
 
 			if(sscanf(argv[a++], "%d", &height) != 1) {
-				printf("laplace: can't parse matrix height\n");
+				printf("mmult: can't parse matrix height\n");
 				exit(1);
 			}
 			
@@ -96,17 +96,11 @@ int main(int argc, char** argv)
 	Matrix* matDest	= newZeroMatrix   (mat[1]->width, mat[0]->height);
 	
 	// Do the dead.
-	struct timeval start, finish;
-        struct rusage start_ru, finish_ru;
-
-        gettimeofday( &start, NULL );
-        getrusage( RUSAGE_SELF, &start_ru );
+	struct benchtime *bt = bench_begin();
 
 	mmult(matDest, mat[0], mat[1]);
 
-        gettimeofday( &finish, NULL );
-        getrusage( RUSAGE_SELF, &finish_ru );
-
+	bench_done(bt);
 
 	// Write out matrices as files, if we were asked for them
 	if (dumpInputMatrices) {
@@ -121,19 +115,6 @@ int main(int argc, char** argv)
 
 	if(outFileName != 0)
 		writeMatrixAsTextFile(outFileName, 	matDest);
-
-
-	// Dump timing info.
-        sub_timeval( &finish, &start );
-        sub_timeval( &finish_ru.ru_utime, &start_ru.ru_utime );
-        sub_timeval( &finish_ru.ru_stime, &start_ru.ru_stime );
-        add_timeval( &finish_ru.ru_utime, &finish_ru.ru_stime );
-
-	printf("elapsedTimeMS   = ");
-        print_timeval( &finish ); putchar( '\n' );
-
- 	printf("cpuTimeMS       = ");
-        print_timeval( &finish_ru.ru_utime); putchar( '\n' );
 
 	// Dump checksum
 	printf("sum = %f\n", sumMatrix(matDest));
