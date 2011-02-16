@@ -399,7 +399,7 @@ forceBlockwise arr
 						width
 						x0 y0 x1 y1
 
-					-- fill the border partition
+{-					-- fill the border partition
 					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
 						= fillVectorBlock mvec 
 							(getElemBorder . fromIndex sh)
@@ -407,7 +407,7 @@ forceBlockwise arr
 							x0' y0' x1' y1'
 	
 					mapM_ fillBorderBlock rngsBorder
-
+-}
 					-- All done, freeze the sucker.
 					V.unsafeFreeze mvec
 		    in	vec `seq` (sh, vec)

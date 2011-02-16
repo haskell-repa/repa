@@ -210,12 +210,25 @@ fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
 	fillBlock !ixLineStart !ixLineEnd
 	 | ixLineStart > ixFinal	= return ()
 	 | otherwise
-	 = do	fillLine ixLineStart
+	 = do	fillLine4 ixLineStart
 		fillBlock (ixLineStart + imageWidth) (ixLineEnd + imageWidth)
 	
-	 where	{-# INLINE fillLine #-}
-		fillLine !ix
+	 where	{-# INLINE fillLine4 #-}
+		fillLine4 !ix
+		 | ix + 4 > ixLineEnd 	= fillLine1 ix
+		 | otherwise
+		 = do	VM.unsafeWrite vec (ix + 0) (getElemFVB (ix + 0))
+			VM.unsafeWrite vec (ix + 1) (getElemFVB (ix + 1))
+			VM.unsafeWrite vec (ix + 2) (getElemFVB (ix + 2))
+			VM.unsafeWrite vec (ix + 3) (getElemFVB (ix + 3))
+			fillLine4 (ix + 4)
+		
+		{-# INLINE fillLine1 #-}
+		fillLine1 !ix
  	   	 | ix > ixLineEnd	= return ()
 	   	 | otherwise
 	   	 = do	VM.unsafeWrite vec ix (getElemFVB ix)
-			fillLine (ix + 1)
+			fillLine1 (ix + 1)
+
+
+

@@ -55,14 +55,14 @@ loop n !img@Manifest{}
 
 
 -- | Determine the squared magnitude of a vector.
-magnitude :: Double -> Double -> Double
+magnitude :: Float -> Float -> Double
 {-# INLINE magnitude #-}
 magnitude x y
-	= sqrt (x * x + y * y)
+	= fromRational $ toRational $ sqrt (x * x + y * y)
 
 
 -- | RGB to greyscale conversion.
-toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
+toGreyScale :: Array DIM3 Word8 -> Image
 {-# NOINLINE toGreyScale #-}
 toGreyScale arr@Manifest{}
   = arr `deepSeqArray` force
@@ -75,7 +75,7 @@ toGreyScale arr@Manifest{}
 
 
 -- | Convert a RGB value to a luminance.
-rgbToLuminance :: Word8 -> Word8 -> Word8 -> Double
+rgbToLuminance :: Word8 -> Word8 -> Word8 -> Float
 {-# INLINE rgbToLuminance #-}
 rgbToLuminance r g b 
 	= fromIntegral r * 0.3

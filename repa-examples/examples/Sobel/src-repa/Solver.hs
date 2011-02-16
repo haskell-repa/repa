@@ -3,12 +3,14 @@
 
 module Solver 
 	( Image
-	, gradientX, gradientY )
+	, gradientX
+	, gradientY )
 where
 import Data.Array.Repa 			as Repa
 import Data.Array.Repa.Stencil
 
-type Image	= Array DIM2 Double
+type Image	= Array DIM2 Float
+
 
 gradientX :: Image -> Image
 {-# NOINLINE gradientX #-}
@@ -28,4 +30,6 @@ gradientY img@Manifest{}
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
+
+
 
