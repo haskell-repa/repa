@@ -8,7 +8,8 @@
 #define TRACE_GANG 0
 
 module Data.Array.Repa.Internals.Gang 
-	(Gang, seqGang, forkGang, gangSize, gangIO, gangST, traceGang, traceGangST)
+	( Gang, seqGang, forkGang, gangSize, gangIO, gangST, traceGang, traceGangST
+	, theGang)
 where
 import GHC.IO
 import GHC.ST
@@ -16,13 +17,23 @@ import GHC.Conc                  (forkOnIO)
 
 import Control.Concurrent.MVar
 import Control.Exception         (assert)
+
 import Control.Monad             (zipWithM, zipWithM_)
 import System.IO
+import GHC.Conc			(numCapabilities)
 
 #if TRACE_GANG
 import GHC.Exts                  (traceEvent)
 import System.Time ( ClockTime(..), getClockTime )
 #endif
+
+-- TheGang ----------------------------------------------------------------------------------------
+-- | The gang is shared by all computations.
+theGang :: Gang
+{-# NOINLINE theGang #-}
+theGang = unsafePerformIO $ forkGang numCapabilities
+
+
 
 -- Requests ---------------------------------------------------------------------------------------
 -- | The 'Req' type encapsulates work requests for individual members of a gang. 

@@ -28,7 +28,9 @@ module Data.Array.Repa.Base
 	, forceBlockwise)
 where
 import Data.Array.Repa.Index
-import Data.Array.Repa.Internals.Evaluate
+import Data.Array.Repa.Internals.EvalVector
+import Data.Array.Repa.Internals.EvalBlockwise	as EB
+import Data.Array.Repa.Internals.EvalBlockwise2	as EB2
 import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
 import Data.Vector.Unboxed.Mutable		as VM
@@ -394,8 +396,8 @@ forceBlockwise arr
 					let (_ :. y0 :. x0)	= shInner1
 					let (_ :. y1 :. x1)	= shInner2
 
-					fillVectorBlockP mvec
-						(getElemInner . fromIndex sh)
+					fillVectorBlock2 mvec
+						(\x y -> getElemInner (Z :. y :. x))
 						width
 						x0 y0 x1 y1
 

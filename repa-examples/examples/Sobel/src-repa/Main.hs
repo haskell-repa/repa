@@ -10,7 +10,7 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
-import Solver
+import SolverSeparated
 
 
 -- Main routine ---------------------------------------------------------------
