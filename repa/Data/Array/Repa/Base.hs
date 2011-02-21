@@ -5,6 +5,7 @@
 module Data.Array.Repa.Base
 	( Elt(..)
 	, Array(..)
+	, Cursor(..)
 	, deepSeqArray, deepSeqArrays
 	, singleton, toScalar
 	, extent,    delay
@@ -32,7 +33,7 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.EvalVector
 import Data.Array.Repa.Internals.EvalBlockwise	as EB
-import Data.Array.Repa.Internals.EvalBlockwise2	as EB2
+import Data.Array.Repa.Internals.EvalCursored	as EC
 import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
 import Data.Vector.Unboxed.Mutable		as VM
@@ -40,6 +41,11 @@ import Data.Vector.Unboxed			(Vector)
 import System.IO.Unsafe	
 
 stage	= "Data.Array.Repa.Array"
+
+-- | A index into the flat array.
+--   Should be abstract outside the stencil modules.
+data Cursor 
+	= Cursor Int
 
 -- Array -----------------------------------------------------------------------------------------	
 -- | Possibly delayed arrays.
@@ -97,6 +103,7 @@ deepSeqArray arr x
  = case arr of
 	Manifest  sh uarr	-> sh `S.deepSeq` uarr `seq` x
 	Delayed   sh _		-> sh `S.deepSeq` x
+	DelayedCursor sh _ _ _	-> sh `S.deepSeq` x
 	Partitioned sh _ _ _ _ _-> sh `S.deepSeq` x
 
 
@@ -393,6 +400,37 @@ forceBlockwise arr
 		Delayed sh@(_ :. width) getElem_FBW_Delayed
 		 -> let vec	= newVectorBlockwiseP (getElem_FBW_Delayed . fromIndex sh) (S.size sh) width
 		    in	sh `S.deepSeq` vec `seq` (sh, vec)
+
+
+		-- Cursor version for stencils
+		DelayedCursor sh
+			makeCursor
+			offsetCursor
+			getElemInner
+		
+		 -> arr `deepSeqArray` sh `S.deepSeq` 
+	            let	vec	= unsafePerformIO
+		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
+
+					-- fill the inner partition
+					let (_ :. height :. width) = sh
+					let x0	= 1
+					let x1	= width - 2
+					let y0	= 1
+					let y1	= height - 2
+
+					fillCursoredBlock2P mvec
+						makeCursor
+						offsetCursor
+						getElemInner
+						width 
+						x0 y0 x1 y1
+
+					-- All done, freeze the sucker.
+					V.unsafeFreeze mvec
+		    in	vec `seq` (sh, vec)
+	
+			
 
 		-- TODO: This needs the index to be DIM2 becase we call fillVectorBlock directly
 		Partitioned sh@(_ :. width) 

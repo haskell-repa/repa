@@ -3,8 +3,8 @@
 
 module SolverSeparated
 	( Image
-	, gradientX
-	, gradientY )
+	, gradientX_sep
+	, gradientY_sep )
 where
 import Data.Array.Repa 			as Repa
 import Data.Array.Repa.Stencil
@@ -12,8 +12,8 @@ import Data.Array.Repa.Stencil
 type Image	= Array DIM2 Float
 
 -- Separated version
-gradientX :: Image -> Image
-gradientX = gradientX1 . gradientX2
+gradientX_sep :: Image -> Image
+gradientX_sep = gradientX1 -- . gradientX2
 
 gradientX1 :: Image -> Image
 {-# NOINLINE gradientX1 #-}
@@ -32,8 +32,8 @@ gradientX2 img@Manifest{}
 	                1 |]
 
 
-gradientY :: Image -> Image
-gradientY = gradientY1 . gradientY2
+gradientY_sep :: Image -> Image
+gradientY_sep = gradientY1 -- . gradientY2
 
 gradientY1 :: Image -> Image
 {-# NOINLINE gradientY1 #-}

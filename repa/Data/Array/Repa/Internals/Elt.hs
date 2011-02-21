@@ -19,7 +19,9 @@ instance Elt Float where
   = IO (\state -> case touch# f state of
 			state' -> (# state', () #))
 
+
 instance Elt Bool
 instance Elt Int
 instance Elt Double
 instance Elt Word8
+
