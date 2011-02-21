@@ -13,7 +13,7 @@ type Image	= Array DIM2 Float
 
 -- Separated version
 gradientX :: Image -> Image
-gradientX = gradientX1 -- . gradientX2
+gradientX = gradientX1 . gradientX2
 
 gradientX1 :: Image -> Image
 {-# NOINLINE gradientX1 #-}
@@ -33,7 +33,7 @@ gradientX2 img@Manifest{}
 
 
 gradientY :: Image -> Image
-gradientY = gradientY1 -- . gradientY2
+gradientY = gradientY1 . gradientY2
 
 gradientY1 :: Image -> Image
 {-# NOINLINE gradientY1 #-}

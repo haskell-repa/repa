@@ -2,7 +2,7 @@
 {-# LANGUAGE ExplicitForAll, TypeOperators, FlexibleInstances, UndecidableInstances, BangPatterns #-}
 
 module Data.Array.Repa.Base
-	( Elt
+	( Elt(..)
 	, Array(..)
 	, deepSeqArray, deepSeqArrays
 	, singleton, toScalar
@@ -28,6 +28,7 @@ module Data.Array.Repa.Base
 	, forceBlockwise)
 where
 import Data.Array.Repa.Index
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.EvalVector
 import Data.Array.Repa.Internals.EvalBlockwise	as EB
 import Data.Array.Repa.Internals.EvalBlockwise2	as EB2
@@ -396,10 +397,16 @@ forceBlockwise arr
 					let (_ :. y0 :. x0)	= shInner1
 					let (_ :. y1 :. x1)	= shInner2
 
-					fillVectorBlock2 mvec
+{-					fillVectorBlock mvec
 						(\x y -> getElemInner (Z :. y :. x))
 						width
 						x0 y0 x1 y1
+-}
+					fillVectorBlockP mvec
+						(getElemInner . fromIndex sh)
+						width 
+						x0 y0 x1 y1
+
 
 {-					-- fill the border partition
 					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
@@ -415,10 +422,13 @@ forceBlockwise arr
 		    in	vec `seq` (sh, vec)
 
 
--- Elements ---------------------------------------------------------------------------------------
-class V.Unbox a	=> Elt a
-
-instance V.Unbox a => Elt a
 
 
 
+
+{-
+touch :: a -> IO ()
+touch x
+ = IO (\state -> case touch# x state of
+			state' -> (# state', () #))
+-}

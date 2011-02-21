@@ -10,7 +10,9 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
-import SolverSeparated
+import Solver
+import SolverX
+import SolverY
 
 
 -- Main routine ---------------------------------------------------------------
@@ -46,8 +48,8 @@ loop 0 !img@Manifest{}
 	= (img, img)
 
 loop n !img@Manifest{}
- = do	let gX	= gradientX img
-	let gY	= gradientY img
+ = do	let gX	= gradientX_only img
+	let gY	= gradientY_only img
 
 	if (n == 1) 
 		then gX `deepSeqArray` gY `deepSeqArray` (gX, gY)

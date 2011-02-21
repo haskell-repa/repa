@@ -6,6 +6,7 @@ module Data.Array.Repa.Internals.EvalBlockwise
 	, fillVectorBlockP)
 where
 import Data.Array.Repa.Internals.Gang
+import Data.Array.Repa.Internals.Elt
 import Data.Vector.Unboxed			as V
 import Data.Vector.Unboxed.Mutable		as VM
 import System.IO.Unsafe
@@ -15,7 +16,7 @@ import Prelude					as P
 
 -- Blockwise filling ------------------------------------------------------------------------------
 newVectorBlockwiseP
-	:: Unbox a
+	:: Elt a
 	=> (Int -> a)
 	-> Int		-- size
 	-> Int		-- width
@@ -30,7 +31,7 @@ newVectorBlockwiseP !getElemNew !size !width
 	
 				
 fillVectorBlockwiseP 
-	:: Unbox a
+	:: Elt a
 	=> IOVector a		-- ^ vector to write elements into
 	-> (Int -> a)		-- ^ fn to evaluate an element at the given index
 	-> Int			-- ^ width of image.
@@ -69,7 +70,7 @@ fillVectorBlockwiseP !vec !getElemFVBP !imageWidth
 --   Coordinates given are of the filled edges of the block.
 --   We divide the block into columns, and give one column to each thread.
 fillVectorBlockP
-	:: Unbox a
+	:: Elt a
 	=> IOVector a		-- ^ vector to write elements into
 	-> (Int -> a)		-- ^ fn to evaluate an element at the given index.
 	-> Int			-- ^ width of whole image
@@ -111,7 +112,7 @@ fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
 -- | Fill a block in a 2D image.
 --   Coordinates given are of the filled edges of the block.
 fillVectorBlock
-	:: Unbox a
+	:: Elt a
 	=> IOVector a		-- ^ vector to write elements into.
 	-> (Int -> a)		-- ^ fn to evaluate an element at the given index.
 	-> Int			-- ^ width of whole image
@@ -140,18 +141,26 @@ fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
 		fillLine4 !ix
 		 | ix + 4 > ixLineEnd 	= fillLine1 ix
 		 | otherwise
-		 = do	VM.unsafeWrite vec (ix + 0) (getElemFVB (ix + 0))
-			VM.unsafeWrite vec (ix + 1) (getElemFVB (ix + 1))
-			VM.unsafeWrite vec (ix + 2) (getElemFVB (ix + 2))
-			VM.unsafeWrite vec (ix + 3) (getElemFVB (ix + 3))
+		 = do
+			let x0		= getElemFVB (ix + 0)
+			let x1		= getElemFVB (ix + 1)
+			let x2		= getElemFVB (ix + 2)
+			let x3		= getElemFVB (ix + 3)
+						
+			touch x0
+			touch x1
+			touch x2
+			touch x3
+									
+			VM.unsafeWrite vec (ix + 0) x0
+			VM.unsafeWrite vec (ix + 1) x1
+			VM.unsafeWrite vec (ix + 2) x2
+			VM.unsafeWrite vec (ix + 3) x3
 			fillLine4 (ix + 4)
-		
+
 		{-# INLINE fillLine1 #-}
 		fillLine1 !ix
  	   	 | ix > ixLineEnd	= return ()
 	   	 | otherwise
 	   	 = do	VM.unsafeWrite vec ix (getElemFVB ix)
 			fillLine1 (ix + 1)
-
-
-
