@@ -1,5 +1,6 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE ExplicitForAll, TypeOperators, FlexibleInstances, UndecidableInstances, BangPatterns #-}
+{-# LANGUAGE ExplicitForAll, TypeOperators, FlexibleInstances, UndecidableInstances, BangPatterns,
+             ExistentialQuantification #-}
 
 module Data.Array.Repa.Base
 	( Elt(..)
@@ -52,12 +53,15 @@ data Array sh a
 	| Delayed 
 		{ arrayExtent		:: sh
 		, arrayGetElem		:: (sh -> a) }
-{-
-	| Region 
-		{ arrayRange		:: (sh, sh)
-		, arrayGetElem		:: sh -> a
-		, arrayNext		:: Array sh a }
--}
+
+	  -- Try a version with cursors
+	| forall cursor
+	. DelayedCursor
+		{ arrayExtent		:: sh
+		, arrayCursor		:: sh -> cursor
+		, arrayOffset		:: sh -> cursor -> cursor
+		, arrayElem 		:: cursor -> a }
+
 	  -- | An delayed array broken into subranges.
 	  --   INVARIANT: the ranges to not overlap.
 	  --   INVARIANT: for a singleton array both elem fns return the same result.
@@ -70,6 +74,13 @@ data Array sh a
 		, arrayInnerRange	:: (sh, sh)
 		, arrayInnerGetElem	:: (sh -> a) }	--   otherwise use this other one.
 
+{-	Maybe move to this version instead of partitioned, 
+	so we can have any number of partitions.
+	| Region 
+		{ arrayRange		:: (sh, sh)
+		, arrayGetElem		:: sh -> a
+		, arrayNext		:: Array sh a }
+-}
 
 
 -- | Ensure an array's structure is fully evaluated.
@@ -397,18 +408,12 @@ forceBlockwise arr
 					let (_ :. y0 :. x0)	= shInner1
 					let (_ :. y1 :. x1)	= shInner2
 
-{-					fillVectorBlock mvec
-						(\x y -> getElemInner (Z :. y :. x))
-						width
-						x0 y0 x1 y1
--}
 					fillVectorBlockP mvec
 						(getElemInner . fromIndex sh)
 						width 
 						x0 y0 x1 y1
 
-
-{-					-- fill the border partition
+					-- fill the border partition
 					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
 						= fillVectorBlock mvec 
 							(getElemBorder . fromIndex sh)
@@ -416,19 +421,8 @@ forceBlockwise arr
 							x0' y0' x1' y1'
 	
 					mapM_ fillBorderBlock rngsBorder
--}
+
 					-- All done, freeze the sucker.
 					V.unsafeFreeze mvec
 		    in	vec `seq` (sh, vec)
 
-
-
-
-
-
-{-
-touch :: a -> IO ()
-touch x
- = IO (\state -> case touch# x state of
-			state' -> (# state', () #))
--}
