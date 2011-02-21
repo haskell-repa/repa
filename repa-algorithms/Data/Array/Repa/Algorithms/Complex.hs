@@ -6,10 +6,13 @@ module Data.Array.Repa.Algorithms.Complex
 	, mag
 	, arg)
 where
+import Data.Array.Repa
 
 -- | Strict complex doubles.
 type Complex 
 	= (Double, Double)
+
+instance Elt Complex
 
 instance Num Complex where
 

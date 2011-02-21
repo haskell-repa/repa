@@ -52,7 +52,10 @@ Library
         Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Operators.Reduction
         Data.Array.Repa.Internals.Gang
-        Data.Array.Repa.Internals.Evaluate
+        Data.Array.Repa.Internals.Elt
+        Data.Array.Repa.Internals.EvalBlockwise
+        Data.Array.Repa.Internals.EvalCursored
+        Data.Array.Repa.Internals.EvalVector
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil.Base
         Data.Array.Repa.Stencil.Template

@@ -4,18 +4,12 @@ module Data.Array.Repa.Internals.EvalCursored
 	( fillCursoredBlock2P
 	, fillCursoredBlock2 )
 where
-import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Gang
 import Data.Array.Repa.Internals.Elt
-import Data.Vector.Unboxed			as V
 import Data.Vector.Unboxed.Mutable		as VM
-import System.IO.Unsafe
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
-import GHC.Conc
-import GHC.Types
-import Data.Word
 
 
 -- Block filling ----------------------------------------------------------------------------------
@@ -97,38 +91,38 @@ fillCursoredBlock2
 	fillBlock y
 	 | y > y1	= return ()
 	 | otherwise
-	 = do	fillLine6 x0
+	 = do	fillLine4 x0
 		fillBlock (y + 1)
 	
-	 where	{-# INLINE fillLine6 #-}
-		fillLine6 !x
- 	   	 | x + 6 > x1	= fillLine1 x
+	 where	{-# INLINE fillLine4 #-}
+		fillLine4 !x
+ 	   	 | x + 4 > x1	= fillLine1 x
 	   	 | otherwise
 	   	 = do	let c0		= makeCursorFCB  (Z :. y :. x)
 			let c1		= shiftCursorFCB (Z :. 0 :. 1) c0
 			let c2		= shiftCursorFCB (Z :. 0 :. 1) c1
 			let c3		= shiftCursorFCB (Z :. 0 :. 1) c2
 
-			let x0		= getElemFCB c0
-			let x1		= getElemFCB c1
-			let x2		= getElemFCB c2
-			let x3		= getElemFCB c3
+			let d0		= getElemFCB c0
+			let d1		= getElemFCB c1
+			let d2		= getElemFCB c2
+			let d3		= getElemFCB c3
 			
-			touch x0
-			touch x1
-			touch x2
-			touch x3
+			touch d0
+			touch d1
+			touch d2
+			touch d3
 				
 			let !ix0	= x + 0 + y * imageWidth
 			let !ix1	= ix0 + 1
 			let !ix2	= ix0 + 2
 			let !ix3	= ix0 + 3
 									
-			VM.unsafeWrite vec ix0 x0
-			VM.unsafeWrite vec ix1 x1
-			VM.unsafeWrite vec ix2 x2 
-			VM.unsafeWrite vec ix3 x3
-			fillLine4 (x + 6) 
+			VM.unsafeWrite vec ix0 d0
+			VM.unsafeWrite vec ix1 d1
+			VM.unsafeWrite vec ix2 d2 
+			VM.unsafeWrite vec ix3 d3
+			fillLine4 (x + 4) 
 		
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x

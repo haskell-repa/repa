@@ -142,20 +142,20 @@ fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
 		 | ix + 4 > ixLineEnd 	= fillLine1 ix
 		 | otherwise
 		 = do
-			let x0		= getElemFVB (ix + 0)
-			let x1		= getElemFVB (ix + 1)
-			let x2		= getElemFVB (ix + 2)
-			let x3		= getElemFVB (ix + 3)
+			let d0		= getElemFVB (ix + 0)
+			let d1		= getElemFVB (ix + 1)
+			let d2		= getElemFVB (ix + 2)
+			let d3		= getElemFVB (ix + 3)
 						
-			touch x0
-			touch x1
-			touch x2
-			touch x3
+			touch d0
+			touch d1
+			touch d2
+			touch d3
 									
-			VM.unsafeWrite vec (ix + 0) x0
-			VM.unsafeWrite vec (ix + 1) x1
-			VM.unsafeWrite vec (ix + 2) x2
-			VM.unsafeWrite vec (ix + 3) x3
+			VM.unsafeWrite vec (ix + 0) d0
+			VM.unsafeWrite vec (ix + 1) d1
+			VM.unsafeWrite vec (ix + 2) d2
+			VM.unsafeWrite vec (ix + 3) d3
 			fillLine4 (ix + 4)
 
 		{-# INLINE fillLine1 #-}

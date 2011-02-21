@@ -24,4 +24,3 @@ instance Elt Bool
 instance Elt Int
 instance Elt Double
 instance Elt Word8
-
