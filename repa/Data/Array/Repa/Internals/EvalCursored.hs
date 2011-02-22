@@ -91,12 +91,12 @@ fillCursoredBlock2
 	fillBlock !y
 	 | y >= y1	= return ()
 	 | otherwise
-	 = do	fillLine4 x0 (x0 + y * imageWidth) (makeCursor (Z :. y :. x0))
+	 = do	fillLine4 x0 (makeCursor (Z :. y :. x0))
 		fillBlock (y + 1)
 	
 	 where	{-# INLINE fillLine4 #-}
-		fillLine4 !x !dstCur0 !srcCur0
- 	   	 | x + 4 >= x1 		= fillLine1 x dstCur0 srcCur0
+		fillLine4 !x !srcCur0
+ 	   	 | x + 4 >= x1 		= fillLine1 x
 	   	 | otherwise
 	   	 = do	-- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
@@ -118,17 +118,18 @@ fillCursoredBlock2
 			touch val1
 			touch val2
 			touch val3
-									
-			VM.unsafeWrite vec  (dstCur0)     val0
-			VM.unsafeWrite vec  (dstCur0 + 1) val1
-			VM.unsafeWrite vec  (dstCur0 + 2) val2
-			VM.unsafeWrite vec  (dstCur0 + 3) val3
-			fillLine4 (x + 4) (dstCur0 + 4) (shiftCursor (Z :. 0 :. 1) srcCur3)
+
+			let !dstCur0	= x + y * imageWidth				
+			VM.unsafeWrite vec (dstCur0)     val0
+			VM.unsafeWrite vec (dstCur0 + 1) val1
+			VM.unsafeWrite vec (dstCur0 + 2) val2
+			VM.unsafeWrite vec (dstCur0 + 3) val3
+			fillLine4 (x + 4) (shiftCursor (Z :. 0 :. 1) srcCur3)
 		
 		{-# INLINE fillLine1 #-}
-		fillLine1 !x !dstCur0 srcCur0
+		fillLine1 !x 
  	   	 | x >= x1		= return ()
 	   	 | otherwise
-	   	 = do	VM.unsafeWrite vec dstCur0 (getElem srcCur0)
-			fillLine1 (x + 1) (dstCur0 + 1) (shiftCursor (Z :. 0 :. 1) srcCur0)
+	   	 = do	VM.unsafeWrite vec (x + y * imageWidth) (getElem $ makeCursor (Z :. y :. x))
+			fillLine1 (x + 1)
 
