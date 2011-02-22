@@ -91,15 +91,16 @@ fillCursoredBlock2
 	fillBlock !y
 	 | y >= y1	= return ()
 	 | otherwise
-	 = do	fillLine4 x0 (makeCursor (Z :. y :. x0))
+	 = do	fillLine4 x0
 		fillBlock (y + 1)
 	
 	 where	{-# INLINE fillLine4 #-}
-		fillLine4 !x !srcCur0
+		fillLine4 !x
  	   	 | x + 4 >= x1 		= fillLine1 x
 	   	 | otherwise
 	   	 = do	-- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
+			let srcCur0	= makeCursor  (Z :. y :. x)
 			let srcCur1	= shiftCursor (Z :. 0 :. 1) srcCur0
 			let srcCur2	= shiftCursor (Z :. 0 :. 1) srcCur1
 			let srcCur3	= shiftCursor (Z :. 0 :. 1) srcCur2
@@ -124,7 +125,7 @@ fillCursoredBlock2
 			VM.unsafeWrite vec (dstCur0 + 1) val1
 			VM.unsafeWrite vec (dstCur0 + 2) val2
 			VM.unsafeWrite vec (dstCur0 + 3) val3
-			fillLine4 (x + 4) (shiftCursor (Z :. 0 :. 1) srcCur3)
+			fillLine4 (x + 4)
 		
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x 
