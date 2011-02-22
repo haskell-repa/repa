@@ -82,53 +82,63 @@ fillCursoredBlock2
 {-# INLINE fillCursoredBlock2 #-}
 fillCursoredBlock2 
 	!vec 
-	!makeCursorFCB !shiftCursorFCB !getElemFCB
+	!makeCursor !shiftCursor !getElem
 	!imageWidth !x0 !y0 !x1 !y1
- = fillBlock y0
+
+ = fillBlock dstCurFirstLineStart srcCurFirstLineStart
+
  where	
+	-- Source cursor, in whatever abstract form the source array needs.
+	!srcCurFirstLineStart	= makeCursor (Z :. y0 :. x0)
+	
+	-- Destination cursor. 
+	!dstCurFirstLineStart	= x0 + y0       * imageWidth
+	!dstCurBlockEnd		= x0 + (y1 + 1) * imageWidth
+
+	!lineWidth		= x1 - x0
 	
 	{-# INLINE fillBlock #-}
-	fillBlock y
-	 | y > y1	= return ()
+	fillBlock !dstCurLineStart !srcCurLineStart
+	 | dstCurLineStart >= dstCurBlockEnd	= return ()
 	 | otherwise
-	 = do	fillLine4 x0
-		fillBlock (y + 1)
+	 = do	fillLine4  (dstCurLineStart + lineWidth)  dstCurLineStart srcCurLineStart
+		fillBlock  (dstCurLineStart + imageWidth) (shiftCursor (Z :. 1 :. 0) srcCurLineStart)
 	
 	 where	{-# INLINE fillLine4 #-}
-		fillLine4 !x
- 	   	 | x + 4 > x1	= fillLine1 x
+		fillLine4 !dstCurEnd !dstCur0 !srcCur0
+ 	   	 | dstCur0 + 4 >= dstCurEnd = fillLine1 dstCurEnd dstCur0 srcCur0
 	   	 | otherwise
-	   	 = do	let c0		= makeCursorFCB  (Z :. y :. x)
-			let c1		= shiftCursorFCB (Z :. 0 :. 1) c0
-			let c2		= shiftCursorFCB (Z :. 0 :. 1) c1
-			let c3		= shiftCursorFCB (Z :. 0 :. 1) c2
+	   	 = do	-- Compute each source cursor based on the previous one so that
+			-- the variable live ranges in the generated code are shorter.
+			let srcCur1	= shiftCursor (Z :. 0 :. 1) srcCur0
+			let srcCur2	= shiftCursor (Z :. 0 :. 1) srcCur1
+			let srcCur3	= shiftCursor (Z :. 0 :. 1) srcCur2
 
-			let d0		= getElemFCB c0
-			let d1		= getElemFCB c1
-			let d2		= getElemFCB c2
-			let d3		= getElemFCB c3
+			-- Get the result value for each cursor.
+			let val0	= getElem srcCur0
+			let val1	= getElem srcCur1
+			let val2	= getElem srcCur2
+			let val3	= getElem srcCur3
 			
-			touch d0
-			touch d1
-			touch d2
-			touch d3
-				
-			let !ix0	= x + 0 + y * imageWidth
-			let !ix1	= ix0 + 1
-			let !ix2	= ix0 + 2
-			let !ix3	= ix0 + 3
+			-- Ensure that we've computed each of the result values before we
+			-- write into the array. If the backend code generator can't tell
+			-- our destination array doesn't alias with the source then writing
+			-- to it can prevent the sharing of intermediate computations.
+			touch val0
+			touch val1
+			touch val2
+			touch val3
 									
-			VM.unsafeWrite vec ix0 d0
-			VM.unsafeWrite vec ix1 d1
-			VM.unsafeWrite vec ix2 d2 
-			VM.unsafeWrite vec ix3 d3
-			fillLine4 (x + 4) 
+			VM.unsafeWrite vec  (dstCur0)     val0
+			VM.unsafeWrite vec  (dstCur0 + 1) val1
+			VM.unsafeWrite vec  (dstCur0 + 2) val2
+			VM.unsafeWrite vec  (dstCur0 + 3) val3
+			fillLine4 dstCurEnd (dstCur0 + 4) (shiftCursor (Z :. 0 :. 1) srcCur3)
 		
 		{-# INLINE fillLine1 #-}
-		fillLine1 !x
- 	   	 | x > x1	= return ()
+		fillLine1 !dstCurEnd !dstCur0 srcCur0
+ 	   	 | dstCur0 >= dstCurEnd	= return ()
 	   	 | otherwise
-	   	 = do	VM.unsafeWrite vec (x + y * imageWidth) (getElemFCB $ makeCursorFCB (Z :. y :. x))
-			fillLine1 (x + 1)
-
+	   	 = do	VM.unsafeWrite vec dstCur0 (getElem srcCur0)
+			fillLine1 dstCurEnd (dstCur0 + 1) (shiftCursor (Z :. 0 :. 1) srcCur0)
 
