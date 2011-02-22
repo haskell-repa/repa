@@ -85,28 +85,18 @@ fillCursoredBlock2
 	!makeCursor !shiftCursor !getElem
 	!imageWidth !x0 !y0 !x1 !y1
 
- = fillBlock dstCurFirstLineStart srcCurFirstLineStart
+ = fillBlock y0
 
- where	
-	-- Source cursor, in whatever abstract form the source array needs.
-	!srcCurFirstLineStart	= makeCursor (Z :. y0 :. x0)
-	
-	-- Destination cursor. 
-	!dstCurFirstLineStart	= x0 + y0       * imageWidth
-	!dstCurBlockEnd		= x0 + (y1 + 1) * imageWidth
-
-	!lineWidth		= x1 - x0
-	
-	{-# INLINE fillBlock #-}
-	fillBlock !dstCurLineStart !srcCurLineStart
-	 | dstCurLineStart >= dstCurBlockEnd	= return ()
+ where	{-# INLINE fillBlock #-}
+	fillBlock !y
+	 | y >= y1	= return ()
 	 | otherwise
-	 = do	fillLine4  (dstCurLineStart + lineWidth)  dstCurLineStart srcCurLineStart
-		fillBlock  (dstCurLineStart + imageWidth) (shiftCursor (Z :. 1 :. 0) srcCurLineStart)
+	 = do	fillLine4 x0 (x0 + y * imageWidth) (makeCursor (Z :. y :. x0))
+		fillBlock (y + 1)
 	
 	 where	{-# INLINE fillLine4 #-}
-		fillLine4 !dstCurEnd !dstCur0 !srcCur0
- 	   	 | dstCur0 + 4 >= dstCurEnd = fillLine1 dstCurEnd dstCur0 srcCur0
+		fillLine4 !x !dstCur0 !srcCur0
+ 	   	 | x + 4 >= x1 		= fillLine1 x dstCur0 srcCur0
 	   	 | otherwise
 	   	 = do	-- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
@@ -133,12 +123,12 @@ fillCursoredBlock2
 			VM.unsafeWrite vec  (dstCur0 + 1) val1
 			VM.unsafeWrite vec  (dstCur0 + 2) val2
 			VM.unsafeWrite vec  (dstCur0 + 3) val3
-			fillLine4 dstCurEnd (dstCur0 + 4) (shiftCursor (Z :. 0 :. 1) srcCur3)
+			fillLine4 (x + 4) (dstCur0 + 4) (shiftCursor (Z :. 0 :. 1) srcCur3)
 		
 		{-# INLINE fillLine1 #-}
-		fillLine1 !dstCurEnd !dstCur0 srcCur0
- 	   	 | dstCur0 >= dstCurEnd	= return ()
+		fillLine1 !x !dstCur0 srcCur0
+ 	   	 | x >= x1		= return ()
 	   	 | otherwise
 	   	 = do	VM.unsafeWrite vec dstCur0 (getElem srcCur0)
-			fillLine1 dstCurEnd (dstCur0 + 1) (shiftCursor (Z :. 0 :. 1) srcCur0)
+			fillLine1 (x + 1) (dstCur0 + 1) (shiftCursor (Z :. 0 :. 1) srcCur0)
 
