@@ -22,8 +22,9 @@ stage	= "Data.Array.Repa.Operators.IndexSpace"
 
 -- Index space transformations --------------------------------------------------------------------
 -- | Impose a new shape on the elements of an array.
---	The new extent must be the same size as the original, else `error`.
---
+--   The new extent must be the same size as the original, else `error`.
+--   Reshaping a `DelayedCursor` array makes it `Delayed`.
+--   TODO: Finish this for Partitioned arrays.
 reshape	:: (Shape sh, Shape sh', Elt a) 
 	=> sh'
 	-> Array sh a
@@ -41,6 +42,9 @@ reshape sh' arr
 
 		Delayed  sh f
 		 -> Delayed sh' (f . fromIndex sh . toIndex sh')
+
+		DelayedCursor sh makeCursor _ loadElem
+		 -> Delayed sh' (loadElem . makeCursor . fromIndex sh . toIndex sh')
 
 		-- TODO: we need to reshape all of the contained functions.
 		Partitioned{}

@@ -32,8 +32,12 @@ map f arr
 	Delayed sh getElem
 	 -> let {-# INLINE getElem' #-}
 	    	getElem'	= f . getElem
-
 	    in	Delayed sh getElem'
+
+	DelayedCursor sh makeCursor shiftCursor loadElem
+	 -> let {-# INLINE loadElem' #-}
+		loadElem'	= f . loadElem
+	    in	DelayedCursor sh makeCursor shiftCursor loadElem'
 
 	Partitioned sh inBorder
 		rngsBorder getBorder
