@@ -44,10 +44,8 @@ run iterations fileIn fileOut
 
 loop :: Int -> Image -> (Image, Image)
 
-loop 0 !img@Manifest{}	
-	= (img, img)
-
-loop n !img@Manifest{}
+loop 0 !img = (img, img)
+loop n !img
  = do	let gX	= gradientX_only img
 	let gY	= gradientY_only img
 
@@ -66,7 +64,7 @@ magnitude x y
 -- | RGB to greyscale conversion.
 toGreyScale :: Array DIM3 Word8 -> Image
 {-# NOINLINE toGreyScale #-}
-toGreyScale arr@Manifest{}
+toGreyScale arr
   = arr `deepSeqArray` force
   $ traverse arr
 	(\(sh :. _) -> sh)

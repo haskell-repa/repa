@@ -67,8 +67,8 @@ instance Shape Z where
 	fromIndex _ _		= Z
 
 
-	{-# INLINE inRange #-}
-	inRange Z Z Z		= True
+	{-# INLINE inShapeRange #-}
+	inShapeRange Z Z Z	= True
 
 	listOfShape _		= []
 	shapeOfList []		= Z
@@ -120,9 +120,9 @@ instance Shape sh => Shape (sh :. Int) where
 		r 	| rank ds == 0	= n
 			| otherwise	= n `remInt` d
 
-	{-# INLINE inRange #-}
-	inRange (zs :. z) (sh1 :. n1) (sh2 :. n2) 
-		= (n2 >= z) && (n2 < n1) && (inRange zs sh1 sh2)
+	{-# INLINE inShapeRange #-}
+	inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2) 
+		= (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
 
 
        	listOfShape (sh :. n)

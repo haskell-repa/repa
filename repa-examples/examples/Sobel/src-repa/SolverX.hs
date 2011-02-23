@@ -4,14 +4,14 @@
 module SolverX
 	( gradientX_only)
 where
-import Data.Array.Repa 			as Repa
+import Data.Array.Repa
 import Data.Array.Repa.Stencil
 import Solver
 
 gradientX_only :: Image -> Image
 {-# NOINLINE gradientX_only #-}
-gradientX_only img@Manifest{}
- 	= img `deepSeqArray` forceBlockwise 
+gradientX_only img@(Array _ [Region RangeAll (GenManifest vec)])
+ 	= img `deepSeqArray` vec `seq` force2
  	$ forStencil2 BoundClamp img
 	  [stencil2|	-1  0  1
 			-2  0  2

@@ -28,7 +28,7 @@ fold f x arr
 	elemFn i 	= V.foldl' f x
 			$ V.map	(\ix -> arr ! (i :. ix)) 
 				(V.enumFromTo 0 (n - 1))
-   in	Delayed sh' elemFn
+   in	fromFunction sh' elemFn
 
 
 -- | Sequentially fold all the elements of an array.

@@ -28,6 +28,11 @@ import Data.List			as List
 import GHC.Exts
 import Debug.Trace
 
+-- | A index into the flat array.
+--   Should be abstract outside the stencil modules.
+data Cursor 
+	= Cursor Int
+
 
 -- | Like `mapStencil2` but with the parameters flipped.
 forStencil2
@@ -68,11 +73,9 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 	{-# INLINE getInner' #-}
 	getInner' cur	= unsafeAppStencilCursor2 stencil arr shiftCursor' cur
 							
-   in	DelayedCursor 
-		(extent arr)
-		makeCursor'
-		shiftCursor'
-		getInner'
+   in	Array (extent arr)
+		[Region (RangeAll)
+			 (GenCursor makeCursor' shiftCursor' getInner')]
 
 
 unsafeAppStencilCursor2
@@ -86,7 +89,7 @@ unsafeAppStencilCursor2
 {-# INLINE [1] unsafeAppStencilCursor2 #-}
 unsafeAppStencilCursor2
 	    stencil@(StencilStatic sExtent zero load)
-	        arr@(Manifest aExtent vec) 
+	        arr@(Array aExtent [Region RangeAll (GenManifest vec)])
 	 offsetCursor
 	     cur@(Cursor off)
 

@@ -44,7 +44,8 @@ class Eq sh => Shape sh where
 		-> sh   
 
 	-- | Check whether an index is within a given shape.
-	inRange	:: sh 	-- ^ Start index for range.
+	inShapeRange
+		:: sh 	-- ^ Start index for range.
 		-> sh 	-- ^ Final index for range.
 		-> sh 	-- ^ Index to check for.
 		-> Bool
@@ -69,4 +70,4 @@ inShape :: forall sh
 
 {-# INLINE inShape #-}
 inShape sh ix
-	= inRange zeroDim sh ix
+	= inShapeRange zeroDim sh ix

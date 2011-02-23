@@ -15,8 +15,11 @@ module Data.Array.Repa
 	, Elt(..)
 
 	-- from Data.Array.Repa.Internals.Base ----------------------
-	, Cursor(..)
 	, Array(..)
+	, Region(..)
+	, Range(..)
+	, Rect(..)
+	, Generator(..)
 	, deepSeqArray, deepSeqArrays
 	, singleton,    toScalar
 	, extent,       delay
@@ -33,8 +36,7 @@ module Data.Array.Repa
 	
 	-- from Data.Array.Repa.Interlals.Forcing -------------------
 	-- * Forcing
-	, force
-	, forceBlockwise
+	, force, force2
 	, toVector
 	, toList
 
@@ -133,6 +135,6 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	signum 		= map signum
 
 	{-# INLINE fromInteger #-}
-	fromInteger n	 = Delayed failShape (\_ -> fromInteger n) 
+	fromInteger n	 = fromFunction failShape (\_ -> fromInteger n) 
 	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
 

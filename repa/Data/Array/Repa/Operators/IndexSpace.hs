@@ -24,7 +24,7 @@ stage	= "Data.Array.Repa.Operators.IndexSpace"
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
 --   Reshaping a `DelayedCursor` array makes it `Delayed`.
---   TODO: Finish this for Partitioned arrays.
+--   TODO: Finish this for partitioned arrays.
 reshape	:: (Shape sh, Shape sh', Elt a) 
 	=> sh'
 	-> Array sh a
@@ -35,21 +35,21 @@ reshape sh' arr
 	| not $ S.size sh' == S.size (extent arr)
 	= error $ stage ++ ".reshape: reshaped array will not match size of the original"
 
-	| otherwise
-	= case arr of
-		Manifest _  uarr 
-		 -> Manifest sh' uarr
+reshape sh' (Array sh [Region RangeAll gen])
+ = Array sh' [Region RangeAll gen']
+ where gen' = case gen of
+		GenManifest vec 
+	 	 -> GenManifest vec
 
-		Delayed  sh f
-		 -> Delayed sh' (f . fromIndex sh . toIndex sh')
+		GenDelayed getElem
+		 -> GenDelayed (getElem . fromIndex sh . toIndex sh')
 
-		DelayedCursor sh makeCursor _ loadElem
-		 -> Delayed sh' (loadElem . makeCursor . fromIndex sh . toIndex sh')
+		GenCursor makeCursor _ loadElem
+	 	 -> GenDelayed (loadElem . makeCursor . fromIndex sh . toIndex sh')
 
-		-- TODO: we need to reshape all of the contained functions.
-		Partitioned{}
-		 -> error $ stage ++ ".reshape: not finished for segmented"
-
+reshape _ _
+	= error $ stage ++ ".reshape: can't reshape a partitioned array"
+	
 
 -- | Append two arrays.
 --
@@ -158,7 +158,7 @@ backpermuteDft
 
 {-# INLINE backpermuteDft #-}
 backpermuteDft arrDft fnIndex arrSrc
-	= Delayed (extent arrDft) fnElem
+	= fromFunction (extent arrDft) fnElem
 	where	fnElem ix	
 		 = case fnIndex ix of
 			Just ix'	-> arrSrc ! ix'

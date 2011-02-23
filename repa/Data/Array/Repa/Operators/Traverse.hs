@@ -25,13 +25,13 @@ traverse
 {-# INLINE traverse #-}
 traverse arr transExtent newElem
  	= arr `deepSeqArray` 
-          Delayed (transExtent (extent arr)) (newElem (arr !))
+          fromFunction (transExtent (extent arr)) (newElem (arr !))
 
 
 {-# INLINE unsafeTraverse #-}
 unsafeTraverse arr transExtent newElem
  	= arr `deepSeqArray` 
-          Delayed (transExtent (extent arr)) (newElem (unsafeIndex arr))
+	  fromFunction (transExtent (extent arr)) (newElem (unsafeIndex arr))
 
 
 -- | Unstructured traversal over two arrays at once.
@@ -51,14 +51,14 @@ traverse2, unsafeTraverse2
 {-# INLINE traverse2 #-}
 traverse2 arrA arrB transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray`
-   	  Delayed 
+   	  fromFunction
 		(transExtent (extent arrA) (extent arrB)) 
 		(newElem     (arrA !) (arrB !))
 
 {-# INLINE unsafeTraverse2 #-}
 unsafeTraverse2 arrA arrB transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray`
-   	  Delayed 
+   	  fromFunction
 		(transExtent (extent arrA) (extent arrB)) 
 		(newElem     (unsafeIndex arrA) (unsafeIndex arrB))
 
@@ -81,14 +81,14 @@ traverse3, unsafeTraverse3
 {-# INLINE traverse3 #-}
 traverse3 arrA arrB arrC transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray`
-   	  Delayed 
+   	  fromFunction
 		(transExtent (extent arrA) (extent arrB) (extent arrC)) 
 		(newElem     (arrA !) (arrB !) (arrC !))
 
 {-# INLINE unsafeTraverse3 #-}
 unsafeTraverse3 arrA arrB arrC transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray`
-   	  Delayed 
+   	  fromFunction
 		(transExtent (extent arrA) (extent arrB) (extent arrC)) 
 		(newElem     (unsafeIndex arrA) (unsafeIndex arrB) (unsafeIndex arrC))
 
@@ -112,7 +112,7 @@ traverse4, unsafeTraverse4
 {-# INLINE traverse4 #-}
 traverse4 arrA arrB arrC arrD transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray` arrD `deepSeqArray` 
-   	  Delayed 
+   	  fromFunction
 		(transExtent (extent arrA) (extent arrB) (extent arrC) (extent arrD)) 
 		(newElem     (arrA !) (arrB !) (arrC !) (arrD !))
 
@@ -120,7 +120,7 @@ traverse4 arrA arrB arrC arrD transExtent newElem
 {-# INLINE unsafeTraverse4 #-}
 unsafeTraverse4 arrA arrB arrC arrD transExtent newElem
 	= arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray` arrD `deepSeqArray` 
-   	  Delayed 
+   	  fromFunction
 		(transExtent (extent arrA) (extent arrB) (extent arrC) (extent arrD)) 
 		(newElem     (unsafeIndex arrA) (unsafeIndex arrB) (unsafeIndex arrC) (unsafeIndex arrD))
 
