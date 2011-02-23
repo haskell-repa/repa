@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports #-} 
+{-# LANGUAGE PackageImports, PatternGuards  #-} 
 
 -- | Reading and writing arrays as uncompressed 24 and 32 bit Windows BMP files.
 module Data.Array.Repa.IO.BMP
