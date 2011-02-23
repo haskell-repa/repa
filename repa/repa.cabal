@@ -37,6 +37,7 @@ Library
 
   Exposed-modules:
         Data.Array.Repa
+        Data.Array.Repa.Elt
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
@@ -52,10 +53,9 @@ Library
         Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Operators.Reduction
         Data.Array.Repa.Internals.Gang
-        Data.Array.Repa.Internals.Elt
+        Data.Array.Repa.Internals.EvalChunked
         Data.Array.Repa.Internals.EvalBlockwise
         Data.Array.Repa.Internals.EvalCursored
-        Data.Array.Repa.Internals.EvalVector
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil.Base
         Data.Array.Repa.Stencil.Template

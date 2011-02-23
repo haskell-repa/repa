@@ -7,19 +7,16 @@
 --   More information at <http://trac.haskell.org/repa>
 --  
 module Data.Array.Repa
-	( module Data.Array.Repa.Shape
+	( module Data.Array.Repa.Elt
+	, module Data.Array.Repa.Shape
 	, module Data.Array.Repa.Index
 	, module Data.Array.Repa.Slice
 
 	-- from Data.Array.Repa.Base --------------------------------
-	, Elt
 	, Array(..)
 	, deepSeqArray, deepSeqArrays
 	, singleton,    toScalar
 	, extent,       delay
-
-	-- * Simple projections
---	, width, height, depth
 
 	-- * Indexing
 	, (!),  index
@@ -70,6 +67,7 @@ module Data.Array.Repa
 	, interleave4)
 		
 where
+import Data.Array.Repa.Elt
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
 import Data.Array.Repa.Shape
@@ -131,26 +129,3 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	fromInteger n	 = Delayed failShape (\_ -> fromInteger n) 
 	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
 
-
--- Projections ------------------------------------------------------------------------------------
-{-
-width :: Array (sh :. Int) a -> Int
-{-# INLINE width #-}
-width arr
- = let	_ :.  width		= extent arr
-   in	width
-
-
-height :: Array (sh :. Int :. Int) a -> Int
-{-# INLINE height #-}
-height arr
- = let	_ :. height :. _	= extent arr
-   in	height
-
-
-depth :: Array (sh :. Int :. Int :. Int) a -> Int
-{-# INLINE depth #-}
-depth arr
- = let	_ :. depth :. _ :. _	= extent arr
-   in	depth
--}		

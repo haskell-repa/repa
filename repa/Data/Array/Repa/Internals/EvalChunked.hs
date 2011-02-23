@@ -1,8 +1,10 @@
+-- | Evaluate a vector by breaking it up into linear chunks and filling each chunk
+--   in parallel.
 {-# LANGUAGE BangPatterns #-}
-module Data.Array.Repa.Internals.EvalVector
-	( newVectorP
-	, fillVector
-	, fillVectorP)
+module Data.Array.Repa.Internals.EvalChunked
+	( newVectorChunkedP
+	, fillChunkedS
+	, fillChunkedP)
 where
 import Data.Array.Repa.Internals.Gang
 import Data.Vector.Unboxed			as V
@@ -11,30 +13,31 @@ import System.IO.Unsafe
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
 
--- Vector Filling ---------------------------------------------------------------------------------
-newVectorP
+
+-- | Create a new vector in parallel 
+newVectorChunkedP
 	:: Unbox a
-	=> (Int -> a)
-	-> Int		-- size
+	=> (Int -> a)	-- ^ Fn to get the value at a given index.
+	-> Int		-- ^ Length of vector.
 	-> Vector a
 	
-{-# INLINE newVectorP #-}
-newVectorP !getElemNew !size
+{-# INLINE newVectorChunkedP #-}
+newVectorChunkedP !getElemNew !size
  = unsafePerformIO
  $ do	mvec	<- VM.unsafeNew size
-	fillVectorP mvec getElemNew
+	fillChunkedP mvec getElemNew
 	V.unsafeFreeze mvec
 
 
 -- | Fill a vector sequentially.
-fillVector
+fillChunkedS
 	:: Unbox a
- 	=> IOVector a
-	-> (Int -> a)
+ 	=> IOVector a	-- ^ Vector to fill.
+	-> (Int -> a)	-- ^ Fn to get the value at a given index.
 	-> IO ()
 
-{-# INLINE fillVector #-}
-fillVector !vec !getElem
+{-# INLINE fillChunkedS #-}
+fillChunkedS !vec !getElem
  = fill 0
  where 	!len	= VM.length vec
 	
@@ -46,14 +49,14 @@ fillVector !vec !getElem
 
 
 -- | Fill a vector in parallel.
-fillVectorP
+fillChunkedP
 	:: Unbox a
-	=> IOVector a		-- ^ vector to write elements info.
-	-> (Int -> a)		-- ^ fn to evaluate an element at a given index.
+	=> IOVector a	-- ^ Vector to fill.
+	-> (Int -> a)	-- ^ Fn to get the value at a given index.
 	-> IO ()
 		
-{-# INLINE fillVectorP #-}
-fillVectorP !vec !getElem
+{-# INLINE fillChunkedP #-}
+fillChunkedP !vec !getElem
  = 	gangIO theGang 
 	 $  \thread -> fill (splitIx thread) (splitIx (thread + 1))
 

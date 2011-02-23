@@ -30,8 +30,8 @@ module Data.Array.Repa.Base
 	, forceBlockwise)
 where
 import Data.Array.Repa.Index
-import Data.Array.Repa.Internals.Elt
-import Data.Array.Repa.Internals.EvalVector
+import Data.Array.Repa.Elt
+import Data.Array.Repa.Internals.EvalChunked	as EH
 import Data.Array.Repa.Internals.EvalBlockwise	as EB
 import Data.Array.Repa.Internals.EvalCursored	as EC
 import Data.Array.Repa.Shape			as S
@@ -363,7 +363,7 @@ force arr
 		Delayed sh getElem
 		 -> let vec	= unsafePerformIO
 				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					fillVectorP mvec (getElem . fromIndex sh)
+					fillChunkedP mvec (getElem . fromIndex sh)
 					V.unsafeFreeze mvec
 
 		    in sh `S.deepSeq` vec `seq` (sh, vec)
@@ -372,7 +372,7 @@ force arr
 		 -> let	sh	= arrayExtent arr
 			vec	= unsafePerformIO
 				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					fillVectorP mvec (index arr . fromIndex sh)
+					fillChunkedP mvec (index arr . fromIndex sh)
 					V.unsafeFreeze mvec
 					
 		    in sh `S.deepSeq` vec `seq` (sh, vec)

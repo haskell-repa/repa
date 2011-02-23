@@ -4,9 +4,9 @@ module Data.Array.Repa.Internals.EvalCursored
 	( fillCursoredBlock2P
 	, fillCursoredBlock2 )
 where
+import Data.Array.Repa.Elt
 import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Gang
-import Data.Array.Repa.Internals.Elt
 import Data.Vector.Unboxed.Mutable		as VM
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
@@ -120,6 +120,7 @@ fillCursoredBlock2
 			touch val2
 			touch val3
 
+			-- Compute cursor into destination array.
 			let !dstCur0	= x + y * imageWidth				
 			VM.unsafeWrite vec (dstCur0)     val0
 			VM.unsafeWrite vec (dstCur0 + 1) val1

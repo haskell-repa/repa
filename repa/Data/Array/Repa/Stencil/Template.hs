@@ -57,10 +57,10 @@ parseStencil2 str
 	maxY		= sizeY `div` 2
 
 	-- List of coefficients for the stencil.
-	coeffs		= List.map read $ words str
+	coeffs		= (List.map read $ words str) :: [Double]
 	
    in	makeStencil2' sizeX sizeY
-	 $ filter (\(x, y, v) -> v /= 0)
+	 $ filter (\(_, _, v) -> v /= 0)
 	 $ [ (fromIntegral y, fromIntegral x, toRational v)
 		| y	<- [minX, minX + 1 .. maxX]
 		, x	<- [minY, minY + 1 .. maxY]
