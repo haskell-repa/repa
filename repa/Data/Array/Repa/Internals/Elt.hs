@@ -1,6 +1,6 @@
 -- | Values that can be stored in Repa Arrays.
 {-# LANGUAGE MagicHash, UnboxedTuples #-}
-module Data.Array.Repa.Elt
+module Data.Array.Repa.Internals.Elt
 	(Elt (..))
 where
 import GHC.Prim

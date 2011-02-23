@@ -7,9 +7,9 @@ module Data.Array.Repa.Operators.Traverse
 	, traverse3, unsafeTraverse3
 	, traverse4, unsafeTraverse4)
 where
-import Data.Array.Repa.Base
+import Data.Array.Repa.Internals.Elt
+import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Shape	as S
-
 
 -- Generic Traversal -----------------------------------------------------------------------------
 -- | Unstructured traversal.

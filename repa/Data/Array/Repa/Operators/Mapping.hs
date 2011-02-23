@@ -9,7 +9,8 @@ module Data.Array.Repa.Operators.Mapping
 	, (*^)
 	, (/^))
 where
-import Data.Array.Repa.Base
+import Data.Array.Repa.Internals.Elt
+import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Shape		as S
 import Prelude				hiding (map, zipWith)

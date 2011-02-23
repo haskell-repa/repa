@@ -6,8 +6,9 @@ module Data.Array.Repa.Operators.Interleave
 	, interleave3
 	, interleave4)
 where
-import Data.Array.Repa.Base
 import Data.Array.Repa.Index
+import Data.Array.Repa.Internals.Elt
+import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Shape			as S
 

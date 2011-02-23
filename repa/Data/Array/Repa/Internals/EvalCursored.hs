@@ -4,8 +4,8 @@ module Data.Array.Repa.Internals.EvalCursored
 	( fillCursoredBlock2P
 	, fillCursoredBlock2 )
 where
-import Data.Array.Repa.Elt
 import Data.Array.Repa.Index
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
 import Data.Vector.Unboxed.Mutable		as VM
 import GHC.Base					(remInt, quotInt)

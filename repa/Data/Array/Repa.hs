@@ -7,12 +7,15 @@
 --   More information at <http://trac.haskell.org/repa>
 --  
 module Data.Array.Repa
-	( module Data.Array.Repa.Elt
-	, module Data.Array.Repa.Shape
+	( module Data.Array.Repa.Shape
 	, module Data.Array.Repa.Index
 	, module Data.Array.Repa.Slice
 
-	-- from Data.Array.Repa.Base --------------------------------
+	-- from Data.Array.Repa.Internals.Elt -----------------------
+	, Elt(..)
+
+	-- from Data.Array.Repa.Internals.Base ----------------------
+	, Cursor(..)
 	, Array(..)
 	, deepSeqArray, deepSeqArrays
 	, singleton,    toScalar
@@ -23,14 +26,17 @@ module Data.Array.Repa
 	, (!?), safeIndex
 	, unsafeIndex
 
-	-- * Conversions 
+	-- * Construction
 	, fromFunction	
-	, fromVector, toVector
-	, fromList,   toList
+	, fromVector
+	, fromList
 	
+	-- from Data.Array.Repa.Interlals.Forcing -------------------
 	-- * Forcing
 	, force
 	, forceBlockwise
+	, toVector
+	, toList
 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
 	-- * Index space transformations
@@ -67,11 +73,12 @@ module Data.Array.Repa
 	, interleave4)
 		
 where
-import Data.Array.Repa.Elt
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
 import Data.Array.Repa.Shape
-import Data.Array.Repa.Base
+import Data.Array.Repa.Internals.Elt
+import Data.Array.Repa.Internals.Base
+import Data.Array.Repa.Internals.Forcing
 import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave

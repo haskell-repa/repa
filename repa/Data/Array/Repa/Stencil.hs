@@ -18,7 +18,7 @@ module Data.Array.Repa.Stencil
 	, stencil2)
 where
 import Data.Array.Repa			as R
-import Data.Array.Repa.Base		as R
+import Data.Array.Repa.Internals.Base	as R
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
 import Data.Array.Repa.Specialised.Dim2

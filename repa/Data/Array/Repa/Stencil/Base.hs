@@ -5,9 +5,8 @@ module Data.Array.Repa.Stencil.Base
 	, Stencil	(..)
 	, makeStencil, makeStencil2)
 where
-import Data.Array.Repa.Base
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Index
-
 
 -- | Indicates how to handle the case when the stencil being applied
 --   to the input array lies partly outside that array.

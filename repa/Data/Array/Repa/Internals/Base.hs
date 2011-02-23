@@ -1,10 +1,7 @@
-{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE ExplicitForAll, TypeOperators, FlexibleInstances, UndecidableInstances, BangPatterns,
              ExistentialQuantification #-}
-
-module Data.Array.Repa.Base
-	( Elt(..)
-	, Array(..)
+module Data.Array.Repa.Internals.Base
+	( Array(..)
 	, Cursor(..)
 	, deepSeqArray, deepSeqArrays
 	, singleton, toScalar
@@ -20,25 +17,16 @@ module Data.Array.Repa.Base
 	, (!?), safeIndex
 	, unsafeIndex
 
-	-- * Conversions 
+	-- * Construction
 	, fromFunction	
-	, fromVector, toVector
-	, fromList,   toList
-	
-	-- * Forcing
-	, force
-	, forceBlockwise)
+	, fromVector
+	, fromList)
 where
 import Data.Array.Repa.Index
-import Data.Array.Repa.Elt
-import Data.Array.Repa.Internals.EvalChunked	as EH
-import Data.Array.Repa.Internals.EvalBlockwise	as EB
-import Data.Array.Repa.Internals.EvalCursored	as EC
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
-import Data.Vector.Unboxed.Mutable		as VM
 import Data.Vector.Unboxed			(Vector)
-import System.IO.Unsafe	
 
 stage	= "Data.Array.Repa.Array"
 
@@ -298,19 +286,6 @@ fromVector sh vec
 	  Manifest sh vec
 
 
--- | Convert an array to an unboxed `U.Array`, forcing it if required.
---	The elements come out in row-major order.
-toVector
-	:: (Shape sh, Elt a)
-	=> Array sh a 
-	-> Vector a
-{-# INLINE toVector #-}
-toVector arr
- = case force arr of
-	Manifest _ vec	-> vec
-	_		-> error $ stage ++ ".toVector: force failed"
-
-
 -- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an array.
 --	The length of the list must be exactly the `size` of the extent given, else `error`.
@@ -334,133 +309,3 @@ fromList sh xx
 
 	where	vec	= V.fromList xx
 	
--- | Convert an array to a list.
-toList 	:: (Shape sh, Elt a)
-	=> Array sh a
-	-> [a]
-
-{-# INLINE toList #-}
-toList arr
- = case force arr of
-	Manifest _ vec	-> V.toList vec
-	_		-> error $ stage ++ ".toList: force failed"
-
-
--- Forcing ----------------------------------------------------------------------------------------
--- | Force an array, so that it becomes `Manifest`.
---   The array is chunked up and evaluated in parallel.
-force	:: (Shape sh, Elt a)
-	=> Array sh a -> Array sh a
-	
-{-# INLINE force #-}
-force arr
- = Manifest sh' vec'
- where	(sh', vec')
-	 = case arr of
-		Manifest sh vec
-		 -> sh `S.deepSeq` vec `seq` (sh, vec)
-		
-		Delayed sh getElem
-		 -> let vec	= unsafePerformIO
-				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					fillChunkedP mvec (getElem . fromIndex sh)
-					V.unsafeFreeze mvec
-
-		    in sh `S.deepSeq` vec `seq` (sh, vec)
-
-		Partitioned{}
-		 -> let	sh	= arrayExtent arr
-			vec	= unsafePerformIO
-				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					fillChunkedP mvec (index arr . fromIndex sh)
-					V.unsafeFreeze mvec
-					
-		    in sh `S.deepSeq` vec `seq` (sh, vec)
-
-
--- | Force an array, so that it becomes `Manifest`.
---
---   The array is evaluated in parallel in a blockwise manner, where each block is
---   evaluated independently and in a separate thread. For delayed arrays which access
---   their source elements from the local neighbourhood, `forceBlockwise` should give
---   better cache performance than plain `force`.
---
-forceBlockwise	
-	:: (Elt a, Num a)
-	=> Array DIM2 a -> Array DIM2 a
-	
-{-# INLINE [0] forceBlockwise #-}
-forceBlockwise arr
- = Manifest sh' vec'
- where	(sh', vec')
-	 = case arr of
-		Manifest sh vec
-		 -> sh `S.deepSeq` vec `seq` (sh, vec)
-		
-		Delayed sh@(_ :. width) getElem_FBW_Delayed
-		 -> let vec	= newVectorBlockwiseP (getElem_FBW_Delayed . fromIndex sh) (S.size sh) width
-		    in	sh `S.deepSeq` vec `seq` (sh, vec)
-
-
-		-- Cursor version for stencils
-		DelayedCursor sh
-			makeCursor
-			offsetCursor
-			getElemInner
-		
-		 -> arr `deepSeqArray` sh `S.deepSeq` 
-	            let	vec	= unsafePerformIO
-		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
-
-					-- fill the inner partition
-					let (_ :. height :. width) = sh
-					let x0	= 1
-					let x1	= width - 2
-					let y0	= 1
-					let y1	= height - 2
-
-					fillCursoredBlock2P mvec
-						makeCursor
-						offsetCursor
-						getElemInner
-						width 
-						x0 y0 x1 y1
-
-					-- All done, freeze the sucker.
-					V.unsafeFreeze mvec
-		    in	vec `seq` (sh, vec)
-	
-			
-
-		-- TODO: This needs the index to be DIM2 becase we call fillVectorBlock directly
-		Partitioned sh@(_ :. width) 
-			_inBorder
-			rngsBorder getElemBorder
-			(shInner1, shInner2)  getElemInner
-
-		 -> arr `deepSeqArray` shInner1 `S.deepSeq` shInner2 `S.deepSeq` sh `S.deepSeq` 
-	            let	vec	= unsafePerformIO
-		 		$ do	!mvec	<- VM.unsafeNew (S.size sh)
-
-					-- fill the inner partition
-					let (_ :. y0 :. x0)	= shInner1
-					let (_ :. y1 :. x1)	= shInner2
-
-					fillVectorBlockP mvec
-						(getElemInner . fromIndex sh)
-						width 
-						x0 y0 x1 y1
-
-					-- fill the border partition
-					let fillBorderBlock ((_ :. y0' :. x0'), (_ :. y1' :. x1'))
-						= fillVectorBlock mvec 
-							(getElemBorder . fromIndex sh)
-							width
-							x0' y0' x1' y1'
-	
-					mapM_ fillBorderBlock rngsBorder
-
-					-- All done, freeze the sucker.
-					V.unsafeFreeze mvec
-		    in	vec `seq` (sh, vec)
-

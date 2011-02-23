@@ -5,7 +5,7 @@ module Data.Array.Repa.Internals.EvalBlockwise
 	, fillVectorBlock
 	, fillVectorBlockP)
 where
-import Data.Array.Repa.Elt
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
 import Data.Vector.Unboxed			as V
 import Data.Vector.Unboxed.Mutable		as VM

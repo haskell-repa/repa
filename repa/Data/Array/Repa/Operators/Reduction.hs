@@ -5,8 +5,9 @@ module Data.Array.Repa.Operators.Reduction
 	( fold, foldAll
 	, sum,  sumAll)
 where
-import Data.Array.Repa.Base
 import Data.Array.Repa.Index
+import Data.Array.Repa.Internals.Elt
+import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Shape		as S
 import qualified Data.Vector.Unboxed	as V
 import Prelude				hiding (sum)
