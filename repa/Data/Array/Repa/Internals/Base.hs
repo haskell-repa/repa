@@ -10,6 +10,7 @@ module Data.Array.Repa.Internals.Base
 	-- * Predicates
 	, isManifest
 	, isDelayed
+	, isDelayedCursor
 	, isPartitioned
 
 	-- * Indexing
@@ -52,9 +53,9 @@ data Array sh a
 	| forall cursor
 	. DelayedCursor
 		{ arrayExtent		:: sh
-		, arrayCursor		:: sh -> cursor
-		, arrayOffset		:: sh -> cursor -> cursor
-		, arrayElem 		:: cursor -> a }
+		, arrayMakeCursor	:: sh -> cursor
+		, arrayShiftCursor	:: sh -> cursor -> cursor
+		, arrayLoadElem		:: cursor -> a }
 
 	  -- | An delayed array broken into subranges.
 	  --   INVARIANT: the ranges to not overlap.
@@ -122,6 +123,12 @@ isDelayed arr
 	Delayed{}	-> True
 	_		-> False
 
+isDelayedCursor :: Array sh a -> Bool
+isDelayedCursor arr
+ = case arr of
+	DelayedCursor{}	-> True
+	_		-> False
+
 isPartitioned :: Array sh a -> Bool
 isPartitioned arr
  = case arr of
@@ -141,9 +148,16 @@ toScalar :: Elt a => Array Z a -> a
 {-# INLINE toScalar #-}
 toScalar arr
  = case arr of
-	Delayed   _ fn		-> fn Z
 	Manifest  _ uarr	-> uarr V.! 0
-	Partitioned{}		-> arrayInnerGetElem arr Z
+
+	Delayed{}
+	 -> arrayGetElem arr Z
+
+	DelayedCursor _ makeCursor _ loadElem
+	 -> (loadElem . makeCursor) Z
+
+	Partitioned{}
+	 -> arrayInnerGetElem arr Z
 	
 
 -- Projections ------------------------------------------------------------------------------------
@@ -163,6 +177,9 @@ delay arr
  = case arr of
 	Delayed   sh fn	
 	 -> (sh, fn)
+	
+	DelayedCursor sh makeCursor _ loadElem
+	 -> (sh, loadElem . makeCursor)
 
 	Manifest  sh vec
 	 -> (sh, \ix -> vec V.! S.toIndex sh ix)
@@ -192,11 +209,14 @@ delay arr
 {-# INLINE index #-}
 index arr ix
  = case arr of
+	Manifest  sh vec
+	 -> vec V.! (S.toIndex sh ix)
+
 	Delayed   _  fn
 	 -> fn ix
 
-	Manifest  sh vec
-	 -> vec V.! (S.toIndex sh ix)
+	DelayedCursor _ makeCursor _ loadElem
+	 -> loadElem $ makeCursor ix
 
 	Partitioned{}
 	 -> if arrayChoose arr ix
@@ -206,6 +226,8 @@ index arr ix
 
 -- | Get an indexed element from an array.
 --   If the element is out of range then `Nothing`.
+--   TODO: We should probably also ensure that delaying functions don't get
+--         called by out of range indices.
 (!?), safeIndex
 	:: forall sh a
 	.  (Shape sh, Elt a)
@@ -219,11 +241,14 @@ index arr ix
 {-# INLINE safeIndex #-}
 safeIndex arr ix
  = case arr of
+	Manifest sh vec		
+	 -> vec V.!? (S.toIndex sh ix)
+
 	Delayed  _  fn
 	 -> Just (fn ix)
 
-	Manifest sh vec		
-	 -> vec V.!? (S.toIndex sh ix)
+	DelayedCursor _ makeCursor _ loadElem
+	 -> Just (loadElem $ makeCursor ix)
 
 	Partitioned{}
 	 -> Just (if arrayChoose arr ix
@@ -247,11 +272,14 @@ unsafeIndex
 {-# INLINE unsafeIndex #-}
 unsafeIndex arr ix
  = case arr of
+	Manifest sh uarr
+	 -> uarr `V.unsafeIndex` (S.toIndex sh ix)
+
 	Delayed  _  fn
 	 -> fn ix
 
-	Manifest sh uarr
-	 -> uarr `V.unsafeIndex` (S.toIndex sh ix)
+	DelayedCursor _ makeCursor _ loadElem
+	 -> loadElem $ makeCursor ix
 
 	Partitioned{}
 	 -> if arrayChoose arr ix
