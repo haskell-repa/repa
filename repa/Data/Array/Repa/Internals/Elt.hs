@@ -17,6 +17,7 @@ class (Show a, Unbox a)	=> Elt a where
 	touch :: a -> IO ()
 
 	zero  :: a
+	one   :: a
 
 -- Note that the touch# function is special because we can pass it boxed or unboxed
 -- values. The argument type has kind ?, not just * or #.
@@ -30,6 +31,9 @@ instance Elt Bool where
  {-# INLINE zero #-}
  zero = False
 
+ {-# INLINE one #-}
+ one  = True
+
 instance Elt Float where
  {-# INLINE touch #-}
  touch (F# f) 
@@ -38,6 +42,9 @@ instance Elt Float where
 
  {-# INLINE zero #-}
  zero = 0
+
+ {-# INLINE one #-}
+ one = 1
 
 
 instance Elt Double where
@@ -49,6 +56,9 @@ instance Elt Double where
  {-# INLINE zero #-}
  zero = 0
 
+ {-# INLINE one #-}
+ one = 1
+
 
 instance Elt Int where
  {-# INLINE touch #-}
@@ -59,6 +69,9 @@ instance Elt Int where
  {-# INLINE zero #-}
  zero = 0
 
+ {-# INLINE one #-}
+ one = 1
+
 
 instance Elt Word8 where
  {-# INLINE touch #-}
@@ -68,4 +81,7 @@ instance Elt Word8 where
 
  {-# INLINE zero #-}
  zero = 0
+
+ {-# INLINE one #-}
+ one = 1
 	

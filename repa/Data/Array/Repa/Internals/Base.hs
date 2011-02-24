@@ -65,9 +65,9 @@ data Range sh
 
 
 -- | A rectangle\/cube of arbitrary dimension.
+--   The indices are of the minimum and maximim elements to fill.
 data Rect sh
 	= Rect sh sh
-
 
 -- | Generates array elements for a given region in an array.
 data Generator sh a

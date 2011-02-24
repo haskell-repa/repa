@@ -43,9 +43,9 @@ fillVectorBlockwiseP !vec !getElemFVBP !imageWidth
 	fillBlock :: Int -> IO ()
 	fillBlock !ix 
 	 = let	!x0	= colIx ix        
-		!x1	= colIx (ix + 1) - 1
+		!x1	= colIx (ix + 1)
 		!y0	= 0
-		!y1	= imageHeight    - 1
+		!y1	= imageHeight
 	   in	fillVectorBlock vec getElemFVBP imageWidth x0 y0 x1 y1
 
 
@@ -68,7 +68,7 @@ fillVectorBlockP
 fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
-	!blockWidth	= x1 - x0
+	!blockWidth	= x1 - x0 + 1
 	
 	-- All columns have at least this many pixels.
 	!colChunkLen	= blockWidth `quotInt` threads
@@ -89,7 +89,7 @@ fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
 	 = let	!x0'	= colIx ix
 		!x1'	= colIx (ix + 1) - 1
 		!y0'	= y0
-		!y1'	= y1             - 1
+		!y1'	= y1
 	   in	fillVectorBlock vec getElem imageWidth x0' y0' x1' y1'
 
 
@@ -108,7 +108,7 @@ fillVectorBlock
 
 {-# INLINE fillVectorBlock #-}
 fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
- = do	-- putStrLn $ "fillVectorBlock: " P.++ show (imageWidth, x0, y0, x1, y1)
+ = do	-- putStrLn $ "fillVectorBlock: " P.++ show (x0, y0, x1, y1)
 	fillBlock ixStart (ixStart + (x1 - x0))
  where	
 	-- offset from end of one line to the start of the next.

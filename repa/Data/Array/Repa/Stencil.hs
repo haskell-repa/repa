@@ -60,6 +60,29 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
  = let	(_ :. aHeight :. aWidth) = extent arr
 	(_ :. sHeight :. sWidth) = sExtent
 
+	sHeight2	= sHeight `div` 2
+	sWidth2		= sWidth  `div` 2
+
+	-- minimum and maximum indicies of values in the inner part of the image.
+	xMin		= sWidth2
+	yMin		= sHeight2
+	xMax		= aWidth  - sWidth2  - 1
+	yMax		= aHeight - sHeight2 - 1
+
+	-- Rectangles -----------------------
+	-- range of values where we don't need to worry about the border
+	rectsInternal	
+	 = 	[ Rect (Z :. yMin :. xMin)	   (Z :. yMax :. xMax ) ]
+
+	-- range of values where some of the data needed by the stencil is outside the image.
+	rectsBorder
+	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot 
+	   	, Rect (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1)	 	-- top
+		, Rect (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)		-- left
+	   	, Rect (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) ]  	-- right
+
+
+	-- Cursor functions ----------------
 	{-# INLINE makeCursor' #-}
 	makeCursor'   (Z :. y :. x)	
 			= Cursor (x + y * aWidth)
@@ -72,10 +95,16 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 			
 	{-# INLINE getInner' #-}
 	getInner' cur	= unsafeAppStencilCursor2 stencil arr shiftCursor' cur
+	
+	{-# INLINE getBorder' #-}
+	getBorder' _	= zero
 							
    in	Array (extent arr)
-		[Region (RangeAll)
-			 (GenCursor makeCursor' shiftCursor' getInner')]
+		[ Region (RangeRects (error "sorry") rectsInternal)
+		    	(GenCursor makeCursor' shiftCursor' getInner')
+
+		, Region (RangeRects (error "sorry") rectsBorder)
+			 (GenDelayed getBorder') ]
 
 
 unsafeAppStencilCursor2

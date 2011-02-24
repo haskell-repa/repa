@@ -26,7 +26,7 @@ fillCursoredBlock2P
 	-> Int			-- ^ x0 lower left corner of block to fill
 	-> Int			-- ^ y0 (low x and y value)
 	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1 (high x and y value)
+	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
 	-> IO ()
 
 {-# INLINE fillCursoredBlock2P #-}
@@ -36,7 +36,7 @@ fillCursoredBlock2P
 	!imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
-	!blockWidth	= x1 - x0
+	!blockWidth	= x1 - x0 + 1
 	
 	-- All columns have at least this many pixels.
 	!colChunkLen	= blockWidth `quotInt` threads
@@ -55,7 +55,7 @@ fillCursoredBlock2P
 	fillBlock :: Int -> IO ()
 	fillBlock !ix
 	 = let	!x0'	= colIx ix
-		!x1'	= colIx (ix + 1)
+		!x1'	= colIx (ix + 1) - 1
 		!y0'	= y0
 		!y1'	= y1
 	   in	fillCursoredBlock2 
@@ -76,7 +76,7 @@ fillCursoredBlock2
 	-> Int				-- ^ x0 lower left corner of block to fill 
 	-> Int				-- ^ y0 (low x and y value)
 	-> Int				-- ^ x1 upper right corner of block to fill
-	-> Int				-- ^ y1 (high x and y value)
+	-> Int				-- ^ y1 (high x and y value, index of last elem to fill)
 	-> IO ()
 
 {-# INLINE fillCursoredBlock2 #-}
@@ -89,14 +89,14 @@ fillCursoredBlock2
 
  where	{-# INLINE fillBlock #-}
 	fillBlock !y
-	 | y >= y1	= return ()
+	 | y > y1	= return ()
 	 | otherwise
 	 = do	fillLine4 x0
 		fillBlock (y + 1)
 	
 	 where	{-# INLINE fillLine4 #-}
 		fillLine4 !x
- 	   	 | x + 4 >= x1 		= fillLine1 x
+ 	   	 | x + 4 > x1 		= fillLine1 x
 	   	 | otherwise
 	   	 = do	-- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
@@ -130,7 +130,7 @@ fillCursoredBlock2
 		
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x 
- 	   	 | x >= x1		= return ()
+ 	   	 | x > x1		= return ()
 	   	 | otherwise
 	   	 = do	VM.unsafeWrite vec (x + y * imageWidth) (getElem $ makeCursor (Z :. y :. x))
 			fillLine1 (x + 1)

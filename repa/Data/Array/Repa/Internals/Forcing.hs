@@ -85,6 +85,17 @@ force2 arr
 		-- Don't force an already forced array.
 		Array sh [Region RangeAll (GenManifest vec)]
 	 	 -> 	return (sh, vec)
+
+		-- Create a vector to hold the new array and load in the regions.
+		-- NOTE We must specialise this for the common case of two regions to enable
+		--      fusion for them. If we just have the next case (arbitrary region list)
+		--      the worker won't fuse with the filling / evaluation code.
+		Array sh [r1, r2]
+	 	 -> do	mvec	<- VM.new (S.size sh)
+			fillRegion2P mvec sh r1
+			fillRegion2P mvec sh r2
+			vec	<- V.unsafeFreeze mvec
+			return (sh, vec)
 	
 		-- Create a vector to hold the new array and load in the regions.
 		Array sh regions
@@ -129,39 +140,71 @@ fillRegionP _ _ _
 --
 fillRegion2P 
 	:: Elt a
-	=> VM.IOVector a
+	=> VM.IOVector a	-- ^ Vector to write elements into.
 	-> DIM2			-- ^ Extent of entire array.
-	-> Region DIM2 a
+	-> Region DIM2 a	-- ^ Region to fill.
 	-> IO ()
 	
 {-# INLINE fillRegion2P #-}
-fillRegion2P mvec sh@(_ :. height :. width) (Region RangeAll gen)
+fillRegion2P mvec sh@(_ :. height :. width) (Region range gen)
  = mvec `seq` height `seq` width `seq`
+   case range of 
+	RangeAll	
+	 -> fillRect2 mvec sh gen 
+		(Rect 	(Z :. 0          :. 0) 
+			(Z :. height - 1 :. width - 1))
+
+	RangeRects _ [rect]
+	 -> fillRect2 mvec sh gen rect 
+
+	-- Specialise for the common case of 4 rectangles so we get fusion.
+	-- The following case with mapM_ doesn't fuse because mapM_ isn't completely unrolled.
+	RangeRects _ [r1, r2, r3, r4]
+	 -> do	fillRect2 mvec sh gen r1
+		fillRect2 mvec sh gen r2
+		fillRect2 mvec sh gen r3
+		fillRect2 mvec sh gen r4
+
+	RangeRects _ rects
+	 -> mapM_ (fillRect2 mvec sh gen) rects
+
+		
+-- | Fill a rectangle in a vector.
+fillRect2 
+	:: Elt a
+	=> VM.IOVector a	-- ^ Vector to write elements into.
+	-> DIM2 		-- ^ Extent of entire array.
+	-> Generator DIM2 a	-- ^ Generator for array elements.
+	-> Rect DIM2		-- ^ Rectangle to fill.
+	-> IO ()
+
+{-# INLINE fillRect2 #-}	
+fillRect2 mvec sh@(_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1)) 
+ = mvec `seq` width `seq` y0 `seq` x0 `seq` y1 `seq` x1 `seq` 
    case gen of
 	GenManifest{}
 	 -> error "fillRegion2P: GenManifest, copy elements."
 	
+	-- If the region we're filling is just one pixel wide then just fill it
+	--   in the current thread instead of starting up the whole gang.
 	GenDelayed getElem
-	 -> fillVectorBlockwiseP mvec (getElem . fromIndex sh) width
+	 |  x0 == x1
+	 -> fillVectorBlock mvec
+		(getElem . fromIndex sh)
+		width x0 y0 x1 y1
+
+	 |  y0 == y1
+	 -> fillVectorBlock mvec
+		(getElem . fromIndex sh)
+		width x0 y0 x1 y1
 	
-	-- TODO: we're faking the range by only filling the inner elements.
+	 | otherwise
+	 -> fillVectorBlockP mvec
+		(getElem . fromIndex sh) 
+		width x0 y0 x1 y1
+	
+	-- Cursor based arrays.
 	GenCursor makeCursor shiftCursor loadElem
-	 -> do	
-		-- fill the inner partition
-		let x0	= 1
-		let x1	= width - 2
-		let y0	= 1
-		let y1	= height - 2
-
-		-- VERY FUCKING IMPORTANT: if we're not going to initialize the whole array
-		-- then we must zero it, otherwise the result will be undefined when normalised.
-		VM.set mvec zero
-
-		fillCursoredBlock2P mvec
-			makeCursor shiftCursor loadElem
-			width x0 y0 x1 y1
-
-
-fillRegion2P _ _ _
-	= error "fillRegion2P: not finished for ranges"
-
+         -> fillCursoredBlock2P mvec
+		makeCursor shiftCursor loadElem
+		width x0 y0 x1 y1
