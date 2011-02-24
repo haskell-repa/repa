@@ -44,12 +44,13 @@ run iterations fileIn fileOut
 
 
 loop :: Int -> Image -> (Image, Image)
-loop 0 !img = (img, img)
-loop n !img 
- = img `deepSeqArray` 
-   do	let gX	= gradientX_only img
-	let gY	= gradientY_only img
-		
+loop n 
+ = withManifest $ \img ->
+   if n == 0
+    then (img, img)
+    else do 
+	let gX	= gradientX_only img
+	let gY	= gradientY_only img	
 	if (n == 1) 
 		then gX `deepSeqArray` gY `deepSeqArray` (gX, gY)
 		else gX `deepSeqArray` gY `deepSeqArray` loop (n - 1) img

@@ -10,9 +10,9 @@ import Solver
 
 gradientY_only :: Image -> Image
 {-# NOINLINE gradientY_only #-}
-gradientY_only 
- 	= withManifest $ \img -> 
-   	  force2 $ forStencil2 BoundClamp img
+gradientY_only img@(Array _ [Region RangeAll (GenManifest _)])
+ 	= img `deepSeqArray` 
+          force2 $ forStencil2 BoundClamp img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 

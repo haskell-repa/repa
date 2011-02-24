@@ -49,7 +49,7 @@ toList arr
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 
-{-# NOINLINE force #-}	
+{-# INLINE force #-}	
 force arr
  = unsafePerformIO
  $ do	(sh, vec)	<- forceIO arr
@@ -73,7 +73,7 @@ force arr
 -- | Force an array, so that it becomes `Manifest`.
 --   This forcing function is specialised for DIM2 arrays, and does blockwise filling.
 force2	:: Elt a => Array DIM2 a -> Array DIM2 a
-{-# NOINLINE force2 #-}	
+{-# INLINE force2 #-}	
 force2 arr
  = unsafePerformIO 
  $ do	(sh, vec)	<- forceIO2 arr
@@ -153,7 +153,7 @@ fillRegion2P mvec sh@(_ :. height :. width) (Region RangeAll gen)
 		let y0	= 1
 		let y1	= height - 2
 
-		-- FUCKING IMPORTANT: if we're not going to initialize the whole array
+		-- VERY FUCKING IMPORTANT: if we're not going to initialize the whole array
 		-- then we must zero it, otherwise the result will be undefined when normalised.
 		VM.set mvec zero
 
@@ -161,10 +161,6 @@ fillRegion2P mvec sh@(_ :. height :. width) (Region RangeAll gen)
 			makeCursor shiftCursor loadElem
 			width x0 y0 x1 y1
 
-{-		fillVectorBlock mvec
-			(loadElem . makeCursor . fromIndex sh) 
-			width x0 y0 x1 y1
--}
 
 fillRegion2P _ _ _
 	= error "fillRegion2P: not finished for ranges"
