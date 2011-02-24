@@ -14,12 +14,12 @@ solveLaplace
 	-> Array DIM2 Double
 
 {-# NOINLINE solveLaplace #-}
-solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} arrInit@Manifest{}
+solveLaplace steps arrBoundMask arrBoundValue arrInit
  = go steps arrInit
- where	go !i !arr@Manifest{}
+ where	go !i !arr
 	   | i == 0	= arr
 	   | otherwise	
-	   = let vec'	= forceBlockwise
+	   = let vec'	= force2
 			$ applyBoundary arrBoundMask arrBoundValue
 			$ relaxLaplace arr
 	
@@ -37,7 +37,7 @@ relaxLaplace
 	-> Array DIM2 Double
 
 {-# INLINE relaxLaplace #-}
-relaxLaplace !arr@Manifest{}
+relaxLaplace !arr
  = unsafeTraverse arr id elemFn
  where
 	_ :. height :. width	

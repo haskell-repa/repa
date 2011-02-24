@@ -26,7 +26,9 @@ multiplyMM
 multiplyMM arr1 arr2
  = multiplyMM' (force arr1) (force arr2)
 
- where multiplyMM' arr@Manifest{} brr@Manifest{}
+ where multiplyMM'
+	arr@(Array _ [Region RangeAll GenManifest{} ])
+	brr@(Array _ [Region RangeAll GenManifest{} ])
 	= A.force $ A.sum (A.zipWith (*) arrRepl brrRepl)
 	where
 	 trr		= force $ transpose2D brr

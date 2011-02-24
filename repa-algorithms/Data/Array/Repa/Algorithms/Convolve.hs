@@ -26,8 +26,8 @@ convolve
 
 {-# INLINE convolve #-}
 convolve makeOut
- 	kernel@(Manifest       (_ :. krnHeight :. krnWidth) krnVec)
-  	 image@(Manifest imgSh@(_ :. imgHeight :. imgWidth) imgVec)
+ 	kernel@(Array       (_ :. krnHeight :. krnWidth) [Region RangeAll (GenManifest krnVec)])
+  	 image@(Array imgSh@(_ :. imgHeight :. imgWidth) [Region RangeAll (GenManifest imgVec)])
 
  = kernel `deepSeqArray` image `deepSeqArray` 
    force $ unsafeTraverse image id update
@@ -116,8 +116,8 @@ convolveOut
 
 {-# INLINE convolveOut #-}
 convolveOut getOut
- 	kernel@(Manifest krnSh@(_ :. krnHeight :. krnWidth) _)
-  	 image@(Manifest imgSh@(_ :. imgHeight :. imgWidth) _)
+ 	kernel@(Array krnSh@(_ :. krnHeight :. krnWidth) _)
+  	 image@(Array imgSh@(_ :. imgHeight :. imgWidth) _)
 
  = kernel `deepSeqArray` image `deepSeqArray` 
    force $ unsafeTraverse image id stencil

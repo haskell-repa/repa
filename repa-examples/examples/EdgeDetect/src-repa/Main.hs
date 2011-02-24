@@ -6,7 +6,7 @@ import Data.List
 import Data.Word
 import Control.Monad
 import System.Environment
-import Data.Array.Repa 			as Repa
+import Data.Array.Repa 			as R
 import Data.Array.Repa.Stencil
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
@@ -55,7 +55,7 @@ canny 	:: Array DIM3 Word8
 	-> Array DIM2 Double
 
 {-# NOINLINE canny #-}
-canny input@Manifest{}
+canny input
  = output
  where	blured		= blur $ toGreyScale input
 	(dX, dY)	= gradientXY blured
@@ -67,7 +67,7 @@ canny input@Manifest{}
 --   TODO: can't force this blockwise, get indexing problems.
 {-# INLINE nonMaximumSupression #-}
 nonMaximumSupression :: Image -> Image -> Image
-nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
+nonMaximumSupression dMag dOrient
  = [dMag, dOrient] `deepSeqArrays` force
  $ traverse2 dMag dOrient const compare
  where
@@ -102,14 +102,14 @@ nonMaximumSupression dMag@Manifest{} dOrient@Manifest{}
 
 {-# INLINE gradientXY #-}
 gradientXY :: Image -> (Image, Image)
-gradientXY img@Manifest{}
+gradientXY img
  	= img `deepSeqArray` 
- 	( forceBlockwise $ forStencil2 BoundClamp img
+ 	( force2 $ forStencil2 BoundClamp img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
 
-	, forceBlockwise $ forStencil2 BoundClamp img
+	, force2 $ forStencil2 BoundClamp img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
@@ -118,10 +118,10 @@ gradientXY img@Manifest{}
 
 {-# INLINE gradientIntOrient #-}
 gradientIntOrient :: Image -> Image -> (Image, Image)
-gradientIntOrient dX@Manifest{} dY@Manifest{}
+gradientIntOrient dX dY
 	= [dX, dY] `deepSeqArrays`
-	( forceBlockwise $ Repa.zipWith magnitude   dX dY
-	, forceBlockwise $ Repa.zipWith orientation dX dY)
+	( force2 $ R.zipWith magnitude   dX dY
+	, force2 $ R.zipWith orientation dX dY)
 
 
 -- | Determine the squared magnitude of a vector.
@@ -171,9 +171,9 @@ orientation x y
 -- | Perform a Gaussian blur to the image.
 blur 	:: Array DIM2 Double -> Array DIM2 Double
 {-# NOINLINE blur #-}
-blur arr@Manifest{}	
-	= arr `deepSeqArray` Repa.forceBlockwise
-	$ Repa.map (/ 159) 
+blur arr	
+	= arr `deepSeqArray` force2
+	$ R.map (/ 159) 
 	$ forStencil2  BoundClamp arr
 	  [stencil2|	2  4  5  4  2
 			4  9 12  9  4
@@ -187,7 +187,7 @@ blur arr@Manifest{}
 --         Doesn't handle reading DIM3 arrays.
 toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
 {-# NOINLINE toGreyScale #-}
-toGreyScale arr@Manifest{}
+toGreyScale arr
   = arr `deepSeqArray` force
   $ traverse arr
 	(\(sh :. _) -> sh)

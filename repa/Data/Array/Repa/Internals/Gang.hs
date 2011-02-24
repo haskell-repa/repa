@@ -34,7 +34,6 @@ theGang :: Gang
 theGang = unsafePerformIO $ forkGang numCapabilities
 
 
-
 -- Requests ---------------------------------------------------------------------------------------
 -- | The 'Req' type encapsulates work requests for individual members of a gang. 
 data Req 
@@ -166,7 +165,7 @@ gangIO	:: Gang
 	-> (Int -> IO ())
 	-> IO ()
 
-{-# INLINE [2] gangIO #-}
+{-# NOINLINE gangIO #-}
 gangIO (Gang n mvs busy) p 
  = do	traceGang   "gangIO: issuing work requests (SEQ_IF_GANG_BUSY)"
 	b <- swapMVar busy True
@@ -174,8 +173,9 @@ gangIO (Gang n mvs busy) p
 	traceGang $ "gangIO: gang is currently " ++ (if b then "busy" else "idle")
 	if b
 	 then do
-		hPutStr stderr $ "Data.Array.Repa: warning - evaluating nested parallel computation sequentially"
-		mapM_ p [0 .. n-1]
+		error "Data.Array.Repa: not evaluating parallel computation sequentially"
+--		hPutStr stderr $ "Data.Array.Repa: warning - evaluating nested parallel computation sequentially"
+--		mapM_ p [0 .. n-1]
 
 	 else do
 		parIO n mvs p

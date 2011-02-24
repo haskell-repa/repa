@@ -24,6 +24,9 @@ module Data.Array.Repa
 	, singleton,    toScalar
 	, extent,       delay
 
+	--
+	, withManifest, withManifest'
+
 	-- * Indexing
 	, (!),  index
 	, (!?), safeIndex
@@ -137,4 +140,21 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	{-# INLINE fromInteger #-}
 	fromInteger n	 = fromFunction failShape (\_ -> fromInteger n) 
 	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
+
+
+withManifest :: (Array sh a -> b) -> Array sh a -> b
+{-# INLINE withManifest #-}
+withManifest f arr
+ = case arr of
+	Array sh [Region RangeAll (GenManifest vec)]
+	 -> vec `seq` f (Array sh [Region RangeAll (GenManifest vec)])
+
+withManifest' :: Array sh a -> (Array sh a -> b) -> b
+{-# INLINE withManifest' #-}
+withManifest' arr f
+ = case arr of
+	Array sh [Region RangeAll (GenManifest vec)]
+	 -> vec `seq` f (Array sh [Region RangeAll (GenManifest vec)])
+
+	
 

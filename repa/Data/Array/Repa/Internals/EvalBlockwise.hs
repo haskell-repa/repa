@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Data.Array.Repa.Internals.EvalBlockwise
-	( newVectorBlockwiseP
-	, fillVectorBlockwiseP
+	( fillVectorBlockwiseP
 	, fillVectorBlock
 	, fillVectorBlockP)
 where
@@ -15,21 +14,6 @@ import Prelude					as P
 
 
 -- Blockwise filling ------------------------------------------------------------------------------
-newVectorBlockwiseP
-	:: Elt a
-	=> (Int -> a)
-	-> Int		-- size
-	-> Int		-- width
-	-> Vector a
-	
-{-# INLINE newVectorBlockwiseP #-}
-newVectorBlockwiseP !getElemNew !size !width
- = unsafePerformIO
- $ do	mvec	<- VM.unsafeNew size
-	fillVectorBlockwiseP mvec getElemNew width
-	V.unsafeFreeze mvec
-	
-				
 fillVectorBlockwiseP 
 	:: Elt a
 	=> IOVector a		-- ^ vector to write elements into
@@ -58,10 +42,10 @@ fillVectorBlockwiseP !vec !getElemFVBP !imageWidth
 	{-# INLINE fillBlock #-}
 	fillBlock :: Int -> IO ()
 	fillBlock !ix 
-	 = let	!x0	= colIx ix
-		!x1	= colIx (ix + 1)
+	 = let	!x0	= colIx ix        
+		!x1	= colIx (ix + 1) - 1
 		!y0	= 0
-		!y1	= imageHeight
+		!y1	= imageHeight    - 1
 	   in	fillVectorBlock vec getElemFVBP imageWidth x0 y0 x1 y1
 
 
@@ -76,8 +60,8 @@ fillVectorBlockP
 	-> Int			-- ^ width of whole image
 	-> Int			-- ^ x0 lower left corner of block to fill
 	-> Int			-- ^ y0 (low x and y value)
-	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1 (high x and y value)
+	-> Int			-- ^ x1 upper right corner of block
+	-> Int			-- ^ y1 (high x and y value, last index to fill)
 	-> IO ()
 
 {-# INLINE fillVectorBlockP #-}
@@ -103,9 +87,9 @@ fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
 	fillBlock :: Int -> IO ()
 	fillBlock !ix
 	 = let	!x0'	= colIx ix
-		!x1'	= colIx (ix + 1)
+		!x1'	= colIx (ix + 1) - 1
 		!y0'	= y0
-		!y1'	= y1
+		!y1'	= y1             - 1
 	   in	fillVectorBlock vec getElem imageWidth x0' y0' x1' y1'
 
 
@@ -118,13 +102,14 @@ fillVectorBlock
 	-> Int			-- ^ width of whole image
 	-> Int			-- ^ x0 lower left corner of block to fill 
 	-> Int			-- ^ y0 (low x and y value)
-	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1 (high x and y value)
+	-> Int			-- ^ x1 upper right corner of block
+	-> Int			-- ^ y1 (high x and y value, last index to fill)
 	-> IO ()
 
 {-# INLINE fillVectorBlock #-}
 fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
- = fillBlock ixStart (ixStart + (x1 - x0))
+ = do	-- putStrLn $ "fillVectorBlock: " P.++ show (imageWidth, x0, y0, x1, y1)
+	fillBlock ixStart (ixStart + (x1 - x0))
  where	
 	-- offset from end of one line to the start of the next.
 	!ixStart	= x0 + y0 * imageWidth

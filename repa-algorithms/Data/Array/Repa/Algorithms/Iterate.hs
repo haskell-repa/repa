@@ -17,7 +17,7 @@ iterateBlockwise
 	-> Array DIM2 a
 	
 {-# INLINE iterateBlockwise #-}
-iterateBlockwise steps f arrInit@(Manifest shInit vecInit)
+iterateBlockwise steps f arrInit@(Array shInit [Region RangeAll (GenManifest vecInit)])
  = arrInit `deepSeqArray`
   goSolve steps shInit vecInit
 
@@ -26,11 +26,11 @@ iterateBlockwise steps f arrInit@(Manifest shInit vecInit)
 	--	 the arrays at the start of solveLaplace makes the unboxings happen
 	--	 at that point in the corresponding core code.
 	goSolve !i !shCurrent !vecCurrent
-	 = let	!arrCurrent	= Manifest shCurrent vecCurrent
+	 = let	!arrCurrent	= fromVector shCurrent vecCurrent
 	   in   if i == 0 
 		 then arrCurrent
-		 else let Manifest shNew vecNew = forceBlockwise $ f arrCurrent
-		      in  goSolve (i - 1) shNew vecNew
+		 else let arrNew = force2 $ f arrCurrent
+		      in  goSolve (i - 1) (extent arrNew) (toVector arrNew)
 
 
 {-# INLINE iterateBlockwise' #-}

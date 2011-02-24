@@ -9,13 +9,14 @@ import GHC.Types
 import GHC.Word
 import Data.Vector.Unboxed
 	
-class Unbox a	=> Elt a where
+class (Show a, Unbox a)	=> Elt a where
 
 	-- | We use this to prevent bindings from being floated inappropriatey.
 	--   Doing a `seq` sometimes isn't enough, because the GHC simpplifier can 
 	--   erase these, and/or still move around the bindings.
 	touch :: a -> IO ()
 
+	zero  :: a
 
 -- Note that the touch# function is special because we can pass it boxed or unboxed
 -- values. The argument type has kind ?, not just * or #.
@@ -26,12 +27,17 @@ instance Elt Bool where
   = IO (\state -> case touch# b state of
 			state' -> (# state', () #))
 
+ {-# INLINE zero #-}
+ zero = False
 
 instance Elt Float where
  {-# INLINE touch #-}
  touch (F# f) 
   = IO (\state -> case touch# f state of
 			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
 
 
 instance Elt Double where
@@ -40,6 +46,9 @@ instance Elt Double where
   = IO (\state -> case touch# d state of
 			state' -> (# state', () #))
 
+ {-# INLINE zero #-}
+ zero = 0
+
 
 instance Elt Int where
  {-# INLINE touch #-}
@@ -47,10 +56,16 @@ instance Elt Int where
   = IO (\state -> case touch# i state of
 			state' -> (# state', () #))
 
+ {-# INLINE zero #-}
+ zero = 0
+
 
 instance Elt Word8 where
  {-# INLINE touch #-}
  touch (W8# w) 
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
 	

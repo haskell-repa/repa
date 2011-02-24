@@ -30,7 +30,7 @@ run iterations fileIn fileOut
 	
 	let greyImage	= toGreyScale inputImage
 	greyImage `deepSeqArray` return ()
-	
+		
 	(result, tElapsed)
 		<- time $ let 	(gX, gY)	= loop iterations greyImage
 			  in	gX `deepSeqArray` gY `deepSeqArray` return (gX, gY)
@@ -38,17 +38,18 @@ run iterations fileIn fileOut
 	putStr $ prettyTime tElapsed
 	
 	let (gX, gY)	= result
-	let outImage	= force $ Repa.zipWith magnitude gX gY	
+	let outImage	= force2 $ Repa.zipWith magnitude gX gY	
+	outImage `seq` return ()
 	writeMatrixToGreyscaleBMP fileOut outImage
 
 
 loop :: Int -> Image -> (Image, Image)
-
 loop 0 !img = (img, img)
-loop n !img
- = do	let gX	= gradientX_only img
+loop n !img 
+ = img `deepSeqArray` 
+   do	let gX	= gradientX_only img
 	let gY	= gradientY_only img
-
+		
 	if (n == 1) 
 		then gX `deepSeqArray` gY `deepSeqArray` (gX, gY)
 		else gX `deepSeqArray` gY `deepSeqArray` loop (n - 1) img
@@ -64,9 +65,9 @@ magnitude x y
 -- | RGB to greyscale conversion.
 toGreyScale :: Array DIM3 Word8 -> Image
 {-# NOINLINE toGreyScale #-}
-toGreyScale arr
-  = arr `deepSeqArray` force
-  $ traverse arr
+toGreyScale 
+  = withManifest $ \arr ->
+    arr `seq` force2 $ traverse arr
 	(\(sh :. _) -> sh)
 	(\get ix    -> rgbToLuminance 
 				(get (ix :. 0))

@@ -145,7 +145,8 @@ fft !sign !sh !lenVec !vec
 			1	-> (vec `unsafeIndex` (sh' :. offset)) - (vec `unsafeIndex` (sh' :. (offset + stride)))
 
 		{-# INLINE combine #-}
-		combine !len' evens@Manifest{} odds@Manifest{}
+		combine !len' 	evens@(Array _ [Region RangeAll GenManifest{}]) 
+				 odds@(Array _ [Region RangeAll GenManifest{}])
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
    	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
    	   	   in	force 	$ (evens +^ odds') +:+ (evens -^ odds')

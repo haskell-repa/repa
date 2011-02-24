@@ -143,6 +143,7 @@ deepSeqRange range x
 -- | Ensure a Generator's structure is fully evaluated.
 infixr 0 `deepSeqGen`
 deepSeqGen :: Shape sh => Generator sh a -> b -> b
+{-# INLINE deepSeqGen #-}
 deepSeqGen gen x
  = case gen of
 	GenManifest vec		-> vec `seq` x

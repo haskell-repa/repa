@@ -49,50 +49,50 @@ toList arr
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 
-{-# INLINE force #-}	
+{-# NOINLINE force #-}	
 force arr
- = Array sh' [Region RangeAll (GenManifest vec')]
- where	(sh', vec')
-	 = case arr of
-
+ = unsafePerformIO
+ $ do	(sh, vec)	<- forceIO arr
+	return $ sh `seq` vec `seq` 
+		 Array sh [Region RangeAll (GenManifest vec)]
+	
+ where	forceIO arr'
+	 = case arr' of
 		-- Don't force an already forced array.
 		Array sh [Region RangeAll (GenManifest vec)]
-		 -> sh `S.deepSeq` vec `seq` (sh, vec)
+		 -> 	return (sh, vec)
 
 		-- Create the vector to hold the new array and load in the regions.
 		Array sh regions
-		 -> let	vec	= unsafePerformIO
-				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					mapM_ (fillRegionP mvec sh) regions
-					V.unsafeFreeze mvec
-					
-		    in	sh `S.deepSeq` vec `seq` (sh, vec)
+		 -> do	mvec	<- VM.unsafeNew (S.size sh)
+			mapM_ (fillRegionP mvec sh) regions
+			vec	<- V.unsafeFreeze mvec
+			return (sh, vec)
 
 
 -- | Force an array, so that it becomes `Manifest`.
 --   This forcing function is specialised for DIM2 arrays, and does blockwise filling.
-force2	:: Elt a
-	=> Array DIM2 a -> Array DIM2 a
-
-{-# INLINE force2 #-}	
+force2	:: Elt a => Array DIM2 a -> Array DIM2 a
+{-# NOINLINE force2 #-}	
 force2 arr
- = Array sh' [Region RangeAll (GenManifest vec')]
- where	(sh', vec')
-	 = case arr of
+ = unsafePerformIO 
+ $ do	(sh, vec)	<- forceIO2 arr
+	return $ sh `seq` vec `seq` 
+		 Array sh [Region RangeAll (GenManifest vec)]
 
+ where	forceIO2 arr'
+ 	 = case arr' of
 		-- Don't force an already forced array.
 		Array sh [Region RangeAll (GenManifest vec)]
-		 -> sh `S.deepSeq` vec `seq` (sh, vec)
-
-		-- Create the vector to hold the new array and load in the regions.
+	 	 -> 	return (sh, vec)
+	
+		-- Create a vector to hold the new array and load in the regions.
 		Array sh regions
-		 -> let	vec	= unsafePerformIO
-				$ do	mvec	<- VM.unsafeNew (S.size sh)
-					mapM_ (fillRegion2P mvec sh) regions
-					V.unsafeFreeze mvec
-					
-		    in	sh `S.deepSeq` vec `seq` (sh, vec)
-
+	 	 -> do	mvec	<- VM.new (S.size sh)
+			mapM_ (fillRegion2P mvec sh) regions
+			vec	<- V.unsafeFreeze mvec
+			return (sh, vec)
+			
 
 -- FillRegionP ------------------------------------------------------------------------------------
 -- | Fill an array region into this vector.
@@ -110,10 +110,10 @@ fillRegionP mvec sh (Region RangeAll gen)
 	 -> error "fillRegionP: GenManifest, copy elements."
 	
 	GenDelayed getElem
-	 -> fillChunkedP mvec (getElem . fromIndex sh)
+	 -> fillChunkedS mvec (getElem . fromIndex sh)
 	
 	GenCursor makeCursor _ loadElem
-	 -> fillChunkedP mvec (loadElem . makeCursor . fromIndex sh)
+	 -> fillChunkedS mvec (loadElem . makeCursor . fromIndex sh)
 
 fillRegionP _ _ _
 	= error "fillRegionP: not finished for ranges"
@@ -153,9 +153,18 @@ fillRegion2P mvec sh@(_ :. height :. width) (Region RangeAll gen)
 		let y0	= 1
 		let y1	= height - 2
 
+		-- FUCKING IMPORTANT: if we're not going to initialize the whole array
+		-- then we must zero it, otherwise the result will be undefined when normalised.
+		VM.set mvec zero
+
 		fillCursoredBlock2P mvec
 			makeCursor shiftCursor loadElem
 			width x0 y0 x1 y1
+
+{-		fillVectorBlock mvec
+			(loadElem . makeCursor . fromIndex sh) 
+			width x0 y0 x1 y1
+-}
 
 fillRegion2P _ _ _
 	= error "fillRegion2P: not finished for ranges"

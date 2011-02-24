@@ -18,7 +18,7 @@ solveLaplace
 	-> Array DIM2 Double
 
 {-# NOINLINE solveLaplace #-}
-solveLaplace steps arrBoundMask@Manifest{} arrBoundValue@Manifest{} arrInit@Manifest{}
+solveLaplace steps arrBoundMask arrBoundValue arrInit
  	= arrBoundMask `deepSeqArray` arrBoundValue `deepSeqArray` arrInit `deepSeqArray` 
 	  iterateBlockwise' steps arrInit
 	$ A.zipWith (+) arrBoundValue . A.zipWith (*) arrBoundMask

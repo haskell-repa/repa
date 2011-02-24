@@ -2,36 +2,21 @@
 --   in parallel.
 {-# LANGUAGE BangPatterns #-}
 module Data.Array.Repa.Internals.EvalChunked
-	( newVectorChunkedP
-	, fillChunkedS
+	( fillChunkedS
 	, fillChunkedP)
 where
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
 import Data.Vector.Unboxed			as V
 import Data.Vector.Unboxed.Mutable		as VM
 import System.IO.Unsafe
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
-
-
--- | Create a new vector in parallel 
-newVectorChunkedP
-	:: Unbox a
-	=> (Int -> a)	-- ^ Fn to get the value at a given index.
-	-> Int		-- ^ Length of vector.
-	-> Vector a
-	
-{-# INLINE newVectorChunkedP #-}
-newVectorChunkedP !getElemNew !size
- = unsafePerformIO
- $ do	mvec	<- VM.unsafeNew size
-	fillChunkedP mvec getElemNew
-	V.unsafeFreeze mvec
-
+import Control.Monad
 
 -- | Fill a vector sequentially.
 fillChunkedS
-	:: Unbox a
+	:: Elt a
  	=> IOVector a	-- ^ Vector to fill.
 	-> (Int -> a)	-- ^ Fn to get the value at a given index.
 	-> IO ()
@@ -81,5 +66,4 @@ fillChunkedP !vec !getElem
 	 | otherwise
 	 = do	VM.unsafeWrite vec ix (getElem ix)
 		fill (ix + 1) end
-
 
