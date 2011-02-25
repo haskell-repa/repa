@@ -30,44 +30,165 @@ main
  = do	args	<- getArgs
 	case args of
 	 [fileIn, fileOut]	-> run fileIn fileOut
-	 _			-> usage
+	 _			-> putStr "repa-edgedetect <fileIn.bmp> <fileOut.bmp>"
 
 
 run fileIn fileOut
- = do	inputImage 	<- liftM (force . either (error . show) id) 
+ = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
 	
-	inputImage `deepSeqArray` return ()
-	(arrResult, tElapsed)
-		<- time $ let result	= canny inputImage
-			  in  result `deepSeqArray` return result
+	arrInput `deepSeqArray` return ()
+	arrGrey		<- timeStage "toGreyScale" $ \_ -> toGreyScale    arrInput
+	arrBlured	<- timeStage "blur" 	   $ \_ -> blur           arrGrey
+	arrDX		<- timeStage "diffX"	   $ \_ -> gradientX      arrBlured
+	arrDY		<- timeStage "diffY"	   $ \_ -> gradientY      arrBlured
+	arrMag		<- timeStage "magnitude"   $ \_ -> gradientMag    arrDX arrDY
+	arrOrient	<- timeStage "orientation" $ \_ -> gradientOrient arrDX arrDY
+	arrSupress	<- timeStage "suppress"    $ \_ -> suppress       arrMag arrOrient
+	writeMatrixToGreyscaleBMP fileOut arrSupress
+
+
+timeStage
+	:: (Shape sh, Elt a)
+	=> String 
+	-> (() -> Array sh a)
+	-> IO (Array sh a)
+
+{-# NOINLINE timeStage #-}
+timeStage name fn
+ = do	(arrResult, t)
+		<- time $ let arrResult' = fn ()
+			  in  arrResult' `deepSeqArray` return arrResult'
+
+	putStr 	$  name ++ "\n"
+		++ unlines [ "  " ++ l | l <- lines $ prettyTime t ]
+
+	return arrResult
 	
-	putStr $ prettyTime tElapsed
-	writeMatrixToGreyscaleBMP fileOut arrResult
 
-usage
- = putStr $ unlines
-	[ "repa-edgedetect <fileIn.bmp> <fileOut.bmp>" ]
+-------------------------------------------------------------------------------
+
+-- | RGB to greyscale conversion.
+{-# NOINLINE toGreyScale #-}
+toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
+toGreyScale 
+	arr@(Array _ [Region RangeAll (GenManifest _)])
+  = arr `deepSeqArray` force
+  $ traverse arr
+	(\(sh :. _) -> sh)
+	(\get ix    -> rgbToLuminance 
+				(get (ix :. 0))
+				(get (ix :. 1))
+				(get (ix :. 2)))
+
+ where	{-# INLINE rgbToLuminance #-}
+	rgbToLuminance :: Word8 -> Word8 -> Word8 -> Double
+	rgbToLuminance r g b 
+		= fromIntegral r * 0.3
+		+ fromIntegral g * 0.59
+		+ fromIntegral b * 0.11
 
 
--- Edge detection -------------------------------------------------------------
-canny 	:: Array DIM3 Word8 
-	-> Array DIM2 Double
+-- | Perform a Gaussian blur to the image.
+{-# NOINLINE blur #-}
+blur 	:: Array DIM2 Double -> Array DIM2 Double
+blur 	arr@(Array _ [Region RangeAll (GenManifest _)])	
+	= arr `deepSeqArray` force2
+	$ R.map (/ 159) 
+	$ forStencil2  BoundClamp arr
+	  [stencil2|	2  4  5  4  2
+			4  9 12  9  4
+			5 12 15 12  5
+			4  9 12  9  4
+			2  4  5  4  2 |]
 
-{-# NOINLINE canny #-}
-canny input
- = output
- where	blured		= blur $ toGreyScale input
-	(dX, dY)	= gradientXY blured
-	(int, orient)	= gradientIntOrient dX dY
-	output		= nonMaximumSupression int orient
+
+-- | Compute gradient in the X direction.
+{-# NOINLINE gradientX #-}
+gradientX :: Image -> Image
+gradientX img@(Array _ [Region RangeAll (GenManifest _)])
+ 	= img `deepSeqArray` 
+    	  force2 $ forStencil2 BoundClamp img
+	  [stencil2|	-1  0  1
+			-2  0  2
+			-1  0  1 |]
 
 
--- | Maximum suppression	
---   TODO: can't force this blockwise, get indexing problems.
-{-# INLINE nonMaximumSupression #-}
-nonMaximumSupression :: Image -> Image -> Image
-nonMaximumSupression dMag dOrient
+-- | Compute gradient in the Y direction.
+{-# NOINLINE gradientY #-}
+gradientY :: Image -> Image
+gradientY img@(Array _ [Region RangeAll (GenManifest _)])
+	= img `deepSeqArray` 
+	  force2 $ forStencil2 BoundClamp img
+	  [stencil2|	 1  2  1
+			 0  0  0
+			-1 -2 -1 |] 
+
+
+-- | Compute magnitude of the vector gradient.
+{-# NOINLINE gradientMag #-}
+gradientMag :: Image -> Image -> Image
+gradientMag
+	dX@(Array _ [Region RangeAll (GenManifest _)])
+	dY@(Array _ [Region RangeAll (GenManifest _)])
+ = [dX, dY] `deepSeqArrays`
+   force2 $ R.zipWith magnitude  dX dY
+
+ where	{-# INLINE magnitude #-}
+	magnitude :: Double -> Double -> Double
+	magnitude x y	= x * x + y * y
+
+
+-- | Classify the orientation of the vector gradient.
+{-# NOINLINE gradientOrient #-}
+gradientOrient :: Image -> Image -> Image
+gradientOrient
+ 	dX@(Array _ [Region RangeAll (GenManifest _)])
+	dY@(Array _ [Region RangeAll (GenManifest _)])
+ = [dX, dY] `deepSeqArrays`
+   force2 $ R.zipWith orientation dX dY
+
+ where	{-# INLINE orientation #-}
+	orientation :: Double -> Double -> Double
+	orientation x y
+ 	 | x >= -40, x < 40
+ 	 , y >= -40, y < 40	= orientUndef
+
+	 | otherwise
+	 = let	-- determine the angle of the vector and rotate it around a bit
+		-- to make the segments easier to classify.
+		!d	= atan2 y x 
+		!dRot	= (d - (pi/8)) * (4/pi)
+	
+		-- normalise angle to beween 0..8
+		!dNorm	= if dRot < 0 then dRot + 8 else dRot
+
+		-- doing tests seems to be faster than using floor.
+	   in	if dNorm >= 4
+		 then if dNorm >= 6
+			then if dNorm >= 7
+				then orientHoriz   -- 7
+				else orientNegDiag -- 6
+
+			else if dNorm >= 5
+				then orientVert    -- 5
+				else orientPosDiag -- 4
+
+		 else if dNorm >= 2
+			then if dNorm >= 3
+				then orientHoriz   -- 3
+				else orientNegDiag -- 2
+
+			else if dNorm >= 1
+				then orientVert    -- 1
+				else orientPosDiag -- 0
+
+
+-- | Suppress pixels which are not local maxima.
+{-# NOINLINE suppress #-}
+suppress :: Image -> Image -> Image
+suppress   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
+	dOrient@(Array _ [Region RangeAll (GenManifest _)])
  = [dMag, dOrient] `deepSeqArrays` force
  $ traverse2 dMag dOrient const compare
  where
@@ -98,111 +219,3 @@ nonMaximumSupression dMag dOrient
             | intensity < intensity1 = edge False
             | intensity < intensity2 = edge False
             | otherwise              = edge True
-
-
-{-# INLINE gradientXY #-}
-gradientXY :: Image -> (Image, Image)
-gradientXY img
- 	= img `deepSeqArray` 
- 	( force2 $ forStencil2 BoundClamp img
-	  [stencil2|	-1  0  1
-			-2  0  2
-			-1  0  1 |]
-
-	, force2 $ forStencil2 BoundClamp img
-	  [stencil2|	 1  2  1
-			 0  0  0
-			-1 -2 -1 |] 
-	)
-
-
-{-# INLINE gradientIntOrient #-}
-gradientIntOrient :: Image -> Image -> (Image, Image)
-gradientIntOrient dX dY
-	= [dX, dY] `deepSeqArrays`
-	( force2 $ R.zipWith magnitude   dX dY
-	, force2 $ R.zipWith orientation dX dY)
-
-
--- | Determine the squared magnitude of a vector.
-magnitude :: Double -> Double -> Double
-{-# INLINE magnitude #-}
-magnitude x y
-	= x * x + y * y
-
-
--- | Classify the orientation of a vector.
-orientation :: Double -> Double -> Double
-{-# INLINE orientation #-}
-orientation x y
- | x >= -40, x < 40
- , y >= -40, y < 40	= orientUndef
-
- | otherwise
- = let	-- determine the angle of the vector and rotate it around a bit
-	-- to make the segments easier to classify.
-	!d	= atan2 y x 
-	!dRot	= (d - (pi/8)) * (4/pi)
-	
-	-- normalise angle to beween 0..8
-	!dNorm	= if dRot < 0 then dRot + 8 else dRot
-
-	-- doing tests seems to be faster than using floor.
-   in	if dNorm >= 4
-	 then if dNorm >= 6
-		then if dNorm >= 7
-			then orientHoriz   -- 7
-			else orientNegDiag -- 6
-
-		else if dNorm >= 5
-			then orientVert    -- 5
-			else orientPosDiag -- 4
-
-	 else if dNorm >= 2
-		then if dNorm >= 3
-			then orientHoriz   -- 3
-			else orientNegDiag -- 2
-
-		else if dNorm >= 1
-			then orientVert    -- 1
-			else orientPosDiag -- 0
-
-
--- | Perform a Gaussian blur to the image.
-blur 	:: Array DIM2 Double -> Array DIM2 Double
-{-# NOINLINE blur #-}
-blur arr	
-	= arr `deepSeqArray` force2
-	$ R.map (/ 159) 
-	$ forStencil2  BoundClamp arr
-	  [stencil2|	2  4  5  4  2
-			4  9 12  9  4
-			5 12 15 12  5
-			4  9 12  9  4
-			2  4  5  4  2 |]
-
-
--- | RGB to greyscale conversion.
---   TODO: trying to blockwise force this breaks.
---         Doesn't handle reading DIM3 arrays.
-toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
-{-# NOINLINE toGreyScale #-}
-toGreyScale arr
-  = arr `deepSeqArray` force
-  $ traverse arr
-	(\(sh :. _) -> sh)
-	(\get ix    -> rgbToLuminance 
-				(get (ix :. 0))
-				(get (ix :. 1))
-				(get (ix :. 2)))
-
-
--- | Convert a RGB value to a luminance.
-rgbToLuminance :: Word8 -> Word8 -> Word8 -> Double
-{-# INLINE rgbToLuminance #-}
-rgbToLuminance r g b 
-	= fromIntegral r * 0.3
-	+ fromIntegral g * 0.59
-	+ fromIntegral b * 0.11
-
-

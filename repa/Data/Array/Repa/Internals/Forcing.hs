@@ -90,6 +90,12 @@ force2 arr
 		-- NOTE We must specialise this for the common case of two regions to enable
 		--      fusion for them. If we just have the next case (arbitrary region list)
 		--      the worker won't fuse with the filling / evaluation code.
+		Array sh [r1]
+		 -> do	mvec	<- VM.new (S.size sh)
+			fillRegion2P mvec sh r1
+			vec	<- V.unsafeFreeze mvec
+			return (sh, vec)
+
 		Array sh [r1, r2]
 	 	 -> do	mvec	<- VM.new (S.size sh)
 			fillRegion2P mvec sh r1

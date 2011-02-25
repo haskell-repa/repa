@@ -87,8 +87,9 @@ data Generator sh a
 	, genLoadElem		:: cursor -> a }
 
 
--- Arrays ---------------------------------------------------------------------
--- | Ensure an array's structure is fully evaluated.
+-- DeepSeqs -------------------------------------------------------------------
+
+-- | Ensure the structure for an array is fully evaluated.
 infixr 0 `deepSeqArray`
 deepSeqArray :: Shape sh => Array sh a -> b -> b
 {-# INLINE deepSeqArray #-}
@@ -104,15 +105,16 @@ deepSeqArrays arr y
 	[]	-> y
 	x : xs	-> x `deepSeqArray` xs `deepSeqArrays` y
 
--- Regions --------------------------------------------------------------------
--- | Ensure a region's structure is fully evaluated.
+
+-- | Ensure the structure for a region is fully evaluated.
 infixr 0 `deepSeqRegion` 
 deepSeqRegion :: Shape sh => Region sh a -> b -> b
 {-# INLINE deepSeqRegion #-}
 deepSeqRegion (Region range gen) x
 	= range `deepSeqRange` gen `deepSeqGen` x
 
--- | Like `deepSeqRegion` but seqs all the regions in a list.
+
+-- | Ensure the structure for some regions are fully evaluated.
 infixr 0 `deepSeqRegions`
 deepSeqRegions :: Shape sh => [Region sh a] -> b -> b
 {-# INLINE deepSeqRegions #-}
@@ -129,7 +131,7 @@ deepSeqRegions' rs' y
 	x : xs	-> x `deepSeqRegion` xs `deepSeqRegions'` y
 
 
--- Ranges ---------------------------------------------------------------------
+-- | Ensure a range is fully evaluated.
 infixr 0 `deepSeqRange`
 deepSeqRange :: Shape sh => Range sh -> b -> b
 {-# INLINE deepSeqRange #-}
@@ -139,7 +141,6 @@ deepSeqRange range x
 	RangeRects f rects 	-> f `seq` rects `seq` x
 
 
--- Generators -----------------------------------------------------------------
 -- | Ensure a Generator's structure is fully evaluated.
 infixr 0 `deepSeqGen`
 deepSeqGen :: Shape sh => Generator sh a -> b -> b
@@ -169,7 +170,6 @@ toScalar :: Elt a => Array Z a -> a
 {-# INLINE toScalar #-}
 toScalar arr	= arr ! Z
 
-	
 
 -- Projections ------------------------------------------------------------------------------------
 -- | Take the extent of an array.
@@ -314,7 +314,6 @@ fromVector sh vec
 -- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an array.
 --	The length of the list must be exactly the `size` of the extent given, else `error`.
---
 fromList
 	:: (Shape sh, Elt a)
 	=> sh
