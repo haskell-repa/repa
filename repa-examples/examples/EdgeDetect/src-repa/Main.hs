@@ -29,15 +29,18 @@ edge True	= 200 	:: Float
 main 
  = do	args	<- getArgs
 	case args of
-	 [fileIn, fileOut]	-> run fileIn fileOut
-	 _			-> putStr "repa-edgedetect <fileIn.bmp> <fileOut.bmp>"
+	 [fileIn, fileOut]		
+	   -> run 0 fileIn fileOut
+
+	 [loops, fileIn, fileOut]
+	   -> run (read loops) fileIn fileOut
+
+	 _ -> putStrLn "repa-edgedetect [loops] <fileIn.bmp> <fileOut.bmp>"
 
 
-run fileIn fileOut
+run loops fileIn fileOut
  = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
-
-	let loops	= 1
 
 	arrInput `deepSeqArray` return ()
 	(arrResult, tTotal)
@@ -52,8 +55,10 @@ run fileIn fileOut
 		arrSupress	<- timeStage loops "suppress"     $ return $ suppress       arrMag arrOrient
 		return arrSupress
 
-	putStrLn $ "\nTOTAL\n" ++ prettyTime tTotal
-
+	when (loops >= 1)
+	 $ putStrLn $ "\nTOTAL\n"
+	
+	putStr $ prettyTime tTotal
 	
 	writeMatrixToGreyscaleBMP fileOut arrResult
 
@@ -71,15 +76,16 @@ timeStage loops name fn
  = do	let burn !n
 	     = do arr	<- fn
 		  arr `deepSeqArray` return ()
-		  if n == 0 then return arr
+		  if n <= 1 then return arr
 		            else burn (n - 1)
 			
 	(arrResult, t)
 	 <- time $ do	arrResult' <- burn loops
 		   	arrResult' `deepSeqArray` return arrResult'
 
-	putStr 	$  name ++ "\n"
-		++ unlines [ "  " ++ l | l <- lines $ prettyTime t ]
+	when (loops >= 1) 
+	 $ putStr 	$  name ++ "\n"
+			++ unlines [ "  " ++ l | l <- lines $ prettyTime t ]
 
 	return arrResult
 	
