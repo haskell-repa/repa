@@ -3,9 +3,9 @@
 -- | Conversions between Repa Arrays and ByteStrings.
 module Data.Array.Repa.ByteString
 	( toByteString
-	, fromByteString)
---	, copyFromPtrWord8
---	, copyToPtrWord8)
+	, fromByteString
+	, copyFromPtrWord8
+	, copyToPtrWord8)
 where
 import Data.Word
 import Data.Array.Repa
@@ -26,9 +26,6 @@ toByteString
 
 {-# NOINLINE toByteString #-}
 toByteString arr
- = BS.pack $ toList arr
-
-{-
  =  withManifest' (force arr) $ \arr' 
  -> unsafePerformIO
  $ allocaBytes (size $ extent arr')	$ \(bufDest :: Ptr Word8) ->
@@ -46,7 +43,6 @@ toByteString arr
     in do
 	copy 0
 	BS.packCStringLen (castPtr bufDest, len)
--}
 
 
 -- | Copy a (strict) `ByteString` to a new `Array`.
@@ -66,7 +62,7 @@ fromByteString sh str
 	| otherwise
 	= fromFunction sh (\ix -> str `BS.index` toIndex sh ix)
 
-{-
+
 -- Ptr utils ------------------------------------------------------------------
 -- | Copy some data from somewhere into a new `Array`.
 --   TODO: fake this somehow to avoid the copy. 
@@ -77,7 +73,8 @@ copyFromPtrWord8
 	=> sh
 	-> Ptr Word8
 	-> IO (Array sh Word8)
-	
+
+{-# INLINE copyFromPtrWord8 #-}	
 copyFromPtrWord8 sh ptr
  = do	return	$ fromFunction sh (\ix -> unsafePerformIO (peekElemOff ptr (toIndex sh ix)))
 
@@ -89,6 +86,7 @@ copyToPtrWord8
 	-> Array sh Word8
 	-> IO ()
 	
+{-# INLINE copyToPtrWord8 #-}
 copyToPtrWord8 ptr arr
  = let	vec	= toVector arr
 	len	= size $ extent arr
@@ -104,4 +102,3 @@ copyToPtrWord8 ptr arr
    in do
 	copy 0
 	return ()
--}	

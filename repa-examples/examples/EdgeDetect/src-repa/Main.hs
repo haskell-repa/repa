@@ -37,13 +37,14 @@ run fileIn fileOut
  = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
 
-	let loops	= 10
+	let loops	= 1
 
 	arrInput `deepSeqArray` return ()
 	(arrResult, tTotal)
 	 <- time
 	 $ do	arrGrey		<- timeStage loops "toGreyScale"  $ return $ toGreyScale    arrInput
-		arrBlured	<- timeStage loops "blur" 	  $ return $ blur           arrGrey
+		arrBluredX	<- timeStage loops "blurX" 	  $ return $ blurSepX       arrGrey
+		arrBlured	<- timeStage loops "blurY" 	  $ return $ blurSepY       arrBluredX
 		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
 		arrDY		<- timeStage loops "diffY"	  $ return $ gradientY      arrBlured
 		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
@@ -110,18 +111,26 @@ toGreyScale
 	 	= fromIntegral (fromIntegral w8 :: Int)
 
 
--- | Perform a Gaussian blur to the image.
-{-# NOINLINE blur #-}
-blur 	:: Array DIM2 Float -> Array DIM2 Float
-blur 	arr@(Array _ [Region RangeAll (GenManifest _)])	
+-- | Separable Gaussian blur in the X direction.
+{-# NOINLINE blurSepX #-}
+blurSepX :: Array DIM2 Float -> Array DIM2 Float
+blurSepX arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ R.map (/ 159) 
 	$ forStencil2  BoundClamp arr
-	  [stencil2|	2  4  5  4  2
-			4  9 12  9  4
-			5 12 15 12  5
-			4  9 12  9  4
-			2  4  5  4  2 |]
+	  [stencil2|	1 4 6 4 1 |]	
+
+-- | Separable Gaussian blur in the Y direction.
+{-# NOINLINE blurSepY #-}
+blurSepY :: Array DIM2 Float -> Array DIM2 Float
+blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])	
+	= arr `deepSeqArray` force2
+	$ R.map (/ 256)
+	$ forStencil2  BoundClamp arr
+	  [stencil2|	1
+	 		4
+			6
+			4
+			1 |]	
 
 
 -- | Compute gradient in the X direction.

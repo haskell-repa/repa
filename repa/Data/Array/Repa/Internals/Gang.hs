@@ -19,7 +19,6 @@ import Control.Concurrent.MVar
 import Control.Exception         (assert)
 
 import Control.Monad             (zipWithM, zipWithM_)
-import System.IO
 import GHC.Conc			(numCapabilities)
 
 #if TRACE_GANG

@@ -9,10 +9,9 @@ import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
 import Data.Vector.Unboxed			as V
 import Data.Vector.Unboxed.Mutable		as VM
-import System.IO.Unsafe
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
-import Control.Monad
+
 
 -- | Fill a vector sequentially.
 fillChunkedS

@@ -107,6 +107,7 @@ deepSeqArrays as y
 	[a1, a2]	-> a1 `deepSeqArray` a2 `deepSeqArray` y
 	[a1, a2, a3]	-> a1 `deepSeqArray` a2 `deepSeqArray` a3 `deepSeqArray` y
 	[a1, a2, a3, a4]-> a1 `deepSeqArray` a2 `deepSeqArray` a3 `deepSeqArray` a4 `deepSeqArray` y
+	_		-> deepSeqArrays' as y
 
 deepSeqArrays' as' y
  = case as' of

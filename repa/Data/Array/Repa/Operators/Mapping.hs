@@ -28,9 +28,24 @@ map	:: (Shape sh, Elt a, Elt b)
 
 {-# INLINE map #-}
 map f (Array sh regions)
- = Array sh (P.map mapRegion regions)
+ = Array sh (mapRegions regions)
 
- where	{-# INLINE mapRegion #-}
+ where	{-# INLINE mapRegions #-}
+	mapRegions rs
+	 = case rs of
+		[]		 -> []
+		[r]		 -> [mapRegion r]
+		[r1, r2] 	 -> [mapRegion r1, mapRegion r2]
+		[r1, r2, r3]	 -> [mapRegion r1, mapRegion r2, mapRegion r3]
+		[r1, r2, r3, r4] -> [mapRegion r1, mapRegion r2, mapRegion r3, mapRegion r4]
+		_		 -> mapRegions' rs
+		
+	mapRegions' rs
+	 = case rs of
+		[]		 -> []
+		(r : rs')	 -> mapRegion r : mapRegions' rs'
+		
+	{-# INLINE mapRegion #-}
 	mapRegion (Region range gen)
 	 = Region range (mapGen gen)
 	
