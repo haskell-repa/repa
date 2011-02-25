@@ -100,11 +100,18 @@ deepSeqArray (Array ex rgns) x
 infixr 0 `deepSeqArrays`
 deepSeqArrays :: Shape sh => [Array sh a] -> b -> b
 {-# INLINE deepSeqArrays #-}
-deepSeqArrays arr y
- = case arr of
+deepSeqArrays as y
+ = case as of
+	[]		-> y
+	[a]		-> a  `deepSeqArray` y
+	[a1, a2]	-> a1 `deepSeqArray` a2 `deepSeqArray` y
+	[a1, a2, a3]	-> a1 `deepSeqArray` a2 `deepSeqArray` a3 `deepSeqArray` y
+	[a1, a2, a3, a4]-> a1 `deepSeqArray` a2 `deepSeqArray` a3 `deepSeqArray` a4 `deepSeqArray` y
+
+deepSeqArrays' as' y
+ = case as' of
 	[]	-> y
 	x : xs	-> x `deepSeqArray` xs `deepSeqArrays` y
-
 
 -- | Ensure the structure for a region is fully evaluated.
 infixr 0 `deepSeqRegion` 

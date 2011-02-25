@@ -36,16 +36,21 @@ main
 run fileIn fileOut
  = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
-	
+
 	arrInput `deepSeqArray` return ()
-	arrGrey		<- timeStage "toGreyScale" $ \_ -> toGreyScale    arrInput
-	arrBlured	<- timeStage "blur" 	   $ \_ -> blur           arrGrey
-	arrDX		<- timeStage "diffX"	   $ \_ -> gradientX      arrBlured
-	arrDY		<- timeStage "diffY"	   $ \_ -> gradientY      arrBlured
-	arrMag		<- timeStage "magnitude"   $ \_ -> gradientMag    arrDX arrDY
-	arrOrient	<- timeStage "orientation" $ \_ -> gradientOrient arrDX arrDY
-	arrSupress	<- timeStage "suppress"    $ \_ -> suppress       arrMag arrOrient
-	writeMatrixToGreyscaleBMP fileOut arrSupress
+	(arrResult, tTotal)
+	 <- time
+	 $ do	arrGrey		<- timeStage "toGreyScale" $ \_ -> toGreyScale    arrInput
+		arrBlured	<- timeStage "blur" 	   $ \_ -> blur           arrGrey
+		arrDX		<- timeStage "diffX"	   $ \_ -> gradientX      arrBlured
+		arrDY		<- timeStage "diffY"	   $ \_ -> gradientY      arrBlured
+		arrMag		<- timeStage "magnitude"   $ \_ -> gradientMag    arrDX arrDY
+		arrOrient	<- timeStage "orientation" $ \_ -> gradientOrient arrDX arrDY
+		arrSupress	<- timeStage "suppress"    $ \_ -> suppress       arrMag arrOrient
+		return arrSupress
+
+	putStrLn $ "\nTOTAL\n" ++ prettyTime tTotal
+	writeMatrixToGreyscaleBMP fileOut arrResult
 
 
 timeStage
@@ -73,7 +78,7 @@ timeStage name fn
 toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
 toGreyScale 
 	arr@(Array _ [Region RangeAll (GenManifest _)])
-  = arr `deepSeqArray` force
+  = arr `deepSeqArray` force2
   $ traverse arr
 	(\(sh :. _) -> sh)
 	(\get ix    -> rgbToLuminance 
@@ -107,8 +112,8 @@ blur 	arr@(Array _ [Region RangeAll (GenManifest _)])
 {-# NOINLINE gradientX #-}
 gradientX :: Image -> Image
 gradientX img@(Array _ [Region RangeAll (GenManifest _)])
- 	= img `deepSeqArray` 
-    	  force2 $ forStencil2 BoundClamp img
+ 	= img `deepSeqArray` force2
+    	$ forStencil2 BoundClamp img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -118,8 +123,8 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 {-# NOINLINE gradientY #-}
 gradientY :: Image -> Image
 gradientY img@(Array _ [Region RangeAll (GenManifest _)])
-	= img `deepSeqArray` 
-	  force2 $ forStencil2 BoundClamp img
+	= img `deepSeqArray` force2
+	$ forStencil2 BoundClamp img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
@@ -131,8 +136,8 @@ gradientMag :: Image -> Image -> Image
 gradientMag
 	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
- = [dX, dY] `deepSeqArrays`
-   force2 $ R.zipWith magnitude  dX dY
+ = [dX, dY] `deepSeqArrays` force2
+ $ R.zipWith magnitude  dX dY
 
  where	{-# INLINE magnitude #-}
 	magnitude :: Double -> Double -> Double
@@ -145,8 +150,8 @@ gradientOrient :: Image -> Image -> Image
 gradientOrient
  	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
- = [dX, dY] `deepSeqArrays`
-   force2 $ R.zipWith orientation dX dY
+ = [dX, dY] `deepSeqArrays` force2
+ $ R.zipWith orientation dX dY
 
  where	{-# INLINE orientation #-}
 	orientation :: Double -> Double -> Double
@@ -189,10 +194,10 @@ gradientOrient
 suppress :: Image -> Image -> Image
 suppress   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
 	dOrient@(Array _ [Region RangeAll (GenManifest _)])
- = [dMag, dOrient] `deepSeqArrays` force
+ = [dMag, dOrient] `deepSeqArrays` force2 
  $ traverse2 dMag dOrient const compare
- where
-	_ :. height :. width	= extent dMag
+
+ where	_ :. height :. width	= extent dMag
 	
 	{-# INLINE isBoundary #-}
 	isBoundary i j 
@@ -219,3 +224,4 @@ suppress   dMag@(Array _ [Region RangeAll (GenManifest _)])
             | intensity < intensity1 = edge False
             | intensity < intensity2 = edge False
             | otherwise              = edge True
+
