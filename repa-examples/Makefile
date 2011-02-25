@@ -83,5 +83,5 @@ SOBEL_SRCS = \
 dist/build/repa-sobel-opencv/repa-sobel-opencv : $(SOBEL_SRCS)
 	@echo "* Building Sobel"
 	mkdir -p dist/build/repa-sobel-opencv
-	g++ -O3 $+ -Ilibc -I$(OPENCV_INCLUDE) -L$(OPENCV_LIB) -lopencv_core -lopencv_highgui -lopencv_imgproc -o $@
+	g++ -O3 $+ -Ilibc -I$(OPENCV_INCLUDE) -L$(OPENCV_LIBDIR) -lopencv_core -lopencv_highgui -lopencv_imgproc -o $@
 
