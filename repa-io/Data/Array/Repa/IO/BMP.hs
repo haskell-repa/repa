@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, PatternGuards  #-} 
+{-# LANGUAGE PackageImports, PatternGuards, ExplicitForAll  #-} 
 
 -- | Reading and writing arrays as uncompressed 24 and 32 bit Windows BMP files.
 module Data.Array.Repa.IO.BMP
@@ -128,17 +128,17 @@ readImageFromBMP' bmp
 --	Negative values are discarded. Positive values are normalised to the maximum 
 --	value in the matrix and used as greyscale pixels.
 writeMatrixToGreyscaleBMP 
-	:: FilePath
-	-> Array DIM2 Double
+	:: forall a. (Num a, Elt a, Fractional a, RealFrac a)
+	=> FilePath
+	-> Array DIM2 a
 	-> IO ()
 
-{-# NOINLINE writeMatrixToGreyscaleBMP #-}
+{-# NOINLINE   writeMatrixToGreyscaleBMP #-}
+{-# SPECIALISE writeMatrixToGreyscaleBMP :: FilePath -> Array DIM2 Float  -> IO () #-}
+{-# SPECIALISE writeMatrixToGreyscaleBMP :: FilePath -> Array DIM2 Double -> IO () #-}
 writeMatrixToGreyscaleBMP fileName arr
  = let	arrNorm		= normalisePositive01 arr
-
-	scale :: Double -> Word8
 	scale x		= fromIntegral (truncate (x * 255) :: Int)
-
 	arrWord8	= A.map scale arrNorm
    in	writeComponentsToBMP fileName arrWord8 arrWord8 arrWord8
 		

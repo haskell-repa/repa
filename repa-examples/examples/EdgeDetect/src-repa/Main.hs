@@ -12,17 +12,17 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
-type Image	= Array DIM2 Double
+type Image	= Array DIM2 Float
 
 -- Constants ------------------------------------------------------------------
-orientPosDiag	= 0	:: Double
-orientVert	= 1	:: Double
-orientNegDiag	= 2	:: Double
-orientHoriz	= 3	:: Double
-orientUndef	= 4	:: Double
+orientPosDiag	= 0	:: Float
+orientVert	= 1	:: Float
+orientNegDiag	= 2	:: Float
+orientHoriz	= 3	:: Float
+orientUndef	= 4	:: Float
 
-edge False	= 0 	:: Double
-edge True	= 200 	:: Double
+edge False	= 0 	:: Float
+edge True	= 200 	:: Float
 
 
 -- Main routine ---------------------------------------------------------------
@@ -37,33 +37,45 @@ run fileIn fileOut
  = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
 
+	let loops	= 10
+
 	arrInput `deepSeqArray` return ()
 	(arrResult, tTotal)
 	 <- time
-	 $ do	arrGrey		<- timeStage "toGreyScale" $ \_ -> toGreyScale    arrInput
-		arrBlured	<- timeStage "blur" 	   $ \_ -> blur           arrGrey
-		arrDX		<- timeStage "diffX"	   $ \_ -> gradientX      arrBlured
-		arrDY		<- timeStage "diffY"	   $ \_ -> gradientY      arrBlured
-		arrMag		<- timeStage "magnitude"   $ \_ -> gradientMag    arrDX arrDY
-		arrOrient	<- timeStage "orientation" $ \_ -> gradientOrient arrDX arrDY
-		arrSupress	<- timeStage "suppress"    $ \_ -> suppress       arrMag arrOrient
+	 $ do	arrGrey		<- timeStage loops "toGreyScale"  $ return $ toGreyScale    arrInput
+		arrBlured	<- timeStage loops "blur" 	  $ return $ blur           arrGrey
+		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
+		arrDY		<- timeStage loops "diffY"	  $ return $ gradientY      arrBlured
+		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
+		arrOrient	<- timeStage loops "orientation"  $ return $ gradientOrient arrDX arrDY
+		arrSupress	<- timeStage loops "suppress"     $ return $ suppress       arrMag arrOrient
 		return arrSupress
 
 	putStrLn $ "\nTOTAL\n" ++ prettyTime tTotal
+
+	
 	writeMatrixToGreyscaleBMP fileOut arrResult
 
 
+-- | Wrapper to time each stage of the algorithm.
 timeStage
 	:: (Shape sh, Elt a)
-	=> String 
-	-> (() -> Array sh a)
-	-> IO (Array sh a)
+	=> Int
+	-> String 
+	-> (IO (Array sh a))
+	-> (IO (Array sh a))
 
 {-# NOINLINE timeStage #-}
-timeStage name fn
- = do	(arrResult, t)
-		<- time $ let arrResult' = fn ()
-			  in  arrResult' `deepSeqArray` return arrResult'
+timeStage loops name fn
+ = do	let burn !n
+	     = do arr	<- fn
+		  arr `deepSeqArray` return ()
+		  if n == 0 then return arr
+		            else burn (n - 1)
+			
+	(arrResult, t)
+	 <- time $ do	arrResult' <- burn loops
+		   	arrResult' `deepSeqArray` return arrResult'
 
 	putStr 	$  name ++ "\n"
 		++ unlines [ "  " ++ l | l <- lines $ prettyTime t ]
@@ -72,10 +84,9 @@ timeStage name fn
 	
 
 -------------------------------------------------------------------------------
-
 -- | RGB to greyscale conversion.
 {-# NOINLINE toGreyScale #-}
-toGreyScale :: Array DIM3 Word8 -> Array DIM2 Double
+toGreyScale :: Array DIM3 Word8 -> Array DIM2 Float
 toGreyScale 
 	arr@(Array _ [Region RangeAll (GenManifest _)])
   = arr `deepSeqArray` force2
@@ -87,16 +98,21 @@ toGreyScale
 				(get (ix :. 2)))
 
  where	{-# INLINE rgbToLuminance #-}
-	rgbToLuminance :: Word8 -> Word8 -> Word8 -> Double
+	rgbToLuminance :: Word8 -> Word8 -> Word8 -> Float
 	rgbToLuminance r g b 
-		= fromIntegral r * 0.3
-		+ fromIntegral g * 0.59
-		+ fromIntegral b * 0.11
+		= floatOfWord8 r * 0.3
+		+ floatOfWord8 g * 0.59
+		+ floatOfWord8 b * 0.11
+
+	{-# INLINE floatOfWord8 #-}
+	floatOfWord8 :: Word8 -> Float
+	floatOfWord8 w8
+	 	= fromIntegral (fromIntegral w8 :: Int)
 
 
 -- | Perform a Gaussian blur to the image.
 {-# NOINLINE blur #-}
-blur 	:: Array DIM2 Double -> Array DIM2 Double
+blur 	:: Array DIM2 Float -> Array DIM2 Float
 blur 	arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
 	$ R.map (/ 159) 
@@ -140,7 +156,7 @@ gradientMag
  $ R.zipWith magnitude  dX dY
 
  where	{-# INLINE magnitude #-}
-	magnitude :: Double -> Double -> Double
+	magnitude :: Float -> Float -> Float
 	magnitude x y	= x * x + y * y
 
 
@@ -154,7 +170,7 @@ gradientOrient
  $ R.zipWith orientation dX dY
 
  where	{-# INLINE orientation #-}
-	orientation :: Double -> Double -> Double
+	orientation :: Float -> Float -> Float
 	orientation x y
  	 | x >= -40, x < 40
  	 , y >= -40, y < 40	= orientUndef
