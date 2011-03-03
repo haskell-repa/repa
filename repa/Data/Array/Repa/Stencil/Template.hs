@@ -78,15 +78,21 @@ makeStencil2' sizeX sizeY coeffs
 	let just'	 = mkName "Just"
 	ix'		<- newName "ix"
 	z'		<- [p| Z |]
+	coeffs'		<- newName "coeffs"
+	
+	let fnCoeffs	
+		= LamE  [VarP ix']
+	 	$ CaseE (VarE ix') 
+	 	$   [ Match	(InfixP (InfixP z' dot' (LitP (IntegerL oy))) dot' (LitP (IntegerL ox)))
+				(NormalB $ ConE just' `AppE` LitE (RationalL v))
+				[] | (oy, ox, v) <- coeffs ]
+	  	    ++ [Match WildP 
+				(NormalB $ ConE (mkName "Nothing")) []]
 	
 	return 
-	 $ AppE  (VarE makeStencil' `AppE` (LitE (IntegerL sizeX)) `AppE` (LitE (IntegerL sizeY)))
-	 $ LamE  [VarP ix']
-	 $ CaseE (VarE ix') 
-	 $   [ Match	(InfixP (InfixP z' dot' (LitP (IntegerL oy))) dot' (LitP (IntegerL ox)))
-			(NormalB $ ConE just' `AppE` LitE (RationalL v))
-			[] | (oy, ox, v) <- coeffs ]
-	  ++ [Match WildP 
-			(NormalB $ ConE (mkName "Nothing"))
-			[]]
+	 $ AppE (VarE makeStencil' `AppE` (LitE (IntegerL sizeX)) `AppE` (LitE (IntegerL sizeY)))
+         $ LetE [ PragmaD (InlineP coeffs' (InlineSpec True False Nothing))
+		, ValD 	(VarP coeffs') (NormalB fnCoeffs) [] ]
+		(VarE coeffs')
+			
 

@@ -1,6 +1,8 @@
 {-# LANGUAGE PackageImports, BangPatterns, TemplateHaskell, QuasiQuotes #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
+-- TODO: This needs -funfolding-creation-threshold1000
+
 import Data.List
 import Control.Monad
 import System.Environment
@@ -27,23 +29,13 @@ run iterations fileIn fileOut
 
 	comps `deepSeqArrays` return ()
 	
-	let [arrRed, arrGreen, arrBlue]	= comps
-	arrRed   `deepSeqArray` return ()
-	arrGreen `deepSeqArray` return ()
-	arrBlue  `deepSeqArray` return ()
-	
 	(comps', tElapsed)
-	 <- time $ let	arrRed'		= process iterations arrRed
---			arrGreen'	= process arrGreen
---			arrBlue'	= process arrBlue
---			comps'	= [arrRed', arrGreen', arrBlue']
-			comps'		= arrRed'
-
-		   in	comps' `deepSeqArray` return comps'
+	 <- time $ let	comps' 	= P.map (process iterations) comps
+		   in	comps' `deepSeqArrays` return comps'
 	
 	putStr $ prettyTime tElapsed
 			
-	writeComponentsListToBMP fileOut [comps', comps', comps']
+	writeComponentsListToBMP fileOut comps'
 
 {-# NOINLINE process #-}
 process	:: Int -> Array DIM2 Word8 -> Array DIM2 Word8
@@ -53,24 +45,32 @@ process iterations = demote . blur iterations . promote
 {-# NOINLINE promote #-}
 promote	:: Array DIM2 Word8 -> Array DIM2 Double
 promote arr@(Array _ [Region RangeAll (GenManifest _)])
- = arr `deepSeqArray` force2
- $ A.map fromIntegral arr
+ = arr `deepSeqArray` force
+ $ A.map ffs arr
+
+ where	{-# INLINE ffs #-}
+	ffs	:: Word8 -> Double
+	ffs x	=  fromIntegral (fromIntegral x :: Int)
 
 
 {-# NOINLINE demote #-}
 demote	:: Array DIM2 Double -> Array DIM2 Word8
 demote arr@(Array _ [Region RangeAll (GenManifest _)])
- = arr `deepSeqArray` force2
- $ A.map truncate arr
+ = arr `deepSeqArray` force
+ $ A.map ffs arr
+
+ where	{-# INLINE ffs #-}
+	ffs 	:: Double -> Word8
+	ffs x	=  fromIntegral (truncate x :: Int)
 
 
 {-# NOINLINE blur #-}
 blur 	:: Int -> Array DIM2 Double -> Array DIM2 Double
 blur !iterations arr@(Array _ [Region RangeAll (GenManifest _)])
--- 	= iterateBlockwise' steps arr
-	= arr `deepSeqArray` force
+ 	= arr `deepSeqArray` force2
+	$ iterateBlockwise' iterations arr
 	$ A.map (/ 159)
-	$ forStencil2 BoundClamp arr
+	. mapStencil2 BoundClamp
 	  [stencil2|	2  4  5  4  2
 			4  9 12  9  4
 			5 12 15 12  5

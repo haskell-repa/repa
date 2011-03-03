@@ -64,10 +64,10 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 	sWidth2		= sWidth  `div` 2
 
 	-- minimum and maximum indicies of values in the inner part of the image.
-	xMin		= sWidth2
-	yMin		= sHeight2
-	xMax		= aWidth  - sWidth2  - 1
-	yMax		= aHeight - sHeight2 - 1
+	!xMin		= sWidth2
+	!yMin		= sHeight2
+	!xMax		= aWidth  - sWidth2  - 1
+	!yMax		= aHeight - sHeight2 - 1
 
 	-- Rectangles -----------------------
 	-- range of values where we don't need to worry about the border
@@ -113,7 +113,7 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 			 (GenCursor id addDim getBorder')
 			
 		, Region (RangeRects inInternal rectsInternal)
-		    	(GenCursor makeCursor' shiftCursor' getInner') ]
+		     	 (GenCursor makeCursor' shiftCursor' getInner') ]
 
 
 
