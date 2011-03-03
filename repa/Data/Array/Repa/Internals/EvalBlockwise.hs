@@ -19,7 +19,7 @@ fillVectorBlockwiseP
 	-> Int			-- ^ width of image.
 	-> IO ()
 	
-{-# INLINE fillVectorBlockwiseP #-}
+{-# INLINE [0] fillVectorBlockwiseP #-}
 fillVectorBlockwiseP !vec !getElemFVBP !imageWidth 
  = 	gangIO theGang fillBlock
 	
@@ -62,7 +62,7 @@ fillVectorBlockP
 	-> Int			-- ^ y1 (high x and y value, last index to fill)
 	-> IO ()
 
-{-# INLINE fillVectorBlockP #-}
+{-# INLINE [0] fillVectorBlockP #-}
 fillVectorBlockP !vec !getElem !imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
@@ -104,7 +104,7 @@ fillVectorBlock
 	-> Int			-- ^ y1 (high x and y value, last index to fill)
 	-> IO ()
 
-{-# INLINE fillVectorBlock #-}
+{-# INLINE [0] fillVectorBlock #-}
 fillVectorBlock !vec !getElemFVB !imageWidth !x0 !y0 !x1 !y1
  = do	-- putStrLn $ "fillVectorBlock: " P.++ show (x0, y0, x1, y1)
 	fillBlock ixStart (ixStart + (x1 - x0))

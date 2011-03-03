@@ -49,7 +49,7 @@ toList arr
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 
-{-# INLINE force #-}	
+{-# INLINE [2] force #-}	
 force arr
  = unsafePerformIO
  $ do	(sh, vec)	<- forceIO arr
@@ -73,7 +73,7 @@ force arr
 -- | Force an array, so that it becomes `Manifest`.
 --   This forcing function is specialised for DIM2 arrays, and does blockwise filling.
 force2	:: Elt a => Array DIM2 a -> Array DIM2 a
-{-# INLINE force2 #-}	
+{-# INLINE [2] force2 #-}	
 force2 arr
  = unsafePerformIO 
  $ do	(sh, vec)	<- forceIO2 arr
@@ -120,7 +120,7 @@ fillRegionP
 	-> Region sh a
 	-> IO ()
 
-{-# INLINE fillRegionP #-}
+{-# INLINE [1] fillRegionP #-}
 fillRegionP mvec sh (Region RangeAll gen)
  = case gen of
 	GenManifest{}
@@ -151,7 +151,7 @@ fillRegion2P
 	-> Region DIM2 a	-- ^ Region to fill.
 	-> IO ()
 	
-{-# INLINE fillRegion2P #-}
+{-# INLINE [1] fillRegion2P #-}
 fillRegion2P mvec sh@(_ :. height :. width) (Region range gen)
  = mvec `seq` height `seq` width `seq`
    case range of 

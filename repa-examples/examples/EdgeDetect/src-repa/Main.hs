@@ -30,15 +30,15 @@ main
  = do	args	<- getArgs
 	case args of
 	 [fileIn, fileOut]		
-	   -> run 0 fileIn fileOut
+	   -> run 0 40 fileIn fileOut
 
-	 [loops, fileIn, fileOut]
-	   -> run (read loops) fileIn fileOut
+	 [loops, threshold, fileIn, fileOut]
+	   -> run (read loops) (read threshold) fileIn fileOut
 
-	 _ -> putStrLn "repa-edgedetect [loops] <fileIn.bmp> <fileOut.bmp>"
+	 _ -> putStrLn "repa-edgedetect [loops threshold] <fileIn.bmp> <fileOut.bmp>"
 
 
-run loops fileIn fileOut
+run loops thresh fileIn fileOut
  = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
 
@@ -51,7 +51,7 @@ run loops fileIn fileOut
 		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
 		arrDY		<- timeStage loops "diffY"	  $ return $ gradientY      arrBlured
 		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
-		arrOrient	<- timeStage loops "orientation"  $ return $ gradientOrient arrDX arrDY
+		arrOrient	<- timeStage loops "orientation"  $ return $ gradientOrient thresh arrDX arrDY
 		arrSupress	<- timeStage loops "suppress"     $ return $ suppress       arrMag arrOrient
 		return arrSupress
 
@@ -177,8 +177,8 @@ gradientMag
 
 -- | Classify the orientation of the vector gradient.
 {-# NOINLINE gradientOrient #-}
-gradientOrient :: Image -> Image -> Image
-gradientOrient
+gradientOrient :: Float -> Image -> Image -> Image
+gradientOrient !sensitivity
  	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
  = [dX, dY] `deepSeqArrays` force2
@@ -187,8 +187,9 @@ gradientOrient
  where	{-# INLINE orientation #-}
 	orientation :: Float -> Float -> Float
 	orientation x y
- 	 | x >= -40, x < 40
- 	 , y >= -40, y < 40	= orientUndef
+ 	 | x >= negate sensitivity, x < sensitivity
+ 	 , y >= negate sensitivity, y < sensitivity
+ 	 = orientUndef
 
 	 | otherwise
 	 = let	-- determine the angle of the vector and rotate it around a bit

@@ -37,7 +37,6 @@ Executable repa-mmult
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-laplace
@@ -59,7 +58,6 @@ Executable repa-laplace
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-fft2d
@@ -80,7 +78,6 @@ Executable repa-fft2d
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-fft2d-highpass
@@ -102,7 +99,6 @@ Executable repa-fft2d-highpass
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-fft3d-highpass
@@ -123,7 +119,6 @@ Executable repa-fft3d-highpass
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-blur
@@ -145,7 +140,6 @@ Executable repa-blur
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-edgedetect
@@ -167,7 +161,6 @@ Executable repa-edgedetect
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 
 Executable repa-sobel
@@ -189,6 +182,5 @@ Executable repa-sobel
         -funbox-strict-fields
         -fcpr-off
         -fllvm
-        -fnew-codegen
 
 

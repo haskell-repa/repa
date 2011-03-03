@@ -29,7 +29,7 @@ fillCursoredBlock2P
 	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
 	-> IO ()
 
-{-# INLINE fillCursoredBlock2P #-}
+{-# INLINE [0] fillCursoredBlock2P #-}
 fillCursoredBlock2P 
 	!vec
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
@@ -79,7 +79,7 @@ fillCursoredBlock2
 	-> Int				-- ^ y1 (high x and y value, index of last elem to fill)
 	-> IO ()
 
-{-# INLINE fillCursoredBlock2 #-}
+{-# INLINE [0] fillCursoredBlock2 #-}
 fillCursoredBlock2 
 	!vec 
 	!makeCursor !shiftCursor !getElem

@@ -20,7 +20,7 @@ fillChunkedS
 	-> (Int -> a)	-- ^ Fn to get the value at a given index.
 	-> IO ()
 
-{-# INLINE fillChunkedS #-}
+{-# INLINE [0] fillChunkedS #-}
 fillChunkedS !vec !getElem
  = fill 0
  where 	!len	= VM.length vec
@@ -39,7 +39,7 @@ fillChunkedP
 	-> (Int -> a)	-- ^ Fn to get the value at a given index.
 	-> IO ()
 		
-{-# INLINE fillChunkedP #-}
+{-# INLINE [0] fillChunkedP #-}
 fillChunkedP !vec !getElem
  = 	gangIO theGang 
 	 $  \thread -> fill (splitIx thread) (splitIx (thread + 1))

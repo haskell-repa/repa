@@ -199,7 +199,7 @@ delay arr@(Array sh _)
 -- Indexing ---------------------------------------------------------------------------------------
 -- | Get an indexed element from an array.
 --   This uses the same level of bounds checking as your Data.Vector installation.
---
+--   TODO: unfold this.
 (!), index
 	:: forall sh a
 	.  (Shape sh, Elt a)
