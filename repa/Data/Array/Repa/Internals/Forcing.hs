@@ -62,13 +62,12 @@ force arr
 		Array sh [Region RangeAll (GenManifest vec)]
 		 -> 	return (sh, vec)
 
-		-- Create the vector to hold the new array and load in the regions.
-		Array sh regions
+		Array sh _
 		 -> do	mvec	<- VM.unsafeNew (S.size sh)
-			mapM_ (fillRegionP mvec sh) regions
+			fillChunkedS mvec (\ix -> arr' `unsafeIndex` fromIndex sh ix)
 			vec	<- V.unsafeFreeze mvec
-			return (sh, vec)
-
+			return	(sh, vec)
+		
 
 -- | Force an array, so that it becomes `Manifest`.
 --   This forcing function is specialised for DIM2 arrays, and does blockwise filling.
@@ -112,6 +111,7 @@ force2 arr
 			
 
 -- FillRegionP ------------------------------------------------------------------------------------
+{-
 -- | Fill an array region into this vector.
 fillRegionP 
 	:: (Shape sh, Elt a)
@@ -125,16 +125,13 @@ fillRegionP mvec sh (Region RangeAll gen)
  = case gen of
 	GenManifest{}
 	 -> error "fillRegionP: GenManifest, copy elements."
-	
-	GenDelayed getElem
-	 -> fillChunkedS mvec (getElem . fromIndex sh)
-	
+		
 	GenCursor makeCursor _ loadElem
 	 -> fillChunkedS mvec (loadElem . makeCursor . fromIndex sh)
 
-fillRegionP _ _ _
+fillRegionP mvec sh (Region in1 
 	= error "fillRegionP: not finished for ranges"
-
+-}
 
 -- FillRegion2P -----------------------------------------------------------------------------------	
 -- | Fill an array region into a vector.
@@ -193,7 +190,7 @@ fillRect2 mvec sh@(_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
 	
 	-- If the region we're filling is just one pixel wide then just fill it
 	--   in the current thread instead of starting up the whole gang.
-	GenDelayed getElem
+{-	GenDelayed getElem
 	 |  x0 == x1
 	 -> fillVectorBlock mvec
 		(getElem . fromIndex sh)
@@ -208,7 +205,7 @@ fillRect2 mvec sh@(_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
 	 -> fillVectorBlockP mvec
 		(getElem . fromIndex sh) 
 		width x0 y0 x1 y1
-	
+-}	
 	-- Cursor based arrays.
 	GenCursor makeCursor shiftCursor loadElem
          -> fillCursoredBlock2P mvec

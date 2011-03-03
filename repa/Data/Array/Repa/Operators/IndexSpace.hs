@@ -41,11 +41,11 @@ reshape sh' (Array sh [Region RangeAll gen])
 		GenManifest vec 
 	 	 -> GenManifest vec
 
-		GenDelayed getElem
-		 -> GenDelayed (getElem . fromIndex sh . toIndex sh')
-
 		GenCursor makeCursor _ loadElem
-	 	 -> GenDelayed (loadElem . makeCursor . fromIndex sh . toIndex sh')
+	 	 -> GenCursor 
+			id
+			addDim
+			(loadElem . makeCursor . fromIndex sh . toIndex sh')
 
 reshape _ _
 	= error $ stage ++ ".reshape: can't reshape a partitioned array"

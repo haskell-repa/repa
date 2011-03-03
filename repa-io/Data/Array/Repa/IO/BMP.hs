@@ -85,15 +85,15 @@ readComponentsFromBMP' bmp
 	shapeFn _ 	= Z :. height :. width
 
 	arrRed	
-	 = traverse arr shapeFn
+	 = force2 $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4)))
 
 	arrGreen
-	 = traverse arr shapeFn
+	 = force2 $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 1)))
 
 	arrBlue
-	 = traverse arr shapeFn
+	 = force2 $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
 	
    in	(arrRed, arrGreen, arrBlue)

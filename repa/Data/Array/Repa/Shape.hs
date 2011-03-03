@@ -22,6 +22,8 @@ class Eq sh => Shape sh where
 	-- | Compute the intersection of two shapes.
 	intersectDim :: sh -> sh -> sh
 
+	-- | Add the coordinates of two shapes componentwise
+	addDim  :: sh -> sh -> sh
 
 	-- | Get the total number of elements in an array with this shape.
 	size	:: sh -> Int           

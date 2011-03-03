@@ -4,6 +4,7 @@
 import Data.List
 import Control.Monad
 import System.Environment
+import Data.Word
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Data.Array.Repa.Algorithms.Iterate
@@ -26,25 +27,50 @@ run iterations fileIn fileOut
 
 	comps `deepSeqArrays` return ()
 	
-	let process arr
-		= force $ A.map truncate 
-		$ blur iterations
-		$ force	$ A.map fromIntegral $ arr
-
+	let [arrRed, arrGreen, arrBlue]	= comps
+	arrRed   `deepSeqArray` return ()
+	arrGreen `deepSeqArray` return ()
+	arrBlue  `deepSeqArray` return ()
+	
 	(comps', tElapsed)
-	 <- time $ let	comps' = P.map process comps
-		   in	comps' `deepSeqArrays` return comps'
+	 <- time $ let	arrRed'		= process iterations arrRed
+--			arrGreen'	= process arrGreen
+--			arrBlue'	= process arrBlue
+--			comps'	= [arrRed', arrGreen', arrBlue']
+			comps'		= arrRed'
+
+		   in	comps' `deepSeqArray` return comps'
 	
 	putStr $ prettyTime tElapsed
 			
-	writeComponentsListToBMP fileOut comps'
+	writeComponentsListToBMP fileOut [comps', comps', comps']
+
+{-# NOINLINE process #-}
+process	:: Int -> Array DIM2 Word8 -> Array DIM2 Word8
+process iterations = demote . blur iterations . promote
+
+	
+{-# NOINLINE promote #-}
+promote	:: Array DIM2 Word8 -> Array DIM2 Double
+promote arr@(Array _ [Region RangeAll (GenManifest _)])
+ = arr `deepSeqArray` force2
+ $ A.map fromIntegral arr
 
 
+{-# NOINLINE demote #-}
+demote	:: Array DIM2 Double -> Array DIM2 Word8
+demote arr@(Array _ [Region RangeAll (GenManifest _)])
+ = arr `deepSeqArray` force2
+ $ A.map truncate arr
+
+
+{-# NOINLINE blur #-}
 blur 	:: Int -> Array DIM2 Double -> Array DIM2 Double
-blur steps arr
- 	= iterateBlockwise' steps arr
+blur !iterations arr@(Array _ [Region RangeAll (GenManifest _)])
+-- 	= iterateBlockwise' steps arr
+	= arr `deepSeqArray` force
 	$ A.map (/ 159)
-	. mapStencil2 BoundClamp
+	$ forStencil2 BoundClamp arr
 	  [stencil2|	2  4  5  4  2
 			4  9 12  9  4
 			5 12 15 12  5

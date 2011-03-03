@@ -53,11 +53,11 @@ map f (Array sh regions)
 	mapGen gen
 	 = case gen of
 		GenManifest vec
-		 -> GenDelayed (\ix -> f $ V.unsafeIndex vec $ S.toIndex sh ix)
-		
-		GenDelayed getElem
-		 -> GenDelayed (f . getElem)
-		
+		 -> GenCursor
+			P.id
+			addDim
+		 	(\ix -> f $ V.unsafeIndex vec $ S.toIndex sh ix)
+				
 		GenCursor makeCursor shiftCursor loadElem
 		 -> GenCursor makeCursor shiftCursor (f . loadElem)
 

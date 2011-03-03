@@ -74,12 +74,21 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 	rectsInternal	
 	 = 	[ Rect (Z :. yMin :. xMin)	   (Z :. yMax :. xMax ) ]
 
+	{-# INLINE inInternal #-}
+	inInternal (Z :. y :. x)
+		=  x >= xMin && x <= xMax 
+		&& y >= yMin && y <= yMax
+		
+
 	-- range of values where some of the data needed by the stencil is outside the image.
 	rectsBorder
 	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot 
 	   	, Rect (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1)	 	-- top
 		, Rect (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)		-- left
 	   	, Rect (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) ]  	-- right
+
+	{-# INLINE inBorder #-}
+	inBorder 	= not . inInternal
 
 
 	-- Cursor functions ----------------
@@ -100,11 +109,12 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 	getBorder' _	= zero
 							
    in	Array (extent arr)
-		[ Region (RangeRects (error "sorry") rectsInternal)
-		    	(GenCursor makeCursor' shiftCursor' getInner')
+		[ Region (RangeRects inBorder rectsBorder)
+			 (GenCursor id addDim getBorder')
+			
+		, Region (RangeRects inInternal rectsInternal)
+		    	(GenCursor makeCursor' shiftCursor' getInner') ]
 
-		, Region (RangeRects (error "sorry") rectsBorder)
-			 (GenDelayed getBorder') ]
 
 
 unsafeAppStencilCursor2

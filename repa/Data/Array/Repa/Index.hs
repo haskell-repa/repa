@@ -53,6 +53,9 @@ instance Shape Z where
 	{-# INLINE intersectDim #-}
 	intersectDim _ _	= Z
 
+	{-# INLINE addDim #-}
+	addDim _ _		= Z
+
 	{-# INLINE size #-}
 	size _			= 1
 
@@ -92,6 +95,10 @@ instance Shape sh => Shape (sh :. Int) where
 	{-# INLINE intersectDim #-}
 	intersectDim (sh1 :. n1) (sh2 :. n2) 
 		= (intersectDim sh1 sh2 :. (min n1 n2))
+
+	{-# INLINE addDim #-}
+	addDim (sh1 :. n1) (sh2 :. n2)
+		= addDim sh1 sh2 :. (n1 + n2)
 
 	{-# INLINE size #-}
 	size  (sh1 :. n)

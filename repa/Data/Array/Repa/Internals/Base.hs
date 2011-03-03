@@ -75,10 +75,6 @@ data Generator sh a
 	= GenManifest
 	{ genVector		:: Vector a }
 		
-	-- | Apply a function to get the element.
-	| GenDelayed
-	{ genGetElem		:: sh -> a }
-		
 	-- | Use a cursor to walk over the elements required.
 	| forall cursor
 	. GenCursor
@@ -156,7 +152,6 @@ deepSeqGen :: Shape sh => Generator sh a -> b -> b
 deepSeqGen gen x
  = case gen of
 	GenManifest vec		-> vec `seq` x
-	GenDelayed{}		-> x
 	GenCursor{}		-> x
 
 
@@ -220,9 +215,6 @@ index (Array sh (Region range gen : rs)) ix
 		GenManifest vec		
 		 -> vec V.! (S.toIndex sh ix)
 
-		GenDelayed  getElem
-		 -> getElem ix
-
 		GenCursor   makeCursor _ loadElem
 		 -> loadElem $ makeCursor ix
 		
@@ -254,9 +246,6 @@ safeIndex (Array sh (Region range gen : rs)) ix
 		GenManifest vec		
 		 -> vec V.!? (S.toIndex sh ix)
 
-		GenDelayed  getElem
-		 -> Just $ getElem ix
-
 		GenCursor   makeCursor _ loadElem
 		 -> Just $ loadElem $ makeCursor ix
 		
@@ -265,6 +254,8 @@ safeIndex (Array sh (Region range gen : rs)) ix
 
 
 -- | Get an indexed element from an array, without bounds checking.
+--   This assumes that the regions in the array give full coverage.
+--   An array with no regions gets zero for every element.
 unsafeIndex
 	:: forall sh a
 	.  (Shape sh, Elt a)
@@ -272,25 +263,35 @@ unsafeIndex
 	-> sh 
 	-> a
 
-{-# INLINE unsafeIndex#-}
-unsafeIndex (Array _ []) _
-	= error $ stage ++ ": out of regions when indexing array"
+{-# INLINE unsafeIndex #-}
+unsafeIndex arr ix
+ = case arr of
+	Array sh []
+	 -> zero
+	
+	Array sh [Region r1 gen1]
+	 -> unsafeIndexGen sh gen1 ix
+	
+	Array sh [Region r1 gen1, Region r2 gen2]
+	 | inRange r1 ix	-> unsafeIndexGen sh gen1 ix
+	 | otherwise		-> unsafeIndexGen sh gen2 ix
+	
+	_ -> unsafeIndex' arr ix
 
-unsafeIndex (Array sh (Region range gen : rs)) ix
- 	| inRange range ix
-	= case gen of
-		GenManifest vec		
+ where	{-# INLINE unsafeIndexGen #-}
+	unsafeIndexGen sh gen ix
+	 = case gen of
+		GenManifest vec
 		 -> vec `V.unsafeIndex` (S.toIndex sh ix)
-
-		GenDelayed  getElem
-		 -> getElem ix
-
-		GenCursor   makeCursor _ loadElem
-		 -> loadElem $ makeCursor ix
 		
-	| otherwise
-	= unsafeIndex (Array sh rs) ix
+		GenCursor makeCursor _ loadElem
+		 -> loadElem $ makeCursor ix
 
+	unsafeIndex' (Array sh (Region range gen : rs)) ix
+	 | inRange range ix	= unsafeIndexGen sh gen ix
+	 | otherwise		= unsafeIndex' (Array sh rs) ix
+	
+	
 
 -- Conversions ------------------------------------------------------------------------------------
 -- | Create a `Delayed` array from a function.
@@ -303,7 +304,9 @@ fromFunction
 {-# INLINE fromFunction #-}
 fromFunction sh fnElems
 	= sh `S.deepSeq`
-	  Array sh [Region RangeAll (GenDelayed fnElems)]
+	  Array sh [Region 
+			RangeAll 
+			(GenCursor id addDim fnElems)]
 
 -- | Create a `Manifest` array from an unboxed `U.Array`. 
 --	The elements are in row-major order.
