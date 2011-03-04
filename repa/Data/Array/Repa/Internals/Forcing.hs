@@ -4,7 +4,6 @@ module Data.Array.Repa.Internals.Forcing
 	, toList
 	, force, force2)
 where
-import Data.Array.Repa.Internals.EvalBlockwise
 import Data.Array.Repa.Internals.EvalChunked
 import Data.Array.Repa.Internals.EvalCursored
 import Data.Array.Repa.Internals.Elt
@@ -110,29 +109,6 @@ force2 arr
 			return (sh, vec)
 			
 
--- FillRegionP ------------------------------------------------------------------------------------
-{-
--- | Fill an array region into this vector.
-fillRegionP 
-	:: (Shape sh, Elt a)
-	=> VM.IOVector a
-	-> sh
-	-> Region sh a
-	-> IO ()
-
-{-# INLINE [1] fillRegionP #-}
-fillRegionP mvec sh (Region RangeAll gen)
- = case gen of
-	GenManifest{}
-	 -> error "fillRegionP: GenManifest, copy elements."
-		
-	GenCursor makeCursor _ loadElem
-	 -> fillChunkedS mvec (loadElem . makeCursor . fromIndex sh)
-
-fillRegionP mvec sh (Region in1 
-	= error "fillRegionP: not finished for ranges"
--}
-
 -- FillRegion2P -----------------------------------------------------------------------------------	
 -- | Fill an array region into a vector.
 --   This is specialised for DIM2 regions.
@@ -182,7 +158,7 @@ fillRect2
 	-> IO ()
 
 {-# INLINE fillRect2 #-}	
-fillRect2 mvec sh@(_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1)) 
+fillRect2 mvec (_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1)) 
  = mvec `seq` width `seq` y0 `seq` x0 `seq` y1 `seq` x1 `seq` 
    case gen of
 	GenManifest{}

@@ -266,31 +266,33 @@ unsafeIndex
 {-# INLINE unsafeIndex #-}
 unsafeIndex arr ix
  = case arr of
-	Array sh []
+	Array _ []
 	 -> zero
 	
-	Array sh [Region r1 gen1]
+	Array sh [Region _ gen1]
 	 -> unsafeIndexGen sh gen1 ix
 	
-	Array sh [Region r1 gen1, Region r2 gen2]
+	Array sh [Region r1 gen1, Region _ gen2]
 	 | inRange r1 ix	-> unsafeIndexGen sh gen1 ix
 	 | otherwise		-> unsafeIndexGen sh gen2 ix
 	
 	_ -> unsafeIndex' arr ix
 
  where	{-# INLINE unsafeIndexGen #-}
-	unsafeIndexGen sh gen ix
+	unsafeIndexGen sh gen ix'
 	 = case gen of
 		GenManifest vec
-		 -> vec `V.unsafeIndex` (S.toIndex sh ix)
+		 -> vec `V.unsafeIndex` (S.toIndex sh ix')
 		
 		GenCursor makeCursor _ loadElem
-		 -> loadElem $ makeCursor ix
+		 -> loadElem $ makeCursor ix'
 
-	unsafeIndex' (Array sh (Region range gen : rs)) ix
-	 | inRange range ix	= unsafeIndexGen sh gen ix
-	 | otherwise		= unsafeIndex' (Array sh rs) ix
-	
+	unsafeIndex' (Array sh (Region range gen : rs)) ix'
+	 | inRange range ix	= unsafeIndexGen sh gen ix'
+	 | otherwise		= unsafeIndex' (Array sh rs) ix'
+
+        unsafeIndex' (Array _ []) _
+  	 = zero
 	
 
 -- Conversions ------------------------------------------------------------------------------------
