@@ -71,27 +71,21 @@ laplace :: Solver
 laplace solve steps fileInput fileOutput
  = do
 	-- Load up the file containing boundary conditions.
-	arrImage		<- liftM (either (error . show) id)
+	arrImage		<- liftM (either (error . show) force)
 				$  readImageFromBMP fileInput
-
+			
+	arrImage `deepSeqArray` return ()
 	let arrBoundValue	= force $ slurpDoublesFromImage slurpBoundValue arrImage
 	let arrBoundMask	= force $ slurpDoublesFromImage slurpBoundMask  arrImage
-		
-	-- Use the boundary condition values as the initial matrix.
-	let arrInitial	= arrBoundValue
+	arrBoundValue `deepSeqArray` return ()
+	arrBoundMask  `deepSeqArray` return ()
 
-	arrBoundValue 
-	 `deepSeqArray` arrBoundMask
-	 `deepSeqArray` arrInitial
-	 `deepSeqArray` return ()
-
+	let arrInitial		= arrBoundValue		
+	
 	-- Run the solver.
 	(arrFinal, t)
 		<- time
-		$  let arrFinal	= solve	steps
-					arrBoundMask
-					arrBoundValue
-					arrInitial
+		$  let	arrFinal = solve steps arrBoundMask arrBoundValue arrInitial
 		   in	arrFinal `deepSeqArray` return arrFinal
 
 	-- Print how long it took
@@ -114,8 +108,10 @@ slurpDoublesFromImage
 	-> Array DIM2 Double
 	
 {-# INLINE slurpDoublesFromImage #-}
-slurpDoublesFromImage mkDouble arrBound
- = traverse arrBound
+slurpDoublesFromImage mkDouble 
+	arrBound@(Array _ [Region _ (GenManifest _)])
+ = arrBound `deepSeqArray` force
+ $ unsafeTraverse arrBound
 	(\(Z :. height :. width :. _)	
 		-> Z :. height :. width)
 
@@ -132,18 +128,21 @@ makeImageFromDoubles
 	-> Array DIM3 Word8
 	
 {-# INLINE makeImageFromDoubles #-}
-makeImageFromDoubles fnColor arrDoubles
- = traverse arrDoubles
+makeImageFromDoubles fnColor 
+	arrDoubles@(Array _ [Region _ (GenManifest _)])
+ = arrDoubles `deepSeqArray` force
+ $ unsafeTraverse arrDoubles
 	(\(Z :. height :. width)
 		-> Z :. height :. width :. 4)
 		
 	(\get (Z :. y :. x :. c)
 		-> let (r, g, b) = fnColor (get (Z :. y :. x))
 		   in	case c of
-			  0	-> truncate (r * 255)
-			  1	-> truncate (g * 255)
-			  2	-> truncate (b * 255)
+			  0	-> fromIntegral $ (truncate (r * 255) :: Int)
+			  1	-> fromIntegral $ (truncate (g * 255) :: Int)
+			  2	-> fromIntegral $ (truncate (b * 255) :: Int)
 			  3	-> 0)
+
 
 
 -- | Extract the boundary value from a RGB triple.
@@ -156,7 +155,7 @@ slurpBoundValue r g b
 
 	-- A boundary value.
 	| (r == g) && (r == b) 
-	= fromIntegral r / 255
+	= fromIntegral (fromIntegral r :: Int) / 255
 	
 	| otherwise
 	= error $ "Unhandled pixel value in input " ++ show (r, g, b)

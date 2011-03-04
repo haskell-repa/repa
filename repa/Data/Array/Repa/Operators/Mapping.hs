@@ -65,6 +65,7 @@ map f (Array sh regions)
 -- | Combine two arrays, element-wise, with a binary operator.
 --	If the extent of the two array arguments differ, 
 --	then the resulting array's extent is their intersection.
+--   TODO: Also specialise for when the second array is manifest.
 zipWith :: (Shape sh, Elt a, Elt b, Elt c) 
 	=> (a -> b -> c) 
 	-> Array sh a
@@ -73,12 +74,26 @@ zipWith :: (Shape sh, Elt a, Elt b, Elt c)
 
 {-# INLINE zipWith #-}
 zipWith f arr1 arr2
- = let	{-# INLINE getElem' #-}
-	getElem' ix	= f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
+ 	| Array sh1 [_] <- arr1
+	, Array sh2 [ Region g21 (GenCursor make21 shift21 load21)
+		    , Region g22 (GenCursor make22 shift22 load22)] <- arr2
 
-   in	fromFunction
-		(S.intersectDim (extent arr1) (extent arr2))
-		getElem'
+	= let	{-# INLINE load21' #-}
+		load21' ix	= f (arr1 `unsafeIndex` ix) (load21 $ make21 ix)
+
+		{-# INLINE load22' #-}
+		load22' ix	= f (arr1 `unsafeIndex` ix) (load22 $ make22 ix)
+		
+	  in	Array (S.intersectDim (extent arr1) (extent arr2))
+		      [ Region g21 (GenCursor P.id addDim load21')
+		      , Region g22 (GenCursor P.id addDim load22') ]
+
+	| P.otherwise
+	= let	{-# INLINE getElem' #-}
+		getElem' ix	= f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
+	  in	fromFunction
+			(S.intersectDim (extent arr1) (extent arr2))
+			getElem'
 
 
 {-# INLINE (+^) #-}

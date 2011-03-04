@@ -19,11 +19,8 @@ solveLaplace steps arrBoundMask arrBoundValue arrInit
  where	go !i !arr
 	   | i == 0	= arr
 	   | otherwise	
-	   = let vec'	= force2
-			$ applyBoundary arrBoundMask arrBoundValue
-			$ relaxLaplace arr
-	
-	     in	 vec' `seq` go (i - 1) vec'
+	   = let arr'	= relaxLaplace arrBoundMask arrBoundValue arr
+	     in	 arr' `deepSeqArray` go (i - 1) arr'
 
 
 -- | Perform matrix relaxation for the Laplace equation,
@@ -32,13 +29,29 @@ solveLaplace steps arrBoundMask arrBoundValue arrInit
 --   Computation fn is
 --	u'(i,j) = (u(i-1,j) + u(i+1,j) + u(i,j-1) + u(i,j+1)) / 4
 --
+--  Apply the boundary conditions to this matrix.
+--	The mask  matrix has 0 in places where boundary conditions hold
+--	and 1 otherwise.
+--
+--	The value matrix has the boundary condition value in places where it holds,
+--	and 0 otherwise.
+-- 
+
 relaxLaplace
-	:: Array DIM2 Double
-	-> Array DIM2 Double
+	:: Array DIM2 Double	-- ^ Boundary condition mask
+	-> Array DIM2 Double	-- ^ Boundary condition values
+	-> Array DIM2 Double	-- ^ Initial matrix
+	-> Array DIM2 Double	
 
 {-# INLINE relaxLaplace #-}
-relaxLaplace !arr
- = unsafeTraverse arr id elemFn
+relaxLaplace 
+	 arrBoundMask@(Array _ [Region RangeAll (GenManifest _)])
+	arrBoundValue@(Array _ [Region RangeAll (GenManifest _)])
+       	          arr@(Array _ [Region RangeAll (GenManifest _)])
+ = [arrBoundMask, arrBoundValue, arr] `deepSeqArrays` force2
+ $ A.zipWith (+) arrBoundValue
+ $ A.zipWith (*) arrBoundMask
+ $ unsafeTraverse arr id elemFn
  where
 	_ :. height :. width	
 		= extent arr
@@ -59,22 +72,4 @@ relaxLaplace !arr
 	 	=  (i == 0) || (i >= width  - 1) 
 	 	|| (j == 0) || (j >= height - 1) 
 
-
--- | Apply the boundary conditions to this matrix.
---	The mask  matrix has 0 in places where boundary conditions hold
---	and 1 otherwise.
---
---	The value matrix has the boundary condition value in places where it holds,
---	and 0 otherwise.
--- 
-applyBoundary
-	:: Array DIM2 Double	-- ^ Boundary condition mask.
-	-> Array DIM2 Double	-- ^ Boundary condition values.
-	-> Array DIM2 Double	-- ^ Initial matrix.
-	-> Array DIM2 Double	-- ^ Matrix with boundary conditions applied.
-
-{-# INLINE applyBoundary #-}
-applyBoundary arrBoundMask arrBoundValue arr
-	= A.zipWith (+) arrBoundValue
-	$ A.zipWith (*) arrBoundMask  arr
 
