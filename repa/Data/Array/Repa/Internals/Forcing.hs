@@ -63,7 +63,7 @@ force arr
 
 		Array sh _
 		 -> do	mvec	<- VM.unsafeNew (S.size sh)
-			fillChunkedS mvec (\ix -> arr' `unsafeIndex` fromIndex sh ix)
+			fillChunkedP mvec (\ix -> arr' `unsafeIndex` fromIndex sh ix)
 			vec	<- V.unsafeFreeze mvec
 			return	(sh, vec)
 		

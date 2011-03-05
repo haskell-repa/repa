@@ -36,7 +36,6 @@ solveLaplace steps arrBoundMask arrBoundValue arrInit
 --	The value matrix has the boundary condition value in places where it holds,
 --	and 0 otherwise.
 -- 
-
 relaxLaplace
 	:: Array DIM2 Double	-- ^ Boundary condition mask
 	-> Array DIM2 Double	-- ^ Boundary condition values
