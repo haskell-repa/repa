@@ -85,3 +85,14 @@ dist/build/repa-sobel-opencv/repa-sobel-opencv : $(SOBEL_SRCS)
 	mkdir -p dist/build/repa-sobel-opencv
 	g++ -O3 $+ -Ilibc -I$(OPENCV_INCLUDE) -L$(OPENCV_LIBDIR) -lopencv_core -lopencv_highgui -lopencv_imgproc -o $@
 
+
+# -- Canny ---------------------------------------------------------------
+CANNY_SRCS = \
+	examples/Canny/src-opencv/Main.cpp \
+	libc/Timing.c 
+	
+dist/build/repa-canny-opencv/repa-canny-opencv : $(SOBEL_SRCS)
+	@echo "* Building Canny"
+	mkdir -p dist/build/repa-canny-opencv
+	g++ -O3 $+ -Ilibc -I$(OPENCV_INCLUDE) -L$(OPENCV_LIBDIR) -lopencv_core -lopencv_highgui -lopencv_imgproc -o $@
+

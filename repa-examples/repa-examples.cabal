@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             1.2.0.0
+Version:             2.0.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -28,16 +28,11 @@ Executable repa-mmult
   Main-is: examples/MMult/src-repa/Main.hs
   hs-source-dirs: examples/MMult/src-repa .
   ghc-options: 
-        -threaded
+        -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
 
 
 Executable repa-laplace
@@ -50,16 +45,11 @@ Executable repa-laplace
   other-modules: SolverGet SolverStencil
   hs-source-dirs: examples/Laplace/src-repa .
   ghc-options: 
-        -threaded
+        -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
 
 
 Executable repa-fft2d
@@ -74,14 +64,9 @@ Executable repa-fft2d
   ghc-options: 
         -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
 
 
 Executable repa-fft2d-highpass
@@ -96,14 +81,9 @@ Executable repa-fft2d-highpass
   ghc-options: 
         -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
 
 
 Executable repa-fft3d-highpass
@@ -117,14 +97,9 @@ Executable repa-fft3d-highpass
   ghc-options: 
         -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
 
 
 Executable repa-blur
@@ -139,36 +114,9 @@ Executable repa-blur
   ghc-options: 
         -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
-
-
-Executable repa-edgedetect
-  Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.0.*,
-        repa-algorithms      == 2.0.*,
-        template-haskell     >= 2.5 && < 2.6
-
-  Main-is: examples/EdgeDetect/src-repa/Main.hs
-  hs-source-dirs: examples/EdgeDetect/src-repa .
-  ghc-options: 
-        -threaded 
-        -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
-        -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
 
 
 Executable repa-sobel
@@ -183,12 +131,24 @@ Executable repa-sobel
   ghc-options: 
         -threaded 
         -rtsopts 
-        -Odph
-        -fsimplifier-phases=4 
-        -fstrictness-before=3 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
         -funfolding-use-threshold30
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
+
+
+Executable repa-canny
+  Build-depends: 
+        base                 == 4.*,
+        repa                 == 2.0.*,
+        repa-algorithms      == 2.0.*,
+        template-haskell     >= 2.5 && < 2.6
+
+  Main-is: examples/Canny/src-repa/Main.hs
+  hs-source-dirs: examples/Canny/src-repa .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph -fllvm -optlo-O3
+	-fno-liberate-case
+        -funfolding-use-threshold30
 
