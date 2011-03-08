@@ -12,6 +12,10 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
+import System.IO.Unsafe
+import qualified Data.Vector.Unboxed.Mutable	as VM
+import qualified Data.Vector.Unboxed		as V
+
 type Image	= Array DIM2 Float
 
 -- Constants ------------------------------------------------------------------
@@ -19,7 +23,7 @@ orientPosDiag	= 0	:: Float
 orientVert	= 1	:: Float
 orientNegDiag	= 2	:: Float
 orientHoriz	= 3	:: Float
--- orientUndef	= 4	:: Float
+orientUndef	= 4	:: Float
 
 
 data Edge	= None | Weak | Strong
@@ -58,10 +62,13 @@ run loops threshLow threshHigh fileIn fileOut
 		arrOrient	<- timeStage loops "orientation"  
 				$ return $ gradientOrient threshLow arrDX arrDY
 
-		arrSupress	<- timeStage loops "suppress"     
+		arrSuppress	<- timeStage loops "suppress"     
 				$ return $ suppress threshLow threshHigh arrMag arrOrient
 
-		return arrSupress
+		arrStrong	<- timeStage loops "select"	$ return $ selectStrong arrSuppress	
+		arrEdges	<- timeStage loops "wildfire"	$ return $ wildfire arrSuppress arrStrong	
+
+		return arrEdges
 
 	when (loops >= 1)
 	 $ putStrLn $ "\nTOTAL\n"
@@ -238,7 +245,7 @@ suppress threshLow threshHigh
 	   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
 	dOrient@(Array _ [Region RangeAll (GenManifest _)])
  = [dMag, dOrient] `deepSeqArrays` force2 
- $ traverse2 dMag dOrient const compare
+ $ unsafeTraverse2 dMag dOrient const compare
 
  where	_ :. height :. width	= extent dMag
 	
@@ -269,4 +276,91 @@ suppress threshLow threshHigh
             | m < threshLow 	= edge None
 	    | m < threshHigh	= edge Weak
 	    | otherwise		= edge Strong
+
+
+-- | Select indices of strong edges
+--   TODO: merge this into suppress above with a fused map/select operation.
+{-# NOINLINE selectStrong #-}
+selectStrong :: Image -> Array DIM1 Int
+selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
+ = img `deepSeqArray` 
+   select 
+	(\ix -> img R.! ix == edge Strong)
+	(\ix -> toIndex (extent img) ix)
+	(extent img)
+
+
+-- | Burn in any weak edges that are connected to strong edges.
+--   TODO would be nice to write cursors onto stack
+{-# NOINLINE wildfire #-}
+wildfire 
+	:: Image		-- ^ Image with strong and weak edges set.
+	-> Array DIM1 Int	-- ^ Array containing flat indices of strong edges.
+	-> Image		-- 
+
+wildfire img arrStrong
+ = unsafePerformIO 
+ $ do	(sh, vec)	<- wildfireIO 
+	return	$ sh `seq` vec `seq` 
+		  Array sh [Region RangeAll (GenManifest vec)]
+
+ where	lenImg		= R.size $ R.extent img
+	lenStrong	= R.size $ R.extent arrStrong
+	vStrong		= toVector arrStrong
+	
+	wildfireIO
+  	 = do	-- Stack of image indices we still need to consider.
+		vStrong' <- V.thaw vStrong
+		vStack	 <- VM.grow vStrong' (lenImg - lenStrong)
+	
+		-- Burn in new edges.
+		vImg	<- VM.unsafeNew lenImg
+		VM.set vImg 0
+		burn vImg vStack lenStrong
+		vImg'	<- V.unsafeFreeze vImg
+		return	(extent img, vImg')
+
+	
+	burn :: VM.IOVector Float -> VM.IOVector Int -> Int -> IO ()
+	burn !vImg !vStack !top
+	 | top == 0
+	 = return ()
+	
+	 | otherwise
+	 = do	let top'		=  top - 1
+		n			<- VM.read vStack top'
+		let (Z :. y :. x)	= fromIndex (R.extent img) n
+		let push		= pushWeak vImg vStack 
+				
+		VM.write vImg n (edge Strong)
+	    	 >>  push (Z :. y - 1 :. x - 1) top'
+	    	 >>= push (Z :. y - 1 :. x    )
+	    	 >>= push (Z :. y - 1 :. x + 1)
+
+	    	 >>= push (Z :. y     :. x - 1)
+	    	 >>= push (Z :. y     :. x + 1)
+
+	    	 >>= push (Z :. y + 1 :. x - 1)
+	    	 >>= push (Z :. y + 1 :. x    )
+	    	 >>= push (Z :. y + 1 :. x + 1)
+
+	    	 >>= burn vImg vStack
+
+	-- If this ix is weak in the source then set it to strong in the
+	-- result and push the ix onto the stack.
+	{-# INLINE pushWeak #-}
+	pushWeak vImg vStack ix top
+	 = do	let n		= toIndex (extent img) ix
+		xDst		<- VM.read vImg n
+		let xSrc	= img R.! ix
+
+		if   xDst == edge None 
+		  && xSrc == edge Weak
+		 then do
+			VM.write vStack top (toIndex (extent img) ix)
+			return (top + 1)
+			
+		 else	return top
+	
+
 

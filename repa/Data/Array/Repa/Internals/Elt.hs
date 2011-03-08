@@ -1,5 +1,5 @@
 -- | Values that can be stored in Repa Arrays.
-{-# LANGUAGE MagicHash, UnboxedTuples #-}
+{-# LANGUAGE MagicHash, UnboxedTuples, TypeSynonymInstances, FlexibleInstances #-}
 module Data.Array.Repa.Internals.Elt
 	(Elt (..))
 where
@@ -8,6 +8,7 @@ import GHC.Exts
 import GHC.Types
 import GHC.Word
 import Data.Vector.Unboxed
+import Data.Array.Repa.Index
 	
 class (Show a, Unbox a)	=> Elt a where
 
@@ -34,6 +35,8 @@ instance Elt Bool where
  {-# INLINE one #-}
  one  = True
 
+
+-- Floating -------------------------------------------------------------------
 instance Elt Float where
  {-# INLINE touch #-}
  touch (F# f) 
@@ -60,6 +63,7 @@ instance Elt Double where
  one = 1
 
 
+-- Integral -------------------------------------------------------------------
 instance Elt Int where
  {-# INLINE touch #-}
  touch (I# i) 
@@ -85,3 +89,4 @@ instance Elt Word8 where
  {-# INLINE one #-}
  one = 1
 	
+

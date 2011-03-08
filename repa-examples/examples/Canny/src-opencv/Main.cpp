@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
 	int channels	= src.channels();
 	assert (channels == 3);
 
+	struct benchtime *bt = bench_begin();
 	
 	// Get luminance of source image as word8s
 	cv::Mat srcLum	(src.rows, src.cols, CV_8UC1);
@@ -52,12 +53,10 @@ int main(int argc, char *argv[])
 	// Compute Sobel of source luminance.
 	cv::Mat edges 	= srcLum.clone();
 	
-	struct benchtime *bt = bench_begin();
 
 	for(int iters = 0; iters < iterations; iters++) {
 		cv::Canny(srcLum, edges, 100, 150);
 	}
-	bench_done(bt);
 
 	// Create output greyscale image.
 	//   The imwrite function doesn't handle float data.
@@ -71,6 +70,8 @@ int main(int argc, char *argv[])
 			rowOut[j]	= rowEdges[j] * 100;
 		}
 	}
+
+	bench_done(bt);
 
 	// Write out the data to a new image.
 	cv::imwrite(fileNameOut, matOut);

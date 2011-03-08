@@ -50,6 +50,7 @@ Library
         Data.Array.Repa.Operators.Interleave
         Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Operators.Reduction
+        Data.Array.Repa.Operators.Select
         Data.Array.Repa.Internals.Elt
         Data.Array.Repa.Internals.Base
         Data.Array.Repa.Internals.Gang
@@ -57,6 +58,7 @@ Library
         Data.Array.Repa.Internals.EvalBlockwise
         Data.Array.Repa.Internals.EvalCursored
         Data.Array.Repa.Internals.Forcing
+        Data.Array.Repa.Internals.Select
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil.Base
         Data.Array.Repa.Stencil.Template

@@ -75,7 +75,10 @@ module Data.Array.Repa
 	-- * Interleaving
 	, interleave2
 	, interleave3
-	, interleave4)
+	, interleave4
+	
+	-- from Data.Array.Repa.Operators.Select --------------------
+	, select)
 		
 where
 import Data.Array.Repa.Index
@@ -89,6 +92,7 @@ import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Reduction
+import Data.Array.Repa.Operators.Select
 import qualified Data.Array.Repa.Shape	as S
 
 import Prelude				hiding (sum, map, zipWith, replicate)	
