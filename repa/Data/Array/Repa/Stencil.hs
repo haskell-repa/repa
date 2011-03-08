@@ -1,5 +1,5 @@
 {-# LANGUAGE 	MagicHash, PatternGuards, BangPatterns, TemplateHaskell, QuasiQuotes, 
-		ParallelListComp, TypeOperators #-}
+		ParallelListComp, TypeOperators, ExplicitForAll, ScopedTypeVariables #-}
 {-# OPTIONS -Wnot #-}
 
 -- | Efficient computation of stencil based convolutions.
@@ -26,6 +26,7 @@ import qualified Data.Array.Repa.Shape	as S
 import qualified Data.Vector.Unboxed	as V
 import Data.List			as List
 import GHC.Exts
+import GHC.Base
 import Debug.Trace
 
 -- | A index into the flat array.
@@ -93,8 +94,8 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 
 	-- Cursor functions ----------------
 	{-# INLINE makeCursor' #-}
-	makeCursor'   (Z :. y :. x)	
-			= Cursor (x + y * aWidth)
+	makeCursor' (Z :. y :. x)	
+	 = Cursor (x + y * aWidth)
 	
 	{-# INLINE shiftCursor' #-}
 	shiftCursor' ix (Cursor off)
@@ -103,10 +104,14 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 		Z :. y :. x	-> off + y * aWidth + x
 			
 	{-# INLINE getInner' #-}
-	getInner' cur	= unsafeAppStencilCursor2 stencil arr shiftCursor' cur
+	getInner' cur	
+	 = unsafeAppStencilCursor2 shiftCursor' stencil arr cur
 	
 	{-# INLINE getBorder' #-}
-	getBorder' _	= zero
+	getBorder' cur
+	 = case boundary of
+		BoundConst c	-> c
+		BoundClamp 	-> unsafeAppStencilCursor2_clamp addDim stencil arr cur
 							
    in	Array (extent arr)
 		[ Region (RangeRects inBorder rectsBorder)
@@ -116,21 +121,19 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 		     	 (GenCursor makeCursor' shiftCursor' getInner') ]
 
 
-
 unsafeAppStencilCursor2
 	:: Elt a
-	=> Stencil DIM2 a
+	=> (DIM2 -> Cursor -> Cursor)
+	-> Stencil DIM2 a
 	-> Array DIM2 a 
-	-> (DIM2 -> Cursor -> Cursor)	-- offsetCursor
 	-> Cursor 
 	-> a
 
 {-# INLINE [1] unsafeAppStencilCursor2 #-}
-unsafeAppStencilCursor2
-	    stencil@(StencilStatic sExtent zero load)
-	        arr@(Array aExtent [Region RangeAll (GenManifest vec)])
-	 offsetCursor
-	     cur@(Cursor off)
+unsafeAppStencilCursor2 shift
+	stencil@(StencilStatic sExtent zero load)
+	    arr@(Array aExtent [Region RangeAll (GenManifest vec)])
+	    cur@(Cursor off)
 
 	| _ :. sHeight :. sWidth	<- sExtent
 	, _ :. aHeight :. aWidth	<- aExtent
@@ -138,16 +141,70 @@ unsafeAppStencilCursor2
 	= let	
 		-- Get data from the manifest array.
 		{-# INLINE [0] getData #-}
-		getData (Cursor cur)
-			= vec `V.unsafeIndex` cur
+		getData (Cursor cur) = vec `V.unsafeIndex` cur
 		
 		-- Build a function to pass data from the array to our stencil.
 		{-# INLINE oload #-}
 		oload oy ox	
-		 = let	!cur' = offsetCursor (Z :. oy :. ox) cur
+		 = let	!cur' = shift (Z :. oy :. ox) cur
 		   in	load (Z :. oy :. ox) (getData cur')
 	
 	   in	template5x5 oload zero
+
+
+-- | Like above, but clamp out of bounds array values to the closest real value.
+unsafeAppStencilCursor2_clamp
+	:: forall a. Elt a
+	=> (DIM2 -> DIM2 -> DIM2)
+	-> Stencil DIM2 a
+	-> Array DIM2 a 
+	-> DIM2
+	-> a
+
+{-# INLINE [1] unsafeAppStencilCursor2_clamp #-}
+unsafeAppStencilCursor2_clamp shift
+	   stencil@(StencilStatic sExtent zero load)
+	       arr@(Array aExtent [Region RangeAll (GenManifest vec)])
+	       cur
+
+	| _ :. sHeight :. sWidth	<- sExtent
+	, _ :. aHeight :. aWidth	<- aExtent
+	, sHeight <= 5, sWidth <= 5
+	= let	
+		-- Get data from the manifest array.
+		{-# INLINE [0] getData #-}
+		getData :: DIM2 -> a
+		getData (Z :. y :. x)
+		 = wrapLoadX x y
+
+		-- TODO: Inlining this into above makes SpecConstr choke
+		wrapLoadX :: Int -> Int -> a
+		wrapLoadX !x !y
+		 | x < 0	= wrapLoadY 0      	 y
+		 | x >= aWidth	= wrapLoadY (aWidth - 1) y
+		 | otherwise    = wrapLoadY x y
+		
+		{-# INLINE wrapLoadY #-}
+		wrapLoadY :: Int -> Int -> a
+		wrapLoadY !x !y
+		 | y <  0	= loadXY x 0
+		 | y >= aHeight = loadXY x (aHeight - 1)
+		 | otherwise    = loadXY x y
+		
+		{-# INLINE loadXY #-}
+		loadXY :: Int -> Int -> a
+		loadXY !x !y
+		 = vec `V.unsafeIndex` (x + y * aWidth)
+		
+		-- Build a function to pass data from the array to our stencil.
+		{-# INLINE oload #-}
+		oload oy ox	
+		 = let	!cur' = shift (Z :. oy :. ox) cur
+		   in	load (Z :. oy :. ox) (getData cur')
+	
+	   in	template5x5 oload zero
+
+
 
 
 -- | Data template for stencils up to 5x5.

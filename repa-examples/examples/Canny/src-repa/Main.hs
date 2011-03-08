@@ -159,7 +159,7 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 gradientX :: Image -> Image
 gradientX img@(Array _ [Region RangeAll (GenManifest _)])
  	= img `deepSeqArray` force2
-    	$ forStencil2 BoundClamp img
+    	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -170,7 +170,7 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 gradientY :: Image -> Image
 gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 	= img `deepSeqArray` force2
-	$ forStencil2 BoundClamp img
+	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
