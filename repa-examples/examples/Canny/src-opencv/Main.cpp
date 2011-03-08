@@ -33,63 +33,42 @@ int main(int argc, char *argv[])
 	assert (channels == 3);
 
 	
-	// Get luminance of source image as floats.
-	cv::Mat srcLum	(src.rows, src.cols, CV_32F);
+	// Get luminance of source image as word8s
+	cv::Mat srcLum	(src.rows, src.cols, CV_8UC1);
 	for(int i = 0; i < height; i++) {
 		uchar* rowSrc		= src.ptr(i);
-		float* rowSrcLum	= (float*)srcLum.ptr(i);
+		uchar* rowSrcLum	= (uchar*)srcLum.ptr(i);
 		
 		for(int j = 0; j < width; j++) {
-			uchar r	= rowSrc[j * channels + 0];
-			uchar g = rowSrc[j * channels + 1];
-			uchar b = rowSrc[j * channels + 2];
+			float r	= (float)rowSrc[j * channels + 0];
+			float g = (float)rowSrc[j * channels + 1];
+			float b = (float)rowSrc[j * channels + 2];
+			float x	= ((r * 0.3) + (g * 0.59) + (b * 0.11));
 			
-			rowSrcLum[j] = ((r * 0.3) + (g * 0.59) + (b * 0.11)) / 255.0;
+			rowSrcLum[j] = (uchar)x;
 		}
 	}
 
 	// Compute Sobel of source luminance.
-	cv::Mat sobelX = srcLum.clone();
-	cv::Mat sobelY = srcLum.clone();
+	cv::Mat edges 	= srcLum.clone();
 	
 	struct benchtime *bt = bench_begin();
 
 	for(int iters = 0; iters < iterations; iters++) {
-	cv::Sobel (srcLum, sobelX
-			, srcLum.depth()
-			, 1		// xorder
-			, 0		// yorder
-			, 3		// kernel size
-			, 1		// scale
-			, 0		// delta
-			, cv::BORDER_DEFAULT);
-
-	cv::Sobel (srcLum, sobelY
-			, srcLum.depth()
-			, 0		// xorder
-			, 1		// yorder
-			, 3		// kernel size
-			, 1		// scale
-			, 0		// delta
-			, cv::BORDER_DEFAULT);
+		cv::Canny(srcLum, edges, 100, 150);
 	}
 	bench_done(bt);
-
 
 	// Create output greyscale image.
 	//   The imwrite function doesn't handle float data.
 	cv::Mat matOut (src.rows, src.cols, CV_8U);
 
 	for(int i = 0; i < height; i++) {
-		float* rowSobelX	= (float*)sobelX.ptr(i);
-		float* rowSobelY	= (float*)sobelY.ptr(i);
+		uchar* rowEdges		= (uchar*)edges.ptr(i);
 		uchar* rowOut		= matOut.ptr(i);
 
 		for(int j = 0; j < width; j++) {
-			float sX	= rowSobelX[j];
-			float sY	= rowSobelY[j];
-
-			rowOut[j]	= sqrt(sX * sX + sY * sY) * 100;
+			rowOut[j]	= rowEdges[j] * 100;
 		}
 	}
 
