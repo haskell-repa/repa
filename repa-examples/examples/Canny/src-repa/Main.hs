@@ -19,10 +19,13 @@ orientPosDiag	= 0	:: Float
 orientVert	= 1	:: Float
 orientNegDiag	= 2	:: Float
 orientHoriz	= 3	:: Float
-orientUndef	= 4	:: Float
+-- orientUndef	= 4	:: Float
 
-edge False	= 0 	:: Float
-edge True	= 200 	:: Float
+
+data Edge	= None | Weak | Strong
+edge None	= 0 	:: Float
+edge Weak	= 100 	:: Float
+edge Strong	= 200	:: Float
 
 
 -- Main routine ---------------------------------------------------------------
@@ -30,15 +33,15 @@ main
  = do	args	<- getArgs
 	case args of
 	 [fileIn, fileOut]		
-	   -> run 0 40 fileIn fileOut
+	   -> run 0 50 100 fileIn fileOut
 
-	 [loops, threshold, fileIn, fileOut]
-	   -> run (read loops) (read threshold) fileIn fileOut
+	 [loops, threshLow, threshHigh, fileIn, fileOut]
+	   -> run (read loops) (read threshLow) (read threshHigh) fileIn fileOut
 
-	 _ -> putStrLn "repa-edgedetect [loops threshold] <fileIn.bmp> <fileOut.bmp>"
+	 _ -> putStrLn "repa-canny [loops threshLow threshHigh] <fileIn.bmp> <fileOut.bmp>"
 
 
-run loops thresh fileIn fileOut
+run loops threshLow threshHigh fileIn fileOut
  = do	arrInput 	<- liftM (force . either (error . show) id) 
 			$ readImageFromBMP fileIn
 
@@ -51,8 +54,13 @@ run loops thresh fileIn fileOut
 		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
 		arrDY		<- timeStage loops "diffY"	  $ return $ gradientY      arrBlured
 		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
-		arrOrient	<- timeStage loops "orientation"  $ return $ gradientOrient thresh arrDX arrDY
-		arrSupress	<- timeStage loops "suppress"     $ return $ suppress       arrMag arrOrient
+
+		arrOrient	<- timeStage loops "orientation"  
+				$ return $ gradientOrient threshLow arrDX arrDY
+
+		arrSupress	<- timeStage loops "suppress"     
+				$ return $ suppress threshLow threshHigh arrMag arrOrient
+
 		return arrSupress
 
 	when (loops >= 1)
@@ -172,13 +180,13 @@ gradientMag
 
  where	{-# INLINE magnitude #-}
 	magnitude :: Float -> Float -> Float
-	magnitude x y	= x * x + y * y
+	magnitude x y	= sqrt (x * x + y * y)
 
 
 -- | Classify the orientation of the vector gradient.
 {-# NOINLINE gradientOrient #-}
 gradientOrient :: Float -> Image -> Image -> Image
-gradientOrient !sensitivity
+gradientOrient !threshLow 
  	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
  = [dX, dY] `deepSeqArrays` force2
@@ -187,10 +195,12 @@ gradientOrient !sensitivity
  where	{-# INLINE orientation #-}
 	orientation :: Float -> Float -> Float
 	orientation x y
- 	 | x >= negate sensitivity, x < sensitivity
- 	 , y >= negate sensitivity, y < sensitivity
- 	 = orientUndef
 
+	 -- Don't bother computing orientation if vector is below threshold.
+{- 	 | x >= negate threshLow, x < threshLow
+ 	 , y >= negate threshLow, y < threshLow
+ 	 = orientUndef
+-}
 	 | otherwise
 	 = let	-- determine the angle of the vector and rotate it around a bit
 		-- to make the segments easier to classify.
@@ -223,8 +233,9 @@ gradientOrient !sensitivity
 
 -- | Suppress pixels which are not local maxima.
 {-# NOINLINE suppress #-}
-suppress :: Image -> Image -> Image
-suppress   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
+suppress :: Float -> Float -> Image -> Image -> Image
+suppress threshLow threshHigh
+	   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
 	dOrient@(Array _ [Region RangeAll (GenManifest _)])
  = [dMag, dOrient] `deepSeqArrays` force2 
  $ traverse2 dMag dOrient const compare
@@ -239,21 +250,23 @@ suppress   dMag@(Array _ [Region RangeAll (GenManifest _)])
 	 | otherwise            = False
 
 	{-# INLINE compare #-}
-	compare get1 get2 d@(sh :. i :. j)
-         | isBoundary i j      = edge False 
-         | o == orientHoriz    = isMaximum (get1 (sh :. i     :. j - 1)) (get1 (sh :. i     :. j + 1)) 
-         | o == orientVert     = isMaximum (get1 (sh :. i - 1 :. j))     (get1 (sh :. i + 1 :. j)) 
-         | o == orientPosDiag  = isMaximum (get1 (sh :. i - 1 :. j - 1)) (get1 (sh :. i + 1 :. j + 1)) 
-         | o == orientNegDiag  = isMaximum (get1 (sh :. i - 1 :. j + 1)) (get1 (sh :. i + 1 :. j - 1)) 
-         | otherwise           = edge False  
+	compare getMag getOrient d@(sh :. i :. j)
+         | isBoundary i j	= edge None
+         | o == orientHoriz	= isMaximum (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
+         | o == orientVert	= isMaximum (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 
+         | o == orientNegDiag	= isMaximum (getMag (sh :. i-1 :. j-1)) (getMag (sh :. i+1 :. j+1)) 
+         | o == orientPosDiag	= isMaximum (getMag (sh :. i-1 :. j+1)) (getMag (sh :. i+1 :. j-1)) 
+         | otherwise 		= edge None
       
          where
-          !o 		= get2 d  
-          !intensity 	= get1 (Z :. i :. j)
+          !o 		= getOrient d  
+          !m		= getMag    (Z :. i :. j)
 
 	  {-# INLINE isMaximum #-}
           isMaximum intensity1 intensity2
-            | intensity < intensity1 = edge False
-            | intensity < intensity2 = edge False
-            | otherwise              = edge True
+            | m < intensity1 	= edge None
+            | m < intensity2 	= edge None
+            | m < threshLow 	= edge None
+	    | m < threshHigh	= edge Weak
+	    | otherwise		= edge Strong
 

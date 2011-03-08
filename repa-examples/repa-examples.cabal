@@ -31,7 +31,7 @@ Executable repa-mmult
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -48,7 +48,7 @@ Executable repa-laplace
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -65,7 +65,7 @@ Executable repa-fft2d
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -82,7 +82,7 @@ Executable repa-fft2d-highpass
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -98,7 +98,7 @@ Executable repa-fft3d-highpass
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -115,7 +115,7 @@ Executable repa-blur
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -132,7 +132,7 @@ Executable repa-sobel
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 
 
@@ -149,6 +149,6 @@ Executable repa-canny
         -threaded 
         -rtsopts 
         -Odph -fllvm -optlo-O3
-	-fno-liberate-case
+        -fno-liberate-case
         -funfolding-use-threshold30
 

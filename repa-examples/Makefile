@@ -15,7 +15,8 @@ all : 	dist/build/repa-laplace-c/repa-laplace-c \
 	dist/build/repa-highpass2d-fftw/repa-highpass2d-fftw \
 	dist/build/repa-highpass3d-fftw/repa-highpass3d-fftw \
 	dist/build/repa-mmult-c/repa-mmult-c \
-	dist/build/repa-sobel-opencv/repa-sobel-opencv
+	dist/build/repa-sobel-opencv/repa-sobel-opencv \
+	dist/build/repa-canny-opencv/repa-canny-opencv
 
 .PHONY : clean
 clean : 
