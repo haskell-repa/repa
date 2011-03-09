@@ -141,18 +141,19 @@ word8OfFloat f
 
 -- | Separable Gaussian blur in the X direction.
 {-# NOINLINE blurSepX #-}
-blurSepX :: Array DIM2 Word8 -> Array DIM2 Float
+blurSepX :: Array DIM2 Word8 -> Array DIM2 Word16
 blurSepX arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ forStencil2  BoundClamp arr floatOfWord8
+	$ forStencil2  BoundClamp arr fromIntegral
 	  [stencil2|	1 4 6 4 1 |]	
+
 
 -- | Separable Gaussian blur in the Y direction.
 {-# NOINLINE blurSepY #-}
-blurSepY :: Array DIM2 Float -> Array DIM2 Float
+blurSepY :: Array DIM2 Word16 -> Array DIM2 Word8
 blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ R.map (/ 256)
+	$ R.map postConvert
 	$ forStencil2  BoundClamp arr id
 	  [stencil2|	1
 	 		4
@@ -160,13 +161,16 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 			4
 			1 |]	
 
+	where	{-# INLINE postConvert #-}
+		postConvert :: Word16 -> Word8
+		postConvert !x	= fromIntegral $ x `div` 256
 
 -- | Compute gradient in the X direction.
 {-# NOINLINE gradientX #-}
-gradientX :: Image -> Image
+gradientX :: Array DIM2 Word8 -> Array DIM2 Float
 gradientX img@(Array _ [Region RangeAll (GenManifest _)])
  	= img `deepSeqArray` force2
-    	$ forStencil2 (BoundConst 0) img id
+    	$ forStencil2 (BoundConst 0) img floatOfWord8
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -174,10 +178,10 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 
 -- | Compute gradient in the Y direction.
 {-# NOINLINE gradientY #-}
-gradientY :: Image -> Image
+gradientY :: Array DIM2 Word8 -> Array DIM2 Float
 gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 	= img `deepSeqArray` force2
-	$ forStencil2 (BoundConst 0) img id
+	$ forStencil2 (BoundConst 0) img floatOfWord8
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 

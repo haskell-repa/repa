@@ -57,11 +57,11 @@ parseStencil2 str
 	maxY		= sizeY `div` 2
 
 	-- List of coefficients for the stencil.
-	coeffs		= (List.map read $ words str) :: [Double]
+	coeffs		= (List.map read $ words str) :: [Integer]
 	
    in	makeStencil2' sizeX sizeY
 	 $ filter (\(_, _, v) -> v /= 0)
-	 $ [ (fromIntegral y, fromIntegral x, toRational v)
+	 $ [ (fromIntegral y, fromIntegral x, fromIntegral v)
 		| y	<- [minX, minX + 1 .. maxX]
 		, x	<- [minY, minY + 1 .. maxY]
 		| v	<- coeffs ]
@@ -69,7 +69,7 @@ parseStencil2 str
 
 makeStencil2'
 	:: Integer -> Integer
-	-> [(Integer, Integer, Rational)]
+	-> [(Integer, Integer, Integer)]
 	-> Q Exp
 
 makeStencil2' sizeX sizeY coeffs
@@ -84,7 +84,7 @@ makeStencil2' sizeX sizeY coeffs
 		= LamE  [VarP ix']
 	 	$ CaseE (VarE ix') 
 	 	$   [ Match	(InfixP (InfixP z' dot' (LitP (IntegerL oy))) dot' (LitP (IntegerL ox)))
-				(NormalB $ ConE just' `AppE` LitE (RationalL v))
+				(NormalB $ ConE just' `AppE` LitE (IntegerL v))
 				[] | (oy, ox, v) <- coeffs ]
 	  	    ++ [Match WildP 
 				(NormalB $ ConE (mkName "Nothing")) []]
