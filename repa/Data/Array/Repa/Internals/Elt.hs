@@ -7,6 +7,7 @@ import GHC.Prim
 import GHC.Exts
 import GHC.Types
 import GHC.Word
+import GHC.Int
 import Data.Vector.Unboxed
 import Data.Array.Repa.Index
 	
@@ -93,6 +94,32 @@ instance Elt Word8 where
 instance Elt Word16 where
  {-# INLINE touch #-}
  touch (W16# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+instance Elt Int8 where
+ {-# INLINE touch #-}
+ touch (I8# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+instance Elt Int16 where
+ {-# INLINE touch #-}
+ touch (I16# w) 
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 

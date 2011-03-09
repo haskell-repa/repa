@@ -4,6 +4,8 @@
 -- | Canny edge detector
 import Data.List
 import Data.Word
+import Data.Bits
+import Data.Int
 import Control.Monad
 import System.Environment
 import Data.Array.Repa 			as R
@@ -16,7 +18,7 @@ import System.IO.Unsafe
 import qualified Data.Vector.Unboxed.Mutable	as VM
 import qualified Data.Vector.Unboxed		as V
 
-type Image	= Array DIM2 Float
+type Image a	= Array DIM2 a
 
 -- Constants ------------------------------------------------------------------
 orientPosDiag	= 0	:: Float
@@ -27,9 +29,9 @@ orientUndef	= 4	:: Float
 
 
 data Edge	= None | Weak | Strong
-edge None	= 0 	:: Float
-edge Weak	= 100 	:: Float
-edge Strong	= 200	:: Float
+edge None	= 0 	:: Word8
+edge Weak	= 100 	:: Word8
+edge Strong	= 200	:: Word8
 
 
 -- Main routine ---------------------------------------------------------------
@@ -75,7 +77,7 @@ run loops threshLow threshHigh fileIn fileOut
 	
 	putStr $ prettyTime tTotal
 	
-	writeMatrixToGreyscaleBMP fileOut arrResult
+	writeComponentsToBMP fileOut arrResult arrResult arrResult
 
 
 -- | Wrapper to time each stage of the algorithm.
@@ -103,6 +105,24 @@ timeStage loops name fn
 			++ unlines [ "  " ++ l | l <- lines $ prettyTime t ]
 
 	return arrResult
+
+
+{-# INLINE floatOfWord8 #-}
+floatOfWord8 :: Word8 -> Float
+floatOfWord8 w8
+ 	= fromIntegral (fromIntegral w8 :: Int)
+
+
+{-# INLINE word8OfFloat #-}
+word8OfFloat :: Float -> Word8
+word8OfFloat f
+ 	= fromIntegral (truncate f :: Int)
+
+
+{-# INLINE int8OfFloat #-}
+int8OfFloat :: Float -> Int8
+int8OfFloat f
+ 	= fromIntegral (truncate f :: Int)
 	
 
 -------------------------------------------------------------------------------
@@ -127,33 +147,23 @@ toGreyScale
 		+ floatOfWord8 g * 0.59
 		+ floatOfWord8 b * 0.11)
 
-{-# INLINE floatOfWord8 #-}
-floatOfWord8 :: Word8 -> Float
-floatOfWord8 w8
- 	= fromIntegral (fromIntegral w8 :: Int)
-
-
-{-# INLINE word8OfFloat #-}
-word8OfFloat :: Float -> Word8
-word8OfFloat f
- 	= fromIntegral (truncate f :: Int)
 
 
 -- | Separable Gaussian blur in the X direction.
 {-# NOINLINE blurSepX #-}
-blurSepX :: Array DIM2 Word8 -> Array DIM2 Word16
+blurSepX :: Array DIM2 Word8 -> Array DIM2 Float
 blurSepX arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ forStencil2  BoundClamp arr fromIntegral
+	$ forStencil2  BoundClamp arr floatOfWord8
 	  [stencil2|	1 4 6 4 1 |]	
 
 
 -- | Separable Gaussian blur in the Y direction.
 {-# NOINLINE blurSepY #-}
-blurSepY :: Array DIM2 Word16 -> Array DIM2 Word8
+blurSepY :: Array DIM2 Float -> Array DIM2 Float
 blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ R.map postConvert
+	$ R.map (/ 256)
 	$ forStencil2  BoundClamp arr id
 	  [stencil2|	1
 	 		4
@@ -161,16 +171,13 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 			4
 			1 |]	
 
-	where	{-# INLINE postConvert #-}
-		postConvert :: Word16 -> Word8
-		postConvert !x	= fromIntegral $ x `div` 256
 
 -- | Compute gradient in the X direction.
 {-# NOINLINE gradientX #-}
-gradientX :: Array DIM2 Word8 -> Array DIM2 Float
+gradientX :: Array DIM2 Float -> Array DIM2 Float
 gradientX img@(Array _ [Region RangeAll (GenManifest _)])
  	= img `deepSeqArray` force2
-    	$ forStencil2 (BoundConst 0) img floatOfWord8
+    	$ forStencil2 (BoundConst 0) img id
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -178,10 +185,10 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 
 -- | Compute gradient in the Y direction.
 {-# NOINLINE gradientY #-}
-gradientY :: Array DIM2 Word8 -> Array DIM2 Float
+gradientY :: Array DIM2 Float -> Array DIM2 Float
 gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 	= img `deepSeqArray` force2
-	$ forStencil2 (BoundConst 0) img floatOfWord8
+	$ forStencil2 (BoundConst 0) img id
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
@@ -189,21 +196,21 @@ gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 
 -- | Compute magnitude of the vector gradient.
 {-# NOINLINE gradientMag #-}
-gradientMag :: Image -> Image -> Image
+gradientMag :: Array DIM2 Float -> Array DIM2 Float -> Array DIM2 Float
 gradientMag
 	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
  = [dX, dY] `deepSeqArrays` force2
- $ R.zipWith magnitude  dX dY
+ $ R.zipWith magnitude dX dY
 
  where	{-# INLINE magnitude #-}
 	magnitude :: Float -> Float -> Float
-	magnitude x y	= sqrt (x * x + y * y)
+	magnitude x y = sqrt (x * x + y * y)
 
 
 -- | Classify the orientation of the vector gradient.
 {-# NOINLINE gradientOrient #-}
-gradientOrient :: Float -> Image -> Image -> Image
+gradientOrient :: Float -> Image Float -> Image Float -> Image Float
 gradientOrient !threshLow 
  	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
@@ -251,11 +258,11 @@ gradientOrient !threshLow
 
 -- | Suppress pixels which are not local maxima.
 {-# NOINLINE suppress #-}
-suppress :: Float -> Float -> Image -> Image -> Image
+suppress :: Float -> Float -> Image Float -> Image Float -> Image Word8
 suppress threshLow threshHigh
 	   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
 	dOrient@(Array _ [Region RangeAll (GenManifest _)])
- = [dMag, dOrient] `deepSeqArrays` force2 
+ = dMag `deepSeqArray` dOrient `deepSeqArray` force2 
  $ unsafeTraverse2 dMag dOrient const compare
 
  where	_ :. height :. width	= extent dMag
@@ -292,7 +299,7 @@ suppress threshLow threshHigh
 -- | Select indices of strong edges
 --   TODO: merge this into suppress above with a fused map/select operation.
 {-# NOINLINE selectStrong #-}
-selectStrong :: Image -> Array DIM1 Int
+selectStrong :: Image Word8 -> Array DIM1 Int
 selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
  = img `deepSeqArray` 
    let 	{-# INLINE match #-}
@@ -308,9 +315,9 @@ selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
 --   TODO would be nice to write cursors onto stack
 {-# NOINLINE wildfire #-}
 wildfire 
-	:: Image		-- ^ Image with strong and weak edges set.
+	:: Image Word8		-- ^ Image with strong and weak edges set.
 	-> Array DIM1 Int	-- ^ Array containing flat indices of strong edges.
-	-> Image		-- 
+	-> Image Word8
 
 wildfire img arrStrong
  = unsafePerformIO 
@@ -335,7 +342,7 @@ wildfire img arrStrong
 		return	(extent img, vImg')
 
 	
-	burn :: VM.IOVector Float -> VM.IOVector Int -> Int -> IO ()
+	burn :: VM.IOVector Word8 -> VM.IOVector Int -> Int -> IO ()
 	burn !vImg !vStack !top
 	 | top == 0
 	 = return ()
