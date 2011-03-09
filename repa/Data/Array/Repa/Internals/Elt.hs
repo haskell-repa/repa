@@ -36,6 +36,19 @@ instance Elt Bool where
  {-# INLINE one #-}
  one  = True
 
+-- Tuple ----------------------------------------------------------------------
+instance (Elt a, Elt b) => Elt (a, b) where
+ {-# INLINE touch #-}
+ touch (a, b) 
+  = do	touch a
+	touch b
+	
+ {-# INLINE zero #-}
+ zero = (zero, zero)
+
+ {-# INLINE one #-}
+ one =  (one, one)
+
 
 -- Floating -------------------------------------------------------------------
 instance Elt Float where

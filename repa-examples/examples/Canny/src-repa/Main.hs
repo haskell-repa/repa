@@ -21,6 +21,7 @@ import qualified Data.Vector.Unboxed		as V
 type Image a	= Array DIM2 a
 
 -- Constants ------------------------------------------------------------------
+-- TODO: Setting these to Word8 triggers a bug in the LLVM Mangler
 orientPosDiag	= 0	:: Float
 orientVert	= 1	:: Float
 orientNegDiag	= 2	:: Float
@@ -59,13 +60,17 @@ run loops threshLow threshHigh fileIn fileOut
 		arrBlured	<- timeStage loops "blurY" 	  $ return $ blurSepY       arrBluredX
 		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
 		arrDY		<- timeStage loops "diffY"	  $ return $ gradientY      arrBlured
-		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
+		
+		arrMagOrient	<- timeStage loops "magOrient"	 
+				$ return $ gradientMagOrient threshLow arrDX arrDY
 
+{-
+		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
 		arrOrient	<- timeStage loops "orientation"  
 				$ return $ gradientOrient threshLow arrDX arrDY
-
+-}
 		arrSuppress	<- timeStage loops "suppress"     
-				$ return $ suppress threshLow threshHigh arrMag arrOrient
+				$ return $ suppress threshLow threshHigh arrMagOrient
 
 		arrStrong	<- timeStage loops "select"	$ return $ selectStrong arrSuppress	
 		arrEdges	<- timeStage loops "wildfire"	$ return $ wildfire arrSuppress arrStrong	
@@ -169,7 +174,7 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 	 		4
 			6
 			4
-			1 |]	
+			1 |]
 
 
 -- | Compute gradient in the X direction.
@@ -194,30 +199,27 @@ gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 			-1 -2 -1 |] 
 
 
--- | Compute magnitude of the vector gradient.
-{-# NOINLINE gradientMag #-}
-gradientMag :: Array DIM2 Float -> Array DIM2 Float -> Array DIM2 Float
-gradientMag
-	dX@(Array _ [Region RangeAll (GenManifest _)])
-	dY@(Array _ [Region RangeAll (GenManifest _)])
- = [dX, dY] `deepSeqArrays` force2
- $ R.zipWith magnitude dX dY
-
- where	{-# INLINE magnitude #-}
-	magnitude :: Float -> Float -> Float
-	magnitude x y = sqrt (x * x + y * y)
-
-
 -- | Classify the orientation of the vector gradient.
-{-# NOINLINE gradientOrient #-}
-gradientOrient :: Float -> Image Float -> Image Float -> Image Float
-gradientOrient !threshLow 
+{-# NOINLINE gradientMagOrient #-}
+gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Float)
+gradientMagOrient !threshLow 
  	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
- = [dX, dY] `deepSeqArrays` force2
- $ R.zipWith orientation dX dY
 
- where	{-# INLINE orientation #-}
+ = [dX, dY] `deepSeqArrays` force2
+ $ R.zipWith magOrient dX dY
+
+ where	{-# INLINE magOrient #-}
+	magOrient :: Float -> Float -> (Float, Float)
+	magOrient x y
+		= (magnitude x y, orientation x y)
+	
+	{-# INLINE magnitude #-}
+	magnitude :: Float -> Float -> Float
+	magnitude x y
+		= sqrt (x * x + y * y)
+	
+	{-# INLINE orientation #-}
 	orientation :: Float -> Float -> Float
 	orientation x y
 
@@ -258,14 +260,13 @@ gradientOrient !threshLow
 
 -- | Suppress pixels which are not local maxima.
 {-# NOINLINE suppress #-}
-suppress :: Float -> Float -> Image Float -> Image Float -> Image Word8
+suppress :: Float -> Float -> Image (Float, Float) -> Image Word8
 suppress threshLow threshHigh
-	   dMag@(Array _ [Region RangeAll (GenManifest _)]) 
-	dOrient@(Array _ [Region RangeAll (GenManifest _)])
- = dMag `deepSeqArray` dOrient `deepSeqArray` force2 
- $ unsafeTraverse2 dMag dOrient const compare
+	   dMagOrient@(Array _ [Region RangeAll (GenManifest _)]) 
+ = dMagOrient `deepSeqArray` force2 
+ $ unsafeTraverse dMagOrient id compare
 
- where	_ :. height :. width	= extent dMag
+ where	_ :. height :. width	= extent dMagOrient
 	
 	{-# INLINE isBoundary #-}
 	isBoundary i j 
@@ -275,7 +276,7 @@ suppress threshLow threshHigh
 	 | otherwise            = False
 
 	{-# INLINE compare #-}
-	compare getMag getOrient d@(sh :. i :. j)
+	compare getMagOrient d@(sh :. i :. j)
          | isBoundary i j	= edge None
          | o == orientHoriz	= isMaximum (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
          | o == orientVert	= isMaximum (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 
@@ -286,6 +287,9 @@ suppress threshLow threshHigh
          where
           !o 		= getOrient d  
           !m		= getMag    (Z :. i :. j)
+	
+	  getMag 	= fst . getMagOrient
+	  getOrient	= snd . getMagOrient
 
 	  {-# INLINE isMaximum #-}
           isMaximum intensity1 intensity2
@@ -312,7 +316,6 @@ selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
 
 
 -- | Burn in any weak edges that are connected to strong edges.
---   TODO would be nice to write cursors onto stack
 {-# NOINLINE wildfire #-}
 wildfire 
 	:: Image Word8		-- ^ Image with strong and weak edges set.
