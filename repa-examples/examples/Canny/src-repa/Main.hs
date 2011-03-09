@@ -302,7 +302,7 @@ selectStrong :: Image Word8 -> Array DIM1 Int
 selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
  = img `deepSeqArray` 
    let 	{-# INLINE match #-}
-	match ix	= img R.! ix == edge Strong
+	match ix	= img `R.unsafeIndex` ix == edge Strong
 
 	{-# INLINE process #-}
 	process ix	= toIndex (extent img) ix
