@@ -204,10 +204,10 @@ gradientOrient !threshLow
 	orientation x y
 
 	 -- Don't bother computing orientation if vector is below threshold.
-{- 	 | x >= negate threshLow, x < threshLow
+ 	 | x >= negate threshLow, x < threshLow
  	 , y >= negate threshLow, y < threshLow
  	 = orientUndef
--}
+
 	 | otherwise
 	 = let	-- determine the angle of the vector and rotate it around a bit
 		-- to make the segments easier to classify.
@@ -284,10 +284,13 @@ suppress threshLow threshHigh
 selectStrong :: Image -> Array DIM1 Int
 selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
  = img `deepSeqArray` 
-   select 
-	(\ix -> img R.! ix == edge Strong)
-	(\ix -> toIndex (extent img) ix)
-	(extent img)
+   let 	{-# INLINE match #-}
+	match ix	= img R.! ix == edge Strong
+
+	{-# INLINE process #-}
+	process ix	= toIndex (extent img) ix
+	
+   in	select match process (extent img)
 
 
 -- | Burn in any weak edges that are connected to strong edges.

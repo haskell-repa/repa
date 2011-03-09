@@ -32,31 +32,43 @@ int main(int argc, char *argv[])
 	int channels	= src.channels();
 	assert (channels == 3);
 
-	struct benchtime *bt = bench_begin();
 	
 	// Get luminance of source image as word8s
 	cv::Mat srcLum	(src.rows, src.cols, CV_8UC1);
-	for(int i = 0; i < height; i++) {
-		uchar* rowSrc		= src.ptr(i);
-		uchar* rowSrcLum	= (uchar*)srcLum.ptr(i);
+
+	struct benchtime *btTotal = bench_begin();
+	struct benchtime *btGrey  = bench_begin();
+	for(int iters = 0; iters < iterations; iters++) {
+		for(int i = 0; i < height; i++) {
+			uchar* rowSrc		= src.ptr(i);
+			uchar* rowSrcLum	= (uchar*)srcLum.ptr(i);
 		
-		for(int j = 0; j < width; j++) {
-			float r	= (float)rowSrc[j * channels + 0];
-			float g = (float)rowSrc[j * channels + 1];
-			float b = (float)rowSrc[j * channels + 2];
-			float x	= ((r * 0.3) + (g * 0.59) + (b * 0.11));
+			for(int j = 0; j < width; j++) {
+				float r	= (float)rowSrc[j * channels + 0];
+				float g = (float)rowSrc[j * channels + 1];
+				float b = (float)rowSrc[j * channels + 2];
+				float x	= ((r * 0.3) + (g * 0.59) + (b * 0.11));
 			
-			rowSrcLum[j] = (uchar)x;
+				rowSrcLum[j] = (uchar)x;
+			}
 		}
 	}
+	printf("* GREYSCALE\n");
+	bench_done(btGrey);
 
-	// Compute Sobel of source luminance.
+	// Apply canny algorithm to result
 	cv::Mat edges 	= srcLum.clone();
 	
-
+	struct benchtime *btCanny = bench_begin();
 	for(int iters = 0; iters < iterations; iters++) {
 		cv::Canny(srcLum, edges, 100, 150);
 	}
+	printf("* CANNY\n");
+	bench_done(btCanny);
+
+	
+	printf("\nTOTAL\n");
+	bench_done(btTotal);
 
 	// Create output greyscale image.
 	//   The imwrite function doesn't handle float data.
@@ -71,7 +83,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	bench_done(bt);
 
 	// Write out the data to a new image.
 	cv::imwrite(fileNameOut, matOut);
