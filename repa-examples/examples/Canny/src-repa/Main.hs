@@ -4,7 +4,6 @@
 -- | Canny edge detector
 import Data.List
 import Data.Word
-import Data.Bits
 import Data.Int
 import Control.Monad
 import System.Environment
@@ -118,11 +117,6 @@ word8OfFloat :: Float -> Word8
 word8OfFloat f
  	= fromIntegral (truncate f :: Int)
 
-
-{-# INLINE int8OfFloat #-}
-int8OfFloat :: Float -> Int8
-int8OfFloat f
- 	= fromIntegral (truncate f :: Int)
 	
 
 -------------------------------------------------------------------------------
@@ -257,22 +251,12 @@ gradientMagOrient !threshLow
 {-# NOINLINE suppress #-}
 suppress :: Float -> Float -> Image (Float, Float) -> Image Word8
 suppress threshLow threshHigh
-	   dMagOrient@(Array _ [Region RangeAll (GenManifest _)]) 
+	   dMagOrient@(Array shSrc [Region RangeAll (GenManifest _)]) 
  = dMagOrient `deepSeqArray` force2 
- $ unsafeTraverse dMagOrient id compare
+ $ makeBordered2 shSrc 1 (const 0) compare
 
- where	_ :. height :. width	= extent dMagOrient
-	
-	{-# INLINE isBoundary #-}
-	isBoundary i j 
-         | i == 0 || j == 0     = True
-	 | i == width  - 1	= True
-	 | j == height - 1	= True
-	 | otherwise            = False
-
-	{-# INLINE compare #-}
-	compare getMagOrient d@(sh :. i :. j)
-         | isBoundary i j	= edge None
+ where	{-# INLINE compare #-}
+	compare d@(sh :. i :. j)
          | o == orientHoriz	= isMaximum (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
          | o == orientVert	= isMaximum (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 
          | o == orientNegDiag	= isMaximum (getMag (sh :. i-1 :. j-1)) (getMag (sh :. i+1 :. j+1)) 
@@ -283,8 +267,8 @@ suppress threshLow threshHigh
           !o 		= getOrient d  
           !m		= getMag    (Z :. i :. j)
 	
-	  getMag 	= fst . getMagOrient
-	  getOrient	= snd . getMagOrient
+	  getMag 	= fst . (R.unsafeIndex dMagOrient)
+	  getOrient	= snd . (R.unsafeIndex dMagOrient)
 
 	  {-# INLINE isMaximum #-}
           isMaximum intensity1 intensity2
@@ -386,3 +370,46 @@ wildfire img@(Array _ [Region RangeAll (GenManifest _)])
 	
 
 
+---------------------------------------------
+-- | TODO: shift this into library
+{-# INLINE makeBordered2 #-}
+makeBordered2
+	:: Elt a
+	=> DIM2 -> Int
+	-> (DIM2 -> a) 
+	-> (DIM2 -> a)
+	-> Array DIM2 a
+
+makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth getInternal getBorder
+ = let
+	-- minimum and maximum indicies of values in the inner part of the image.
+	!xMin		= borderWidth
+	!yMin		= borderWidth
+	!xMax		= aWidth  - borderWidth  - 1
+	!yMax		= aHeight - borderWidth - 1
+
+	-- range of values where some of the data needed by the stencil is outside the image.
+	rectsBorder
+	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot 
+	   	, Rect (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1)	 	-- top
+		, Rect (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)		-- left
+	   	, Rect (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) ]  	-- right
+
+	{-# INLINE inBorder #-}
+	inBorder 	= not . inInternal
+
+	-- range of values where we don't need to worry about the border
+	rectsInternal	
+	 = 	[ Rect (Z :. yMin :. xMin)	   (Z :. yMax :. xMax ) ]
+
+	{-# INLINE inInternal #-}
+	inInternal (Z :. y :. x)
+		=  x >= xMin && x <= xMax 
+		&& y >= yMin && y <= yMax
+
+   in	Array sh
+		[ Region (RangeRects inBorder   rectsBorder) 
+			 (GenCursor id addDim  getInternal)
+
+		, Region (RangeRects inInternal rectsInternal)
+		 	 (GenCursor id addDim  getBorder) ]
