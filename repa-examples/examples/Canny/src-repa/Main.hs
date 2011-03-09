@@ -271,7 +271,7 @@ suppress threshLow threshHigh
 	  getMag 	= fst . (R.unsafeIndex dMagOrient)
 	  getOrient	= snd . (R.unsafeIndex dMagOrient)
 
-	  {-# INLINE isMaximum #-}
+	  {-# INLINE isMax #-}
           isMax intensity1 intensity2
             | m < threshLow 	= edge None
             | m < intensity1 	= edge None
