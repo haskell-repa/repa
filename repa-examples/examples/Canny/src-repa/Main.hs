@@ -31,8 +31,8 @@ orientUndef	= 4	:: Float
 
 data Edge	= None | Weak | Strong
 edge None	= 0 	:: Word8
-edge Weak	= 100 	:: Word8
-edge Strong	= 200	:: Word8
+edge Weak	= 128 	:: Word8
+edge Strong	= 255	:: Word8
 
 
 -- Main routine ---------------------------------------------------------------

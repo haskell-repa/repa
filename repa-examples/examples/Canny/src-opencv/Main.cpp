@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 		uchar* rowOut		= matOut.ptr(i);
 
 		for(int j = 0; j < width; j++) {
-			rowOut[j]	= rowEdges[j] * 100;
+			rowOut[j]	= rowEdges[j];
 		}
 	}
 
