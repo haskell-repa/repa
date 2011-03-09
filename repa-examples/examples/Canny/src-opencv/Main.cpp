@@ -56,12 +56,25 @@ int main(int argc, char *argv[])
 	printf("* GREYSCALE\n");
 	bench_done(btGrey);
 
+
+	// Blur image
+	cv::Mat srcBlur	= srcLum.clone();
+	struct benchtime *btBlur = bench_begin();
+	cv::Size ksize;
+	ksize.width = 5;
+	ksize.height = 5;
+	for(int iters = 0; iters < iterations; iters++) {
+		cv::GaussianBlur(srcLum, srcBlur, ksize, 1, 1, cv::BORDER_REPLICATE);
+	}
+	printf("* BLUR\n");
+	bench_done(btBlur);
+
+
 	// Apply canny algorithm to result
 	cv::Mat edges 	= srcLum.clone();
-	
-	struct benchtime *btCanny = bench_begin();
+		struct benchtime *btCanny = bench_begin();
 	for(int iters = 0; iters < iterations; iters++) {
-		cv::Canny(srcLum, edges, 100, 150);
+		cv::Canny(srcBlur, edges, 60, 70);
 	}
 	printf("* CANNY\n");
 	bench_done(btCanny);
@@ -69,6 +82,7 @@ int main(int argc, char *argv[])
 	
 	printf("\nTOTAL\n");
 	bench_done(btTotal);
+
 
 	// Create output greyscale image.
 	//   The imwrite function doesn't handle float data.
