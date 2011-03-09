@@ -257,21 +257,22 @@ suppress threshLow threshHigh
 
  where	{-# INLINE compare #-}
 	compare d@(sh :. i :. j)
-         | o == orientHoriz	= isMaximum (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
-         | o == orientVert	= isMaximum (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 
-         | o == orientNegDiag	= isMaximum (getMag (sh :. i-1 :. j-1)) (getMag (sh :. i+1 :. j+1)) 
-         | o == orientPosDiag	= isMaximum (getMag (sh :. i-1 :. j+1)) (getMag (sh :. i+1 :. j-1)) 
+	 | o == orientUndef     = edge None
+         | o == orientHoriz	= isMax (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
+         | o == orientVert	= isMax (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 
+         | o == orientNegDiag	= isMax (getMag (sh :. i-1 :. j-1)) (getMag (sh :. i+1 :. j+1)) 
+         | o == orientPosDiag	= isMax (getMag (sh :. i-1 :. j+1)) (getMag (sh :. i+1 :. j-1)) 
          | otherwise 		= edge None
       
          where
           !o 		= getOrient d  
           !m		= getMag    (Z :. i :. j)
-	
+
 	  getMag 	= fst . (R.unsafeIndex dMagOrient)
 	  getOrient	= snd . (R.unsafeIndex dMagOrient)
 
 	  {-# INLINE isMaximum #-}
-          isMaximum intensity1 intensity2
+          isMax intensity1 intensity2
             | m < threshLow 	= edge None
             | m < intensity1 	= edge None
             | m < intensity2 	= edge None
