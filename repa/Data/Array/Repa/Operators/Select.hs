@@ -29,8 +29,11 @@ select match produce shSize
 		
  where	{-# INLINE selectIO #-}
 	selectIO
- 	 = do	mvec	<- VM.new (S.size shSize)
-		len	<- selectChunkedS match produce mvec shSize 
-		vec	<- V.unsafeFreeze mvec
-		return	(Z :. len, V.slice 0 len vec)
+ 	 = do	vecs		<- selectChunkedP match produce shSize 
+		vecs'		<- mapM V.unsafeFreeze vecs
+
+		-- TODO: avoid copy.
+		let result	= V.concat vecs'
+		
+		return	(Z :. V.length result, result)
 		

@@ -351,10 +351,12 @@ wildfire img arrStrong
 	 = return ()
 	
 	 | otherwise
-	 = do	let top'		=  top - 1
-		n			<- VM.read vStack top'
+	 = do	let !top'		=  top - 1
+		n			<- VM.unsafeRead vStack top'
 		let (Z :. y :. x)	= fromIndex (R.extent img) n
-		let push		= pushWeak vImg vStack 
+
+		let {-# INLINE push #-}
+		    push t		= pushWeak vImg vStack t
 				
 		VM.write vImg n (edge Strong)
 	    	 >>  push (Z :. y - 1 :. x - 1) top'
@@ -375,13 +377,13 @@ wildfire img arrStrong
 	{-# INLINE pushWeak #-}
 	pushWeak vImg vStack ix top
 	 = do	let n		= toIndex (extent img) ix
-		xDst		<- VM.read vImg n
+		xDst		<- VM.unsafeRead vImg n
 		let xSrc	= img R.! ix
 
 		if   xDst == edge None 
 		  && xSrc == edge Weak
 		 then do
-			VM.write vStack top (toIndex (extent img) ix)
+			VM.unsafeWrite vStack top (toIndex (extent img) ix)
 			return (top + 1)
 			
 		 else	return top
