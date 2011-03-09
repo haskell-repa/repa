@@ -37,27 +37,30 @@ data Cursor
 
 -- | Like `mapStencil2` but with the parameters flipped.
 forStencil2
-	:: Elt a
+	:: (Elt a, Elt b)
 	=> Boundary a
-	-> Array DIM2 a 
+	-> Array DIM2 b
+	-> (b -> a)
 	-> Stencil DIM2 a
 	-> Array DIM2 a
 
 {-# INLINE forStencil2 #-}
-forStencil2 boundary arr stencil
-	= mapStencil2 boundary stencil arr
+forStencil2 boundary arr preConvert stencil
+	= mapStencil2 boundary stencil arr preConvert
 
 
 -- | Apply a stencil to every element of an array.
 --   This is specialised for stencils of extent up to 5x5.
 mapStencil2 
-	:: Elt a
+	:: (Elt a, Elt b)
 	=> Boundary a
 	-> Stencil DIM2 a
-	-> Array DIM2 a -> Array DIM2 a
+	-> Array DIM2 b
+	-> (b -> a)
+	-> Array DIM2 a
 
 {-# INLINE mapStencil2 #-}
-mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
+mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr preConvert
  = let	(_ :. aHeight :. aWidth) = extent arr
 	(_ :. sHeight :. sWidth) = sExtent
 
@@ -105,13 +108,15 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 			
 	{-# INLINE getInner' #-}
 	getInner' cur	
-	 = unsafeAppStencilCursor2 shiftCursor' stencil arr cur
+	 = unsafeAppStencilCursor2 shiftCursor' stencil
+		arr preConvert cur
 	
 	{-# INLINE getBorder' #-}
 	getBorder' cur
 	 = case boundary of
 		BoundConst c	-> c
-		BoundClamp 	-> unsafeAppStencilCursor2_clamp addDim stencil arr cur
+		BoundClamp 	-> unsafeAppStencilCursor2_clamp addDim stencil
+					arr preConvert cur
 							
    in	Array (extent arr)
 		[ Region (RangeRects inBorder rectsBorder)
@@ -122,17 +127,18 @@ mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr
 
 
 unsafeAppStencilCursor2
-	:: Elt a
+	:: (Elt a, Elt b)
 	=> (DIM2 -> Cursor -> Cursor)
 	-> Stencil DIM2 a
-	-> Array DIM2 a 
+	-> Array DIM2 b
+	-> (b -> a)
 	-> Cursor 
 	-> a
 
 {-# INLINE [1] unsafeAppStencilCursor2 #-}
 unsafeAppStencilCursor2 shift
 	stencil@(StencilStatic sExtent zero load)
-	    arr@(Array aExtent [Region RangeAll (GenManifest vec)])
+	    arr@(Array aExtent [Region RangeAll (GenManifest vec)]) preConvert
 	    cur@(Cursor off)
 
 	| _ :. sHeight :. sWidth	<- sExtent
@@ -141,7 +147,7 @@ unsafeAppStencilCursor2 shift
 	= let	
 		-- Get data from the manifest array.
 		{-# INLINE [0] getData #-}
-		getData (Cursor cur) = vec `V.unsafeIndex` cur
+		getData (Cursor cur) = preConvert $ vec `V.unsafeIndex` cur
 		
 		-- Build a function to pass data from the array to our stencil.
 		{-# INLINE oload #-}
@@ -154,17 +160,18 @@ unsafeAppStencilCursor2 shift
 
 -- | Like above, but clamp out of bounds array values to the closest real value.
 unsafeAppStencilCursor2_clamp
-	:: forall a. Elt a
+	:: forall a b. (Elt a, Elt b)
 	=> (DIM2 -> DIM2 -> DIM2)
 	-> Stencil DIM2 a
-	-> Array DIM2 a 
+	-> Array DIM2 b 
+	-> (b -> a)
 	-> DIM2
 	-> a
 
 {-# INLINE [1] unsafeAppStencilCursor2_clamp #-}
 unsafeAppStencilCursor2_clamp shift
 	   stencil@(StencilStatic sExtent zero load)
-	       arr@(Array aExtent [Region RangeAll (GenManifest vec)])
+	       arr@(Array aExtent [Region RangeAll (GenManifest vec)]) preConvert
 	       cur
 
 	| _ :. sHeight :. sWidth	<- sExtent
@@ -194,7 +201,7 @@ unsafeAppStencilCursor2_clamp shift
 		{-# INLINE loadXY #-}
 		loadXY :: Int -> Int -> a
 		loadXY !x !y
-		 = vec `V.unsafeIndex` (x + y * aWidth)
+		 = preConvert $ vec `V.unsafeIndex` (x + y * aWidth)
 		
 		-- Build a function to pass data from the array to our stencil.
 		{-# INLINE oload #-}

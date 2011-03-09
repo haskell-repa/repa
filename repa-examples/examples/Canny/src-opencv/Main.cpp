@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
 	// Apply canny algorithm to result
 	cv::Mat edges 	= srcLum.clone();
-		struct benchtime *btCanny = bench_begin();
+	struct benchtime *btCanny = bench_begin();
 	for(int iters = 0; iters < iterations; iters++) {
 		cv::Canny(srcBlur, edges, 60, 70);
 	}

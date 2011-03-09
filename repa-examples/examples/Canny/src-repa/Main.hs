@@ -108,11 +108,11 @@ timeStage loops name fn
 -------------------------------------------------------------------------------
 -- | RGB to greyscale conversion.
 {-# NOINLINE toGreyScale #-}
-toGreyScale :: Array DIM3 Word8 -> Array DIM2 Float
+toGreyScale :: Array DIM3 Word8 -> Array DIM2 Word8
 toGreyScale 
 	arr@(Array _ [Region RangeAll (GenManifest _)])
   = arr `deepSeqArray` force2
-  $ traverse arr
+  $ unsafeTraverse arr
 	(\(sh :. _) -> sh)
 	(\get ix    -> rgbToLuminance 
 				(get (ix :. 0))
@@ -120,24 +120,31 @@ toGreyScale
 				(get (ix :. 2)))
 
  where	{-# INLINE rgbToLuminance #-}
-	rgbToLuminance :: Word8 -> Word8 -> Word8 -> Float
+	rgbToLuminance :: Word8 -> Word8 -> Word8 -> Word8
 	rgbToLuminance r g b 
-		= floatOfWord8 r * 0.3
+	 = word8OfFloat 
+		( floatOfWord8 r * 0.3
 		+ floatOfWord8 g * 0.59
-		+ floatOfWord8 b * 0.11
+		+ floatOfWord8 b * 0.11)
 
-	{-# INLINE floatOfWord8 #-}
-	floatOfWord8 :: Word8 -> Float
-	floatOfWord8 w8
-	 	= fromIntegral (fromIntegral w8 :: Int)
+{-# INLINE floatOfWord8 #-}
+floatOfWord8 :: Word8 -> Float
+floatOfWord8 w8
+ 	= fromIntegral (fromIntegral w8 :: Int)
+
+
+{-# INLINE word8OfFloat #-}
+word8OfFloat :: Float -> Word8
+word8OfFloat f
+ 	= fromIntegral (truncate f :: Int)
 
 
 -- | Separable Gaussian blur in the X direction.
 {-# NOINLINE blurSepX #-}
-blurSepX :: Array DIM2 Float -> Array DIM2 Float
+blurSepX :: Array DIM2 Word8 -> Array DIM2 Float
 blurSepX arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ forStencil2  BoundClamp arr
+	$ forStencil2  BoundClamp arr floatOfWord8
 	  [stencil2|	1 4 6 4 1 |]	
 
 -- | Separable Gaussian blur in the Y direction.
@@ -146,7 +153,7 @@ blurSepY :: Array DIM2 Float -> Array DIM2 Float
 blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
 	$ R.map (/ 256)
-	$ forStencil2  BoundClamp arr
+	$ forStencil2  BoundClamp arr id
 	  [stencil2|	1
 	 		4
 			6
@@ -159,7 +166,7 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 gradientX :: Image -> Image
 gradientX img@(Array _ [Region RangeAll (GenManifest _)])
  	= img `deepSeqArray` force2
-    	$ forStencil2 (BoundConst 0) img
+    	$ forStencil2 (BoundConst 0) img id
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -170,7 +177,7 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 gradientY :: Image -> Image
 gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 	= img `deepSeqArray` force2
-	$ forStencil2 (BoundConst 0) img
+	$ forStencil2 (BoundConst 0) img id
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
