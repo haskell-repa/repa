@@ -206,17 +206,17 @@ gradientMagOrient !threshLow
 
  where	{-# INLINE magOrient #-}
 	magOrient :: Float -> Float -> (Float, Float)
-	magOrient x y
+	magOrient !x !y
 		= (magnitude x y, orientation x y)
 	
 	{-# INLINE magnitude #-}
 	magnitude :: Float -> Float -> Float
-	magnitude x y
+	magnitude !x !y
 		= sqrt (x * x + y * y)
 	
 	{-# INLINE orientation #-}
 	orientation :: Float -> Float -> Float
-	orientation x y
+	orientation !x !y
 
 	 -- Don't bother computing orientation if vector is below threshold.
  	 | x >= negate threshLow, x < threshLow
@@ -288,9 +288,9 @@ suppress threshLow threshHigh
 
 	  {-# INLINE isMaximum #-}
           isMaximum intensity1 intensity2
+            | m < threshLow 	= edge None
             | m < intensity1 	= edge None
             | m < intensity2 	= edge None
-            | m < threshLow 	= edge None
 	    | m < threshHigh	= edge Weak
 	    | otherwise		= edge Strong
 
