@@ -42,15 +42,15 @@ selectChunkedS match produce !vDst !shSize
 
 
 selectChunkedP 
-	:: forall a sh
-	.  (Shape sh, Unbox a)	
-	=> (sh -> Bool)		-- ^ See if this predicate matches.
-	-> (sh -> a)		--   .. and apply fn to the matching index
-	-> sh			-- Extent of indices to apply to predicate.
+	:: forall a
+	.  Unbox a
+	=> (Int -> Bool)	-- ^ See if this predicate matches.
+	-> (Int -> a)		--   .. and apply fn to the matching index
+	-> Int			-- Extent of indices to apply to predicate.
 	-> IO [IOVector a]	-- Chunks containing array elements.
 
 {-# INLINE selectChunkedP #-}
-selectChunkedP match produce !shSize 
+selectChunkedP !match !produce !len
  = do	refs	<- P.replicateM threads 
 		$ do	vec	<- VM.new $ len `div` threads
 			newIORef vec
@@ -60,8 +60,7 @@ selectChunkedP match produce !shSize
 	
 	P.mapM readIORef refs
 	
- where	!len		= size shSize
-	!threads 	= gangSize theGang
+ where	!threads 	= gangSize theGang
 	!chunkLen 	= len `quotInt` threads
 	!chunkLeftover	= len `remInt`  threads
 
@@ -88,9 +87,8 @@ selectChunkedP match produce !shSize
 		vecDst' 	<- VM.grow vecDst (ixDstEnd + 1)
 		fillChunk (ixSrc + 1) ixSrcEnd vecDst' (ixDst + 1) ixDstEnd'
 	 
-	 | ixSrc'	<- fromIndex shSize ixSrc
-	 , match ixSrc'
-	 = do	VM.unsafeWrite vecDst ixDst (produce ixSrc')
+	 | match ixSrc
+	 = do	VM.unsafeWrite vecDst ixDst (produce ixSrc)
 		fillChunk (ixSrc + 1) ixSrcEnd vecDst (ixDst + 1)  ixDstEnd
 		
 	 | otherwise

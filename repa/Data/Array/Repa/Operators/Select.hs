@@ -14,14 +14,14 @@ import qualified Data.Vector.Unboxed.Mutable	as VM
 import System.IO.Unsafe
 
 
-select	:: (Shape sh, Elt a)
-	=> (sh -> Bool)
-	-> (sh -> a)
-	-> sh
+select	:: Elt a
+	=> (Int -> Bool)
+	-> (Int -> a)
+	-> Int
 	-> Array DIM1 a
 	
 {-# INLINE select #-}
-select match produce shSize
+select match produce len
  = unsafePerformIO 
  $ do	(sh, vec)	<- selectIO 
 	return $ sh `seq` vec `seq` 
@@ -29,7 +29,7 @@ select match produce shSize
 		
  where	{-# INLINE selectIO #-}
 	selectIO
- 	 = do	vecs		<- selectChunkedP match produce shSize 
+ 	 = do	vecs		<- selectChunkedP match produce len
 		vecs'		<- mapM V.unsafeFreeze vecs
 
 		-- TODO: avoid copy.

@@ -299,15 +299,15 @@ suppress threshLow threshHigh
 --   TODO: merge this into suppress above with a fused map/select operation.
 {-# NOINLINE selectStrong #-}
 selectStrong :: Image Word8 -> Array DIM1 Int
-selectStrong img@(Array _ [Region RangeAll (GenManifest _)])
+selectStrong img@(Array _ [Region RangeAll (GenManifest vec)])
  = img `deepSeqArray` 
    let 	{-# INLINE match #-}
-	match ix	= img `R.unsafeIndex` ix == edge Strong
+	match ix	= vec `V.unsafeIndex` ix == edge Strong
 
 	{-# INLINE process #-}
-	process ix	= toIndex (extent img) ix
+	process ix	= ix
 	
-   in	select match process (extent img)
+   in	select match process (size $ extent img)
 
 
 -- | Burn in any weak edges that are connected to strong edges.
