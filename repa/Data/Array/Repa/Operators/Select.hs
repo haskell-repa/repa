@@ -27,7 +27,8 @@ select match produce shSize
 	return $ sh `seq` vec `seq` 
 		 Array sh [Region RangeAll (GenManifest vec)]
 		
- where	selectIO
+ where	{-# INLINE selectIO #-}
+	selectIO
  	 = do	mvec	<- VM.new (S.size shSize)
 		len	<- selectChunkedS match produce mvec shSize 
 		vec	<- V.unsafeFreeze mvec

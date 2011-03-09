@@ -37,3 +37,21 @@ selectChunkedS match produce !vDst !shSize
 
 	 | otherwise
 	 = 	fill (nSrc + 1) nDst
+
+
+{-
+selectChunkedP 
+	:: (Shape sh, Unbox a)	
+	-> (sh -> Bool)		-- ^ See if this predicate matches.
+	-> (sh -> a)		--   .. and apply fn to the matching index
+	-> IOVector a		--   .. then write result to this fector.
+	-> sh			-- Extent of indices to apply to predicate.
+	-> IO Int		-- Number of elements written to dest array.
+
+{-# INLINE selectChunkedP #-}
+selectChunkedP match produce !vDst !shSize 
+ = fill 0 0
+ where	lenSrc	= size shSize
+	lenDst	= VM.length vDst
+-}	
+	
