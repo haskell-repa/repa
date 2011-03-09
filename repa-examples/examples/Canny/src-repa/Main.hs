@@ -64,11 +64,6 @@ run loops threshLow threshHigh fileIn fileOut
 		arrMagOrient	<- timeStage loops "magOrient"	 
 				$ return $ gradientMagOrient threshLow arrDX arrDY
 
-{-
-		arrMag		<- timeStage loops "magnitude"    $ return $ gradientMag    arrDX arrDY
-		arrOrient	<- timeStage loops "orientation"  
-				$ return $ gradientOrient threshLow arrDX arrDY
--}
 		arrSuppress	<- timeStage loops "suppress"     
 				$ return $ suppress threshLow threshHigh arrMagOrient
 
@@ -322,7 +317,8 @@ wildfire
 	-> Array DIM1 Int	-- ^ Array containing flat indices of strong edges.
 	-> Image Word8
 
-wildfire img arrStrong
+wildfire img@(Array _ [Region RangeAll (GenManifest _)])
+         arrStrong
  = unsafePerformIO 
  $ do	(sh, vec)	<- wildfireIO 
 	return	$ sh `seq` vec `seq` 
@@ -378,7 +374,7 @@ wildfire img arrStrong
 	pushWeak vImg vStack ix top
 	 = do	let n		= toIndex (extent img) ix
 		xDst		<- VM.unsafeRead vImg n
-		let xSrc	= img R.! ix
+		let xSrc	= img `R.unsafeIndex` ix
 
 		if   xDst == edge None 
 		  && xSrc == edge Weak
