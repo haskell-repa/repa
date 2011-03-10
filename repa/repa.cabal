@@ -43,6 +43,7 @@ Library
         Data.Array.Repa.Stencil
         Data.Array.Repa.Arbitrary
         Data.Array.Repa.Properties
+        Data.Array.Repa.Specialised.Dim2
 
   Other-modules:
         Data.Array.Repa.Operators.IndexSpace
@@ -59,6 +60,5 @@ Library
         Data.Array.Repa.Internals.EvalCursored
         Data.Array.Repa.Internals.Forcing
         Data.Array.Repa.Internals.Select
-        Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil.Base
         Data.Array.Repa.Stencil.Template
