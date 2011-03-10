@@ -1,5 +1,4 @@
-{-# LANGUAGE BangPatterns, ExplicitForAll, ScopedTypeVariables #-}
-
+{-# LANGUAGE BangPatterns, ExplicitForAll, ScopedTypeVariables, PatternGuards #-}
 module Data.Array.Repa.Internals.Select
 	(selectChunkedS, selectChunkedP)
 where

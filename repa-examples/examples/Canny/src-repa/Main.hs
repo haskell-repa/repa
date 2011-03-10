@@ -59,7 +59,10 @@ run loops threshLow threshHigh fileIn fileOut
 	arrInput `deepSeqArray` return ()
 	(arrResult, tTotal)
 	 <- time
-	 $ do	arrGrey		<- timeStage loops "toGreyScale"  $ return $ toGreyScale    arrInput
+	 $ do	{-let stage str arr 
+			= timeStage loops str $ return arr-}
+	
+		arrGrey		<- timeStage loops "toGreyScale"  $ return $ toGreyScale    arrInput
 		arrBluredX	<- timeStage loops "blurX" 	  $ return $ blurSepX       arrGrey
 		arrBlured	<- timeStage loops "blurY" 	  $ return $ blurSepY       arrBluredX
 		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
@@ -156,7 +159,7 @@ toGreyScale
 blurSepX :: Array DIM2 Word8 -> Array DIM2 Float
 blurSepX arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
-	$ forStencil2  BoundClamp arr floatOfWord8
+	$ forStencilFrom2  BoundClamp arr floatOfWord8
 	  [stencil2|	1 4 6 4 1 |]	
 
 
@@ -166,7 +169,7 @@ blurSepY :: Array DIM2 Float -> Array DIM2 Float
 blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])	
 	= arr `deepSeqArray` force2
 	$ R.map (/ 256)
-	$ forStencil2  BoundClamp arr id
+	$ forStencil2  BoundClamp arr
 	  [stencil2|	1
 	 		4
 			6
@@ -179,7 +182,7 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 gradientX :: Array DIM2 Float -> Array DIM2 Float
 gradientX img@(Array _ [Region RangeAll (GenManifest _)])
  	= img `deepSeqArray` force2
-    	$ forStencil2 (BoundConst 0) img id
+    	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -190,7 +193,7 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 gradientY :: Array DIM2 Float -> Array DIM2 Float
 gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 	= img `deepSeqArray` force2
-	$ forStencil2 (BoundConst 0) img id
+	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 
@@ -262,7 +265,9 @@ suppress :: Float -> Float -> Image (Float, Float) -> Image Word8
 suppress threshLow threshHigh
 	   dMagOrient@(Array shSrc [Region RangeAll (GenManifest _)]) 
  = dMagOrient `deepSeqArray` force2 
- $ makeBordered2 shSrc 1 (const 0) compare
+ $ makeBordered2 shSrc 1 
+		(GenCursor id addDim (const 0))
+ 		(GenCursor id addDim compare)
 
  where	{-# INLINE compare #-}
 	compare d@(sh :. i :. j)

@@ -150,5 +150,6 @@ Executable repa-canny
         -rtsopts 
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
