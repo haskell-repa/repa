@@ -12,9 +12,10 @@ module Data.Array.Repa.Stencil
 	, makeStencil, makeStencil2
 
 	-- * Stencil operators.
-	, mapStencil2, forStencil2
-
-	-- * Template haskell code.
+	, mapStencil2,     forStencil2
+	, mapStencilFrom2, forStencilFrom2
+	
+	--  From Data.Array.Repa.Stencil.Template
 	, stencil2)
 where
 import Data.Array.Repa			as R
@@ -35,32 +36,62 @@ data Cursor
 	= Cursor Int
 
 
+-- Wrappers ---------------------------------------------------------------------------------------
 -- | Like `mapStencil2` but with the parameters flipped.
 forStencil2
-	:: (Elt a, Elt b)
+	:: Elt a
 	=> Boundary a
-	-> Array DIM2 b
-	-> (b -> a)
+	-> Array DIM2 a
 	-> Stencil DIM2 a
 	-> Array DIM2 a
 
 {-# INLINE forStencil2 #-}
-forStencil2 boundary arr preConvert stencil
-	= mapStencil2 boundary stencil arr preConvert
+forStencil2 boundary arr stencil
+	= mapStencil2 boundary stencil arr
 
 
--- | Apply a stencil to every element of an array.
---   This is specialised for stencils of extent up to 5x5.
-mapStencil2 
+-- | Like `mapStencilFrom2` but with the parameters flipped.
+forStencilFrom2
 	:: (Elt a, Elt b)
 	=> Boundary a
-	-> Stencil DIM2 a
 	-> Array DIM2 b
 	-> (b -> a)
+	-> Stencil DIM2 a
+	-> Array DIM2 a
+
+{-# INLINE forStencilFrom2 #-}
+forStencilFrom2 boundary arr from stencil
+	= mapStencilFrom2 boundary stencil arr from
+
+
+-- | Apply a stencil to every element of a 2D array.
+--   The array must be manifest else `error`.
+mapStencil2
+	:: Elt a
+	=> Boundary a
+	-> Stencil DIM2 a
+	-> Array DIM2 a
 	-> Array DIM2 a
 
 {-# INLINE mapStencil2 #-}
-mapStencil2 boundary stencil@(StencilStatic sExtent zero load) arr preConvert
+mapStencil2 boundary stencil arr
+	= mapStencilFrom2 boundary stencil arr id
+
+
+---------------------------------------------------------------------------------------------------
+-- | Apply a stencil to every element of a 2D array.
+--   The array must be manifest else `error`.
+mapStencilFrom2 
+	:: (Elt a, Elt b)
+	=> Boundary a		-- ^ How to handle the boundary of the array.
+	-> Stencil DIM2 a	-- ^ Stencil to apply.
+	-> Array DIM2 b		-- ^ Array to apply stencil to.
+	-> (b -> a)		-- ^ Apply this function to values read from the array before
+				--   transforming them with the stencil.
+	-> Array DIM2 a
+
+{-# INLINE mapStencilFrom2 #-}
+mapStencilFrom2 boundary stencil@(StencilStatic sExtent zero load) arr preConvert
  = let	(_ :. aHeight :. aWidth) = extent arr
 	(_ :. sHeight :. sWidth) = sExtent
 
@@ -213,7 +244,6 @@ unsafeAppStencilCursor2_clamp shift
 
 
 
-
 -- | Data template for stencils up to 5x5.
 template5x5
 	:: (Int -> Int -> a -> a)
@@ -227,4 +257,5 @@ template5x5 f zero
 	$ f   1  (-2)  $  f   1  (-1)  $  f   1    0  $  f   1    1  $  f   1    2 
 	$ f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2 
 	$ zero
+
 

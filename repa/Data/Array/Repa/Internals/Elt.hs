@@ -9,8 +9,10 @@ import GHC.Types
 import GHC.Word
 import GHC.Int
 import Data.Vector.Unboxed
-import Data.Array.Repa.Index
+
 	
+-- Note that the touch# function is special because we can pass it boxed or unboxed
+-- values. The argument type has kind ?, not just * or #.
 class (Show a, Unbox a)	=> Elt a where
 
 	-- | We use this to prevent bindings from being floated inappropriatey.
@@ -18,12 +20,14 @@ class (Show a, Unbox a)	=> Elt a where
 	--   erase these, and/or still move around the bindings.
 	touch :: a -> IO ()
 
+	-- | Generic zero value, helpful for debugging.
 	zero  :: a
+
+	-- | Generic one value, helpful for debugging.
 	one   :: a
 
--- Note that the touch# function is special because we can pass it boxed or unboxed
--- values. The argument type has kind ?, not just * or #.
 
+-- Bool -----------------------------------------------------------------------
 instance Elt Bool where
  {-# INLINE touch #-}
  touch b
@@ -35,6 +39,7 @@ instance Elt Bool where
 
  {-# INLINE one #-}
  one  = True
+
 
 -- Tuple ----------------------------------------------------------------------
 instance (Elt a, Elt b) => Elt (a, b) where
@@ -77,10 +82,49 @@ instance Elt Double where
  one = 1
 
 
--- Integral -------------------------------------------------------------------
+-- Int ------------------------------------------------------------------------
 instance Elt Int where
  {-# INLINE touch #-}
  touch (I# i) 
+  = IO (\state -> case touch# i state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+instance Elt Int8 where
+ {-# INLINE touch #-}
+ touch (I8# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+instance Elt Int16 where
+ {-# INLINE touch #-}
+ touch (I16# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+-- Word -----------------------------------------------------------------------
+instance Elt Word where
+ {-# INLINE touch #-}
+ touch (W# i) 
   = IO (\state -> case touch# i state of
 			state' -> (# state', () #))
 
@@ -115,30 +159,3 @@ instance Elt Word16 where
 
  {-# INLINE one #-}
  one = 1
-
-
-instance Elt Int8 where
- {-# INLINE touch #-}
- touch (I8# w) 
-  = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
-
- {-# INLINE zero #-}
- zero = 0
-
- {-# INLINE one #-}
- one = 1
-
-
-instance Elt Int16 where
- {-# INLINE touch #-}
- touch (I16# w) 
-  = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
-
- {-# INLINE zero #-}
- zero = 0
-
- {-# INLINE one #-}
- one = 1
-	

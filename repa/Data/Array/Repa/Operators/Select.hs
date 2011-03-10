@@ -8,17 +8,18 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Internals.Select
-import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
-import qualified Data.Vector.Unboxed.Mutable	as VM
 import System.IO.Unsafe
 
 
+-- | Select elements maching a given predicate.
+--   Good for writing filtering operations on arrays.
+--   TODO: Also make a version that takes a Shape instead of a flat index.
 select	:: Elt a
-	=> (Int -> Bool)
-	-> (Int -> a)
-	-> Int
-	-> Array DIM1 a
+	=> (Int -> Bool)	-- ^ If the Int matches this predicate, 
+	-> (Int -> a)		-- ^  ... then pass it to this fn to produce a value
+	-> Int			-- ^ Range between 0 and this maximum.
+	-> Array DIM1 a		-- ^ Array containing produced values.
 	
 {-# INLINE select #-}
 select match produce len

@@ -8,15 +8,15 @@ where
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Index
 
--- | Indicates how to handle the case when the stencil being applied
---   to the input array lies partly outside that array.
+-- | How to handle the case when the stencil lies partly outside the array.
 data Boundary a
 	-- | Treat points outside as having a constant value.
 	= BoundConst a	
 
-	-- | Treat points outside as having the same value as the edge pixel.
+	-- | Clamp points outside to the same value as the edge pixel.
 	| BoundClamp
 	deriving (Show)
+
 
 -- | Represents a convolution stencil that we can apply to array.
 data Stencil sh a
@@ -28,7 +28,7 @@ data Stencil sh a
 	, stencilZero	:: !a
 	, stencilAcc	:: !(sh -> a -> a -> a) }
 	
-
+	
 -- | Make a stencil from a function yielding coefficients at each index.
 makeStencil
 	:: (Elt a, Num a) 
@@ -55,3 +55,4 @@ makeStencil2
 {-# INLINE makeStencil2 #-}
 makeStencil2 height width getCoeff
 	= makeStencil (Z :. height :. width) getCoeff
+

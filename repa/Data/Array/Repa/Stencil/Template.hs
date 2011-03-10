@@ -16,8 +16,9 @@ import qualified Data.List	as List
 --   @
 --     [stencil2|  0 1 0
 --                 1 0 1
---                 0 1 0 |] 
+--                 0 1 0 |]
 --   @
+--
 --   Is converted to:
 --   
 --   @

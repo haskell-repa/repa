@@ -4,7 +4,8 @@
 module Data.Array.Repa.Specialised.Dim2
 	( isInside2
 	, isOutside2
-	, clampToBorder2)
+	, clampToBorder2
+	, makeBordered2)
 where
 import Data.Array.Repa
 
@@ -60,5 +61,49 @@ clampToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 	  | y < 0	= sh :. 0	   :. x
 	  | y >= yLen	= sh :. (yLen - 1) :. x
 	  | otherwise	= sh :. y	   :. x
+
+
+-- | Make a 2D partitioned array given two elements, one to produce elements in the 
+--   border region, and one to produce values in the internal region.
+--   The border must be the same width on all sides.
+makeBordered2
+	:: Elt a
+	=> DIM2			-- ^ Extent of array.
+	-> Int			-- ^ Width of border.
+	-> Generator DIM2 a	-- ^ Generator for border elements.
+	-> Generator DIM2 a	-- ^ Generator for internal elements.
+	-> Array DIM2 a
+
+{-# INLINE makeBordered2 #-}
+makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth genInternal genBorder
+ = let
+	-- minimum and maximum indicies of values in the inner part of the image.
+	!xMin		= borderWidth
+	!yMin		= borderWidth
+	!xMax		= aWidth  - borderWidth  - 1
+	!yMax		= aHeight - borderWidth - 1
+
+	-- | Range of values where some of the data needed by the stencil is outside the image.
+	rectsBorder
+	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot 
+	   	, Rect (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1)	 	-- top
+		, Rect (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)		-- left
+	   	, Rect (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) ]  	-- right
+
+	{-# INLINE inBorder #-}
+	inBorder 	= not . inInternal
+
+	-- Range of values where we don't need to worry about the border
+	rectsInternal	
+	 = 	[ Rect (Z :. yMin :. xMin)	   (Z :. yMax :. xMax ) ]
+
+	{-# INLINE inInternal #-}
+	inInternal (Z :. y :. x)
+		=  x >= xMin && x <= xMax 
+		&& y >= yMin && y <= yMax
+
+   in	Array sh
+		[ Region (RangeRects inBorder   rectsBorder)    genInternal
+		, Region (RangeRects inInternal rectsInternal)  genBorder ]
 
 

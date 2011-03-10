@@ -74,9 +74,9 @@ zipWith :: (Shape sh, Elt a, Elt b, Elt c)
 
 {-# INLINE zipWith #-}
 zipWith f arr1 arr2
- 	| Array sh1 [_] <- arr1
-	, Array sh2 [ Region g21 (GenCursor make21 shift21 load21)
-		    , Region g22 (GenCursor make22 shift22 load22)] <- arr2
+ 	| Array sh2 [_] <- arr1
+	, Array sh1 [ Region g21 (GenCursor make21 _ load21)
+		    , Region g22 (GenCursor make22 _ load22)] <- arr2
 
 	= let	{-# INLINE load21' #-}
 		load21' ix	= f (arr1 `unsafeIndex` ix) (load21 $ make21 ix)
@@ -84,7 +84,7 @@ zipWith f arr1 arr2
 		{-# INLINE load22' #-}
 		load22' ix	= f (arr1 `unsafeIndex` ix) (load22 $ make22 ix)
 		
-	  in	Array (S.intersectDim (extent arr1) (extent arr2))
+	  in	Array (S.intersectDim sh1 sh2)
 		      [ Region g21 (GenCursor P.id addDim load21')
 		      , Region g22 (GenCursor P.id addDim load22') ]
 

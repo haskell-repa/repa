@@ -12,9 +12,6 @@ import Data.Array.Repa
 type Complex 
 	= (Double, Double)
 
-instance Elt Complex where
-	touch (d1, d2) = touch d1 >> touch d2
-
 instance Num Complex where
 
   {-# INLINE abs #-}

@@ -368,49 +368,4 @@ wildfire img@(Array _ [Region RangeAll (GenManifest _)])
 			return (top + 1)
 			
 		 else	return top
-	
 
-
----------------------------------------------
--- | TODO: shift this into library
-{-# INLINE makeBordered2 #-}
-makeBordered2
-	:: Elt a
-	=> DIM2 -> Int
-	-> (DIM2 -> a) 
-	-> (DIM2 -> a)
-	-> Array DIM2 a
-
-makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth getInternal getBorder
- = let
-	-- minimum and maximum indicies of values in the inner part of the image.
-	!xMin		= borderWidth
-	!yMin		= borderWidth
-	!xMax		= aWidth  - borderWidth  - 1
-	!yMax		= aHeight - borderWidth - 1
-
-	-- range of values where some of the data needed by the stencil is outside the image.
-	rectsBorder
-	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot 
-	   	, Rect (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1)	 	-- top
-		, Rect (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)		-- left
-	   	, Rect (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) ]  	-- right
-
-	{-# INLINE inBorder #-}
-	inBorder 	= not . inInternal
-
-	-- range of values where we don't need to worry about the border
-	rectsInternal	
-	 = 	[ Rect (Z :. yMin :. xMin)	   (Z :. yMax :. xMax ) ]
-
-	{-# INLINE inInternal #-}
-	inInternal (Z :. y :. x)
-		=  x >= xMin && x <= xMax 
-		&& y >= yMin && y <= yMax
-
-   in	Array sh
-		[ Region (RangeRects inBorder   rectsBorder) 
-			 (GenCursor id addDim  getInternal)
-
-		, Region (RangeRects inInternal rectsInternal)
-		 	 (GenCursor id addDim  getBorder) ]
