@@ -2,6 +2,9 @@
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 -- | Canny edge detector
+--   NOTE: for decent performance this needs to be compiled with
+--         -fllvm -optlo-O3 -Odph -fno-liberate-case -funfolding-use-threshold100 -funfolding-keeness-factor100
+--
 import Data.List
 import Data.Word
 import Data.Int
@@ -9,6 +12,7 @@ import Control.Monad
 import System.Environment
 import Data.Array.Repa 			as R
 import Data.Array.Repa.Stencil
+import Data.Array.Repa.Specialised.Dim2
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
@@ -18,6 +22,7 @@ import qualified Data.Vector.Unboxed.Mutable	as VM
 import qualified Data.Vector.Unboxed		as V
 
 type Image a	= Array DIM2 a
+
 
 -- Constants ------------------------------------------------------------------
 -- TODO: Setting these to Word8 triggers a bug in the LLVM Mangler
@@ -106,6 +111,9 @@ timeStage loops name fn
 	return arrResult
 
 
+-------------------------------------------------------------------------------
+-- | The default conversions supplied via the prelude go via a GMP function
+--   call instead of just using the appropriate primop.
 {-# INLINE floatOfWord8 #-}
 floatOfWord8 :: Word8 -> Float
 floatOfWord8 w8
@@ -188,7 +196,7 @@ gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 			-1 -2 -1 |] 
 
 
--- | Classify the orientation of the vector gradient.
+-- | Classify the magnitude and orientation of the vector gradient.
 {-# NOINLINE gradientMagOrient #-}
 gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Float)
 gradientMagOrient !threshLow 
@@ -218,15 +226,15 @@ gradientMagOrient !threshLow
  	 = orientUndef
 
 	 | otherwise
-	 = let	-- determine the angle of the vector and rotate it around a bit
+	 = let	-- Determine the angle of the vector and rotate it around a bit
 		-- to make the segments easier to classify.
 		!d	= atan2 y x 
 		!dRot	= (d - (pi/8)) * (4/pi)
 	
-		-- normalise angle to beween 0..8
+		-- Normalise angle to beween 0..8
 		!dNorm	= if dRot < 0 then dRot + 8 else dRot
 
-		-- doing tests seems to be faster than using floor.
+		-- Doing explicit tests seems to be faster than using the FP floor function.
 	   in	if dNorm >= 4
 		 then if dNorm >= 6
 			then if dNorm >= 7
@@ -247,7 +255,8 @@ gradientMagOrient !threshLow
 				else orientPosDiag -- 0
 
 
--- | Suppress pixels which are not local maxima.
+-- | Suppress pixels which are not local maxima, and use the magnitude to classify maxima
+--   into strong and weak (potential) edges.
 {-# NOINLINE suppress #-}
 suppress :: Float -> Float -> Image (Float, Float) -> Image Word8
 suppress threshLow threshHigh
@@ -280,8 +289,8 @@ suppress threshLow threshHigh
 	    | otherwise		= edge Strong
 
 
--- | Select indices of strong edges
---   TODO: merge this into suppress above with a fused map/select operation.
+-- | Select indices of strong edges.
+--   TODO: If would be better merge this into suppress above with a fused map/select operation.
 {-# NOINLINE selectStrong #-}
 selectStrong :: Image Word8 -> Array DIM1 Int
 selectStrong img@(Array _ [Region RangeAll (GenManifest vec)])
@@ -295,15 +304,15 @@ selectStrong img@(Array _ [Region RangeAll (GenManifest vec)])
    in	select match process (size $ extent img)
 
 
--- | Burn in any weak edges that are connected to strong edges.
+-- | Trace out strong edges in the final image. 
+--   Also trace out weak edges that are connected to strong edges.
 {-# NOINLINE wildfire #-}
 wildfire 
 	:: Image Word8		-- ^ Image with strong and weak edges set.
 	-> Array DIM1 Int	-- ^ Array containing flat indices of strong edges.
 	-> Image Word8
 
-wildfire img@(Array _ [Region RangeAll (GenManifest _)])
-         arrStrong
+wildfire img@(Array _ [Region RangeAll (GenManifest _)]) arrStrong
  = unsafePerformIO 
  $ do	(sh, vec)	<- wildfireIO 
 	return	$ sh `seq` vec `seq` 
@@ -368,4 +377,3 @@ wildfire img@(Array _ [Region RangeAll (GenManifest _)])
 			return (top + 1)
 			
 		 else	return top
-
