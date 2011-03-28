@@ -1,21 +1,23 @@
 {-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
--- | Canny edge detector
---   NOTE: for decent performance this needs to be compiled with
---         -fllvm -optlo-O3 -Odph -fno-liberate-case -funfolding-use-threshold100 -funfolding-keeness-factor100
+-- | Canny edge detector.
+--
+--   NOTE: for best performance this needs to be compiled with the following GHC options:
+--         -fllvm -optlo-O3 -Odph -fno-liberate-case
+--         -funfolding-use-threshold100 -funfolding-keeness-factor100
 --
 import Data.List
 import Data.Word
 import Data.Int
 import Control.Monad
 import System.Environment
-import Data.Array.Repa 			as R
+import Data.Array.Repa 				as R
 import Data.Array.Repa.Stencil
 import Data.Array.Repa.Specialised.Dim2
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
-import Prelude				hiding (compare)
+import Prelude					hiding (compare)
 
 import System.IO.Unsafe
 import qualified Data.Vector.Unboxed.Mutable	as VM
@@ -23,21 +25,19 @@ import qualified Data.Vector.Unboxed		as V
 
 type Image a	= Array DIM2 a
 
-
 -- Constants ------------------------------------------------------------------
--- TODO: Setting these to Word8 triggers a bug in the LLVM Mangler
-orientPosDiag	= 0	:: Float
-orientVert	= 1	:: Float
-orientNegDiag	= 2	:: Float
-orientHoriz	= 3	:: Float
-orientUndef	= 4	:: Float
-
+-- TODO: It would be better to use Word8 to represent the edge orientations,
+--       but doing so currently triggers a bug in the LLVM mangler.
+orientUndef	= 0	:: Float
+orientPosDiag	= 64	:: Float
+orientVert	= 128	:: Float
+orientNegDiag	= 192	:: Float
+orientHoriz	= 255	:: Float
 
 data Edge	= None | Weak | Strong
 edge None	= 0 	:: Word8
 edge Weak	= 128 	:: Word8
 edge Strong	= 255	:: Word8
-
 
 -- Main routine ---------------------------------------------------------------
 main 
@@ -49,7 +49,7 @@ main
 	 [loops, threshLow, threshHigh, fileIn, fileOut]
 	   -> run (read loops) (read threshLow) (read threshHigh) fileIn fileOut
 
-	 _ -> putStrLn "repa-canny [loops threshLow threshHigh] <fileIn.bmp> <fileOut.bmp>"
+	 _ -> putStrLn "repa-canny [<loops::Int> <threshLow::Int> <threshHigh::Int>] <fileIn.bmp> <fileOut.bmp>"
 
 
 run loops threshLow threshHigh fileIn fileOut
@@ -128,7 +128,6 @@ word8OfFloat :: Float -> Word8
 word8OfFloat f
  	= fromIntegral (truncate f :: Int)
 
-	
 
 -------------------------------------------------------------------------------
 -- | RGB to greyscale conversion.
@@ -151,7 +150,6 @@ toGreyScale
 		( floatOfWord8 r * 0.3
 		+ floatOfWord8 g * 0.59
 		+ floatOfWord8 b * 0.11)
-
 
 
 -- | Separable Gaussian blur in the X direction.
@@ -258,7 +256,7 @@ gradientMagOrient !threshLow
 				else orientPosDiag -- 0
 
 
--- | Suppress pixels which are not local maxima, and use the magnitude to classify maxima
+-- | Suppress pixels that are not local maxima, and use the magnitude to classify maxima
 --   into strong and weak (potential) edges.
 {-# NOINLINE suppress #-}
 suppress :: Float -> Float -> Image (Float, Float) -> Image Word8
@@ -295,7 +293,8 @@ suppress threshLow threshHigh
 
 
 -- | Select indices of strong edges.
---   TODO: If would be better merge this into suppress above with a fused map/select operation.
+--   TODO: If would better if we could medge this into the above stage, and record the strong edge
+--         during non-maximum suppression, but Repa doesn't provide a fused mapFilter primitive yet.
 {-# NOINLINE selectStrong #-}
 selectStrong :: Image Word8 -> Array DIM1 Int
 selectStrong img@(Array _ [Region RangeAll (GenManifest vec)])

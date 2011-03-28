@@ -72,8 +72,7 @@ data Rect sh
 -- | Generates array elements for a given region in an array.
 data Generator sh a
 	-- | Read elements from a manifest vector.  
-	= GenManifest
-	{ genVector		:: Vector a }
+	= GenManifest !(Vector a)
 		
 	-- | Use a cursor to walk over the elements required.
 	| forall cursor

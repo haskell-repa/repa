@@ -14,7 +14,7 @@ gradientX_only :: Image -> Image
 {-# NOINLINE gradientX_only #-}
 gradientX_only img@(Array _ [Region RangeAll (GenManifest _)])
  	= img `deepSeqArray` 
-          force2 $ forStencil2 BoundClamp img
+          force2 $ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]

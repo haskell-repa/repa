@@ -79,7 +79,8 @@ force2 arr
 		 Array sh [Region RangeAll (GenManifest vec)]
 
  where	forceIO2 arr'
- 	 = case arr' of
+ 	 = arr' `deepSeqArray` 
+	   case arr' of
 		-- Don't force an already forced array.
 		Array sh [Region RangeAll (GenManifest vec)]
 	 	 -> 	return (sh, vec)

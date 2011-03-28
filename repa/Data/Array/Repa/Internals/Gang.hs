@@ -20,6 +20,7 @@ import Control.Exception         (assert)
 
 import Control.Monad             (zipWithM, zipWithM_)
 import GHC.Conc			(numCapabilities)
+import System.IO
 
 #if TRACE_GANG
 import GHC.Exts                  (traceEvent)
@@ -172,9 +173,14 @@ gangIO (Gang n mvs busy) p
 	traceGang $ "gangIO: gang is currently " ++ (if b then "busy" else "idle")
 	if b
 	 then do
-		error "Data.Array.Repa: not evaluating parallel computation sequentially"
---		hPutStr stderr $ "Data.Array.Repa: warning - evaluating nested parallel computation sequentially"
---		mapM_ p [0 .. n-1]
+		hPutStr stderr
+		 $ unlines	[ "Data.Array.Repa: Evaluating nested parallel computation sequentially."
+				, "  You've probably tried to call the 'force' function while another instance"
+				, "  was already running. This can happen if the second version was suspended due"
+				, "  to lazy evaluation. Use 'deepSeqArray' to ensure that each array is fully"
+				, "  evaluated before you 'force' the next one." ]
+				
+		mapM_ p [0 .. n-1]
 
 	 else do
 		parIO n mvs p

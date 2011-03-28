@@ -67,7 +67,7 @@ getMatrix arg
 	ArgMatrixRandom height width	
 	 -> return $ randomishDoubleArray (Z :. height :. width) (-100) 100 12345
 
-			
+
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()
 main 
@@ -83,14 +83,12 @@ main' args
 		mat1		<- getMatrix argMat1
 		mat2		<- getMatrix argMat2
 
-        	mat1
-          	 `deepSeqArray` mat2
-          	 `deepSeqArray` return ()
+        	mat1 `deepSeqArray` mat2 `deepSeqArray` return ()
 		
 		-- Run the solver.
 		(matResult, t)	
 			<- time 
-			$  let matResult	= multiplyMM mat1 mat2
+			$  let matResult = multiplyMM mat1 mat2
 			   in  matResult `deepSeqArray` return matResult
 
 		-- Print how long it took.

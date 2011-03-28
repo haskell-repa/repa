@@ -58,7 +58,9 @@ usage	= unlines
 	, "        ie (0, 0, 255)"
 	, "      Any other pixel value is an error." 
 	, ""
-	]
+	, "  NOTE: For GHC 7.0.3, this runs better when you turn off the parallel"
+	, "        garbage collector. Run with +RTS -qg"
+	, "" ]
 			
 
 -- | Solve it.

@@ -1,8 +1,6 @@
 {-# LANGUAGE PackageImports, BangPatterns, TemplateHaskell, QuasiQuotes #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
--- TODO: This needs -funfolding-creation-threshold1000
-
 import Data.List
 import Control.Monad
 import System.Environment
@@ -21,7 +19,7 @@ main
 	 _				-> usage
 
 usage 	= putStr $ unlines
-	[ "repa-blur <iterations> <fileIn.bmp> <fileOut.bmp>" ]
+	[ "repa-blur <iterations::Int> <fileIn.bmp> <fileOut.bmp>" ]
 	
 run iterations fileIn fileOut
  = do	comps	<- liftM (either (error . show) id) 
