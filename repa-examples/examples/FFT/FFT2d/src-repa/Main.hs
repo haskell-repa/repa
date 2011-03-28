@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Perform the 2D FFT on a BMP image.
 import Data.Array.Repa.Algorithms.FFT
@@ -24,29 +25,29 @@ main
 		, "" ]
 			
 	
-mainWithArgs fileIn clipMag fileMag filePhase
+mainWithArgs fileIn (clipMag :: Double) fileMag filePhase
  = do	
 	-- Load in the matrix.
-	arrReal		<- liftM (either (\e -> error $ show e) id)
+	arrReal		<- liftM (either (\e -> error $ show e) force)
 			$  readMatrixFromGreyscaleBMP fileIn
-	let arrComplex	= force $ A.map (\r -> (r, 0)) arrReal
-	
+
+	let arrComplex	= force $ A.map (\r -> (r, 0 :: Double)) arrReal
+
 	-- Apply the centering transform so that the output has the zero
 	--	frequency in the middle of the image.
 	let arrCentered	= center2d arrComplex
 		
 	-- Do the 2d transform.
-	let arrFreq	= fft2d Forward arrCentered
-		
+	let arrFreq 	= fft2d Forward arrCentered
+				
 	-- Write out the magnitude of the transformed array, 
 	--	clipping it at the given value.
 	let clip m	= if m >= clipMag then clipMag else m
-	let arrMag	= A.map (clip . mag) arrFreq
+	let arrMag	= force $ A.map (clip . mag) arrFreq
 	writeMatrixToGreyscaleBMP fileMag arrMag
 
 	-- Write out the phase of the transofmed array, 
 	-- 	scaling it to make full use of the 8 bit greyscale.
 	let scaledArg x	= (arg x + pi) * (255 / (2 * pi))
-	let arrPhase	= A.map scaledArg arrFreq
+	let arrPhase	= force $ A.map scaledArg arrFreq
 	writeMatrixToGreyscaleBMP filePhase arrPhase
-

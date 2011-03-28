@@ -174,11 +174,12 @@ gangIO (Gang n mvs busy) p
 	if b
 	 then do
 		hPutStr stderr
-		 $ unlines	[ "Data.Array.Repa: Evaluating nested parallel computation sequentially."
-				, "  You've probably tried to call the 'force' function while another instance"
-				, "  was already running. This can happen if the second version was suspended due"
+		 $ unlines	[ "Data.Array.Repa: Performing nested parallel computation sequentially."
+				, "  You've probably called the 'force' function while another instance was"
+				, "  already running. This can happen if the second version was suspended due"
 				, "  to lazy evaluation. Use 'deepSeqArray' to ensure that each array is fully"
-				, "  evaluated before you 'force' the next one." ]
+				, "  evaluated before you 'force' the next one."
+				, "" ]
 				
 		mapM_ p [0 .. n-1]
 

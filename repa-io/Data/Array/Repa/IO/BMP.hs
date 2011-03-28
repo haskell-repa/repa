@@ -96,7 +96,7 @@ readComponentsFromBMP' bmp
 	 = force2 $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
 	
-   in	(arrRed, arrGreen, arrBlue)
+   in	[arrRed, arrGreen, arrBlue] `deepSeqArrays` (arrRed, arrGreen, arrBlue)
 
 
 -- | Read a RGBA image from a BMP file.

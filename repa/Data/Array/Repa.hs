@@ -151,19 +151,30 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
 
 
-withManifest :: (Array sh a -> b) -> Array sh a -> b
+withManifest 
+	:: (Shape sh, Elt a)
+	=> (Array sh a -> b) -> Array sh a -> b
+
 {-# INLINE withManifest #-}
 withManifest f arr
  = case arr of
 	Array sh [Region RangeAll (GenManifest vec)]
-	 -> vec `seq` f (Array sh [Region RangeAll (GenManifest vec)])
+	  -> vec `seq` f (Array sh [Region RangeAll (GenManifest vec)])
+	
+	_ -> f (force arr)
+	
 
-withManifest' :: Array sh a -> (Array sh a -> b) -> b
+withManifest' 
+	:: (Shape sh, Elt a)
+	=> Array sh a -> (Array sh a -> b) -> b
+
 {-# INLINE withManifest' #-}
 withManifest' arr f
  = case arr of
 	Array sh [Region RangeAll (GenManifest vec)]
 	 -> vec `seq` f (Array sh [Region RangeAll (GenManifest vec)])
+	
+	_ -> f (force arr)
 
 	
 

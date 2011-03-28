@@ -29,7 +29,8 @@ iterateBlockwise steps f arrInit@(Array shInit [Region RangeAll (GenManifest vec
 	 = let	!arrCurrent	= fromVector shCurrent vecCurrent
 	   in   if i == 0 
 		 then arrCurrent
-		 else let arrNew@(Array shInit [Region RangeAll (GenManifest vecInit)]) = force2 $ f arrCurrent
+		 else let arrNew@(Array _ [Region RangeAll (GenManifest _)]) 
+				= force2 $ f arrCurrent
 		      in  goSolve (i - 1) (extent arrNew) (toVector arrNew)
 
 

@@ -6,7 +6,7 @@ module Data.Array.Repa.Algorithms.Complex
 	, mag
 	, arg)
 where
-import Data.Array.Repa
+
 
 -- | Strict complex doubles.
 type Complex 
