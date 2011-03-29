@@ -165,24 +165,6 @@ fillRect2 mvec (_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
 	GenManifest{}
 	 -> error "fillRegion2P: GenManifest, copy elements."
 	
-	-- If the region we're filling is just one pixel wide then just fill it
-	--   in the current thread instead of starting up the whole gang.
-{-	GenDelayed getElem
-	 |  x0 == x1
-	 -> fillVectorBlock mvec
-		(getElem . fromIndex sh)
-		width x0 y0 x1 y1
-
-	 |  y0 == y1
-	 -> fillVectorBlock mvec
-		(getElem . fromIndex sh)
-		width x0 y0 x1 y1
-	
-	 | otherwise
-	 -> fillVectorBlockP mvec
-		(getElem . fromIndex sh) 
-		width x0 y0 x1 y1
--}	
 	-- Cursor based arrays.
 	GenCursor makeCursor shiftCursor loadElem
          -> fillCursoredBlock2P mvec

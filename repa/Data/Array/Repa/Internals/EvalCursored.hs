@@ -115,11 +115,11 @@ fillCursoredBlock2
 			-- write into the array. If the backend code generator can't tell
 			-- our destination array doesn't alias with the source then writing
 			-- to it can prevent the sharing of intermediate computations.
-{-			touch val0
+			touch val0
 			touch val1
 			touch val2
 			touch val3
--}
+
 			-- Compute cursor into destination array.
 			let !dstCur0	= x + y * imageWidth				
 			VM.unsafeWrite vec (dstCur0)     val0
