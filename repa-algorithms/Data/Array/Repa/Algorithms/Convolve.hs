@@ -1,5 +1,11 @@
 {-# LANGUAGE BangPatterns, PackageImports #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
+
+-- | Old support for stencil based convolutions. 
+--
+--   NOTE: This is slated to be merged with the new Stencil support in the next version
+--         of Repa. We'll still expose the `convolve` function though.
+--
 module Data.Array.Repa.Algorithms.Convolve
 	( convolve
 

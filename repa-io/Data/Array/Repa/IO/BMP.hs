@@ -28,7 +28,6 @@ import Data.Word
 -- | Read a matrix from a `BMP` file.
 --	Each pixel is converted to greyscale, normalised to [0..1] and used
 --	as the corresponding array element. If anything goes wrong when loading the file then `Error`.
---      TODO: fix normalisation.
 readMatrixFromGreyscaleBMP
 	:: FilePath
 	-> IO (Either Error (Array DIM2 Double))

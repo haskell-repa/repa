@@ -1,12 +1,15 @@
 {-# LANGUAGE TypeOperators, PatternGuards, RankNTypes, ScopedTypeVariables, BangPatterns, FlexibleContexts #-}
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 
--- | Fast computation of Discrete Fourier Transforms using the Cooley-Tuckey algorithm.
+-- | Fast computation of Discrete Fourier Transforms using the Cooley-Tuckey algorithm. 
+--   Time complexity is O(n log n) in the size of the input. 
 --
---   Time complexity is O(n log n) in the size of the input.
+--   This uses a naive divide-and-conquer algorithm, the absolute performance is about
+--   50x slower than FFTW in estimate mode.
 --
 module Data.Array.Repa.Algorithms.FFT
 	( Mode(..)
+	, isPowerOfTwo
 	, fft3d
 	, fft2d
 	, fft1d)
@@ -29,23 +32,35 @@ signOfMode mode
 	Inverse		->   1
 
 
+{-# INLINE isPowerOfTwo #-}
+-- | Check if an `Int` is a power of two.
+isPowerOfTwo :: Int -> Bool
+isPowerOfTwo x
+ = let	r	= (log (fromIntegral x) / log 2) :: Double
+   in	ceiling r == (floor r :: Int)
+
+
+
+
 -- 3D Transform -----------------------------------------------------------------------------------
--- | Compute the DFT of a 3d array.
+-- | Compute the DFT of a 3d array. Array dimensions must be powers of two else `error`.
 fft3d 	:: Mode
 	-> Array DIM3 Complex
 	-> Array DIM3 Complex
 
 fft3d mode arr
  = let	_ :. depth :. height :. width	= extent arr
-	sign	= signOfMode mode
-	scale 	= fromIntegral (depth * width * height) 
+	!sign	= signOfMode mode
+	!scale 	= fromIntegral (depth * width * height) 
 		
-   in	arr `deepSeqArray` 
-	case mode of
-		Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
-		Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
-		Inverse	-> force $ A.map (/ scale) 
-				$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+   in	if not (isPowerOfTwo depth && isPowerOfTwo height && isPowerOfTwo width)
+	 then error "Data.Array.Repa.Algorithms.FFT: fft3d -- array dimensions must be powers of two."
+	 else arr `deepSeqArray` 
+		case mode of
+			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+			Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+			Inverse	-> force $ A.map (/ scale) 
+					$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 
 fftTrans3d 
 	:: Double
@@ -69,7 +84,7 @@ rotate3d arr
 
 
 -- Matrix Transform -------------------------------------------------------------------------------
--- | Compute the DFT of a matrix.
+-- | Compute the DFT of a matrix. Array dimensions must be powers of two else `error`.
 fft2d 	:: Mode
 	-> Array DIM2 Complex
 	-> Array DIM2 Complex
@@ -79,11 +94,13 @@ fft2d mode arr
 	sign	= signOfMode mode
 	scale 	= fromIntegral (width * height) 
 		
-   in	arr `deepSeqArray` 
-	case mode of
-		Forward	-> fftTrans2d sign $ fftTrans2d sign arr
-		Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
-		Inverse	-> force $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
+   in	if not (isPowerOfTwo height && isPowerOfTwo width)
+	 then error "Data.Array.Repa.Algorithms.FFT: fft2d -- array dimensions must be powers of two."
+	 else arr `deepSeqArray` 
+		case mode of
+			Forward	-> fftTrans2d sign $ fftTrans2d sign arr
+			Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
+			Inverse	-> force $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
 
 fftTrans2d 
 	:: Double
@@ -98,7 +115,7 @@ fftTrans2d sign arr'
 
 
 -- Vector Transform -------------------------------------------------------------------------------
--- | Compute the DFT of a vector.
+-- | Compute the DFT of a vector. Array dimensions must be powers of two else `error`.
 fft1d	:: Mode 
 	-> Array DIM1 Complex 
 	-> Array DIM1 Complex
@@ -108,11 +125,13 @@ fft1d mode arr
 	sign	= signOfMode mode
 	scale	= fromIntegral len
 	
-   in	arr `deepSeqArray`
-	case mode of
-		Forward	-> fftTrans1d sign arr
-		Reverse	-> fftTrans1d sign arr
-		Inverse -> force $ A.map (/ scale) $ fftTrans1d sign arr
+   in	if not $ isPowerOfTwo len
+	 then error "Data.Array.Repa.Algorithms.FFT: fft1d -- array dimensions must be powers of two."
+	 else arr `deepSeqArray`
+		case mode of
+			Forward	-> fftTrans1d sign arr
+			Reverse	-> fftTrans1d sign arr
+			Inverse -> force $ A.map (/ scale) $ fftTrans1d sign arr
 
 fftTrans1d
 	:: Double 
@@ -149,7 +168,7 @@ fft !sign !sh !lenVec !vec
 				 odds@(Array _ [Region RangeAll GenManifest{}])
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
    	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
-   	   	   in	force 	$ (evens +^ odds') +:+ (evens -^ odds')
+   	   	   in	force 	$ (evens +^ odds') A.++ (evens -^ odds')
 
 
 -- Compute a twiddle factor.

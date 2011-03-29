@@ -19,7 +19,7 @@ stage	= "Data.Array.Repa.Internals.Forcing"
 
 
 -- Conversions that also force the array ----------------------------------------------------------
--- | Convert an array to an unboxed `U.Array`, forcing it if required.
+-- | Convert an array to an unboxed `Data.Vector`, forcing it if required.
 --	The elements come out in row-major order.
 toVector
 	:: (Shape sh, Elt a)

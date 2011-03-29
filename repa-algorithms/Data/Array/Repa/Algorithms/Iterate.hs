@@ -5,10 +5,8 @@ module Data.Array.Repa.Algorithms.Iterate
 where
 import Data.Array.Repa
 
-
--- | Iterate a stencil a fixed number of times, applying constant value boundary conditions after each iteration.
---   The boundary conditions are specified with a mask and value array. 
---   The mask contains 1 for indicies where the boundary conditions apply, and 0 otherwise.
+-- | Iterate array transformation function a fixed number of times, applying `force2` between
+--   each iteration.
 iterateBlockwise
 	:: (Elt a, Num a)
 	=> Int					-- ^ Number of iterations to run for.
@@ -33,6 +31,14 @@ iterateBlockwise steps f arrInit@(Array shInit [Region RangeAll (GenManifest vec
 				= force2 $ f arrCurrent
 		      in  goSolve (i - 1) (extent arrNew) (toVector arrNew)
 
+
+-- | As above, but with the parameters flipped.
+iterateBlockwise'
+	:: (Elt a, Num a)
+	=> Int					-- ^ Number of iterations to run for.
+	-> Array DIM2 a				-- ^ Initial array value.
+	-> (Array DIM2 a -> Array DIM2 a)	-- ^ Fn to step the array.
+	-> Array DIM2 a
 
 {-# INLINE iterateBlockwise' #-}
 iterateBlockwise' steps arr fn

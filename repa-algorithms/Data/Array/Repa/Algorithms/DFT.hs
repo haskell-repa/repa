@@ -22,6 +22,7 @@ where
 import Data.Array.Repa.Algorithms.DFT.Roots
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
+import Prelude					as P
 
 -- | Compute the DFT along the low order dimension of an array.
 dft 	:: forall sh
@@ -62,8 +63,8 @@ dftWithRoots rofu arr
 	| _ :. rLen 	<- extent rofu
 	, _ :. vLen 	<- extent arr
 	, rLen /= vLen
-	= error $  "dftWithRoots: length of vector (" ++ show vLen ++ ")"
-		++ " does not match the length of the roots (" ++ show rLen ++ ")"
+	= error $    "dftWithRoots: length of vector (" P.++ show vLen P.++ ")"
+		P.++ " does not match the length of the roots (" P.++ show rLen P.++ ")"
 
 	| otherwise
 	= traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
@@ -84,8 +85,8 @@ dftWithRootsSingle rofu arrX (_ :. k)
 	| _ :. rLen 	<- extent rofu
 	, _ :. vLen 	<- extent arrX
 	, rLen /= vLen
-	= error $  "dftWithRootsSingle: length of vector (" ++ show vLen ++ ")"
-		++ " does not match the length of the roots (" ++ show rLen ++ ")"
+	= error $    "dftWithRootsSingle: length of vector (" P.++ show vLen P.++ ")"
+		P.++ " does not match the length of the roots (" P.++ show rLen P.++ ")"
 
 	| otherwise
 	= let	sh@(_ :. len)	= extent arrX

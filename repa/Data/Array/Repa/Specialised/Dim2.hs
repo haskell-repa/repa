@@ -63,7 +63,7 @@ clampToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 	  | otherwise	= sh :. y	   :. x
 
 
--- | Make a 2D partitioned array given two elements, one to produce elements in the 
+-- | Make a 2D partitioned array given two generators, one to produce elements in the 
 --   border region, and one to produce values in the internal region.
 --   The border must be the same width on all sides.
 makeBordered2

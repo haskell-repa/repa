@@ -1,5 +1,9 @@
 module Data.Array.Repa.IO.Timing
-	(time, showTime, prettyTime)
+	( Time
+	, milliseconds, cpuTime, wallTime
+	, time, minus, plus
+	, showTime
+	, prettyTime)
 where
 import GHC.Exts	(traceEvent)
 import System.CPUTime
@@ -7,6 +11,7 @@ import System.Time
 
 
 -- Time -----------------------------------------------------------------------
+-- | Abstract representation of process time.
 data Time 
 	= Time 
 	{ cpu_time  :: Integer
@@ -17,11 +22,18 @@ zipT :: (Integer -> Integer -> Integer) -> Time -> Time -> Time
 zipT f (Time cpu1 wall1) (Time cpu2 wall2) 
 	= Time (f cpu1 cpu2) (f wall1 wall2)
 
+-- | Subtract second time from the first.
 minus :: Time -> Time -> Time
 minus = zipT (-)
 
 
+-- | Add two times.
+plus :: Time -> Time -> Time
+plus  = zipT (+)
+
+
 -- TimeUnit -------------------------------------------------------------------
+-- | Conversion 
 type TimeUnit 
 	= Integer -> Integer
 
@@ -50,7 +62,7 @@ showTime t = (show $ wallTime milliseconds t)
           ++ "/"
           ++ (show $ cpuTime  milliseconds t)
 
--- | Pretty print the times.
+-- | Pretty print the times, in milliseconds.
 prettyTime :: Time -> String
 prettyTime t
 	= unlines
@@ -58,6 +70,11 @@ prettyTime t
 	, "cpuTimeMS       = " ++ (show $ cpuTime  milliseconds t) ]
 
 -- Timing benchmarks ----------------------------------------------------------
+
+-- | Time some IO action.
+--   Make sure to deepseq the result before returning it from the action. If you
+--   don't do this then there's a good chance that you'll just pass a suspension
+--   out of the action, and the computation time will be zero.
 time :: IO a -> IO (a, Time)
 {-# NOINLINE time #-}
 time p = do

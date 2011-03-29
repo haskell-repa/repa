@@ -10,10 +10,7 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 
-import SolverSeparated
-import SolverX
-import SolverY
-
+import Solver
 
 -- Main routine ---------------------------------------------------------------
 main 
@@ -21,7 +18,7 @@ main
 	case args of
 	 [iterations, fileIn, fileOut]	
 		-> run (read iterations) fileIn fileOut
-	 _	-> putStr "sobel <fileIn.bmp> <fileOut.bmp>"
+	 _	-> putStrLn "Usage: sobel <iterations::Int> <fileIn.bmp> <fileOut.bmp>"
 
 
 run iterations fileIn fileOut
@@ -39,7 +36,10 @@ run iterations fileIn fileOut
 	
 	let (gX, gY)	= result
 	let outImage	= force2 $ Repa.zipWith magnitude gX gY	
+
 	outImage `seq` return ()
+
+	-- TODO: The image normalization in this write fn eats up most of the runtime.
 	writeMatrixToGreyscaleBMP fileOut outImage
 
 
@@ -49,8 +49,8 @@ loop n
    if n == 0
     then (img, img)
     else do 
-	let gX	= gradientX_only img
-	let gY	= gradientY_only img	
+	let gX	= gradientX img
+	let gY	= gradientY img	
 	if (n == 1) 
 		then gX `deepSeqArray` gY `deepSeqArray` (gX, gY)
 		else gX `deepSeqArray` gY `deepSeqArray` loop (n - 1) img

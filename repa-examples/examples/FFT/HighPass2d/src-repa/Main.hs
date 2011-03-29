@@ -20,6 +20,8 @@ main
 
          _ -> putStr $ unlines
 		[ "Usage: repa-fft-highpass <cutoff::Int> <fileIn.bmp> <fileOut.bmp>"
+		, ""
+		, "    Image dimensions must be powers of two, eg 128x512 or 64x256"
 		, "" ]
 			
 	

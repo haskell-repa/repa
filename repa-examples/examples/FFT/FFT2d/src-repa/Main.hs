@@ -18,6 +18,8 @@ main
 
          _ -> putStr $ unlines
 		[ "Usage: repa-fft2d <fileIn.bmp> <clip mag :: Int> <fileOutMag.bmp> <fileOutPhase.bmp>"
+		, " "
+		, "    Image dimensions must be powers of two, eg 128x512 or 64x256"
 		, ""
 		, "    The output magnitude has a high dynamic range. We need to clip it otherwise"
 		, "    most of the pixels in the output BMP will be black. Start with a value equal"

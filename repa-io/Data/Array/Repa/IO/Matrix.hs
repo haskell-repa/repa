@@ -59,7 +59,7 @@ writeMatrixToTextFile fileName arr
 	let Z :. width :. height	
 		= extent arr
 
-	hPutStrLn file $ show width ++ " " ++ show height
+	hPutStrLn file $ show width P.++ " " P.++ show height
 		
 	hWriteValues file $ toList arr
 	hClose file

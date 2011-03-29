@@ -46,9 +46,9 @@ module Data.Array.Repa
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
 	-- * Index space transformations
 	, reshape
-	, append, (+:+)
+	, append, (++)
 	, transpose
-	, replicate
+	, extend
 	, slice
 	, backpermute
 	, backpermuteDft
@@ -100,7 +100,7 @@ import Data.Array.Repa.Operators.Reduction
 import Data.Array.Repa.Operators.Select
 import qualified Data.Array.Repa.Shape	as S
 
-import Prelude				hiding (sum, map, zipWith, replicate)	
+import Prelude				hiding (sum, map, zipWith, (++))	
 import qualified Prelude		as P
 
 stage	= "Data.Array.Repa"
@@ -148,9 +148,10 @@ instance (Shape sh, Elt a, Num a) => Num (Array sh a) where
 
 	{-# INLINE fromInteger #-}
 	fromInteger n	 = fromFunction failShape (\_ -> fromInteger n) 
-	 where failShape = error $ stage ++ ".fromInteger: Constructed array has no shape."
+	 where failShape = error $ stage P.++ ".fromInteger: Constructed array has no shape."
 
 
+-- | Force an array before passing it to a function.
 withManifest 
 	:: (Shape sh, Elt a)
 	=> (Array sh a -> b) -> Array sh a -> b
@@ -164,6 +165,7 @@ withManifest f arr
 	_ -> f (force arr)
 	
 
+-- | Force an array before passing it to a function.
 withManifest' 
 	:: (Shape sh, Elt a)
 	=> Array sh a -> (Array sh a -> b) -> b

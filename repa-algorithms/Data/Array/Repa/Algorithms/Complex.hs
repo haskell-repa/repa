@@ -8,7 +8,7 @@ module Data.Array.Repa.Algorithms.Complex
 where
 
 
--- | Strict complex doubles.
+-- | Complex doubles.
 type Complex 
 	= (Double, Double)
 

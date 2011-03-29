@@ -18,7 +18,7 @@ stage	= "Data.Array.Repa.Properties"
 -- | QuickCheck properties for "Data.Array.Repa.Index".
 props_DataArrayRepaIndex :: [(String, Property)]
 props_DataArrayRepaIndex
-  = [(stage ++ "." ++ name, test) | (name, test)
+  = [(stage P.++ "." P.++ name, test) | (name, test)
      <-	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
 	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]]
 
@@ -41,8 +41,8 @@ prop_toIndexFromIndex_DIM2
 -- | QuickCheck properties for "Data.Array.Repa" and its children.
 props_DataArrayRepa :: [(String, Property)]
 props_DataArrayRepa
- =  props_DataArrayRepaIndex
- ++ [(stage ++ "." ++ name, test) | (name, test)
+ =    props_DataArrayRepaIndex
+ P.++ [(stage P.++ "." P.++ name, test) | (name, test)
     <-	[ ("id_force/DIM5",			property prop_id_force_DIM5)
 	, ("id_toScalarUnit",			property prop_id_toScalarUnit)
 	, ("id_toListFromList/DIM3",		property prop_id_toListFromList_DIM3) 

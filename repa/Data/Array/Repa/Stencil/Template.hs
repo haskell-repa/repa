@@ -22,9 +22,9 @@ import qualified Data.List	as List
 --   Is converted to:
 --   
 --   @
---     makeStencil2 
---        (\ix -> case ix of
---	            Z :. -1 :.  0  -> Just 1
+--     makeStencil2 (Z:.3:.3)
+--        (\\ix -> case ix of
+--                  Z :. -1 :.  0  -> Just 1
 --                  Z :.  0 :. -1  -> Just 1
 --                  Z :.  0 :.  1  -> Just 1
 --                  Z :.  1 :.  0  -> Just 1

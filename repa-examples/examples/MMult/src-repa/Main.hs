@@ -9,6 +9,7 @@ import Data.Maybe
 import System.Environment
 import Control.Monad
 import System.Random
+import Prelude				as P
 
 -- Arg Parsing ------------------------------------------------------------------------------------
 data Arg
@@ -39,7 +40,7 @@ parseArgs (flag:xx)
 	= ArgMatrixRandom (read x) (read y) : parseArgs rest
 	
 	| otherwise	
-	= error $ "bad arg " ++ flag ++ "\n"
+	= error $ "bad arg " P.++ flag P.++ "\n"
 
 printHelp
 	= putStr 	
@@ -95,7 +96,7 @@ main' args
 		putStr (prettyTime t)
 
 		-- Print a checksum of all the elements
-		putStrLn $ "checkSum        = " ++ show (A.sumAll matResult)
+		putStrLn $ "checkSum        = " P.++ show (A.sumAll matResult)
 
 		-- Write the output to file if requested.
 		case mArgOut of 

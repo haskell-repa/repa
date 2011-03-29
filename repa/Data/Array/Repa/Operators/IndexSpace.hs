@@ -3,9 +3,9 @@
 
 module Data.Array.Repa.Operators.IndexSpace
 	( reshape
-	, append, (+:+)
+	, append, (++)
 	, transpose
-	, replicate
+	, extend
 	, slice
 	, backpermute
 	, backpermuteDft)
@@ -16,15 +16,17 @@ import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Shape		as S
-import Prelude				hiding (replicate)
+import Prelude				hiding ((++))
+import qualified Prelude		as P
 
 stage	= "Data.Array.Repa.Operators.IndexSpace"
 
 -- Index space transformations --------------------------------------------------------------------
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
---   Reshaping a `DelayedCursor` array makes it `Delayed`.
---   TODO: Finish this for partitioned arrays.
+-- 
+--   TODO: This only works for arrays with a single region. 
+-- 
 reshape	:: (Shape sh, Shape sh', Elt a) 
 	=> sh'
 	-> Array sh a
@@ -33,7 +35,7 @@ reshape	:: (Shape sh, Shape sh', Elt a)
 {-# INLINE reshape #-}
 reshape sh' arr
 	| not $ S.size sh' == S.size (extent arr)
-	= error $ stage ++ ".reshape: reshaped array will not match size of the original"
+	= error $ stage P.++ ".reshape: reshaped array will not match size of the original"
 
 reshape sh' (Array sh [Region RangeAll gen])
  = Array sh' [Region RangeAll gen']
@@ -48,16 +50,12 @@ reshape sh' (Array sh [Region RangeAll gen])
 			(loadElem . makeCursor . fromIndex sh . toIndex sh')
 
 reshape _ _
-	= error $ stage ++ ".reshape: can't reshape a partitioned array"
+	= error $ stage P.++ ".reshape: can't reshape a partitioned array"
 	
 
 -- | Append two arrays.
 --
---   OBLIGATION: The higher dimensions of both arrays must have the same extent.
---
---   @tail (listOfShape (shape arr1)) == tail (listOfShape (shape arr2))@
---
-append, (+:+)	
+append, (++)	
 	:: (Shape sh, Elt a)
 	=> Array (sh :. Int) a
 	-> Array (sh :. Int) a
@@ -76,8 +74,8 @@ append arr1 arr2
       		| i < n		= f1 (sh :. i)
   		| otherwise	= f2 (sh :. (i - n))
 
-{-# INLINE (+:+) #-}
-(+:+) arr1 arr2 = append arr1 arr2
+{-# INLINE (++) #-}
+(++) arr1 arr2 = append arr1 arr2
 
 
 -- | Transpose the lowest two dimensions of an array. 
@@ -94,8 +92,9 @@ transpose arr
 	(\f -> \(sh :. i :. j) 	-> f (sh :. j :. i))
 
 
--- | Replicate an array, according to a given slice specification.
-replicate
+-- | Extend an array, according to a given slice specification.
+--   (used to be called replicate).
+extend
 	:: ( Slice sl
 	   , Shape (FullShape sl)
 	   , Shape (SliceShape sl)
@@ -104,8 +103,8 @@ replicate
 	-> Array (SliceShape sl) e
 	-> Array (FullShape sl) e
 
-{-# INLINE replicate #-}
-replicate sl arr
+{-# INLINE extend #-}
+extend sl arr
 	= backpermute 
 		(fullOfSlice sl (extent arr)) 
 		(sliceOfFull sl)

@@ -49,7 +49,7 @@ usage	= unlines
 	, "  input.bmp   :: FileName  Uncompressed RGB24 or RGBA32 BMP file for initial and boundary values."
 	, "  output.bmp  :: FileName  BMP file to write output to."
 	, "" 
-	, "  solver = one of " ++ show (P.map fst solvers)
+	, "  solver = one of " P.++ show (P.map fst solvers)
 	, ""
 	, "  Format of input file:"
 	, "      Boundary values are indicated in greyscale,"
@@ -160,7 +160,7 @@ slurpBoundValue r g b
 	= fromIntegral (fromIntegral r :: Int) / 255
 	
 	| otherwise
-	= error $ "Unhandled pixel value in input " ++ show (r, g, b)
+	= error $ "Unhandled pixel value in input " P.++ show (r, g, b)
 
 
 -- | Extract boundary mask from a RGB triple.
@@ -176,6 +176,6 @@ slurpBoundMask r g b
 	= 0
 	
 	| otherwise
-	= error $ "Unhandled pixel value in input " ++ show (r, g, b)
+	= error $ "Unhandled pixel value in input " P.++ show (r, g, b)
 	
 	

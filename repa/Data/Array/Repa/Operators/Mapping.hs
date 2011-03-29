@@ -16,10 +16,9 @@ import qualified Data.Vector.Unboxed	as V
 import qualified Prelude		as P
 import Prelude				(($), (.), (+), (*), (+), (/), (-))
 
--- | Apply Partitioned worker function to each element of an array, 
---	yielding a new array with the same extent.
+-- | Apply a worker function to each element of an array, yielding a new array with the same extent.
 --
---   TODO: We'll probably need to unfold this some.
+--   This is specialised for arrays of up to four regions, using more breaks fusion.
 --
 map	:: (Shape sh, Elt a, Elt b) 
 	=> (a -> b)
@@ -65,7 +64,7 @@ map f (Array sh regions)
 -- | Combine two arrays, element-wise, with a binary operator.
 --	If the extent of the two array arguments differ, 
 --	then the resulting array's extent is their intersection.
---   TODO: Also specialise for when the second array is manifest.
+--
 zipWith :: (Shape sh, Elt a, Elt b, Elt c) 
 	=> (a -> b -> c) 
 	-> Array sh a

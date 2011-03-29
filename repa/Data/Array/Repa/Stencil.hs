@@ -3,7 +3,15 @@
 {-# OPTIONS -Wnot #-}
 
 -- | Efficient computation of stencil based convolutions.
---   TODO: Also handle stencils larger than 5x5.
+--
+--   This is specialised for stencils up to 7x7.
+--   Due to limitations in the GHC optimiser, using larger stencils doesn't work, and will yield `error`
+--   at runtime. We can probably increase the limit if required -- just ask.
+--
+--   The focus of the stencil is in the center of the 7x7 tile, which has coordinates (0, 0).
+--   All coefficients in the stencil must fit in the tile, so they can be given X,Y coordinates up to
+--   +/- 3 positions. The stencil can be any shape, and need not be symmetric -- provided it fits in the 7x7 tile.
+--
 module Data.Array.Repa.Stencil
 	( Stencil	(..)
 	, Boundary	(..)
@@ -174,7 +182,7 @@ unsafeAppStencilCursor2 shift
 
 	| _ :. sHeight :. sWidth	<- sExtent
 	, _ :. aHeight :. aWidth	<- aExtent
-	, sHeight <= 5, sWidth <= 5
+	, sHeight <= 7, sWidth <= 7
 	= let	
 		-- Get data from the manifest array.
 		{-# INLINE [0] getData #-}
@@ -186,7 +194,7 @@ unsafeAppStencilCursor2 shift
 		 = let	!cur' = shift (Z :. oy :. ox) cur
 		   in	load (Z :. oy :. ox) (getData cur')
 	
-	   in	template5x5 oload zero
+	   in	template7x7 oload zero
 
 
 -- | Like above, but clamp out of bounds array values to the closest real value.
@@ -207,7 +215,7 @@ unsafeAppStencilCursor2_clamp shift
 
 	| _ :. sHeight :. sWidth	<- sExtent
 	, _ :. aHeight :. aWidth	<- aExtent
-	, sHeight <= 5, sWidth <= 5
+	, sHeight <= 7, sWidth <= 7
 	= let	
 		-- Get data from the manifest array.
 		{-# INLINE [0] getData #-}
@@ -240,22 +248,24 @@ unsafeAppStencilCursor2_clamp shift
 		 = let	!cur' = shift (Z :. oy :. ox) cur
 		   in	load (Z :. oy :. ox) (getData cur')
 	
-	   in	template5x5 oload zero
+	   in	template7x7 oload zero
 
 
 
--- | Data template for stencils up to 5x5.
-template5x5
+-- | Data template for stencils up to 7x7.
+template7x7
 	:: (Int -> Int -> a -> a)
 	-> a -> a
 
-{-# INLINE [1] template5x5 #-}
-template5x5 f zero
- 	= f (-2) (-2)  $  f (-2) (-1)  $  f (-2)   0  $  f (-2)   1  $  f (-2)   2 
-	$ f (-1) (-2)  $  f (-1) (-1)  $  f (-1)   0  $  f (-1)   1  $  f (-1)   2 
-	$ f   0  (-2)  $  f   0  (-1)  $  f   0    0  $  f   0    1  $  f   0    2  
-	$ f   1  (-2)  $  f   1  (-1)  $  f   1    0  $  f   1    1  $  f   1    2 
-	$ f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2 
+{-# INLINE [1] template7x7 #-}
+template7x7 f zero
+ 	= f (-3) (-3)  $  f (-3) (-2)  $  f (-3) (-1)  $  f (-3)   0  $  f (-3)   1  $  f (-3)   2  $ f (-3) 3
+ 	$ f (-2) (-3)  $  f (-2) (-2)  $  f (-2) (-1)  $  f (-2)   0  $  f (-2)   1  $  f (-2)   2  $ f (-2) 3
+	$ f (-1) (-3)  $  f (-1) (-2)  $  f (-1) (-1)  $  f (-1)   0  $  f (-1)   1  $  f (-1)   2  $ f (-1) 3
+	$ f   0  (-3)  $  f   0  (-2)  $  f   0  (-1)  $  f   0    0  $  f   0    1  $  f   0    2  $ f   0  3
+	$ f   1  (-3)  $  f   1  (-2)  $  f   1  (-1)  $  f   1    0  $  f   1    1  $  f   1    2  $ f   1  3
+	$ f   2  (-3)  $  f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2  $ f   2  3
+	$ f   3  (-3)  $  f   3  (-2)  $  f   3  (-1)  $  f   3    0  $  f   3    1  $  f   3    2  $ f   3  3
 	$ zero
 
 

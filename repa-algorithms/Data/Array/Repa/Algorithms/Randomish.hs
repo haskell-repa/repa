@@ -14,15 +14,15 @@ import qualified Data.Vector.Unboxed		as V
 import qualified Data.Vector.Generic		as G
 
 
--- | Use the "minimal standard" Lehmer generator to quickly generate some random
---   numbers with reasonable statistical properties. By "reasonable" we mean good
+-- | Use the ''minimal standard'' Lehmer generator to quickly generate some random
+--   numbers with reasonable statistical properties. By ''reasonable'' we mean good
 --   enough for games and test data, but not cryptography or anything where the
 --   quality of the randomness really matters. 
 --
 --   By nature of the algorithm, the maximum value in the output is clipped
 --   to (valMin + 2^31 - 1)
 -- 
---   From "Random Number Generators: Good ones are hard to find"
+--   From ''Random Number Generators: Good ones are hard to find''
 --   Stephen K. Park and Keith W. Miller.
 --   Communications of the ACM, Oct 1988, Volume 31, Number 10.
 --
@@ -83,7 +83,7 @@ randomishIntVector !len !valMin' !valMax' !seed'
 
 
 -- | Generate some randomish doubles with terrible statistical properties.
---   This is good enough for test data, but not much else.
+--   This just takes randomish ints then scales them, so there's not much randomness in low-order bits.
 randomishDoubleArray
 	:: Shape sh
 	=> sh 			-- ^ Shape of array
@@ -95,6 +95,9 @@ randomishDoubleArray
 randomishDoubleArray !sh !valMin !valMax !seed
 	= fromVector sh $ randomishDoubleVector (R.size sh) valMin valMax seed
 
+
+-- | Generate some randomish doubles with terrible statistical properties.
+--   This just takes randmish ints then scales them, so there's not much randomness in low-order bits.
 randomishDoubleVector
 	:: Int			-- ^ Length of vector
 	-> Double		-- ^ Minimum value in output

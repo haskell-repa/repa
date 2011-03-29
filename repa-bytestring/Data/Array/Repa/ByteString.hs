@@ -18,7 +18,7 @@ import qualified Data.ByteString	as BS
 import Data.ByteString			(ByteString)
 
 
--- | Convert an `Array` to a (strict) `ByteString`.
+-- | Copy an `Array` to a (strict) `ByteString`.
 toByteString 
 	:: Shape sh
 	=> Array sh Word8
@@ -65,9 +65,6 @@ fromByteString sh str
 
 -- Ptr utils ------------------------------------------------------------------
 -- | Copy some data from somewhere into a new `Array`.
---   TODO: fake this somehow to avoid the copy. 
---         maybe we want to allocate the array and use that as the CGContext directly.
---         Avoid going via fromFunction in Data.Vector. Data.Vector might need some hacks.
 copyFromPtrWord8 
 	:: Shape sh
 	=> sh
@@ -79,7 +76,7 @@ copyFromPtrWord8 sh ptr
  = do	return	$ fromFunction sh (\ix -> unsafePerformIO (peekElemOff ptr (toIndex sh ix)))
 
 
--- | Copy some data into a buffer
+-- | Copy array data somewhere.s
 copyToPtrWord8 
 	:: Shape sh
 	=> Ptr Word8

@@ -27,8 +27,8 @@ multiplyMM arr@(Array _ [Region RangeAll (GenManifest _)])
    A.force $ A.sum (A.zipWith (*) arrRepl brrRepl)
  where	trr@(Array _ [Region RangeAll (GenManifest _)])
 			= force $ transpose2D brr
-	arrRepl		= trr `deepSeqArray` A.replicate (Z :. All   :. colsB :. All) arr
-	brrRepl		= trr `deepSeqArray` A.replicate (Z :. rowsA :. All   :. All) trr
+	arrRepl		= trr `deepSeqArray` A.extend (Z :. All   :. colsB :. All) arr
+	brrRepl		= trr `deepSeqArray` A.extend (Z :. rowsA :. All   :. All) trr
 	(Z :. _     :. rowsA) = extent arr
 	(Z :. colsB :. _    ) = extent brr
 	

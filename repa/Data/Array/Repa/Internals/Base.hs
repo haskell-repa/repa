@@ -39,26 +39,26 @@ data Array sh a
 	{ -- | The entire extent of the array.
 	  arrayExtent		:: sh
 
-	  -- | Generators for array elements, and which regions they apply in.
+	  -- | Arrays can be partitioned into several regions.
 	, arrayRegions		:: [Region sh a] }
 
 
--- | Holds the generator for a region of the array.
+-- | Defines the values in a region of the array.
 data Region sh a
 	= Region 
-	{ -- | The range in the array this region applies to.
+	{ -- | The range of elements this region applies to.
 	  regionRange		:: Range sh
 
-	  -- | Generator for array elements in the region.
+	  -- | How to compute the array elements in this region.
 	, regionGenerator	:: Generator sh a }
 
 
 -- | Represents a range of elements in the array.
 data Range sh 
-	  -- | Entire extent of array.
+	  -- | Covers the entire array.
 	= RangeAll
 
-	  -- | A range consisting of a possibly disjoint set of rectangles.
+	  -- | The union of a possibly disjoint set of rectangles.
 	| RangeRects
 	{ rangeMatch	:: sh -> Bool
 	, rangeRects	:: [Rect sh] }
@@ -69,22 +69,31 @@ data Range sh
 data Rect sh
 	= Rect sh sh
 
--- | Generates array elements for a given region in an array.
+-- | Generates array elements for a particular region in the array.
 data Generator sh a
-	-- | Read elements from a manifest vector.  
+	-- | Elements are already computed and sitting in this vector. 
 	= GenManifest !(Vector a)
 		
-	-- | Use a cursor to walk over the elements required.
+	-- | Elements can be computed using these cursor functions.
 	| forall cursor
 	. GenCursor
-	{ genMakeCursor		:: sh -> cursor
+	{ -- | Make a cursor to a particular element.
+	  genMakeCursor		:: sh -> cursor
+	
+	  -- | Shift the cursor by an offset, to get to another element.
 	, genShiftCursor	:: sh -> cursor -> cursor
+
+	  -- | Load\/compute the element at the given cursor.
 	, genLoadElem		:: cursor -> a }
 
 
 -- DeepSeqs -------------------------------------------------------------------
 
 -- | Ensure the structure for an array is fully evaluated.
+--   As we are in a lazy language, applying the @force@ function to a delayed array doesn't
+--   actually compute it at that point. Rather, Haskell builds a suspension representing the
+--   appliction of the @force@ function to that array. Use @deepSeqArray@ to ensure the array
+--   is actually computed at a particular point in the program.
 infixr 0 `deepSeqArray`
 deepSeqArray :: Shape sh => Array sh a -> b -> b
 {-# INLINE deepSeqArray #-}
@@ -92,6 +101,7 @@ deepSeqArray (Array ex rgns) x
 	= ex `S.deepSeq` rgns `deepSeqRegions` x
 
 -- | Like `deepSeqArray` but seqs all the arrays in a list.
+--   This is specialised up to lists of 4 arrays. Using more in the list will break fusion.
 infixr 0 `deepSeqArrays`
 deepSeqArrays :: Shape sh => [Array sh a] -> b -> b
 {-# INLINE deepSeqArrays #-}
@@ -193,7 +203,6 @@ delay arr@(Array sh _)
 -- Indexing ---------------------------------------------------------------------------------------
 -- | Get an indexed element from an array.
 --   This uses the same level of bounds checking as your Data.Vector installation.
---   TODO: unfold this.
 (!), index
 	:: forall sh a
 	.  (Shape sh, Elt a)
@@ -205,26 +214,41 @@ delay arr@(Array sh _)
 (!) arr ix = index arr ix
 
 {-# INLINE index #-}
-index (Array _ []) _
-	= error $ stage ++ ": out of regions when indexing array"
+index arr ix
+ = case arr of
+	Array _ []
+	 -> zero
+	
+	Array sh [Region _ gen1]
+	 -> indexGen sh gen1 ix
+	
+	Array sh [Region r1 gen1, Region _ gen2]
+	 | inRange r1 ix	-> indexGen sh gen1 ix
+	 | otherwise		-> indexGen sh gen2 ix
+	
+	_ -> index' arr ix
 
-index (Array sh (Region range gen : rs)) ix
- 	| inRange range ix
-	= case gen of
-		GenManifest vec		
-		 -> vec V.! (S.toIndex sh ix)
 
-		GenCursor   makeCursor _ loadElem
-		 -> loadElem $ makeCursor ix
+ where	{-# INLINE indexGen #-}
+	indexGen sh gen ix'
+	 = case gen of
+		GenManifest vec
+		 -> vec V.! (S.toIndex sh ix')
 		
-	| otherwise
-	= index (Array sh rs) ix
+		GenCursor makeCursor _ loadElem
+		 -> loadElem $ makeCursor ix'
+
+	index' (Array sh (Region range gen : rs)) ix'
+	 | inRange range ix	= indexGen sh gen ix'
+	 | otherwise		= index' (Array sh rs) ix'
+
+        index' (Array _ []) _
+  	 = zero
+
 
 
 -- | Get an indexed element from an array.
 --   If the element is out of range then `Nothing`.
---   TODO: We should probably also ensure that delaying functions don't get
---         called by out of range indices.
 (!?), safeIndex
 	:: forall sh a
 	.  (Shape sh, Elt a)
@@ -235,21 +259,39 @@ index (Array sh (Region range gen : rs)) ix
 {-# INLINE (!?) #-}
 (!?) arr ix = safeIndex arr ix
 
+
 {-# INLINE safeIndex #-}
-safeIndex (Array _ []) _
-	= error $ stage ++ ": out of regions when indexing array"
+safeIndex arr ix
+ = case arr of
+	Array _ []
+	 -> Nothing
+	
+	Array sh [Region _ gen1]
+	 -> indexGen sh gen1 ix
+	
+	Array sh [Region r1 gen1, Region r2 gen2]
+	 | inRange r1 ix	-> indexGen sh gen1 ix
+	 | inRange r2 ix	-> indexGen sh gen2 ix
+	 | otherwise		-> Nothing
+	
+	_ -> index' arr ix
 
-safeIndex (Array sh (Region range gen : rs)) ix
- 	| inRange range ix
-	= case gen of
-		GenManifest vec		
-		 -> vec V.!? (S.toIndex sh ix)
 
-		GenCursor   makeCursor _ loadElem
-		 -> Just $ loadElem $ makeCursor ix
+ where	{-# INLINE indexGen #-}
+	indexGen sh gen ix'
+	 = case gen of
+		GenManifest vec
+		 -> vec V.!? (S.toIndex sh ix')
 		
-	| otherwise
-	= safeIndex (Array sh rs) ix
+		GenCursor makeCursor _ loadElem
+		 -> Just (loadElem $ makeCursor ix')
+
+	index' (Array sh (Region range gen : rs)) ix'
+	 | inRange range ix	= indexGen sh gen ix'
+	 | otherwise		= index' (Array sh rs) ix'
+
+        index' (Array _ []) _
+  	 = Nothing
 
 
 -- | Get an indexed element from an array, without bounds checking.
@@ -309,7 +351,7 @@ fromFunction sh fnElems
 			RangeAll 
 			(GenCursor id addDim fnElems)]
 
--- | Create a `Manifest` array from an unboxed `U.Array`. 
+-- | Create a `Manifest` array from an unboxed `Vector`. 
 --	The elements are in row-major order.
 fromVector
 	:: Shape sh

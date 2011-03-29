@@ -22,6 +22,7 @@ import Prelude					hiding (compare)
 import System.IO.Unsafe
 import qualified Data.Vector.Unboxed.Mutable	as VM
 import qualified Data.Vector.Unboxed		as V
+import Prelude					as P
 
 type Image a	= Array DIM2 a
 
@@ -108,8 +109,8 @@ timeStage loops name fn
 		   	arrResult' `deepSeqArray` return arrResult'
 
 	when (loops >= 1) 
-	 $ putStr 	$  name ++ "\n"
-			++ unlines [ "  " ++ l | l <- lines $ prettyTime t ]
+	 $ putStr 	$  name P.++ "\n"
+			P.++ unlines [ "  " P.++ l | l <- lines $ prettyTime t ]
 
 	return arrResult
 
@@ -265,10 +266,10 @@ suppress threshLow threshHigh
  = dMagOrient `deepSeqArray` force2 
  $ makeBordered2 shSrc 1 
 		(GenCursor id addDim (const 0))
- 		(GenCursor id addDim compare)
+ 		(GenCursor id addDim comparePts)
 
- where	{-# INLINE compare #-}
-	compare d@(sh :. i :. j)
+ where	{-# INLINE comparePts #-}
+	comparePts d@(sh :. i :. j)
 	 | o == orientUndef     = edge None
          | o == orientHoriz	= isMax (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
          | o == orientVert	= isMax (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 

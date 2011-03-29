@@ -12,9 +12,13 @@ import qualified Data.Vector.Unboxed		as V
 import System.IO.Unsafe
 
 
--- | Select elements maching a given predicate.
---   Good for writing filtering operations on arrays.
---   TODO: Also make a version that takes a Shape instead of a flat index.
+-- | Produce an array by applying a predicate to a range of integers.
+--   If the predicate matches, then use the second function to generate
+--   the element.
+--
+--   This is a low-level function helpful for writing filtering operations on arrays. 
+--   Use the integer as the index into the array you're filtering.
+--
 select	:: Elt a
 	=> (Int -> Bool)	-- ^ If the Int matches this predicate, 
 	-> (Int -> a)		-- ^  ... then pass it to this fn to produce a value

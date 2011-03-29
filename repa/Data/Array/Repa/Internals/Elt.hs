@@ -13,6 +13,8 @@ import Data.Vector.Unboxed
 	
 -- Note that the touch# function is special because we can pass it boxed or unboxed
 -- values. The argument type has kind ?, not just * or #.
+
+-- | Element types that can be stored in Repa arrays.
 class (Show a, Unbox a)	=> Elt a where
 
 	-- | We use this to prevent bindings from being floated inappropriatey.

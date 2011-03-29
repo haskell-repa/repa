@@ -12,7 +12,7 @@ import Data.Array.Repa.Internals.Base
 import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Shape			as S
 
--- | Interleave the elments of two arrays. 
+-- | Interleave the elements of two arrays. 
 --   All the input arrays must have the same extent, else `error`.
 --   The lowest dimenion of the result array is twice the size of the inputs.
 --
@@ -47,7 +47,7 @@ interleave2 arr1 arr2
 		_	-> error "Data.Array.Repa.interleave2: this never happens :-P"
 
 
--- | Interleave the elments of three arrays. 
+-- | Interleave the elements of three arrays. 
 interleave3
 	:: (Shape sh, Elt a)
 	=> Array (sh :. Int) a
@@ -77,7 +77,7 @@ interleave3 arr1 arr2 arr3
 		_	-> error "Data.Array.Repa.interleave3: this never happens :-P"
 
 
--- | Interleave the elments of four arrays. 
+-- | Interleave the elements of four arrays. 
 interleave4
 	:: (Shape sh, Elt a)
 	=> Array (sh :. Int) a
