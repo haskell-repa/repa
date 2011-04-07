@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             2.0.0.2
+Version:             2.0.0.3
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -8,8 +8,8 @@ Build-Type:          Simple
 Cabal-Version:       >=1.6
 Stability:           experimental
 Category:            Data Structures
-Homepage:            http://trac.haskell.org/repa
-Bug-reports:         http://trac.haskell.org/repa/newticket
+Homepage:            http://repa.ouroborus.net
+Bug-reports:         repa@ouroborus.net
 Description:
         Reusable algorithms using the Repa array library.
 
