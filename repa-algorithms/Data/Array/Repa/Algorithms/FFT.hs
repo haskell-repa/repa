@@ -16,6 +16,7 @@ module Data.Array.Repa.Algorithms.FFT
 where
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
+import Prelude                                  as P
 
 data Mode
 	= Forward
@@ -35,9 +36,11 @@ signOfMode mode
 {-# INLINE isPowerOfTwo #-}
 -- | Check if an `Int` is a power of two.
 isPowerOfTwo :: Int -> Bool
-isPowerOfTwo x
- = let	r	= (log (fromIntegral x) / log 2) :: Double
-   in	ceiling r == (floor r :: Int)
+isPowerOfTwo n
+	| 0	<- n		= True
+	| 2	<- n		= True
+	| n `mod` 2 == 0	= isPowerOfTwo (n `div` 2)
+	| otherwise		= False
 
 
 
@@ -54,7 +57,12 @@ fft3d mode arr
 	!scale 	= fromIntegral (depth * width * height) 
 		
    in	if not (isPowerOfTwo depth && isPowerOfTwo height && isPowerOfTwo width)
-	 then error "Data.Array.Repa.Algorithms.FFT: fft3d -- array dimensions must be powers of two."
+	 then error $ unlines
+	        [ "Data.Array.Repa.Algorithms.FFT: fft3d"
+	        , "  Array dimensions must be powers of two,"
+	        , "  but the provided array is " 
+	                P.++ show height P.++ "x" P.++ show width P.++ "x" P.++ show depth ]
+	           
 	 else arr `deepSeqArray` 
 		case mode of
 			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
@@ -95,7 +103,11 @@ fft2d mode arr
 	scale 	= fromIntegral (width * height) 
 		
    in	if not (isPowerOfTwo height && isPowerOfTwo width)
-	 then error "Data.Array.Repa.Algorithms.FFT: fft2d -- array dimensions must be powers of two."
+	 then error $ unlines
+	        [ "Data.Array.Repa.Algorithms.FFT: fft2d"
+	        , "  Array dimensions must be powers of two,"
+	        , "  but the provided array is " P.++ show height P.++ "x" P.++ show width ]
+	 
 	 else arr `deepSeqArray` 
 		case mode of
 			Forward	-> fftTrans2d sign $ fftTrans2d sign arr
@@ -126,7 +138,11 @@ fft1d mode arr
 	scale	= fromIntegral len
 	
    in	if not $ isPowerOfTwo len
-	 then error "Data.Array.Repa.Algorithms.FFT: fft1d -- array dimensions must be powers of two."
+	 then error $ unlines 
+                [ "Data.Array.Repa.Algorithms.FFT: fft1d"
+	        , "  Array dimensions must be powers of two, "
+                , "  but the provided array is " P.++ show len ]
+	      
 	 else arr `deepSeqArray`
 		case mode of
 			Forward	-> fftTrans1d sign arr
