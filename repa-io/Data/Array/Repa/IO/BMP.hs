@@ -201,7 +201,7 @@ writeImageToBMP fileName arrImage
 	= error "Data.Array.Repa.IO.BMP: lowest order dimension must be 4"
 
 	| otherwise
-	= let 	bmp	= packRGBA32ToBMP height width 
+	= let 	bmp	= packRGBA32ToBMP width height
 			$ A.toByteString arrImage
 	  in	writeBMP fileName bmp
 	
