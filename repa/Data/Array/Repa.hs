@@ -4,7 +4,9 @@
 
 -- | See the repa-examples package for examples.
 --   
---   More information at <http://trac.haskell.org/repa>
+--   More information at <http://repa.ouroborus.net>.
+--
+--   There is a draft tutorial at <http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial>
 --  
 module Data.Array.Repa
 	( module Data.Array.Repa.Shape
