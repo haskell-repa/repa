@@ -72,7 +72,9 @@ data Rect sh
 -- | Generates array elements for a particular region in the array.
 data Generator sh a
 	-- | Elements are already computed and sitting in this vector. 
-	= GenManifest !(Vector a)
+	= GenManifest (Vector a)
+	--   NOTE: Don't make the vector field strict. If you do then deepSeqing arrays
+	--         outside of loops won't cause the unboxings to be floated out.
 		
 	-- | Elements can be computed using these cursor functions.
 	| forall cursor
@@ -88,7 +90,6 @@ data Generator sh a
 
 
 -- DeepSeqs -------------------------------------------------------------------
-
 -- | Ensure the structure for an array is fully evaluated.
 --   As we are in a lazy language, applying the @force@ function to a delayed array doesn't
 --   actually compute it at that point. Rather, Haskell builds a suspension representing the
