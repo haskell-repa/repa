@@ -47,7 +47,7 @@ relaxLaplace
 	 arrBoundMask@(Array _ [Region RangeAll (GenManifest _)])
 	arrBoundValue@(Array _ [Region RangeAll (GenManifest _)])
        	          arr@(Array _ [Region RangeAll (GenManifest _)])
- = [arrBoundMask, arrBoundValue, arr] `deepSeqArrays` force2
+ = [arrBoundMask, arrBoundValue, arr] `deepSeqArrays` force
  $ A.zipWith (+) arrBoundValue
  $ A.zipWith (*) arrBoundMask
  $ unsafeTraverse arr id elemFn
