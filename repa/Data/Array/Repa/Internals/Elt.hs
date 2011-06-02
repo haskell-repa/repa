@@ -15,10 +15,14 @@ import Data.Vector.Unboxed
 -- values. The argument type has kind ?, not just * or #.
 
 -- | Element types that can be stored in Repa arrays.
+--   Repa uses `Data.Vector.Unboxed` to store the actual data. The implementation
+--   of this library is based on type families and picks an efficient, specialised
+--   representation for every element type. In particular, unboxed vectors of pairs
+--   are represented as pairs of unboxed vectors.
 class (Show a, Unbox a)	=> Elt a where
 
 	-- | We use this to prevent bindings from being floated inappropriatey.
-	--   Doing a `seq` sometimes isn't enough, because the GHC simpplifier can 
+	--   Doing a `seq` sometimes isn't enough, because the GHC simplifier can 
 	--   erase these, and/or still move around the bindings.
 	touch :: a -> IO ()
 
@@ -41,20 +45,6 @@ instance Elt Bool where
 
  {-# INLINE one #-}
  one  = True
-
-
--- Tuple ----------------------------------------------------------------------
-instance (Elt a, Elt b) => Elt (a, b) where
- {-# INLINE touch #-}
- touch (a, b) 
-  = do	touch a
-	touch b
-	
- {-# INLINE zero #-}
- zero = (zero, zero)
-
- {-# INLINE one #-}
- one =  (one, one)
 
 
 -- Floating -------------------------------------------------------------------
@@ -161,3 +151,81 @@ instance Elt Word16 where
 
  {-# INLINE one #-}
  one = 1
+
+
+-- Tuple ----------------------------------------------------------------------
+instance (Elt a, Elt b) => Elt (a, b) where
+ {-# INLINE touch #-}
+ touch (a, b) 
+  = do	touch a
+	touch b
+	
+ {-# INLINE zero #-}
+ zero = (zero, zero)
+
+ {-# INLINE one #-}
+ one =  (one, one)
+
+
+instance (Elt a, Elt b, Elt c) => Elt (a, b, c) where
+ {-# INLINE touch #-}
+ touch (a, b, c) 
+  = do	touch a
+	touch b
+	touch c
+	
+ {-# INLINE zero #-}
+ zero = (zero, zero, zero)
+
+ {-# INLINE one #-}
+ one =  (one, one, one)
+
+
+instance (Elt a, Elt b, Elt c, Elt d) => Elt (a, b, c, d) where
+ {-# INLINE touch #-}
+ touch (a, b, c, d) 
+  = do	touch a
+	touch b
+	touch c
+	touch d
+	
+ {-# INLINE zero #-}
+ zero = (zero, zero, zero, zero)
+
+ {-# INLINE one #-}
+ one =  (one, one, one, one)
+
+
+instance (Elt a, Elt b, Elt c, Elt d, Elt e) => Elt (a, b, c, d, e) where
+ {-# INLINE touch #-}
+ touch (a, b, c, d, e) 
+  = do	touch a
+	touch b
+	touch c
+	touch d
+	touch e
+	
+ {-# INLINE zero #-}
+ zero = (zero, zero, zero, zero, zero)
+
+ {-# INLINE one #-}
+ one =  (one, one, one, one, one)
+
+
+instance (Elt a, Elt b, Elt c, Elt d, Elt e, Elt f) => Elt (a, b, c, d, e, f) where
+ {-# INLINE touch #-}
+ touch (a, b, c, d, e, f) 
+  = do	touch a
+	touch b
+	touch c
+	touch d
+	touch e
+	touch f
+	
+ {-# INLINE zero #-}
+ zero = (zero, zero, zero, zero, zero, zero)
+
+ {-# INLINE one #-}
+ one =  (one, one, one, one, one, one)
+
+

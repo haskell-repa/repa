@@ -1,5 +1,5 @@
 Name:                repa
-Version:             2.0.0.4
+Version:             2.0.1.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -11,10 +11,10 @@ Category:            Data Structures
 Homepage:            http://repa.ouroborus.net
 Bug-reports:         repa@ouroborus.net
 Description:
-        Repa provides high performance, regular, multi-dimensional, shape polymorphic parallel arrays.
-        All numeric data is stored unboxed. Functions written with the Repa combinators
-        are automatically parallel provided you supply +RTS -Nwhatever on the command
-        line when running the program.
+        Repa provides high performance, regular, multi-dimensional, shape polymorphic
+        parallel arrays. All numeric data is stored unboxed. Functions written with
+        the Repa combinators are automatically parallel provided you supply
+        +RTS -Nwhatever on the command line when running the program.
 
 Synopsis:
         High performance, regular, shape polymorphic parallel arrays.
