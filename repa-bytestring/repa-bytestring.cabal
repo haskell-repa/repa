@@ -21,7 +21,7 @@ Library
         base                 == 4.*,
         repa                 == 2.0.*,
         vector               == 0.7.*,
-        bytestring           == 0.9.1.*
+        bytestring           == 0.9.*
 
   ghc-options:
         -Odph -Wall -fno-warn-missing-signatures
