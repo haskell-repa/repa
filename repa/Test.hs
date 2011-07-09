@@ -1,12 +1,16 @@
 
+module Test where
+
+import Text.Printf
 import Test.QuickCheck
-import Data.Array.Repa
+import Data.Array.Repa.Properties
 
-main	= mapM_ test props_DataArrayRepa
-	
+main :: IO ()
+main
+  = mapM_ test props_DataArrayRepa
 
+
+test :: Testable prop => (String, prop) -> IO ()
 test (name, prop)
- = do	putStr $ name ++ "\n"
-	putStr $ "     "
-	quickCheck prop
-	putStr $ "\n"
+  = printf "%-58s: " name >> quickCheck prop
+
