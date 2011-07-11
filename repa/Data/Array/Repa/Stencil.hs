@@ -1,4 +1,4 @@
-{-# LANGUAGE 	MagicHash, PatternGuards, BangPatterns, TemplateHaskell, QuasiQuotes, 
+{-# LANGUAGE 	MagicHash, PatternGuards, BangPatterns, TemplateHaskell, QuasiQuotes,
 		ParallelListComp, TypeOperators, ExplicitForAll, ScopedTypeVariables #-}
 {-# OPTIONS -Wnot #-}
 
@@ -22,7 +22,7 @@ module Data.Array.Repa.Stencil
 	-- * Stencil operators.
 	, mapStencil2,     forStencil2
 	, mapStencilFrom2, forStencilFrom2
-	
+
 	--  From Data.Array.Repa.Stencil.Template
 	, stencil2)
 where
@@ -40,7 +40,7 @@ import Debug.Trace
 
 -- | A index into the flat array.
 --   Should be abstract outside the stencil modules.
-data Cursor 
+data Cursor
 	= Cursor Int
 
 
@@ -89,7 +89,7 @@ mapStencil2 boundary stencil arr
 ---------------------------------------------------------------------------------------------------
 -- | Apply a stencil to every element of a 2D array.
 --   The array must be manifest else `error`.
-mapStencilFrom2 
+mapStencilFrom2
 	:: (Elt a, Elt b)
 	=> Boundary a		-- ^ How to handle the boundary of the array.
 	-> Stencil DIM2 a	-- ^ Stencil to apply.
@@ -114,18 +114,18 @@ mapStencilFrom2 boundary stencil@(StencilStatic sExtent zero load) arr preConver
 
 	-- Rectangles -----------------------
 	-- range of values where we don't need to worry about the border
-	rectsInternal	
+	rectsInternal
 	 = 	[ Rect (Z :. yMin :. xMin)	   (Z :. yMax :. xMax ) ]
 
 	{-# INLINE inInternal #-}
 	inInternal (Z :. y :. x)
-		=  x >= xMin && x <= xMax 
+		=  x >= xMin && x <= xMax
 		&& y >= yMin && y <= yMax
-		
+
 
 	-- range of values where some of the data needed by the stencil is outside the image.
 	rectsBorder
-	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot 
+	 = 	[ Rect (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1)		-- bot
 	   	, Rect (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1)	 	-- top
 		, Rect (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)		-- left
 	   	, Rect (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) ]  	-- right
@@ -136,31 +136,31 @@ mapStencilFrom2 boundary stencil@(StencilStatic sExtent zero load) arr preConver
 
 	-- Cursor functions ----------------
 	{-# INLINE makeCursor' #-}
-	makeCursor' (Z :. y :. x)	
+	makeCursor' (Z :. y :. x)
 	 = Cursor (x + y * aWidth)
-	
+
 	{-# INLINE shiftCursor' #-}
 	shiftCursor' ix (Cursor off)
 	 = Cursor
 	 $ case ix of
 		Z :. y :. x	-> off + y * aWidth + x
-			
+
 	{-# INLINE getInner' #-}
-	getInner' cur	
+	getInner' cur
 	 = unsafeAppStencilCursor2 shiftCursor' stencil
 		arr preConvert cur
-	
+
 	{-# INLINE getBorder' #-}
 	getBorder' cur
 	 = case boundary of
 		BoundConst c	-> c
 		BoundClamp 	-> unsafeAppStencilCursor2_clamp addDim stencil
 					arr preConvert cur
-							
+
    in	Array (extent arr)
 		[ Region (RangeRects inBorder rectsBorder)
 			 (GenCursor id addDim getBorder')
-			
+
 		, Region (RangeRects inInternal rectsInternal)
 		     	 (GenCursor makeCursor' shiftCursor' getInner') ]
 
@@ -171,7 +171,7 @@ unsafeAppStencilCursor2
 	-> Stencil DIM2 a
 	-> Array DIM2 b
 	-> (b -> a)
-	-> Cursor 
+	-> Cursor
 	-> a
 
 {-# INLINE [1] unsafeAppStencilCursor2 #-}
@@ -183,17 +183,17 @@ unsafeAppStencilCursor2 shift
 	| _ :. sHeight :. sWidth	<- sExtent
 	, _ :. aHeight :. aWidth	<- aExtent
 	, sHeight <= 7, sWidth <= 7
-	= let	
+	= let
 		-- Get data from the manifest array.
 		{-# INLINE [0] getData #-}
 		getData (Cursor cur) = preConvert $ vec `V.unsafeIndex` cur
-		
+
 		-- Build a function to pass data from the array to our stencil.
 		{-# INLINE oload #-}
-		oload oy ox	
+		oload oy ox
 		 = let	!cur' = shift (Z :. oy :. ox) cur
 		   in	load (Z :. oy :. ox) (getData cur')
-	
+
 	   in	template7x7 oload zero
 
 
@@ -202,7 +202,7 @@ unsafeAppStencilCursor2_clamp
 	:: forall a b. (Elt a, Elt b)
 	=> (DIM2 -> DIM2 -> DIM2)
 	-> Stencil DIM2 a
-	-> Array DIM2 b 
+	-> Array DIM2 b
 	-> (b -> a)
 	-> DIM2
 	-> a
@@ -216,7 +216,7 @@ unsafeAppStencilCursor2_clamp shift
 	| _ :. sHeight :. sWidth	<- sExtent
 	, _ :. aHeight :. aWidth	<- aExtent
 	, sHeight <= 7, sWidth <= 7
-	= let	
+	= let
 		-- Get data from the manifest array.
 		{-# INLINE [0] getData #-}
 		getData :: DIM2 -> a
@@ -229,25 +229,25 @@ unsafeAppStencilCursor2_clamp shift
 		 | x < 0	= wrapLoadY 0      	 y
 		 | x >= aWidth	= wrapLoadY (aWidth - 1) y
 		 | otherwise    = wrapLoadY x y
-		
+
 		{-# INLINE wrapLoadY #-}
 		wrapLoadY :: Int -> Int -> a
 		wrapLoadY !x !y
 		 | y <  0	= loadXY x 0
 		 | y >= aHeight = loadXY x (aHeight - 1)
 		 | otherwise    = loadXY x y
-		
+
 		{-# INLINE loadXY #-}
 		loadXY :: Int -> Int -> a
 		loadXY !x !y
 		 = preConvert $ vec `V.unsafeIndex` (x + y * aWidth)
-		
+
 		-- Build a function to pass data from the array to our stencil.
 		{-# INLINE oload #-}
-		oload oy ox	
+		oload oy ox
 		 = let	!cur' = shift (Z :. oy :. ox) cur
 		   in	load (Z :. oy :. ox) (getData cur')
-	
+
 	   in	template7x7 oload zero
 
 
@@ -267,5 +267,4 @@ template7x7 f zero
 	$ f   2  (-3)  $  f   2  (-2)  $  f   2  (-1)  $  f   2    0  $  f   2    1  $  f   2    2  $ f   2  3
 	$ f   3  (-3)  $  f   3  (-2)  $  f   3  (-1)  $  f   3    0  $  f   3    1  $  f   3    2  $ f   3  3
 	$ zero
-
 

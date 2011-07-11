@@ -2,7 +2,7 @@
 
 -- | Index types.
 module Data.Array.Repa.Index
-	( 
+	(
 	-- * Index types
 	  Z	(..)
 	, (:.)	(..)
@@ -80,7 +80,7 @@ instance Shape Z where
 	{-# INLINE deepSeq #-}
 	deepSeq Z x		= x
 
-	
+
 instance Shape sh => Shape (sh :. Int) where
 	{-# INLINE rank #-}
 	rank   (sh  :. _)
@@ -93,7 +93,7 @@ instance Shape sh => Shape (sh :. Int) where
 	unitDim = unitDim :. 1
 
 	{-# INLINE intersectDim #-}
-	intersectDim (sh1 :. n1) (sh2 :. n2) 
+	intersectDim (sh1 :. n1) (sh2 :. n2)
 		= (intersectDim sh1 sh2 :. (min n1 n2))
 
 	{-# INLINE addDim #-}
@@ -108,16 +108,16 @@ instance Shape sh => Shape (sh :. Int) where
 	sizeIsValid (sh1 :. n)
 		| size sh1 > 0
 		= n <= maxBound `div` size sh1
-		
+
 		| otherwise
 		= False
-		
+
 	{-# INLINE toIndex #-}
-	toIndex (sh1 :. sh2) (sh1' :. sh2') 
+	toIndex (sh1 :. sh2) (sh1' :. sh2')
 		= toIndex sh1 sh1' * sh2 + sh2'
 
 	{-# INLINE fromIndex #-}
-	fromIndex (ds :. d) n 
+	fromIndex (ds :. d) n
 	 	= fromIndex ds (n `quotInt` d) :. r
 		where
 		-- If we assume that the index is in range, there is no point
@@ -128,7 +128,7 @@ instance Shape sh => Shape (sh :. Int) where
 			| otherwise	= n `remInt` d
 
 	{-# INLINE inShapeRange #-}
-	inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2) 
+	inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2)
 		= (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
 
 
@@ -138,14 +138,8 @@ instance Shape sh => Shape (sh :. Int) where
 	shapeOfList xx
 	 = case xx of
 		[]	-> error $ stage ++ ".toList: empty list when converting to  (_ :. Int)"
-		x:xs	-> shapeOfList xs :. x			
+		x:xs	-> shapeOfList xs :. x
 
-	{-# INLINE deepSeq #-} 
+	{-# INLINE deepSeq #-}
 	deepSeq (sh :. n) x = deepSeq sh (n `seq` x)
-
-
-
-
-
-
 

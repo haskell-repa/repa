@@ -20,7 +20,7 @@ import Prelude				(($), (.), (+), (*), (+), (/), (-))
 --
 --   This is specialised for arrays of up to four regions, using more breaks fusion.
 --
-map	:: (Shape sh, Elt a, Elt b) 
+map	:: (Shape sh, Elt a, Elt b)
 	=> (a -> b)
 	-> Array sh a
 	-> Array sh b
@@ -38,16 +38,16 @@ map f (Array sh regions)
 		[r1, r2, r3]	 -> [mapRegion r1, mapRegion r2, mapRegion r3]
 		[r1, r2, r3, r4] -> [mapRegion r1, mapRegion r2, mapRegion r3, mapRegion r4]
 		_		 -> mapRegions' rs
-		
+
 	mapRegions' rs
 	 = case rs of
 		[]		 -> []
 		(r : rs')	 -> mapRegion r : mapRegions' rs'
-		
+
 	{-# INLINE mapRegion #-}
 	mapRegion (Region range gen)
 	 = Region range (mapGen gen)
-	
+
 	{-# INLINE mapGen #-}
 	mapGen gen
 	 = case gen of
@@ -56,17 +56,17 @@ map f (Array sh regions)
 			P.id
 			addDim
 		 	(\ix -> f $ V.unsafeIndex vec $ S.toIndex sh ix)
-				
+
 		GenCursor makeCursor shiftCursor loadElem
 		 -> GenCursor makeCursor shiftCursor (f . loadElem)
 
 
 -- | Combine two arrays, element-wise, with a binary operator.
---	If the extent of the two array arguments differ, 
+--	If the extent of the two array arguments differ,
 --	then the resulting array's extent is their intersection.
 --
-zipWith :: (Shape sh, Elt a, Elt b, Elt c) 
-	=> (a -> b -> c) 
+zipWith :: (Shape sh, Elt a, Elt b, Elt c)
+	=> (a -> b -> c)
 	-> Array sh a
 	-> Array sh b
 	-> Array sh c
@@ -82,7 +82,7 @@ zipWith f arr1 arr2
 
 		{-# INLINE load22' #-}
 		load22' ix	= f (arr1 `unsafeIndex` ix) (load22 $ make22 ix)
-		
+
 	  in	Array (S.intersectDim sh1 sh2)
 		      [ Region g21 (GenCursor P.id addDim load21')
 		      , Region g22 (GenCursor P.id addDim load22') ]
@@ -106,3 +106,4 @@ zipWith f arr1 arr2
 
 {-# INLINE (/^) #-}
 (/^)	= zipWith (/)
+

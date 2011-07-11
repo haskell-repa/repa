@@ -23,7 +23,7 @@ stage	= "Data.Array.Repa.Internals.Forcing"
 --	The elements come out in row-major order.
 toVector
 	:: (Shape sh, Elt a)
-	=> Array sh a 
+	=> Array sh a
 	-> Vector a
 {-# INLINE toVector #-}
 toVector arr
@@ -48,13 +48,13 @@ toList arr
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 
-{-# INLINE [2] force #-}	
+{-# INLINE [2] force #-}
 force arr
  = unsafePerformIO
  $ do	(sh, vec)	<- forceIO arr
-	return $ sh `seq` vec `seq` 
+	return $ sh `seq` vec `seq`
 		 Array sh [Region RangeAll (GenManifest vec)]
-	
+
  where	forceIO arr'
 	 = case arr' of
 		-- Don't force an already forced array.
@@ -66,20 +66,20 @@ force arr
 			fillChunkedP mvec (\ix -> arr' `unsafeIndex` fromIndex sh ix)
 			vec	<- V.unsafeFreeze mvec
 			return	(sh, vec)
-		
+
 
 -- | Force an array, so that it becomes `Manifest`.
 --   This forcing function is specialised for DIM2 arrays, and does blockwise filling.
 force2	:: Elt a => Array DIM2 a -> Array DIM2 a
-{-# INLINE [2] force2 #-}	
+{-# INLINE [2] force2 #-}
 force2 arr
- = unsafePerformIO 
+ = unsafePerformIO
  $ do	(sh, vec)	<- forceIO2 arr
-	return $ sh `seq` vec `seq` 
+	return $ sh `seq` vec `seq`
 		 Array sh [Region RangeAll (GenManifest vec)]
 
  where	forceIO2 arr'
- 	 = arr' `deepSeqArray` 
+ 	 = arr' `deepSeqArray`
 	   case arr' of
 		-- Don't force an already forced array.
 		Array sh [Region RangeAll (GenManifest vec)]
@@ -101,16 +101,16 @@ force2 arr
 			fillRegion2P mvec sh r2
 			vec	<- V.unsafeFreeze mvec
 			return (sh, vec)
-	
+
 		-- Create a vector to hold the new array and load in the regions.
 		Array sh regions
 	 	 -> do	mvec	<- VM.new (S.size sh)
 			mapM_ (fillRegion2P mvec sh) regions
 			vec	<- V.unsafeFreeze mvec
 			return (sh, vec)
-			
 
--- FillRegion2P -----------------------------------------------------------------------------------	
+
+-- FillRegion2P -----------------------------------------------------------------------------------
 -- | Fill an array region into a vector.
 --   This is specialised for DIM2 regions.
 --   The region is evaluated in parallel in a blockwise manner, where each block is
@@ -118,24 +118,24 @@ force2 arr
 --   access their source elements from the local neighbourhood, this specialised version
 --   should given better cache performance than plain `fillRegionP`.
 --
-fillRegion2P 
+fillRegion2P
 	:: Elt a
 	=> VM.IOVector a	-- ^ Vector to write elements into.
 	-> DIM2			-- ^ Extent of entire array.
 	-> Region DIM2 a	-- ^ Region to fill.
 	-> IO ()
-	
+
 {-# INLINE [1] fillRegion2P #-}
 fillRegion2P mvec sh@(_ :. height :. width) (Region range gen)
  = mvec `seq` height `seq` width `seq`
-   case range of 
-	RangeAll	
-	 -> fillRect2 mvec sh gen 
-		(Rect 	(Z :. 0          :. 0) 
+   case range of
+	RangeAll
+	 -> fillRect2 mvec sh gen
+		(Rect 	(Z :. 0          :. 0)
 			(Z :. height - 1 :. width - 1))
 
 	RangeRects _ [rect]
-	 -> fillRect2 mvec sh gen rect 
+	 -> fillRect2 mvec sh gen rect
 
 	-- Specialise for the common case of 4 rectangles so we get fusion.
 	-- The following case with mapM_ doesn't fuse because mapM_ isn't completely unrolled.
@@ -148,9 +148,9 @@ fillRegion2P mvec sh@(_ :. height :. width) (Region range gen)
 	RangeRects _ rects
 	 -> mapM_ (fillRect2 mvec sh gen) rects
 
-		
+
 -- | Fill a rectangle in a vector.
-fillRect2 
+fillRect2
 	:: Elt a
 	=> VM.IOVector a	-- ^ Vector to write elements into.
 	-> DIM2 		-- ^ Extent of entire array.
@@ -158,15 +158,16 @@ fillRect2
 	-> Rect DIM2		-- ^ Rectangle to fill.
 	-> IO ()
 
-{-# INLINE fillRect2 #-}	
-fillRect2 mvec (_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1)) 
- = mvec `seq` width `seq` y0 `seq` x0 `seq` y1 `seq` x1 `seq` 
+{-# INLINE fillRect2 #-}
+fillRect2 mvec (_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
+ = mvec `seq` width `seq` y0 `seq` x0 `seq` y1 `seq` x1 `seq`
    case gen of
 	GenManifest{}
 	 -> error "fillRegion2P: GenManifest, copy elements."
-	
+
 	-- Cursor based arrays.
 	GenCursor makeCursor shiftCursor loadElem
          -> fillCursoredBlock2P mvec
 		makeCursor shiftCursor loadElem
 		width x0 y0 x1 y1
+

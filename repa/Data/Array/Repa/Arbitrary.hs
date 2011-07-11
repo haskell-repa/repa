@@ -22,24 +22,24 @@ instance Arbitrary Z where
 
 -- | Generate an arbitrary index, which may have 0's for some components.
 instance (Shape sh, Arbitrary sh) => Arbitrary (sh :. Int)  where
-	arbitrary 
+	arbitrary
 	 = do	sh1		<- arbitrary
 		let sh1Unit	= if size sh1 == 0 then unitDim else sh1
-		
+
 		-- Make sure not to create an index so big that we get
 		--	integer overflow when converting it to the linear form.
 		n		<- liftM abs $ arbitrary
 		let nMax	= maxBound `div` (size sh1Unit)
 		let nMaxed	= n `mod` nMax
-		
-		return	$ sh1 :. nMaxed 
+
+		return	$ sh1 :. nMaxed
 
 -- | Generate an aribrary shape that does not have 0's for any component.
-arbitraryShape 
-	:: (Shape sh, Arbitrary sh) 
+arbitraryShape
+	:: (Shape sh, Arbitrary sh)
 	=> Gen (sh :. Int)
 
-arbitraryShape 
+arbitraryShape
  = do	sh1		<- arbitrary
 	let sh1Unit	= if size sh1 == 0 then unitDim else sh1
 
@@ -49,13 +49,13 @@ arbitraryShape
 	let nMax	= maxBound `div` size sh1Unit
 	let nMaxed	= n `mod` nMax
 	let nClamped	= if nMaxed == 0 then 1 else nMaxed
-	
+
 	return $ sh1Unit :. nClamped
-	
-	
--- | Generate an arbitrary shape where each dimension is more than zero, 
+
+
+-- | Generate an arbitrary shape where each dimension is more than zero,
 --	but less than a specific value.
-arbitrarySmallShape 
+arbitrarySmallShape
 	:: (Shape sh, Arbitrary sh)
 	=> Int
 	-> Gen (sh :. Int)
@@ -68,13 +68,13 @@ arbitrarySmallShape maxDim
 		= case x `mod` maxDim of
 			0	-> 1
 			n	-> n
-						
-	return	$ if True 
+
+	return	$ if True
 			then shapeOfList $ map clamp dims
 			else sh
 
 
-arbitraryListOfLength 
+arbitraryListOfLength
 	:: Arbitrary a
 	=> Int -> Gen [a]
 
@@ -84,10 +84,10 @@ arbitraryListOfLength n
 	= do	i	<- arbitrary
 		rest	<- arbitraryListOfLength (n - 1)
 		return	$ i : rest
-	
+
 -- | Create an arbitrary small array, restricting the size of each of the
 --   dimensions to some value.
-arbitrarySmallArray 
+arbitrarySmallArray
 	:: (Shape sh, Elt a, Arbitrary sh, Arbitrary a)
 	=> Int
 	-> Gen (Array (sh :. Int) a)

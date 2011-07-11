@@ -10,7 +10,7 @@ import GHC.Word
 import GHC.Int
 import Data.Vector.Unboxed
 
-	
+
 -- Note that the touch# function is special because we can pass it boxed or unboxed
 -- values. The argument type has kind ?, not just * or #.
 
@@ -22,7 +22,7 @@ import Data.Vector.Unboxed
 class (Show a, Unbox a)	=> Elt a where
 
 	-- | We use this to prevent bindings from being floated inappropriatey.
-	--   Doing a `seq` sometimes isn't enough, because the GHC simplifier can 
+	--   Doing a `seq` sometimes isn't enough, because the GHC simplifier can
 	--   erase these, and/or still move around the bindings.
 	touch :: a -> IO ()
 
@@ -50,7 +50,7 @@ instance Elt Bool where
 -- Floating -------------------------------------------------------------------
 instance Elt Float where
  {-# INLINE touch #-}
- touch (F# f) 
+ touch (F# f)
   = IO (\state -> case touch# f state of
 			state' -> (# state', () #))
 
@@ -77,7 +77,7 @@ instance Elt Double where
 -- Int ------------------------------------------------------------------------
 instance Elt Int where
  {-# INLINE touch #-}
- touch (I# i) 
+ touch (I# i)
   = IO (\state -> case touch# i state of
 			state' -> (# state', () #))
 
@@ -89,7 +89,7 @@ instance Elt Int where
 
 instance Elt Int8 where
  {-# INLINE touch #-}
- touch (I8# w) 
+ touch (I8# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -102,7 +102,7 @@ instance Elt Int8 where
 
 instance Elt Int16 where
  {-# INLINE touch #-}
- touch (I16# w) 
+ touch (I16# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -115,7 +115,7 @@ instance Elt Int16 where
 
 instance Elt Int32 where
  {-# INLINE touch #-}
- touch (I32# w) 
+ touch (I32# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -128,7 +128,7 @@ instance Elt Int32 where
 
 instance Elt Int64 where
  {-# INLINE touch #-}
- touch (I64# w) 
+ touch (I64# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -142,7 +142,7 @@ instance Elt Int64 where
 -- Word -----------------------------------------------------------------------
 instance Elt Word where
  {-# INLINE touch #-}
- touch (W# i) 
+ touch (W# i)
   = IO (\state -> case touch# i state of
 			state' -> (# state', () #))
 
@@ -155,7 +155,7 @@ instance Elt Word where
 
 instance Elt Word8 where
  {-# INLINE touch #-}
- touch (W8# w) 
+ touch (W8# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -168,7 +168,7 @@ instance Elt Word8 where
 
 instance Elt Word16 where
  {-# INLINE touch #-}
- touch (W16# w) 
+ touch (W16# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -181,7 +181,7 @@ instance Elt Word16 where
 
 instance Elt Word32 where
  {-# INLINE touch #-}
- touch (W32# w) 
+ touch (W32# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -194,7 +194,7 @@ instance Elt Word32 where
 
 instance Elt Word64 where
  {-# INLINE touch #-}
- touch (W64# w) 
+ touch (W64# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
@@ -208,10 +208,10 @@ instance Elt Word64 where
 -- Tuple ----------------------------------------------------------------------
 instance (Elt a, Elt b) => Elt (a, b) where
  {-# INLINE touch #-}
- touch (a, b) 
+ touch (a, b)
   = do	touch a
 	touch b
-	
+
  {-# INLINE zero #-}
  zero = (zero, zero)
 
@@ -221,11 +221,11 @@ instance (Elt a, Elt b) => Elt (a, b) where
 
 instance (Elt a, Elt b, Elt c) => Elt (a, b, c) where
  {-# INLINE touch #-}
- touch (a, b, c) 
+ touch (a, b, c)
   = do	touch a
 	touch b
 	touch c
-	
+
  {-# INLINE zero #-}
  zero = (zero, zero, zero)
 
@@ -235,12 +235,12 @@ instance (Elt a, Elt b, Elt c) => Elt (a, b, c) where
 
 instance (Elt a, Elt b, Elt c, Elt d) => Elt (a, b, c, d) where
  {-# INLINE touch #-}
- touch (a, b, c, d) 
+ touch (a, b, c, d)
   = do	touch a
 	touch b
 	touch c
 	touch d
-	
+
  {-# INLINE zero #-}
  zero = (zero, zero, zero, zero)
 
@@ -250,13 +250,13 @@ instance (Elt a, Elt b, Elt c, Elt d) => Elt (a, b, c, d) where
 
 instance (Elt a, Elt b, Elt c, Elt d, Elt e) => Elt (a, b, c, d, e) where
  {-# INLINE touch #-}
- touch (a, b, c, d, e) 
+ touch (a, b, c, d, e)
   = do	touch a
 	touch b
 	touch c
 	touch d
 	touch e
-	
+
  {-# INLINE zero #-}
  zero = (zero, zero, zero, zero, zero)
 
@@ -266,14 +266,14 @@ instance (Elt a, Elt b, Elt c, Elt d, Elt e) => Elt (a, b, c, d, e) where
 
 instance (Elt a, Elt b, Elt c, Elt d, Elt e, Elt f) => Elt (a, b, c, d, e, f) where
  {-# INLINE touch #-}
- touch (a, b, c, d, e, f) 
+ touch (a, b, c, d, e, f)
   = do	touch a
 	touch b
 	touch c
 	touch d
 	touch e
 	touch f
-	
+
  {-# INLINE zero #-}
  zero = (zero, zero, zero, zero, zero, zero)
 

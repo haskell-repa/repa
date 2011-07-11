@@ -16,22 +16,22 @@ import System.IO.Unsafe
 --   If the predicate matches, then use the second function to generate
 --   the element.
 --
---   This is a low-level function helpful for writing filtering operations on arrays. 
+--   This is a low-level function helpful for writing filtering operations on arrays.
 --   Use the integer as the index into the array you're filtering.
 --
 select	:: Elt a
-	=> (Int -> Bool)	-- ^ If the Int matches this predicate, 
+	=> (Int -> Bool)	-- ^ If the Int matches this predicate,
 	-> (Int -> a)		-- ^  ... then pass it to this fn to produce a value
 	-> Int			-- ^ Range between 0 and this maximum.
 	-> Array DIM1 a		-- ^ Array containing produced values.
-	
+
 {-# INLINE select #-}
 select match produce len
- = unsafePerformIO 
- $ do	(sh, vec)	<- selectIO 
-	return $ sh `seq` vec `seq` 
+ = unsafePerformIO
+ $ do	(sh, vec)	<- selectIO
+	return $ sh `seq` vec `seq`
 		 Array sh [Region RangeAll (GenManifest vec)]
-		
+
  where	{-# INLINE selectIO #-}
 	selectIO
  	 = do	vecs		<- selectChunkedP match produce len
@@ -39,6 +39,6 @@ select match produce len
 
 		-- TODO: avoid copy.
 		let result	= V.concat vecs'
-		
+
 		return	(Z :. V.length result, result)
-		
+

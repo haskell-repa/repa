@@ -24,7 +24,7 @@ fillChunkedS
 fillChunkedS !vec !getElem
  = fill 0
  where 	!len	= VM.length vec
-	
+
 	fill !ix
 	 | ix >= len	= return ()
 	 | otherwise
@@ -38,13 +38,13 @@ fillChunkedP
 	=> IOVector a	-- ^ Vector to fill.
 	-> (Int -> a)	-- ^ Fn to get the value at a given index.
 	-> IO ()
-		
+
 {-# INLINE [0] fillChunkedP #-}
 fillChunkedP !vec !getElem
- = 	gangIO theGang 
+ = 	gangIO theGang
 	 $  \thread -> fill (splitIx thread) (splitIx (thread + 1))
 
- where	
+ where
 	-- Decide now to split the work across the threads.
 	-- If the length of the vector doesn't divide evenly among the threads,
 	-- then the first few get an extra element.
@@ -57,10 +57,10 @@ fillChunkedP !vec !getElem
 	splitIx thread
 	 | thread < chunkLeftover = thread * (chunkLen + 1)
 	 | otherwise		  = thread * chunkLen  + chunkLeftover
-	
+
 	-- Evaluate the elements of a single chunk.
 	{-# INLINE fill #-}
-	fill !ix !end 
+	fill !ix !end
 	 | ix >= end		= return ()
 	 | otherwise
 	 = do	VM.unsafeWrite vec ix (getElem ix)

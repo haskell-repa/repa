@@ -11,7 +11,7 @@ import Data.Array.Repa.Index
 -- | How to handle the case when the stencil lies partly outside the array.
 data Boundary a
 	-- | Treat points outside as having a constant value.
-	= BoundConst a	
+	= BoundConst a
 
 	-- | Clamp points outside to the same value as the edge pixel.
 	| BoundClamp
@@ -28,18 +28,18 @@ data Stencil sh a
 	{ stencilExtent	:: !sh
 	, stencilZero	:: !a
 	, stencilAcc	:: !(sh -> a -> a -> a) }
-	
-	
+
+
 -- | Make a stencil from a function yielding coefficients at each index.
 makeStencil
-	:: (Elt a, Num a) 
+	:: (Elt a, Num a)
 	=> sh			-- ^ Extent of stencil.
 	-> (sh -> Maybe a) 	-- ^ Get the coefficient at this index.
 	-> Stencil sh a
 
 {-# INLINE makeStencil #-}
 makeStencil ex getCoeff
- = StencilStatic ex 0 
+ = StencilStatic ex 0
  $ \ix val acc
 	-> case getCoeff ix of
 		Nothing		-> acc

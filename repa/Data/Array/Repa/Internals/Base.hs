@@ -10,7 +10,7 @@ module Data.Array.Repa.Internals.Base
 
 	, singleton, toScalar
 	, extent,    delay
-	
+
 	-- * Predicates
 	, inRange
 
@@ -20,7 +20,7 @@ module Data.Array.Repa.Internals.Base
 	, unsafeIndex
 
 	-- * Construction
-	, fromFunction	
+	, fromFunction
 	, fromVector
 	, fromList)
 where
@@ -33,9 +33,9 @@ import Data.Vector.Unboxed			(Vector)
 stage	= "Data.Array.Repa.Array"
 
 -- Array ----------------------------------------------------------------------
--- | Repa arrays. 
+-- | Repa arrays.
 data Array sh a
-	= Array 
+	= Array
 	{ -- | The entire extent of the array.
 	  arrayExtent		:: sh
 
@@ -45,7 +45,7 @@ data Array sh a
 
 -- | Defines the values in a region of the array.
 data Region sh a
-	= Region 
+	= Region
 	{ -- | The range of elements this region applies to.
 	  regionRange		:: Range sh
 
@@ -54,7 +54,7 @@ data Region sh a
 
 
 -- | Represents a range of elements in the array.
-data Range sh 
+data Range sh
 	  -- | Covers the entire array.
 	= RangeAll
 
@@ -71,17 +71,17 @@ data Rect sh
 
 -- | Generates array elements for a particular region in the array.
 data Generator sh a
-	-- | Elements are already computed and sitting in this vector. 
+	-- | Elements are already computed and sitting in this vector.
 	= GenManifest (Vector a)
 	--   NOTE: Don't make the vector field strict. If you do then deepSeqing arrays
 	--         outside of loops won't cause the unboxings to be floated out.
-		
+
 	-- | Elements can be computed using these cursor functions.
 	| forall cursor
 	. GenCursor
 	{ -- | Make a cursor to a particular element.
 	  genMakeCursor		:: sh -> cursor
-	
+
 	  -- | Shift the cursor by an offset, to get to another element.
 	, genShiftCursor	:: sh -> cursor -> cursor
 
@@ -121,7 +121,7 @@ deepSeqArrays' as' y
 	x : xs	-> x `deepSeqArray` xs `deepSeqArrays` y
 
 -- | Ensure the structure for a region is fully evaluated.
-infixr 0 `deepSeqRegion` 
+infixr 0 `deepSeqRegion`
 deepSeqRegion :: Shape sh => Region sh a -> b -> b
 {-# INLINE deepSeqRegion #-}
 deepSeqRegion (Region range gen) x
@@ -192,11 +192,11 @@ extent arr	= arrayExtent arr
 
 
 -- | Unpack an array into delayed form.
-delay 	:: (Shape sh, Elt a) 
-	=> Array sh a 
+delay 	:: (Shape sh, Elt a)
+	=> Array sh a
 	-> (sh, sh -> a)
 
-{-# INLINE delay #-}	
+{-# INLINE delay #-}
 delay arr@(Array sh _)
 	= (sh, (arr !))
 
@@ -208,7 +208,7 @@ delay arr@(Array sh _)
 	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> Array sh a
-	-> sh 
+	-> sh
 	-> a
 
 {-# INLINE (!) #-}
@@ -219,14 +219,14 @@ index arr ix
  = case arr of
 	Array _ []
 	 -> zero
-	
+
 	Array sh [Region _ gen1]
 	 -> indexGen sh gen1 ix
-	
+
 	Array sh [Region r1 gen1, Region _ gen2]
 	 | inRange r1 ix	-> indexGen sh gen1 ix
 	 | otherwise		-> indexGen sh gen2 ix
-	
+
 	_ -> index' arr ix
 
 
@@ -235,7 +235,7 @@ index arr ix
 	 = case gen of
 		GenManifest vec
 		 -> vec V.! (S.toIndex sh ix')
-		
+
 		GenCursor makeCursor _ loadElem
 		 -> loadElem $ makeCursor ix'
 
@@ -254,7 +254,7 @@ index arr ix
 	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> Array sh a
-	-> sh 
+	-> sh
 	-> Maybe a
 
 {-# INLINE (!?) #-}
@@ -266,15 +266,15 @@ safeIndex arr ix
  = case arr of
 	Array _ []
 	 -> Nothing
-	
+
 	Array sh [Region _ gen1]
 	 -> indexGen sh gen1 ix
-	
+
 	Array sh [Region r1 gen1, Region r2 gen2]
 	 | inRange r1 ix	-> indexGen sh gen1 ix
 	 | inRange r2 ix	-> indexGen sh gen2 ix
 	 | otherwise		-> Nothing
-	
+
 	_ -> index' arr ix
 
 
@@ -283,7 +283,7 @@ safeIndex arr ix
 	 = case gen of
 		GenManifest vec
 		 -> vec V.!? (S.toIndex sh ix')
-		
+
 		GenCursor makeCursor _ loadElem
 		 -> Just (loadElem $ makeCursor ix')
 
@@ -302,7 +302,7 @@ unsafeIndex
 	:: forall sh a
 	.  (Shape sh, Elt a)
 	=> Array sh a
-	-> sh 
+	-> sh
 	-> a
 
 {-# INLINE unsafeIndex #-}
@@ -310,14 +310,14 @@ unsafeIndex arr ix
  = case arr of
 	Array _ []
 	 -> zero
-	
+
 	Array sh [Region _ gen1]
 	 -> unsafeIndexGen sh gen1 ix
-	
+
 	Array sh [Region r1 gen1, Region _ gen2]
 	 | inRange r1 ix	-> unsafeIndexGen sh gen1 ix
 	 | otherwise		-> unsafeIndexGen sh gen2 ix
-	
+
 	_ -> unsafeIndex' arr ix
 
  where	{-# INLINE unsafeIndexGen #-}
@@ -325,7 +325,7 @@ unsafeIndex arr ix
 	 = case gen of
 		GenManifest vec
 		 -> vec `V.unsafeIndex` (S.toIndex sh ix')
-		
+
 		GenCursor makeCursor _ loadElem
 		 -> loadElem $ makeCursor ix'
 
@@ -335,24 +335,24 @@ unsafeIndex arr ix
 
         unsafeIndex' (Array _ []) _
   	 = zero
-	
+
 
 -- Conversions ------------------------------------------------------------------------------------
 -- | Create a `Delayed` array from a function.
-fromFunction 
+fromFunction
 	:: Shape sh
 	=> sh
 	-> (sh -> a)
 	-> Array sh a
-	
+
 {-# INLINE fromFunction #-}
 fromFunction sh fnElems
 	= sh `S.deepSeq`
-	  Array sh [Region 
-			RangeAll 
+	  Array sh [Region
+			RangeAll
 			(GenCursor id addDim fnElems)]
 
--- | Create a `Manifest` array from an unboxed `Vector`. 
+-- | Create a `Manifest` array from an unboxed `Vector`.
 --	The elements are in row-major order.
 fromVector
 	:: Shape sh
@@ -374,7 +374,7 @@ fromList
 	=> sh
 	-> [a]
 	-> Array sh a
-	
+
 {-# INLINE fromList #-}
 fromList sh xx
 	| V.length vec /= S.size sh
@@ -382,7 +382,7 @@ fromList sh xx
 	 	[ stage ++ ".fromList: size of array shape does not match size of list"
 		, "        size of shape = " ++ (show $ S.size sh) 	++ "\n"
 		, "        size of list  = " ++ (show $ V.length vec) 	++ "\n" ]
-	
+
 	| otherwise
 	= Array sh [Region RangeAll (GenManifest vec)]
 

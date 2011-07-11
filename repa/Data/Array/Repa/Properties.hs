@@ -20,7 +20,7 @@ stage	= "Data.Array.Repa.Properties"
 props_DataArrayRepaIndex :: [(String, Property)]
 props_DataArrayRepaIndex
   = [(stage P.++ "." P.++ name, test) | (name, test)
-     <-	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1) 
+     <-	[ ("toIndexFromIndex/DIM1", 	property prop_toIndexFromIndex_DIM1)
 	, ("toIndexFromIndex/DIM2", 	property prop_toIndexFromIndex_DIM2) ]]
 
 prop_toIndexFromIndex_DIM1 sh ix
@@ -35,8 +35,8 @@ prop_toIndexFromIndex_DIM2
    	forAll (genInShape2 sh) $ \(ix :: DIM2) ->
 	fromIndex sh (toIndex sh ix) == ix
 
-	
-	
+
+
 
 -- Data.Array.Repa --------------------------------------------------------------------------------
 -- | QuickCheck properties for "Data.Array.Repa" and its children.
@@ -46,19 +46,19 @@ props_DataArrayRepa
  P.++ [(stage P.++ "." P.++ name, test) | (name, test)
     <-	[ ("id_force/DIM5",			property prop_id_force_DIM5)
 	, ("id_toScalarUnit",			property prop_id_toScalarUnit)
-	, ("id_toListFromList/DIM3",		property prop_id_toListFromList_DIM3) 
+	, ("id_toListFromList/DIM3",		property prop_id_toListFromList_DIM3)
 	, ("id_transpose/DIM4",			property prop_id_transpose_DIM4)
 	, ("reshapeTransposeSize/DIM3",		property prop_reshapeTranspose_DIM3)
 	, ("appendIsAppend/DIM3",		property prop_appendIsAppend_DIM3)
 	, ("sumIsSum/DIM3",			property prop_sumIsSum_DIM3)
 	, ("sumAllIsSum/DIM3",			property prop_sumAllIsSum_DIM3) ]]
-	
+
 
 -- The Eq instance uses fold and zipWith.
 prop_id_force_DIM5
  = 	forAll (arbitrarySmallArray 10)			$ \(arr :: Array DIM5 Int) ->
 	arr == force arr
-	
+
 prop_id_toScalarUnit (x :: Int)
  =	toScalar (singleton x) == x
 
@@ -97,7 +97,7 @@ prop_sumIsSum_DIM3
 
 prop_sumAllIsSum_DIM3
  = 	forAll (arbitrarySmallShape 20)		        $ \(sh :: DIM3) ->
-	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) -> 
+	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) ->
 	sumAll (fromList sh xx) == P.sum xx
 
 
@@ -107,3 +107,4 @@ genInShape2 (Z :. yMax :. xMax)
  = do	y	<- liftM (`mod` yMax) $ arbitrary
 	x	<- liftM (`mod` xMax) $ arbitrary
 	return	$ Z :. y :. x
+

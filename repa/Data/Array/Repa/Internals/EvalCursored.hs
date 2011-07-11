@@ -30,26 +30,26 @@ fillCursoredBlock2P
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2P #-}
-fillCursoredBlock2P 
+fillCursoredBlock2P
 	!vec
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
 	!imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
 	!blockWidth	= x1 - x0 + 1
-	
+
 	-- All columns have at least this many pixels.
 	!colChunkLen	= blockWidth `quotInt` threads
 
 	-- Extra pixels that we have to divide between some of the threads.
 	!colChunkSlack	= blockWidth `remInt` threads
-	
+
 	-- Get the starting pixel of a column in the image.
 	{-# INLINE colIx #-}
 	colIx !ix
 	 | ix < colChunkSlack	= x0 + ix * (colChunkLen + 1)
 	 | otherwise		= x0 + ix * colChunkLen + colChunkSlack
- 
+
 	-- Give one column to each thread
 	{-# INLINE fillBlock #-}
 	fillBlock :: Int -> IO ()
@@ -58,8 +58,8 @@ fillCursoredBlock2P
 		!x1'	= colIx (ix + 1) - 1
 		!y0'	= y0
 		!y1'	= y1
-	   in	fillCursoredBlock2 
-			vec 
+	   in	fillCursoredBlock2
+			vec
 			makeCursorFCB shiftCursorFCB getElemFCB
 			imageWidth x0' y0' x1' y1'
 
@@ -73,15 +73,15 @@ fillCursoredBlock2
 	-> (DIM2   -> cursor -> cursor)	-- ^ shift the cursor by an offset
 	-> (cursor -> a)		-- ^ fn to evaluate an element at the given index.
 	-> Int				-- ^ width of whole image
-	-> Int				-- ^ x0 lower left corner of block to fill 
+	-> Int				-- ^ x0 lower left corner of block to fill
 	-> Int				-- ^ y0 (low x and y value)
 	-> Int				-- ^ x1 upper right corner of block to fill
 	-> Int				-- ^ y1 (high x and y value, index of last elem to fill)
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2 #-}
-fillCursoredBlock2 
-	!vec 
+fillCursoredBlock2
+	!vec
 	!makeCursor !shiftCursor !getElem
 	!imageWidth !x0 !y0 !x1 !y1
 
@@ -93,7 +93,7 @@ fillCursoredBlock2
 	 | otherwise
 	 = do	fillLine4 x0
 		fillBlock (y + 1)
-	
+
 	 where	{-# INLINE fillLine4 #-}
 		fillLine4 !x
  	   	 | x + 4 > x1 		= fillLine1 x
@@ -110,7 +110,7 @@ fillCursoredBlock2
 			let val1	= getElem srcCur1
 			let val2	= getElem srcCur2
 			let val3	= getElem srcCur3
-			
+
 			-- Ensure that we've computed each of the result values before we
 			-- write into the array. If the backend code generator can't tell
 			-- our destination array doesn't alias with the source then writing
@@ -121,15 +121,15 @@ fillCursoredBlock2
 			touch val3
 
 			-- Compute cursor into destination array.
-			let !dstCur0	= x + y * imageWidth				
+			let !dstCur0	= x + y * imageWidth
 			VM.unsafeWrite vec (dstCur0)     val0
 			VM.unsafeWrite vec (dstCur0 + 1) val1
 			VM.unsafeWrite vec (dstCur0 + 2) val2
 			VM.unsafeWrite vec (dstCur0 + 3) val3
 			fillLine4 (x + 4)
-		
+
 		{-# INLINE fillLine1 #-}
-		fillLine1 !x 
+		fillLine1 !x
  	   	 | x > x1		= return ()
 	   	 | otherwise
 	   	 = do	VM.unsafeWrite vec (x + y * imageWidth) (getElem $ makeCursor (Z :. y :. x))

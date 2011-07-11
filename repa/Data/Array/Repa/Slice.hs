@@ -44,7 +44,7 @@ class Slice ss where
 
 	-- | Map an index of a slice onto an index of the full shape.
 	fullOfSlice	:: ss -> SliceShape ss -> FullShape  ss
-		
+
 
 instance Slice Z  where
 	{-# INLINE sliceOfFull #-}
@@ -52,27 +52,27 @@ instance Slice Z  where
 
 	{-# INLINE fullOfSlice #-}
 	fullOfSlice _ _		= Z
-	
-	
+
+
 instance Slice (Any sh) where
 	{-# INLINE sliceOfFull #-}
 	sliceOfFull _ sh	= sh
 
 	{-# INLINE fullOfSlice #-}
 	fullOfSlice _ sh	= sh
-	
+
 
 instance Slice sl => Slice (sl :. Int) where
 	{-# INLINE sliceOfFull #-}
-	sliceOfFull (fsl :. _) (ssl :. _)	
+	sliceOfFull (fsl :. _) (ssl :. _)
 		= sliceOfFull fsl ssl
 
 	{-# INLINE fullOfSlice #-}
-	fullOfSlice (fsl :. n) ssl		
+	fullOfSlice (fsl :. n) ssl
 		= fullOfSlice fsl ssl :. n
-	
-	
-instance Slice sl => Slice (sl :. All) where	
+
+
+instance Slice sl => Slice (sl :. All) where
 	{-# INLINE sliceOfFull #-}
 	sliceOfFull (fsl :. All) (ssl :. s)
 		= sliceOfFull fsl ssl :. s
@@ -80,3 +80,4 @@ instance Slice sl => Slice (sl :. All) where
 	{-# INLINE fullOfSlice #-}
 	fullOfSlice (fsl :. All) (ssl :. s)
 		= fullOfSlice fsl ssl :. s
+
