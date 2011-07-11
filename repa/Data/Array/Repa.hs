@@ -61,6 +61,10 @@ module Data.Array.Repa
 	, zipWith
 	, (+^), (-^), (*^), (/^)
 
+        -- from Data.Array.Repa.Operations.Modify -------------------
+        -- * Bulk updates
+        , (//)
+
 	-- from Data.Array.Repa.Operators.Reduction -----------------
 	-- * Reductions
 	, fold,	foldAll
@@ -98,6 +102,7 @@ import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave
 import Data.Array.Repa.Operators.Mapping
+import Data.Array.Repa.Operators.Modify
 import Data.Array.Repa.Operators.Reduction
 import Data.Array.Repa.Operators.Select
 import qualified Data.Array.Repa.Shape	as S

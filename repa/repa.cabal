@@ -50,6 +50,7 @@ Library
         Data.Array.Repa.Operators.Traverse
         Data.Array.Repa.Operators.Interleave
         Data.Array.Repa.Operators.Mapping
+        Data.Array.Repa.Operators.Modify
         Data.Array.Repa.Operators.Reduction
         Data.Array.Repa.Operators.Select
         Data.Array.Repa.Internals.Elt
