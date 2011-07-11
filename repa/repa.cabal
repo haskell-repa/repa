@@ -58,6 +58,7 @@ Library
         Data.Array.Repa.Internals.EvalChunked
         Data.Array.Repa.Internals.EvalBlockwise
         Data.Array.Repa.Internals.EvalCursored
+        Data.Array.Repa.Internals.EvalReduction
         Data.Array.Repa.Internals.Forcing
         Data.Array.Repa.Internals.Select
         Data.Array.Repa.Stencil.Base

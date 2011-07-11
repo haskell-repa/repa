@@ -1,5 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE ExplicitForAll, TypeOperators #-}
+{-# LANGUAGE BangPatterns, ExplicitForAll, TypeOperators #-}
 
 module Data.Array.Repa.Operators.Reduction
 	( fold, foldAll
@@ -8,65 +8,75 @@ where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Base
-import Data.Array.Repa.Shape		as S
-import qualified Data.Vector.Unboxed	as V
-import Prelude				hiding (sum)
+import Data.Array.Repa.Shape		        as S
+import qualified Data.Vector.Unboxed	        as V
+import qualified Data.Vector.Unboxed.Mutable    as M
+import Prelude				        hiding (sum)
+
+import Data.Array.Repa.Internals.EvalReduction
+import System.IO.Unsafe
 
 
--- | Sequentially fold the innermost dimension of an array.
---	Combine this with `transpose` to fold any other dimension.
+-- | Reduction of the innermost dimension of an arbitrary rank array. The first
+-- argument needs to be an /associative/ function to enable efficient parallel
+-- implementation.
+--
+-- Combine this with `transpose` to fold any other dimension.
+--
 fold 	:: (Shape sh, Elt a)
 	=> (a -> a -> a)
-	-> a 
+	-> a
 	-> Array (sh :. Int) a
 	-> Array sh a
+{-# INLINE [1] fold #-}
+fold f z arr =
+  let sh@(sz :. n) = extent arr
+  in
+  case rank sh of
+    -- specialise rank-1 arrays, else one thread does all the work. We can't
+    -- match against the shape constructor, otherwise type error: (sz ~ Z)
+    --
+    1 -> let !x = V.singleton $ foldAll f z arr
+         in  Array sz [Region RangeAll (GenManifest x)]
 
-{-# INLINE fold #-}
-fold f x arr
- = x `seq` arr `deepSeqArray` 
-   let	sh' :. n	= extent arr
-	elemFn i 	= V.foldl' f x
-			$ V.map	(\ix -> arr ! (i :. ix)) 
-				(V.enumFromTo 0 (n - 1))
-   in	fromFunction sh' elemFn
+    _ -> unsafePerformIO $ do
+           mvec <- M.unsafeNew (S.size sz)
+           foldP mvec (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
+           !vec <- V.unsafeFreeze mvec
+           return $ Array sz [Region RangeAll (GenManifest vec)]
 
 
--- | Sequentially fold all the elements of an array.
+-- | Reduction of an array of arbitrary rank to a single scalar value. The first
+-- argument needs to be an /associative/ function to enable efficient parallel
+-- implementation.
+--
 foldAll :: (Shape sh, Elt a)
 	=> (a -> a -> a)
 	-> a
 	-> Array sh a
 	-> a
-	
-{-# INLINE foldAll #-}
-foldAll f x arr
-	= V.foldl' f x
-	$ V.map ((arr !) . (S.fromIndex (extent arr)))
-	$ V.enumFromTo
-		0
-		((S.size $ extent arr) - 1)
-
+{-# INLINE [1] foldAll #-}
+foldAll f z arr =
+  let sh = extent arr
+      n  = size sh
+  in
+  unsafePerformIO $ foldAllP (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
 
 
 -- | Sum the innermost dimension of an array.
+--
 sum	:: (Shape sh, Elt a, Num a)
 	=> Array (sh :. Int) a
 	-> Array sh a
-
 {-# INLINE sum #-}
 sum arr	= fold (+) 0 arr
 
 
 -- | Sum all the elements of an array.
+--
 sumAll	:: (Shape sh, Elt a, Num a)
 	=> Array sh a
 	-> a
-
 {-# INLINE sumAll #-}
-sumAll arr
-	= V.foldl' (+) 0
-	$ V.map ((arr !) . (S.fromIndex (extent arr)))
-	$ V.enumFromTo
-		0
-		((S.size $ extent arr) - 1)
+sumAll arr = foldAll (+) 0 arr
 

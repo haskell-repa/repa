@@ -5,8 +5,9 @@ module Data.Array.Repa.Properties
 	, props_DataArrayRepa)
 where
 import Data.Array.Repa			as R
-import qualified Data.Array.Repa.Shape	as S
 import Data.Array.Repa.Arbitrary
+import qualified Data.Array.Repa.Shape	as S
+import qualified Data.Vector.Unboxed    as V
 import Control.Monad
 import Test.QuickCheck
 import Prelude				as P
@@ -49,6 +50,7 @@ props_DataArrayRepa
 	, ("id_transpose/DIM4",			property prop_id_transpose_DIM4)
 	, ("reshapeTransposeSize/DIM3",		property prop_reshapeTranspose_DIM3)
 	, ("appendIsAppend/DIM3",		property prop_appendIsAppend_DIM3)
+	, ("sumIsSum/DIM3",			property prop_sumIsSum_DIM3)
 	, ("sumAllIsSum/DIM3",			property prop_sumAllIsSum_DIM3) ]]
 	
 
@@ -84,8 +86,17 @@ prop_appendIsAppend_DIM3
 	sumAll (append arr1 arr1) == (2 * sumAll arr1)
 
 -- Reductions --------------------------
+prop_sumIsSum_DIM3
+  = forAll (arbitrarySmallArray 20)                     $ \(arr :: Array DIM3 Float) ->
+    let sh :. sz  = extent arr
+        elemFn ix = V.foldl' (+) 0
+                  $ V.map (\i -> arr ! (ix :. i))
+                          (V.enumFromTo 0 (sz-1))
+    in
+    R.fold (+) 0 arr == fromFunction sh elemFn
+
 prop_sumAllIsSum_DIM3
- = 	forAll (arbitrarySmallShape 100)		$ \(sh :: DIM2) ->
+ = 	forAll (arbitrarySmallShape 20)		        $ \(sh :: DIM3) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) -> 
 	sumAll (fromList sh xx) == P.sum xx
 
