@@ -113,6 +113,32 @@ instance Elt Int16 where
  one = 1
 
 
+instance Elt Int32 where
+ {-# INLINE touch #-}
+ touch (I32# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+instance Elt Int64 where
+ {-# INLINE touch #-}
+ touch (I64# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
 -- Word -----------------------------------------------------------------------
 instance Elt Word where
  {-# INLINE touch #-}
@@ -143,6 +169,32 @@ instance Elt Word8 where
 instance Elt Word16 where
  {-# INLINE touch #-}
  touch (W16# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+instance Elt Word32 where
+ {-# INLINE touch #-}
+ touch (W32# w) 
+  = IO (\state -> case touch# w state of
+			state' -> (# state', () #))
+
+ {-# INLINE zero #-}
+ zero = 0
+
+ {-# INLINE one #-}
+ one = 1
+
+
+instance Elt Word64 where
+ {-# INLINE touch #-}
+ touch (W64# w) 
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
 
