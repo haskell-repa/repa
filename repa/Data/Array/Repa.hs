@@ -8,6 +8,14 @@
 --
 --   There is a draft tutorial at <http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial>
 --
+-- @Release Notes:
+--  For 2.1.0.1:
+--   * The fold and foldAll functions now run in parallel and require the
+--     starting element to be neutral with respect to the reduction operator.
+--                                   -- thanks to Trevor McDonnel
+--   * Added (\/\/) update function.   -- thanks to Trevor McDonell
+--   * Dropped unneeded Elt constraints from traverse functions.
+-- @
 module Data.Array.Repa
 	( module Data.Array.Repa.Shape
 	, module Data.Array.Repa.Index
