@@ -12,7 +12,7 @@
 --  For 2.1.0.1:
 --   * The fold and foldAll functions now run in parallel and require the
 --     starting element to be neutral with respect to the reduction operator.
---                                   -- thanks to Trevor McDonnel
+--                                   -- thanks to Trevor McDonell
 --   * Added (\/\/) update function.   -- thanks to Trevor McDonell
 --   * Dropped unneeded Elt constraints from traverse functions.
 -- @
