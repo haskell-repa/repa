@@ -38,7 +38,7 @@ unsafeTraverse arr transExtent newElem
 traverse2, unsafeTraverse2
 	:: forall sh sh' sh'' a b c
 	.  ( Shape sh, Shape sh', Shape sh''
-	   , Elt a,    Elt b,     Elt c)
+	   , Elt a,    Elt b)
         => Array sh a 				-- ^ First source array.
 	-> Array sh' b				-- ^ Second source array.
         -> (sh -> sh' -> sh'')			-- ^ Function to produce the extent of the result.
@@ -68,7 +68,7 @@ traverse3, unsafeTraverse3
 	:: forall sh1 sh2 sh3 sh4
 	          a   b   c   d
 	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4
-	   , Elt a,     Elt b,     Elt c,     Elt d)
+	   , Elt a,     Elt b,     Elt c)
         => Array sh1 a
 	-> Array sh2 b
 	-> Array sh3 c
@@ -98,7 +98,7 @@ traverse4, unsafeTraverse4
 	:: forall sh1 sh2 sh3 sh4 sh5
 	          a   b   c   d   e
 	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4, Shape sh5
-	   , Elt a,     Elt b,     Elt c,     Elt d,     Elt e)
+	   , Elt a,     Elt b,     Elt c,     Elt d)
         => Array sh1 a
 	-> Array sh2 b
 	-> Array sh3 c
