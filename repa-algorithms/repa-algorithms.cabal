@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             2.0.0.3
+Version:             2.1.0.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -20,7 +20,7 @@ Library
   Build-Depends: 
         base                 == 4.*,
         vector               == 0.7.*,
-        repa                 == 2.0.*
+        repa                 == 2.1.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

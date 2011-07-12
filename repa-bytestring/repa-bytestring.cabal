@@ -1,5 +1,5 @@
 Name:                repa-bytestring
-Version:             2.0.0.4
+Version:             2.1.0.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -19,7 +19,7 @@ Synopsis:
 Library
   Build-Depends: 
         base                 == 4.*,
-        repa                 == 2.0.*,
+        repa                 == 2.1.*,
         vector               == 0.7.*,
         bytestring           == 0.9.*
 
