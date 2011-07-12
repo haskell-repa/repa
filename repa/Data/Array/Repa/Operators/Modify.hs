@@ -1,22 +1,19 @@
 {-# OPTIONS_HADDOCK hide #-}
 
-module Data.Array.Repa.Operators.Modify (
-
-  -- * Bulk updates
-  (//), update, unsafeUpdate
-
-) where
-
+module Data.Array.Repa.Operators.Modify 
+        ( -- * Bulk updates
+         (//))
+where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Base
 
+{-
 stage :: String
 stage = "Data.Array.Repa.Operators.Modify"
+-}
 
 -- Bulk updates ----------------------------------------------------------------
---
-
 -- | For each pair @(sh, a)@ from the list of index/value pairs, replace the
 -- element at position @sh@ by @a@.
 --
@@ -24,10 +21,14 @@ stage = "Data.Array.Repa.Operators.Modify"
 --
 {-# INLINE (//) #-}
 (//) :: (Shape sh, Elt a) => Array sh a -> [(sh,a)] -> Array sh a
-(//) arr us = fromFunction (extent arr) (\sh -> case lookup sh us of
-                                                 Just a  -> a
-                                                 Nothing -> index arr sh)
+(//) arr us 
+        = fromFunction
+                (extent arr) 
+                (\sh -> case lookup sh us of
+                            Just a  -> a
+                            Nothing -> index arr sh)
 
+{-
 -- For each pair @(sh, a)@ from the array of index/value pairs, replace the
 -- element at position @sh@ by @a@.
 --
@@ -49,4 +50,4 @@ unsafeUpdate :: Shape sh
              -> Array sh (sh, a)
              -> Array sh a
 unsafeUpdate _arr _us = error $ stage ++ ".unsafeUpdate: not defined yet"
-
+-}

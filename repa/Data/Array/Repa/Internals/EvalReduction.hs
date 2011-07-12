@@ -1,23 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
--- |
--- Module      : Data.Array.Repa.Internal.EvalReduction
--- Copyright   : [2011] The DPH Team
--- License     : BSD3
---
--- Maintainer  : Ben Lippmeier <benl@ouroborus.net>
--- Stability   : Experimental
--- Portability : non-portable (GHC extensions)
---
--- Serial and parallel tree-based array reductions.
---
-
-module Data.Array.Repa.Internals.EvalReduction (
-
-  foldS,    foldP,
-  foldAllS, foldAllP
-
-) where
-
+module Data.Array.Repa.Internals.EvalReduction 
+        ( foldS,    foldP
+        , foldAllS, foldAllP)
+where
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
 import qualified Data.Vector.Unboxed            as V
@@ -25,9 +10,7 @@ import qualified Data.Vector.Unboxed.Mutable    as M
 import GHC.Base                                 ( quotInt )
 
 
--- Multidimensional reduction --------------------------------------------------
---
-
+-- | Sequential reduction of a multidimensional array along the innermost dimension.
 foldS :: Elt a
       => M.IOVector a           -- ^ vector to write elements into
       -> (Int -> a)             -- ^ function to get an element from the given index
@@ -46,15 +29,16 @@ foldS vec !f !c !r !n = iter 0 0
                      let !next = sz + n
                      in  M.unsafeWrite vec sh (reduce f c r sz next) >> iter (sh+1) next
 
--- Parallel reduction of a multidimensional array along the innermost dimension.
--- Each output value is computed by a single thread, with the output values
--- distributed evenly amongst the available threads.
---
+
+-- | Parallel reduction of a multidimensional array along the innermost dimension.
+--   Each output value is computed by a single thread, with the output values
+--   distributed evenly amongst the available threads.
 foldP :: Elt a
       => M.IOVector a           -- ^ vector to write elements into
       -> (Int -> a)             -- ^ function to get an element from the given index
-      -> (a -> a -> a)          -- ^ binary associative combination function
-      -> a                      -- ^ starting value
+      -> (a -> a -> a)          -- ^ binary associative combination operator 
+      -> a                      -- ^ starting value. Must be neutral with respect
+                                -- ^ to the operator. eg @0 + a = a@.
       -> Int                    -- ^ inner dimension (length to fold over)
       -> IO ()
 {-# INLINE foldP #-}
@@ -79,9 +63,7 @@ foldP vec !f !c !r !n
                          in  M.unsafeWrite vec sh (reduce f c r sz next) >> iter (sh+1) next
 
 
--- Reduction -------------------------------------------------------------------
---
-
+-- | Sequential reduction of all the elements in an array.
 foldAllS :: Elt a
          => (Int -> a)          -- ^ function to get an element from the given index
          -> (a -> a -> a)       -- ^ binary associative combining function
@@ -92,13 +74,13 @@ foldAllS :: Elt a
 foldAllS !f !c !r !len = return $! reduce f c r 0 len
 
 
--- Parallel tree reduction of an array to a single value. Each thread takes an
--- equally sized chunk of the data and computes a partial sum. The main thread
--- then reduces the array of partial sums to the final result.
+-- | Parallel tree reduction of an array to a single value. Each thread takes an
+--   equally sized chunk of the data and computes a partial sum. The main thread
+--   then reduces the array of partial sums to the final result.
 --
--- We don't require that the initial value be a neutral element, so each thread
--- computes a fold1 on its chunk of the data, and the seed element is only
--- applied in the final reduction step.
+--   We don't require that the initial value be a neutral element, so each thread
+--   computes a fold1 on its chunk of the data, and the seed element is only
+--   applied in the final reduction step.
 --
 foldAllP :: Elt a
          => (Int -> a)          -- ^ function to get an element from the given index
@@ -125,11 +107,7 @@ foldAllP !f !c !r !len = do
       | otherwise    = M.unsafeWrite mvec tid (reduce f c (f start) (start+1) end)
 
 
--- Auxiliary
--- ---------
-
--- Sequentially reduce values between the given indices
---
+-- | Sequentially reduce values between the given indices
 {-# INLINE reduce #-}
 reduce :: (Int -> a) -> (a -> a -> a) -> a -> Int -> Int -> a
 reduce !f !c !r !start !end = iter start r
