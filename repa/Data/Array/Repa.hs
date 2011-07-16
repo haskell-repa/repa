@@ -124,7 +124,11 @@ stage	= "Data.Array.Repa"
 -- Instances --------------------------------------------------------------------------------------
 -- Show
 instance (Shape sh, Elt a, Show a) => Show (Array sh a) where
- 	show arr = show $ toList arr
+        show arr =
+          let shape = showShape (extent arr)
+              elems = show      (toList arr)
+          in
+          "Array (" P.++ shape P.++ ") " P.++ elems
 
 
 -- Eq

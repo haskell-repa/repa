@@ -3,7 +3,8 @@
 -- | Class of types that can be used as array shapes and indices.
 module Data.Array.Repa.Shape
 	( Shape(..)
-	, inShape )
+        , inShape
+        , showShape )
 where
 
 -- Shape ------------------------------------------------------------------------------------------
@@ -73,4 +74,9 @@ inShape :: forall sh
 {-# INLINE inShape #-}
 inShape sh ix
 	= inShapeRange zeroDim sh ix
+
+
+-- | Nicely format a shape as a string
+showShape :: Shape sh => sh -> String
+showShape = foldr (\sh str -> str ++ " :. " ++ show sh) "Z" . listOfShape
 
