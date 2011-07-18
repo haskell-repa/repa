@@ -10,9 +10,16 @@ import qualified Data.Array.Repa.Shape	as S
 import qualified Data.Vector.Unboxed    as V
 import Control.Monad
 import Test.QuickCheck
-import Prelude				as P
+import Prelude				as P hiding (compare)
 
+stage   :: String
 stage	= "Data.Array.Repa.Properties"
+
+compare :: (Eq a, Show a) => a -> a -> Property
+compare ans ref = printTestCase message (ref == ans)
+  where
+    message = unlines ["*** Expected:", show ref
+                      ,"*** Received:", show ans ]
 
 
 -- Data.Array.Repa.Index --------------------------------------------------------------------------
@@ -26,14 +33,12 @@ props_DataArrayRepaIndex
 prop_toIndexFromIndex_DIM1 sh ix
 	=   (sizeIsValid sh)
 	==> (inShape sh ix)
-	==> fromIndex sh (toIndex sh ix) == ix
-	where	_types	= ( sh :: DIM1
-			  , ix :: DIM1)
+	==> fromIndex sh (toIndex sh ix) `compare` (ix :: DIM1)
 
 prop_toIndexFromIndex_DIM2
  =	forAll arbitraryShape   $ \(sh :: DIM2) ->
    	forAll (genInShape2 sh) $ \(ix :: DIM2) ->
-	fromIndex sh (toIndex sh ix) == ix
+	fromIndex sh (toIndex sh ix) `compare` ix
 
 
 
@@ -57,48 +62,48 @@ props_DataArrayRepa
 -- The Eq instance uses fold and zipWith.
 prop_id_force_DIM5
  = 	forAll (arbitrarySmallArray 10)			$ \(arr :: Array DIM5 Int) ->
-	arr == force arr
+	force arr `compare` arr
 
 prop_id_toScalarUnit (x :: Int)
- =	toScalar (singleton x) == x
+ =	toScalar (singleton x) `compare` x
 
 -- Conversions ------------------------
 prop_id_toListFromList_DIM3
  =	forAll (arbitrarySmallShape 10)			$ \(sh :: DIM3) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) ->
-	toList (fromList sh xx) == xx
+	toList (fromList sh xx) `compare` xx
 
 -- Index Space Transforms -------------
 prop_id_transpose_DIM4
  = 	forAll (arbitrarySmallArray 20)			$ \(arr :: Array DIM3 Int) ->
-	transpose (transpose arr) == arr
+	transpose (transpose arr) `compare` arr
 
 -- A reshaped array has the same size and sum as the original
 prop_reshapeTranspose_DIM3
  = 	forAll (arbitrarySmallArray 20)			$ \(arr :: Array DIM3 Int) ->
    let	arr'	= transpose arr
    	sh'	= extent arr'
-   in	(S.size $ extent arr) == S.size (extent (reshape sh' arr))
-     && (sumAll arr          == sumAll arr')
+   in	(S.size (extent (reshape sh' arr)) `compare` S.size (extent arr))
+   .&&. (sumAll arr'                       `compare` sumAll arr)
 
 prop_appendIsAppend_DIM3
  = 	forAll (arbitrarySmallArray 20)			$ \(arr1 :: Array DIM3 Int) ->
-	sumAll (append arr1 arr1) == (2 * sumAll arr1)
+	sumAll (append arr1 arr1) `compare` (2 * sumAll arr1)
 
 -- Reductions --------------------------
 prop_sumIsSum_DIM3
-  = forAll (arbitrarySmallArray 20)                     $ \(arr :: Array DIM3 Float) ->
+  = forAll (arbitrarySmallArray 20)                     $ \(arr :: Array DIM3 Int) ->
     let sh :. sz  = extent arr
         elemFn ix = V.foldl' (+) 0
                   $ V.map (\i -> arr ! (ix :. i))
                           (V.enumFromTo 0 (sz-1))
     in
-    R.fold (+) 0 arr == fromFunction sh elemFn
+    R.fold (+) 0 arr `compare` fromFunction sh elemFn
 
 prop_sumAllIsSum_DIM3
  = 	forAll (arbitrarySmallShape 20)		        $ \(sh :: DIM3) ->
 	forAll (arbitraryListOfLength (S.size sh))	$ \(xx :: [Int]) ->
-	sumAll (fromList sh xx) == P.sum xx
+        sumAll (fromList sh xx) `compare` P.sum xx
 
 
 -- Utils ------------------------------------------------------------------------------------------
