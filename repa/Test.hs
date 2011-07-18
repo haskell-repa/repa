@@ -1,5 +1,5 @@
 
-module Test where
+module Main where
 
 import Text.Printf
 import Test.QuickCheck
@@ -12,5 +12,5 @@ main
 
 test :: Testable prop => (String, prop) -> IO ()
 test (name, prop)
-  = printf "%-58s: " name >> quickCheck prop
+  = printf "%-58s: " name >> quickCheck (within 5000000 prop)
 

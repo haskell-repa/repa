@@ -7,7 +7,7 @@ import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
 import qualified Data.Vector.Unboxed            as V
 import qualified Data.Vector.Unboxed.Mutable    as M
-import GHC.Base                                 ( quotInt )
+import GHC.Base                                 ( quotInt, divInt )
 
 
 -- | Sequential reduction of a multidimensional array along the innermost dimension.
@@ -54,7 +54,7 @@ foldP vec !f !c !r !n
     split !ix = len `min` (ix * step)
 
     {-# INLINE fill #-}
-    fill !start !end = iter start start
+    fill !start !end = iter start (start * n)
       where
         {-# INLINE iter #-}
         iter !sh !sz | sh >= end = return ()
@@ -90,12 +90,13 @@ foldAllP :: Elt a
          -> IO a
 {-# INLINE foldAllP #-}
 foldAllP !f !c !r !len = do
-  mvec <- M.unsafeNew threads
+  mvec <- M.unsafeNew (threads `min` chunks)
   gangIO theGang $ \tid -> fill mvec tid (split tid) (split (tid+1))
   vec  <- V.unsafeFreeze mvec
   return $! V.foldl' c r vec
   where
     !threads  = gangSize theGang
+    !chunks   = (len + step    - 1) `divInt`  step
     !step     = (len + threads - 1) `quotInt` threads
 
     {-# INLINE split #-}
