@@ -89,18 +89,20 @@ foldAllP :: Elt a
          -> Int                 -- ^ number of elements
          -> IO a
 {-# INLINE foldAllP #-}
-foldAllP !f !c !r !len = do
-  mvec <- M.unsafeNew (threads `min` chunks)
-  gangIO theGang $ \tid -> fill mvec tid (split tid) (split (tid+1))
-  vec  <- V.unsafeFreeze mvec
-  return $! V.foldl' c r vec
+foldAllP !f !c !r !len
+  | len == 0    = return r
+  | otherwise   = do
+      mvec <- M.unsafeNew chunks
+      gangIO theGang $ \tid -> fill mvec tid (split tid) (split (tid+1))
+      vec  <- V.unsafeFreeze mvec
+      return $! V.foldl' c r vec
   where
-    !threads  = gangSize theGang
-    !chunks   = (len + step    - 1) `divInt`  step
-    !step     = (len + threads - 1) `quotInt` threads
+    !threads    = gangSize theGang
+    !step       = (len + threads - 1) `quotInt` threads
+    chunks      = ((len + step - 1) `divInt` step) `min` threads
 
     {-# INLINE split #-}
-    split !ix = len `min` (ix * step)
+    split !ix   = len `min` (ix * step)
 
     {-# INLINE fill #-}
     fill !mvec !tid !start !end
