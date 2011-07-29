@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             2.1.0.1
+Version:             2.1.0.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -124,7 +124,7 @@ Executable repa-sobel
         base                 == 4.*,
         repa                 == 2.1.*,
         repa-algorithms      == 2.1.*,
-        template-haskell     >= 2.5 && < 2.6
+        template-haskell     >= 2.5 && < 2.7
 
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
@@ -142,7 +142,7 @@ Executable repa-canny
         base                 == 4.*,
         repa                 == 2.1.*,
         repa-algorithms      == 2.1.*,
-        template-haskell     >= 2.5 && < 2.6
+        template-haskell     >= 2.5 && < 2.7
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .

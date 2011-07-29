@@ -1,5 +1,5 @@
 Name:                repa
-Version:             2.1.1.1
+Version:             2.1.1.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -27,7 +27,7 @@ Library
         ghc-prim             == 0.2.*,
         vector               >= 0.7 && < 0.8,
         QuickCheck           >= 2.3 && < 2.5,
-        template-haskell     >= 2.5 && < 2.6
+        template-haskell     >= 2.5 && < 2.7
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
