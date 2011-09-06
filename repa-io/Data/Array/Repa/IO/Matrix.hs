@@ -21,10 +21,14 @@ import Data.Array.Repa				as A
 import Prelude					as P
 
 
+-------------------------------------------------------------------------------
 -- | Read a matrix from a text file.
+--   WARNING: This is implemented fairly naively, just using `Strings` 
+--   under the covers. It will be slow for large data files.
+-- 
+--   It also doesn't do graceful error handling.
+--   If the file has the wrong format you'll get a confusing `error`.
 --
---   WARNING: This doesn't do graceful error handling. If the file has the wrong format
---   you'll get a confusing `error`.
 readMatrixFromTextFile
 	:: (Elt a, Num a, Read a)
 	=> FilePath

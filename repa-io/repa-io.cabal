@@ -22,7 +22,9 @@ Library
         repa                 == 2.1.*,
         repa-bytestring      == 2.1.*,
         bmp                  == 1.1.*,
-        old-time             == 1.0.*
+        old-time             == 1.0.*,
+        vector               == 0.7.*,
+        binary               == 0.5.*
 
   ghc-options:
         -Odph -Wall -fno-warn-missing-signatures
@@ -32,6 +34,7 @@ Library
         Data.Array.Repa.IO.BMP
         Data.Array.Repa.IO.Vector
         Data.Array.Repa.IO.Matrix
+        Data.Array.Repa.IO.Binary
         Data.Array.Repa.IO.Timing
       
   Other-modules:
