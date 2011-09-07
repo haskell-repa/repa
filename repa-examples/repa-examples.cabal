@@ -154,3 +154,18 @@ Executable repa-canny
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
 
+
+Executable repa-volume
+  Build-depends: 
+        base                 == 4.*,
+        repa                 == 2.2.*,
+        repa-io              == 2.2.*
+
+  Main-is: examples/Volume/Main.hs
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph -fllvm -optlo-O3
+        -fno-liberate-case
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
