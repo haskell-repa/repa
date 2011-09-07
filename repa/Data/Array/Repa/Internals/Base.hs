@@ -22,13 +22,18 @@ module Data.Array.Repa.Internals.Base
 	-- * Construction
 	, fromFunction
 	, fromVector
-	, fromList)
+	, fromList
+	, unsafeFromForeignPtr)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
+import qualified Data.Vector.Storable           as VS
+import qualified Data.Vector.Generic            as VG
 import Data.Vector.Unboxed			(Vector)
+import Foreign.Storable
+import Foreign.ForeignPtr
 
 stage	= "Data.Array.Repa.Array"
 
@@ -366,7 +371,6 @@ fromVector sh vec
 	  Array sh [Region RangeAll (GenManifest vec)]
 
 
--- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an array.
 --	The length of the list must be exactly the `size` of the extent given, else `error`.
 fromList
@@ -387,4 +391,21 @@ fromList sh xx
 	= Array sh [Region RangeAll (GenManifest vec)]
 
 	where	vec	= V.fromList xx
+
+
+-- | Copy data from a ForeignPtr into an `Array`.
+--   Data appears row-major in host byte order.
+--   You promise not to modify the pointed-to data any further.
+--   
+unsafeFromForeignPtr
+        :: (Shape sh, Elt a, Storable a)
+        => ForeignPtr a
+        -> Int                  -- starting offset
+        -> sh                   -- array shape
+        -> Array sh a
+
+unsafeFromForeignPtr fptr offset sh
+        = fromVector sh
+        $ VG.convert 
+        $ VS.unsafeFromForeignPtr fptr offset (S.size sh)
 

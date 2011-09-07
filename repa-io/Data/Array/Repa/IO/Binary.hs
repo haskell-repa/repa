@@ -1,43 +1,56 @@
 {-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Array.Repa.IO.Binary
-        ()
+        (readArrayFromStorableFile)
 where
-import Foreign.Storable                 as S
-import Data.Binary                      as B
-import Data.Binary.Get                  as B
+import Foreign.Storable
+import Foreign.Ptr
+import Foreign.ForeignPtr
+import Foreign.Marshal.Alloc
+import System.IO
 import Data.Array.Repa                  as R
 import Prelude                          as P
-import Data.Vector.Unboxed              as V
+import Control.Monad
 
 
--- | Binary instance for Repa arrays.
---   When reading from the stream, if there are not a whole number of 
---   elements then `error`.
-instance (Binary a, Storable a, Elt a) => Binary (Array DIM1 a) where
-                   
- {-# INLINE get #-}     
- get 
-  = do -- Determine the size of a single element.
-        --  This size can be determined from the Storable dictionary we've
-        --  been passed, but we need to go via a fake array to witness the
-        --  element type.
-        let (fake   :: Array DIM1 a) = R.fromList (Z:.0) []
-        let (bytes1 :: Int)          = S.sizeOf (fake R.! (Z:.0))
+-- | Read an array from a file.
+--   Data appears in host byte order.
+--   If the file size does match the provided shape then `error`.
+-- 
+readArrayFromStorableFile 
+        :: forall a sh
+        .  (Shape sh, Storable a, Elt a)
+        => FilePath 
+        -> sh
+        -> IO (Array sh a)
 
-        -- Determine how many elements the stream will give us.
-        bytesTotal      <- remaining 
-        let lenTotal    =  bytesTotal `div` (fromIntegral bytes1)
-        let lenTotal'   = fromIntegral lenTotal
+readArrayFromStorableFile filePath sh
+ = do
+        -- Determine number of bytes per element.
+        let (fake   :: Array sh a)      = R.fromList R.zeroDim []
+        let (bytes1 :: Integer)         = fromIntegral $ sizeOf (fake R.! R.zeroDim)
+
+        -- Determine how many elements the whole file will give us.
+        h :: Handle     <- openBinaryFile filePath ReadMode
+        bytesTotal      <- hFileSize h
+
+        let lenTotal      =  bytesTotal `div` bytes1
+        let bytesExpected =  bytes1 * lenTotal
         
-        vec             <- if bytes1 * lenTotal' /= (fromIntegral bytesTotal)
-                                then error "Data.Array.Repa.IO.Binary.get: not a whole number of elements in stream"
-                                else V.generateM (fromIntegral lenTotal') (\_ -> (get :: Get a))        
+        when (bytesTotal /= bytesExpected)
+         $ error $ unlines
+                ["Data.Array.Repa.IO.Binary.readArrayFromStorableFile: not a whole number of elements in file"
+                , "element length = " P.++ show bytes1
+                , "file size      = " P.++ show bytesTotal
+                , "slack space    = " P.++ show (bytesTotal `mod` bytes1) ]
+         
+        let bytesTotal' = fromIntegral bytesTotal
+        buf :: Ptr a    <- mallocBytes bytesTotal' 
+        bytesRead  <- hGetBuf h buf bytesTotal'
+        when (bytesTotal' /= bytesRead)
+         $ error "Data.Array.Repa.IO.Binary.readArrayFromStorableFile: read failed"
 
-        let arr         = fromVector (Z:. lenTotal') vec
-        return $ (arr `asTypeOf` fake)
-
- {-# INLINE put #-}
- put arr
-  =     V.mapM_ put $ toVector arr
-
+        hClose h
+        fbuf     <- newForeignPtr finalizerFree buf        
+        let arr  =  R.unsafeFromForeignPtr fbuf 0 sh
+        return   $  arr `asTypeOf` fake

@@ -5,42 +5,37 @@ module Data.Array.Repa.Internals.EvalChunked
 	( fillChunkedS
 	, fillChunkedP)
 where
-import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
-import Data.Vector.Unboxed			as V
-import Data.Vector.Unboxed.Mutable		as VM
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
 
 
--- | Fill a vector sequentially.
+-- | Fill something sequentially.
 fillChunkedS
-	:: Elt a
- 	=> IOVector a	-- ^ Vector to fill.
-	-> (Int -> a)	-- ^ Fn to get the value at a given index.
+	:: Int                  -- ^ Number of elements
+	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
+	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
 	-> IO ()
 
 {-# INLINE [0] fillChunkedS #-}
-fillChunkedS !vec !getElem
+fillChunkedS !len !write !getElem
  = fill 0
- where 	!len	= VM.length vec
-
-	fill !ix
+ where	fill !ix
 	 | ix >= len	= return ()
 	 | otherwise
-	 = do	VM.unsafeWrite vec ix (getElem ix)
+	 = do	write ix (getElem ix)
 		fill (ix + 1)
 
 
--- | Fill a vector in parallel.
+-- | Fill something in parallel.
 fillChunkedP
-	:: Unbox a
-	=> IOVector a	-- ^ Vector to fill.
-	-> (Int -> a)	-- ^ Fn to get the value at a given index.
+        :: Int                  -- ^ Number of elements
+	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
+	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
 	-> IO ()
 
 {-# INLINE [0] fillChunkedP #-}
-fillChunkedP !vec !getElem
+fillChunkedP !len !write !getElem
  = 	gangIO theGang
 	 $  \thread -> fill (splitIx thread) (splitIx (thread + 1))
 
@@ -49,7 +44,6 @@ fillChunkedP !vec !getElem
 	-- If the length of the vector doesn't divide evenly among the threads,
 	-- then the first few get an extra element.
 	!threads 	= gangSize theGang
-	!len		= VM.length vec
 	!chunkLen 	= len `quotInt` threads
 	!chunkLeftover	= len `remInt`  threads
 
@@ -63,6 +57,6 @@ fillChunkedP !vec !getElem
 	fill !ix !end
 	 | ix >= end		= return ()
 	 | otherwise
-	 = do	VM.unsafeWrite vec ix (getElem ix)
+	 = do	write ix (getElem ix)
 		fill (ix + 1) end
 

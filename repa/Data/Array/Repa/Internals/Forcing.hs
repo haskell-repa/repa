@@ -2,7 +2,8 @@
 module Data.Array.Repa.Internals.Forcing
 	( toVector
 	, toList
-	, force, force2)
+	, force,  forceInto
+	, force2)
 where
 import Data.Array.Repa.Internals.EvalChunked
 import Data.Array.Repa.Internals.EvalCursored
@@ -13,6 +14,8 @@ import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
 import qualified Data.Vector.Unboxed.Mutable	as VM
 import Data.Vector.Unboxed			(Vector)
+import Foreign.Storable
+import Foreign.Ptr
 import System.IO.Unsafe
 
 stage	= "Data.Array.Repa.Internals.Forcing"
@@ -63,9 +66,27 @@ force arr
 
 		Array sh _
 		 -> do	mvec	<- VM.unsafeNew (S.size sh)
-			fillChunkedP mvec (\ix -> arr' `unsafeIndex` fromIndex sh ix)
+
+			fillChunkedP (VM.length mvec)
+			        (VM.unsafeWrite mvec)
+			        (\ix -> arr' `unsafeIndex` fromIndex sh ix)
+
 			vec	<- V.unsafeFreeze mvec
 			return	(sh, vec)
+
+
+-- | Force an array, writing elements into a `Ptr`.
+--   The array is split into linear chunks and each chunk is evaluated in parallel.
+forceInto
+        :: (Shape sh, Elt a, Storable a)
+        => Ptr a -> Array sh a -> IO ()
+
+{-# INLINE [2] forceInto #-}        
+forceInto !ptr arr@(Array sh _)
+        = fillChunkedP
+                (S.size sh)
+                (pokeElemOff ptr)
+                (\ix -> arr `unsafeIndex` fromIndex sh ix)
 
 
 -- | Force an array, so that it becomes `Manifest`.

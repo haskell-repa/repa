@@ -46,10 +46,12 @@ module Data.Array.Repa
 	, fromFunction
 	, fromVector
 	, fromList
+	, unsafeFromForeignPtr
 
 	-- from Data.Array.Repa.Interlals.Forcing -------------------
 	-- * Forcing
-	, force, force2
+	, force, forceInto
+	, force2
 	, toVector
 	, toList
 
