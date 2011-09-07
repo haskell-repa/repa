@@ -155,11 +155,18 @@ fillRegion2P mvec sh@(_ :. height :. width) (Region range gen)
 		(Rect 	(Z :. 0          :. 0)
 			(Z :. height - 1 :. width - 1))
 
-	RangeRects _ [rect]
-	 -> fillRect2 mvec sh gen rect
+	RangeRects _ [r1]
+	 -> fillRect2 mvec sh gen r1
 
-	-- Specialise for the common case of 4 rectangles so we get fusion.
-	-- The following case with mapM_ doesn't fuse because mapM_ isn't completely unrolled.
+	RangeRects _ [r1, r2]
+	 -> do	fillRect2 mvec sh gen r1
+		fillRect2 mvec sh gen r2
+
+	RangeRects _ [r1, r2, r3]
+	 -> do	fillRect2 mvec sh gen r1
+		fillRect2 mvec sh gen r2
+		fillRect2 mvec sh gen r3
+
 	RangeRects _ [r1, r2, r3, r4]
 	 -> do	fillRect2 mvec sh gen r1
 		fillRect2 mvec sh gen r2
