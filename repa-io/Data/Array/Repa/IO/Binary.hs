@@ -76,7 +76,7 @@ writeArrayToStorableFile filePath arr
         let bytesTotal  = bytes1 * (R.size $ R.extent arr)
         
         buf :: Ptr a    <- mallocBytes bytesTotal
-        R.forceIntoPtr buf arr
+        R.forceWith (pokeElemOff buf) arr
         
         h <- openBinaryFile filePath WriteMode
         hPutBuf h buf bytesTotal 
