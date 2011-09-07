@@ -180,15 +180,16 @@ fillRect2
 	-> IO ()
 
 {-# INLINE fillRect2 #-}
-fillRect2 mvec (_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
+fillRect2 mvec sh@(_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
  = mvec `seq` width `seq` y0 `seq` x0 `seq` y1 `seq` x1 `seq`
    case gen of
-	GenManifest{}
-	 -> error "fillRegion2P: GenManifest, copy elements."
+	GenManifest vec
+	 -> fillCursoredBlock2P mvec
+		id addDim (\ix -> vec `V.unsafeIndex` toIndex sh ix)
+		width x0 y0 x1 y1
 
 	-- Cursor based arrays.
 	GenCursor makeCursor shiftCursor loadElem
          -> fillCursoredBlock2P mvec
 		makeCursor shiftCursor loadElem
 		width x0 y0 x1 y1
-
