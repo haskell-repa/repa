@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 {-# OPTIONS -fno-warn-orphans #-}
+
+-- | Reading and writing Repa arrays as binary files.
 module Data.Array.Repa.IO.Binary
         ( readArrayFromStorableFile
         , writeArrayToStorableFile)
@@ -63,7 +65,8 @@ readArrayFromStorableFile filePath sh
 -- | Write an array to a file.
 --   Data appears in host byte order.
 writeArrayToStorableFile
-        :: (Shape sh, Storable a, Elt a)
+        :: forall sh a 
+        .  (Shape sh, Storable a, Elt a)
         => FilePath 
         -> Array sh a
         -> IO ()
