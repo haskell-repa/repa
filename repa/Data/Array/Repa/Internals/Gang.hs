@@ -13,7 +13,7 @@ module Data.Array.Repa.Internals.Gang
 where
 import GHC.IO
 import GHC.ST
-import GHC.Conc                  (forkOnIO)
+import GHC.Conc                  (forkOn)
 
 import Control.Concurrent.MVar
 import Control.Exception         (assert)
@@ -141,7 +141,7 @@ forkGang n
 	mapM_ (\var -> addMVarFinalizer var (finaliseWorker var)) mvs
 
 	-- Create all the worker threads
-	zipWithM_ forkOnIO [0..]
+	zipWithM_ forkOn [0..]
 		$ zipWith gangWorker [0 .. n-1] mvs
 
 	-- The gang is currently idle.
