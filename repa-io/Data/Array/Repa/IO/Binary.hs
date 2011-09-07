@@ -46,11 +46,11 @@ readArrayFromStorableFile filePath sh
          
         let bytesTotal' = fromIntegral bytesTotal
         buf :: Ptr a    <- mallocBytes bytesTotal' 
-        bytesRead  <- hGetBuf h buf bytesTotal'
+        bytesRead       <- hGetBuf h buf bytesTotal'
         when (bytesTotal' /= bytesRead)
          $ error "Data.Array.Repa.IO.Binary.readArrayFromStorableFile: read failed"
 
         hClose h
-        fbuf     <- newForeignPtr finalizerFree buf        
-        let arr  =  R.unsafeFromForeignPtr fbuf 0 sh
+        fptr     <- newForeignPtr finalizerFree buf        
+        let arr  =  R.unsafeFromForeignPtr sh fptr
         return   $  arr `asTypeOf` fake

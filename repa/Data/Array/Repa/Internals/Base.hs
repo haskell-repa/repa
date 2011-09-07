@@ -29,11 +29,10 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Shape			as S
 import qualified Data.Vector.Unboxed		as V
-import qualified Data.Vector.Storable           as VS
-import qualified Data.Vector.Generic            as VG
 import Data.Vector.Unboxed			(Vector)
-import Foreign.Storable
 import Foreign.ForeignPtr
+import Foreign.Storable
+import System.IO.Unsafe
 
 stage	= "Data.Array.Repa.Array"
 
@@ -393,19 +392,19 @@ fromList sh xx
 	where	vec	= V.fromList xx
 
 
--- | Copy data from a ForeignPtr into an `Array`.
---   Data appears row-major in host byte order.
+-- | Convert a `Ptr` to an `Array`. 
+--   The data is used directly, and not copied.
 --   You promise not to modify the pointed-to data any further.
 --   
 unsafeFromForeignPtr
         :: (Shape sh, Elt a, Storable a)
-        => ForeignPtr a
-        -> Int                  -- starting offset
-        -> sh                   -- array shape
+        => sh
+        -> ForeignPtr a   
         -> Array sh a
 
-unsafeFromForeignPtr fptr offset sh
-        = fromVector sh
-        $ VG.convert 
-        $ VS.unsafeFromForeignPtr fptr offset (S.size sh)
+unsafeFromForeignPtr sh fptr
+ = fromFunction sh 
+        (\ix -> unsafePerformIO 
+             $  withForeignPtr fptr
+                        (\ptr -> peekElemOff ptr $ toIndex sh ix))
 

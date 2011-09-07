@@ -2,7 +2,7 @@
 module Data.Array.Repa.Internals.Forcing
 	( toVector
 	, toList
-	, force,  forceInto
+	, force,  forceIntoPtr
 	, force2)
 where
 import Data.Array.Repa.Internals.EvalChunked
@@ -77,12 +77,12 @@ force arr
 
 -- | Force an array, writing elements into a `Ptr`.
 --   The array is split into linear chunks and each chunk is evaluated in parallel.
-forceInto
+forceIntoPtr
         :: (Shape sh, Elt a, Storable a)
         => Ptr a -> Array sh a -> IO ()
 
-{-# INLINE [2] forceInto #-}        
-forceInto !ptr arr@(Array sh _)
+{-# INLINE [2] forceIntoPtr #-}        
+forceIntoPtr !ptr arr@(Array sh _)
         = fillChunkedP
                 (S.size sh)
                 (pokeElemOff ptr)

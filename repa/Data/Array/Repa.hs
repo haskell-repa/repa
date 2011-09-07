@@ -50,7 +50,7 @@ module Data.Array.Repa
 
 	-- from Data.Array.Repa.Interlals.Forcing -------------------
 	-- * Forcing
-	, force, forceInto
+	, force, forceIntoPtr
 	, force2
 	, toVector
 	, toList
