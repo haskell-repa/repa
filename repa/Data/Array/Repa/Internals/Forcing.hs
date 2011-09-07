@@ -120,7 +120,7 @@ forceWith2
         -> Array DIM2 a
         -> IO ()
 
-{-# INLINE forceWith2 #-}
+{-# INLINE [2] forceWith2 #-}
 forceWith2 !write arr
  = arr `deepSeqArray`
    case arr of
@@ -129,7 +129,7 @@ forceWith2 !write arr
 	Array _ [Region RangeAll (GenManifest _)]
  	 -> forceWith write arr
 
-	-- NOTE We must specialise this for common numbers of resions so that
+	-- NOTE We must specialise this for common numbers of regions so that
 	--      we get fusion for them. If we just have the last case (arbitrary
 	--      region list) then the worker won't fuse with the filling /
 	--      evaluation code.
@@ -139,17 +139,6 @@ forceWith2 !write arr
 	Array sh [r1, r2]
  	 -> do	fillRegion2P write sh r1
 		fillRegion2P write sh r2
-
-	Array sh [r1, r2, r3]
- 	 -> do	fillRegion2P write sh r1
-		fillRegion2P write sh r2
-		fillRegion2P write sh r3
-
-	Array sh [r1, r2, r3, r4]
- 	 -> do	fillRegion2P write sh r1
-		fillRegion2P write sh r2
-		fillRegion2P write sh r3
-		fillRegion2P write sh r4
 
 	Array sh regions
  	 -> do	mapM_ (fillRegion2P write sh) regions
