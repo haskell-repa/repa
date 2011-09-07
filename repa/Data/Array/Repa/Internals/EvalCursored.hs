@@ -7,7 +7,6 @@ where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Internals.Gang
-import Data.Vector.Unboxed.Mutable		as VM
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
 
@@ -18,7 +17,7 @@ import Prelude					as P
 --   We divide the block into columns, and give one column to each thread.
 fillCursoredBlock2P
 	:: Elt a
-	=> IOVector a		-- ^ vector to write elements into
+	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer
 	-> (DIM2   -> cursor)		-- ^ make a cursor to a particular element
 	-> (DIM2   -> cursor -> cursor)	-- ^ shift the cursor by an offset
 	-> (cursor -> a)		-- ^ fn to evaluate an element at the given index.
@@ -31,7 +30,7 @@ fillCursoredBlock2P
 
 {-# INLINE [0] fillCursoredBlock2P #-}
 fillCursoredBlock2P
-	!vec
+	!write
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
 	!imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
@@ -59,7 +58,7 @@ fillCursoredBlock2P
 		!y0'	= y0
 		!y1'	= y1
 	   in	fillCursoredBlock2
-			vec
+			write
 			makeCursorFCB shiftCursorFCB getElemFCB
 			imageWidth x0' y0' x1' y1'
 
@@ -68,7 +67,7 @@ fillCursoredBlock2P
 --   Coordinates given are of the filled edges of the block.
 fillCursoredBlock2
 	:: Elt a
-	=> IOVector a			-- ^ vector to write elements into.
+	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer
 	-> (DIM2   -> cursor)		-- ^ make a cursor to a particular element
 	-> (DIM2   -> cursor -> cursor)	-- ^ shift the cursor by an offset
 	-> (cursor -> a)		-- ^ fn to evaluate an element at the given index.
@@ -81,7 +80,7 @@ fillCursoredBlock2
 
 {-# INLINE [0] fillCursoredBlock2 #-}
 fillCursoredBlock2
-	!vec
+	!write
 	!makeCursor !shiftCursor !getElem
 	!imageWidth !x0 !y0 !x1 !y1
 
@@ -122,16 +121,16 @@ fillCursoredBlock2
 
 			-- Compute cursor into destination array.
 			let !dstCur0	= x + y * imageWidth
-			VM.unsafeWrite vec (dstCur0)     val0
-			VM.unsafeWrite vec (dstCur0 + 1) val1
-			VM.unsafeWrite vec (dstCur0 + 2) val2
-			VM.unsafeWrite vec (dstCur0 + 3) val3
+			write (dstCur0)     val0
+			write (dstCur0 + 1) val1
+			write (dstCur0 + 2) val2
+			write (dstCur0 + 3) val3
 			fillLine4 (x + 4)
 
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x
  	   	 | x > x1		= return ()
 	   	 | otherwise
-	   	 = do	VM.unsafeWrite vec (x + y * imageWidth) (getElem $ makeCursor (Z :. y :. x))
+	   	 = do	write (x + y * imageWidth) (getElem $ makeCursor (Z :. y :. x))
 			fillLine1 (x + 1)
 

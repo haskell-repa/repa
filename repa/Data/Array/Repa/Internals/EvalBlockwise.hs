@@ -1,4 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
+
+-- | Old non-cursored, blockwise filling functions.
+--   NOTE: this isn't currently used.
 module Data.Array.Repa.Internals.EvalBlockwise
 	( fillVectorBlockwiseP
 	, fillVectorBlock

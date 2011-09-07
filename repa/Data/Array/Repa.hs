@@ -9,6 +9,12 @@
 --   There is a draft tutorial at <http://www.haskell.org/haskellwiki/Numeric_Haskell:_A_Repa_Tutorial>
 --
 -- @Release Notes:
+--  For 2.2.0.1:
+--   * Added unsafeFromForeignPtr, which helps use foreign source
+--     arrays without intermediate copying.
+--   * Added forceWith and forceWith2, which can be used to force
+--     arrays into foreign result buffers without intermediate copying.
+--
 --  For 2.1.0.1:
 --   * The fold and foldAll functions now run in parallel and require the
 --     starting element to be neutral with respect to the reduction operator.
@@ -50,8 +56,8 @@ module Data.Array.Repa
 
 	-- from Data.Array.Repa.Interlals.Forcing -------------------
 	-- * Forcing
-	, force, forceIntoPtr
-	, force2
+	, force,  forceWith
+	, force2, forceWith2
 	, toVector
 	, toList
 
