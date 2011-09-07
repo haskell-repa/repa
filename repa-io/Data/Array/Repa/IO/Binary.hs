@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Array.Repa.IO.Binary
-        (readArrayFromStorableFile)
+        ( readArrayFromStorableFile
+        , writeArrayToStorableFile)
 where
 import Foreign.Storable
 import Foreign.Ptr
@@ -16,7 +17,6 @@ import Control.Monad
 -- | Read an array from a file.
 --   Data appears in host byte order.
 --   If the file size does match the provided shape then `error`.
--- 
 readArrayFromStorableFile 
         :: forall a sh
         .  (Shape sh, Storable a, Elt a)
@@ -52,5 +52,29 @@ readArrayFromStorableFile filePath sh
 
         hClose h
         fptr     <- newForeignPtr finalizerFree buf        
+
+        -- Converting the foreign ptr like this means that the array
+        -- elements are used directly from the buffer, and not copied.
         let arr  =  R.unsafeFromForeignPtr sh fptr
+
         return   $  arr `asTypeOf` fake
+
+
+-- | Write an array to a file.
+--   Data appears in host byte order.
+writeArrayToStorableFile
+        :: (Shape sh, Storable a, Elt a)
+        => FilePath 
+        -> Array sh a
+        -> IO ()
+
+writeArrayToStorableFile filePath arr
+ = do   let bytes1      = sizeOf (arr R.! R.zeroDim)
+        let bytesTotal  = bytes1 * (R.size $ R.extent arr)
+        
+        buf :: Ptr a    <- mallocBytes bytesTotal
+        R.forceIntoPtr buf arr
+        
+        h <- openBinaryFile filePath WriteMode
+        hPutBuf h buf bytesTotal 
+        hClose h
