@@ -49,7 +49,7 @@ toList arr
 force	:: (Shape sh, Elt a)
 	=> Array sh a -> Array sh a
 
-{-# INLINE [2] force #-}
+{-# INLINE [3] force #-}
 force arr
  = unsafePerformIO
  $ do	(sh, vec)	<- forceIO arr
@@ -78,18 +78,19 @@ forceWith
         -> Array sh a
         -> IO ()
 
-{-# INLINE [2] forceWith #-}        
-forceWith !update arr@(Array sh _)
-        = fillChunkedP  
-                (S.size sh)
-		update
-		(\ix -> arr `unsafeIndex` fromIndex sh ix)
+{-# INLINE [3] forceWith #-}        
+forceWith !update !arr@(Array sh _)
+ = arr `deepSeqArray` 
+   fillChunkedP  
+           (S.size sh)
+	   update
+   	   (\ix -> arr `unsafeIndex` fromIndex sh ix)
 
 
 -- | Force an array, so that it becomes `Manifest`.
 --   This forcing function is specialised for DIM2 arrays, and does blockwise filling.
 force2	:: Elt a => Array DIM2 a -> Array DIM2 a
-{-# INLINE [2] force2 #-}
+{-# INLINE [3] force2 #-}
 force2 arr
  = unsafePerformIO
  $ do	(sh, vec)	<- forceIO2 arr
@@ -120,7 +121,7 @@ forceWith2
         -> Array DIM2 a
         -> IO ()
 
-{-# INLINE [2] forceWith2 #-}
+{-# INLINE [3] forceWith2 #-}
 forceWith2 !write arr
  = arr `deepSeqArray`
    case arr of
@@ -159,7 +160,7 @@ fillRegion2P
 	-> Region DIM2 a	-- ^ Region to fill.
 	-> IO ()
 
-{-# INLINE [1] fillRegion2P #-}
+{-# INLINE [2] fillRegion2P #-}
 fillRegion2P write sh@(_ :. height :. width) (Region range gen)
  = write `seq` height `seq` width `seq`
    case range of
@@ -199,12 +200,13 @@ fillRect2
 	-> Rect DIM2		-- ^ Rectangle to fill.
 	-> IO ()
 
-{-# INLINE fillRect2 #-}
+{-# INLINE [1] fillRect2 #-}
 fillRect2 write sh@(_ :. _ :. width) gen (Rect (Z :. y0 :. x0) (Z :. y1 :. x1))
  = write `seq` width `seq` y0 `seq` x0 `seq` y1 `seq` x1 `seq`
    case gen of
 	GenManifest vec
-	 -> fillCursoredBlock2P write
+	 -> vec `seq` 
+  	    fillCursoredBlock2P write
 		id addDim (\ix -> vec `V.unsafeIndex` toIndex sh ix)
 		width x0 y0 x1 y1
 
