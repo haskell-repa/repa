@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards #-}
+{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards, MagicHash #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 -- | Canny edge detector.
@@ -18,6 +18,7 @@ import Data.Array.Repa.Specialised.Dim2
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude					hiding (compare)
+import GHC.Exts
 
 import System.IO.Unsafe
 import qualified Data.Vector.Unboxed.Mutable	as VM
@@ -29,11 +30,11 @@ type Image a	= Array DIM2 a
 -- Constants ------------------------------------------------------------------
 -- TODO: It would be better to use Word8 to represent the edge orientations,
 --       but doing so currently triggers a bug in the LLVM mangler.
-orientUndef	= 0	:: Float
-orientPosDiag	= 64	:: Float
-orientVert	= 128	:: Float
-orientNegDiag	= 192	:: Float
-orientHoriz	= 255	:: Float
+orientUndef	= 0	:: Int
+orientPosDiag	= 64	:: Int
+orientVert	= 128	:: Int
+orientNegDiag	= 192	:: Int
+orientHoriz	= 255	:: Int
 
 data Edge	= None | Weak | Strong
 edge None	= 0 	:: Word8
@@ -200,7 +201,7 @@ gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 
 -- | Classify the magnitude and orientation of the vector gradient.
 {-# NOINLINE gradientMagOrient #-}
-gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Float)
+gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Int)
 gradientMagOrient !threshLow 
  	dX@(Array _ [Region RangeAll (GenManifest _)])
 	dY@(Array _ [Region RangeAll (GenManifest _)])
@@ -209,7 +210,7 @@ gradientMagOrient !threshLow
  $ R.zipWith magOrient dX dY
 
  where	{-# INLINE magOrient #-}
-	magOrient :: Float -> Float -> (Float, Float)
+	magOrient :: Float -> Float -> (Float, Int)
 	magOrient !x !y
 		= (magnitude x y, orientation x y)
 	
@@ -219,13 +220,13 @@ gradientMagOrient !threshLow
 		= sqrt (x * x + y * y)
 	
 	{-# INLINE orientation #-}
-	orientation :: Float -> Float -> Float
+	orientation :: Float -> Float -> Int
 	orientation !x !y
 
 	 -- Don't bother computing orientation if vector is below threshold.
  	 | x >= negate threshLow, x < threshLow
  	 , y >= negate threshLow, y < threshLow
- 	 = orientUndef
+ 	 = orientUndef 
 
 	 | otherwise
 	 = let	-- Determine the angle of the vector and rotate it around a bit
@@ -237,30 +238,35 @@ gradientMagOrient !threshLow
 		!dNorm	= if dRot < 0 then dRot + 8 else dRot
 
 		-- Doing explicit tests seems to be faster than using the FP floor function.
-	   in	if dNorm >= 4
-		 then if dNorm >= 6
-			then if dNorm >= 7
-				then orientHoriz   -- 7
-				else orientNegDiag -- 6
+	   in	I# (if dNorm >= 4
+		     then if dNorm >= 6
+	   		  then if dNorm >= 7
+			  	then 255#               -- 7
+				else 192#               -- 6
 
-			else if dNorm >= 5
-				then orientVert    -- 5
-				else orientPosDiag -- 4
+			  else if dNorm >= 5
+				then 128#               -- 5
+				else 64#                -- 4
 
-		 else if dNorm >= 2
+		     else if dNorm >= 2
 			then if dNorm >= 3
-				then orientHoriz   -- 3
-				else orientNegDiag -- 2
+				then 255#               -- 3
+				else 192#               -- 2
 
 			else if dNorm >= 1
-				then orientVert    -- 1
-				else orientPosDiag -- 0
+				then 128#               -- 1
+				else 64#)               -- 0
 
+-- orientUndef  	= 0	:: Int
+-- orientPosDiag	= 64	:: Int
+-- orientVert	        = 128	:: Int
+-- orientNegDiag	= 192	:: Int
+-- orientHoriz	        = 255	:: Int
 
 -- | Suppress pixels that are not local maxima, and use the magnitude to classify maxima
 --   into strong and weak (potential) edges.
 {-# NOINLINE suppress #-}
-suppress :: Float -> Float -> Image (Float, Float) -> Image Word8
+suppress :: Float -> Float -> Image (Float, Int) -> Image Word8
 suppress threshLow threshHigh
 	   dMagOrient@(Array shSrc [Region RangeAll (GenManifest _)]) 
  = dMagOrient `deepSeqArray` force2 
@@ -273,9 +279,9 @@ suppress threshLow threshHigh
 	 | o == orientUndef     = edge None
          | o == orientHoriz	= isMax (getMag (sh :. i   :. j-1)) (getMag (sh :. i   :. j+1)) 
          | o == orientVert	= isMax (getMag (sh :. i-1 :. j))   (getMag (sh :. i+1 :. j)) 
-         | o == orientNegDiag	= isMax (getMag (sh :. i-1 :. j-1)) (getMag (sh :. i+1 :. j+1)) 
-         | o == orientPosDiag	= isMax (getMag (sh :. i-1 :. j+1)) (getMag (sh :. i+1 :. j-1)) 
-         | otherwise 		= edge None
+         | o == orientNegDiag   = isMax (getMag (sh :. i-1 :. j-1)) (getMag (sh :. i+1 :. j+1)) 
+         | o == orientPosDiag   = isMax (getMag (sh :. i-1 :. j+1)) (getMag (sh :. i+1 :. j-1)) 
+         | otherwise            = edge None
       
          where
           !o 		= getOrient d  
