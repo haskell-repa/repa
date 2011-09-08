@@ -1,5 +1,5 @@
 Name:                repa-repr
-Version:             2.2.0.1
+Version:             3.0.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -48,10 +48,14 @@ Library
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
+        Data.Array.Repa.Eval
 
   Other-modules:
         Data.Array.Repa.Base
+        Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.List
         Data.Array.Repa.Repr.Unboxed
-        Data.Array.Repa.Operators.Mapping
+        Data.Array.Repa.Eval.Elt
+        Data.Array.Repa.Eval.Chunked
+        
