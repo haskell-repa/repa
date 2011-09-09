@@ -7,11 +7,11 @@ module Data.Array.Repa.Base
 where
 import Data.Array.Repa.Shape
 
--- | Array type with a shape, representation tag, and element type
+-- | Arrays with a representation tag, shape, and element type.
 data family Array r sh e
 
 
--- | Operators that array representations implement differently. 
+-- | Operators that work directly on the array representation. 
 class Repr r e where
  index        :: Shape sh => Array r sh e -> sh -> e
 

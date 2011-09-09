@@ -11,7 +11,7 @@ import Data.Array.Repa.Repr.Delayed
 
 
 -- | Unstructured traversal.
-traverse
+traverse, unsafeTraverse
 	:: forall r sh sh' a b
 	.  (Shape sh, Shape sh', Repr r a)
 	=> Array r sh a		        -- ^ Source array.

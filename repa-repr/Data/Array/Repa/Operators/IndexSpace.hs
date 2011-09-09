@@ -81,7 +81,6 @@ transpose arr
 
 
 -- | Extend an array, according to a given slice specification.
---   (used to be called replicate).
 extend
 	:: ( Slice sl
 	   , Shape (FullShape sl)

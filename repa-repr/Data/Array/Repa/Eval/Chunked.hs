@@ -1,9 +1,8 @@
--- | Evaluate a vector by breaking it up into linear chunks and filling each chunk
---   in parallel.
-{-# LANGUAGE BangPatterns #-}
+-- | Evaluate an array by breaking it up into linear chunks and filling
+--   each chunk in parallel.
 module Data.Array.Repa.Eval.Chunked
-	( fillChunkedS
-	, fillChunkedP)
+	( fillChunkedP
+	, fillChunkedS)
 where
 import Data.Array.Repa.Eval.Gang
 import GHC.Base		(remInt, quotInt)

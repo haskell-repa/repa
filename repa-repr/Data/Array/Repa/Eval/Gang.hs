@@ -28,7 +28,7 @@ import System.Time ( ClockTime(..), getClockTime )
 #endif
 
 -- TheGang ----------------------------------------------------------------------------------------
--- | The gang is shared by all computations.
+-- | This auto-initialized gang is shared by all Repa computations.
 theGang :: Gang
 {-# NOINLINE theGang #-}
 theGang = unsafePerformIO $ forkGang numCapabilities

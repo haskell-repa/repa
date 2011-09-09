@@ -3,6 +3,8 @@ module Data.Array.Repa
         ( module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
         , module Data.Array.Repa.Slice
+
+        -- * Basic types and functions
         , Array
         , Repr(..)
         , Load(..)

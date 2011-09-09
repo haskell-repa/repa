@@ -36,14 +36,15 @@ Library
         -fcpr-off
 
   extensions:
+        NoMonomorphismRestriction
+        ExplicitForAll
         EmptyDataDecls
+        BangPatterns
         TypeFamilies
         MultiParamTypeClasses
         FlexibleInstances
         FlexibleContexts
         StandaloneDeriving
-        ExplicitForAll
-        NoMonomorphismRestriction
 
   Exposed-modules:
         Data.Array.Repa
@@ -54,11 +55,14 @@ Library
 
   Other-modules:
         Data.Array.Repa.Base
+        Data.Array.Repa.Operators.IndexSpace
         Data.Array.Repa.Operators.Mapping
+        Data.Array.Repa.Operators.Traversal
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.List
         Data.Array.Repa.Repr.Unboxed
         Data.Array.Repa.Eval.Elt
+        Data.Array.Repa.Eval.Gang
         Data.Array.Repa.Eval.Chunked
-
+        Data.Array.Repa.Eval.Cursored
         

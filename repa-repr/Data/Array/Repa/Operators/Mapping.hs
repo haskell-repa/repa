@@ -16,8 +16,6 @@ import Prelude hiding (map, zipWith)
 
 -- | Apply a worker function to each element of an array, yielding a new array with the same extent.
 --
---   This is specialised for arrays of up to four regions, using more breaks fusion.
---
 map     :: (Shape sh, Repr r a)
         => (a -> b) -> Array r sh a -> Array D sh b
 {-# INLINE map #-}
