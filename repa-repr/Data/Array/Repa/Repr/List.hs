@@ -45,7 +45,7 @@ instance Load L L e where
 
 instance Load D L e where
  {-# INLINE load #-}
- load (Delayed sh getElem)
+ load (ADelayed sh getElem)
         = AList sh
         $ [getElem (fromIndex sh ix) 
                 | ix <- [0 .. size sh - 1]]
@@ -58,6 +58,7 @@ fromList sh xs = AList sh xs
 
 
 -- | Convert an array to a flat list.
+-- 
 toList :: Shape sh => Array L sh e -> [e]
 {-# INLINE toList #-}
 toList arr

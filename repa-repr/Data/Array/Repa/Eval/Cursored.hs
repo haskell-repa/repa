@@ -2,15 +2,34 @@
 -- | Evaluate an array by dividing it into rectangular blocks and filling
 --   each block in parallel.
 module Data.Array.Repa.Eval.Cursored
-	( fillCursoredBlock2P
+	( fillBlock2P
+	, fillCursoredBlock2P
 	, fillCursoredBlock2S )
 where
 import Data.Array.Repa.Index
+import Data.Array.Repa.Shape
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Gang
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
 
+-- Non-cursored interface -------------------------------------------------------------------------
+fillBlock2P 
+        :: Elt a
+	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
+        -> (DIM2 -> a)          -- ^ fn to evaluate an element at the given index
+	-> Int			-- ^ width of whole image
+	-> Int			-- ^ x0 lower left corner of block to fill
+	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ x1 upper right corner of block to fill
+	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
+        -> IO ()
+
+{-# INLINE [0] fillBlock2P #-}
+fillBlock2P !write !getElem !imageWidth !x0 !y0 !x1 !y1
+ = fillCursoredBlock2P 
+        write id addDim getElem 
+        imageWidth x0 y0 x1 y1
 
 -- Block filling ----------------------------------------------------------------------------------
 -- | Fill a block in a 2D image, in parallel.

@@ -21,7 +21,7 @@ map     :: (Shape sh, Repr r a)
 {-# INLINE map #-}
 map f arr
  = case load arr of
-        Delayed sh g    -> Delayed sh (f . g)
+        ADelayed sh g    -> ADelayed sh (f . g)
 
 
 -- | Combine two arrays, element-wise, with a binary operator.

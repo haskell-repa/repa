@@ -2,10 +2,11 @@
 module Data.Array.Repa.Base
         ( Array
         , Repr (..)
-        , Load (..)
+        , Load (..), Load2(..)
         , deepSeqArrays)
 where
 import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
 
 -- | Arrays with a representation tag, shape, and element type.
 data family Array r sh e
@@ -34,9 +35,17 @@ class Repr r e where
 --     parallel copy, depending on whether the two representations can be easily
 --     converted.
 --
-class (Repr r1 e, Repr r2 e) => Load r1 r2 e where
+class Load r1 r2 e where
  load :: Shape sh => Array r1 sh e  -> Array r2 sh e
 
+-- | Array loading specialised to rank-2 arrays.
+--
+--  * Instances should perform cache-friendly blockwise filling.
+-- 
+--  * This is instantiated to arrays with 5 partitions, so that you can use 
+--    separate element functions for the border and internal regions.
+class Load2 r1 r2 e where
+ load2 :: Array r1 DIM2 e -> Array r2 DIM2 e
 
 
 deepSeqArrays 

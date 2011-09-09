@@ -12,31 +12,31 @@ import Data.Array.Repa.Base
 -- | Delayed arrays are represented as functions from the index to element value.
 data D
 data instance Array D sh e
-        = Delayed  sh (sh -> e)
+        = ADelayed  sh (sh -> e)
 
 
 instance Repr D a where
  {-# INLINE index #-}
- index  (Delayed _ f) ix
+ index  (ADelayed _ f) ix
         = f ix
 
  {-# INLINE extent #-}
- extent (Delayed sh _)
+ extent (ADelayed sh _)
         = sh
 
  {-# INLINE deepSeqArray #-}
- deepSeqArray (Delayed sh f) y
+ deepSeqArray (ADelayed sh f) y
         = sh `deepSeq` f `seq` y
 
 instance Repr r1 e => Load r1 D e where
  {-# INLINE load #-}
- load arr = Delayed (extent arr) (\ix -> index arr ix)
+ load arr = ADelayed (extent arr) (\ix -> index arr ix)
 
 
 -- | O(1). Wrap a function as a delayed array.
 fromFunction :: sh -> (sh -> a) -> Array D sh a
 {-# INLINE fromFunction #-}
-fromFunction sh f = Delayed sh f
+fromFunction sh f = ADelayed sh f
 
 
 -- | O(1). Unpack an array to a function,
@@ -47,7 +47,7 @@ toFunction
 {-# INLINE toFunction #-}
 toFunction arr
  = case load arr of
-        Delayed sh f      -> (sh, f)
+        ADelayed sh f      -> (sh, f)
 
 
 -- | O(1). Delay an array.

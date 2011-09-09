@@ -14,13 +14,10 @@ import GHC.Int
 -- values. The argument type has kind ?, not just * or #.
 
 -- | Element types that can be stored in Repa arrays.
---   Repa uses `Data.Vector.Unboxed` to store the actual data. The implementation
---   of this library is based on type families and picks an efficient, specialised
---   representation for every element type. In particular, unboxed vectors of pairs
---   are represented as pairs of unboxed vectors.
 class Elt a where
 
 	-- | We use this to prevent bindings from being floated inappropriatey.
+	--
 	--   Doing a `seq` sometimes isn't enough, because the GHC simplifier can
 	--   erase these, and/or still move around the bindings.
 	touch :: a -> IO ()
