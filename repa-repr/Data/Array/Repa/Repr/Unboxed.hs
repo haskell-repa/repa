@@ -24,10 +24,17 @@ instance U.Unbox a => Repr U a where
  index  (AUnboxed sh  vec) ix 
         = vec U.! toIndex sh ix
 
+ {-# INLINE unsafeIndex #-}
+ unsafeIndex (AUnboxed sh vec) ix
+        = vec `U.unsafeIndex` toIndex sh ix
+
  {-# INLINE extent #-}
  extent (AUnboxed sh _)
         = sh
 
+ {-# INLINE deepSeqArray #-}
+ deepSeqArray (AUnboxed sh vec) x 
+  = sh `deepSeq` vec `seq` x
 
 instance U.Unbox e => Load U U e where
  {-# INLINE load #-}

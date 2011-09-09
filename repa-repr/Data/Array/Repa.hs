@@ -6,6 +6,7 @@ module Data.Array.Repa
         , Array
         , Repr(..)
         , Load(..)
+        , deepSeqArrays
         
         -- * Delayed representation
         , D, fromFunction, toFunction

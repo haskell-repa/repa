@@ -14,11 +14,15 @@ solveLaplace
 	-> Array U DIM2 Double
 
 {-# NOINLINE solveLaplace #-}
-solveLaplace steps arrBoundMask arrBoundValue arrInit
- = go steps arrInit
- where	go !i !arr
-	   | i == 0	= arr
-	   | otherwise	= go (i - 1) $ relaxLaplace arrBoundMask arrBoundValue arr
+solveLaplace !steps !arrBoundMask !arrBoundValue !arrInit
+ = [arrBoundMask, arrBoundValue, arrInit] `deepSeqArrays`
+   go steps arrInit
+ where  go :: Int -> Array U DIM2 Double -> Array U DIM2 Double
+        go !i !arr
+         | i == 0    = arr
+         | otherwise 
+         = let arr' = relaxLaplace arrBoundMask arrBoundValue arr
+           in  arr' `deepSeqArray` go (i - 1) arr'               
 
 
 -- | Perform matrix relaxation for the Laplace equation,

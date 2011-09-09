@@ -9,14 +9,11 @@ import Data.Array.Repa.Eval.Gang
 import GHC.Base		(remInt, quotInt)
 import Prelude		as P
 
-
-elem function in IO for Andreas
-
 -- | Fill something sequentially.
 fillChunkedS
 	:: Int                  -- ^ Number of elements
 	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
-	-> (Int -> IO a)	-- ^ Fn to get the value at a given index.
+	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
 	-> IO ()
 
 {-# INLINE [0] fillChunkedS #-}
@@ -33,7 +30,7 @@ fillChunkedS !len !write !getElem
 fillChunkedP
         :: Int                  -- ^ Number of elements
 	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
-	-> (Int -> IO a)	-- ^ Fn to get the value at a given index.
+	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
 	-> IO ()
 
 {-# INLINE [0] fillChunkedP #-}

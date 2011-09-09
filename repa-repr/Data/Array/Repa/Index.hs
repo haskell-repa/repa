@@ -27,7 +27,7 @@ data Z	= Z
 -- | Our index type, used for both shapes and indices.
 infixl 3 :.
 data tail :. head
-	= tail :. head
+	= !tail :. !head
 	deriving (Show, Eq, Ord)
 
 -- Common dimensions
