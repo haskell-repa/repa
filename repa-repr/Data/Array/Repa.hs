@@ -1,11 +1,37 @@
 
+-- | Repa arrays are wrappers around a linear structure that holds the element data.
+--   The representation tag determines what structure holds the data.
+--
+--   Currently supported are:
+--
+--   * `D`  -- Delayed arrays as functions from indices to elements.
+--
+--   * `U`  -- Arrays as adaptive unboxed vectors.
+--
+--   * `B`  -- Arrays as strict ByteStrings. (TODO)
+--
+--   * `F`  -- Arrays as foreign memory buffers. (TODO)
+--
+--   * `L`  -- Arrays as Haskell cons-lists.
+--
+--   * `P`  -- Arrays that are partitioned into several representations.
+--
+--   * `C`  -- Arrays as cursor functions. (TODO)
+--
+--   * `X`  -- Undefined arrays.
+--
+--  Array fusion is achieved via the delayed (`D`) and cursored (`C`) representations. 
+--  At compile time, the GHC simplifier combines the functions contained within `D` and `C` 
+--  arrays without needing to create manifest intermediate arrays. Converting between the
+--  parallel manifest representations (eg `U` and `B`) is either constant time or parallel
+--  copy, depending on the compatability of the physical representation.
+--
 module Data.Array.Repa
-        ( module Data.Array.Repa.Shape
+        ( -- * Array representation
+          Array(..)
+        , module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
         , module Data.Array.Repa.Slice
-
-        -- * Array representation
-        , Array(..)
         , Repr(..)
         , deepSeqArrays
 

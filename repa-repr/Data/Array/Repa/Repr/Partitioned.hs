@@ -52,35 +52,38 @@ inRange (Range _ _ p) ix
 
 -- Load2 ---------------------------------------------------------------------- 
 -- | TODO: check that all of the array sizes match up.
-instance Fill r e
-      => Load2 (P D (P D X)) r e where
+--         add unsafeLoad that doesn't check this.
+instance ( Repr r1 e, Repr r2 e
+         , Fill r0 e)
+      => Load2 (P r1 (P r2 X)) r0 e where
  {-# INLINE load2 #-}
- load2 (APart sh@(Z :. h :. w) (Range ix00 ix01 _) (ADelayed _ getElem1)
-       (APart _                (Range ix10 ix11 _) (ADelayed _ getElem2)
+ load2 (APart sh@(Z :. _h :. w) (Range ix10 ix11 _) arr1
+       (APart _                 (Range ix20 ix21 _) arr2
         AUndefined))
   = unsafePerformIO 
   $ do  (marr :: MArr r e) <- newMArr (size sh) 
-        fillBlock2P' (writeMArr marr) getElem1 w ix00 ix01
-        fillBlock2P' (writeMArr marr) getElem2 w ix10 ix11
+        fillBlock2P' (writeMArr marr) (index arr1) w ix10 ix11
+        fillBlock2P' (writeMArr marr) (index arr2) w ix20 ix21
         unsafeFreezeMArr sh marr 
 
 
-instance Fill r e
-      => Load2 (P D (P D (P D (P D (P D X))))) r e where
+instance ( Repr r1 e, Repr r2 e, Repr r3 e, Repr r4 e, Repr r5 e
+         , Fill r0 e)
+      => Load2 (P r1 (P r2 (P r3 (P r4 (P r5 X))))) r0 e where
  {-# INLINE load2 #-}
- load2 (APart sh@(Z :. h :. w) (Range ix00 ix01 _) (ADelayed _ getElem0)
-       (APart _                (Range ix10 ix11 _) (ADelayed _ getElem1)
-       (APart _                (Range ix20 ix21 _) (ADelayed _ getElem2)
-       (APart _                (Range ix30 ix31 _) (ADelayed _ getElem3)
-       (APart _                (Range ix40 ix41 _) (ADelayed _ getElem4)
+ load2 (APart sh@(Z :. _h :. w) (Range ix10 ix11 _) arr1
+       (APart _                 (Range ix20 ix21 _) arr2
+       (APart _                 (Range ix30 ix31 _) arr3
+       (APart _                 (Range ix40 ix41 _) arr4
+       (APart _                 (Range ix50 ix51 _) arr5
         AUndefined)))))
   = unsafePerformIO 
   $ do  (marr :: MArr r e) <- newMArr (size sh) 
-        fillBlock2P' (writeMArr marr) getElem0 w ix00 ix01
-        fillBlock2P' (writeMArr marr) getElem1 w ix10 ix11
-        fillBlock2P' (writeMArr marr) getElem2 w ix20 ix21
-        fillBlock2P' (writeMArr marr) getElem3 w ix30 ix31
-        fillBlock2P' (writeMArr marr) getElem4 w ix40 ix41
+        fillBlock2P' (writeMArr marr) (index arr1) w ix10 ix11
+        fillBlock2P' (writeMArr marr) (index arr2) w ix20 ix21
+        fillBlock2P' (writeMArr marr) (index arr3) w ix30 ix31
+        fillBlock2P' (writeMArr marr) (index arr4) w ix40 ix41
+        fillBlock2P' (writeMArr marr) (index arr5) w ix50 ix51
         unsafeFreezeMArr sh marr 
 
 

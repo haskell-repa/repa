@@ -12,14 +12,18 @@ import Data.Array.Repa.Index
 data family Array r sh e
 
 
--- | Operators that work directly on the array representation. 
+-- | Class of supported array representations.
+--
+--   These operators are used to read the physical data,
+--   or to compute it for the delayed and cursored representations.
+--
 class Repr r e where
+ extent       :: Shape sh => Array r sh e -> sh
+
  index        :: Shape sh => Array r sh e -> sh -> e
 
  unsafeIndex  :: Shape sh => Array r sh e -> sh -> e
  unsafeIndex = index
- 
- extent       :: Shape sh => Array r sh e -> sh
 
  deepSeqArray :: Shape sh => Array r sh e -> b -> b
 
