@@ -19,14 +19,32 @@ module Data.Array.Repa
         -- * List representation
         , L, fromList, toList
         
-        -- * Mapping
-        , map
-        , zipWith
-        , (+^), (-^), (*^), (/^)
-        
-        -- * Traversal
-        , traverse, unsafeTraverse)
-        
+	-- from Data.Array.Repa.Operators.IndexSpace ----------------
+	-- * Index space transformations
+	, reshape
+	, append, (++)
+	, transpose
+	, extend
+	, slice
+	, backpermute
+	, backpermuteDft
+
+	-- from Data.Array.Repa.Operators.Mapping -------------------
+        -- * Structure preserving operations
+	, map
+	, zipWith
+	, (+^), (-^), (*^), (/^)
+
+	-- from Data.Array.Repa.Operators.Traversal ------------------
+	-- * Generic Traversal
+	, traverse
+	, traverse2
+	, traverse3
+	, traverse4
+	, unsafeTraverse
+	, unsafeTraverse2
+	, unsafeTraverse3
+	, unsafeTraverse4)        
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
@@ -37,4 +55,5 @@ import Data.Array.Repa.Repr.List
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
+import Data.Array.Repa.Operators.IndexSpace
 import Prelude ()
