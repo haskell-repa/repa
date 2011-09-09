@@ -24,6 +24,9 @@ instance Repr D a where
  extent (Delayed sh _)
         = sh
 
+ {-# INLINE deepSeqArray #-}
+ deepSeqArray (Delayed sh f) y
+        = sh `deepSeq` f `seq` y
 
 instance Repr r1 e => Load r1 D e where
  {-# INLINE load #-}

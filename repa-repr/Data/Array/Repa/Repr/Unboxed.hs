@@ -36,6 +36,7 @@ instance U.Unbox a => Repr U a where
  deepSeqArray (AUnboxed sh vec) x 
   = sh `deepSeq` vec `seq` x
 
+
 instance U.Unbox e => Load U U e where
  {-# INLINE load #-}
  load arr = arr

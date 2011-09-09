@@ -29,6 +29,14 @@ instance Repr L a where
  extent (AList sh _)
         = sh
 
+ {-# INLINE deepSeqArray #-}
+ deepSeqArray (AList sh xx) y
+  = sh `deepSeq` (xx `deepSeqList` y)
+  where deepSeqList xx' y'
+         = case xx' of
+                []      -> y'
+                x : xs  -> x `seq` deepSeqList xs `seq` y'
+
 
 instance Load L L e where
  {-# INLINE load #-}
