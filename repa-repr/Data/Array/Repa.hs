@@ -41,25 +41,27 @@ module Data.Array.Repa
         -- * Loading between representations
         , Load(..), Load2(..)
 
-        -- * Delayed representation
+        -- * Representations
+        -- ** Delayed representation
         , D, fromFunction, toFunction
         , delay, copy
 
-        -- * Unboxed vector representation
+        -- ** Unboxed vector representation
         , U, fromUnboxed, toUnboxed
         , force
 
-        -- * List representation
+        -- ** List representation
         , L, fromList, toList
 
-        -- * Partitioned array representation
+        -- ** Partitioned array representation
         , P, Range(..), inRange
 
-        -- * Undefined arrays
+        -- ** Undefined arrays
         , X
                 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
-	-- * Index space transformations
+        -- * Operators
+	-- ** Index space transformations
 	, reshape
 	, append, (++)
 	, transpose
@@ -69,13 +71,13 @@ module Data.Array.Repa
 	, backpermuteDft
 
 	-- from Data.Array.Repa.Operators.Mapping -------------------
-        -- * Structure preserving operations
+        -- ** Structure preserving operations
 	, map
 	, zipWith
 	, (+^), (-^), (*^), (/^)
 
 	-- from Data.Array.Repa.Operators.Traversal ------------------
-	-- * Generic Traversal
+	-- ** Generic Traversal
 	, traverse
 	, traverse2
 	, traverse3
