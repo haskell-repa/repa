@@ -12,8 +12,12 @@ data family Array r sh e
 
 -- | Operators that array representations implement differently. 
 class Repr r e where
- index  :: Shape sh => Array r sh e -> sh -> e
- extent :: Shape sh => Array r sh e -> sh
+ index       :: Shape sh => Array r sh e -> sh -> e
+
+ unsafeIndex :: Shape sh => Array r sh e -> sh -> e
+ unsafeIndex = index
+ 
+ extent      :: Shape sh => Array r sh e -> sh
 
 
 -- | Load array data between representations.

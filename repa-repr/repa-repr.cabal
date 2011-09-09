@@ -42,6 +42,8 @@ Library
         FlexibleInstances
         FlexibleContexts
         StandaloneDeriving
+        ExplicitForAll
+        NoMonomorphismRestriction
 
   Exposed-modules:
         Data.Array.Repa
@@ -58,4 +60,5 @@ Library
         Data.Array.Repa.Repr.Unboxed
         Data.Array.Repa.Eval.Elt
         Data.Array.Repa.Eval.Chunked
+
         

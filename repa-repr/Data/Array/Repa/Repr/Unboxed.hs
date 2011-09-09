@@ -13,7 +13,7 @@ import qualified Data.Vector.Unboxed      as U
 -- | Unboxed arrays are represented as unboxed vectors.
 data U
 data instance Array U sh e
-        = AUnboxed sh (U.Vector e)
+        = AUnboxed sh !(U.Vector e)
         
 deriving instance (Show sh, Show e, U.Unbox e)
         => Show (Array U sh e)
