@@ -20,6 +20,7 @@ deriving instance (Show sh, Show e)
         => Show (Array L sh e)
 
 
+-- | O(n) Indexing into a list.
 instance Repr L a where
  {-# INLINE index #-}
  index  (AList sh lst) ix
@@ -37,13 +38,13 @@ instance Repr L a where
                 []      -> y'
                 x : xs  -> x `seq` deepSeqList xs `seq` y'
 
-
-instance Load L L e where
+-- | no-op.
+instance Shape sh => Load L L sh e where
  {-# INLINE load #-}
  load arr = arr
 
-
-instance Load D L e where
+-- | Sequential computation of list elements.
+instance Shape sh => Load D L sh e where
  {-# INLINE load #-}
  load (ADelayed sh getElem)
         = AList sh

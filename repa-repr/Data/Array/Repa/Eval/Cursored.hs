@@ -16,9 +16,9 @@ import Prelude					as P
 -- Non-cursored interface -------------------------------------------------------------------------
 fillBlock2P 
         :: Elt a
-	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
-        -> (DIM2 -> a)          -- ^ fn to evaluate an element at the given index
-	-> Int			-- ^ width of whole image
+	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
+        -> (DIM2 -> a)          -- ^ Function to evaluate the element at an index.
+	-> Int			-- ^ Width of the whole array.
 	-> Int			-- ^ x0 lower left corner of block to fill
 	-> Int			-- ^ y0 (low x and y value)
 	-> Int			-- ^ x1 upper right corner of block to fill
@@ -32,16 +32,16 @@ fillBlock2P !write !getElem !imageWidth !x0 !y0 !x1 !y1
         imageWidth x0 y0 x1 y1
 
 -- Block filling ----------------------------------------------------------------------------------
--- | Fill a block in a 2D image, in parallel.
+-- | Fill a block in a 2D array, in parallel.
 --   Coordinates given are of the filled edges of the block.
 --   We divide the block into columns, and give one column to each thread.
 fillCursoredBlock2P
 	:: Elt a
-	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer
-	-> (DIM2   -> cursor)		-- ^ make a cursor to a particular element
-	-> (DIM2   -> cursor -> cursor)	-- ^ shift the cursor by an offset
-	-> (cursor -> a)		-- ^ fn to evaluate an element at the given index.
-	-> Int			-- ^ width of whole image
+	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer.
+	-> (DIM2   -> cursor)		-- ^ Make a cursor to a particular element.
+	-> (DIM2   -> cursor -> cursor)	-- ^ Shift the cursor by an offset.
+	-> (cursor -> a)		-- ^ Function to evaluate the element at an index.
+	-> Int			-- ^ Width of the whole array.
 	-> Int			-- ^ x0 lower left corner of block to fill
 	-> Int			-- ^ y0 (low x and y value)
 	-> Int			-- ^ x1 upper right corner of block to fill
@@ -87,14 +87,14 @@ fillCursoredBlock2P
 --   Coordinates given are of the filled edges of the block.
 fillCursoredBlock2S
 	:: Elt a
-	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer
-	-> (DIM2   -> cursor)		-- ^ make a cursor to a particular element
-	-> (DIM2   -> cursor -> cursor)	-- ^ shift the cursor by an offset
-	-> (cursor -> a)		-- ^ fn to evaluate an element at the given index.
-	-> Int				-- ^ width of whole image
-	-> Int				-- ^ x0 lower left corner of block to fill
+	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer.
+	-> (DIM2   -> cursor)		-- ^ Make a cursor to a particular element.
+	-> (DIM2   -> cursor -> cursor)	-- ^ Shift the cursor by an offset.
+	-> (cursor -> a)		-- ^ Function to evaluate an element at the given index.
+	-> Int				-- ^ Width of the whole array.
+	-> Int				-- ^ x0 lower left corner of block to fill.
 	-> Int				-- ^ y0 (low x and y value)
-	-> Int				-- ^ x1 upper right corner of block to fill
+	-> Int				-- ^ x1 upper right corner of block to fill.
 	-> Int				-- ^ y1 (high x and y value, index of last elem to fill)
 	-> IO ()
 

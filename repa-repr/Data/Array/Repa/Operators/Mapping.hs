@@ -20,7 +20,7 @@ map     :: (Shape sh, Repr r a)
         => (a -> b) -> Array r sh a -> Array D sh b
 {-# INLINE map #-}
 map f arr
- = case load arr of
+ = case delay arr of
         ADelayed sh g    -> ADelayed sh (f . g)
 
 

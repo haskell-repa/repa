@@ -5,9 +5,14 @@ module Data.Array.Repa.Repr.Delayed
         , delay
         , copy)
 where
+import Data.Array.Repa.Eval.Elt
+import Data.Array.Repa.Eval.Cursored
+import Data.Array.Repa.Eval.Chunked
+import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
-
+import System.IO.Unsafe
 
 -- | Delayed arrays are represented as functions from the index to element value.
 data D
@@ -15,6 +20,8 @@ data instance Array D sh e
         = ADelayed  sh (sh -> e)
 
 
+-- Repr -----------------------------------------------------------------------
+-- | Compute elements from a delayed array.
 instance Repr D a where
  {-# INLINE index #-}
  index  (ADelayed _ f) ix
@@ -28,25 +35,45 @@ instance Repr D a where
  deepSeqArray (ADelayed sh f) y
         = sh `deepSeq` f `seq` y
 
-instance Repr r1 e => Load r1 D e where
+
+-- Fill -----------------------------------------------------------------------
+-- | Compute all elements in an array.
+instance (Fillable r1 e, Shape sh) => Fill D r1 sh e where
+ {-# INLINE fillP #-}
+ fillP (ADelayed sh getElem) marr
+  = fillChunkedP (size sh) (writeMArr marr) (getElem . fromIndex sh)
+
+-- | Compute a range of elements in a rank-2 array.
+instance (Fillable r1 e, Elt e) => FillRange D r1 DIM2 e where
+ {-# INLINE fillRangeP #-}
+ fillRangeP  (ADelayed sh@(Z :. h :. w) getElem) marr
+             (Z :. y0 :. x0) (Z :. y1 :. x1)
+  = fillBlock2P (writeMArr marr) 
+                getElem
+                w x0 y0 x1 y1
+
+
+-- Load -----------------------------------------------------------------------
+-- | no-op.
+instance Shape sh => Load D D sh a where
  {-# INLINE load #-}
- load arr = ADelayed (extent arr) (\ix -> index arr ix)
+ load arr       = arr
+  
 
-
+-- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a function as a delayed array.
 fromFunction :: sh -> (sh -> a) -> Array D sh a
 {-# INLINE fromFunction #-}
 fromFunction sh f = ADelayed sh f
 
 
--- | O(1). Unpack an array to a function,
---   which produces a function to retrieve an arbitrary element.
+-- | O(1). Produce the shape of an array, and a function to retrieve an arbitrary element.
 toFunction 
         :: (Shape sh, Repr r1 a)
         => Array r1 sh a -> (sh, sh -> a)
 {-# INLINE toFunction #-}
 toFunction arr
- = case load arr of
+ = case delay arr of
         ADelayed sh f      -> (sh, f)
 
 
@@ -54,11 +81,11 @@ toFunction arr
 delay   :: (Shape sh, Repr r e)
         => Array r sh e -> Array D sh e
 {-# INLINE delay #-}
-delay = load
+delay arr = ADelayed (extent arr) (index arr)
 
 
 -- | Copy an array by delaying it then loading to the new representation.
-copy    :: (Shape sh, Repr r1 e, Load D r2 e)
+copy    :: (Repr r1 e, Load D r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 {-# INLINE copy #-}
 copy    = load . delay

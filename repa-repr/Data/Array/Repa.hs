@@ -2,44 +2,46 @@
 -- | Repa arrays are wrappers around a linear structure that holds the element data.
 --   The representation tag determines what structure holds the data.
 --
---   Currently supported are:
+--   Delayed Representations (functions that compute elements)
 --
---   * `D`  -- Delayed arrays as functions from indices to elements.
+--   * `D`  -- Functions from indices to elements.
 --
---   * `U`  -- Arrays as adaptive unboxed vectors.
+--   * `C`  -- Cursor functions.
 --
---   * `B`  -- Arrays as strict ByteStrings. (TODO)
+--   Manifest Representations (real data)
 --
---   * `F`  -- Arrays as foreign memory buffers. (TODO)
+--   * `U`  -- Adaptive unboxed vectors.
 --
---   * `L`  -- Arrays as Haskell cons-lists.
+--   * `B`  -- Strict ByteStrings. (TODO)
+--
+--   * `F`  -- Foreign memory buffers. (TODO)
+--
+--   * `L`  -- Haskell cons-lists.
+--
+--
+--   Meta Representations
 --
 --   * `P`  -- Arrays that are partitioned into several representations.
 --
---   * `C`  -- Arrays as cursor functions. (TODO)
---
---   * `X`  -- Undefined arrays.
+--   * `X`  -- Arrays whose elements are all undefined.
 --
 --  Array fusion is achieved via the delayed (`D`) and cursored (`C`) representations. 
 --  At compile time, the GHC simplifier combines the functions contained within `D` and `C` 
---  arrays without needing to create manifest intermediate arrays. Converting between the
---  parallel manifest representations (eg `U` and `B`) is either constant time or parallel
---  copy, depending on the compatability of the physical representation.
+--  arrays without needing to create manifest intermediate arrays. 
+--
+--  Converting between the parallel manifest representations (eg `U` and `B`) is either
+--  constant time or parallel copy, depending on the compatability of the physical representation.
 --
 module Data.Array.Repa
         ( -- * Array representation
           Array(..)
         , module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
-        , module Data.Array.Repa.Slice
         , Repr(..)
         , deepSeqArrays
 
-        -- * Parallel array filling
-        , Fill (..)
-
         -- * Loading between representations
-        , Load(..), Load2(..)
+        , Load(..)
 
         -- * Representations
         -- ** Delayed representation
@@ -52,12 +54,6 @@ module Data.Array.Repa
 
         -- ** List representation
         , L, fromList, toList
-
-        -- ** Partitioned array representation
-        , P, Range(..), inRange
-
-        -- ** Undefined arrays
-        , X
                 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
         -- * Operators
@@ -66,9 +62,11 @@ module Data.Array.Repa
 	, append, (++)
 	, transpose
 	, extend
-	, slice
 	, backpermute
 	, backpermuteDft
+
+	, module Data.Array.Repa.Slice
+	, slice
 
 	-- from Data.Array.Repa.Operators.Mapping -------------------
         -- ** Structure preserving operations
@@ -97,6 +95,7 @@ import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.List
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.Partitioned
+import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace

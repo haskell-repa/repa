@@ -2,7 +2,7 @@
 module Data.Array.Repa.Base
         ( Array
         , Repr (..)
-        , Load (..), Load2(..)
+        , Load (..)
         , deepSeqArrays)
 where
 import Data.Array.Repa.Shape
@@ -30,18 +30,22 @@ class Repr r e where
 
 -- | Load array data between representations.
 --
---   * Loading between arrays of the same representation is a no-op.
+--   * Loading a delayed array to a manifest representation invokes
+--     parallel computation.
 --
---   * Loading a delayed array to an array-like manifest representation invokes
---     parallel computation. (unboxed vectors are array-like, but lists are not)
+--   * Loading between arrays of the same manifest representation is a no-op.
 --
 --   * Loading between manifest representations can be constant time or require a
 --     parallel copy, depending on whether the two representations can be easily
 --     converted.
 --
-class Load r1 r2 e where
- load :: Shape sh => Array r1 sh e  -> Array r2 sh e
+--   * To turn a manifest array back into a delayed array use 
+--     `delay` or `makeCursored`.
+--
+class Shape sh => Load r1 r2 sh e where
+ load :: Array r1 sh e  -> Array r2 sh e
 
+{-
 -- | Array loading specialised to rank-2 arrays.
 --
 --  * Instances should perform cache-friendly blockwise filling.
@@ -50,7 +54,7 @@ class Load r1 r2 e where
 --    separate element functions for the border and internal regions.
 class Load2 r1 r2 e where
  load2 :: Array r1 DIM2 e -> Array r2 DIM2 e
-
+-}
 
 deepSeqArrays 
         :: (Shape sh, Repr r e)

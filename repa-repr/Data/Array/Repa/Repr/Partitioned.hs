@@ -49,12 +49,21 @@ inRange :: Range sh -> sh -> Bool
 inRange (Range _ _ p) ix
         = p ix
 
+-- Fill -----------------------------------------------------------------------
+instance ( FillRange r1 r3 sh e, Fill r2 r3 sh e
+         , Fillable r3 e)
+        => Fill (P r1 r2) r3 sh e where
+ fillP (APart sh (Range ix10 ix11 _) arr1 arr2) marr
+  = do  fillRangeP arr1 marr ix10 ix11
+        fillP arr2 marr
+
 
 -- Load2 ---------------------------------------------------------------------- 
+{-
 -- | TODO: check that all of the array sizes match up.
 --         add unsafeLoad that doesn't check this.
 instance ( Repr r1 e, Repr r2 e
-         , Fill r0 e)
+         , Elt e, Fillable r0 e)
       => Load2 (P r1 (P r2 X)) r0 e where
  {-# INLINE load2 #-}
  load2 (APart sh@(Z :. _h :. w) (Range ix10 ix11 _) arr1
@@ -68,7 +77,7 @@ instance ( Repr r1 e, Repr r2 e
 
 
 instance ( Repr r1 e, Repr r2 e, Repr r3 e, Repr r4 e, Repr r5 e
-         , Fill r0 e)
+         , Elt e, Fillable r0 e)
       => Load2 (P r1 (P r2 (P r3 (P r4 (P r5 X))))) r0 e where
  {-# INLINE load2 #-}
  load2 (APart sh@(Z :. _h :. w) (Range ix10 ix11 _) arr1
@@ -90,5 +99,5 @@ instance ( Repr r1 e, Repr r2 e, Repr r3 e, Repr r4 e, Repr r5 e
 {-# INLINE fillBlock2P' #-}
 fillBlock2P' update getElem w (Z :. y0 :. x0) (Z :. y1 :. x1)
  = fillBlock2P update getElem w y0 x0 y1 x1
- 
+-}
  

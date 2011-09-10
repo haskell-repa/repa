@@ -1,0 +1,88 @@
+
+module Data.Array.Repa.Repr.Cursored
+        ( C, Array (..)
+        , makeCursored)
+where
+import Data.Array.Repa.Base
+import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
+import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Undefined
+import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Elt
+import Data.Array.Repa.Eval.Cursored
+import Data.Array.Repa.Eval.Chunked
+import System.IO.Unsafe
+
+
+-- | Cursored Arrays
+data C
+
+data instance Array C sh e
+        = forall cursor. ACursored
+        { cursoredExtent :: sh 
+                
+          -- | Make a cursor to a particular element.
+	, makeCursor    :: sh -> cursor
+
+	  -- | Shift the cursor by an offset, to get to another element.
+	, shiftCursor   :: sh -> cursor -> cursor
+
+	  -- | Load\/compute the element at the given cursor.
+	, loadCursor	:: cursor -> e }
+
+
+-- Repr -----------------------------------------------------------------------
+-- | Compute elements from a cursored array.
+instance Repr C a where
+ {-# INLINE index #-}
+ index (ACursored _ makec _ loadc)
+        = loadc . makec
+
+ {-# INLINE extent #-}
+ extent (ACursored sh _ _ _)
+        = sh
+        
+ {-# INLINE deepSeqArray #-}
+ deepSeqArray (ACursored sh makec shiftc loadc) y
+  = sh `deepSeq` makec `seq` shiftc `seq` loadc `seq` y
+
+
+-- Fill -----------------------------------------------------------------------
+-- | Compute all elements in an rank-2 array. 
+instance (Fillable r1 e, Elt e) => Fill C r1 DIM2 e where
+ {-# INLINE fillP #-}
+ fillP (ACursored sh@(Z :. h :. w) makec shiftc loadc) marr
+  = fillCursoredBlock2P 
+                (writeMArr marr) 
+                makec shiftc loadc
+                w 0 0 (w - 1) (h - 1) 
+
+-- | Compute a range of elements in a rank-2 array.
+instance (Fillable r1 e, Elt e) => FillRange C r1 DIM2 e where
+ {-# INLINE fillRangeP #-}
+ fillRangeP  (ACursored sh@(Z :. h :. w) makec shiftc loadc) marr
+             (Z :. y0 :. x0) (Z :. y1 :. x1)
+  = fillCursoredBlock2P 
+                (writeMArr marr) 
+                makec shiftc loadc
+                w x0 y0 x1 y1
+
+-- Load -----------------------------------------------------------------------
+-- | no-op.
+instance Shape sh => Load C C sh a where
+ {-# INLINE load #-}
+ load arr       = arr
+
+ 
+-- Conversions ----------------------------------------------------------------
+-- | Define a new cursored array.
+makeCursored 
+        :: sh
+        -> (sh -> cursor)               -- ^ Create a cursor for an index.
+        -> (sh -> cursor -> cursor)     -- ^ Shift a cursor by an offset.
+        -> (cursor -> e)                -- ^ Compute the element at the cursor.
+        -> Array C sh e
+
+{-# INLINE makeCursored #-}
+makeCursored = ACursored
