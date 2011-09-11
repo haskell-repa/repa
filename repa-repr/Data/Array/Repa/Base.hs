@@ -6,7 +6,7 @@ module Data.Array.Repa.Base
         , deepSeqArrays)
 where
 import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
+
 
 -- | Arrays with a representation tag, shape, and element type.
 data family Array r sh e

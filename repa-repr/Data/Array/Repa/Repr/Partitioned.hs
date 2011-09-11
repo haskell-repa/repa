@@ -7,11 +7,9 @@ module Data.Array.Repa.Repr.Partitioned
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
 import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Undefined
-import System.IO.Unsafe
 
 
 -- | Partitioned arrays.
@@ -53,9 +51,13 @@ inRange (Range _ _ p) ix
 instance ( FillRange r1 r3 sh e, Fill r2 r3 sh e
          , Fillable r3 e)
         => Fill (P r1 r2) r3 sh e where
- fillP (APart sh (Range ix10 ix11 _) arr1 arr2) marr
+ fillP (APart _ (Range ix10 ix11 _) arr1 arr2) marr
   = do  fillRangeP arr1 marr ix10 ix11
         fillP arr2 marr
+
+ fillS (APart _ (Range ix10 ix11 _) arr1 arr2) marr
+  = do  fillRangeS arr1 marr ix10 ix11
+        fillS arr2 marr
 
 
 -- Load2 ---------------------------------------------------------------------- 

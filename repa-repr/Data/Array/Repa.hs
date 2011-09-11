@@ -89,7 +89,6 @@ import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
-import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.List

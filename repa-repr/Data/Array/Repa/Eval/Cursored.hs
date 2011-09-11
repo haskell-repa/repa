@@ -3,6 +3,7 @@
 --   each block in parallel.
 module Data.Array.Repa.Eval.Cursored
 	( fillBlock2P
+	, fillBlock2S
 	, fillCursoredBlock2P
 	, fillCursoredBlock2S )
 where
@@ -30,6 +31,25 @@ fillBlock2P !write !getElem !imageWidth !x0 !y0 !x1 !y1
  = fillCursoredBlock2P 
         write id addDim getElem 
         imageWidth x0 y0 x1 y1
+
+
+fillBlock2S
+        :: Elt a
+	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
+        -> (DIM2 -> a)          -- ^ Function to evaluate the element at an index.
+	-> Int			-- ^ Width of the whole array.
+	-> Int			-- ^ x0 lower left corner of block to fill
+	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ x1 upper right corner of block to fill
+	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
+        -> IO ()
+
+{-# INLINE [0] fillBlock2S #-}
+fillBlock2S !write !getElem !imageWidth !x0 !y0 !x1 !y1
+ = fillCursoredBlock2S
+        write id addDim getElem 
+        imageWidth x0 y0 x1 y1
+
 
 -- Block filling ----------------------------------------------------------------------------------
 -- | Fill a block in a 2D array, in parallel.

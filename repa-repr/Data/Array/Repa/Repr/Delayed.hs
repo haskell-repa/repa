@@ -12,7 +12,7 @@ import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
-import System.IO.Unsafe
+
 
 -- | Delayed arrays are represented as functions from the index to element value.
 data D
@@ -43,12 +43,24 @@ instance (Fillable r1 e, Shape sh) => Fill D r1 sh e where
  fillP (ADelayed sh getElem) marr
   = fillChunkedP (size sh) (writeMArr marr) (getElem . fromIndex sh)
 
+ {-# INLINE fillS #-}
+ fillS (ADelayed sh getElem) marr
+  = fillChunkedS (size sh) (writeMArr marr) (getElem . fromIndex sh)
+
+
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r1 e, Elt e) => FillRange D r1 DIM2 e where
  {-# INLINE fillRangeP #-}
- fillRangeP  (ADelayed sh@(Z :. h :. w) getElem) marr
+ fillRangeP  (ADelayed (Z :. _h :. w) getElem) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = fillBlock2P (writeMArr marr) 
+                getElem
+                w x0 y0 x1 y1
+
+ {-# INLINE fillRangeS #-}
+ fillRangeS  (ADelayed (Z :. _h :. w) getElem) marr
+             (Z :. y0 :. x0) (Z :. y1 :. x1)
+  = fillBlock2S (writeMArr marr) 
                 getElem
                 w x0 y0 x1 y1
 

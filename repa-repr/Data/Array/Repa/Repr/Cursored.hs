@@ -11,8 +11,6 @@ import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
-import Data.Array.Repa.Eval.Chunked
-import System.IO.Unsafe
 
 
 -- | Cursored Arrays
@@ -52,18 +50,34 @@ instance Repr C a where
 -- | Compute all elements in an rank-2 array. 
 instance (Fillable r1 e, Elt e) => Fill C r1 DIM2 e where
  {-# INLINE fillP #-}
- fillP (ACursored sh@(Z :. h :. w) makec shiftc loadc) marr
+ fillP (ACursored (Z :. h :. w) makec shiftc loadc) marr
   = fillCursoredBlock2P 
                 (writeMArr marr) 
                 makec shiftc loadc
                 w 0 0 (w - 1) (h - 1) 
 
+ {-# INLINE fillS #-}
+ fillS (ACursored (Z :. h :. w) makec shiftc loadc) marr
+  = fillCursoredBlock2S 
+                (writeMArr marr) 
+                makec shiftc loadc
+                w 0 0 (w - 1) (h - 1) 
+
+
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r1 e, Elt e) => FillRange C r1 DIM2 e where
  {-# INLINE fillRangeP #-}
- fillRangeP  (ACursored sh@(Z :. h :. w) makec shiftc loadc) marr
+ fillRangeP  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = fillCursoredBlock2P 
+                (writeMArr marr) 
+                makec shiftc loadc
+                w x0 y0 x1 y1
+
+ {-# INLINE fillRangeS #-}
+ fillRangeS  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
+             (Z :. y0 :. x0) (Z :. y1 :. x1)
+  = fillCursoredBlock2S
                 (writeMArr marr) 
                 makec shiftc loadc
                 w x0 y0 x1 y1
