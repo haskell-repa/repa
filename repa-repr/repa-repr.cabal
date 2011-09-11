@@ -46,6 +46,7 @@ Library
         FlexibleContexts
         StandaloneDeriving
         ScopedTypeVariables
+        PatternGuards
 
   Exposed-modules:
         Data.Array.Repa
@@ -63,6 +64,7 @@ Library
         Data.Array.Repa.Operators.Traversal
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil
+        Data.Array.Repa.Stencil.Dim2
 
   Other-modules:
         Data.Array.Repa.Base

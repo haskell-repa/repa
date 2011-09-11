@@ -24,8 +24,9 @@ data instance Array D sh e
 -- | Compute elements from a delayed array.
 instance Repr D a where
  {-# INLINE index #-}
- index       (ADelayed _ f) ix  = f ix
- unsafeIndex (ADelayed _ f) ix  = f ix
+ index       (ADelayed _  f) ix  = f ix
+
+ linearIndex (ADelayed sh f) ix  = f (fromIndex sh ix)
 
  {-# INLINE extent #-}
  extent (ADelayed sh _)

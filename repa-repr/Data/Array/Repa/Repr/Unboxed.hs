@@ -30,11 +30,11 @@ deriving instance (Show sh, Show e, U.Unbox e)
 -- | Use elements from an unboxed vector array.
 instance U.Unbox a => Repr U a where
  {-# INLINE linearIndex #-}
- linearIndex (AUnboxed sh  vec) ix
+ linearIndex (AUnboxed _ vec) ix
         = vec U.! ix
 
  {-# INLINE unsafeLinearIndex #-}
- unsafeLinearIndex (AUnboxed sh vec) ix
+ unsafeLinearIndex (AUnboxed _ vec) ix
         = vec `U.unsafeIndex` ix
 
  {-# INLINE extent #-}

@@ -26,6 +26,10 @@ instance Repr L a where
  index  (AList sh lst) ix
         = lst !! toIndex sh ix
 
+ {-# INLINE linearIndex #-}
+ linearIndex (AList _ lst) ix
+        = lst !! ix
+
  {-# INLINE extent #-}
  extent (AList sh _)
         = sh

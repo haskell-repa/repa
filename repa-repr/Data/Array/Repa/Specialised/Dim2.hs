@@ -68,7 +68,7 @@ clampToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 
 -- | Make a 2D partitioned array from two others, one to produce the elements
 --   in the internal region, and one to produce elements in the border region.
---   THe two arrays must have the same extent.
+--   The two arrays must have the same extent.
 --   The border must be the same width on all sides.
 --
 --   TODO: Check arrays have same extent.
