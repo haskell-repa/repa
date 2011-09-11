@@ -29,13 +29,13 @@ deriving instance (Show sh, Show e, U.Unbox e)
 -- Repr -----------------------------------------------------------------------
 -- | Use elements from an unboxed vector array.
 instance U.Unbox a => Repr U a where
- {-# INLINE index #-}
- index  (AUnboxed sh  vec) ix 
-        = vec U.! toIndex sh ix
+ {-# INLINE linearIndex #-}
+ linearIndex (AUnboxed sh  vec) ix
+        = vec U.! ix
 
- {-# INLINE unsafeIndex #-}
- unsafeIndex (AUnboxed sh vec) ix
-        = vec `U.unsafeIndex` toIndex sh ix
+ {-# INLINE unsafeLinearIndex #-}
+ unsafeLinearIndex (AUnboxed sh vec) ix
+        = vec `U.unsafeIndex` ix
 
  {-# INLINE extent #-}
  extent (AUnboxed sh _)

@@ -18,13 +18,23 @@ data family Array r sh e
 --   or to compute it for the delayed and cursored representations.
 --
 class Repr r e where
+ -- | Take the extent of an array.
  extent       :: Shape sh => Array r sh e -> sh
 
- index        :: Shape sh => Array r sh e -> sh -> e
+ -- | Shape polymorphic indexing
+ index, unsafeIndex
+        :: Shape sh => Array r sh e -> sh -> e
 
- unsafeIndex  :: Shape sh => Array r sh e -> sh -> e
- unsafeIndex = index
+ index arr ix           = arr `linearIndex`       toIndex (extent arr) ix
+ unsafeIndex arr ix     = arr `unsafeLinearIndex` toIndex (extent arr) ix
 
+ -- | Linear indexing into underlying representation
+ linearIndex, unsafeLinearIndex
+        :: Shape sh => Array r sh e -> Int -> e
+
+ unsafeLinearIndex      = linearIndex
+
+ -- | Ensure an array's data structure is fully evaluated.
  deepSeqArray :: Shape sh => Array r sh e -> b -> b
 
 

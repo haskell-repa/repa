@@ -37,6 +37,13 @@ instance Repr C a where
  index (ACursored _ makec _ loadc)
         = loadc . makec
 
+ {-# INLINE unsafeIndex #-}
+ unsafeIndex    = index
+ 
+ {-# INLINE linearIndex #-}
+ linearIndex (ACursored sh makec _ loadc)
+        = loadc . makec . fromIndex sh
+
  {-# INLINE extent #-}
  extent (ACursored sh _ _ _)
         = sh
