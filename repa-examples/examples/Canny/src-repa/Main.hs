@@ -257,11 +257,6 @@ gradientMagOrient !threshLow
 				then 128#               -- 1
 				else 64#)               -- 0
 
--- orientUndef  	= 0	:: Int
--- orientPosDiag	= 64	:: Int
--- orientVert	        = 128	:: Int
--- orientNegDiag	= 192	:: Int
--- orientHoriz	        = 255	:: Int
 
 -- | Suppress pixels that are not local maxima, and use the magnitude to classify maxima
 --   into strong and weak (potential) edges.

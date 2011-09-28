@@ -115,7 +115,7 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
     $   APart sh (Range (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1) inBorder)   arrBorder
     $   APart sh (Range (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)   inBorder)   arrBorder
     $   APart sh (Range (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) inBorder)   arrBorder
-    $   AUndefined
+    $   AUndefined sh
 
 
 unsafeAppStencilCursor2
