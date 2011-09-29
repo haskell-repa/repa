@@ -91,6 +91,10 @@ toFunction arr
 
 
 -- | O(1). Delay an array.
+--   This changes the internal representation to be a function from
+--   indices to elements, so consumers don't need to worry about
+--   what the previous representation was.
+--
 delay   :: (Shape sh, Repr r e)
         => Array r sh e -> Array D sh e
 {-# INLINE delay #-}

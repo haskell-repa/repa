@@ -37,7 +37,7 @@ module Data.Array.Repa
           Array(..)
         , module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
-        , Repr(..)
+        , Repr(..), (!)
         , deepSeqArrays
 
         -- * Loading between representations

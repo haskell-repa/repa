@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Base
         ( Array
-        , Repr (..)
+        , Repr (..), (!)
         , Load (..)
         , deepSeqArrays)
 where
@@ -40,6 +40,11 @@ class Repr r e where
 
  -- | Ensure an array's data structure is fully evaluated.
  deepSeqArray :: Shape sh => Array r sh e -> b -> b
+
+
+-- | Alias for `index`
+(!) :: (Repr r e, Shape sh) => Array r sh e -> sh -> e
+(!) = index
 
 
 -- | Load array data between representations.

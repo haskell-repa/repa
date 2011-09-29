@@ -1,7 +1,8 @@
 
 module Data.Array.Repa.Repr.ForeignPtr
         ( F, Array (..)
-        , fromForeignPtr, toForeignPtr)
+        , fromForeignPtr, toForeignPtr
+        , forceIntoS,     forceIntoP)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
@@ -81,7 +82,7 @@ instance Shape sh => Load F F sh e where
 
 
 -- Conversions ----------------------------------------------------------------
--- | O(1). Wrap an unboxed vector as an array.
+-- | O(1). Wrap a `ForeignPtr` as an array.
 fromForeignPtr
         :: Shape sh
         => sh -> ForeignPtr e -> Array F sh e
@@ -92,7 +93,8 @@ fromForeignPtr sh fptr
 
 -- | Convert a Repa array to a `ForeignPtr` array.
 -- 
---   This is O(1) if the source is already represented as a `ForeignPtr` array (has representation `F`).
+--   This is O(1) if the source is already represented as a `ForeignPtr`
+--   array (has representation `F`).
 --
 toForeignPtr
         :: Load r1 F sh e
@@ -103,4 +105,24 @@ toForeignPtr arr
         AForeignPtr _ _ fptr  -> fptr
 
 
+-- | Compute an array sequentially and write the elements into a foreign
+--   buffer without intermediate copying. If you want to copy a
+--   pre-existing manifest array to a foreign buffer then `delay` it first.
+forceIntoS
+        :: Fill r1 F sh e
+        => ForeignPtr e -> Array r1 sh e -> IO ()
+
+forceIntoS fptr arr
+ = fillS arr (FPArr 0 fptr)
+
+
+-- | Compute an array in parallel and write the elements into a foreign
+--   buffer without intermediate copying. If you want to copy a
+--   pre-existing manifest array to a foreign buffer then `delay` it first.
+forceIntoP
+        :: Fill r1 F sh e
+        => ForeignPtr e -> Array r1 sh e -> IO ()
+
+forceIntoP fptr arr
+ = fillP arr (FPArr 0 fptr)
 

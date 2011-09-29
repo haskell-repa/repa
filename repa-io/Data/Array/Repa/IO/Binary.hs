@@ -21,7 +21,7 @@ import Control.Monad
 --   If the file size does match the provided shape then `error`.
 readArrayFromStorableFile 
         :: forall a sh
-        .  (Shape sh, Storable a, Elt a)
+        .  (Shape sh, Storable a)
         => FilePath 
         -> sh
         -> IO (Array sh a)
