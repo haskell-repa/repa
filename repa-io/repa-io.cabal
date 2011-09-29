@@ -23,7 +23,8 @@ Library
         bmp                  == 1.1.*,
         old-time             == 1.0.*,
         vector               == 0.9.*,
-        binary               == 0.5.*
+        binary               == 0.5.*,
+        bytestring           == 0.9.*
 
   ghc-options:
         -Odph -Wall -fno-warn-missing-signatures

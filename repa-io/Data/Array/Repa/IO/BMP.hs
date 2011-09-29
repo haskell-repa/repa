@@ -7,11 +7,16 @@ module Data.Array.Repa.IO.BMP
 where
 import Data.Array.Repa				as R
 import Data.Array.Repa.Repr.Unboxed		as R
+import Data.Array.Repa.Repr.ForeignPtr		as R
 import Data.Array.Repa.Repr.ByteString		as R
 import Data.Vector.Unboxed                      as U
 import Prelude					as P
+import Foreign.ForeignPtr
+import Foreign.Marshal.Alloc
+import Data.ByteString.Unsafe                   as B
 import Codec.BMP
 import Data.Word
+
 
 -- NOTE: We set most of these functions as NOINLINE so it's easier to understand
 --       what's going on in the core programs. The top-level IO functions are
@@ -75,21 +80,27 @@ writeImageToBMP fileName arrRGB
 
         -- O(1). unzip the components
 	let (vecRed, vecGreen, vecBlue)
-	                = U.unzip3 $ toUnboxed arrRGB
+	        = U.unzip3 $ toUnboxed arrRGB
+
 
         -- Create a bytestring with all the data
-	let arrRGBA	= R.toByteString arrRGBA
-	                $ load 
-	                $ interleave4 
-	                        (fromUnboxed sh vecRed)
-	                        (fromUnboxed sh vecGreen)
-	                        (fromUnboxed sh vecBlue)
-	                        (fromFunction sh (\_ -> 255))
+        ptr     <- mallocBytes (height * width * 4)
+        fptr    <- newForeignPtr finalizerFree ptr
 
-        -- Build the BMP file
-	let bmp		= packRGBA32ToBMP width height arrRGBA
+        forceIntoP fptr 
+         $ interleave4 
+	        (fromUnboxed sh vecRed)
+	        (fromUnboxed sh vecGreen)
+	        (fromUnboxed sh vecBlue)
+	        (fromFunction sh (\_ -> 255))
 
-	writeBMP fileName bmp
+        -- Pack the data into a BMP file and write it out.
+        withForeignPtr fptr
+         $ \ptr' -> do
+                bs      <- unsafePackCStringFinalizer ptr' (width * height * 4) (return ())
+                let bmp = packRGBA32ToBMP width height bs
+                writeBMP fileName bmp
+
 
 {-
 -- Normalise --------------------------------------------------------------------------------------
