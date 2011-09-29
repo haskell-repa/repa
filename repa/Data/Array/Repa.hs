@@ -14,7 +14,7 @@
 --
 --   * `B`  -- Strict ByteStrings.
 --
---   * `F`  -- Foreign memory buffers. (TODO)
+--   * `F`  -- Foreign memory buffers.
 --
 --   * `L`  -- Haskell cons-lists.
 --
@@ -89,13 +89,14 @@ import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
-import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.List
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.ByteString
-import Data.Array.Repa.Repr.Partitioned
+import Data.Array.Repa.Repr.ForeignPtr
 import Data.Array.Repa.Repr.Cursored
+import Data.Array.Repa.Repr.Partitioned
+import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace

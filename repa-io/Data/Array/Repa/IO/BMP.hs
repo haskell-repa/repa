@@ -13,8 +13,7 @@ module Data.Array.Repa.IO.BMP
 	, writeComponentsListToBMP
 	, writeMatrixToGreyscaleBMP)
 where
-import Data.Array.Repa				as A
-import Data.Array.Repa.ByteString               as A
+import Data.Array.Repa				as R
 import Prelude					as P
 import Codec.BMP
 import Data.Word
@@ -39,7 +38,7 @@ readMatrixFromGreyscaleBMP filePath
 	 Left err	-> return $ Left err
   	 Right (arrRed, arrGreen, arrBlue)
  	  -> let arr	= force2 
-			$ A.fromFunction (extent arrRed)
+			$ R.fromFunction (extent arrRed)
 			   (\ix -> sqrt ( (fromIntegral (arrRed   ! ix) / 255) ^ (2 :: Int)
 					+ (fromIntegral (arrGreen ! ix) / 255) ^ (2 :: Int)
 					+ (fromIntegral (arrBlue  ! ix) / 255) ^ (2 :: Int)))
@@ -78,7 +77,7 @@ readComponentsFromBMP filePath
 readComponentsFromBMP' bmp
  = let	(width, height) = bmpDimensions bmp
 
-	arr		= A.fromByteString (Z :. height :. width * 4)
+	arr		= R.fromByteString (Z :. height :. width * 4)
 			$ unpackBMPToRGBA32 bmp
 
 	shapeFn _ 	= Z :. height :. width
@@ -138,7 +137,7 @@ writeMatrixToGreyscaleBMP
 writeMatrixToGreyscaleBMP fileName arr
  = let	arrNorm		= normalisePositive01 arr
 	scale x		= fromIntegral (truncate (x * 255) :: Int)
-	arrWord8	= A.map scale arrNorm
+	arrWord8	= R.map scale arrNorm
    in	writeComponentsToBMP fileName arrWord8 arrWord8 arrWord8
 		
 		
@@ -181,7 +180,7 @@ writeComponentsToBMP fileName arrRed arrGreen arrBlue
 	let arrAlpha	= fromFunction (extent arrRed) (\_ -> 255)
 	let arrRGBA	= interleave4 arrRed arrGreen arrBlue arrAlpha
 	let bmp		= packRGBA32ToBMP width height
-			$ A.toByteString arrRGBA
+			$ R.toByteString arrRGBA
 	
 	writeBMP fileName bmp
 
@@ -202,7 +201,7 @@ writeImageToBMP fileName arrImage
 
 	| otherwise
 	= let 	bmp	= packRGBA32ToBMP width height
-			$ A.toByteString arrImage
+			$ R.toByteString arrImage
 	  in	writeBMP fileName bmp
 	
 	where	Z :. height :. width :. comps	
@@ -226,5 +225,5 @@ normalisePositive01 arr
    in	mx `seq`
 	 if mx == 0 
 	  then arr
-	  else A.map elemFn arr
+	  else R.map elemFn arr
 
