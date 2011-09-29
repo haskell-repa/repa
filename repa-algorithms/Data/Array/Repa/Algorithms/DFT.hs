@@ -22,30 +22,31 @@ where
 import Data.Array.Repa.Algorithms.DFT.Roots
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
+import Data.Array.Repa.Repr.Unboxed		as A
 import Prelude					as P
 
 -- | Compute the DFT along the low order dimension of an array.
 dft 	:: forall sh
 	.  Shape sh
-	=> Array (sh :. Int) Complex
-	-> Array (sh :. Int) Complex
+	=> Array U (sh :. Int) Complex
+	-> Array U (sh :. Int) Complex
 
 dft v
  = let	rofu	= calcRootsOfUnity (extent v)
-   in	force $ dftWithRoots rofu v
+   in	forceUnboxed $ dftWithRoots rofu v
 
 
 -- | Compute the inverse DFT along the low order dimension of an array.
 idft 	:: forall sh
 	.  Shape sh
-	=> Array (sh :. Int) Complex
-	-> Array (sh :. Int) Complex
+	=> Array U (sh :. Int) Complex
+	-> Array U (sh :. Int) Complex
 
 idft v
  = let	_ :. len	= extent v
 	scale		= (fromIntegral len, 0)
 	rofu		= calcInverseRootsOfUnity (extent v)
-   in	force $ A.map (/ scale) $ dftWithRoots rofu v
+   in	forceUnboxed $ A.map (/ scale) $ dftWithRoots rofu v
 
 
 -- | Generic function for computation of forward or inverse DFT.
@@ -55,9 +56,9 @@ idft v
 dftWithRoots
 	:: forall sh
 	.  Shape sh
-	=> Array (sh :. Int) Complex		-- ^ Roots of unity.
-	-> Array (sh :. Int) Complex		-- ^ Input array.
-	-> Array (sh :. Int) Complex
+	=> Array U (sh :. Int) Complex		-- ^ Roots of unity.
+	-> Array U (sh :. Int) Complex		-- ^ Input array.
+	-> Array U (sh :. Int) Complex
 
 dftWithRoots rofu arr
 	| _ :. rLen 	<- extent rofu
@@ -67,7 +68,7 @@ dftWithRoots rofu arr
 		P.++ " does not match the length of the roots (" P.++ show rLen P.++ ")"
 
 	| otherwise
-	= traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
+	= forceUnboxed $ traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
 		
 
 -- | Compute a single value of the DFT.
@@ -75,8 +76,8 @@ dftWithRoots rofu arr
 dftWithRootsSingle
 	:: forall sh
 	.  Shape sh
-	=> Array (sh :. Int) Complex 		-- ^ Roots of unity.
-	-> Array (sh :. Int) Complex		-- ^ Input array.
+	=> Array U (sh :. Int) Complex 		-- ^ Roots of unity.
+	-> Array U (sh :. Int) Complex		-- ^ Input array.
 	-> (sh :. Int)				-- ^ Index of the value we want.
 	-> Complex
 

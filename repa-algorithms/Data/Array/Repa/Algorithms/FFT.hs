@@ -16,6 +16,7 @@ module Data.Array.Repa.Algorithms.FFT
 where
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
+import Data.Array.Repa.Repr.Unboxed		as A
 import Prelude                                  as P
 
 data Mode
@@ -43,13 +44,11 @@ isPowerOfTwo n
 	| otherwise		= False
 
 
-
-
 -- 3D Transform -----------------------------------------------------------------------------------
 -- | Compute the DFT of a 3d array. Array dimensions must be powers of two else `error`.
 fft3d 	:: Mode
-	-> Array DIM3 Complex
-	-> Array DIM3 Complex
+	-> Array U DIM3 Complex
+	-> Array U DIM3 Complex
 
 fft3d mode arr
  = let	_ :. depth :. height :. width	= extent arr
@@ -67,22 +66,24 @@ fft3d mode arr
 		case mode of
 			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 			Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
-			Inverse	-> force $ A.map (/ scale) 
-					$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+			Inverse	-> forceUnboxed 
+			        $ A.map (/ scale) 
+				$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 
 fftTrans3d 
 	:: Double
-	-> Array DIM3 Complex 
-	-> Array DIM3 Complex
+	-> Array U DIM3 Complex 
+	-> Array U DIM3 Complex
 
 {-# NOINLINE fftTrans3d #-}
-fftTrans3d sign arr'
- = let 	arr		= force arr'
-	(sh :. len)	= extent arr
-   in	force $ rotate3d $ fft sign sh len arr
+fftTrans3d sign arr
+ = let	(sh :. len)	= extent arr
+   in	forceUnboxed $ rotate3d $ fft sign sh len arr
 
 
-rotate3d :: Array DIM3 Complex -> Array DIM3 Complex
+rotate3d 
+        :: Repr r Complex
+        => Array r DIM3 Complex -> Array D DIM3 Complex
 {-# INLINE rotate3d #-}
 rotate3d arr
  = backpermute (sh :. m :. k :. l) f arr
@@ -94,8 +95,8 @@ rotate3d arr
 -- Matrix Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a matrix. Array dimensions must be powers of two else `error`.
 fft2d 	:: Mode
-	-> Array DIM2 Complex
-	-> Array DIM2 Complex
+	-> Array U DIM2 Complex
+	-> Array U DIM2 Complex
 
 fft2d mode arr
  = let	_ :. height :. width	= extent arr
@@ -112,25 +113,24 @@ fft2d mode arr
 		case mode of
 			Forward	-> fftTrans2d sign $ fftTrans2d sign arr
 			Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
-			Inverse	-> force $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
+			Inverse	-> forceUnboxed $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
 
 fftTrans2d 
 	:: Double
-	-> Array DIM2 Complex 
-	-> Array DIM2 Complex
+	-> Array U DIM2 Complex 
+	-> Array U DIM2 Complex
 
 {-# NOINLINE fftTrans2d #-}
-fftTrans2d sign arr'
- = let 	arr		= force arr'
-	(sh :. len)	= extent arr
-   in	force $ transpose $ fft sign sh len arr
+fftTrans2d sign arr
+ = let  (sh :. len)	= extent arr
+   in	forceUnboxed $ transpose $ fft sign sh len arr
 
 
 -- Vector Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a vector. Array dimensions must be powers of two else `error`.
 fft1d	:: Mode 
-	-> Array DIM1 Complex 
-	-> Array DIM1 Complex
+	-> Array U DIM1 Complex 
+	-> Array U DIM1 Complex
 	
 fft1d mode arr
  = let	_ :. len	= extent arr
@@ -147,27 +147,31 @@ fft1d mode arr
 		case mode of
 			Forward	-> fftTrans1d sign arr
 			Reverse	-> fftTrans1d sign arr
-			Inverse -> force $ A.map (/ scale) $ fftTrans1d sign arr
+			Inverse -> forceUnboxed $ A.map (/ scale) $ fftTrans1d sign arr
 
 fftTrans1d
 	:: Double 
-	-> Array DIM1 Complex
-	-> Array DIM1 Complex
+	-> Array U DIM1 Complex
+	-> Array U DIM1 Complex
 
 {-# NOINLINE fftTrans1d #-}
-fftTrans1d sign arr'
- = let	arr		= force arr'
-	(sh :. len)	= extent arr
+fftTrans1d sign arr
+ = let	(sh :. len)	= extent arr
    in	fft sign sh len arr
 
 
 -- Rank Generalised Worker ------------------------------------------------------------------------
+fft     :: Shape sh 
+        => Double -> sh -> Int 
+        -> Array U (sh :. Int) Complex
+        -> Array U (sh :. Int) Complex
+
 {-# INLINE fft #-}
 fft !sign !sh !lenVec !vec
  = go lenVec 0 1
  where	go !len !offset !stride
 	 | len == 2
-	 = force $ fromFunction (sh :. 2) swivel
+	 = forceUnboxed $ fromFunction (sh :. 2) swivel
 	
 	 | otherwise
 	 = combine len 
@@ -180,11 +184,10 @@ fft !sign !sh !lenVec !vec
 			1	-> (vec `unsafeIndex` (sh' :. offset)) - (vec `unsafeIndex` (sh' :. (offset + stride)))
 
 		{-# INLINE combine #-}
-		combine !len' 	evens@(Array _ [Region RangeAll GenManifest{}]) 
-				 odds@(Array _ [Region RangeAll GenManifest{}])
+		combine !len' 	evens odds
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
    	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
-   	   	   in	force 	$ (evens +^ odds') A.++ (evens -^ odds')
+   	   	   in	forceUnboxed $ (evens +^ odds') A.++ (evens -^ odds')
 
 
 -- Compute a twiddle factor.
@@ -198,4 +201,3 @@ twiddle sign k' n'
  	=  (cos (2 * pi * k / n), sign * sin  (2 * pi * k / n))
 	where 	k	= fromIntegral k'
 		n	= fromIntegral n'
-      

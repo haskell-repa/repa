@@ -9,6 +9,7 @@ where
 import Data.Word
 import Data.Vector.Unboxed			(Vector)
 import Data.Array.Repa				as R
+import Data.Array.Repa.Repr.Unboxed		as R
 import qualified Data.Vector.Unboxed.Mutable	as MV
 import qualified Data.Vector.Unboxed		as V
 import qualified Data.Vector.Generic		as G
@@ -32,10 +33,10 @@ randomishIntArray
 	-> Int 			-- ^ Minumum value in output.
 	-> Int 			-- ^ Maximum value in output.
 	-> Int 			-- ^ Random seed.	
-	-> Array sh Int		-- ^ Array of randomish numbers.
+	-> Array U sh Int	-- ^ Array of randomish numbers.
 
 randomishIntArray !sh !valMin !valMax !seed
-	= fromVector sh $ randomishIntVector (R.size sh) valMin valMax seed
+	= fromUnboxed sh $ randomishIntVector (R.size sh) valMin valMax seed
 
 
 randomishIntVector 
@@ -90,10 +91,10 @@ randomishDoubleArray
 	-> Double		-- ^ Minumum value in output.
 	-> Double		-- ^ Maximum value in output.
 	-> Int 			-- ^ Random seed.	
-	-> Array sh Double	-- ^ Array of randomish numbers.
+	-> Array U sh Double	-- ^ Array of randomish numbers.
 
 randomishDoubleArray !sh !valMin !valMax !seed
-	= fromVector sh $ randomishDoubleVector (R.size sh) valMin valMax seed
+	= fromUnboxed sh $ randomishDoubleVector (R.size sh) valMin valMax seed
 
 
 -- | Generate some randomish doubles with terrible statistical properties.

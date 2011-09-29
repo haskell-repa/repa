@@ -24,7 +24,7 @@ multiplyMM
 {-# NOINLINE multiplyMM #-}
 multiplyMM arr brr
  = [arr, brr] `deepSeqArrays`
-   A.forceUnboxed $ A.sum (A.zipWith (*) arrRepl brrRepl)
+   A.sum (A.zipWith (*) arrRepl brrRepl)
  where	trr             = forceUnboxed $ transpose2D brr
 	arrRepl		= trr `deepSeqArray` A.extend (Z :. All   :. colsB :. All) arr
 	brrRepl		= trr `deepSeqArray` A.extend (Z :. rowsA :. All   :. All) trr

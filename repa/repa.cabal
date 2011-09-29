@@ -68,6 +68,7 @@ Library
         Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Operators.Traversal
         Data.Array.Repa.Operators.Interleave
+        Data.Array.Repa.Operators.Reduction
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil
         Data.Array.Repa.Stencil.Dim2
