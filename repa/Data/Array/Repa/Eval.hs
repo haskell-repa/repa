@@ -31,7 +31,7 @@ import Data.Array.Repa.Shape
 import System.IO.Unsafe
 
 -- | Parallel computation of array elements.
-instance Fill r1 r2 sh e => Load r1 r2 sh e where
+instance (Repr r1 e, Fill r1 r2 sh e) => Load r1 r2 sh e where
  {-# INLINE load #-}
  load arr1
   = unsafePerformIO

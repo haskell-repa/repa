@@ -12,12 +12,11 @@
 --
 --   * `U`  -- Adaptive unboxed vectors.
 --
+--   * `V`  -- Boxed vectors.
+--
 --   * `B`  -- Strict ByteStrings.
 --
 --   * `F`  -- Foreign memory buffers.
---
---   * `L`  -- Haskell cons-lists.
---
 --
 --   Meta Representations
 --
@@ -48,12 +47,10 @@ module Data.Array.Repa
         , D, fromFunction, toFunction
         , delay, copy
 
-        -- ** Unboxed vector representation
-        , U, fromUnboxed, toUnboxed
-        , force
-
-        -- ** List representation
-        , L, fromList, toList
+        -- ** Vector representation
+        , V
+        , fromVector, toVector,  forceVector
+        , fromList,   toList
                 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
         -- * Operators
@@ -83,21 +80,31 @@ module Data.Array.Repa
 	, unsafeTraverse
 	, unsafeTraverse2
 	, unsafeTraverse3
-	, unsafeTraverse4)        
+	, unsafeTraverse4
+	
+	-- from Data.Array.Repa.Operators.Interleave -----------------
+	-- ** Interleaving
+	, interleave2
+	, interleave3
+	, interleave4)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
 import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.List
+import Data.Array.Repa.Repr.Vector
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.ByteString
 import Data.Array.Repa.Repr.ForeignPtr
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
-import Data.Array.Repa.Repr.Undefined
+import Data.Array.Repa.Repr.Undefined           ()
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace
+import Data.Array.Repa.Operators.Interleave
 import Prelude ()
+
+
+

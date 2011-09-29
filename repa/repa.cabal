@@ -48,6 +48,7 @@ Library
         StandaloneDeriving
         ScopedTypeVariables
         PatternGuards
+        OverlappingInstances
 
   Exposed-modules:
         Data.Array.Repa
@@ -59,19 +60,20 @@ Library
         Data.Array.Repa.Repr.Cursored
         Data.Array.Repa.Repr.Partitioned
         Data.Array.Repa.Repr.Unboxed
+        Data.Array.Repa.Repr.Vector
         Data.Array.Repa.Repr.ByteString
         Data.Array.Repa.Repr.ForeignPtr
         Data.Array.Repa.Repr.Undefined
         Data.Array.Repa.Operators.IndexSpace
         Data.Array.Repa.Operators.Mapping
         Data.Array.Repa.Operators.Traversal
+        Data.Array.Repa.Operators.Interleave
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil
         Data.Array.Repa.Stencil.Dim2
 
   Other-modules:
         Data.Array.Repa.Base
-        Data.Array.Repa.Repr.List
         Data.Array.Repa.Eval.Elt
         Data.Array.Repa.Eval.Fill
         Data.Array.Repa.Eval.Gang

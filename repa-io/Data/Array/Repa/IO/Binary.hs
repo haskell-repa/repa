@@ -12,6 +12,7 @@ import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import System.IO
 import Data.Array.Repa                  as R
+import Data.Array.Repa.Repr.ForeignPtr  as R
 import Prelude                          as P
 import Control.Monad
 
@@ -24,13 +25,13 @@ readArrayFromStorableFile
         .  (Shape sh, Storable a)
         => FilePath 
         -> sh
-        -> IO (Array sh a)
+        -> IO (Array F sh a)
 
 readArrayFromStorableFile filePath sh
  = do
         -- Determine number of bytes per element.
-        let (fake   :: Array sh a)      = R.fromList R.zeroDim []
-        let (bytes1 :: Integer)         = fromIntegral $ sizeOf (fake R.! R.zeroDim)
+        let (fake   :: a)               = undefined
+        let (bytes1 :: Integer)         = fromIntegral $ sizeOf fake
 
         -- Determine how many elements the whole file will give us.
         h :: Handle     <- openBinaryFile filePath ReadMode
@@ -57,18 +58,18 @@ readArrayFromStorableFile filePath sh
 
         -- Converting the foreign ptr like this means that the array
         -- elements are used directly from the buffer, and not copied.
-        let arr  =  R.unsafeFromForeignPtr sh fptr
+        let arr  =  R.fromForeignPtr sh fptr
 
-        return   $  arr `asTypeOf` fake
+        return   $  arr
 
 
 -- | Write an array to a file.
 --   Data appears in host byte order.
 writeArrayToStorableFile
-        :: forall sh a 
-        .  (Shape sh, Storable a, Elt a)
+        :: forall sh a r
+        .  (Shape sh, Repr r a, Storable a)
         => FilePath 
-        -> Array sh a
+        -> Array r sh a
         -> IO ()
 
 writeArrayToStorableFile filePath arr
@@ -76,7 +77,8 @@ writeArrayToStorableFile filePath arr
         let bytesTotal  = bytes1 * (R.size $ R.extent arr)
         
         buf :: Ptr a    <- mallocBytes bytesTotal
-        R.forceWith (pokeElemOff buf) arr
+        fptr            <- newForeignPtr finalizerFree buf        
+        R.forceIntoP fptr (delay arr)
         
         h <- openBinaryFile filePath WriteMode
         hPutBuf h buf bytesTotal 

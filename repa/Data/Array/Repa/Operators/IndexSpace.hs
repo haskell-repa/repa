@@ -151,3 +151,5 @@ backpermuteDft arrDft fnIndex arrSrc
 		 = case fnIndex ix of
 			Just ix'	-> arrSrc `index` ix'
 			Nothing		-> arrDft `index` ix
+
+

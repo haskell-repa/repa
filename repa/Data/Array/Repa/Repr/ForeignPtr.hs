@@ -8,7 +8,6 @@ import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.List
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
@@ -91,18 +90,11 @@ fromForeignPtr sh fptr
         = AForeignPtr sh (size sh) fptr
 
 
--- | Convert a Repa array to a `ForeignPtr` array.
--- 
---   This is O(1) if the source is already represented as a `ForeignPtr`
---   array (has representation `F`).
---
-toForeignPtr
-        :: Load r1 F sh e
-        => Array r1 sh e -> ForeignPtr e
+-- | O(1). Unpack a `ForeignPtr` from an array.
+toForeignPtr :: Array F sh e -> ForeignPtr e
 {-# INLINE toForeignPtr #-}
-toForeignPtr arr
- = case load arr of
-        AForeignPtr _ _ fptr  -> fptr
+toForeignPtr (AForeignPtr _ _ fptr)
+        = fptr
 
 
 -- | Compute an array sequentially and write the elements into a foreign

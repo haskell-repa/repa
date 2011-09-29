@@ -14,6 +14,7 @@ module Data.Array.Repa.IO.Vector
 	, writeVectorToTextFile)
 where
 import Data.Array.Repa				as A
+import Data.Array.Repa.Repr.Unboxed             as A
 import Data.Array.Repa.IO.Internals.Text
 import Data.List				as L
 import Prelude					as P
@@ -26,9 +27,9 @@ import Data.Char
 --   WARNING: This doesn't do graceful error handling. If the file has the wrong format
 --   you'll get a confusing `error`.
 readVectorFromTextFile
-	:: (Elt a, Num a, Read a)
+	:: (Num e, Read e, Unbox e)
 	=> FilePath
-	-> IO (Array DIM1 a)	
+	-> IO (Array U DIM1 e)	
 
 readVectorFromTextFile fileName
  = do	handle		<- openFile fileName ReadMode
@@ -39,9 +40,9 @@ readVectorFromTextFile fileName
 	let vals	= readValues str
 
 	let dims	= Z :. len
-	let vec		= fromList dims vals
+	let arr		= copy $ fromList dims vals
+	return arr
 
-	return vec
 
 readInt :: String -> Int
 readInt str
@@ -54,8 +55,8 @@ readInt str
 	
 -- | Write a vector as a text file.
 writeVectorToTextFile 
-	:: (Elt a, Show a)
-	=> Array DIM1 a
+	:: (Show e, Repr r e)
+	=> Array r DIM1 e
 	-> FilePath
 	-> IO ()
 
