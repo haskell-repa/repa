@@ -21,10 +21,10 @@ instance Num e => Repr X e where
         = sh
 
  {-# INLINE index #-}
- index (AUndefined _) ix        = 0
+ index (AUndefined _) _        = 0
         
  {-# INLINE linearIndex #-}
- linearIndex (AUndefined _) ix  = 0
+ linearIndex (AUndefined _) _  = 0
  
 
 instance (Shape sh, Fillable r2 e, Num e) => Fill X r2 sh e where

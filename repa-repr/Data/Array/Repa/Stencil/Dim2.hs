@@ -20,8 +20,6 @@ import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
-import GHC.Exts
-import GHC.Base
 
 
 -- | A index into the flat array.
@@ -29,7 +27,7 @@ import GHC.Base
 data Cursor
 	= Cursor Int
 
-type PC5 = P C (P C (P C (P C (P C X))))
+type PC5 = P C (P D (P D (P D (P D X))))
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -94,17 +92,17 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
 	 = unsafeAppStencilCursor2 shiftc stencil arr cur
 
 	{-# INLINE getBorder' #-}
-	getBorder' cur
+	getBorder' ix
 	 = case boundary of
 		BoundConst c	-> c
 		BoundClamp 	-> unsafeAppStencilCursor2_clamp addDim stencil
-					arr cur
+					arr ix
 
         {-# INLINE arrInternal #-}
         arrInternal     = makeCursored (extent arr) makec shiftc getInner' 
         
         {-# INLINE arrBorder #-}
-        arrBorder       = makeCursored (extent arr) id addDim getBorder'
+        arrBorder       = fromFunction (extent arr) getBorder'
 
    in
     --  internal region
@@ -126,7 +124,7 @@ unsafeAppStencilCursor2
 	-> Cursor
 	-> a
 
-{-# INLINE [1] unsafeAppStencilCursor2 #-}
+{-# INLINE unsafeAppStencilCursor2 #-}
 unsafeAppStencilCursor2 shift
         (StencilStatic sExtent zero loads)
 	arr cur0
@@ -135,7 +133,7 @@ unsafeAppStencilCursor2 shift
 	, sHeight <= 7, sWidth <= 7
 	= let
 		-- Get data from the manifest array.
-		{-# INLINE [0] getData #-}
+		{-# INLINE getData #-}
 		getData (Cursor cur) = arr `unsafeLinearIndex` cur
 
 		-- Build a function to pass data from the array to our stencil.
@@ -157,7 +155,7 @@ unsafeAppStencilCursor2_clamp
 	-> DIM2
 	-> a
 
-{-# INLINE [1] unsafeAppStencilCursor2_clamp #-}
+{-# INLINE unsafeAppStencilCursor2_clamp #-}
 unsafeAppStencilCursor2_clamp shift
 	   (StencilStatic sExtent zero loads)
 	   arr cur
@@ -167,7 +165,7 @@ unsafeAppStencilCursor2_clamp shift
 	, sHeight <= 7, sWidth <= 7
 	= let
 		-- Get data from the manifest array.
-		{-# INLINE [0] getData #-}
+		{-# INLINE getData #-}
 		getData :: DIM2 -> a
 		getData (Z :. y :. x)
 		 = wrapLoadX x y
@@ -206,7 +204,7 @@ template7x7
 	:: (Int -> Int -> a -> a)
 	-> a -> a
 
-{-# INLINE [1] template7x7 #-}
+{-# INLINE template7x7 #-}
 template7x7 f zero
  	= f (-3) (-3)  $  f (-3) (-2)  $  f (-3) (-1)  $  f (-3)   0  $  f (-3)   1  $  f (-3)   2  $ f (-3) 3
  	$ f (-2) (-3)  $  f (-2) (-2)  $  f (-2) (-1)  $  f (-2)   0  $  f (-2)   1  $  f (-2)   2  $ f (-2) 3

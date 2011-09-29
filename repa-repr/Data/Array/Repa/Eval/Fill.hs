@@ -17,7 +17,7 @@ class Fillable r e where
  newMArr          :: Int -> IO (MArr r e)
 
  -- | Write an element into the mutable array.
- writeMArr        :: MArr r e -> Int -> e -> IO ()
+ unsafeWriteMArr  :: MArr r e -> Int -> e -> IO ()
 
  -- | Freeze the mutable array into a Repa array.
  unsafeFreezeMArr :: sh  -> MArr r e -> IO (Array r sh e)

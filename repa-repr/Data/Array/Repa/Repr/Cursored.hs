@@ -59,14 +59,14 @@ instance (Fillable r1 e, Elt e) => Fill C r1 DIM2 e where
  {-# INLINE fillP #-}
  fillP (ACursored (Z :. h :. w) makec shiftc loadc) marr
   = fillCursoredBlock2P 
-                (writeMArr marr) 
+                (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w 0 0 (w - 1) (h - 1) 
 
  {-# INLINE fillS #-}
  fillS (ACursored (Z :. h :. w) makec shiftc loadc) marr
   = fillCursoredBlock2S 
-                (writeMArr marr) 
+                (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w 0 0 (w - 1) (h - 1) 
 
@@ -77,7 +77,7 @@ instance (Fillable r1 e, Elt e) => FillRange C r1 DIM2 e where
  fillRangeP  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = fillCursoredBlock2P 
-                (writeMArr marr) 
+                (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 x1 y1
 
@@ -85,7 +85,7 @@ instance (Fillable r1 e, Elt e) => FillRange C r1 DIM2 e where
  fillRangeS  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = fillCursoredBlock2S
-                (writeMArr marr) 
+                (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 x1 y1
 

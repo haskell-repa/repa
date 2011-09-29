@@ -56,9 +56,9 @@ instance (Elt e, U.Unbox e) => Fillable U e where
  newMArr n
   = liftM UMArr (UM.new n)
 
- {-# INLINE writeMArr #-}
- writeMArr (UMArr v) ix
-  = UM.write v ix
+ {-# INLINE unsafeWriteMArr #-}
+ unsafeWriteMArr (UMArr v) ix
+  = UM.unsafeWrite v ix
 
  {-# INLINE unsafeFreezeMArr #-}
  unsafeFreezeMArr sh (UMArr mvec)     

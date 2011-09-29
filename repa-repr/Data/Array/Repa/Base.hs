@@ -25,13 +25,17 @@ class Repr r e where
  index, unsafeIndex
         :: Shape sh => Array r sh e -> sh -> e
 
+ {-# INLINE index #-}
  index arr ix           = arr `linearIndex`       toIndex (extent arr) ix
+
+ {-# INLINE unsafeIndex #-}
  unsafeIndex arr ix     = arr `unsafeLinearIndex` toIndex (extent arr) ix
 
  -- | Linear indexing into underlying representation
  linearIndex, unsafeLinearIndex
         :: Shape sh => Array r sh e -> Int -> e
 
+ {-# INLINE unsafeLinearIndex #-}
  unsafeLinearIndex      = linearIndex
 
  -- | Ensure an array's data structure is fully evaluated.
@@ -54,17 +58,6 @@ class Repr r e where
 --
 class Shape sh => Load r1 r2 sh e where
  load :: Array r1 sh e  -> Array r2 sh e
-
-{-
--- | Array loading specialised to rank-2 arrays.
---
---  * Instances should perform cache-friendly blockwise filling.
--- 
---  * This is instantiated to arrays with 5 partitions, so that you can use 
---    separate element functions for the border and internal regions.
-class Load2 r1 r2 e where
- load2 :: Array r1 DIM2 e -> Array r2 DIM2 e
--}
 
 deepSeqArrays 
         :: (Shape sh, Repr r e)
