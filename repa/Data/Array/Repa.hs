@@ -86,7 +86,12 @@ module Data.Array.Repa
 	-- ** Interleaving
 	, interleave2
 	, interleave3
-	, interleave4)
+	, interleave4
+	
+	-- from Data.Array.Repa.Operators.Reduction ------------------
+	-- ** Reduction
+	, fold, foldAll
+	, sum, sumAll)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
@@ -104,6 +109,7 @@ import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave
+import Data.Array.Repa.Operators.Reduction
 import Prelude ()
 
 

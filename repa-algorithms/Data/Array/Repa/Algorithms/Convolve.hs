@@ -15,6 +15,7 @@ module Data.Array.Repa.Algorithms.Convolve
 	, convolveOut )
 where
 import Data.Array.Repa 					as A
+import Data.Array.Repa.Repr.Unboxed                     as A
 import qualified Data.Vector.Unboxed			as V
 import qualified Data.Array.Repa.Shape			as S
 import Prelude						as P
@@ -24,20 +25,23 @@ import Prelude						as P
 -- | Image-kernel convolution,
 --   which takes a function specifying what value to return when the kernel doesn't apply.
 convolve
-	:: (Elt a, Num a)
+	:: (Num a, Unbox a)
 	=> (DIM2 -> a) 		-- ^ Use this function to get border elements where the kernel apply.
-	-> Array DIM2 a		-- ^ Kernel to use in the convolution.
-	-> Array DIM2 a		-- ^ Input image.
-	-> Array DIM2 a
+	-> Array U DIM2 a	-- ^ Kernel to use in the convolution.
+	-> Array U DIM2 a	-- ^ Input image.
+	-> Array U DIM2 a
 
 {-# INLINE convolve #-}
-convolve makeOut
- 	kernel@(Array       (_ :. krnHeight :. krnWidth) [Region RangeAll (GenManifest krnVec)])
-  	 image@(Array imgSh@(_ :. imgHeight :. imgWidth) [Region RangeAll (GenManifest imgVec)])
-
+convolve makeOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
-   force $ unsafeTraverse image id update
+   forceUnboxed $ unsafeTraverse image id update
  where	
+        (Z :. krnHeight :. krnWidth)        = extent kernel
+        krnVec          = toUnboxed kernel
+        
+        imgSh@(Z :. imgHeight :. imgWidth)  = extent image
+        imgVec          = toUnboxed image
+
 	!krnHeight2	= krnHeight `div` 2
 	!krnWidth2	= krnWidth  `div` 2
 
@@ -114,20 +118,20 @@ outClamp get (_ :. yLen :. xLen) (sh :. j :. i)
 -- | Image-kernel convolution, 
 --   which takes a function specifying what value to use for out-of-range elements.
 convolveOut
-	:: (Elt a, Num a)
+	:: (Num a, Unbox a)
 	=> GetOut a		-- ^ Use this fn to get out of range elements.
-	-> Array DIM2 a		-- ^ Kernel
-	-> Array DIM2 a		-- ^ Image
-	-> Array DIM2 a
+	-> Array U DIM2 a	-- ^ Kernel
+	-> Array U DIM2 a	-- ^ Image
+	-> Array U DIM2 a
 
 {-# INLINE convolveOut #-}
-convolveOut getOut
- 	kernel@(Array krnSh@(_ :. krnHeight :. krnWidth) _)
-  	 image@(Array imgSh@(_ :. imgHeight :. imgWidth) _)
-
+convolveOut getOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
-   force $ unsafeTraverse image id stencil
+   forceUnboxed $ unsafeTraverse image id stencil
  where	
+        krnSh@(Z :. krnHeight :. krnWidth)  = extent kernel        
+        imgSh@(Z :. imgHeight :. imgWidth)  = extent image
+
 	!krnHeight2	= krnHeight `div` 2
 	!krnWidth2	= krnWidth  `div` 2
         !krnSize	= S.size krnSh

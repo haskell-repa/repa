@@ -79,6 +79,7 @@ Library
         Data.Array.Repa.Eval.Gang
         Data.Array.Repa.Eval.Chunked
         Data.Array.Repa.Eval.Cursored
+        Data.Array.Repa.Eval.Reduction
         Data.Array.Repa.Stencil.Base
         Data.Array.Repa.Stencil.Template
         

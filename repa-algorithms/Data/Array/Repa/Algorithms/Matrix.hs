@@ -12,28 +12,27 @@
 module Data.Array.Repa.Algorithms.Matrix
 	(multiplyMM)
 where
-import Data.Array.Repa	as A
+import Data.Array.Repa	                as A
+import Data.Array.Repa.Repr.Unboxed     as A
 
 -- | Matrix-matrix multiply.
 multiplyMM
-	:: Array DIM2 Double
-	-> Array DIM2 Double
-	-> Array DIM2 Double
+	:: Array U DIM2 Double
+	-> Array U DIM2 Double
+	-> Array U DIM2 Double
 
 {-# NOINLINE multiplyMM #-}
-multiplyMM arr@(Array _ [Region RangeAll (GenManifest _)])
-	   brr@(Array _ [Region RangeAll (GenManifest _)])
+multiplyMM arr brr
  = [arr, brr] `deepSeqArrays`
-   A.force $ A.sum (A.zipWith (*) arrRepl brrRepl)
- where	trr@(Array _ [Region RangeAll (GenManifest _)])
-			= force $ transpose2D brr
+   A.forceUnboxed $ A.sum (A.zipWith (*) arrRepl brrRepl)
+ where	trr             = forceUnboxed $ transpose2D brr
 	arrRepl		= trr `deepSeqArray` A.extend (Z :. All   :. colsB :. All) arr
 	brrRepl		= trr `deepSeqArray` A.extend (Z :. rowsA :. All   :. All) trr
 	(Z :. _     :. rowsA) = extent arr
 	(Z :. colsB :. _    ) = extent brr
 	
 
-transpose2D :: Elt e => Array DIM2 e -> Array DIM2 e
+transpose2D :: Repr r e => Array r DIM2 e -> Array D DIM2 e
 {-# INLINE transpose2D #-}
 transpose2D arr
  = backpermute new_extent swap arr

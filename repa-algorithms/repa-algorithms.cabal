@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             2.2.0.1
+Version:             3.0.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -20,7 +20,7 @@ Library
   Build-Depends: 
         base                 == 4.*,
         vector               == 0.9.*,
-        repa                 == 2.2.*
+        repa                 == 3.0.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -40,4 +40,3 @@ Library
         Data.Array.Repa.Algorithms.FFT
         Data.Array.Repa.Algorithms.Matrix
         Data.Array.Repa.Algorithms.Convolve
-        Data.Array.Repa.Algorithms.Iterate
