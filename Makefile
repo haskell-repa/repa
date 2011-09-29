@@ -3,7 +3,6 @@
 all : 
 	@make clean
 	@make repa
-	@make repa-bytestring
 	@make repa-io
 	@make repa-algorithms
 	@make repa-examples
@@ -25,17 +24,6 @@ clean :
 .PHONY : repa
 repa :
 	@echo "-- Building repa -----------------------------------------------"
-	@cd $@ ; \
-		runghc Setup.hs clean ; \
-		runghc Setup.hs configure --user ; \
-		runghc Setup.hs build ; \
-		runghc Setup.hs install
-	@echo
-
-
-.PHONY : repa-bytestring
-repa-bytestring :
-	@echo "-- Building repa-bytestring ------------------------------------"
 	@cd $@ ; \
 		runghc Setup.hs clean ; \
 		runghc Setup.hs configure --user ; \

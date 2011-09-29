@@ -5,6 +5,7 @@ module Data.Array.Repa.Stencil.Base
 	, Stencil	(..)
 	, makeStencil, makeStencil2)
 where
+import Data.Array.Repa.Internals.Elt
 import Data.Array.Repa.Index
 
 -- | How to handle the case when the stencil lies partly outside the array.
@@ -31,7 +32,7 @@ data Stencil sh a
 
 -- | Make a stencil from a function yielding coefficients at each index.
 makeStencil
-	:: Num a
+	:: (Elt a, Num a)
 	=> sh			-- ^ Extent of stencil.
 	-> (sh -> Maybe a) 	-- ^ Get the coefficient at this index.
 	-> Stencil sh a
@@ -47,7 +48,7 @@ makeStencil ex getCoeff
 
 -- | Wrapper for `makeStencil` that requires a DIM2 stencil.
 makeStencil2
-	:: Num a
+	:: (Elt a, Num a)
 	=> Int -> Int		-- ^ extent of stencil
 	-> (DIM2 -> Maybe a)	-- ^ Get the coefficient at this index.
 	-> Stencil DIM2 a

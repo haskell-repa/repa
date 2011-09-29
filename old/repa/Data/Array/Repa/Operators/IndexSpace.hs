@@ -12,9 +12,9 @@ module Data.Array.Repa.Operators.IndexSpace
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
-import Data.Array.Repa.Base
-import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Operators.Traversal
+import Data.Array.Repa.Internals.Elt
+import Data.Array.Repa.Internals.Base
+import Data.Array.Repa.Operators.Traverse
 import Data.Array.Repa.Shape		as S
 import Prelude				hiding ((++))
 import qualified Prelude		as P
@@ -24,29 +24,42 @@ stage	= "Data.Array.Repa.Operators.IndexSpace"
 -- Index space transformations --------------------------------------------------------------------
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
-reshape	:: (Shape sh2, Shape sh1
-           , Repr r1 e)
-	=> sh2
-	-> Array r1 sh1 e
-	-> Array D  sh2 e
+--
+--   TODO: This only works for arrays with a single region.
+--
+reshape	:: (Shape sh, Shape sh', Elt a)
+	=> sh'
+	-> Array sh a
+	-> Array sh' a
 
 {-# INLINE reshape #-}
-reshape sh2 arr
-	| not $ S.size sh2 == S.size (extent arr)
+reshape sh' arr
+	| not $ S.size sh' == S.size (extent arr)
 	= error $ stage P.++ ".reshape: reshaped array will not match size of the original"
 
-reshape sh2 arr
-        = fromFunction sh2 
-        $ unsafeIndex arr . fromIndex (extent arr) . toIndex sh2
- 
+reshape sh' (Array sh [Region RangeAll gen])
+ = Array sh' [Region RangeAll gen']
+ where gen' = case gen of
+		GenManifest vec
+	 	 -> GenManifest vec
+
+		GenCursor makeCursor _ loadElem
+	 	 -> GenCursor
+			id
+			addDim
+			(loadElem . makeCursor . fromIndex sh . toIndex sh')
+
+reshape _ _
+	= error $ stage P.++ ".reshape: can't reshape a partitioned array"
+
 
 -- | Append two arrays.
+--
 append, (++)
-	:: ( Shape sh
-	   , Repr r1 e, Repr r2 e)
-	=> Array r1 (sh :. Int) e
-	-> Array r2 (sh :. Int) e
-	-> Array D  (sh :. Int) e
+	:: (Shape sh, Elt a)
+	=> Array (sh :. Int) a
+	-> Array (sh :. Int) a
+	-> Array (sh :. Int) a
 
 {-# INLINE append #-}
 append arr1 arr2
@@ -68,10 +81,9 @@ append arr1 arr2
 -- | Transpose the lowest two dimensions of an array.
 --	Transposing an array twice yields the original.
 transpose
-	:: ( Shape sh
-	   , Repr r e)
-	=> Array r (sh :. Int :. Int) e
-	-> Array D (sh :. Int :. Int) e
+	:: (Shape sh, Elt a)
+	=> Array (sh :. Int :. Int) a
+	-> Array (sh :. Int :. Int) a
 
 {-# INLINE transpose #-}
 transpose arr
@@ -81,14 +93,15 @@ transpose arr
 
 
 -- | Extend an array, according to a given slice specification.
+--   (used to be called replicate).
 extend
 	:: ( Slice sl
 	   , Shape (FullShape sl)
 	   , Shape (SliceShape sl)
-	   , Repr r e)
+	   , Elt e)
 	=> sl
-	-> Array r (SliceShape sl) e
-	-> Array D (FullShape sl)  e
+	-> Array (SliceShape sl) e
+	-> Array (FullShape sl) e
 
 {-# INLINE extend #-}
 extend sl arr
@@ -101,10 +114,10 @@ extend sl arr
 slice	:: ( Slice sl
 	   , Shape (FullShape sl)
 	   , Shape (SliceShape sl)
-	   , Repr r e)
-	=> Array r (FullShape sl) e
+	   , Elt e)
+	=> Array (FullShape sl) e
 	-> sl
-	-> Array D (SliceShape sl) e
+	-> Array (SliceShape sl) e
 
 {-# INLINE slice #-}
 slice arr sl
@@ -117,14 +130,13 @@ slice arr sl
 -- | Backwards permutation of an array's elements.
 --	The result array has the same extent as the original.
 backpermute
-	:: forall r sh1 sh2 e
-	.  ( Shape sh1, Shape sh2
-	   , Repr r e)
-	=> sh2 				-- ^ Extent of result array.
-	-> (sh2 -> sh1) 		-- ^ Function mapping each index in the result array
+	:: forall sh sh' a
+	.  (Shape sh, Shape sh', Elt a)
+	=> sh' 				-- ^ Extent of result array.
+	-> (sh' -> sh) 			-- ^ Function mapping each index in the result array
 					--	to an index of the source array.
-	-> Array r  sh1 e 		-- ^ Source array.
-	-> Array D  sh2 e
+	-> Array sh a 			-- ^ Source array.
+	-> Array sh' a
 
 {-# INLINE backpermute #-}
 backpermute newExtent perm arr
@@ -135,19 +147,19 @@ backpermute newExtent perm arr
 --	If the function returns `Nothing` then the value at that index is taken
 --	from the default array (@arrDft@)
 backpermuteDft
-	:: forall r0 r1 sh1 sh2 e
-	.  ( Shape sh1, Shape sh2
-	   , Repr  r0 e, Repr r1 e)
-	=> Array r0 sh2 e		-- ^ Default values (@arrDft@)
-	-> (sh2 -> Maybe sh1) 		-- ^ Function mapping each index in the result array
+	:: forall sh sh' a
+	.  (Shape sh, Shape sh', Elt a)
+	=> Array sh' a			-- ^ Default values (@arrDft@)
+	-> (sh' -> Maybe sh) 		-- ^ Function mapping each index in the result array
 					--	to an index in the source array.
-	-> Array r1 sh1 e			-- ^ Source array.
-	-> Array D  sh2 e
+	-> Array sh  a			-- ^ Source array.
+	-> Array sh' a
 
 {-# INLINE backpermuteDft #-}
 backpermuteDft arrDft fnIndex arrSrc
 	= fromFunction (extent arrDft) fnElem
 	where	fnElem ix
 		 = case fnIndex ix of
-			Just ix'	-> arrSrc `index` ix'
-			Nothing		-> arrDft `index` ix
+			Just ix'	-> arrSrc ! ix'
+			Nothing		-> arrDft ! ix
+
