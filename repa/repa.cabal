@@ -48,7 +48,6 @@ Library
         StandaloneDeriving
         ScopedTypeVariables
         PatternGuards
-        OverlappingInstances
 
   Exposed-modules:
         Data.Array.Repa

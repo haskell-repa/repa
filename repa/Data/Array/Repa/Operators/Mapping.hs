@@ -1,5 +1,4 @@
 
-
 -- | TODO: Use local rules to rewrite these to use special versions
 --         for specific representations, eg for partitioned arrays 
 --         we want to map the regions separately.

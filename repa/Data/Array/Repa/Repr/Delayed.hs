@@ -2,8 +2,7 @@
 module Data.Array.Repa.Repr.Delayed
         ( D, Array(..)
         , fromFunction, toFunction
-        , delay
-        , copy)
+        , delay)
 where
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
@@ -39,7 +38,7 @@ instance Repr D a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an array.
-instance (Fillable r1 e, Shape sh) => Fill D r1 sh e where
+instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
  {-# INLINE fillP #-}
  fillP (ADelayed sh getElem) marr
   = fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
@@ -50,7 +49,7 @@ instance (Fillable r1 e, Shape sh) => Fill D r1 sh e where
 
 
 -- | Compute a range of elements in a rank-2 array.
-instance (Fillable r1 e, Elt e) => FillRange D r1 DIM2 e where
+instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
  {-# INLINE fillRangeP #-}
  fillRangeP  (ADelayed (Z :. _h :. w) getElem) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
@@ -65,13 +64,6 @@ instance (Fillable r1 e, Elt e) => FillRange D r1 DIM2 e where
                 getElem
                 w x0 y0 x1 y1
 
-
--- Load -----------------------------------------------------------------------
--- | no-op.
-instance Shape sh => Load D D sh a where
- {-# INLINE load #-}
- load arr       = arr
-  
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a function as a delayed array.
@@ -100,9 +92,3 @@ delay   :: (Shape sh, Repr r e)
 {-# INLINE delay #-}
 delay arr = ADelayed (extent arr) (index arr)
 
-
--- | Copy an array by delaying it then loading to the new representation.
-copy    :: (Repr r1 e, Load D r2 sh e)
-        => Array r1 sh e -> Array r2 sh e
-{-# INLINE copy #-}
-copy    = load . delay

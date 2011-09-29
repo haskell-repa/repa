@@ -55,7 +55,7 @@ instance Repr C a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an rank-2 array. 
-instance (Fillable r1 e, Elt e) => Fill C r1 DIM2 e where
+instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
  {-# INLINE fillP #-}
  fillP (ACursored (Z :. h :. w) makec shiftc loadc) marr
   = fillCursoredBlock2P 
@@ -72,7 +72,7 @@ instance (Fillable r1 e, Elt e) => Fill C r1 DIM2 e where
 
 
 -- | Compute a range of elements in a rank-2 array.
-instance (Fillable r1 e, Elt e) => FillRange C r1 DIM2 e where
+instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
  {-# INLINE fillRangeP #-}
  fillRangeP  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
@@ -88,13 +88,6 @@ instance (Fillable r1 e, Elt e) => FillRange C r1 DIM2 e where
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 x1 y1
-
--- Load -----------------------------------------------------------------------
--- | no-op.
-instance Shape sh => Load C C sh a where
- {-# INLINE load #-}
- load arr       = arr
-
  
 -- Conversions ----------------------------------------------------------------
 -- | Define a new cursored array.

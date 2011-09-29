@@ -32,25 +32,26 @@
 --  constant time or parallel copy, depending on the compatability of the physical representation.
 --
 module Data.Array.Repa
-        ( -- * Array representation
+        ( -- * Abstract array representation
           Array(..)
         , module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
         , Repr(..), (!)
         , deepSeqArrays
 
-        -- * Loading between representations
-        , Load(..)
+        -- * Converting between array representations
+        , compute, copy
 
-        -- * Representations
+        -- * Concrete array representations
         -- ** Delayed representation
         , D, fromFunction, toFunction
-        , delay, copy
+        , delay
 
-        -- ** Vector representation
-        , V
-        , fromVector, toVector,  forceVector
-        , fromList,   toList
+        -- ** Unboxed Vector representation
+        , U
+        , computeUnboxed
+        , fromUnboxed,     toUnboxed
+        , fromListUnboxed, toListUnboxed
                 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
         -- * Operators
@@ -97,6 +98,7 @@ import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
+import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Vector
 import Data.Array.Repa.Repr.Unboxed
@@ -110,7 +112,7 @@ import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave
 import Data.Array.Repa.Operators.Reduction
-import Prelude ()
+import Prelude          ()
 
 
 

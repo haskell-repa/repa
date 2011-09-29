@@ -1,12 +1,12 @@
 
 module Data.Array.Repa.Repr.Vector
         ( V, Array (..)
-        , fromVector, toVector,  forceVector
-        , fromList,   toList)
+        , computeVector,  fromVector, toVector
+        , fromListVector, toListVector)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
-import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Delayed
 import qualified Data.Vector            as V
 import qualified Data.Vector.Mutable    as VM
@@ -41,7 +41,7 @@ instance Repr V a where
 
 
 -- Fill -----------------------------------------------------------------------
--- | Filling of unboxed vector arrays.
+-- | Filling of boxed vector arrays.
 instance Fillable V e where
  data MArr V e 
   = MVec (VM.IOVector e)
@@ -60,14 +60,18 @@ instance Fillable V e where
         return  $  AVector sh vec
 
 
--- Load -----------------------------------------------------------------------
--- | no-op.
-instance Shape sh => Load V V sh e where
- {-# INLINE load #-}
- load arr = arr
-
-
 -- Conversions ----------------------------------------------------------------
+-- | Compute an array to a boxed vector.
+--
+--   * This is just a wrapper for `compute`, with a more specific type.
+--
+computeVector
+        :: Fill r1 V sh e
+        => Array r1 sh e -> Array V sh e
+{-# INLINE computeVector #-}
+computeVector = compute
+
+
 -- | O(1). Wrap a boxed vector as an array
 fromVector
         :: Shape sh
@@ -84,30 +88,17 @@ toVector (AVector _ vec)
         = vec
 
 
--- | Force an array to a boxed vector.
---
---   If the source array was in delayed form then this invokes parallel computation.
---
-forceVector
-        :: (Load r1 V sh e)
-        => Array r1 sh e -> Array V sh e
-{-# INLINE forceVector #-}
-forceVector = load
-
-
 -- | O(n). Convert a list to a boxed vector.
-fromList :: sh -> [a] -> Array V sh a
-{-# INLINE fromList #-}
-fromList sh xs
+fromListVector :: sh -> [a] -> Array V sh a
+{-# INLINE fromListVector #-}
+fromListVector sh xs
         = AVector sh (V.fromList xs)
 
 
 -- | O(n). Convert an array to a list.
-toList  :: (Shape sh, Repr r a, Load D V sh a)
-        => Array r sh a -> [a]
-{-# INLINE toList #-}
-toList arr
- = case load (delay arr) of
-         AVector _ vec -> V.toList vec
-
+toListVector :: Shape sh
+        => Array V sh a -> [a]
+{-# INLINE toListVector #-}
+toListVector (AVector _ vec) 
+        = V.toList vec
 

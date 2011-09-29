@@ -1,4 +1,3 @@
-{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeOperators, ExplicitForAll, FlexibleContexts #-}
 
 module Data.Array.Repa.Operators.IndexSpace

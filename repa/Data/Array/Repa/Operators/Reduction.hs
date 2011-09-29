@@ -1,4 +1,3 @@
-{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE BangPatterns, ExplicitForAll, TypeOperators #-}
 
 module Data.Array.Repa.Operators.Reduction

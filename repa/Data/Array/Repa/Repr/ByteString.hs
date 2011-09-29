@@ -40,13 +40,6 @@ instance Repr B Word8 where
   = sh `deepSeq` bs `seq` x
 
 
--- Load -----------------------------------------------------------------------
--- | no-op.
-instance Shape sh => Load B B sh Word8 where
- {-# INLINE load #-}
- load arr = arr
-
-
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a `ByteString` as an array.
 fromByteString

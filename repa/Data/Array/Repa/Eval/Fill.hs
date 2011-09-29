@@ -26,10 +26,9 @@ class Fillable r e where
 -- | Compute array elements and write them to a filleable
 --   array representation.
 --  
---   Note that instances require that the source array to have
---   a delayed representation such as `D` or `C`. If you want
---   to use a pre-existing manifest array as the source then
---   `delay` it first.
+--   Note that instances require that the source array to have a delayed
+--   representation such as `D` or `C`. If you want to use a pre-existing
+--   manifest array as the source then `delay` it first.
 class (Shape sh, Repr r1 e, Fillable r2 e) => Fill r1 r2 sh e where
  -- | Fill an entire array sequentially.
  fillS          :: Array r1 sh e -> MArr r2 e -> IO ()

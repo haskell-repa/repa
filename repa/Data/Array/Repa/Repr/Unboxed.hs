@@ -1,11 +1,13 @@
 
 module Data.Array.Repa.Repr.Unboxed
         ( U, U.Unbox, Array (..)
-        , fromUnboxed, toUnboxed, forceUnboxed)
+        , computeUnboxed,  fromUnboxed, toUnboxed
+        , fromListUnboxed, toListUnboxed)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
 import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Delayed
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
@@ -63,14 +65,17 @@ instance U.Unbox e => Fillable U e where
         return  $  AUnboxed sh vec
 
 
--- Load -----------------------------------------------------------------------
--- | no-op.
-instance Shape sh => Load U U sh e where
- {-# INLINE load #-}
- load arr = arr
-
-
 -- Conversions ----------------------------------------------------------------
+-- | Compute an array to an unboxed vector.
+--
+--   * This is just a wrapper for `compute`, with a more specific type.
+--
+computeUnboxed
+        :: Fill r1 U sh e
+        => Array r1 sh e -> Array U sh e
+{-# INLINE computeUnboxed #-}
+computeUnboxed = compute
+
 -- | O(1). Wrap an unboxed vector as an array.
 fromUnboxed
         :: (Shape sh, U.Unbox e)
@@ -88,12 +93,17 @@ toUnboxed
 toUnboxed (AUnboxed _ vec)
         = vec
 
--- | Force an array to an unboxed vector.
---
---   If the source array was in delayed form then this invokes parallel computation.
---
-forceUnboxed
-        :: (Load r1 U sh e)
-        => Array r1 sh e -> Array U sh e
-{-# INLINE forceUnboxed #-}
-forceUnboxed = load
+
+-- | O(n). Convert a list to an unboxed vector.
+fromListUnboxed :: U.Unbox a => sh -> [a] -> Array U sh a
+{-# INLINE fromListUnboxed #-}
+fromListUnboxed sh xs
+        = AUnboxed sh (U.fromList xs)
+
+
+-- | O(n). Convert an array to a list.
+toListUnboxed :: (Shape sh, U.Unbox a)
+        => Array U sh a -> [a]
+{-# INLINE toListUnboxed #-}
+toListUnboxed (AUnboxed _ vec) 
+        = U.toList vec

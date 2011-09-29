@@ -71,15 +71,6 @@ instance Storable e => Fillable F e where
   =     return  $ AForeignPtr sh len fptr
 
 
-
--- Load -----------------------------------------------------------------------
--- | no-op.
-instance Shape sh => Load F F sh e where
- {-# INLINE load #-}
- load arr = arr
-
-
-
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a `ForeignPtr` as an array.
 fromForeignPtr
