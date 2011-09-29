@@ -12,7 +12,7 @@
 --
 --   * `U`  -- Adaptive unboxed vectors.
 --
---   * `B`  -- Strict ByteStrings. (TODO)
+--   * `B`  -- Strict ByteStrings.
 --
 --   * `F`  -- Foreign memory buffers. (TODO)
 --
@@ -93,6 +93,7 @@ import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.List
 import Data.Array.Repa.Repr.Unboxed
+import Data.Array.Repa.Repr.ByteString
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Operators.Mapping

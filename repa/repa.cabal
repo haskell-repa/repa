@@ -26,6 +26,7 @@ Library
         base                 == 4.4.*,
         ghc-prim             == 0.2.*,
         vector               == 0.9.*,
+        bytestring           == 0.9.*,
         QuickCheck           >= 2.3 && < 2.5,
         template-haskell     >= 2.5 && < 2.7
 
@@ -57,6 +58,7 @@ Library
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.Cursored
         Data.Array.Repa.Repr.Unboxed
+        Data.Array.Repa.Repr.ByteString
         Data.Array.Repa.Repr.Partitioned
         Data.Array.Repa.Repr.Undefined
         Data.Array.Repa.Operators.IndexSpace
