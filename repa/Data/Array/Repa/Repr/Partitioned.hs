@@ -25,7 +25,14 @@ data Range sh
         = Range sh sh                           -- indices defining the range
                 (sh -> Bool)                    -- predicate to check whether were in range
 
+-- | Check whether an index is within the given range.
+{-# INLINE inRange #-}
+inRange :: Range sh -> sh -> Bool
+inRange (Range _ _ p) ix
+        = p ix
 
+
+-- Repr -----------------------------------------------------------------------
 -- | Read elements from a partitioned array.
 instance (Repr r1 e, Repr r2 e) => Repr (P r1 r2) e where
  {-# INLINE index #-}
@@ -51,12 +58,6 @@ deepSeqRange :: Shape sh => Range sh -> b -> b
 deepSeqRange (Range low high f) y
         = low `deepSeq` high `deepSeq` f `seq` y
 
-
--- | Check whether an index is within the given range.
-{-# INLINE inRange #-}
-inRange :: Range sh -> sh -> Bool
-inRange (Range _ _ p) ix
-        = p ix
 
 -- Fill -----------------------------------------------------------------------
 instance ( FillRange r1 r3 sh e, Fill r2 r3 sh e

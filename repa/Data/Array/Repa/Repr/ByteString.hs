@@ -20,6 +20,7 @@ data instance Array B sh Word8
 deriving instance Show sh
         => Show (Array B sh Word8)
 
+
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a `ByteString`.
 instance Repr B Word8 where
