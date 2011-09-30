@@ -47,8 +47,9 @@ isPowerOfTwo n
 
 -- 3D Transform -----------------------------------------------------------------------------------
 -- | Compute the DFT of a 3d array. Array dimensions must be powers of two else `error`.
-fft3d 	:: Mode
-	-> Array U DIM3 Complex
+fft3d 	:: Repr r Complex
+        => Mode
+	-> Array r DIM3 Complex
 	-> Array U DIM3 Complex
 
 fft3d mode arr
@@ -72,8 +73,9 @@ fft3d mode arr
 				$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 
 fftTrans3d 
-	:: Double
-	-> Array U DIM3 Complex 
+	:: Repr r Complex
+	=> Double
+	-> Array r DIM3 Complex 
 	-> Array U DIM3 Complex
 
 {-# NOINLINE fftTrans3d #-}
@@ -95,8 +97,9 @@ rotate3d arr
 
 -- Matrix Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a matrix. Array dimensions must be powers of two else `error`.
-fft2d 	:: Mode
-	-> Array U DIM2 Complex
+fft2d 	:: Repr r Complex
+        => Mode
+	-> Array r DIM2 Complex
 	-> Array U DIM2 Complex
 
 fft2d mode arr
@@ -117,8 +120,9 @@ fft2d mode arr
 			Inverse	-> compute $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
 
 fftTrans2d 
-	:: Double
-	-> Array U DIM2 Complex 
+	:: Repr r Complex
+	=> Double
+	-> Array r DIM2 Complex 
 	-> Array U DIM2 Complex
 
 {-# NOINLINE fftTrans2d #-}
@@ -129,8 +133,9 @@ fftTrans2d sign arr
 
 -- Vector Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a vector. Array dimensions must be powers of two else `error`.
-fft1d	:: Mode 
-	-> Array U DIM1 Complex 
+fft1d	:: Repr r Complex
+        => Mode 
+	-> Array r DIM1 Complex 
 	-> Array U DIM1 Complex
 	
 fft1d mode arr
@@ -151,8 +156,9 @@ fft1d mode arr
 			Inverse -> compute $ A.map (/ scale) $ fftTrans1d sign arr
 
 fftTrans1d
-	:: Double 
-	-> Array U DIM1 Complex
+	:: Repr r Complex
+	=> Double 
+	-> Array r DIM1 Complex
 	-> Array U DIM1 Complex
 
 {-# NOINLINE fftTrans1d #-}
@@ -162,9 +168,9 @@ fftTrans1d sign arr
 
 
 -- Rank Generalised Worker ------------------------------------------------------------------------
-fft     :: Shape sh 
+fft     :: (Shape sh, Repr r Complex)
         => Double -> sh -> Int 
-        -> Array U (sh :. Int) Complex
+        -> Array r (sh :. Int) Complex
         -> Array U (sh :. Int) Complex
 
 {-# INLINE fft #-}

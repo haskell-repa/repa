@@ -7,6 +7,7 @@ import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.ColorRamp
 import Data.Array.Repa.IO.Timing
 import Data.Array.Repa				as A
+import qualified Data.Array.Repa.Repr.Unboxed   as U
 import Data.Word
 import System.Environment
 import Control.Monad
@@ -34,7 +35,8 @@ mainWithArgs size prefixOut
 	let center	= size `div` 2
 	let cutoff		= 4
 
-	let arrInit	= force 
+	let arrInit	
+	        = compute
 		$ fromFunction shape 
 			(\ix -> if isInCenteredCube center cubeSize ix 
 					then (1, 0) else (0, 0))
@@ -53,10 +55,10 @@ mainWithArgs size prefixOut
 
 -- | To the high pass transform.
 transform
-	:: Array DIM3 Complex
+	:: Array U DIM3 Complex
 	-> Int
 	-> Int
-	-> Array DIM3 Complex
+	-> Array U DIM3 Complex
 transform arrInit center cutoff
  = let	-- Transform to frequency space.
 	arrCentered	= center3d arrInit
@@ -73,17 +75,17 @@ transform arrInit center cutoff
 -- | Dump a numbered slice of this array to a BMP file.
 dumpSlice 
 	:: FilePath
-	-> Array DIM3 Complex
+	-> Array U DIM3 Complex
 	-> Int
 	-> IO ()
 
 dumpSlice prefix arr sliceNum
  = do	let arrSlice	= slice arr (Any :. sliceNum :. All)
-	let arrGrey	= A.map (truncate . (* 255) . mag) arrSlice
+	let arrGrey	= computeUnboxed $ A.map (truncate . (* 255) . mag) arrSlice
 	let fileName	= prefix P.++ (pad0 3 (show sliceNum)) P.++ ".bmp"
 
-	writeComponentsToBMP fileName
-		arrGrey arrGrey arrGrey
+	writeImageToBMP fileName
+	        (U.zip3 arrGrey arrGrey arrGrey)
 
 pad0 n str
  = P.replicate  (n - length str) '0' P.++ str
