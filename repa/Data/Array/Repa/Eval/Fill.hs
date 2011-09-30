@@ -1,30 +1,50 @@
 
 module Data.Array.Repa.Eval.Fill
-        ( Fillable  (..)
+        ( Fillable  (..), fromList
         , Fill      (..)
         , FillRange (..))
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
+import Control.Monad
+import System.IO.Unsafe
 
--- | Class of manifest array representations that can be filled in parallel.
+-- Fillable -------------------------------------------------------------------
+-- | Class of manifest array representations that can be filled in parallel 
+--   and then frozen into immutable Repa arrays.
 class Fillable r e where
 
  -- | Mutable version of the representation.
  data MArr r e
 
- -- | Allocate a new array of the given size.
+ -- | Allocate a new mutable array of the given size.
  newMArr          :: Int -> IO (MArr r e)
 
  -- | Write an element into the mutable array.
  unsafeWriteMArr  :: MArr r e -> Int -> e -> IO ()
 
- -- | Freeze the mutable array into a Repa array.
+ -- | Freeze the mutable array into an immutable Repa array.
  unsafeFreezeMArr :: sh  -> MArr r e -> IO (Array r sh e)
 
 
--- | Compute array elements and write them to a filleable
---   array representation.
+-- | O(n). Construct a manifest array from a list.
+fromList
+        :: (Shape sh, Fillable r e)
+        => sh -> [e] -> Array r sh e
+fromList sh xx
+ = unsafePerformIO
+ $ do   let len = length xx
+        if len /= size sh
+         then error "Data.Array.Repa.Eval.Fill.fromList: provide array shape does not match list length"
+         else do
+                marr    <- newMArr len
+                zipWithM_ (unsafeWriteMArr marr) [0..] xx
+                unsafeFreezeMArr sh marr
+
+
+-- Fill -----------------------------------------------------------------------
+-- | Compute all elements defined by an array and write them to a fillable
+--   representation.
 --  
 --   Note that instances require that the source array to have a delayed
 --   representation such as `D` or `C`. If you want to use a pre-existing
@@ -37,9 +57,15 @@ class (Shape sh, Repr r1 e, Fillable r2 e) => Fill r1 r2 sh e where
  fillP          :: Array r1 sh e -> MArr r2 e -> IO ()
 
 
+-- FillRange ------------------------------------------------------------------
+-- | Compute a range of elements defined by an array and write them to a fillable
+--   representation.
 class (Shape sh, Repr r1 e, Fillable r2 e) => FillRange r1 r2 sh e where
  -- | Fill a range of an array sequentially.
  fillRangeS     :: Array r1 sh e -> MArr r2 e -> sh -> sh -> IO ()
 
  -- | Fill a range of an array in parallel.
  fillRangeP     :: Array r1 sh e -> MArr r2 e -> sh -> sh -> IO ()
+
+
+                        

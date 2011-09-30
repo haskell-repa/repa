@@ -20,7 +20,7 @@ data instance Array D sh e
 
 
 -- Repr -----------------------------------------------------------------------
--- | Compute elements from a delayed array.
+-- | Compute elements of a delayed array.
 instance Repr D a where
  {-# INLINE index #-}
  index       (ADelayed _  f) ix  = f ix
@@ -72,7 +72,7 @@ fromFunction :: sh -> (sh -> a) -> Array D sh a
 fromFunction sh f = ADelayed sh f
 
 
--- | O(1). Produce the shape of an array, and a function to retrieve an arbitrary element.
+-- | O(1). Produce the extent of an array and a function to retrieve an arbitrary element.
 toFunction 
         :: (Shape sh, Repr r1 a)
         => Array r1 sh a -> (sh, sh -> a)
@@ -83,7 +83,7 @@ toFunction arr
 
 
 -- | O(1). Delay an array.
---   This changes the internal representation to be a function from
+--   This wraps the internal representation to be a function from
 --   indices to elements, so consumers don't need to worry about
 --   what the previous representation was.
 --
@@ -91,4 +91,6 @@ delay   :: (Shape sh, Repr r e)
         => Array r sh e -> Array D sh e
 {-# INLINE delay #-}
 delay arr = ADelayed (extent arr) (index arr)
+
+
 

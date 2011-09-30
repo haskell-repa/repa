@@ -15,16 +15,19 @@ data X
 data instance Array X sh e
         = AUndefined sh
 
-instance Num e => Repr X e where
+
+-- | Read an undefined array elements. Inspecting their values yields `error`.
+--
+instance Repr X e where
  {-# INLINE extent #-}
  extent (AUndefined sh) 
         = sh
 
  {-# INLINE index #-}
- index (AUndefined _) _        = 0
+ index (AUndefined _) _        = error "Repa: array element is undefined."
         
  {-# INLINE linearIndex #-}
- linearIndex (AUndefined _) _  = 0
+ linearIndex (AUndefined _) _  = error "Repa: array element is undefined."
  
 
 instance (Shape sh, Fillable r2 e, Num e) => Fill X r2 sh e where

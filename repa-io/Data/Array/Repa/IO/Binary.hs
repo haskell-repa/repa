@@ -78,7 +78,7 @@ writeArrayToStorableFile filePath arr
         
         buf :: Ptr a    <- mallocBytes bytesTotal
         fptr            <- newForeignPtr finalizerFree buf        
-        R.forceIntoP fptr (delay arr)
+        R.computeIntoP fptr (delay arr)
         
         h <- openBinaryFile filePath WriteMode
         hPutBuf h buf bytesTotal 

@@ -13,13 +13,16 @@ import GHC.Int
 -- Note that the touch# function is special because we can pass it boxed or unboxed
 -- values. The argument type has kind ?, not just * or #.
 
--- | Element types that can be stored in Repa arrays.
+-- | Element types that can be used with the blockwise filling functions.
+--  
+--   This class is mainly used to define the `touch` method. This is used internally
+--   in the imeplementation of Repa to prevent let-binding from being floated
+--   inappropriately by the GHC simplifier.  Doing a `seq` sometimes isn't enough,
+--   because the GHC simplifier can erase these, and still move around the bindings.
+--
 class Elt a where
 
-	-- | We use this to prevent bindings from being floated inappropriatey.
-	--
-	--   Doing a `seq` sometimes isn't enough, because the GHC simplifier can
-	--   erase these, and/or still move around the bindings.
+	-- | Place a demand on a value at a particular point in an IO computation.
 	touch :: a -> IO ()
 
 	-- | Generic zero value, helpful for debugging.

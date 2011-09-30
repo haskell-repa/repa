@@ -15,15 +15,25 @@ import GHC.Base					(remInt, quotInt)
 import Prelude					as P
 
 -- Non-cursored interface -------------------------------------------------------------------------
+-- | Fill a block in a rank-2 array in parallel.
+--
+--   * Blockwise filling can be more cache-efficient than linear filling for rank-2 arrays.
+--
+--   * Coordinates given are of the filled edges of the block.
+-- 
+--   * We divide the block into columns, and give one column to each thread.
+-- 
+--   * Each column is filled in row major order from top to bottom.
+--
 fillBlock2P 
         :: Elt a
 	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
         -> (DIM2 -> a)          -- ^ Function to evaluate the element at an index.
 	-> Int			-- ^ Width of the whole array.
 	-> Int			-- ^ x0 lower left corner of block to fill
-	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ y0 
 	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
+	-> Int			-- ^ y1
         -> IO ()
 
 {-# INLINE [0] fillBlock2P #-}
@@ -33,15 +43,23 @@ fillBlock2P !write !getElem !imageWidth !x0 !y0 !x1 !y1
         imageWidth x0 y0 x1 y1
 
 
+-- | Fill a block in a rank-2 array sequentially.
+--
+--   * Blockwise filling can be more cache-efficient than linear filling for rank-2 arrays.
+--
+--   * Coordinates given are of the filled edges of the block.
+-- 
+--   * The block is filled in row major order from top to bottom.
+--
 fillBlock2S
         :: Elt a
 	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
         -> (DIM2 -> a)          -- ^ Function to evaluate the element at an index.
 	-> Int			-- ^ Width of the whole array.
 	-> Int			-- ^ x0 lower left corner of block to fill
-	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ y0
 	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
+	-> Int			-- ^ y1
         -> IO ()
 
 {-# INLINE [0] fillBlock2S #-}
@@ -52,9 +70,19 @@ fillBlock2S !write !getElem !imageWidth !x0 !y0 !x1 !y1
 
 
 -- Block filling ----------------------------------------------------------------------------------
--- | Fill a block in a 2D array, in parallel.
---   Coordinates given are of the filled edges of the block.
---   We divide the block into columns, and give one column to each thread.
+-- | Fill a block in a rank-2 array in parallel.
+-- 
+--   * Blockwise filling can be more cache-efficient than linear filling for rank-2 arrays.
+--
+--   * Using cursor functions can help to expose inter-element indexing computations to
+--     the GHC and LLVM optimisers.
+--
+--   * Coordinates given are of the filled edges of the block.
+-- 
+--   * We divide the block into columns, and give one column to each thread.
+-- 
+--   * Each column is filled in row major order from top to bottom.
+--
 fillCursoredBlock2P
 	:: Elt a
 	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer.
@@ -63,9 +91,9 @@ fillCursoredBlock2P
 	-> (cursor -> a)		-- ^ Function to evaluate the element at an index.
 	-> Int			-- ^ Width of the whole array.
 	-> Int			-- ^ x0 lower left corner of block to fill
-	-> Int			-- ^ y0 (low x and y value)
+	-> Int			-- ^ y0
 	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1 (high x and y value, index of last elem to fill)
+	-> Int			-- ^ y1
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2P #-}
@@ -103,8 +131,17 @@ fillCursoredBlock2P
 			imageWidth x0' y0' x1' y1'
 
 
--- | Fill a block in a 2D image.
---   Coordinates given are of the filled edges of the block.
+-- | Fill a block in a rank-2 array, sequentially.
+--
+--   * Blockwise filling can be more cache-efficient than linear filling for rank-2 arrays.
+--
+--   * Using cursor functions can help to expose inter-element indexing computations to
+--     the GHC and LLVM optimisers.
+--
+--   * Coordinates given are of the filled edges of the block.
+--
+--   * The block is filled in row major order from top to bottom.
+--
 fillCursoredBlock2S
 	:: Elt a
 	=> (Int -> a -> IO ())		-- ^ Update function to write into result buffer.
@@ -113,9 +150,9 @@ fillCursoredBlock2S
 	-> (cursor -> a)		-- ^ Function to evaluate an element at the given index.
 	-> Int				-- ^ Width of the whole array.
 	-> Int				-- ^ x0 lower left corner of block to fill.
-	-> Int				-- ^ y0 (low x and y value)
+	-> Int				-- ^ y0
 	-> Int				-- ^ x1 upper right corner of block to fill.
-	-> Int				-- ^ y1 (high x and y value, index of last elem to fill)
+	-> Int				-- ^ y1
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2S #-}

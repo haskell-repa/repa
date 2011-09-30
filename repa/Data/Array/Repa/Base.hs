@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Base
         ( Array
-        , Repr (..), (!)
+        , Repr (..), (!), toList
         , deepSeqArrays)
 where
 import Data.Array.Repa.Shape
@@ -14,10 +14,10 @@ data family Array r sh e
 -- | Class of array representations that we can read elements from.
 --
 class Repr r e where
- -- | Take the extent of an array.
+ -- | O(1). Take the extent of an array.
  extent       :: Shape sh => Array r sh e -> sh
 
- -- | Shape polymorphic indexing
+ -- | O(1). Shape polymorphic indexing.
  index, unsafeIndex
         :: Shape sh => Array r sh e -> sh -> e
 
@@ -27,7 +27,7 @@ class Repr r e where
  {-# INLINE unsafeIndex #-}
  unsafeIndex arr ix     = arr `unsafeLinearIndex` toIndex (extent arr) ix
 
- -- | Linear indexing into underlying representation
+ -- | O(1). Linear indexing into underlying, row-major, array representation.
  linearIndex, unsafeLinearIndex
         :: Shape sh => Array r sh e -> Int -> e
 
@@ -38,11 +38,28 @@ class Repr r e where
  deepSeqArray :: Shape sh => Array r sh e -> b -> b
 
 
--- | Alias for `index`
+-- | O(1). Alias for `index`
 (!) :: (Repr r e, Shape sh) => Array r sh e -> sh -> e
 (!) = index
 
 
+-- | O(n). Convert an array to a list.
+toList  :: (Shape sh, Repr r e)
+        => Array r sh e -> [e]
+{-# INLINE toList #-}
+toList arr 
+ = go 0 
+ where  len     = size (extent arr)
+        go ix
+         | ix == len    = []
+         | otherwise    = unsafeLinearIndex arr ix : go (ix + 1)
+
+
+-- | Apply `deepSeqArray` to up to four arrays. 
+--
+--   The implementation of this function has been hand-unwound to work for up to
+--   four arrays. Putting more in the list yields `error`.
+-- 
 deepSeqArrays 
         :: (Shape sh, Repr r e)
         => [Array r sh e] -> b -> b

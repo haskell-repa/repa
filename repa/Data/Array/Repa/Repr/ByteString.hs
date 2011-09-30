@@ -21,7 +21,7 @@ deriving instance Show sh
         => Show (Array B sh Word8)
 
 -- Repr -----------------------------------------------------------------------
--- | Use elements from a bytestring
+-- | Read elements from a `ByteString`.
 instance Repr B Word8 where
  {-# INLINE linearIndex #-}
  linearIndex (AByteString _ bs) ix

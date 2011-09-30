@@ -64,6 +64,6 @@ writeMatrixToTextFile fileName arr
 		= extent arr
 
 	hPutStrLn file $ show width P.++ " " P.++ show height
-	hWriteValues file $ toList arr
+	hWriteValues file $ toListV $ copy arr
 	hClose file
 

@@ -36,7 +36,7 @@ module Data.Array.Repa
           Array(..)
         , module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
-        , Repr(..), (!)
+        , Repr(..), (!), toList
         , deepSeqArrays
 
         -- * Converting between array representations
@@ -49,9 +49,8 @@ module Data.Array.Repa
 
         -- ** Unboxed Vector representation
         , U
-        , computeUnboxed
+        , computeUnboxed,  fromListUnboxed
         , fromUnboxed,     toUnboxed
-        , fromListUnboxed, toListUnboxed
                 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
         -- * Operators

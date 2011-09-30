@@ -9,9 +9,12 @@ import GHC.Base		(remInt, quotInt)
 import Prelude		as P
 
 -- | Fill something sequentially.
+-- 
+--   * The array is filled linearly from start to finish.  
+-- 
 fillChunkedS
-	:: Int                  -- ^ Number of elements
-	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
+	:: Int                  -- ^ Number of elements.
+	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
 	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
 	-> IO ()
 
@@ -26,9 +29,12 @@ fillChunkedS !len !write !getElem
 
 
 -- | Fill something in parallel.
+-- 
+--   * The array is split into linear chunks and each thread fills one chunk.
+-- 
 fillChunkedP
-        :: Int                  -- ^ Number of elements
-	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer
+        :: Int                  -- ^ Number of elements.
+	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
 	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
 	-> IO ()
 

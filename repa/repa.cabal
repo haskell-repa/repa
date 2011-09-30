@@ -55,6 +55,7 @@ Library
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
         Data.Array.Repa.Eval
+        Data.Array.Repa.Eval.Gang
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.Cursored
         Data.Array.Repa.Repr.Partitioned
@@ -76,7 +77,6 @@ Library
         Data.Array.Repa.Base
         Data.Array.Repa.Eval.Elt
         Data.Array.Repa.Eval.Fill
-        Data.Array.Repa.Eval.Gang
         Data.Array.Repa.Eval.Chunked
         Data.Array.Repa.Eval.Cursored
         Data.Array.Repa.Eval.Reduction

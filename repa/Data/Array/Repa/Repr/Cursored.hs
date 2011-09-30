@@ -31,7 +31,7 @@ data instance Array C sh e
 
 
 -- Repr -----------------------------------------------------------------------
--- | Compute elements from a cursored array.
+-- | Compute elements of a cursored array.
 instance Repr C a where
  {-# INLINE index #-}
  index (ACursored _ makec _ loadc)

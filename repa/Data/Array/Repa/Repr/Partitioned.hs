@@ -26,6 +26,7 @@ data Range sh
                 (sh -> Bool)                    -- predicate to check whether were in range
 
 
+-- | Read elements from a partitioned array.
 instance (Repr r1 e, Repr r2 e) => Repr (P r1 r2) e where
  {-# INLINE index #-}
  index (APart _ range arr1 arr2) ix

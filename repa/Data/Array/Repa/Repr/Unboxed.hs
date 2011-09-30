@@ -1,12 +1,11 @@
 
 module Data.Array.Repa.Repr.Unboxed
         ( U, U.Unbox, Array (..)
-        , computeUnboxed,  fromUnboxed, toUnboxed
-        , fromListUnboxed, toListUnboxed)
+        , computeUnboxed,  fromListUnboxed
+        , fromUnboxed, toUnboxed)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
-import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Delayed
 import qualified Data.Vector.Unboxed            as U
@@ -17,7 +16,7 @@ import Control.Monad
 --   The implementation of `Data.Vector.Unboxed` is based on type families and
 --   picks an efficient, specialised representation for every element type. In
 --   particular, unboxed vectors of pairs are represented as pairs of unboxed
---   vectors.
+--   vectors. This is the most efficient representation for numerical data.
 data U
 data instance U.Unbox e => Array U sh e
         = AUnboxed sh !(U.Vector e)
@@ -26,7 +25,7 @@ deriving instance (Show sh, Show e, U.Unbox e)
         => Show (Array U sh e)
 
 -- Repr -----------------------------------------------------------------------
--- | Use elements from an unboxed vector array.
+-- | Read elements from an unboxed vector array.
 instance U.Unbox a => Repr U a where
  {-# INLINE linearIndex #-}
  linearIndex (AUnboxed _ vec) ix
@@ -66,15 +65,27 @@ instance U.Unbox e => Fillable U e where
 
 
 -- Conversions ----------------------------------------------------------------
--- | Compute an array to an unboxed vector.
+-- | Compute array elements in parallel.
 --
---   * This is just a wrapper for `compute`, with a more specific type.
+--   * This is an alias for `compute` with a more specific type.
 --
 computeUnboxed
         :: Fill r1 U sh e
         => Array r1 sh e -> Array U sh e
 {-# INLINE computeUnboxed #-}
 computeUnboxed = compute
+
+
+-- | O(n). Convert a list to an unboxed vector array.
+-- 
+--   * This is an alias for `fromList` with a more specific type.
+--
+fromListUnboxed
+        :: (Shape sh, U.Unbox a)
+        => sh -> [a] -> Array U sh a
+{-# INLINE fromListUnboxed #-}
+fromListUnboxed = fromList
+
 
 -- | O(1). Wrap an unboxed vector as an array.
 fromUnboxed
@@ -92,18 +103,3 @@ toUnboxed
 {-# INLINE toUnboxed #-}
 toUnboxed (AUnboxed _ vec)
         = vec
-
-
--- | O(n). Convert a list to an unboxed vector.
-fromListUnboxed :: U.Unbox a => sh -> [a] -> Array U sh a
-{-# INLINE fromListUnboxed #-}
-fromListUnboxed sh xs
-        = AUnboxed sh (U.fromList xs)
-
-
--- | O(n). Convert an array to a list.
-toListUnboxed :: (Shape sh, U.Unbox a)
-        => Array U sh a -> [a]
-{-# INLINE toListUnboxed #-}
-toListUnboxed (AUnboxed _ vec) 
-        = U.toList vec

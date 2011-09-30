@@ -3,13 +3,16 @@
 -- | Gang Primitives.
 --   Based on DPH code by Roman Leshchinskiy
 --
---   Gang primitives.
---
 #define TRACE_GANG 0
 
 module Data.Array.Repa.Eval.Gang
-	( Gang, seqGang, forkGang, gangSize, gangIO, gangST
-	, theGang)
+	( 
+	-- * The globally shared Repa gang
+          theGang
+
+	-- * A parallel gang of threads
+	, Gang, forkGang, gangSize, gangIO, gangST)
+	
 where
 import GHC.IO
 import GHC.ST
@@ -28,7 +31,24 @@ import System.Time ( ClockTime(..), getClockTime )
 #endif
 
 -- TheGang ----------------------------------------------------------------------------------------
--- | This auto-initialized gang is shared by all Repa computations.
+-- | This globally shared gang is auto-initialised at startup and shared by all Repa computations.
+--
+--   In a data parallel setting, it does not help to have multiple gangs running at the 
+--   same time. This is because a single data parallel computation should already be able
+--   to keep all threads busy. If we had multiple gangs running at the same time, then
+--   the system as a whole would run slower as the gangs would contend for cache and thrash
+--   the scheduler.
+--
+--   If, due to laziness or otherwise, you try to start multiple parallel Repa computations
+--   at the same time, then you will get the following warning on stderr at runtime:
+--
+-- @Data.Array.Repa: Performing nested parallel computation sequentially.
+--    You've probably called the 'compute' or 'copy' function while another
+--    instance was already running. This can happen if the second version
+--    was suspended due to lazy evaluation. Use 'deepSeqArray' to ensure that
+--    each array is fully evaluated before you 'compute' the next one.
+-- @
+--
 theGang :: Gang
 {-# NOINLINE theGang #-}
 theGang = unsafePerformIO $ forkGang numCapabilities
@@ -64,8 +84,7 @@ waitReq req
 
 
 -- Gang ------------------------------------------------------------------------------------------
--- | A 'Gang' is a group of threads which execute arbitrary work requests.
---   To get the gang to do work, write Req-uest values to its MVars
+-- | A 'Gang' is a group of threads that execute arbitrary work requests.
 data Gang
 	= Gang !Int           -- Number of 'Gang' threads
                [MVar Req]     -- One 'MVar' per thread
@@ -77,11 +96,6 @@ instance Show Gang where
 	= showString "<<"
         . showsPrec p n
         . showString " threads>>"
-
-
--- | A sequential gang has no threads.
-seqGang :: Gang -> Gang
-seqGang (Gang n _ mv) = Gang n [] mv
 
 
 -- | The worker thread of a 'Gang'.
@@ -150,16 +164,15 @@ forkGang n
 	return $ Gang n mvs busy
 
 
--- | The number of threads in the 'Gang'.
+-- | O(1). Yield the number of threads in the 'Gang'.
 gangSize :: Gang -> Int
 gangSize (Gang n _ _) = n
 
 
--- | Issue work requests for the 'Gang' and wait until they have been executed.
---   If the gang is already busy then just run the action in the
---   requesting thread.
+-- | Issue work requests for the 'Gang' and wait until they complete.
 --
---   TODO: We might want to print a configurable warning that this is happening.
+--   If the gang is already busy then print a warning to `stderr` and just run the 
+--   actions sequentially in the requesting thread.
 --
 gangIO	:: Gang
 	-> (Int -> IO ())
@@ -175,10 +188,10 @@ gangIO (Gang n mvs busy) p
 	 then do
 		hPutStr stderr
 		 $ unlines	[ "Data.Array.Repa: Performing nested parallel computation sequentially."
-				, "  You've probably called the 'force' function while another instance was"
-				, "  already running. This can happen if the second version was suspended due"
-				, "  to lazy evaluation. Use 'deepSeqArray' to ensure that each array is fully"
-				, "  evaluated before you 'force' the next one."
+				, "  You've probably called the 'compute' or 'copy' function while another"
+				, "  instance was already running. This can happen if the second version"
+				, "  was suspended due to lazy evaluation. Use 'deepSeqArray' to ensure"
+				, "  that each array is fully evaluated before you 'compute' the next one."
 				, "" ]
 
 		mapM_ p [0 .. n-1]

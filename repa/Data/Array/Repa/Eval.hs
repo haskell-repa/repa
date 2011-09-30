@@ -2,16 +2,17 @@
 
 -- | Low level interface to parallel array filling operators.
 module Data.Array.Repa.Eval
-        ( Elt       (..)
+        ( -- * Element types
+          Elt       (..)
+
+        -- * Parallel array filling
         , Fillable  (..)
         , Fill      (..)
         , FillRange (..)
+        , fromList
         
-        -- * Loading array data between representations
+        -- * Converting between representations
         , compute, copy
-        
-        -- * The Gang
-        , Gang, seqGang, forkGang, gangSize, gangIO, gangST, theGang
         
         -- * Chunked filling
         , fillChunkedS
@@ -19,13 +20,13 @@ module Data.Array.Repa.Eval
 
         -- * Blockwise filling
         , fillBlock2P
+        , fillBlock2S
         
         -- * Cursored blockwise filling
         , fillCursoredBlock2S
         , fillCursoredBlock2P)
 where
 import Data.Array.Repa.Eval.Elt
-import Data.Array.Repa.Eval.Gang
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Chunked
 import Data.Array.Repa.Eval.Cursored
@@ -65,5 +66,6 @@ compute arr1
 --
 copy    :: (Repr r1 e, Fill D r2 sh e)
         => Array r1 sh e -> Array r2 sh e
+{-# INLINE copy #-}
 copy arr1
         = compute $ delay arr1

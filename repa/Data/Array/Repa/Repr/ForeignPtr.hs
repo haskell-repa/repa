@@ -2,7 +2,7 @@
 module Data.Array.Repa.Repr.ForeignPtr
         ( F, Array (..)
         , fromForeignPtr, toForeignPtr
-        , forceIntoS,     forceIntoP)
+        , computeIntoS,   computeIntoP)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
@@ -19,7 +19,7 @@ data instance Array F sh e
         = AForeignPtr sh !Int !(ForeignPtr e)
 
 -- Repr -----------------------------------------------------------------------
--- | Use elements from an unboxed vector array.
+-- | Read elements from a foreign buffer.
 instance Storable a => Repr F a where
  {-# INLINE linearIndex #-}
  linearIndex (AForeignPtr _ len fptr) ix
@@ -29,7 +29,7 @@ instance Storable a => Repr F a where
         $ \ptr -> peekElemOff ptr ix
   
   | otherwise
-  = error "Data.Array.Repa.Repr.ForeignPtr.linearIndes: array index out of bounds"
+  = error "Repa: foreign array index out of bounds"
 
  {-# INLINE unsafeLinearIndex #-}
  unsafeLinearIndex (AForeignPtr _ _ fptr) ix
@@ -91,21 +91,21 @@ toForeignPtr (AForeignPtr _ _ fptr)
 -- | Compute an array sequentially and write the elements into a foreign
 --   buffer without intermediate copying. If you want to copy a
 --   pre-existing manifest array to a foreign buffer then `delay` it first.
-forceIntoS
+computeIntoS
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
-
-forceIntoS fptr arr
+{-# INLINE computeIntoS #-}
+computeIntoS fptr arr
  = fillS arr (FPArr 0 fptr)
 
 
 -- | Compute an array in parallel and write the elements into a foreign
 --   buffer without intermediate copying. If you want to copy a
 --   pre-existing manifest array to a foreign buffer then `delay` it first.
-forceIntoP
+computeIntoP
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
-
-forceIntoP fptr arr
+{-# INLINE computeIntoP #-}
+computeIntoP fptr arr
  = fillP arr (FPArr 0 fptr)
 

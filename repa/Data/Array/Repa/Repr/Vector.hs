@@ -1,8 +1,8 @@
 
 module Data.Array.Repa.Repr.Vector
         ( V, Array (..)
-        , computeVector,  fromVector, toVector
-        , fromListVector, toListVector)
+        , computeVector, fromListVector
+        , fromVector, toVector)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
@@ -21,7 +21,7 @@ deriving instance (Show sh, Show e)
         => Show (Array V sh e)
 
 -- Repr -----------------------------------------------------------------------
--- | Use elements from an unboxed vector array.
+-- | Read elements from a boxed vector array.
 instance Repr V a where
  {-# INLINE linearIndex #-}
  linearIndex (AVector _ vec) ix
@@ -61,18 +61,27 @@ instance Fillable V e where
 
 
 -- Conversions ----------------------------------------------------------------
--- | Compute an array to a boxed vector.
+-- | Compute array elements in parallel.
 --
---   * This is just a wrapper for `compute`, with a more specific type.
+--   * This is an alias for `compute` with a more specific type.
 --
 computeVector
         :: Fill r1 V sh e
         => Array r1 sh e -> Array V sh e
 {-# INLINE computeVector #-}
-computeVector = compute
+computeVector   = compute
 
 
--- | O(1). Wrap a boxed vector as an array
+-- | O(n). Convert a list to a boxed vector array.
+--
+--   * This is an alias for `fromList` with a more specific type.
+--
+fromListVector :: Shape sh => sh -> [a] -> Array V sh a
+{-# INLINE fromListVector #-}
+fromListVector  = fromList
+
+
+-- | O(1). Wrap a boxed vector as an array.
 fromVector
         :: Shape sh
         => sh -> V.Vector e -> Array V sh e
@@ -81,24 +90,10 @@ fromVector sh vec
         = AVector sh vec
 
 
--- | O(1). Unpack a vector from an array.
+-- | O(1). Unpack a boxed vector from an array.
 toVector :: Array V sh e -> V.Vector e
 {-# INLINE toVector #-}
 toVector (AVector _ vec)
         = vec
 
-
--- | O(n). Convert a list to a boxed vector.
-fromListVector :: sh -> [a] -> Array V sh a
-{-# INLINE fromListVector #-}
-fromListVector sh xs
-        = AVector sh (V.fromList xs)
-
-
--- | O(n). Convert an array to a list.
-toListVector :: Shape sh
-        => Array V sh a -> [a]
-{-# INLINE toListVector #-}
-toListVector (AVector _ vec) 
-        = V.toList vec
 
