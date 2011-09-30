@@ -7,8 +7,10 @@ import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Data.Array.Repa				as A
+import qualified Data.Array.Repa.Repr.Unboxed   as U
 import System.Environment
 import Control.Monad
+import Data.Word
 
 
 main :: IO ()
@@ -28,16 +30,14 @@ main
 mainWithArgs cutoff fileIn fileOut
  = do	
 	-- Load in the matrix.
-	(arrRed, arrGreen, arrBlue)
-		<- liftM (either (\e -> error $ show e) id)
-		$  readComponentsFromBMP fileIn
+	arrRGB	<- liftM (either (\e -> error $ show e) id)
+		$  readImageFromBMP fileIn
 	
-	-- The deepSeqs are to make sure we're just measuring the transform time.
-	arrRed 
-	 `deepSeqArray` arrGreen
-	 `deepSeqArray` arrBlue
-	 `deepSeqArray` return ()
-		
+	arrRGB `deepSeqArray` return ()
+	
+	let (arrRed, arrGreen, arrBlue)
+	        = U.unzip3 arrRGB
+	
 	-- Do the transform on each component individually
 	((arrRed', arrGreen', arrBlue'), t)
 		<- time
@@ -52,15 +52,17 @@ mainWithArgs cutoff fileIn fileOut
 	putStr (prettyTime t)
 	
 	-- Write it back to file.
-	writeComponentsToBMP fileOut
-		arrRed' arrGreen' arrBlue' 
+	writeImageToBMP fileOut
+	        (U.zip3 arrRed' arrGreen' arrBlue')
 		
 
+-- | Perform high-pass filtering on a rank-2 array.
+transform :: Int -> Array U DIM2 Word8 -> Array U DIM2 Word8
 transform cutoff arrReal
- = let	arrComplex	= force $ A.map (\r -> (fromIntegral r, 0)) arrReal
+ = let	arrComplex	= A.map (\r -> (fromIntegral r, 0)) arrReal
 			
 	-- Do the 2d transform.
-	arrCentered	= center2d arrComplex
+	arrCentered	= compute $ center2d arrComplex
 	arrFreq		= fft2d Forward arrCentered
 
 	-- Zap out the low frequency components.
@@ -79,13 +81,13 @@ transform cutoff arrReal
 		| otherwise
 		= 0
 		
-	arrFilt	= traverse arrFreq id highpass
+	arrFilt	= compute $ traverse arrFreq id highpass
 
 	-- Do the inverse transform to get back to image space.
 	arrInv	= fft2d Inverse arrFilt
 		
 	-- Get the magnitude of the transformed array, 
-	arrMag	= A.map (truncate . mag) arrInv
+	arrMag	= compute $ A.map (truncate . mag) arrInv
 
    in	arrMag
 
