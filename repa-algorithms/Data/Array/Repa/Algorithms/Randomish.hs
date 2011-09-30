@@ -9,7 +9,6 @@ where
 import Data.Word
 import Data.Vector.Unboxed			(Vector)
 import Data.Array.Repa				as R
-import Data.Array.Repa.Repr.Unboxed		as R
 import qualified Data.Vector.Unboxed.Mutable	as MV
 import qualified Data.Vector.Unboxed		as V
 import qualified Data.Vector.Generic		as G
@@ -110,7 +109,7 @@ randomishDoubleVector !len !valMin !valMax !seed
  = let	range	= valMax - valMin
 
 	mx	= 2^(30 :: Integer) - 1
-	mxf	= fromIntegral mx
+	mxf	= fromIntegral (mx :: Integer)
 	ints	= randomishIntVector len 0 mx seed
 	
    in	V.map (\n -> valMin + (fromIntegral n / mxf) * range) ints

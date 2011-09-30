@@ -16,14 +16,15 @@ module Data.Array.Repa.Algorithms.FFT
 where
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
-import Data.Array.Repa.Repr.Unboxed		as A
 import Prelude                                  as P
+
 
 data Mode
 	= Forward
 	| Reverse
 	| Inverse
 	deriving (Show, Eq)
+
 
 {-# INLINE signOfMode #-}
 signOfMode :: Mode -> Double
@@ -66,7 +67,7 @@ fft3d mode arr
 		case mode of
 			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 			Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
-			Inverse	-> forceUnboxed 
+			Inverse	-> compute 
 			        $ A.map (/ scale) 
 				$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 
@@ -78,7 +79,7 @@ fftTrans3d
 {-# NOINLINE fftTrans3d #-}
 fftTrans3d sign arr
  = let	(sh :. len)	= extent arr
-   in	forceUnboxed $ rotate3d $ fft sign sh len arr
+   in	compute $ rotate3d $ fft sign sh len arr
 
 
 rotate3d 
@@ -113,7 +114,7 @@ fft2d mode arr
 		case mode of
 			Forward	-> fftTrans2d sign $ fftTrans2d sign arr
 			Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
-			Inverse	-> forceUnboxed $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
+			Inverse	-> compute $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
 
 fftTrans2d 
 	:: Double
@@ -123,7 +124,7 @@ fftTrans2d
 {-# NOINLINE fftTrans2d #-}
 fftTrans2d sign arr
  = let  (sh :. len)	= extent arr
-   in	forceUnboxed $ transpose $ fft sign sh len arr
+   in	compute $ transpose $ fft sign sh len arr
 
 
 -- Vector Transform -------------------------------------------------------------------------------
@@ -147,7 +148,7 @@ fft1d mode arr
 		case mode of
 			Forward	-> fftTrans1d sign arr
 			Reverse	-> fftTrans1d sign arr
-			Inverse -> forceUnboxed $ A.map (/ scale) $ fftTrans1d sign arr
+			Inverse -> compute $ A.map (/ scale) $ fftTrans1d sign arr
 
 fftTrans1d
 	:: Double 
@@ -171,7 +172,7 @@ fft !sign !sh !lenVec !vec
  = go lenVec 0 1
  where	go !len !offset !stride
 	 | len == 2
-	 = forceUnboxed $ fromFunction (sh :. 2) swivel
+	 = compute $ fromFunction (sh :. 2) swivel
 	
 	 | otherwise
 	 = combine len 
@@ -187,7 +188,7 @@ fft !sign !sh !lenVec !vec
 		combine !len' 	evens odds
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
    	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
-   	   	   in	forceUnboxed $ (evens +^ odds') A.++ (evens -^ odds')
+   	   	   in	compute $ (evens +^ odds') A.++ (evens -^ odds')
 
 
 -- Compute a twiddle factor.

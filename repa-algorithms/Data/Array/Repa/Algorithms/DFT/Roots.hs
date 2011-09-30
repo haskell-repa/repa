@@ -6,8 +6,8 @@ module Data.Array.Repa.Algorithms.DFT.Roots
 	, calcInverseRootsOfUnity)
 where
 import Data.Array.Repa
-import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Algorithms.Complex
+
 
 -- | Calculate roots of unity for the forward transform.
 calcRootsOfUnity
@@ -17,7 +17,7 @@ calcRootsOfUnity
 	-> Array U (sh :. Int) Complex
 
 calcRootsOfUnity sh@(_ :. n) 
- = forceUnboxed $ fromFunction sh f
+ = compute $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
     f (_ :. i) 
@@ -35,7 +35,7 @@ calcInverseRootsOfUnity
 	-> Array U (sh :. Int) Complex
 
 calcInverseRootsOfUnity sh@(_ :. n) 
- = forceUnboxed $ fromFunction sh f
+ = compute $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
     f (_ :. i) 

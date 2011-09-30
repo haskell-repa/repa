@@ -22,8 +22,8 @@ where
 import Data.Array.Repa.Algorithms.DFT.Roots
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa				as A
-import Data.Array.Repa.Repr.Unboxed		as A
 import Prelude					as P
+
 
 -- | Compute the DFT along the low order dimension of an array.
 dft 	:: forall sh
@@ -33,7 +33,7 @@ dft 	:: forall sh
 
 dft v
  = let	rofu	= calcRootsOfUnity (extent v)
-   in	forceUnboxed $ dftWithRoots rofu v
+   in	dftWithRoots rofu v
 
 
 -- | Compute the inverse DFT along the low order dimension of an array.
@@ -46,7 +46,7 @@ idft v
  = let	_ :. len	= extent v
 	scale		= (fromIntegral len, 0)
 	rofu		= calcInverseRootsOfUnity (extent v)
-   in	forceUnboxed $ A.map (/ scale) $ dftWithRoots rofu v
+   in	compute $ A.map (/ scale) $ dftWithRoots rofu v
 
 
 -- | Generic function for computation of forward or inverse DFT.
@@ -68,7 +68,7 @@ dftWithRoots rofu arr
 		P.++ " does not match the length of the roots (" P.++ show rLen P.++ ")"
 
 	| otherwise
-	= forceUnboxed $ traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
+	= compute $ traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
 		
 
 -- | Compute a single value of the DFT.
