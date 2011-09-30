@@ -47,7 +47,7 @@ module Data.Array.Repa
         , D, fromFunction, toFunction
         , delay
 
-        -- ** Unboxed Vector representation
+        -- ** Unboxed vector representation
         , U
         , computeUnboxed,  fromListUnboxed
         , fromUnboxed,     toUnboxed
@@ -72,7 +72,7 @@ module Data.Array.Repa
 	, (+^), (-^), (*^), (/^)
 
 	-- from Data.Array.Repa.Operators.Traversal ------------------
-	-- ** Generic Traversal
+	-- ** Generic traversal
 	, traverse
 	, traverse2
 	, traverse3
