@@ -1,12 +1,11 @@
 {-# LANGUAGE PackageImports, PatternGuards, ExplicitForAll  #-} 
 
--- | Reading and writing arrays as uncompressed 24 and 32 bit Windows BMP files.
+-- | Reading and writing arrays as uncompressed 24 or 32 bit Windows BMP files.
 module Data.Array.Repa.IO.BMP
 	( readImageFromBMP
         , writeImageToBMP)
 where
 import Data.Array.Repa				as R
-import Data.Array.Repa.Repr.Unboxed		as R
 import Data.Array.Repa.Repr.ForeignPtr		as R
 import Data.Array.Repa.Repr.ByteString		as R
 import Data.Vector.Unboxed                      as U
@@ -47,15 +46,15 @@ readImageFromBMP' bmp
         -- Read out the components into their own arrays, 
         -- skipping the alpha channel.
 	vecRed
-	 = toUnboxed $ forceUnboxed $ traverse arr shapeFn
+	 = toUnboxed $ compute $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4)))
 
 	vecGreen
-	 = toUnboxed $ forceUnboxed $ traverse arr shapeFn
+	 = toUnboxed $ compute $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 1)))
 
 	vecBlue
-	 = toUnboxed $ forceUnboxed $ traverse arr shapeFn
+	 = toUnboxed $ compute $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
 	
 	-- O(1). zip the components together
@@ -67,7 +66,6 @@ readImageFromBMP' bmp
 
 
 -- | Write RGB components to a BMP file.
---	All arrays must have the same extent, else `error`.
 writeImageToBMP
 	:: FilePath
 	-> Array U DIM2 (Word8, Word8, Word8)
@@ -87,7 +85,7 @@ writeImageToBMP fileName arrRGB
         ptr     <- mallocBytes (height * width * 4)
         fptr    <- newForeignPtr finalizerFree ptr
 
-        forceIntoP fptr 
+        computeIntoP fptr 
          $ interleave4 
 	        (fromUnboxed sh vecRed)
 	        (fromUnboxed sh vecGreen)

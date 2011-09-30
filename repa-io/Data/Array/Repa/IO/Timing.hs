@@ -1,3 +1,5 @@
+
+-- | Timing utilities used for benchmarks in the @repa-examples@ package.
 module Data.Array.Repa.IO.Timing
 	( Time
 	, milliseconds, cpuTime, wallTime

@@ -24,8 +24,13 @@ import Data.Char
 
 
 -- | Read a vector from a text file.
---   WARNING: This doesn't do graceful error handling. If the file has the wrong format
---   you'll get a confusing `error`.
+--
+--   * WARNING: This is implemented fairly naively, just using `Strings` 
+--     under the covers. It will be slow for large data files.
+-- 
+--   * It also doesn't do graceful error handling.
+--     If the file has the wrong format you'll get a confusing `error`.
+--
 readVectorFromTextFile
 	:: (Num e, Read e, Unbox e)
 	=> FilePath
@@ -40,8 +45,7 @@ readVectorFromTextFile fileName
 	let vals	= readValues str
 
 	let dims	= Z :. len
-	let arr		= copy $ fromList dims vals
-	return arr
+	return $ fromListUnboxed dims vals
 
 
 readInt :: String -> Int

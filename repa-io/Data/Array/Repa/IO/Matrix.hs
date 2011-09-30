@@ -20,15 +20,15 @@ import Data.List				as L
 import Data.Array.Repa				as A
 import Data.Array.Repa.Repr.Unboxed             as A
 import Prelude					as P
-import qualified Data.Vector.Unboxed            as U
 
--------------------------------------------------------------------------------
+
 -- | Read a matrix from a text file.
---   WARNING: This is implemented fairly naively, just using `Strings` 
---   under the covers. It will be slow for large data files.
 -- 
---   It also doesn't do graceful error handling.
---   If the file has the wrong format you'll get a confusing `error`.
+--   * WARNING: This is implemented fairly naively, just using `Strings` 
+--     under the covers. It will be slow for large data files.
+-- 
+--   * It also doesn't do graceful error handling.
+--     If the file has the wrong format you'll get a confusing `error`.
 --
 readMatrixFromTextFile
 	:: (Num e, Read e, Unbox e)
@@ -44,8 +44,7 @@ readMatrixFromTextFile fileName
 	let vals	= readValues str
 
 	let dims	= Z :. width :. height
-	let mat		= fromUnboxed dims $ U.fromList vals
-	return mat
+	return $ fromListUnboxed dims vals
 
 
 -- | Write a matrix as a text file.
@@ -64,6 +63,6 @@ writeMatrixToTextFile fileName arr
 		= extent arr
 
 	hPutStrLn file $ show width P.++ " " P.++ show height
-	hWriteValues file $ toListV $ copy arr
+	hWriteValues file $ toList arr
 	hClose file
 
