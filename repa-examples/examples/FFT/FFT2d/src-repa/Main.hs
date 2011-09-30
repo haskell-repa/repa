@@ -9,6 +9,8 @@ import Data.Array.Repa				as A
 import System.Environment
 import Control.Monad
 
+import Data.Word
+
 main :: IO ()
 main 
  = do	args	<- getArgs
@@ -25,31 +27,51 @@ main
 		, "    most of the pixels in the output BMP will be black. Start with a value equal"
 		, "    to about the width of the image (eg 512)"
 		, "" ]
-			
+
 	
 mainWithArgs fileIn (clipMag :: Double) fileMag filePhase
  = do	
 	-- Load in the matrix.
-	arrReal		<- liftM (either (\e -> error $ show e) force)
-			$  readMatrixFromGreyscaleBMP fileIn
-
-	let arrComplex	= force $ A.map (\r -> (r, 0 :: Double)) arrReal
+        arrRGB          <- liftM (either (\e -> error $ show e) id)
+			$  readImageFromBMP fileIn
+        
+	let arrComplex	= computeUnboxed
+	                $ A.map (\r -> (r, 0 :: Double)) 
+	                $ A.map fromGreyPixel arrRGB
 
 	-- Apply the centering transform so that the output has the zero
 	--	frequency in the middle of the image.
-	let arrCentered	= center2d arrComplex
+	let arrCentered	= computeUnboxed 
+	                $ center2d arrComplex
 		
 	-- Do the 2d transform.
 	let arrFreq 	= fft2d Forward arrCentered
 				
 	-- Write out the magnitude of the transformed array, 
 	--	clipping it at the given value.
-	let clip m	= if m >= clipMag then clipMag else m
-	let arrMag	= force $ A.map (clip . mag) arrFreq
-	writeMatrixToGreyscaleBMP fileMag arrMag
+	let clip m	= if m >= clipMag then 1 else (m / clipMag)
+	let arrMag	= computeUnboxed $ A.map (toGreyPixel . clip . mag) arrFreq
+        writeImageToBMP fileMag arrMag
 
-	-- Write out the phase of the transofmed array, 
+	-- Write out the phase of the transformed array, 
 	-- 	scaling it to make full use of the 8 bit greyscale.
-	let scaledArg x	= (arg x + pi) * (255 / (2 * pi))
-	let arrPhase	= force $ A.map scaledArg arrFreq
-	writeMatrixToGreyscaleBMP filePhase arrPhase
+	let scaledArg x	= (arg x + pi) / (2 * pi)
+	let arrPhase	= computeUnboxed $ A.map (toGreyPixel . scaledArg) arrFreq
+	writeImageToBMP filePhase arrPhase
+
+
+fromGreyPixel :: Floating a => (Word8, Word8, Word8) -> a
+{-# INLINE fromGreyPixel #-}
+fromGreyPixel (r, g, b)
+        = sqrt  ( (fromIntegral r / 255) ^ (2 :: Int)
+                + (fromIntegral g / 255) ^ (2 :: Int)
+                + (fromIntegral b / 255) ^ (2 :: Int))	
+
+
+toGreyPixel
+        :: RealFrac a
+        => a -> (Word8, Word8, Word8) 
+{-# INLINE toGreyPixel #-}
+toGreyPixel x
+ = let  v        = truncate (x * 255)
+   in   (v, v, v)

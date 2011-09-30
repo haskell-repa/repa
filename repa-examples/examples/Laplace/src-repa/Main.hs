@@ -15,12 +15,15 @@ import Data.Word
 import Control.Monad
 import Prelude 			as P
 
+type RGB8
+        = (Word8, Word8, Word8)
+
 type Solver 
 	=  Int			-- ^ Number of iterations to use.
-	-> Array DIM2 Double	-- ^ Boundary value mask.
-	-> Array DIM2 Double	-- ^ Boundary values.
-	-> Array DIM2 Double	-- ^ Initial state.
-	-> Array DIM2 Double
+	-> Array U DIM2 Double	-- ^ Boundary value mask.
+	-> Array U DIM2 Double	-- ^ Boundary values.
+	-> Array U DIM2 Double	-- ^ Initial state.
+	-> Array U DIM2 Double
 
 solvers 
  = 	[ ("get", 	SG.solveLaplace)
@@ -73,13 +76,14 @@ laplace :: Solver
 laplace solve steps fileInput fileOutput
  = do
 	-- Load up the file containing boundary conditions.
-	arrImage		<- liftM (either (error . show) force)
+	arrImage		<- liftM (either (error . show) id)
 				$  readImageFromBMP fileInput
-			
 	arrImage `deepSeqArray` return ()
-	let arrBoundValue	= force $ slurpDoublesFromImage slurpBoundValue arrImage
-	let arrBoundMask	= force $ slurpDoublesFromImage slurpBoundMask  arrImage
+
+	let arrBoundValue	= compute $ A.map slurpBoundValue arrImage
 	arrBoundValue `deepSeqArray` return ()
+
+	let arrBoundMask	= compute $ A.map slurpBoundMask  arrImage
 	arrBoundMask  `deepSeqArray` return ()
 
 	let arrInitial		= arrBoundValue		
@@ -94,8 +98,7 @@ laplace solve steps fileInput fileOutput
 	putStr (prettyTime t)
 
 	-- Make the result image
-	let arrImageOut		
-		= makeImageFromDoubles (rampColorHotToCold 0.0 1.0) arrFinal
+	let arrImageOut         = compute $ A.map makePixel arrFinal
 
 	-- Write out the image to file.	
 	writeImageToBMP
@@ -103,54 +106,10 @@ laplace solve steps fileInput fileOutput
 		arrImageOut
 
 
-
-slurpDoublesFromImage
-	:: (Word8 -> Word8 -> Word8 -> Double)
-	-> Array DIM3 Word8
-	-> Array DIM2 Double
-	
-{-# INLINE slurpDoublesFromImage #-}
-slurpDoublesFromImage mkDouble 
-	arrBound@(Array _ [Region _ (GenManifest _)])
- = arrBound `deepSeqArray` force
- $ unsafeTraverse arrBound
-	(\(Z :. height :. width :. _)	
-		-> Z :. height :. width)
-
-	(\get (Z :. y :. x)
-		-> mkDouble
-			(get (Z :. y :. x :. 0))
-			(get (Z :. y :. x :. 1))
-			(get (Z :. y :. x :. 2)))
-
-
-makeImageFromDoubles
-	:: (Double -> (Double, Double, Double))
-	-> Array DIM2 Double
-	-> Array DIM3 Word8
-	
-{-# INLINE makeImageFromDoubles #-}
-makeImageFromDoubles fnColor 
-	arrDoubles@(Array _ [Region _ (GenManifest _)])
- = arrDoubles `deepSeqArray` force
- $ unsafeTraverse arrDoubles
-	(\(Z :. height :. width)
-		-> Z :. height :. width :. 4)
-		
-	(\get (Z :. y :. x :. c)
-		-> let (r, g, b) = fnColor (get (Z :. y :. x))
-		   in	case c of
-			  0	-> fromIntegral $ (truncate (r * 255) :: Int)
-			  1	-> fromIntegral $ (truncate (g * 255) :: Int)
-			  2	-> fromIntegral $ (truncate (b * 255) :: Int)
-			  3	-> 0)
-
-
-
 -- | Extract the boundary value from a RGB triple.
-slurpBoundValue :: Word8 -> Word8 -> Word8 -> Double
+slurpBoundValue :: RGB8 -> Double
 {-# INLINE slurpBoundValue #-}
-slurpBoundValue r g b
+slurpBoundValue (!r, !g, !b)
 	-- A non-boundary value.
  	| r == 0 && g == 0 && b == 255	
 	= 0
@@ -164,9 +123,9 @@ slurpBoundValue r g b
 
 
 -- | Extract boundary mask from a RGB triple.
-slurpBoundMask :: Word8 -> Word8 -> Word8 -> Double
+slurpBoundMask :: RGB8 -> Double
 {-# INLINE slurpBoundMask #-}
-slurpBoundMask r g b
+slurpBoundMask (!r, !g, !b)
 	-- A non-boundary value.
  	| r == 0 && g == 0 && b == 255	
 	= 1
@@ -177,5 +136,14 @@ slurpBoundMask r g b
 	
 	| otherwise
 	= error $ "Unhandled pixel value in input " P.++ show (r, g, b)
-	
-	
+
+
+-- | Make an RGB pixel from a final array value.
+makePixel :: Double -> RGB8
+{-# INLINE makePixel #-}
+makePixel d
+ = let  (rd, gd, bd)       = rampColorHotToCold 0.0 1.0 d
+   in   ( truncate (rd * 255)
+        , truncate (gd * 255)
+        , truncate (bd * 255))
+        

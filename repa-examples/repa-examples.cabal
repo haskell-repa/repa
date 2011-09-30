@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             2.2.0.1
+Version:             3.0.0.0
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -19,10 +19,10 @@ Synopsis:
 
 Executable repa-mmult
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-io              == 2.2.*,
-        repa-algorithms      == 2.2.*,
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-io              == 3.0.*,
+        repa-algorithms      == 3.0.*,
         random               == 1.0.*
 
   Main-is: examples/MMult/src-repa/Main.hs
@@ -37,9 +37,9 @@ Executable repa-mmult
 
 Executable repa-laplace
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-io              == 2.2.*
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-io              == 3.0.*
 
   Main-is: examples/Laplace/src-repa/Main.hs
   other-modules: SolverGet SolverStencil
@@ -50,14 +50,15 @@ Executable repa-laplace
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
+        -fsimpl-tick-factor=1000
 
 
 Executable repa-fft2d
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-algorithms      == 2.2.*,
-        repa-io              == 2.2.*
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*,
+        repa-io              == 3.0.*
 
   Main-is: examples/FFT/FFT2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/FFT2d/src-repa .
@@ -71,10 +72,10 @@ Executable repa-fft2d
 
 Executable repa-fft2d-highpass
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-algorithms      == 2.2.*,
-        repa-io              == 2.2.*
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*,
+        repa-io              == 3.0.*
 
   Main-is: examples/FFT/HighPass2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass2d/src-repa .
@@ -88,9 +89,9 @@ Executable repa-fft2d-highpass
 
 Executable repa-fft3d-highpass
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-algorithms      == 2.2.*
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*
 
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
@@ -104,9 +105,9 @@ Executable repa-fft3d-highpass
 
 Executable repa-blur
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-algorithms      == 2.2.*,
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*,
         vector               == 0.9.*
 
   Main-is: examples/Blur/src-repa/Main.hs
@@ -121,9 +122,9 @@ Executable repa-blur
 
 Executable repa-sobel
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-algorithms      == 2.2.*,
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*,
         template-haskell     >= 2.5 && < 2.7
 
   Main-is: examples/Sobel/src-repa/Main.hs
@@ -139,9 +140,9 @@ Executable repa-sobel
 
 Executable repa-canny
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-algorithms      == 2.2.*,
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*,
         template-haskell     >= 2.5 && < 2.7
 
   Main-is: examples/Canny/src-repa/Main.hs
@@ -157,9 +158,9 @@ Executable repa-canny
 
 Executable repa-volume
   Build-depends: 
-        base                 == 4.*,
-        repa                 == 2.2.*,
-        repa-io              == 2.2.*
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-io              == 3.0.*
 
   Main-is: examples/Volume/Main.hs
   ghc-options: 

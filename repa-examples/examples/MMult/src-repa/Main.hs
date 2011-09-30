@@ -59,7 +59,7 @@ printHelp
 
 
 -- | Get a matrix from a file, or generate a random one.
-getMatrix :: Arg -> IO (Array DIM2 Double)
+getMatrix :: Arg -> IO (Array U DIM2 Double)
 getMatrix arg
  = case arg of
 	ArgMatrixFile   fileName	

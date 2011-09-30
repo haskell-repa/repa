@@ -8,10 +8,10 @@ import qualified Data.Array.Repa.Shape	as S
 -- | Solver for the Laplace equation.
 solveLaplace
 	:: Int			-- ^ Number of iterations to use.
-	-> Array DIM2 Double	-- ^ Boundary value mask.
-	-> Array DIM2 Double	-- ^ Boundary values.
-	-> Array DIM2 Double	-- ^ Initial state.
-	-> Array DIM2 Double
+	-> Array U DIM2 Double	-- ^ Boundary value mask.
+	-> Array U DIM2 Double	-- ^ Boundary values.
+	-> Array U DIM2 Double	-- ^ Initial state.
+	-> Array U DIM2 Double
 
 {-# NOINLINE solveLaplace #-}
 solveLaplace steps arrBoundMask arrBoundValue arrInit
@@ -37,21 +37,19 @@ solveLaplace steps arrBoundMask arrBoundValue arrInit
 --	and 0 otherwise.
 -- 
 relaxLaplace
-	:: Array DIM2 Double	-- ^ Boundary condition mask
-	-> Array DIM2 Double	-- ^ Boundary condition values
-	-> Array DIM2 Double	-- ^ Initial matrix
-	-> Array DIM2 Double	
+	:: Array U DIM2 Double	-- ^ Boundary condition mask
+	-> Array U DIM2 Double	-- ^ Boundary condition values
+	-> Array U DIM2 Double	-- ^ Initial matrix
+	-> Array U DIM2 Double	
 
 {-# INLINE relaxLaplace #-}
-relaxLaplace 
-	 arrBoundMask@(Array _ [Region RangeAll (GenManifest _)])
-	arrBoundValue@(Array _ [Region RangeAll (GenManifest _)])
-       	          arr@(Array _ [Region RangeAll (GenManifest _)])
- = [arrBoundMask, arrBoundValue, arr] `deepSeqArrays` force
- $ A.zipWith (+) arrBoundValue
- $ A.zipWith (*) arrBoundMask
- $ unsafeTraverse arr id elemFn
- where
+relaxLaplace arrBoundMask arrBoundValue arr
+  = [arrBoundMask, arrBoundValue, arr] 
+   `deepSeqArrays` compute
+  $ A.zipWith (+) arrBoundValue
+  $ A.zipWith (*) arrBoundMask
+  $ unsafeTraverse arr id elemFn
+  where
 	_ :. height :. width	
 		= extent arr
 
