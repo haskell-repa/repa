@@ -2,11 +2,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 import Data.Word
 import Data.Bits
-import Data.Array.Repa                  as R
-import Data.Array.Repa.IO.Binary        as R
-import Data.Array.Repa.IO.BMP           as R
-import Data.Array.Repa.IO.ColorRamp     as R
-import Prelude                          as P
+import Data.Array.Repa                          as R
+import Data.Array.Repa.Repr.ForeignPtr          as R
+import Data.Array.Repa.IO.Binary                as R
+import Data.Array.Repa.IO.BMP                   as R
+import Data.Array.Repa.Algorithms.ColorRamp     as R
+import Prelude                                  as P
 import System.Environment
 import Control.Monad
 
@@ -29,7 +30,7 @@ run fileIn fileOut depth width height sliceNum low high
  = do   
         -- Read data from the raw file of Word16s.
         let arraySize   = (Z :. depth :. width  :. height)
-        (arr :: Array DIM3 Word16) 
+        (arr :: Array F DIM3 Word16) 
          <- R.readArrayFromStorableFile fileIn arraySize
 
         -- Ensure it's all read in before proceeding.
@@ -40,7 +41,7 @@ run fileIn fileOut depth width height sliceNum low high
 -- | Dump a numbered slice of this array to a BMP file.
 dumpSlice 
 	:: FilePath             -- output base name
-	-> Array DIM3 Word16    -- source data
+	-> Array F DIM3 Word16  -- source data
 	-> Int                  -- array slice number
 	-> Int                  -- low value for color ramp
 	-> Int                  -- high value for color ramp
@@ -51,7 +52,7 @@ dumpSlice fileBase arr sliceNum low high
         let arrSlice	= slice arr (Any :. sliceNum :. All :. All)
 
         -- select a part of the large dynamic range
-	let arrBrack    :: Array DIM2 Word16
+	let arrBrack    :: Array D DIM2 Word16
 	    arrBrack	= R.map (bracket low high . fromIntegral . flip16) arrSlice
 
         -- invert the y coordinate so the image is the correct way around
@@ -63,22 +64,20 @@ dumpSlice fileBase arr sliceNum low high
 	R.writeArrayToStorableFile (fileBase P.++ ".w16") arrInv
 
         -- colorise and write to BMP file
-        let arrColor :: Array DIM2 (Double, Double, Double)
+        let arrColor :: Array D DIM2 (Double, Double, Double)
             arrColor    = R.map (\x -> if x == 0
                                         then (0, 0, 0)
                                         else rampColorHotToCold 0 255 x)
                         $ R.map fromIntegral arrInv
         
-        let arrColor'   = R.force
+        let arrColor' :: Array U DIM2 (Word8, Word8, Word8)
+            arrColor'   = compute
                         $ R.map (\(r, g, b) ->  ( truncate (r * 255)
                                                 , truncate (g * 255)
                                                 , truncate (b * 255)))
                         $ arrColor
 
-        R.writeComponentsToBMP (fileBase P.++ ".bmp")
-                (R.map (\(r, g, b) -> r) arrColor')
-                (R.map (\(r, g, b) -> g) arrColor')
-                (R.map (\(r, g, b) -> b) arrColor') 
+        R.writeImageToBMP (fileBase P.++ ".bmp") arrColor'
 
 
 {-# INLINE bracket #-}
