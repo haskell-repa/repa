@@ -12,7 +12,9 @@ module Data.Array.Repa.Eval
         , fromList
         
         -- * Converting between representations
-        , compute, copy
+        , compute
+        , copy
+        , now
         
         -- * Chunked filling
         , fillChunkedS
@@ -69,3 +71,20 @@ copy    :: (Repr r1 e, Fill D r2 sh e)
 {-# INLINE copy #-}
 copy arr1
         = compute $ delay arr1
+        
+
+-- | Apply `deepSeqArray` to an array so the result is actually constructed
+--   at this point in a monadic computation. 
+--
+--   * Haskell's laziness means that applications of `compute` and `copy` are
+--     automatically suspended.
+--
+--   * Laziness can be problematic for data parallel programs, because we want
+--     each array to be constructed in parallel before moving onto the next one.
+--   
+now     :: (Shape sh, Repr r e, Monad m)
+        => Array r sh e -> m (Array r sh e)
+{-# INLINE now #-}
+now arr
+ = do   arr `deepSeqArray` return ()
+        return arr

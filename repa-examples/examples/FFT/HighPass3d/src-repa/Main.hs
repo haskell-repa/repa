@@ -3,8 +3,8 @@
 import Data.Array.Repa.Algorithms.FFT
 import Data.Array.Repa.Algorithms.DFT.Center
 import Data.Array.Repa.Algorithms.Complex
+import Data.Array.Repa.Algorithms.ColorRamp
 import Data.Array.Repa.IO.BMP
-import Data.Array.Repa.IO.ColorRamp
 import Data.Array.Repa.IO.Timing
 import Data.Array.Repa				as A
 import qualified Data.Array.Repa.Repr.Unboxed   as U
@@ -35,19 +35,12 @@ mainWithArgs size prefixOut
 	let center	= size `div` 2
 	let cutoff		= 4
 
-	let arrInit	
-	        = compute
-		$ fromFunction shape 
+	arrInit	<- now $ compute
+                $  fromFunction shape 
 			(\ix -> if isInCenteredCube center cubeSize ix 
 					then (1, 0) else (0, 0))
 
-	arrInit `deepSeqArray` return ()
-
-	(arrFinal, t)
-	 	<- time 
-	 	$  let arrFinal'	= transform arrInit center cutoff
-	  	   in  arrFinal' `deepSeqArray` return arrFinal'
-
+	(arrFinal, t) <- time $ now $ transform arrInit center cutoff
 	putStr (prettyTime t)
 
  	mapM_ (dumpSlice prefixOut arrFinal) [0..size - 1]

@@ -33,21 +33,16 @@ mainWithArgs cutoff fileIn fileOut
 	arrRGB	<- liftM (either (\e -> error $ show e) id)
 		$  readImageFromBMP fileIn
 	
-	arrRGB `deepSeqArray` return ()
-	
 	let (arrRed, arrGreen, arrBlue)
 	        = U.unzip3 arrRGB
 	
 	-- Do the transform on each component individually
 	((arrRed', arrGreen', arrBlue'), t)
 		<- time
-		$ let	arrRed'		= transform cutoff arrRed
-			arrGreen'	= transform cutoff arrGreen
-			arrBlue'	= transform cutoff arrBlue
-		  in	arrRed' 
-		         `deepSeqArray` arrGreen'
-			 `deepSeqArray` arrBlue'
-			 `deepSeqArray` return (arrRed', arrGreen', arrBlue')
+		$ do	arrRed'		<- now $ transform cutoff arrRed
+			arrGreen'	<- now $ transform cutoff arrGreen
+			arrBlue'	<- now $ transform cutoff arrBlue
+                        return  (arrRed', arrGreen', arrBlue')
 	
 	putStr (prettyTime t)
 	

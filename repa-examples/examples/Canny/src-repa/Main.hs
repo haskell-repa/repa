@@ -13,7 +13,10 @@ import Data.Int
 import Control.Monad
 import System.Environment
 import Data.Array.Repa 				as R
+import Data.Array.Repa.Repr.Unboxed             as U
+import Data.Array.Repa.Repr.Cursored            as C
 import Data.Array.Repa.Stencil
+import Data.Array.Repa.Stencil.Dim2
 import Data.Array.Repa.Specialised.Dim2
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
@@ -55,29 +58,25 @@ main
 
 
 run loops threshLow threshHigh fileIn fileOut
- = do	arrInput 	<- liftM (force . either (error . show) id) 
-			$ readImageFromBMP fileIn
+ = do	arrInput <- liftM (either (error . show) id) 
+		 $  readImageFromBMP fileIn
 
-	arrInput `deepSeqArray` return ()
 	(arrResult, tTotal)
 	 <- time
-	 $ do	{-let stage str arr 
-			= timeStage loops str $ return arr-}
-	
-		arrGrey		<- timeStage loops "toGreyScale"  $ return $ toGreyScale    arrInput
+	 $ do	arrGrey		<- timeStage loops "toGreyScale"  $ return $ toGreyScale    arrInput
 		arrBluredX	<- timeStage loops "blurX" 	  $ return $ blurSepX       arrGrey
 		arrBlured	<- timeStage loops "blurY" 	  $ return $ blurSepY       arrBluredX
 		arrDX		<- timeStage loops "diffX"	  $ return $ gradientX      arrBlured
 		arrDY		<- timeStage loops "diffY"	  $ return $ gradientY      arrBlured
 		
 		arrMagOrient	<- timeStage loops "magOrient"	 
-				$ return $ gradientMagOrient threshLow arrDX arrDY
+				$  return $ gradientMagOrient threshLow arrDX arrDY
 
 		arrSuppress	<- timeStage loops "suppress"     
-				$ return $ suppress threshLow threshHigh arrMagOrient
+				$  return $ suppress threshLow threshHigh arrMagOrient
 
-		arrStrong	<- timeStage loops "select"	$ return $ selectStrong arrSuppress	
-		arrEdges	<- timeStage loops "wildfire"	$ return $ wildfire arrSuppress arrStrong	
+		arrStrong	<- timeStage loops "select"	  $ return $ selectStrong arrSuppress	
+		arrEdges	<- timeStage loops "wildfire"	  $ return $ wildfire arrSuppress arrStrong	
 
 		return arrEdges
 
@@ -86,16 +85,16 @@ run loops threshLow threshHigh fileIn fileOut
 	
 	putStr $ prettyTime tTotal
 	
-	writeComponentsToBMP fileOut arrResult arrResult arrResult
+	writeImageToBMP fileOut (U.zip3 arrResult arrResult arrResult)
 
 
 -- | Wrapper to time each stage of the algorithm.
 timeStage
-	:: (Shape sh, Elt a)
+	:: Shape sh
 	=> Int
 	-> String 
-	-> (IO (Array sh a))
-	-> (IO (Array sh a))
+	-> IO (Array sh a)
+	-> IO (Array sh a)
 
 {-# NOINLINE timeStage #-}
 timeStage loops name fn
@@ -135,9 +134,8 @@ word8OfFloat f
 -- | RGB to greyscale conversion.
 {-# NOINLINE toGreyScale #-}
 toGreyScale :: Array DIM3 Word8 -> Array DIM2 Word8
-toGreyScale 
-	arr@(Array _ [Region RangeAll (GenManifest _)])
-  = arr `deepSeqArray` force2
+toGreyScale arr
+  = arr `deepSeqArray` compute
   $ unsafeTraverse arr
 	(\(sh :. _) -> sh)
 	(\get ix    -> rgbToLuminance 
@@ -157,17 +155,17 @@ toGreyScale
 -- | Separable Gaussian blur in the X direction.
 {-# NOINLINE blurSepX #-}
 blurSepX :: Array DIM2 Word8 -> Array DIM2 Float
-blurSepX arr@(Array _ [Region RangeAll (GenManifest _)])	
-	= arr `deepSeqArray` force2
-	$ forStencilFrom2  BoundClamp arr floatOfWord8
-	  [stencil2|	1 4 6 4 1 |]	
+blurSepX arr
+        = arr `deepSeqArray` compute
+        $ forStencil2  BoundClamp (R.map floatOfWord8 arr)
+          [stencil2|	1 4 6 4 1 |]	
 
 
 -- | Separable Gaussian blur in the Y direction.
 {-# NOINLINE blurSepY #-}
 blurSepY :: Array DIM2 Float -> Array DIM2 Float
-blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])	
-	= arr `deepSeqArray` force2
+blurSepY arr
+	= arr `deepSeqArray` compute
 	$ R.map (/ 256)
 	$ forStencil2  BoundClamp arr
 	  [stencil2|	1
@@ -180,8 +178,8 @@ blurSepY arr@(Array _ [Region RangeAll (GenManifest _)])
 -- | Compute gradient in the X direction.
 {-# NOINLINE gradientX #-}
 gradientX :: Array DIM2 Float -> Array DIM2 Float
-gradientX img@(Array _ [Region RangeAll (GenManifest _)])
- 	= img `deepSeqArray` force2
+gradientX img
+ 	= img `deepSeqArray` compute
     	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
@@ -191,8 +189,8 @@ gradientX img@(Array _ [Region RangeAll (GenManifest _)])
 -- | Compute gradient in the Y direction.
 {-# NOINLINE gradientY #-}
 gradientY :: Array DIM2 Float -> Array DIM2 Float
-gradientY img@(Array _ [Region RangeAll (GenManifest _)])
-	= img `deepSeqArray` force2
+gradientY img
+	= img `deepSeqArray` compute
 	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0
@@ -202,12 +200,9 @@ gradientY img@(Array _ [Region RangeAll (GenManifest _)])
 -- | Classify the magnitude and orientation of the vector gradient.
 {-# NOINLINE gradientMagOrient #-}
 gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Int)
-gradientMagOrient !threshLow 
- 	dX@(Array _ [Region RangeAll (GenManifest _)])
-	dY@(Array _ [Region RangeAll (GenManifest _)])
-
- = [dX, dY] `deepSeqArrays` force2
- $ R.zipWith magOrient dX dY
+gradientMagOrient !threshLow dX dY
+        = [dX, dY] `deepSeqArrays` compute
+        $ R.zipWith magOrient dX dY
 
  where	{-# INLINE magOrient #-}
 	magOrient :: Float -> Float -> (Float, Int)
@@ -262,12 +257,12 @@ gradientMagOrient !threshLow
 --   into strong and weak (potential) edges.
 {-# NOINLINE suppress #-}
 suppress :: Float -> Float -> Image (Float, Int) -> Image Word8
-suppress threshLow threshHigh
-	   dMagOrient@(Array shSrc [Region RangeAll (GenManifest _)]) 
- = dMagOrient `deepSeqArray` force2 
- $ makeBordered2 shSrc 1 
-		(GenCursor id addDim (const 0))
- 		(GenCursor id addDim comparePts)
+suppress threshLow threshHigh dMagOrient
+ = dMagOrient `deepSeqArray` compute
+ $ makeBordered2 
+        (extent dMagOrient) 1 
+ 	(makeCursored (extent dMagOrient) id addDim comparePts)
+ 	(fromFunction (extent dMagOrient) (const 0))
 
  where	{-# INLINE comparePts #-}
 	comparePts d@(sh :. i :. j)
@@ -299,9 +294,10 @@ suppress threshLow threshHigh
 --         during non-maximum suppression, but Repa doesn't provide a fused mapFilter primitive yet.
 {-# NOINLINE selectStrong #-}
 selectStrong :: Image Word8 -> Array DIM1 Int
-selectStrong img@(Array _ [Region RangeAll (GenManifest vec)])
+selectStrong img
  = img `deepSeqArray` 
    let 	{-# INLINE match #-}
+        vec             = fromUnboxed img
 	match ix	= vec `V.unsafeIndex` ix == edge Strong
 
 	{-# INLINE process #-}
@@ -318,15 +314,14 @@ wildfire
 	-> Array DIM1 Int	-- ^ Array containing flat indices of strong edges.
 	-> Image Word8
 
-wildfire img@(Array _ [Region RangeAll (GenManifest _)]) arrStrong
+wildfire img arrStrong
  = unsafePerformIO 
  $ do	(sh, vec)	<- wildfireIO 
-	return	$ sh `seq` vec `seq` 
-		  Array sh [Region RangeAll (GenManifest vec)]
+	return	$ sh `seq` vec `seq` fromUnboxed sh vec
 
  where	lenImg		= R.size $ R.extent img
 	lenStrong	= R.size $ R.extent arrStrong
-	vStrong		= toVector arrStrong
+	vStrong		= toUnboxed arrStrong
 	
 	wildfireIO
   	 = do	-- Stack of image indices we still need to consider.

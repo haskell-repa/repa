@@ -40,7 +40,7 @@ module Data.Array.Repa
         , deepSeqArrays
 
         -- * Converting between array representations
-        , compute, copy
+        , compute, copy, now
 
         -- * Concrete array representations
         -- ** Delayed representation

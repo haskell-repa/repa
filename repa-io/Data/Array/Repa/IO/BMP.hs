@@ -33,7 +33,9 @@ readImageFromBMP filePath
  = do	ebmp	<- readBMP filePath
 	case ebmp of
 	 Left err	-> return $ Left err
-	 Right bmp	-> return $ Right (readImageFromBMP' bmp)
+	 Right bmp	
+	  -> do arr     <- R.now (readImageFromBMP' bmp)
+	        return  $ Right arr
 
 readImageFromBMP' bmp
  = let	(width, height) = bmpDimensions bmp

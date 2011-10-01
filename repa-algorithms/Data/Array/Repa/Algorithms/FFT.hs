@@ -51,7 +51,7 @@ fft3d 	:: Repr r Complex
         => Mode
 	-> Array r DIM3 Complex
 	-> Array U DIM3 Complex
-
+{-# INLINE fft3d #-}
 fft3d mode arr
  = let	_ :. depth :. height :. width	= extent arr
 	!sign	= signOfMode mode
@@ -69,8 +69,8 @@ fft3d mode arr
 			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 			Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 			Inverse	-> compute 
-			        $ A.map (/ scale) 
-				$ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+			        $  A.map (/ scale) 
+				$  fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 
 fftTrans3d 
 	:: Repr r Complex
@@ -78,7 +78,7 @@ fftTrans3d
 	-> Array r DIM3 Complex 
 	-> Array U DIM3 Complex
 
-{-# NOINLINE fftTrans3d #-}
+{-# INLINE fftTrans3d #-}
 fftTrans3d sign arr
  = let	(sh :. len)	= extent arr
    in	compute $ rotate3d $ fft sign sh len arr
@@ -101,7 +101,7 @@ fft2d 	:: Repr r Complex
         => Mode
 	-> Array r DIM2 Complex
 	-> Array U DIM2 Complex
-
+{-# INLINE fft2d #-}
 fft2d mode arr
  = let	_ :. height :. width	= extent arr
 	sign	= signOfMode mode
@@ -125,7 +125,7 @@ fftTrans2d
 	-> Array r DIM2 Complex 
 	-> Array U DIM2 Complex
 
-{-# NOINLINE fftTrans2d #-}
+{-# INLINE fftTrans2d #-}
 fftTrans2d sign arr
  = let  (sh :. len)	= extent arr
    in	compute $ transpose $ fft sign sh len arr
@@ -137,7 +137,7 @@ fft1d	:: Repr r Complex
         => Mode 
 	-> Array r DIM1 Complex 
 	-> Array U DIM1 Complex
-	
+{-# INLINE fft1d #-}
 fft1d mode arr
  = let	_ :. len	= extent arr
 	sign	= signOfMode mode
@@ -161,7 +161,7 @@ fftTrans1d
 	-> Array r DIM1 Complex
 	-> Array U DIM1 Complex
 
-{-# NOINLINE fftTrans1d #-}
+{-# INLINE fftTrans1d #-}
 fftTrans1d sign arr
  = let	(sh :. len)	= extent arr
    in	fft sign sh len arr

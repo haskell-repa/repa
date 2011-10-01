@@ -1,22 +1,19 @@
 {-# LANGUAGE BangPatterns #-}
-
 -- | Solver for the Laplace equation
 --	You supply a BMP files specifying the boundary conditions.
 --	The output is written back to another BMP file.
 --
-import SolverGet		as SG
-import SolverStencil		as SS
-import Data.Array.Repa		as A
+import SolverGet	                	as SG
+import SolverStencil	                	as SS
+import Data.Array.Repa	                	as A
+import Data.Array.Repa.Algorithms.Pixel
+import Data.Array.Repa.Algorithms.ColorRamp
 import Data.Array.Repa.IO.BMP	
-import Data.Array.Repa.IO.ColorRamp
 import Data.Array.Repa.IO.Timing
 import System.Environment
 import Data.Word
 import Control.Monad
 import Prelude 			as P
-
-type RGB8
-        = (Word8, Word8, Word8)
 
 type Solver 
 	=  Int			-- ^ Number of iterations to use.
@@ -76,38 +73,30 @@ laplace :: Solver
 laplace solve steps fileInput fileOutput
  = do
 	-- Load up the file containing boundary conditions.
-	arrImage		<- liftM (either (error . show) id)
-				$  readImageFromBMP fileInput
-	arrImage `deepSeqArray` return ()
+	arrImage	<- liftM (either (error . show) id)
+			$  readImageFromBMP fileInput
 
-	let arrBoundValue	= compute $ A.map slurpBoundValue arrImage
-	arrBoundValue `deepSeqArray` return ()
-
-	let arrBoundMask	= compute $ A.map slurpBoundMask  arrImage
-	arrBoundMask  `deepSeqArray` return ()
-
-	let arrInitial		= arrBoundValue		
+	arrBoundValue   <- now $ compute $ A.map slurpBoundValue arrImage
+	arrBoundMask	<- now $ compute $ A.map slurpBoundMask  arrImage
+	let arrInitial	= arrBoundValue		
 	
-	-- Run the solver.
-	(arrFinal, t)
-		<- time
-		$  let	arrFinal = solve steps arrBoundMask arrBoundValue arrInitial
-		   in	arrFinal `deepSeqArray` return arrFinal
+	-- Run the Laplace solver and print how long it took.
+	(arrFinal, t)   <- time $ now 
+	                $  solve steps arrBoundMask arrBoundValue arrInitial
 
-	-- Print how long it took
 	putStr (prettyTime t)
 
-	-- Make the result image
-	let arrImageOut         = compute $ A.map makePixel arrFinal
 
-	-- Write out the image to file.	
-	writeImageToBMP
-		fileOutput
-		arrImageOut
+	-- Write out the result to a file.
+	arrImageOut     <- now $ compute
+	                $  A.map rgb8OfFrac
+	                $  A.map (rampColorHotToCold 0.0 1.0) arrFinal
+
+	writeImageToBMP	fileOutput arrImageOut
 
 
 -- | Extract the boundary value from a RGB triple.
-slurpBoundValue :: RGB8 -> Double
+slurpBoundValue :: (Word8, Word8, Word8) -> Double
 {-# INLINE slurpBoundValue #-}
 slurpBoundValue (!r, !g, !b)
 	-- A non-boundary value.
@@ -123,7 +112,7 @@ slurpBoundValue (!r, !g, !b)
 
 
 -- | Extract boundary mask from a RGB triple.
-slurpBoundMask :: RGB8 -> Double
+slurpBoundMask :: (Word8, Word8, Word8) -> Double
 {-# INLINE slurpBoundMask #-}
 slurpBoundMask (!r, !g, !b)
 	-- A non-boundary value.
@@ -137,13 +126,3 @@ slurpBoundMask (!r, !g, !b)
 	| otherwise
 	= error $ "Unhandled pixel value in input " P.++ show (r, g, b)
 
-
--- | Make an RGB pixel from a final array value.
-makePixel :: Double -> RGB8
-{-# INLINE makePixel #-}
-makePixel d
- = let  (rd, gd, bd)       = rampColorHotToCold 0.0 1.0 d
-   in   ( truncate (rd * 255)
-        , truncate (gd * 255)
-        , truncate (bd * 255))
-        

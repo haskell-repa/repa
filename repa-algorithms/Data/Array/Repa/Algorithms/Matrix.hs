@@ -13,7 +13,7 @@ module Data.Array.Repa.Algorithms.Matrix
 	(multiplyMM)
 where
 import Data.Array.Repa	                as A
-import Data.Array.Repa.Repr.Unboxed     as A
+
 
 -- | Matrix-matrix multiply.
 multiplyMM
