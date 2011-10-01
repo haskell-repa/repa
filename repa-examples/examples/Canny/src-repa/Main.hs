@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards, MagicHash #-}
+{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards, MagicHash, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 -- | Canny edge detector.
@@ -18,6 +18,7 @@ import Data.Array.Repa.Repr.Cursored            as C
 import Data.Array.Repa.Stencil
 import Data.Array.Repa.Stencil.Dim2
 import Data.Array.Repa.Specialised.Dim2
+import Data.Array.Repa.Algorithms.Pixel
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude					hiding (compare)
@@ -28,7 +29,7 @@ import qualified Data.Vector.Unboxed.Mutable	as VM
 import qualified Data.Vector.Unboxed		as V
 import Prelude					as P
 
-type Image a	= Array DIM2 a
+type Image a	= Array U DIM2 a
 
 -- Constants ------------------------------------------------------------------
 -- TODO: It would be better to use Word8 to represent the edge orientations,
@@ -90,11 +91,11 @@ run loops threshLow threshHigh fileIn fileOut
 
 -- | Wrapper to time each stage of the algorithm.
 timeStage
-	:: Shape sh
+	:: (Shape sh, Unbox a)
 	=> Int
 	-> String 
-	-> IO (Array sh a)
-	-> IO (Array sh a)
+	-> IO (Array U sh a)
+	-> IO (Array U sh a)
 
 {-# NOINLINE timeStage #-}
 timeStage loops name fn
@@ -133,41 +134,29 @@ word8OfFloat f
 -------------------------------------------------------------------------------
 -- | RGB to greyscale conversion.
 {-# NOINLINE toGreyScale #-}
-toGreyScale :: Array DIM3 Word8 -> Array DIM2 Word8
+toGreyScale :: Image (Word8, Word8, Word8) -> Image Float
 toGreyScale arr
-  = arr `deepSeqArray` compute
-  $ unsafeTraverse arr
-	(\(sh :. _) -> sh)
-	(\get ix    -> rgbToLuminance 
-				(get (ix :. 0))
-				(get (ix :. 1))
-				(get (ix :. 2)))
-
- where	{-# INLINE rgbToLuminance #-}
-	rgbToLuminance :: Word8 -> Word8 -> Word8 -> Word8
-	rgbToLuminance r g b 
-	 = word8OfFloat 
-		( floatOfWord8 r * 0.3
-		+ floatOfWord8 g * 0.59
-		+ floatOfWord8 b * 0.11)
+        = arr `deepSeqArray` compute
+        $ R.map (* 255)
+        $ R.map luminanceOfRGB8 arr 
 
 
 -- | Separable Gaussian blur in the X direction.
 {-# NOINLINE blurSepX #-}
-blurSepX :: Array DIM2 Word8 -> Array DIM2 Float
+blurSepX :: Image Float -> Image Float
 blurSepX arr
         = arr `deepSeqArray` compute
-        $ forStencil2  BoundClamp (R.map floatOfWord8 arr)
+        $ forStencil2  (BoundConst 0) arr
           [stencil2|	1 4 6 4 1 |]	
 
 
 -- | Separable Gaussian blur in the Y direction.
 {-# NOINLINE blurSepY #-}
-blurSepY :: Array DIM2 Float -> Array DIM2 Float
+blurSepY :: Image Float -> Image Float
 blurSepY arr
 	= arr `deepSeqArray` compute
 	$ R.map (/ 256)
-	$ forStencil2  BoundClamp arr
+	$ forStencil2  (BoundConst 0) arr
 	  [stencil2|	1
 	 		4
 			6
@@ -177,7 +166,7 @@ blurSepY arr
 
 -- | Compute gradient in the X direction.
 {-# NOINLINE gradientX #-}
-gradientX :: Array DIM2 Float -> Array DIM2 Float
+gradientX :: Image Float -> Image Float
 gradientX img
  	= img `deepSeqArray` compute
     	$ forStencil2 (BoundConst 0) img
@@ -188,7 +177,7 @@ gradientX img
 
 -- | Compute gradient in the Y direction.
 {-# NOINLINE gradientY #-}
-gradientY :: Array DIM2 Float -> Array DIM2 Float
+gradientY :: Image Float -> Image Float
 gradientY img
 	= img `deepSeqArray` compute
 	$ forStencil2 (BoundConst 0) img
@@ -293,11 +282,11 @@ suppress threshLow threshHigh dMagOrient
 --   TODO: If would better if we could medge this into the above stage, and record the strong edge
 --         during non-maximum suppression, but Repa doesn't provide a fused mapFilter primitive yet.
 {-# NOINLINE selectStrong #-}
-selectStrong :: Image Word8 -> Array DIM1 Int
+selectStrong :: Image Word8 -> Array U DIM1 Int
 selectStrong img
  = img `deepSeqArray` 
    let 	{-# INLINE match #-}
-        vec             = fromUnboxed img
+        vec             = toUnboxed img
 	match ix	= vec `V.unsafeIndex` ix == edge Strong
 
 	{-# INLINE process #-}
@@ -311,7 +300,7 @@ selectStrong img
 {-# NOINLINE wildfire #-}
 wildfire 
 	:: Image Word8		-- ^ Image with strong and weak edges set.
-	-> Array DIM1 Int	-- ^ Array containing flat indices of strong edges.
+	-> Array U DIM1 Int	-- ^ Array containing flat indices of strong edges.
 	-> Image Word8
 
 wildfire img arrStrong
