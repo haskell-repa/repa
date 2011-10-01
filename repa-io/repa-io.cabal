@@ -30,7 +30,6 @@ Library
         -Odph -Wall -fno-warn-missing-signatures
 
   Exposed-modules:
-        Data.Array.Repa.IO.ColorRamp
         Data.Array.Repa.IO.BMP
         Data.Array.Repa.IO.Vector
         Data.Array.Repa.IO.Matrix

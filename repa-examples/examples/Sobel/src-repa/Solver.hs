@@ -6,17 +6,18 @@ module Solver
 	, gradientX
 	, gradientY )
 where
-import Data.Array.Repa 			as Repa
-import Data.Array.Repa.Stencil
+import Data.Array.Repa 			as R
+import Data.Array.Repa.Stencil          as R
+import Data.Array.Repa.Stencil.Dim2     as R
 
-type Image	= Array DIM2 Float
+type Image	= Array U DIM2 Float
 
 
 gradientX :: Image -> Image
 {-# NOINLINE gradientX #-}
 gradientX img
- 	= img `deepSeqArray` force2
- 	$ forStencil2 BoundClamp img
+ 	= img `deepSeqArray` compute
+ 	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
 			-1  0  1 |]
@@ -25,8 +26,8 @@ gradientX img
 gradientY :: Image -> Image
 {-# NOINLINE gradientY #-}
 gradientY img
-	= img `deepSeqArray` force2
-	$ forStencil2 BoundClamp img
+	= img `deepSeqArray` compute
+	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0
 			-1 -2 -1 |] 

@@ -60,18 +60,3 @@ mainWithArgs fileIn (clipMag :: Double) fileMag filePhase
 	writeImageToBMP filePhase arrPhase
 
 
-fromGreyPixel :: Floating a => (Word8, Word8, Word8) -> a
-{-# INLINE fromGreyPixel #-}
-fromGreyPixel (r, g, b)
-        = sqrt  ( (fromIntegral r / 255) ^ (2 :: Int)
-                + (fromIntegral g / 255) ^ (2 :: Int)
-                + (fromIntegral b / 255) ^ (2 :: Int))	
-
-
-toGreyPixel
-        :: RealFrac a
-        => a -> (Word8, Word8, Word8) 
-{-# INLINE toGreyPixel #-}
-toGreyPixel x
- = let  v        = truncate (x * 255)
-   in   (v, v, v)

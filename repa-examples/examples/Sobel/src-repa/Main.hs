@@ -5,7 +5,8 @@
 import Data.Word
 import Control.Monad
 import System.Environment
-import Data.Array.Repa 			as Repa
+import Data.Array.Repa 			        as R
+import qualified Data.Array.Repa.Repr.Unboxed   as U
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
@@ -22,7 +23,7 @@ main
 
 
 run iterations fileIn fileOut
- = do	inputImage 	<- liftM (force . either (error . show) id) 
+ = do	inputImage 	<- liftM (compute . either (error . show) id) 
 			$ readImageFromBMP fileIn
 	
 	let greyImage	= toGreyScale inputImage
@@ -35,17 +36,16 @@ run iterations fileIn fileOut
 	putStr $ prettyTime tElapsed
 	
 	let (gX, gY)	= result
-	let outImage	= force2 $ Repa.zipWith magnitude gX gY	
+	let outImage	= compute $ R.zipWith magnitude gX gY	
 
 	outImage `seq` return ()
-
-	-- TODO: The image normalization in this write fn eats up most of the runtime.
-	writeMatrixToGreyscaleBMP fileOut outImage
+	writeImageToBMP fileOut 
+	        (U.zip3 outImage outImage outImage)
 
 
 loop :: Int -> Image -> (Image, Image)
-loop n 
- = withManifest $ \img ->
+loop n img
+ = img `deepSeqArray`
    if n == 0
     then (img, img)
     else do 
@@ -64,17 +64,20 @@ magnitude x y
 
 
 -- | RGB to greyscale conversion.
-toGreyScale :: Array DIM3 Word8 -> Image
+toGreyScale :: Array U DIM3 Word8 -> Image
 {-# NOINLINE toGreyScale #-}
-toGreyScale 
-  = withManifest $ \arr ->
-    arr `seq` force2 $ traverse arr
+toGreyScale arr
+  = arr `deepSeqArray`
+   compute $ traverse arr
 	(\(sh :. _) -> sh)
 	(\get ix    -> rgbToLuminance 
 				(get (ix :. 0))
 				(get (ix :. 1))
 				(get (ix :. 2)))
 
+
+** shift pixel conversions, this and greyscale to algorithms 
+** also shift colorRamp to algorithms
 
 -- | Convert a RGB value to a luminance.
 rgbToLuminance :: Word8 -> Word8 -> Word8 -> Float

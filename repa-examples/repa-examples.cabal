@@ -136,6 +136,7 @@ Executable repa-sobel
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
+        -fsimpl-tick-factor=1000
 
 
 Executable repa-canny

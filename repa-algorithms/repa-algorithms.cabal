@@ -47,10 +47,12 @@ Library
 
   Exposed-modules:
         Data.Array.Repa.Algorithms.Complex
+        Data.Array.Repa.Algorithms.Pixel
+        Data.Array.Repa.Algorithms.ColorRamp
         Data.Array.Repa.Algorithms.Randomish
+        Data.Array.Repa.Algorithms.Matrix
+        Data.Array.Repa.Algorithms.Convolve
         Data.Array.Repa.Algorithms.DFT
         Data.Array.Repa.Algorithms.DFT.Roots
         Data.Array.Repa.Algorithms.DFT.Center
         Data.Array.Repa.Algorithms.FFT
-        Data.Array.Repa.Algorithms.Matrix
-        Data.Array.Repa.Algorithms.Convolve
