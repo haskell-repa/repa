@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns, ExplicitForAll, ScopedTypeVariables, PatternGuards #-}
-module Data.Array.Repa.Internals.Select
+module Data.Array.Repa.Eval.Selection
 	(selectChunkedS, selectChunkedP)
 where
-import Data.Array.Repa.Internals.Gang
+import Data.Array.Repa.Eval.Gang
 import Data.Array.Repa.Shape
 import Data.Vector.Unboxed			as V
 import Data.Vector.Unboxed.Mutable		as VM
@@ -12,28 +12,29 @@ import Control.Monad				as P
 import Data.IORef
 
 
--- | Select indices matching a predicate
+-- | Select indices matching a predicate.
+--  
+--   * This primitive can be useful for writing filtering functions.
+--
 selectChunkedS
-	:: (Shape sh, Unbox a)
-	=> (sh -> Bool)		-- ^ See if this predicate matches.
+	:: Shape sh
+	=> (sh -> a -> IO ())	-- ^ Update function to write into result.
+	-> (sh -> Bool)		-- ^ See if this predicate matches.
 	-> (sh -> a)		-- ^  .. and apply fn to the matching index
-	-> IOVector a		-- ^  .. then write the result into the vector.
 	-> sh 			-- ^ Extent of indices to apply to predicate.
 	-> IO Int		-- ^ Number of elements written to destination array.
 
 {-# INLINE selectChunkedS #-}
-selectChunkedS match produce !vDst !shSize
+selectChunkedS !fnWrite !fnMatch !fnProduce !shSize
  = fill 0 0
  where	lenSrc	= size shSize
-	lenDst	= VM.length vDst
 
 	fill !nSrc !nDst
 	 | nSrc >= lenSrc	= return nDst
-	 | nDst >= lenDst	= return nDst
 
 	 | ixSrc	<- fromIndex shSize nSrc
-	 , match ixSrc
-	 = do	VM.unsafeWrite vDst nDst (produce ixSrc)
+	 , fnMatch ixSrc
+	 = do	fnWrite ixSrc (fnProduce ixSrc)
 		fill (nSrc + 1) (nDst + 1)
 
 	 | otherwise
@@ -41,9 +42,14 @@ selectChunkedS match produce !vDst !shSize
 
 
 -- | Select indices matching a predicate, in parallel.
---   The array is chunked up, with one chunk being given to each thread.
---   The number of elements in the result array depends on how many threads
---   you're running the program with.
+--  
+--   * This primitive can be useful for writing filtering functions.
+--
+--   * The array is split into linear chunks, with one chunk being given to each thread.
+--
+--   * The number of elements in the result array depends on how many threads
+--     you're running the program with.
+--
 selectChunkedP
 	:: forall a
 	.  Unbox a
@@ -53,7 +59,7 @@ selectChunkedP
 	-> IO [IOVector a]	-- Chunks containing array elements.
 
 {-# INLINE selectChunkedP #-}
-selectChunkedP !match !produce !len
+selectChunkedP !fnMatch !fnProduce !len
  = do
 	-- Make IORefs that the threads will write their result chunks to.
 	-- We start with a chunk size proportial to the number of threads we have,
@@ -109,8 +115,8 @@ selectChunkedP !match !produce !len
 		fillChunk (ixSrc + 1) ixSrcEnd vecDst' (ixDst + 1) ixDstEnd'
 
 	 -- We've got a maching element, so add it to the chunk.
-	 | match ixSrc
-	 = do	VM.unsafeWrite vecDst ixDst (produce ixSrc)
+	 | fnMatch ixSrc
+	 = do	VM.unsafeWrite vecDst ixDst (fnProduce ixSrc)
 		fillChunk (ixSrc + 1) ixSrcEnd vecDst (ixDst + 1)  ixDstEnd
 
 	 -- The element doesnt match, so keep going.

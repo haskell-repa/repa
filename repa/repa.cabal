@@ -69,6 +69,7 @@ Library
         Data.Array.Repa.Operators.Traversal
         Data.Array.Repa.Operators.Interleave
         Data.Array.Repa.Operators.Reduction
+        Data.Array.Repa.Operators.Selection
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil
         Data.Array.Repa.Stencil.Dim2
@@ -80,6 +81,7 @@ Library
         Data.Array.Repa.Eval.Chunked
         Data.Array.Repa.Eval.Cursored
         Data.Array.Repa.Eval.Reduction
+        Data.Array.Repa.Eval.Selection
         Data.Array.Repa.Stencil.Base
         Data.Array.Repa.Stencil.Template
         

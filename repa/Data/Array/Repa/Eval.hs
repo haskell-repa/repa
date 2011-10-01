@@ -26,12 +26,17 @@ module Data.Array.Repa.Eval
         
         -- * Cursored blockwise filling
         , fillCursoredBlock2S
-        , fillCursoredBlock2P)
+        , fillCursoredBlock2P
+        
+        -- * Chunked selection
+        , selectChunkedS
+        , selectChunkedP)
 where
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Chunked
 import Data.Array.Repa.Eval.Cursored
+import Data.Array.Repa.Eval.Selection
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape

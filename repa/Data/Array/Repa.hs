@@ -91,7 +91,10 @@ module Data.Array.Repa
 	-- from Data.Array.Repa.Operators.Reduction ------------------
 	-- ** Reduction
 	, fold, foldAll
-	, sum, sumAll)
+	, sum, sumAll
+	
+	-- from Data.Array.Repa.Operators.Selection ------------------
+	, select)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
@@ -111,6 +114,7 @@ import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave
 import Data.Array.Repa.Operators.Reduction
+import Data.Array.Repa.Operators.Selection
 import Prelude          ()
 
 
