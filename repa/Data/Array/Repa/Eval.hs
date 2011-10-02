@@ -19,6 +19,7 @@ module Data.Array.Repa.Eval
         -- * Chunked filling
         , fillChunkedS
         , fillChunkedP
+        , fillChunkedIOP
 
         -- * Blockwise filling
         , fillBlock2P
