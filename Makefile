@@ -13,7 +13,6 @@ all :
 clean :
 	@echo "-- Cleaning up -------------------------------------------------"
 	rm -Rf repa/dist
-	rm -Rf repa-bytestring/dist
 	rm -Rf repa-io/dist
 	rm -Rf repa-algorithms/dist
 	rm -Rf repa-examples/dist
