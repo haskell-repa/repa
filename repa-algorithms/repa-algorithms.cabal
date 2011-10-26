@@ -30,7 +30,6 @@ Library
         -funfolding-use-threshold=30
         -funbox-strict-fields
         -fcpr-off
-        -fsimpl-tick-factor=1000
 
   extensions:
         NoMonomorphismRestriction
