@@ -17,6 +17,37 @@ Synopsis:
         Examples using the Repa array library.
 
 
+Executable repa-crystal
+  Build-depends: 
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        gloss                == 1.5.*
+
+  Main-is: examples/Crystal/Main.hs
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph -fno-liberate-case -funbox-strict-fields 
+        -fllvm -optlo-O3
+
+Executable repa-canny
+  Build-depends: 
+        base                 == 4.4.*,
+        repa                 == 3.0.*,
+        repa-algorithms      == 3.0.*,
+        template-haskell     >= 2.5 && < 2.7
+
+  Main-is: examples/Canny/src-repa/Main.hs
+  hs-source-dirs: examples/Canny/src-repa .
+  ghc-options: 
+        -threaded 
+        -rtsopts 
+        -Odph -fllvm -optlo-O3
+        -fno-liberate-case
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
+
+
 Executable repa-mmult
   Build-depends: 
         base                 == 4.4.*,
@@ -69,8 +100,6 @@ Executable repa-fft2d
         -fno-liberate-case
         -funfolding-use-threshold30
         -fsimpl-tick-factor=1000
-
-
 
 Executable repa-fft2d-highpass
   Build-depends: 
@@ -142,24 +171,6 @@ Executable repa-sobel
         -fno-liberate-case
         -funfolding-use-threshold30
         -fsimpl-tick-factor=1000
-
-
-Executable repa-canny
-  Build-depends: 
-        base                 == 4.4.*,
-        repa                 == 3.0.*,
-        repa-algorithms      == 3.0.*,
-        template-haskell     >= 2.5 && < 2.7
-
-  Main-is: examples/Canny/src-repa/Main.hs
-  hs-source-dirs: examples/Canny/src-repa .
-  ghc-options: 
-        -threaded 
-        -rtsopts 
-        -Odph -fllvm -optlo-O3
-        -fno-liberate-case
-        -funfolding-use-threshold100
-        -funfolding-keeness-factor100
 
 
 Executable repa-volume

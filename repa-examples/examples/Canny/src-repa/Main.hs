@@ -117,21 +117,6 @@ timeStage loops name fn
 
 
 -------------------------------------------------------------------------------
--- | The default conversions supplied via the prelude go via a GMP function
---   call instead of just using the appropriate primop.
-{-# INLINE floatOfWord8 #-}
-floatOfWord8 :: Word8 -> Float
-floatOfWord8 w8
- 	= fromIntegral (fromIntegral w8 :: Int)
-
-
-{-# INLINE word8OfFloat #-}
-word8OfFloat :: Float -> Word8
-word8OfFloat f
- 	= fromIntegral (truncate f :: Int)
-
-
--------------------------------------------------------------------------------
 -- | RGB to greyscale conversion.
 {-# NOINLINE toGreyScale #-}
 toGreyScale :: Image (Word8, Word8, Word8) -> Image Float

@@ -42,13 +42,13 @@ type Zoom   = Int
 -- Point ----------------------------------------------------------------------
 -- | Compute a single point of the visualisation.
 quasicrystal :: Size -> Scale -> Degree -> Phi -> DIM2 -> R
-quasicrystal size scale degree phi p
+quasicrystal !size !scale !degree !phi !p
         = waves degree phi $ point size scale p 
 
 
 -- | Sum up all the waves at a particular point.
 waves :: Degree -> Phi -> R2 -> R
-waves degree phi x = wrap $ waver 0 degree
+waves !degree !phi !x = wrap $ waver 0 degree
  where
     waver :: Float -> Int -> Float
     waver !acc !n
@@ -66,7 +66,7 @@ waves degree phi x = wrap $ waver 0 degree
 
 -- | Generate the value for a single wave.
 wave :: Angle -> R2 -> R
-wave th = f where
+wave !th = f where
     !cth  = cos th
     !sth  = sin th
 
@@ -76,7 +76,7 @@ wave th = f where
 
 -- | Convert an image point to a point on our wave plane.
 point :: Size -> Scale -> DIM2 -> R2
-point size scale (Z :. x :. y) 
+point !size !scale (Z :. x :. y) 
  = R2 (adj x) (adj y)
  where
     !denom       = fromIntegral size - 1
@@ -87,9 +87,8 @@ point size scale (Z :. x :. y)
 
 -- Computation ----------------------------------------------------------------
 -- | Compute a single frame as a wrapped ForeignPtr.
-{-# NOINLINE makeImage #-}
 makeImage :: Size -> Scale -> Degree -> Phi -> Array F DIM2 Word8
-makeImage size scale degree phi
+makeImage !size !scale !degree !phi
  = let  
         -- Compute [0..1] values for the wave density at each point.
         arrVals   :: Array D DIM2 Float
@@ -120,7 +119,6 @@ makeImage size scale degree phi
 
 
 -- | Color ramp from blue to white.
-{-# INLINE rampColor #-}
 rampColor :: Float -> (Float, Float, Float)
 rampColor v
  = (1, 0.4 + (v * 0.6), v)
@@ -138,7 +136,7 @@ word8OfFloat f
 -- | Compute a single frame of the animation as a Gloss picture.
 {-# NOINLINE frame #-}
 frame :: Size -> Scale -> Zoom -> Degree -> Float -> G.Picture
-frame size scale zoom degree time
+frame !size !scale !zoom !degree !time
  = let  
         -- Scale the time to be the phi value of the animation.
         -- The action seems to slow down at increasing phi values, 
@@ -166,7 +164,7 @@ main :: IO ()
 main 
  = do   args    <- getArgs
         case args of
-         []     -> run 200 4 30 5
+         []     -> run 200 3 30 5
 
          [size, zoom, scale, degree]
                 -> run (read size) (read zoom) (read scale) (read degree)
@@ -174,7 +172,7 @@ main
          _ -> putStr $ unlines
            [ "quazicrystal <size::Int> <zoom::Int> <scale::Float> <degree::Int>"
            , "    size    - visualisation size                  (default 200)"
-           , "    zoom    - pixel replication factor            (default 4)"
+           , "    zoom    - pixel replication factor            (default 3)"
            , "    scale   - feature size of visualisation       (default 30)"
            , "    degree  - number waves to sum for each point  (default 5)" 
            , ""

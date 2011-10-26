@@ -16,7 +16,7 @@ import System.IO.Unsafe
 -- | Arrays represented as foreign buffers in the C heap.
 data F
 data instance Array F sh e
-        = AForeignPtr sh !Int !(ForeignPtr e)
+        = AForeignPtr !sh !Int !(ForeignPtr e)
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a foreign buffer.
@@ -62,12 +62,12 @@ instance Storable e => Fillable F e where
         return           $ FPArr n fptr
 
  {-# INLINE unsafeWriteMArr #-}
- unsafeWriteMArr (FPArr _ fptr) ix x
+ unsafeWriteMArr (FPArr _ fptr) !ix !x
   = withForeignPtr fptr
   $ \ptr -> pokeElemOff ptr ix x
 
  {-# INLINE unsafeFreezeMArr #-}
- unsafeFreezeMArr sh (FPArr len fptr)     
+ unsafeFreezeMArr !sh (FPArr len fptr)     
   =     return  $ AForeignPtr sh len fptr
 
 
@@ -77,7 +77,7 @@ fromForeignPtr
         :: Shape sh
         => sh -> ForeignPtr e -> Array F sh e
 {-# INLINE fromForeignPtr #-}
-fromForeignPtr sh fptr
+fromForeignPtr !sh !fptr
         = AForeignPtr sh (size sh) fptr
 
 
@@ -95,7 +95,7 @@ computeIntoS
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
 {-# INLINE computeIntoS #-}
-computeIntoS fptr arr
+computeIntoS !fptr !arr
  = fillS arr (FPArr 0 fptr)
 
 
@@ -106,6 +106,6 @@ computeIntoP
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
 {-# INLINE computeIntoP #-}
-computeIntoP fptr arr
+computeIntoP !fptr !arr
  = fillP arr (FPArr 0 fptr)
 
