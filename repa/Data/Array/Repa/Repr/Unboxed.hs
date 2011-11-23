@@ -1,7 +1,8 @@
 
 module Data.Array.Repa.Repr.Unboxed
         ( U, U.Unbox, Array (..)
-        , computeUnboxed,  fromListUnboxed
+        , computeUnboxedS, computeUnboxedP
+        , fromListUnboxed
         , fromUnboxed, toUnboxed
         
         , zip,   zip3,   zip4,   zip5,   zip6
@@ -69,15 +70,23 @@ instance U.Unbox e => Fillable U e where
 
 
 -- Conversions ----------------------------------------------------------------
--- | Compute array elements in parallel.
+-- | Sequential computation of array elements..
 --
 --   * This is an alias for `compute` with a more specific type.
 --
-computeUnboxed
+computeUnboxedS
         :: Fill r1 U sh e
         => Array r1 sh e -> Array U sh e
-{-# INLINE computeUnboxed #-}
-computeUnboxed = compute
+{-# INLINE computeUnboxedS #-}
+computeUnboxedS = computeS
+
+
+-- | Parallel computation of array elements..
+computeUnboxedP
+        :: Fill r1 U sh e
+        => Array r1 sh e -> Array U sh e
+{-# INLINE computeUnboxedP #-}
+computeUnboxedP = computeP
 
 
 -- | O(n). Convert a list to an unboxed vector array.

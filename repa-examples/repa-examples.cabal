@@ -81,7 +81,6 @@ Executable repa-laplace
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
-        -fsimpl-tick-factor=1000
 
 
 Executable repa-fft2d
@@ -99,7 +98,6 @@ Executable repa-fft2d
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
-        -fsimpl-tick-factor=1000
 
 Executable repa-fft2d-highpass
   Build-depends: 
@@ -116,7 +114,6 @@ Executable repa-fft2d-highpass
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
-        -fsimpl-tick-factor=1000
 
 
 
@@ -134,7 +131,6 @@ Executable repa-fft3d-highpass
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
-        -fsimpl-tick-factor=1000
 
 
 Executable repa-blur
@@ -170,7 +166,6 @@ Executable repa-sobel
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold30
-        -fsimpl-tick-factor=1000
 
 
 Executable repa-volume

@@ -1,8 +1,10 @@
 
 module Data.Array.Repa.Repr.Vector
         ( V, Array (..)
-        , computeVector, fromListVector
-        , fromVector, toVector)
+        , computeVectorS,  computeVectorP
+        , fromListVector
+        , fromVector
+        , toVector)
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
@@ -61,15 +63,23 @@ instance Fillable V e where
 
 
 -- Conversions ----------------------------------------------------------------
--- | Compute array elements in parallel.
+-- | Sequential computation of array elements.
 --
 --   * This is an alias for `compute` with a more specific type.
 --
-computeVector
+computeVectorS
         :: Fill r1 V sh e
         => Array r1 sh e -> Array V sh e
-{-# INLINE computeVector #-}
-computeVector   = compute
+{-# INLINE computeVectorS #-}
+computeVectorS   = computeS
+
+
+-- | Parallel computation of array elements.
+computeVectorP
+        :: Fill r1 V sh e
+        => Array r1 sh e -> Array V sh e
+{-# INLINE computeVectorP #-}
+computeVectorP   = computeP
 
 
 -- | O(n). Convert a list to a boxed vector array.

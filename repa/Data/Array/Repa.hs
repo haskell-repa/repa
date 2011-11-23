@@ -47,7 +47,9 @@ module Data.Array.Repa
         , deepSeqArrays
 
         -- * Converting between array representations
-        , compute, copy, now
+        , computeP, computeS
+        , copyP,    copyS
+        , now
 
         -- * Concrete array representations
         -- ** Delayed representation
@@ -56,8 +58,10 @@ module Data.Array.Repa
 
         -- ** Unboxed vector representation
         , U
-        , computeUnboxed,  fromListUnboxed
-        , fromUnboxed,     toUnboxed
+        , computeUnboxedP, computeUnboxedS
+        , fromListUnboxed
+        , fromUnboxed
+        , toUnboxed
                 
 	-- from Data.Array.Repa.Operators.IndexSpace ----------------
         -- * Operators
@@ -97,8 +101,10 @@ module Data.Array.Repa
 	
 	-- from Data.Array.Repa.Operators.Reduction ------------------
 	-- ** Reduction
-	, fold, foldAll
-	, sum, sumAll
+	, foldP,    foldS
+	, foldAllP, foldAllS
+	, sumP,     sumS
+	, sumAllP,  sumAllS
 	
 	-- from Data.Array.Repa.Operators.Selection ------------------
 	, select)

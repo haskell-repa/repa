@@ -12,8 +12,8 @@ module Data.Array.Repa.Eval
         , fromList
         
         -- * Converting between representations
-        , compute
-        , copy
+        , computeP, computeS
+        , copyP,    copyS
         , now
         
         -- * Chunked filling
@@ -44,7 +44,7 @@ import Data.Array.Repa.Shape
 import System.IO.Unsafe
 
 
--- | Compute array elements in parallel.
+-- | Parallel computation of array elements.
 --
 --   * The `Fill` class is defined so that the source array must have a delayed representation (`D` or `C`)
 --
@@ -52,17 +52,30 @@ import System.IO.Unsafe
 --
 --   * If you want to convert a manifest array back to a delayed representation then use `delay` instead.
 --
-compute :: Fill r1 r2 sh e
+computeP :: Fill r1 r2 sh e
         => Array r1 sh e -> Array r2 sh e
-{-# INLINE compute #-}
-compute arr1
+{-# INLINE computeP #-}
+computeP arr1
  = unsafePerformIO
  $ do   marr2    <- newMArr (size $ extent arr1) 
         fillP arr1 marr2
         unsafeFreezeMArr (extent arr1) marr2
 
 
--- | Copying of arrays.
+-- | Sequential computation of array elements.
+computeS :: Fill r1 r2 sh e
+        => Array r1 sh e -> Array r2 sh e
+{-# INLINE computeS #-}
+computeS arr1
+ = unsafePerformIO
+ $ do   marr2    <- newMArr (size $ extent arr1) 
+        fillS arr1 marr2
+        unsafeFreezeMArr (extent arr1) marr2
+
+
+
+
+-- | Parallel copying of arrays.
 --
 --   * This is a wrapper that delays an array before calling `compute`. 
 -- 
@@ -72,11 +85,19 @@ compute arr1
 --     This is because delaying it the second time can hide information about
 --     the structure of the original computation.
 --
-copy    :: (Repr r1 e, Fill D r2 sh e)
+copyP   :: (Repr r1 e, Fill D r2 sh e)
         => Array r1 sh e -> Array r2 sh e
-{-# INLINE copy #-}
-copy arr1
-        = compute $ delay arr1
+{-# INLINE copyP #-}
+copyP arr1 = computeP $ delay arr1
+
+
+-- | Sequential copying of arrays.
+copyS   :: (Repr r1 e, Fill D r2 sh e)
+        => Array r1 sh e -> Array r2 sh e
+{-# INLINE copyS #-}
+copyS arr1 = computeS $ delay arr1
+
+
         
 
 -- | Apply `deepSeqArray` to an array so the result is actually constructed
