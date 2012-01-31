@@ -57,7 +57,7 @@ transform cutoff arrReal
  = let	arrComplex	= A.map (\r -> (fromIntegral r, 0)) arrReal
 			
 	-- Do the 2d transform.
-	arrCentered	= computeUnboxed $ center2d arrComplex
+	arrCentered	= computeUnboxedP $ center2d arrComplex
 	arrFreq		= fft2d Forward arrCentered
 
 	-- Zap out the low frequency components.
@@ -76,13 +76,13 @@ transform cutoff arrReal
 		| otherwise
 		= 0
 		
-	arrFilt	= computeUnboxed $ traverse arrFreq id highpass
+	arrFilt	= computeUnboxedP $ traverse arrFreq id highpass
 
 	-- Do the inverse transform to get back to image space.
 	arrInv	= fft2d Inverse arrFilt
 		
 	-- Get the magnitude of the transformed array, 
-	arrMag	= computeUnboxed $ A.map (truncate . mag) arrInv
+	arrMag	= computeUnboxedP $ A.map (truncate . mag) arrInv
 
    in	arrMag
 

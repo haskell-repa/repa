@@ -121,7 +121,7 @@ timeStage loops name fn
 {-# NOINLINE toGreyScale #-}
 toGreyScale :: Image (Word8, Word8, Word8) -> Image Float
 toGreyScale arr
-        = arr `deepSeqArray` compute
+        = arr `deepSeqArray` computeP
         $ R.map (* 255)
         $ R.map luminanceOfRGB8 arr 
 
@@ -130,7 +130,7 @@ toGreyScale arr
 {-# NOINLINE blurSepX #-}
 blurSepX :: Image Float -> Image Float
 blurSepX arr
-        = arr `deepSeqArray` compute
+        = arr `deepSeqArray` computeP
         $ forStencil2  (BoundConst 0) arr
           [stencil2|	1 4 6 4 1 |]	
 
@@ -139,7 +139,7 @@ blurSepX arr
 {-# NOINLINE blurSepY #-}
 blurSepY :: Image Float -> Image Float
 blurSepY arr
-	= arr `deepSeqArray` compute
+	= arr `deepSeqArray` computeP
 	$ R.map (/ 256)
 	$ forStencil2  (BoundConst 0) arr
 	  [stencil2|	1
@@ -153,7 +153,7 @@ blurSepY arr
 {-# NOINLINE gradientX #-}
 gradientX :: Image Float -> Image Float
 gradientX img
- 	= img `deepSeqArray` compute
+ 	= img `deepSeqArray` computeP
     	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
@@ -164,7 +164,7 @@ gradientX img
 {-# NOINLINE gradientY #-}
 gradientY :: Image Float -> Image Float
 gradientY img
-	= img `deepSeqArray` compute
+	= img `deepSeqArray` computeP
 	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0
@@ -175,7 +175,7 @@ gradientY img
 {-# NOINLINE gradientMagOrient #-}
 gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Int)
 gradientMagOrient !threshLow dX dY
-        = [dX, dY] `deepSeqArrays` compute
+        = [dX, dY] `deepSeqArrays` computeP
         $ R.zipWith magOrient dX dY
 
  where	{-# INLINE magOrient #-}
@@ -232,7 +232,7 @@ gradientMagOrient !threshLow dX dY
 {-# NOINLINE suppress #-}
 suppress :: Float -> Float -> Image (Float, Int) -> Image Word8
 suppress threshLow threshHigh dMagOrient
- = dMagOrient `deepSeqArray` compute
+ = dMagOrient `deepSeqArray` computeP
  $ makeBordered2 
         (extent dMagOrient) 1 
  	(makeCursored (extent dMagOrient) id addDim comparePts)

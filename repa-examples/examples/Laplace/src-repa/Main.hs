@@ -76,8 +76,8 @@ laplace solve steps fileInput fileOutput
 	arrImage	<- liftM (either (error . show) id)
 			$  readImageFromBMP fileInput
 
-	arrBoundValue   <- now $ compute $ A.map slurpBoundValue arrImage
-	arrBoundMask	<- now $ compute $ A.map slurpBoundMask  arrImage
+	arrBoundValue   <- now $ computeP $ A.map slurpBoundValue arrImage
+	arrBoundMask	<- now $ computeP $ A.map slurpBoundMask  arrImage
 	let arrInitial	= arrBoundValue		
 	
 	-- Run the Laplace solver and print how long it took.
@@ -88,7 +88,7 @@ laplace solve steps fileInput fileOutput
 
 
 	-- Write out the result to a file.
-	arrImageOut     <- now $ compute
+	arrImageOut     <- now $ computeP
 	                $  A.map rgb8OfFrac
 	                $  A.map (rampColorHotToCold 0.0 1.0) arrFinal
 

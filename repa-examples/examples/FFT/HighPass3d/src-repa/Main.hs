@@ -35,7 +35,7 @@ mainWithArgs size prefixOut
 	let center	= size `div` 2
 	let cutoff		= 4
 
-	arrInit	<- now $ compute
+	arrInit	<- now $ computeP
                 $  fromFunction shape 
 			(\ix -> if isInCenteredCube center cubeSize ix 
 					then (1, 0) else (0, 0))
@@ -74,7 +74,7 @@ dumpSlice
 
 dumpSlice prefix arr sliceNum
  = do	let arrSlice	= slice arr (Any :. sliceNum :. All)
-	let arrGrey	= computeUnboxed $ A.map (truncate . (* 255) . mag) arrSlice
+	let arrGrey	= computeUnboxedP $ A.map (truncate . (* 255) . mag) arrSlice
 	let fileName	= prefix P.++ (pad0 3 (show sliceNum)) P.++ ".bmp"
 
 	writeImageToBMP fileName

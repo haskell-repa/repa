@@ -37,7 +37,7 @@ relaxLaplace arrBoundMask arrBoundValue arr
 	arrBoundMask'	= reshape ex arrBoundMask
 	arrBoundValue'	= reshape ex arrBoundValue
 	arr'		= reshape ex arr
-    in	compute
+    in	computeP
 	 $ A.zipWith (+) arrBoundValue'
 	 $ A.zipWith (*) arrBoundMask'
 	 $ A.map (/ 4)

@@ -45,7 +45,7 @@ relaxLaplace
 {-# INLINE relaxLaplace #-}
 relaxLaplace arrBoundMask arrBoundValue arr
   = [arrBoundMask, arrBoundValue, arr] 
-   `deepSeqArrays` compute
+   `deepSeqArrays` computeP
   $ A.zipWith (+) arrBoundValue
   $ A.zipWith (*) arrBoundMask
   $ unsafeTraverse arr id elemFn

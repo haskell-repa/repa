@@ -52,7 +52,7 @@ process iterations = demote . blur iterations . promote
 {-# NOINLINE promote #-}
 promote	:: Array U DIM2 Word8 -> Array U DIM2 Double
 promote arr
- = arr `deepSeqArray` compute
+ = arr `deepSeqArray` computeP
  $ A.map ffs arr
 
  where	{-# INLINE ffs #-}
@@ -63,7 +63,7 @@ promote arr
 {-# NOINLINE demote #-}
 demote	:: Array U DIM2 Double -> Array U DIM2 Word8
 demote arr
- = arr `deepSeqArray` compute
+ = arr `deepSeqArray` computeP
  $ A.map ffs arr
 
  where	{-# INLINE ffs #-}
@@ -79,7 +79,7 @@ blur !iterations arrInit
         go !0 !arr = arr
         go !n !arr  
  	 = arr `deepSeqArray` go (n-1) 
- 	 $ compute
+ 	 $ computeP
 	 $ A.map (/ 159)
 	 $ forStencil2 BoundClamp arr
 	   [stencil2|	2  4  5  4  2

@@ -16,7 +16,7 @@ type Image	= Array U DIM2 Float
 gradientX :: Image -> Image
 {-# NOINLINE gradientX #-}
 gradientX img
- 	= img `deepSeqArray` compute
+ 	= img `deepSeqArray` computeP
  	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
@@ -26,7 +26,7 @@ gradientX img
 gradientY :: Image -> Image
 {-# NOINLINE gradientY #-}
 gradientY img
-	= img `deepSeqArray` compute
+	= img `deepSeqArray` computeP
 	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0

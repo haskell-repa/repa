@@ -71,7 +71,7 @@ dumpSlice fileBase arr sliceNum low high
                         $ R.map fromIntegral arrInv
         
         let arrColor' :: Array U DIM2 (Word8, Word8, Word8)
-            arrColor'   = compute
+            arrColor'   = computeP
                         $ R.map (\(r, g, b) ->  ( truncate (r * 255)
                                                 , truncate (g * 255)
                                                 , truncate (b * 255)))

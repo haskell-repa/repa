@@ -27,7 +27,7 @@ run iterations fileIn fileOut
         inputImage 	<- liftM (either (error . show) id) 
 			$ readImageFromBMP fileIn
 
-        greyImage       <- now $ compute
+        greyImage       <- now $ computeP
                         $  R.map luminanceOfRGB8 inputImage
 		
         -- Run the filter.
@@ -37,7 +37,7 @@ run iterations fileIn fileOut
 	putStr $ prettyTime tElapsed
 	
 	-- Write out the magnitute of the vector gradient as the result image.
-	outImage	<- now $ computeUnboxed
+	outImage	<- now $ computeUnboxedP
 	                $  R.map rgb8OfGrey  
 	                $  R.zipWith magnitude gX gY	
 
