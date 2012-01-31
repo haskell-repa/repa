@@ -17,7 +17,7 @@ calcRootsOfUnity
 	-> Array U (sh :. Int) Complex
 
 calcRootsOfUnity sh@(_ :. n) 
- = compute $ fromFunction sh f
+ = computeP $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
     f (_ :. i) 
@@ -35,7 +35,7 @@ calcInverseRootsOfUnity
 	-> Array U (sh :. Int) Complex
 
 calcInverseRootsOfUnity sh@(_ :. n) 
- = compute $ fromFunction sh f
+ = computeP $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
     f (_ :. i) 

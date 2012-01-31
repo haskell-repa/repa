@@ -48,15 +48,15 @@ readImageFromBMP' bmp
         -- Read out the components into their own arrays, 
         -- skipping the alpha channel.
 	vecRed
-	 = toUnboxed $ compute $ traverse arr shapeFn
+	 = toUnboxed $ computeP $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4)))
 
 	vecGreen
-	 = toUnboxed $ compute $ traverse arr shapeFn
+	 = toUnboxed $ computeP $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 1)))
 
 	vecBlue
-	 = toUnboxed $ compute $ traverse arr shapeFn
+	 = toUnboxed $ computeP $ traverse arr shapeFn
 		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
 	
 	-- O(1). zip the components together

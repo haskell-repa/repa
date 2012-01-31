@@ -34,7 +34,7 @@ convolve
 {-# INLINE convolve #-}
 convolve makeOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
-   compute $ unsafeTraverse image id update
+   computeP $ unsafeTraverse image id update
  where	
         (Z :. krnHeight :. krnWidth)        = extent kernel
         krnVec          = toUnboxed kernel
@@ -127,7 +127,7 @@ convolveOut
 {-# INLINE convolveOut #-}
 convolveOut getOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
-   compute $ unsafeTraverse image id stencil
+   computeP $ unsafeTraverse image id stencil
  where	
         krnSh@(Z :. krnHeight :. krnWidth)  = extent kernel        
         imgSh@(Z :. imgHeight :. imgWidth)  = extent image

@@ -68,7 +68,7 @@ fft3d mode arr
 		case mode of
 			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 			Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
-			Inverse	-> compute 
+			Inverse	-> computeP
 			        $  A.map (/ scale) 
 				$  fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 
@@ -81,7 +81,7 @@ fftTrans3d
 {-# INLINE fftTrans3d #-}
 fftTrans3d sign arr
  = let	(sh :. len)	= extent arr
-   in	compute $ rotate3d $ fft sign sh len arr
+   in	computeP $ rotate3d $ fft sign sh len arr
 
 
 rotate3d 
@@ -117,7 +117,7 @@ fft2d mode arr
 		case mode of
 			Forward	-> fftTrans2d sign $ fftTrans2d sign arr
 			Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
-			Inverse	-> compute $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
+			Inverse	-> computeP $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
 
 fftTrans2d 
 	:: Repr r Complex
@@ -128,7 +128,7 @@ fftTrans2d
 {-# INLINE fftTrans2d #-}
 fftTrans2d sign arr
  = let  (sh :. len)	= extent arr
-   in	compute $ transpose $ fft sign sh len arr
+   in	computeP $ transpose $ fft sign sh len arr
 
 
 -- Vector Transform -------------------------------------------------------------------------------
@@ -153,7 +153,7 @@ fft1d mode arr
 		case mode of
 			Forward	-> fftTrans1d sign arr
 			Reverse	-> fftTrans1d sign arr
-			Inverse -> compute $ A.map (/ scale) $ fftTrans1d sign arr
+			Inverse -> computeP $ A.map (/ scale) $ fftTrans1d sign arr
 
 fftTrans1d
 	:: Repr r Complex
@@ -178,7 +178,7 @@ fft !sign !sh !lenVec !vec
  = go lenVec 0 1
  where	go !len !offset !stride
 	 | len == 2
-	 = compute $ fromFunction (sh :. 2) swivel
+	 = computeP $ fromFunction (sh :. 2) swivel
 	
 	 | otherwise
 	 = combine len 
@@ -194,7 +194,7 @@ fft !sign !sh !lenVec !vec
 		combine !len' 	evens odds
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
    	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
-   	   	   in	compute $ (evens +^ odds') A.++ (evens -^ odds')
+   	   	   in	computeP $ (evens +^ odds') A.++ (evens -^ odds')
 
 
 -- Compute a twiddle factor.

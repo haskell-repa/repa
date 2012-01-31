@@ -46,7 +46,7 @@ idft v
  = let	_ :. len	= extent v
 	scale		= (fromIntegral len, 0)
 	rofu		= calcInverseRootsOfUnity (extent v)
-   in	compute $ A.map (/ scale) $ dftWithRoots rofu v
+   in	computeP $ A.map (/ scale) $ dftWithRoots rofu v
 
 
 -- | Generic function for computation of forward or inverse DFT.
@@ -68,7 +68,7 @@ dftWithRoots rofu arr
 		P.++ " does not match the length of the roots (" P.++ show rLen P.++ ")"
 
 	| otherwise
-	= compute $ traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
+	= computeP $ traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
 		
 
 -- | Compute a single value of the DFT.
@@ -97,6 +97,6 @@ dftWithRootsSingle rofu arrX (_ :. k)
 		elemFn (sh' :. n) 
 			= rofu ! (sh' :. (k * n) `mod` len)
 
-	  in  A.sumAll $ A.zipWith (*) arrX wroots
+	  in  A.sumAllP $ A.zipWith (*) arrX wroots
 
 

@@ -18,10 +18,10 @@ Synopsis:
 
 Library
   Build-Depends: 
-        base                 == 4.4.*,
+        base                 == 4.5.*,
         repa                 == 3.0.*,
-        bmp                  == 1.1.*,
-        old-time             == 1.0.*,
+        bmp                  == 1.2.*,
+        old-time             == 1.1.*,
         vector               == 0.9.*,
         binary               == 0.5.*,
         bytestring           == 0.9.*
