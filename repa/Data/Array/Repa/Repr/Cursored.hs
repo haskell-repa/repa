@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MagicHash #-}
 module Data.Array.Repa.Repr.Cursored
         ( C, Array (..)
         , makeCursored)
@@ -11,7 +11,7 @@ import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
-
+import GHC.Exts
 
 -- | Cursored Arrays
 data C
@@ -64,11 +64,11 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
                 w 0 0 (w - 1) (h - 1) 
 
  {-# INLINE fillS #-}
- fillS (ACursored (Z :. h :. w) makec shiftc loadc) marr
+ fillS (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
   = fillCursoredBlock2S 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
-                w 0 0 (w - 1) (h - 1) 
+                w 0# 0# (w -# 1#) (h -# 1#) 
 
 
 -- | Compute a range of elements in a rank-2 array.
@@ -82,8 +82,9 @@ instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
                 w x0 y0 x1 y1
 
  {-# INLINE fillRangeS #-}
- fillRangeS  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
-             (Z :. y0 :. x0) (Z :. y1 :. x1)
+ fillRangeS  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
+             (Z :. (I# y0) :. (I# x0)) 
+             (Z :. (I# y1) :. (I# x1))
   = fillCursoredBlock2S
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc

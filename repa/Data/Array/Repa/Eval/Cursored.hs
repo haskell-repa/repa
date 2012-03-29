@@ -64,7 +64,7 @@ fillBlock2S
         -> IO ()
 
 {-# INLINE [0] fillBlock2S #-}
-fillBlock2S !write !getElem !imageWidth !x0 !y0 !x1 !y1
+fillBlock2S !write !getElem !(I# imageWidth) !(I# x0) !(I# y0) !(I# x1) !(I# y1)
  = fillCursoredBlock2S
         write id addDim getElem 
         imageWidth x0 y0 x1 y1
@@ -101,7 +101,7 @@ fillCursoredBlock2P
 fillCursoredBlock2P
 	!write
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
-	!imageWidth !x0 !y0 !x1 !y1
+	!(I# imageWidth) !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
 	!blockWidth	= x1 - x0 + 1
@@ -122,10 +122,10 @@ fillCursoredBlock2P
 	{-# INLINE fillBlock #-}
 	fillBlock :: Int -> IO ()
 	fillBlock !ix
-	 = let	!x0'	= colIx ix
-		!x1'	= colIx (ix + 1) - 1
-		!y0'	= y0
-		!y1'	= y1
+	 = let	!(I# x0')	= colIx ix
+		!(I# x1')	= colIx (ix + 1) - 1
+		!(I# y0')	= y0
+		!(I# y1')	= y1
 	   in	fillCursoredBlock2S
 			write
 			makeCursorFCB shiftCursorFCB getElemFCB
@@ -149,18 +149,18 @@ fillCursoredBlock2S
 	-> (DIM2   -> cursor)		-- ^ Make a cursor to a particular element.
 	-> (DIM2   -> cursor -> cursor)	-- ^ Shift the cursor by an offset.
 	-> (cursor -> a)		-- ^ Function to evaluate an element at the given index.
-	-> Int				-- ^ Width of the whole array.
-	-> Int				-- ^ x0 lower left corner of block to fill.
-	-> Int				-- ^ y0
-	-> Int				-- ^ x1 upper right corner of block to fill.
-	-> Int				-- ^ y1
+	-> Int#				-- ^ Width of the whole array.
+	-> Int#				-- ^ x0 lower left corner of block to fill.
+	-> Int#				-- ^ y0
+	-> Int#				-- ^ x1 upper right corner of block to fill.
+	-> Int#				-- ^ y1
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2S #-}
 fillCursoredBlock2S
 	!write
 	!makeCursor !shiftCursor !getElem
-	!(I# imageWidth) !(I# x0) !(I# y0) !(I# x1) !(I# y1)
+	!imageWidth !x0 !y0 !x1 !y1
 
  = fillBlock y0
 

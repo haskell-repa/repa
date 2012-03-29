@@ -27,7 +27,7 @@ Library
         bytestring           == 0.9.*
 
   ghc-options:
-        -Odph -Wall -fno-warn-missing-signatures
+        -O2 -Wall -fno-warn-missing-signatures
 
   Exposed-modules:
         Data.Array.Repa.IO.BMP

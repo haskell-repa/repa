@@ -24,24 +24,30 @@ main
 
 run iterations fileIn fileOut
  = do	-- Load the source image and convert it to greyscale
+        traceEventIO "******** Sobel Read Image"
         inputImage 	<- liftM (either (error . show) id) 
 			$ readImageFromBMP fileIn
 
+        traceEventIO "******** Sobel Luminance"
         (greyImage :: Array U DIM2 Float)
                         <- now $ computeP
                         $  R.map luminanceOfRGB8 inputImage
 		
         -- Run the filter.
+        traceEventIO "******** Sobel Loop Start"
 	((gX, gY), tElapsed)
 	               <- time $ loop iterations greyImage
 
+        traceEventIO "******** Sobel Loop End"
 	putStr $ prettyTime tElapsed
 	
 	-- Write out the magnitute of the vector gradient as the result image.
+        traceEventIO "******** Sobel Magnitude"
 	outImage       <- now $ computeUnboxedP
 	               $  R.map rgb8OfGrey  
 	               $  R.zipWith magnitude gX gY	
 
+        traceEventIO "******** Sobel Write Image"
 	writeImageToBMP fileOut outImage
 
 
@@ -51,6 +57,7 @@ loop n img
    if n == 0
     then return (img, img)
     else do 
+        traceEventIO $ "******** Sobel Loop " Prelude.++ show n
 	gX      <- now $ gradientX img
 	gY	<- now $ gradientY img	
 	if (n == 1) 

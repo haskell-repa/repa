@@ -16,7 +16,6 @@ import Data.ByteString.Unsafe                   as B
 import Codec.BMP
 import Data.Word
 
-
 -- NOTE: We set most of these functions as NOINLINE so it's easier to understand
 --       what's going on in the core programs. The top-level IO functions are
 --       only called a few times each, so it doesn't matter if they're not
@@ -30,40 +29,42 @@ readImageFromBMP
 
 {-# NOINLINE readImageFromBMP #-}
 readImageFromBMP filePath
- = do	ebmp	<- readBMP filePath
+ = do   ebmp	<- readBMP filePath
+
 	case ebmp of
 	 Left err	-> return $ Left err
 	 Right bmp	
-	  -> do arr     <- R.now (readImageFromBMP' bmp)
+	  -> do arr     <- readImageFromBMP' bmp
 	        return  $ Right arr
 
 readImageFromBMP' bmp
- = let	(width, height) = bmpDimensions bmp
+ = do	let (width, height) = bmpDimensions bmp
 
-	arr		= R.fromByteString (Z :. height :. width * 4)
+	let arr		= R.fromByteString (Z :. height :. width * 4)
 			$ unpackBMPToRGBA32 bmp
 
-	shapeFn _ 	= Z :. height :. width
+	let shapeFn _ 	= Z :. height :. width
 
         -- Read out the components into their own arrays, 
         -- skipping the alpha channel.
-	vecRed
-	 = toUnboxed $ computeP $ traverse arr shapeFn
-		(\get (sh :. x) -> get (sh :. (x * 4)))
+	vecRed         <- now $ computeP 
+                        $ traverse arr shapeFn
+                	       (\get (sh :. x) -> get (sh :. (x * 4)))
 
-	vecGreen
-	 = toUnboxed $ computeP $ traverse arr shapeFn
-		(\get (sh :. x) -> get (sh :. (x * 4 + 1)))
+	vecGreen       <- now $ computeP 
+                        $ traverse arr shapeFn
+                		(\get (sh :. x) -> get (sh :. (x * 4 + 1)))
 
-	vecBlue
-	 = toUnboxed $ computeP $ traverse arr shapeFn
-		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
-	
+	vecBlue        <- now $ computeP
+                        $ traverse arr shapeFn
+                		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
+
 	-- O(1). zip the components together
-	vecRGB = U.zip3 vecRed vecGreen vecBlue
+	let vecRGB     = U.zip3 (toUnboxed vecRed)
+                                (toUnboxed vecGreen)
+                                (toUnboxed vecBlue)
 	
-   in	vecRed `seq` vecGreen `seq` vecBlue `seq`
-          fromUnboxed (Z :. height :. width) vecRGB
+        return $ fromUnboxed (Z :. height :. width) vecRGB
 
 
 
