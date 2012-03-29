@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MagicHash #-}
 -- | Evaluate an array by dividing it into rectangular blocks and filling
 --   each block in parallel.
 module Data.Array.Repa.Eval.Cursored
@@ -13,6 +13,7 @@ import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Gang
 import GHC.Base					(remInt, quotInt)
 import Prelude					as P
+import GHC.Exts
 
 -- Non-cursored interface -------------------------------------------------------------------------
 -- | Fill a block in a rank-2 array in parallel.
@@ -159,24 +160,24 @@ fillCursoredBlock2S
 fillCursoredBlock2S
 	!write
 	!makeCursor !shiftCursor !getElem
-	!imageWidth !x0 !y0 !x1 !y1
+	!(I# imageWidth) !(I# x0) !(I# y0) !(I# x1) !(I# y1)
 
  = fillBlock y0
 
  where	{-# INLINE fillBlock #-}
 	fillBlock !y
-	 | y > y1	= return ()
+	 | y ># y1	= return ()
 	 | otherwise
 	 = do	fillLine4 x0
-		fillBlock (y + 1)
+		fillBlock (y +# 1#)
 
 	 where	{-# INLINE fillLine4 #-}
 		fillLine4 !x
- 	   	 | x + 4 > x1 		= fillLine1 x
+ 	   	 | x +# 4# ># x1 	= fillLine1 x
 	   	 | otherwise
 	   	 = do	-- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
-			let srcCur0	= makeCursor  (Z :. y :. x)
+			let srcCur0	= makeCursor  (Z :. (I# y) :. (I# x))
 			let srcCur1	= shiftCursor (Z :. 0 :. 1) srcCur0
 			let srcCur2	= shiftCursor (Z :. 0 :. 1) srcCur1
 			let srcCur3	= shiftCursor (Z :. 0 :. 1) srcCur2
@@ -197,17 +198,18 @@ fillCursoredBlock2S
 			touch val3
 
 			-- Compute cursor into destination array.
-			let !dstCur0	= x + y * imageWidth
-			write (dstCur0)     val0
-			write (dstCur0 + 1) val1
-			write (dstCur0 + 2) val2
-			write (dstCur0 + 3) val3
-			fillLine4 (x + 4)
+			let !dstCur0	= x +# (y *# imageWidth)
+			write (I# dstCur0)         val0
+			write (I# (dstCur0 +# 1#)) val1
+			write (I# (dstCur0 +# 2#)) val2
+			write (I# (dstCur0 +# 3#)) val3
+			fillLine4 (x +# 4#)
 
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x
- 	   	 | x > x1		= return ()
+ 	   	 | x ># x1		= return ()
 	   	 | otherwise
-	   	 = do	write (x + y * imageWidth) (getElem $ makeCursor (Z :. y :. x))
-			fillLine1 (x + 1)
+	   	 = do	write (I# (x +# (y *# imageWidth)))
+                              (getElem $ makeCursor (Z :. (I# y) :. (I# x)))
+			fillLine1 (x +# 1#)
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards #-}
+{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 -- | Apply Sobel operators to an image.
@@ -10,7 +10,7 @@ import Data.Array.Repa.IO.Timing
 import Prelude				hiding (compare)
 import Control.Monad
 import Solver
-
+import Debug.Trace
 
 -- Main routine ---------------------------------------------------------------
 main 
@@ -27,19 +27,20 @@ run iterations fileIn fileOut
         inputImage 	<- liftM (either (error . show) id) 
 			$ readImageFromBMP fileIn
 
-        greyImage       <- now $ computeP
+        (greyImage :: Array U DIM2 Float)
+                        <- now $ computeP
                         $  R.map luminanceOfRGB8 inputImage
 		
         -- Run the filter.
 	((gX, gY), tElapsed)
-		<- time $ loop iterations greyImage
+	               <- time $ loop iterations greyImage
 
 	putStr $ prettyTime tElapsed
 	
 	-- Write out the magnitute of the vector gradient as the result image.
-	outImage	<- now $ computeUnboxedP
-	                $  R.map rgb8OfGrey  
-	                $  R.zipWith magnitude gX gY	
+	outImage       <- now $ computeUnboxedP
+	               $  R.map rgb8OfGrey  
+	               $  R.zipWith magnitude gX gY	
 
 	writeImageToBMP fileOut outImage
 
@@ -58,9 +59,8 @@ loop n img
 
 
 -- | Determine the squared magnitude of a vector.
-magnitude :: Float -> Float -> Double
+magnitude :: Float -> Float -> Float
 {-# INLINE magnitude #-}
 magnitude x y
-        = fromRational $ toRational
-        $ sqrt (x * x + y * y)
+        = sqrt (x * x + y * y)
 
