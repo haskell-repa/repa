@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash #-}
 -- | Evaluate an array by breaking it up into linear chunks and filling
 --   each chunk in parallel.
 module Data.Array.Repa.Eval.Chunked
@@ -6,7 +7,7 @@ module Data.Array.Repa.Eval.Chunked
 	, fillChunkedIOP)
 where
 import Data.Array.Repa.Eval.Gang
-import GHC.Base		(remInt, quotInt)
+import GHC.Exts
 import Prelude		as P
 
 -- | Fill something sequentially.
@@ -20,13 +21,13 @@ fillChunkedS
 	-> IO ()
 
 {-# INLINE [0] fillChunkedS #-}
-fillChunkedS !len !write !getElem
- = fill 0
+fillChunkedS !(I# len) !write !getElem
+ = fill 0#
  where	fill !ix
-	 | ix >= len	= return ()
+	 | ix >=# len	= return ()
 	 | otherwise
-	 = do	write ix (getElem ix)
-		fill (ix + 1)
+	 = do	write (I# ix) (getElem (I# ix))
+		fill (ix +# 1#)
 
 
 -- | Fill something in parallel.
@@ -40,30 +41,33 @@ fillChunkedP
 	-> IO ()
 
 {-# INLINE [0] fillChunkedP #-}
-fillChunkedP !len !write !getElem
+fillChunkedP !(I# len) !write !getElem
  = 	gangIO theGang
-	 $  \thread -> fill (splitIx thread) (splitIx (thread + 1))
+	 $  \(I# thread) -> 
+              let !start   = splitIx thread
+                  !end     = splitIx (thread +# 1#)
+              in  fill start end
 
  where
 	-- Decide now to split the work across the threads.
 	-- If the length of the vector doesn't divide evenly among the threads,
 	-- then the first few get an extra element.
-	!threads 	= gangSize theGang
-	!chunkLen 	= len `quotInt` threads
-	!chunkLeftover	= len `remInt`  threads
+	!(I# threads) 	= gangSize theGang
+	!chunkLen 	= len `quotInt#` threads
+	!chunkLeftover	= len `remInt#`  threads
 
 	{-# INLINE splitIx #-}
 	splitIx thread
-	 | thread < chunkLeftover = thread * (chunkLen + 1)
-	 | otherwise		  = thread * chunkLen  + chunkLeftover
+	 | thread <# chunkLeftover = thread *# (chunkLen +# 1#)
+	 | otherwise	 	   = thread *# chunkLen  +# chunkLeftover
 
 	-- Evaluate the elements of a single chunk.
 	{-# INLINE fill #-}
 	fill !ix !end
-	 | ix >= end		= return ()
+	 | ix >=# end		= return ()
 	 | otherwise
-	 = do	write ix (getElem ix)
-		fill (ix + 1) end
+	 = do	write (I# ix) (getElem (I# ix))
+		fill (ix +# 1#) end
 
 
 -- | Fill something in parallel, using a separate IO action for each thread.
@@ -76,22 +80,25 @@ fillChunkedIOP
         -> IO ()
 
 {-# INLINE [0] fillChunkedIOP #-}
-fillChunkedIOP !len !write !mkGetElem
+fillChunkedIOP !(I# len) !write !mkGetElem
  = 	gangIO theGang
-	 $  \thread -> fillChunk thread (splitIx thread) (splitIx (thread + 1))
+	 $  \(I# thread) -> 
+              let !start = splitIx thread
+                  !end   = splitIx (thread +# 1#)
+              in fillChunk thread start end 
 
  where
 	-- Decide now to split the work across the threads.
 	-- If the length of the vector doesn't divide evenly among the threads,
 	-- then the first few get an extra element.
-	!threads 	= gangSize theGang
-	!chunkLen 	= len `quotInt` threads
-	!chunkLeftover	= len `remInt`  threads
+	!(I# threads) 	= gangSize theGang
+	!chunkLen 	= len `quotInt#` threads
+	!chunkLeftover	= len `remInt#`  threads
 
 	{-# INLINE splitIx #-}
 	splitIx thread
-	 | thread < chunkLeftover = thread * (chunkLen + 1)
-	 | otherwise		  = thread * chunkLen  + chunkLeftover
+	 | thread <# chunkLeftover = thread *# (chunkLen +# 1#)
+	 | otherwise		   = thread *# chunkLen  +# chunkLeftover
 
 
         -- Given the threadId, starting and ending indices. 
@@ -99,7 +106,7 @@ fillChunkedIOP !len !write !mkGetElem
         --      and call it for every index.
         {-# INLINE fillChunk #-}
         fillChunk !thread !ixStart !ixEnd
-         = do   getElem <- mkGetElem thread
+         = do   getElem <- mkGetElem (I# thread)
                 fill getElem ixStart ixEnd
                 
         -- Call the provided getElem function for every element
@@ -108,8 +115,8 @@ fillChunkedIOP !len !write !mkGetElem
 	fill !getElem !ix0 !end
 	 = go ix0 
 	 where  go !ix
-	         | ix >= end	= return ()
+	         | ix >=# end	= return ()
  	         | otherwise
-	         = do	x       <- getElem ix
-	                write ix x
-                        go (ix + 1)
+	         = do	x       <- getElem (I# ix)
+	                write (I# ix) x
+                        go (ix +# 1#)
