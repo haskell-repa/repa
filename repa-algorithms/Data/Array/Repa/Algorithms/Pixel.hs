@@ -1,23 +1,38 @@
 
 -- | Utilities for converting pixel color values.
+--
+-- NOTE: These functions are not polymorphic in the Float type because
+--       without assisatance, GHC does a bad job of converting Word8s 
+--       to and from floats. 
+--
 module Data.Array.Repa.Algorithms.Pixel
-        ( rmsOfRGB8
-        , luminanceOfRGB8
-        , rgb8OfGrey
+        ( floatRmsOfRGB8
+        , doubleRmsOfRGB8
+        , floatLuminanceOfRGB8
+        , doubleLuminanceOfRGB8
+        , rgb8OfGreyFloat
+        , rgb8OfGreyDouble
         , rgb8OfFloat
         , rgb8OfDouble)
 where
 import Data.Word
 
--- NOTE: These functions are not polymorphic in the Float type because
---       without assisatance, GHC does a very bad job of converting Word8s 
---       to and from floats. This is also the reason we do a manual covnersion
---       to the Int type.
 
 -- | Compute the root mean square of an RGB color. Result is in the range [0..1].
-rmsOfRGB8 :: (Word8, Word8, Word8) -> Float
-{-# INLINE rmsOfRGB8 #-}
-rmsOfRGB8 (r, g, b)
+floatRmsOfRGB8 :: (Word8, Word8, Word8) -> Float
+{-# INLINE floatRmsOfRGB8 #-}
+floatRmsOfRGB8 (r, g, b)
+ = let  r'      = fromIntegral (fromIntegral r :: Int) / 255
+        g'      = fromIntegral (fromIntegral g :: Int) / 255
+        b'      = fromIntegral (fromIntegral b :: Int) / 255
+        s       = ((r' * r') + (g' * g') + (b' * b')) / 3
+   in   sqrt s
+
+
+-- | Compute the root mean square of an RGB color. Result is in the range [0..1].
+doubleRmsOfRGB8 :: (Word8, Word8, Word8) -> Float
+{-# INLINE doubleRmsOfRGB8 #-}
+doubleRmsOfRGB8 (r, g, b)
  = let  r'      = fromIntegral (fromIntegral r :: Int) / 255
         g'      = fromIntegral (fromIntegral g :: Int) / 255
         b'      = fromIntegral (fromIntegral b :: Int) / 255
@@ -26,9 +41,19 @@ rmsOfRGB8 (r, g, b)
 
 
 -- | Convert an RGB color to its luminance value. Result in the range [0..1].
-luminanceOfRGB8 :: (Word8, Word8, Word8) -> Float
-{-# INLINE luminanceOfRGB8 #-}
-luminanceOfRGB8 (r, g, b)
+floatLuminanceOfRGB8 :: (Word8, Word8, Word8) -> Float
+{-# INLINE floatLuminanceOfRGB8 #-}
+floatLuminanceOfRGB8 (r, g, b)
+ = let  r'      = fromIntegral (fromIntegral r :: Int) / 255
+        g'      = fromIntegral (fromIntegral g :: Int) / 255
+        b'      = fromIntegral (fromIntegral b :: Int) / 255
+   in   r' * 0.3 + g' * 0.59 + b' * 0.11
+
+
+-- | Convert an RGB color to its luminance value. Result in the range [0..1].
+doubleLuminanceOfRGB8 :: (Word8, Word8, Word8) -> Double
+{-# INLINE doubleLuminanceOfRGB8 #-}
+doubleLuminanceOfRGB8 (r, g, b)
  = let  r'      = fromIntegral (fromIntegral r :: Int) / 255
         g'      = fromIntegral (fromIntegral g :: Int) / 255
         b'      = fromIntegral (fromIntegral b :: Int) / 255
@@ -36,9 +61,17 @@ luminanceOfRGB8 (r, g, b)
 
 
 -- | Promote a value in the range [0..1] to a grey RGB8 color.
-rgb8OfGrey :: Float -> (Word8, Word8, Word8)
-{-# INLINE rgb8OfGrey #-}
-rgb8OfGrey x
+rgb8OfGreyFloat :: Float -> (Word8, Word8, Word8)
+{-# INLINE rgb8OfGreyFloat #-}
+rgb8OfGreyFloat x
+ = let  v        = fromIntegral (truncate (x * 255) :: Int)
+   in   (v, v, v)
+
+
+-- | Promote a value in the range [0..1] to a grey RGB8 color.
+rgb8OfGreyDouble :: Double -> (Word8, Word8, Word8)
+{-# INLINE rgb8OfGreyDouble #-}
+rgb8OfGreyDouble x
  = let  v        = fromIntegral (truncate (x * 255) :: Int)
    in   (v, v, v)
 

@@ -148,7 +148,7 @@ toGreyScale :: Image (Word8, Word8, Word8) -> Image Float
 toGreyScale arr
         = computeP
         $ R.map (* 255)
-        $ R.map luminanceOfRGB8 arr 
+        $ R.map floatLuminanceOfRGB8 arr 
 
 
 -- | Separable Gaussian blur in the X direction.
@@ -299,10 +299,10 @@ selectStrong img
         vec             = toUnboxed img
 	match ix	= vec `V.unsafeIndex` ix == edge Strong
 
-	{-# INLINE process #-}
-	process ix	= ix
+	{-# INLINE process' #-}
+	process' ix	= ix
 	
-   in	select match process (size $ extent img)
+   in	select match process' (size $ extent img)
 
 
 -- | Trace out strong edges in the final image. 

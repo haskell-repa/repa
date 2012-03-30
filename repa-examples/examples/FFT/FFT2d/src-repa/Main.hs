@@ -38,7 +38,7 @@ mainWithArgs fileIn (clipMag :: Double) fileMag filePhase
         
 	arrComplex	<- now $ computeUnboxedP
 	                $  A.map (\r -> (r, 0 :: Double)) 
-	                $  A.map luminanceOfRGB8 arrRGB
+	                $  A.map doubleLuminanceOfRGB8 arrRGB
 
 	-- Apply the centering transform so that the output has the zero
 	--	frequency in the middle of the image.
@@ -51,13 +51,18 @@ mainWithArgs fileIn (clipMag :: Double) fileMag filePhase
 	-- Write out the magnitude of the transformed array, 
 	--	clipping it at the given value.
 	let clip m	= if m >= clipMag then 1 else (m / clipMag)
-	arrMag	        <- now $ computeUnboxedP $ A.map (rgb8OfGrey . clip . mag) arrFreq
+	arrMag	        <- now $ computeUnboxedP 
+                        $ A.map (rgb8OfGreyDouble . clip . mag) 
+                        $ arrFreq
+
         writeImageToBMP fileMag arrMag
 
 	-- Write out the phase of the transformed array, 
 	-- 	scaling it to make full use of the 8 bit greyscale.
 	let scaledArg x	= (arg x + pi) / (2 * pi)
-	arrPhase	<- now $ computeUnboxedP $ A.map (rgb8OfGrey . scaledArg) arrFreq
+	arrPhase	<- now $ computeUnboxedP 
+                        $ A.map (rgb8OfGreyDouble . scaledArg) arrFreq
+
 	writeImageToBMP filePhase arrPhase
 
 

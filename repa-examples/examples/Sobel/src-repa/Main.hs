@@ -31,7 +31,7 @@ run iterations fileIn fileOut
         traceEventIO "******** Sobel Luminance"
         (greyImage :: Array U DIM2 Float)
                         <- now $ computeP
-                        $  R.map luminanceOfRGB8 inputImage
+                        $  R.map floatLuminanceOfRGB8 inputImage
 		
         -- Run the filter.
         traceEventIO "******** Sobel Loop Start"
@@ -44,7 +44,7 @@ run iterations fileIn fileOut
 	-- Write out the magnitute of the vector gradient as the result image.
         traceEventIO "******** Sobel Magnitude"
 	outImage       <- now $ computeUnboxedP
-	               $  R.map rgb8OfGrey  
+	               $  R.map rgb8OfGreyFloat  
 	               $  R.zipWith magnitude gX gY	
 
         traceEventIO "******** Sobel Write Image"
