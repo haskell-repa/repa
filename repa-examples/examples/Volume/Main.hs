@@ -21,9 +21,11 @@ main
                         (read depth')    (read height') (read width') 
                         (read sliceNum') (read low')    (read high')
 
-         _ -> do
-                putStr  $ unlines
-                        [ "usage: volume <fileIn> <fileOut> <depth> <height> <width> <sliceNum> <lowVal> <highVal>" ]
+         _ ->   putStr  usage
+
+usage
+ = "usage: volume <fileIn> <fileOut> <depth> <height> <width> <sliceNum> <lowVal> <highVal>"
+
 
 run :: FilePath -> FilePath -> Int -> Int -> Int -> Int -> Int -> Int -> IO ()
 run fileIn fileOut depth width height sliceNum low high
