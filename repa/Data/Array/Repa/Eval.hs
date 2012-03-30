@@ -56,7 +56,8 @@ computeP :: Fill r1 r2 sh e
         => Array r1 sh e -> Array r2 sh e
 {-# INLINE computeP #-}
 computeP arr1
- = unsafePerformIO
+ = arr1 `deepSeqArray` 
+   unsafePerformIO
  $ do   marr2    <- newMArr (size $ extent arr1) 
         fillP arr1 marr2
         unsafeFreezeMArr (extent arr1) marr2
@@ -67,7 +68,8 @@ computeS :: Fill r1 r2 sh e
         => Array r1 sh e -> Array r2 sh e
 {-# INLINE computeS #-}
 computeS arr1
- = unsafePerformIO
+ = arr1 `deepSeqArray` 
+   unsafePerformIO
  $ do   marr2    <- newMArr (size $ extent arr1) 
         fillS arr1 marr2
         unsafeFreezeMArr (extent arr1) marr2

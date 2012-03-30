@@ -46,15 +46,14 @@ run iterations fileIn fileOut
 
 {-# NOINLINE process #-}
 process	:: Int -> Array U DIM2 Word8 -> Array U DIM2 Word8
-process iterations = demote . blur iterations . promote
+process iterations
+        = demote . blur iterations . promote
 
 	
 {-# NOINLINE promote #-}
 promote	:: Array U DIM2 Word8 -> Array U DIM2 Double
 promote arr
- = arr `deepSeqArray` computeP
- $ A.map ffs arr
-
+ = computeP $ A.map ffs arr
  where	{-# INLINE ffs #-}
 	ffs	:: Word8 -> Double
 	ffs x	=  fromIntegral (fromIntegral x :: Int)
@@ -63,8 +62,7 @@ promote arr
 {-# NOINLINE demote #-}
 demote	:: Array U DIM2 Double -> Array U DIM2 Word8
 demote arr
- = arr `deepSeqArray` computeP
- $ A.map ffs arr
+ = computeP $ A.map ffs arr
 
  where	{-# INLINE ffs #-}
 	ffs 	:: Double -> Word8
@@ -80,7 +78,7 @@ blur !iterations arrInit
         go !n !arr  
  	 = arr `deepSeqArray` go (n-1) 
  	 $ computeP
-	 $ A.map (/ 159)
+	 $ A.cmap (/ 159)
 	 $ forStencil2 BoundClamp arr
 	   [stencil2|	2  4  5  4  2
 			4  9 12  9  4
@@ -88,24 +86,3 @@ blur !iterations arrInit
 			4  9 12  9  4
 			2  4  5  4  2 |]
 			
-
-{- version using convolveOut
--- | Run several iterations of blurring.
-blur 	:: Int -> Array DIM2 Double -> Array DIM2 Double
-blur 0 arr	= arr
-blur n arr	= blurs (n - 1) (force $ blur arr)
-
--- | Run a single iteration of blurring.
-blur :: Array DIM2 Double -> Array DIM2 Double
-blur input@Manifest{}
- = convolveOut outClamp kernel input
- where kernel 	= force 
-		$ A.fromList (Z :. 5 :. 5) 
-		$ Data.List.map (\x -> x / 159) 
-			 [2.0,  4.0,  5.0,  4.0, 2.0,
-                          4.0,  9.0, 12.0,  9.0, 4.0,
-                          5.0, 12.0, 15.0, 12.0, 5.0,
-                          4.0,  9.0, 12.0,  9.0, 4.0,
-                          2.0,  4.0,  5.0,  4.0, 2.0]
--}	
-	
