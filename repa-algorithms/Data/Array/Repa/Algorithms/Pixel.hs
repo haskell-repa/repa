@@ -4,7 +4,8 @@ module Data.Array.Repa.Algorithms.Pixel
         ( rmsOfRGB8
         , luminanceOfRGB8
         , rgb8OfGrey
-        , rgb8OfFrac)
+        , rgb8OfFloat
+        , rgb8OfDouble)
 where
 import Data.Word
 
@@ -44,11 +45,21 @@ rgb8OfGrey x
 
 -- | Promote a tuple of color components to a RGB8 color. 
 --   Each of the source components should be in the range [0..1].
-rgb8OfFrac :: (Float, Float, Float) -> (Word8, Word8, Word8)
-{-# INLINE rgb8OfFrac #-}
-rgb8OfFrac (r, g, b)
+rgb8OfFloat :: (Float, Float, Float) -> (Word8, Word8, Word8)
+{-# INLINE rgb8OfFloat #-}
+rgb8OfFloat (r, g, b)
  = let  r8      = fromIntegral (truncate (r * 255) :: Int)
         g8      = fromIntegral (truncate (g * 255) :: Int)
         b8      = fromIntegral (truncate (b * 255) :: Int)
    in   (r8, g8, b8)
 
+
+-- | Promote a tuple of color components to a RGB8 color. 
+--   Each of the source components should be in the range [0..1].
+rgb8OfDouble :: (Double, Double, Double) -> (Word8, Word8, Word8)
+{-# INLINE rgb8OfDouble #-}
+rgb8OfDouble (r, g, b)
+ = let  r8      = fromIntegral (truncate (r * 255) :: Int)
+        g8      = fromIntegral (truncate (g * 255) :: Int)
+        b8      = fromIntegral (truncate (b * 255) :: Int)
+   in   (r8, g8, b8)

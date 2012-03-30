@@ -86,10 +86,9 @@ laplace solve steps fileInput fileOutput
 
 	putStr (prettyTime t)
 
-
 	-- Write out the result to a file.
 	arrImageOut     <- now $ computeP
-	                $  A.map rgb8OfFrac
+	                $  A.map rgb8OfDouble
 	                $  A.map (rampColorHotToCold 0.0 1.0) arrFinal
 
 	writeImageToBMP	fileOutput arrImageOut

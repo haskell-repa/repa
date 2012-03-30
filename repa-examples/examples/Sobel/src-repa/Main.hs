@@ -12,7 +12,7 @@ import Control.Monad
 import Solver
 import Debug.Trace
 
--- Main routine ---------------------------------------------------------------
+
 main 
  = do	args	<- getArgs
 	case args of

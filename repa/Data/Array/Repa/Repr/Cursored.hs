@@ -50,7 +50,7 @@ instance Repr C a where
         
  {-# INLINE deepSeqArray #-}
  deepSeqArray (ACursored sh makec shiftc loadc) y
-  = sh `deepSeq` makec `seq` shiftc `seq` loadc `seq` y
+  = sh `deepSeq` makec  `seq` shiftc `seq` loadc `seq` y
 
 
 -- Fill -----------------------------------------------------------------------

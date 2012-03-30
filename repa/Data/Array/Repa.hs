@@ -81,6 +81,7 @@ module Data.Array.Repa
 	, map
 	, zipWith
 	, (+^), (-^), (*^), (/^)
+        , Combine(..)
 
 	-- from Data.Array.Repa.Operators.Traversal ------------------
 	-- ** Generic traversal

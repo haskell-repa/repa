@@ -41,8 +41,6 @@ theGang :: Gang
 theGang 
  = unsafePerformIO 
  $ do   let caps        = numCapabilities
-        putStr $ "forking " ++ show caps
-
         forkGang caps
 
 

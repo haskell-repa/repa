@@ -7,7 +7,6 @@ module Data.Array.Repa.Specialised.Dim2
 	, clampToBorder2
 	, makeBordered2)
 where
-import Data.Array.Repa.Base
 import Data.Array.Repa.Index
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined

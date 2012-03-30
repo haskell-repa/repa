@@ -20,7 +20,7 @@ import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
-
+import GHC.Base
 
 -- | A index into the flat array.
 --   Should be abstract outside the stencil modules.
