@@ -9,12 +9,15 @@ where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
 import Data.Array.Repa.Eval
-import Data.Array.Repa.Repr.Delayed
 import qualified Data.Vector            as V
 import qualified Data.Vector.Mutable    as VM
 import Control.Monad
 
 -- | Arrays represented as boxed vectors.
+--
+--   This representation should only be used when your element type doesn't
+--   have an `Unbox` instsance. If it does, then use the Unboxed `U`
+--   representation will be faster.
 data V
 data instance Array V sh e
         = AVector sh !(V.Vector e)

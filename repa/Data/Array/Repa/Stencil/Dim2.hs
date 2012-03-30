@@ -20,7 +20,6 @@ import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
-import GHC.Base
 
 -- | A index into the flat array.
 --   Should be abstract outside the stencil modules.
@@ -144,6 +143,11 @@ unsafeAppStencilCursor2 shift
 
 	   in	template7x7 oload zero
 
+        | otherwise
+        = error $ unlines 
+                [ "mapStencil2: Your stencil is too big for this method."
+                , " It must fit within a 7x7 tile to be compiled statically." ]
+
 
 -- | Like above, but clamp out of bounds array values to the closest real value.
 unsafeAppStencilCursor2_clamp
@@ -197,6 +201,10 @@ unsafeAppStencilCursor2_clamp shift
 
 	   in	template7x7 oload zero
 
+        | otherwise
+        = error $ unlines 
+                [ "mapStencil2: Your stencil is too big for this method."
+                , " It must fit within a 7x7 tile to be compiled statically." ]
 
 
 -- | Data template for stencils up to 7x7.

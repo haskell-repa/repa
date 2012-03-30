@@ -13,7 +13,13 @@ import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
 import GHC.Exts
 
--- | Cursored Arrays
+-- | Cursored Arrays.
+--   These are produced by Repa's stencil functions, and help the fusion
+--   framework to share index compuations between array elements.
+--
+--   The basic idea is described in ``Efficient Parallel Stencil Convolution'',
+--   Ben Lippmeier and Gabriele Keller, Haskell 2011 -- though the underlying
+--   array representation has changed since this paper was published.
 data C
 
 data instance Array C sh e

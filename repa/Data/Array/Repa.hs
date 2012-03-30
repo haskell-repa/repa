@@ -31,13 +31,6 @@
 --  Converting between the parallel manifest representations (eg `U` and `B`) is either
 --  constant time or parallel copy, depending on the compatability of the physical representation.
 --
---
--- NOTE NOTE NOTE NOTE 
--- 
--- This is a pre-release version of Repa. The specialistions needed for stencils haven't yet
--- been added, so stencil code will be 10x slower than with Repa2. The other non-stencil functions
--- should run ok though.
--- 
 module Data.Array.Repa
         ( -- * Abstract array representation
           Array(..)

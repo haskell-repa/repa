@@ -14,16 +14,24 @@ import Data.Array.Repa.Repr.Undefined
 
 -- | Partitioned arrays.
 --   The last partition takes priority
+--
+--   These are produced by Repa's support functions and allow arrays to be defined
+--   using a different element function for each partition.
+--
+--   The basic idea is described in ``Efficient Parallel Stencil Convolution'',
+--   Ben Lippmeier and Gabriele Keller, Haskell 2011 -- though the underlying
+--   array representation has changed since this paper was published.
+--
 data P r1 r2
 
 data instance Array (P r1 r2) sh e
-        = APart sh                              -- size of the whole array
-                (Range sh) (Array r1 sh e)      -- if in range use this array
-                (Array r2 sh e)                 -- otherwise use this array
+        = APart sh                         -- size of the whole array
+                (Range sh) (Array r1 sh e) -- if in range use this array
+                (Array r2 sh e)            -- otherwise use this array
 
 data Range sh
-        = Range sh sh                           -- indices defining the range
-                (sh -> Bool)                    -- predicate to check whether were in range
+        = Range sh sh                      -- indices defining the range
+                (sh -> Bool)               -- predicate to check whether were in range
 
 -- | Check whether an index is within the given range.
 {-# INLINE inRange #-}

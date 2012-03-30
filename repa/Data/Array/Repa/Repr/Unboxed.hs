@@ -18,10 +18,12 @@ import Control.Monad
 import Prelude hiding (zip, zip3, unzip, unzip3)
 
 -- | Unboxed arrays are represented as unboxed vectors.
+--
 --   The implementation of `Data.Vector.Unboxed` is based on type families and
 --   picks an efficient, specialised representation for every element type. In
 --   particular, unboxed vectors of pairs are represented as pairs of unboxed
 --   vectors. This is the most efficient representation for numerical data.
+--
 data U
 data instance U.Unbox e => Array U sh e
         = AUnboxed sh !(U.Vector e)

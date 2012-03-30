@@ -19,6 +19,10 @@ data instance Array X sh e
 -- | Read an undefined array elements. Inspecting their values yields `error`.
 --
 instance Repr X e where
+ {-# INLINE deepSeqArray #-}
+ deepSeqArray _ x
+        = x
+
  {-# INLINE extent #-}
  extent (AUndefined sh) 
         = sh
