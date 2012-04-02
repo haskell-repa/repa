@@ -109,7 +109,7 @@ randomishDoubleVector !len !valMin !valMax !seed
  = let	range	= valMax - valMin
 
 	mx	= 2^(30 :: Integer) - 1
-	mxf	= fromIntegral mx
+	mxf	= fromIntegral (mx :: Integer)
 	ints	= randomishIntVector len 0 mx seed
 	
    in	V.map (\n -> valMin + (fromIntegral n / mxf) * range) ints
