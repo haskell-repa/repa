@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeOperators, TypeSynonymInstances, FlexibleInstances #-}
-
+{-# OPTIONS -fno-warn-orphans #-}
 -- | Strict complex doubles.
 module Data.Array.Repa.Algorithms.Complex
 	( Complex
