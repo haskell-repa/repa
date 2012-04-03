@@ -12,7 +12,6 @@ import Control.Monad
 import Solver
 import Debug.Trace
 
-
 main 
  = do	args	<- getArgs
 	case args of
@@ -45,6 +44,7 @@ run iterations fileIn fileOut
         traceEventIO "******** Sobel Magnitude"
 	outImage       <- now $ computeUnboxedP
 	               $  R.map rgb8OfGreyFloat  
+                       $  R.map (/ 3)
 	               $  R.zipWith magnitude gX gY	
 
         traceEventIO "******** Sobel Write Image"

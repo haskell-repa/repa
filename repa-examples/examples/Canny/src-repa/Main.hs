@@ -146,7 +146,7 @@ timeStage loops name fn
 {-# NOINLINE toGreyScale #-}
 toGreyScale :: Image (Word8, Word8, Word8) -> Image Float
 toGreyScale arr
-        = computeP
+        = arr `deepSeqArray` computeP
         $ R.map (* 255)
         $ R.map floatLuminanceOfRGB8 arr 
 
@@ -155,7 +155,7 @@ toGreyScale arr
 {-# NOINLINE blurSepX #-}
 blurSepX :: Image Float -> Image Float
 blurSepX arr
-        = computeP
+        = arr `deepSeqArray` computeP
         $ forStencil2  BoundClamp arr
           [stencil2|	1 4 6 4 1 |]	
 
@@ -164,7 +164,7 @@ blurSepX arr
 {-# NOINLINE blurSepY #-}
 blurSepY :: Image Float -> Image Float
 blurSepY arr
-	= computeP
+	= arr `deepSeqArray` computeP
 	$ R.cmap (/ 256)
 	$ forStencil2  BoundClamp arr
 	  [stencil2|	1
@@ -178,7 +178,7 @@ blurSepY arr
 {-# NOINLINE gradientX #-}
 gradientX :: Image Float -> Image Float
 gradientX img
- 	= computeP
+ 	= img `deepSeqArray` computeP
     	$ forStencil2 BoundClamp img
 	  [stencil2|	-1  0  1
 			-2  0  2
@@ -189,7 +189,7 @@ gradientX img
 {-# NOINLINE gradientY #-}
 gradientY :: Image Float -> Image Float
 gradientY img
-	= computeP
+	= img `deepSeqArray` computeP
 	$ forStencil2 BoundClamp img
 	  [stencil2|	 1  2  1
 			 0  0  0
@@ -200,7 +200,7 @@ gradientY img
 {-# NOINLINE gradientMagOrient #-}
 gradientMagOrient :: Float -> Image Float -> Image Float -> Image (Float, Int)
 gradientMagOrient !threshLow dX dY
-        = computeP
+        = [dX, dY] `deepSeqArrays` computeP
         $ R.zipWith magOrient dX dY
 
  where	{-# INLINE magOrient #-}
@@ -257,7 +257,7 @@ gradientMagOrient !threshLow dX dY
 {-# NOINLINE suppress #-}
 suppress :: Float -> Float -> Image (Float, Int) -> Image Word8
 suppress !threshLow !threshHigh !dMagOrient
- = computeP
+ = dMagOrient `deepSeqArray` computeP
  $ makeBordered2 
         (extent dMagOrient) 1 
  	(makeCursored (extent dMagOrient) id addDim comparePts)
@@ -295,7 +295,8 @@ suppress !threshLow !threshHigh !dMagOrient
 {-# NOINLINE selectStrong #-}
 selectStrong :: Image Word8 -> Array U DIM1 Int
 selectStrong img
- = let 	{-# INLINE match #-}
+ = img `deepSeqArray`
+   let 	{-# INLINE match #-}
         vec             = toUnboxed img
 	match ix	= vec `V.unsafeIndex` ix == edge Strong
 
@@ -314,7 +315,8 @@ wildfire
 	-> Image Word8
 
 wildfire img arrStrong
- = unsafePerformIO 
+ = img `deepSeqArray` arrStrong `deepSeqArray`
+   unsafePerformIO 
  $ do	(sh, vec)	<- wildfireIO 
 	return	$ sh `seq` vec `seq` fromUnboxed sh vec
 

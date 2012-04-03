@@ -11,7 +11,7 @@ import Control.Monad
 import System.Random
 import Prelude				as P
 
--- Arg Parsing ------------------------------------------------------------------------------------
+-- Arg Parsing ----------------------------------------------------------------
 data Arg
 	= ArgSolver       String
 	| ArgMatrixRandom Int Int
@@ -69,7 +69,7 @@ getMatrix arg
 	 -> return $ randomishDoubleArray (Z :. height :. width) (-100) 100 12345
 
 
--- Main -------------------------------------------------------------------------------------------
+-- Main -----------------------------------------------------------------------
 main :: IO ()
 main 
  = do	args	<- liftM parseArgs $ getArgs
@@ -87,10 +87,7 @@ main' args
         	mat1 `deepSeqArray` mat2 `deepSeqArray` return ()
 		
 		-- Run the solver.
-		(matResult, t)	
-			<- time 
-			$  let matResult = mmult mat1 mat2
-			   in  matResult `deepSeqArray` return matResult
+		(matResult, t)	<- time $ now $ mmultP mat1 mat2
 
 		-- Print how long it took.
 		putStr (prettyTime t)

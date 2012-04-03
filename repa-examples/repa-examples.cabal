@@ -27,12 +27,11 @@ Executable repa-canny
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold100
-        -funfolding-keeness-factor100
 
 
 Executable repa-mmult
@@ -46,11 +45,13 @@ Executable repa-mmult
   Main-is: examples/MMult/src-repa/Main.hs
   hs-source-dirs: examples/MMult/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
 
 Executable repa-laplace
@@ -63,11 +64,11 @@ Executable repa-laplace
   other-modules: SolverGet SolverStencil
   hs-source-dirs: examples/Laplace/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
 
 
 Executable repa-fft2d
@@ -80,11 +81,13 @@ Executable repa-fft2d
   Main-is: examples/FFT/FFT2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/FFT2d/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
 
 Executable repa-fft2d-highpass
@@ -97,11 +100,13 @@ Executable repa-fft2d-highpass
   Main-is: examples/FFT/HighPass2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass2d/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
 
 
@@ -114,11 +119,13 @@ Executable repa-fft3d-highpass
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
 
 Executable repa-blur
@@ -131,11 +138,13 @@ Executable repa-blur
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
 
 Executable repa-sobel
@@ -148,12 +157,14 @@ Executable repa-sobel
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
   hs-source-dirs: examples/Sobel/src-repa .
-  ghc-options: 
-        -threaded 
+  ghc-options:
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
-        -funfolding-use-threshold30
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
 
 
 Executable repa-volume
@@ -164,8 +175,9 @@ Executable repa-volume
 
   Main-is: examples/Volume/Main.hs
   ghc-options: 
-        -threaded 
         -rtsopts 
+        -threaded 
+        -eventlog
         -Odph -fllvm -optlo-O3
         -fno-liberate-case
         -funfolding-use-threshold100
