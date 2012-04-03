@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             3.0.0.0
+Version:             3.0.0.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -49,13 +49,13 @@ Library
         OverlappingInstances
 
   Exposed-modules:
-        Data.Array.Repa.Algorithms.Complex
-        Data.Array.Repa.Algorithms.Pixel
+        Data.Array.Repa.Algorithms.DFT.Center
+        Data.Array.Repa.Algorithms.DFT.Roots
         Data.Array.Repa.Algorithms.ColorRamp
-        Data.Array.Repa.Algorithms.Randomish
-        Data.Array.Repa.Algorithms.Matrix
+        Data.Array.Repa.Algorithms.Complex
         Data.Array.Repa.Algorithms.Convolve
         Data.Array.Repa.Algorithms.DFT
-        Data.Array.Repa.Algorithms.DFT.Roots
-        Data.Array.Repa.Algorithms.DFT.Center
         Data.Array.Repa.Algorithms.FFT
+        Data.Array.Repa.Algorithms.Matrix
+        Data.Array.Repa.Algorithms.Pixel
+        Data.Array.Repa.Algorithms.Randomish

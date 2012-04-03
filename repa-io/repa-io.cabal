@@ -1,5 +1,5 @@
 Name:                repa-io
-Version:             3.0.0.0
+Version:             3.0.0.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -30,11 +30,11 @@ Library
         -O2 -Wall -fno-warn-missing-signatures
 
   Exposed-modules:
-        Data.Array.Repa.IO.BMP
-        Data.Array.Repa.IO.Vector
-        Data.Array.Repa.IO.Matrix
         Data.Array.Repa.IO.Binary
+        Data.Array.Repa.IO.BMP
+        Data.Array.Repa.IO.Matrix
         Data.Array.Repa.IO.Timing
+        Data.Array.Repa.IO.Vector
       
   Other-modules:
         Data.Array.Repa.IO.Internals.Text
