@@ -1,14 +1,21 @@
 {-# LANGUAGE BangPatterns, PackageImports #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
--- | Old support for stencil based convolutions. 
---
---   NOTE: This is slated to be merged with the new Stencil support in the next version
---         of Repa. We'll still expose the `convolve` function though.
+-- | Generic stencil based convolutions. 
+-- 
+--   If your stencil fits within a 7x7 tile and is known at compile-time then using
+--   then using the built-in stencil support provided by the main Repa package will
+--   be 5-10x faster. 
+-- 
+--   If you have a larger stencil, the coefficients are not statically known, 
+--   or need more complex boundary handling than provided by the built-in functions,
+--   then use this version instead.
 --
 module Data.Array.Repa.Algorithms.Convolve
-	( convolve
+	( -- * Arbitrary boundary handling
+          convolve
 
+          -- * Specialised boundary handling
 	, GetOut
 	, outAs
 	, outClamp
@@ -21,17 +28,18 @@ import qualified Data.Array.Repa.Shape			as S
 import Prelude						as P
 
 
--- Plain Convolve ---------------------------------------------------------------------------------
+-- Plain Convolve -------------------------------------------------------------
 -- | Image-kernel convolution,
---   which takes a function specifying what value to return when the kernel doesn't apply.
+--   which takes a function specifying what value to return when the
+--   kernel doesn't apply.
 convolve
 	:: (Num a, Unbox a)
-	=> (DIM2 -> a) 		-- ^ Use this function to get border elements where the kernel apply.
-	-> Array U DIM2 a	-- ^ Kernel to use in the convolution.
+	=> (DIM2 -> a) 		-- ^ Function to get border elements when 
+                                --   the stencil does not apply.
+	-> Array U DIM2 a	-- ^ Stencil to use in the convolution.
 	-> Array U DIM2 a	-- ^ Input image.
 	-> Array U DIM2 a
 
-{-# INLINE convolve #-}
 convolve makeOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
    computeP $ unsafeTraverse image id update
@@ -79,6 +87,7 @@ convolve makeOut kernel image
 		krnZ	= krnVec `V.unsafeIndex` krnCur 
 		here	= imgZ * krnZ 
 	   in	integrate (acc + here) (x + 1) y (imgCur + 1) (krnCur + 1)
+{-# INLINE convolve #-}
 
 
 -- Convolve Out -----------------------------------------------------------------------------------
@@ -119,9 +128,9 @@ outClamp get (_ :. yLen :. xLen) (sh :. j :. i)
 --   which takes a function specifying what value to use for out-of-range elements.
 convolveOut
 	:: (Num a, Unbox a)
-	=> GetOut a		-- ^ Use this fn to get out of range elements.
-	-> Array U DIM2 a	-- ^ Kernel
-	-> Array U DIM2 a	-- ^ Image
+	=> GetOut a		-- ^ How to handle out-of-range elements.
+	-> Array U DIM2 a	-- ^ Stencil to use in the convolution.
+	-> Array U DIM2 a	-- ^ Input image.
 	-> Array U DIM2 a
 
 {-# INLINE convolveOut #-}

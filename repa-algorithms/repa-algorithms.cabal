@@ -25,12 +25,14 @@ Library
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -Odph
-        -optlo-O3
+        -fno-liberate-case
         -fsimplifier-phases=4
-        -fstrictness-before=5
-        -funfolding-use-threshold=30
+        -funfolding-use-threshold=1000
+        -funfolding-keeness-factor=1000
         -funbox-strict-fields
         -fcpr-off
+        -fllvm
+        -optlo-O3
 
   extensions:
         NoMonomorphismRestriction

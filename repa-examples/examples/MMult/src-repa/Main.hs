@@ -1,9 +1,9 @@
 {-# LANGUAGE PatternGuards, PackageImports  #-}
 
+import Solver
 import Data.Array.Repa			as A
 import Data.Array.Repa.IO.Matrix
 import Data.Array.Repa.IO.Timing
-import Data.Array.Repa.Algorithms.Matrix
 import Data.Array.Repa.Algorithms.Randomish
 import Data.Maybe
 import System.Environment
@@ -89,7 +89,7 @@ main' args
 		-- Run the solver.
 		(matResult, t)	
 			<- time 
-			$  let matResult = multiplyMM mat1 mat2
+			$  let matResult = mmult mat1 mat2
 			   in  matResult `deepSeqArray` return matResult
 
 		-- Print how long it took.
