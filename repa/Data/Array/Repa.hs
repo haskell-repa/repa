@@ -63,7 +63,7 @@ module Data.Array.Repa
 	, append, (++)
 	, transpose
 	, extend
-	, backpermute
+	, backpermute,         unsafeBackpermute
 	, backpermuteDft
 
 	, module Data.Array.Repa.Slice
@@ -73,19 +73,16 @@ module Data.Array.Repa
         -- ** Structure preserving operations
 	, map
 	, zipWith
+        , zipWith'
 	, (+^), (-^), (*^), (/^)
         , Combine(..)
 
 	-- from Data.Array.Repa.Operators.Traversal ------------------
 	-- ** Generic traversal
-	, traverse
-	, traverse2
-	, traverse3
-	, traverse4
-	, unsafeTraverse
-	, unsafeTraverse2
-	, unsafeTraverse3
-	, unsafeTraverse4
+	, traverse,            unsafeTraverse
+	, traverse2,           unsafeTraverse2
+	, traverse3,           unsafeTraverse3
+	, traverse4,           unsafeTraverse4
 	
 	-- from Data.Array.Repa.Operators.Interleave -----------------
 	-- ** Interleaving

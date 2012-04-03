@@ -4,6 +4,7 @@ module Data.Array.Repa.Operators.Mapping
         ( -- * Generic maps
           map
         , zipWith
+        , zipWith'
         , (+^), (-^), (*^), (/^)
 
           -- * Combining maps
@@ -27,10 +28,10 @@ import Data.Word
 --
 map     :: (Shape sh, Repr r a)
         => (a -> b) -> Array r sh a -> Array D sh b
-{-# INLINE map #-}
+{-# INLINE [3] map #-}
 map f arr
  = case delay arr of
-        ADelayed sh g    -> ADelayed sh (f . g)
+        ADelayed sh g -> ADelayed sh (f . g)
 
 
 -- ZipWith --------------------------------------------------------------------
@@ -42,13 +43,33 @@ zipWith :: (Shape sh, Repr r1 a, Repr r2 b)
         => (a -> b -> c)
         -> Array r1 sh a -> Array r2 sh b
         -> Array D sh c
-{-# INLINE zipWith #-}
+{-# INLINE [3] zipWith #-}
 zipWith f arr1 arr2
- = let  {-# INLINE getElem' #-}
-	getElem' ix	= f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
-   in	fromFunction
-		(intersectDim (extent arr1) (extent arr2))
-		getElem'
+ = fromFunction 
+        (intersectDim (extent arr1) (extent arr2))
+        (let {-# INLINE getElem' #-}
+             getElem' ix = f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
+         in  getElem')
+
+zipWith' 
+        :: (Shape sh, Repr r1 a, Repr r2 b)
+        => (a -> b -> c)
+        -> (i -> Array r1 sh a)
+        -> (i -> Array r2 sh b)
+        -> i
+        -> Array D sh c
+
+{-# INLINE [3] zipWith' #-}
+zipWith' f mkArr1 mkArr2 x
+ = let  arr1    = mkArr1 x
+        arr2    = mkArr2 x
+   in   fromFunction 
+         (intersectDim (extent arr1) (extent arr2))
+         (let {-# INLINE getElem' #-}
+              getElem' ix = f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
+          in  getElem')
+ 
+
 
 
 {-# INLINE (+^) #-}

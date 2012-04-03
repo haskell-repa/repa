@@ -16,7 +16,9 @@ import Data.Array.Repa.Base
 -- | Delayed arrays are represented as functions from the index to element value.
 data D
 data instance Array D sh e
-        = ADelayed  sh (sh -> e)
+        = ADelayed  
+                sh 
+                (sh -> e) 
 
 
 -- Repr -----------------------------------------------------------------------
@@ -25,6 +27,7 @@ instance Repr D a where
  {-# INLINE index #-}
  index       (ADelayed _  f) ix  = f ix
 
+ {-# INLINE linearIndex #-}
  linearIndex (ADelayed sh f) ix  = f (fromIndex sh ix)
 
  {-# INLINE extent #-}
@@ -39,25 +42,30 @@ instance Repr D a where
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an array.
 instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
- {-# INLINE fillP #-}
+ {-# INLINE [4] fillP #-}
  fillP (ADelayed sh getElem) marr
-  = fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
+  = fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
+        -- pass in index transform as separate function.
+        -- so we don't get distribution of sh.
+        -- Want getElem function near the top, not trapped behind fromIndex, so it fuses ot other things
+        -- before we need to inline fillChunkedP.
 
- {-# INLINE fillS #-}
+
+ {-# INLINE [4] fillS #-}
  fillS (ADelayed sh getElem) marr
   = fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
 
 
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
- {-# INLINE fillRangeP #-}
+ {-# INLINE [1] fillRangeP #-}
  fillRangeP  (ADelayed (Z :. _h :. w) getElem) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = fillBlock2P (unsafeWriteMArr marr) 
                 getElem
                 w x0 y0 x1 y1
 
- {-# INLINE fillRangeS #-}
+ {-# INLINE [1] fillRangeS #-}
  fillRangeS  (ADelayed (Z :. _h :. w) getElem) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = fillBlock2S (unsafeWriteMArr marr) 
@@ -69,7 +77,8 @@ instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
 -- | O(1). Wrap a function as a delayed array.
 fromFunction :: sh -> (sh -> a) -> Array D sh a
 {-# INLINE fromFunction #-}
-fromFunction sh f = ADelayed sh f
+fromFunction sh f 
+        = ADelayed sh f 
 
 
 -- | O(1). Produce the extent of an array and a function to retrieve an arbitrary element.
@@ -79,7 +88,7 @@ toFunction
 {-# INLINE toFunction #-}
 toFunction arr
  = case delay arr of
-        ADelayed sh f      -> (sh, f)
+        ADelayed sh f -> (sh, f)
 
 
 -- | O(1). Delay an array.
@@ -91,6 +100,5 @@ delay   :: (Shape sh, Repr r e)
         => Array r sh e -> Array D sh e
 {-# INLINE delay #-}
 delay arr = ADelayed (extent arr) (index arr)
-
 
 

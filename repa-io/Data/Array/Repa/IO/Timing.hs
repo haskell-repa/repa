@@ -7,7 +7,6 @@ module Data.Array.Repa.IO.Timing
 	, showTime
 	, prettyTime)
 where
-import GHC.Exts	(traceEvent)
 import System.CPUTime
 import System.Time
 
@@ -81,8 +80,6 @@ time :: IO a -> IO (a, Time)
 {-# NOINLINE time #-}
 time p = do
            start <- getTime
-           traceEvent "Bench.Benchmark: start timing"
            x     <- p
-           traceEvent "Bench.Benchmark: finished timing"
            end   <- getTime
            return (x, end `minus` start)

@@ -27,7 +27,7 @@ data Z	= Z
 -- | Our index type, used for both shapes and indices.
 infixl 3 :.
 data tail :. head
-	= !tail :. !head
+	= tail :. head
 	deriving (Show, Eq, Ord)
 
 -- Common dimensions
@@ -41,39 +41,42 @@ type DIM5	= DIM4 :. Int
 
 -- Shape ------------------------------------------------------------------------------------------
 instance Shape Z where
-	{-# INLINE rank #-}
+	{-# INLINE [1] rank #-}
 	rank _			= 0
 
-	{-# INLINE zeroDim #-}
-	zeroDim			= Z
+	{-# INLINE [1] zeroDim #-}
+	zeroDim		 	= Z
 
-	{-# INLINE unitDim #-}
+	{-# INLINE [1] unitDim #-}
 	unitDim			= Z
 
-	{-# INLINE intersectDim #-}
+	{-# INLINE [1] intersectDim #-}
 	intersectDim _ _	= Z
 
-	{-# INLINE addDim #-}
+	{-# INLINE [1] addDim #-}
 	addDim _ _		= Z
 
-	{-# INLINE size #-}
+	{-# INLINE [1] size #-}
 	size _			= 1
 
-	{-# INLINE sizeIsValid #-}
+	{-# INLINE [1] sizeIsValid #-}
 	sizeIsValid _		= True
 
 
-	{-# INLINE toIndex #-}
+	{-# INLINE [1] toIndex #-}
 	toIndex _ _		= 0
 
-	{-# INLINE fromIndex #-}
+	{-# INLINE [1] fromIndex #-}
 	fromIndex _ _		= Z
 
 
-	{-# INLINE inShapeRange #-}
+	{-# INLINE [1] inShapeRange #-}
 	inShapeRange Z Z Z	= True
 
+        {-# NOINLINE listOfShape #-}
 	listOfShape _		= []
+
+        {-# NOINLINE shapeOfList #-}
 	shapeOfList []		= Z
 	shapeOfList _		= error $ stage ++ ".fromList: non-empty list when converting to Z."
 
@@ -82,29 +85,29 @@ instance Shape Z where
 
 
 instance Shape sh => Shape (sh :. Int) where
-	{-# INLINE rank #-}
+	{-# INLINE [1] rank #-}
 	rank   (sh  :. _)
 		= rank sh + 1
 
-	{-# INLINE zeroDim #-}
+	{-# INLINE [1] zeroDim #-}
 	zeroDim = zeroDim :. 0
 
-	{-# INLINE unitDim #-}
+	{-# INLINE [1] unitDim #-}
 	unitDim = unitDim :. 1
 
-	{-# INLINE intersectDim #-}
+	{-# INLINE [1] intersectDim #-}
 	intersectDim (sh1 :. n1) (sh2 :. n2)
 		= (intersectDim sh1 sh2 :. (min n1 n2))
 
-	{-# INLINE addDim #-}
+	{-# INLINE [1] addDim #-}
 	addDim (sh1 :. n1) (sh2 :. n2)
 		= addDim sh1 sh2 :. (n1 + n2)
 
-	{-# INLINE size #-}
+	{-# INLINE [1] size #-}
 	size  (sh1 :. n)
 		= size sh1 * n
 
-	{-# INLINE sizeIsValid #-}
+	{-# INLINE [1] sizeIsValid #-}
 	sizeIsValid (sh1 :. n)
 		| size sh1 > 0
 		= n <= maxBound `div` size sh1
@@ -112,29 +115,30 @@ instance Shape sh => Shape (sh :. Int) where
 		| otherwise
 		= False
 
-	{-# INLINE toIndex #-}
+	{-# INLINE [1] toIndex #-}
 	toIndex (sh1 :. sh2) (sh1' :. sh2')
 		= toIndex sh1 sh1' * sh2 + sh2'
 
-	{-# INLINE fromIndex #-}
-	fromIndex (ds :. d) n
-	 	= fromIndex ds (n `quotInt` d) :. r
-		where
-		-- If we assume that the index is in range, there is no point
-		-- in computing the remainder for the highest dimension since
-		-- n < d must hold. This saves one remInt per element access which
-		-- is quite a big deal.
-		r 	| rank ds == 0	= n
-			| otherwise	= n `remInt` d
+	{-# INLINE [1] fromIndex #-}
+        fromIndex (ds :. d) n
+                = fromIndex ds (n `quotInt` d) :. r
+                where
+                -- If we assume that the index is in range, there is no point
+                -- in computing the remainder for the highest dimension since
+                -- n < d must hold. This saves one remInt per element access which
+                -- is quite a big deal.
+                r       | rank ds == 0  = n
+                        | otherwise     = n `remInt` d
 
-	{-# INLINE inShapeRange #-}
+	{-# INLINE [1] inShapeRange #-}
 	inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2)
 		= (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
 
-
+        {-# NOINLINE listOfShape #-}
        	listOfShape (sh :. n)
 	 = n : listOfShape sh
 
+        {-# NOINLINE shapeOfList #-}
 	shapeOfList xx
 	 = case xx of
 		[]	-> error $ stage ++ ".toList: empty list when converting to  (_ :. Int)"

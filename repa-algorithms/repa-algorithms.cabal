@@ -25,6 +25,7 @@ Library
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -Odph
+        -optlo-O3
         -fsimplifier-phases=4
         -fstrictness-before=5
         -funfolding-use-threshold=30

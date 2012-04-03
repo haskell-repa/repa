@@ -6,7 +6,7 @@ module Data.Array.Repa.Operators.IndexSpace
 	, transpose
 	, extend
 	, slice
-	, backpermute
+	, backpermute,         unsafeBackpermute
 	, backpermuteDft)
 where
 import Data.Array.Repa.Index
@@ -29,7 +29,7 @@ reshape	:: (Shape sh2, Shape sh1
 	-> Array r1 sh1 e
 	-> Array D  sh2 e
 
-{-# INLINE reshape #-}
+{-# INLINE [3] reshape #-}
 reshape sh2 arr
 	| not $ S.size sh2 == S.size (extent arr)
 	= error $ stage P.++ ".reshape: reshaped array will not match size of the original"
@@ -47,7 +47,7 @@ append, (++)
 	-> Array r2 (sh :. Int) e
 	-> Array D  (sh :. Int) e
 
-{-# INLINE append #-}
+{-# INLINE [3] append #-}
 append arr1 arr2
  = unsafeTraverse2 arr1 arr2 fnExtent fnElem
  where
@@ -72,7 +72,7 @@ transpose
 	=> Array r (sh :. Int :. Int) e
 	-> Array D (sh :. Int :. Int) e
 
-{-# INLINE transpose #-}
+{-# INLINE [3] transpose #-}
 transpose arr
  = unsafeTraverse arr
 	(\(sh :. m :. n) 	-> (sh :. n :.m))
@@ -89,9 +89,9 @@ extend
 	-> Array r (SliceShape sl) e
 	-> Array D (FullShape sl)  e
 
-{-# INLINE extend #-}
+{-# INLINE [3] extend #-}
 extend sl arr
-	= backpermute
+	= unsafeBackpermute
 		(fullOfSlice sl (extent arr))
 		(sliceOfFull sl)
 		arr
@@ -105,9 +105,9 @@ slice	:: ( Slice sl
 	-> sl
 	-> Array D (SliceShape sl) e
 
-{-# INLINE slice #-}
+{-# INLINE [3] slice #-}
 slice arr sl
-	= backpermute
+	= unsafeBackpermute
 		(sliceOfFull sl (extent arr))
 		(fullOfSlice sl)
 		arr
@@ -115,7 +115,7 @@ slice arr sl
 
 -- | Backwards permutation of an array's elements.
 --	The result array has the same extent as the original.
-backpermute
+backpermute, unsafeBackpermute
 	:: forall r sh1 sh2 e
 	.  ( Shape sh1, Shape sh2
 	   , Repr r e)
@@ -125,9 +125,12 @@ backpermute
 	-> Array r  sh1 e 		-- ^ Source array.
 	-> Array D  sh2 e
 
-{-# INLINE backpermute #-}
+{-# INLINE [3] backpermute #-}
 backpermute newExtent perm arr
 	= traverse arr (const newExtent) (. perm)
+
+unsafeBackpermute newExtent perm arr
+        = unsafeTraverse arr (const newExtent) (. perm)
 
 
 -- | Default backwards permutation of an array's elements.
@@ -143,7 +146,7 @@ backpermuteDft
 	-> Array r1 sh1 e			-- ^ Source array.
 	-> Array D  sh2 e
 
-{-# INLINE backpermuteDft #-}
+{-# INLINE [3] backpermuteDft #-}
 backpermuteDft arrDft fnIndex arrSrc
 	= fromFunction (extent arrDft) fnElem
 	where	fnElem ix

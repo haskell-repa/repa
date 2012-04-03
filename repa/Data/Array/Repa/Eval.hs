@@ -54,7 +54,7 @@ import System.IO.Unsafe
 --
 computeP :: Fill r1 r2 sh e
         => Array r1 sh e -> Array r2 sh e
-{-# INLINE computeP #-}
+{-# INLINE [4] computeP #-}
 computeP arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO
@@ -64,9 +64,10 @@ computeP arr1
 
 
 -- | Sequential computation of array elements.
-computeS :: Fill r1 r2 sh e
+computeS 
+        :: Fill r1 r2 sh e
         => Array r1 sh e -> Array r2 sh e
-{-# INLINE computeS #-}
+{-# INLINE [4] computeS #-}
 computeS arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO

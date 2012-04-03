@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, ExplicitForAll, TypeOperators #-}
+{-# LANGUAGE BangPatterns, ExplicitForAll, TypeOperators, MagicHash #-}
 
 module Data.Array.Repa.Operators.Reduction
 	( foldS,        foldP
@@ -14,10 +14,9 @@ import Data.Array.Repa.Shape		        as S
 import qualified Data.Vector.Unboxed	        as V
 import qualified Data.Vector.Unboxed.Mutable    as M
 import Prelude				        hiding (sum)
-
 import qualified Data.Array.Repa.Eval.Reduction as E
 import System.IO.Unsafe
-
+import GHC.Exts
 
 -- foldS ------------------------------------------------------------------------------------------
 -- | Sequential reduction of the innermost dimension of an arbitrary rank array.
@@ -28,12 +27,13 @@ foldS 	:: (Shape sh, Elt a, Unbox a, Repr r a)
 	-> a
 	-> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE [0] foldS #-}
+{-# INLINE [2] foldS #-}
 foldS f z arr
- = let  sh@(sz :. n) = extent arr
+ = let  sh@(sz :. n') = extent arr
+        !(I# n)       = n'
    in unsafePerformIO
     $ do mvec   <- M.unsafeNew (S.size sz)
-         E.foldS mvec (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
+         E.foldS mvec (\ix -> arr `unsafeIndex` fromIndex sh (I# ix)) f z n
          !vec   <- V.unsafeFreeze mvec
          return $ fromUnboxed sz vec
 
@@ -50,7 +50,7 @@ foldP 	:: (Shape sh, Elt a, Unbox a, Repr r a)
 	-> a
 	-> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE [0] foldP #-}
+{-# INLINE [2] foldP #-}
 foldP f z arr 
  = let  sh@(sz :. n) = extent arr
    in   case rank sh of
@@ -75,11 +75,13 @@ foldAllS :: (Shape sh, Elt a, Unbox a, Repr r a)
 	-> a
 	-> Array r sh a
 	-> a
-{-# INLINE [0] foldAllS #-}
+{-# INLINE [2] foldAllS #-}
 foldAllS f z arr 
- = let  sh = extent arr
-        n  = size sh
-   in   unsafePerformIO $ E.foldAllS (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
+        = E.foldAllS 
+                (\ix -> arr `unsafeIndex` fromIndex (extent arr) ix) 
+                f 
+                z 
+                (size (extent arr))
 
 
 -- | Parallel reduction of an array of arbitrary rank to a single scalar value.
@@ -94,7 +96,7 @@ foldAllP :: (Shape sh, Elt a, Unbox a, Repr r a)
 	 -> a
 	 -> Array r sh a
 	 -> a
-{-# INLINE [0] foldAllP #-}
+{-# INLINE [2] foldAllP #-}
 foldAllP f z arr 
  = let  sh = extent arr
         n  = size sh
@@ -106,16 +108,20 @@ foldAllP f z arr
 sumS	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE sumS #-}
-sumS arr = foldS (+) 0 arr
+{-# INLINE [2] sumS #-}
+sumS arr 
+ = let  result   = foldS (+) 0 arr
+   in   result `seq` result
 
 
 -- | Sequential sum the innermost dimension of an array.
 sumP	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE sumP #-}
-sumP arr = foldP (+) 0 arr
+{-# INLINE [2] sumP #-}
+sumP arr 
+ = let  result   = foldP (+) 0 arr
+   in   result `seq` result
 
 
 -- sumAll -----------------------------------------------------------------------------------------
@@ -123,7 +129,7 @@ sumP arr = foldP (+) 0 arr
 sumAllS	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a
 	-> a
-{-# INLINE sumAllS #-}
+{-# INLINE [2] sumAllS #-}
 sumAllS arr = foldAllS (+) 0 arr
 
 
@@ -131,5 +137,5 @@ sumAllS arr = foldAllS (+) 0 arr
 sumAllP	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a
 	-> a
-{-# INLINE sumAllP #-}
+{-# INLINE [2] sumAllP #-}
 sumAllP arr = foldAllP (+) 0 arr

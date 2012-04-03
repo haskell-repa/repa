@@ -10,7 +10,7 @@ module Data.Array.Repa.Slice
 	, Slice		(..))
 where
 import Data.Array.Repa.Index
-import Prelude					hiding (replicate, drop)
+import Prelude		        hiding (replicate, drop)
 
 
 -- | Select all indices at a certain position.
@@ -47,37 +47,37 @@ class Slice ss where
 
 
 instance Slice Z  where
-	{-# INLINE sliceOfFull #-}
+	{-# INLINE [1] sliceOfFull #-}
 	sliceOfFull _ _		= Z
 
-	{-# INLINE fullOfSlice #-}
+	{-# INLINE [1] fullOfSlice #-}
 	fullOfSlice _ _		= Z
 
 
 instance Slice (Any sh) where
-	{-# INLINE sliceOfFull #-}
+	{-# INLINE [1] sliceOfFull #-}
 	sliceOfFull _ sh	= sh
 
-	{-# INLINE fullOfSlice #-}
+	{-# INLINE [1] fullOfSlice #-}
 	fullOfSlice _ sh	= sh
 
 
 instance Slice sl => Slice (sl :. Int) where
-	{-# INLINE sliceOfFull #-}
+	{-# INLINE [1] sliceOfFull #-}
 	sliceOfFull (fsl :. _) (ssl :. _)
 		= sliceOfFull fsl ssl
 
-	{-# INLINE fullOfSlice #-}
+	{-# INLINE [1] fullOfSlice #-}
 	fullOfSlice (fsl :. n) ssl
 		= fullOfSlice fsl ssl :. n
 
 
 instance Slice sl => Slice (sl :. All) where
-	{-# INLINE sliceOfFull #-}
+	{-# INLINE [1] sliceOfFull #-}
 	sliceOfFull (fsl :. All) (ssl :. s)
 		= sliceOfFull fsl ssl :. s
 
-	{-# INLINE fullOfSlice #-}
+	{-# INLINE [1] fullOfSlice #-}
 	fullOfSlice (fsl :. All) (ssl :. s)
 		= fullOfSlice fsl ssl :. s
 
