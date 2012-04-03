@@ -77,11 +77,12 @@ foldAllS :: (Shape sh, Elt a, Unbox a, Repr r a)
 	-> a
 {-# INLINE [2] foldAllS #-}
 foldAllS f z arr 
-        = E.foldAllS 
-                (\ix -> arr `unsafeIndex` fromIndex (extent arr) ix) 
-                f 
-                z 
-                (size (extent arr))
+ = arr `deepSeqArray`
+   let  !ex     = extent arr
+        !(I# n) = size ex
+   in   E.foldAllS 
+                (\ix -> arr `unsafeIndex` fromIndex ex (I# ix))
+                f z n 
 
 
 -- | Parallel reduction of an array of arbitrary rank to a single scalar value.
@@ -108,20 +109,16 @@ foldAllP f z arr
 sumS	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE [5] sumS #-}
-sumS arr 
- = let  result   = foldS (+) 0 arr
-   in   result `seq` result
+{-# INLINE [4] sumS #-}
+sumS = foldS (+) 0
 
 
 -- | Sequential sum the innermost dimension of an array.
 sumP	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE [5] sumP #-}
-sumP arr 
- = let  result   = foldP (+) 0 arr
-   in   result `seq` result
+{-# INLINE [4] sumP #-}
+sumP = foldP (+) 0
 
 
 -- sumAll -----------------------------------------------------------------------------------------
@@ -129,13 +126,14 @@ sumP arr
 sumAllS	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a
 	-> a
-{-# INLINE [5] sumAllS #-}
-sumAllS arr = foldAllS (+) 0 arr
+{-# INLINE [4] sumAllS #-}
+sumAllS = foldAllS (+) 0
 
 
 -- | Parallel sum all the elements of an array.
 sumAllP	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a
 	-> a
-{-# INLINE [5] sumAllP #-}
-sumAllP arr = foldAllP (+) 0 arr
+{-# INLINE [4] sumAllP #-}
+sumAllP = foldAllP (+) 0
+

@@ -73,7 +73,6 @@ module Data.Array.Repa
         -- ** Structure preserving operations
 	, map
 	, zipWith
-        , zipWith'
 	, (+^), (-^), (*^), (/^)
         , Combine(..)
 

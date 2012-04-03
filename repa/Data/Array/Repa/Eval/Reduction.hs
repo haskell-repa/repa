@@ -18,8 +18,8 @@ foldS :: (Elt a, V.Unbox a)
       -> a                      -- ^ starting value (typically an identity)
       -> Int#                   -- ^ inner dimension (length to fold over)
       -> IO ()
-{-# INLINE [0] foldS #-}
-foldS vec !f !c !r !n
+{-# INLINE [1] foldS #-}
+foldS vec !get !c !r !n
   = iter 0# 0#
   where
     !(I# end) = M.length vec
@@ -29,7 +29,7 @@ foldS vec !f !c !r !n
      | sh >=# end = return ()
      | otherwise 
      = do let !next = sz +# n
-          M.unsafeWrite vec (I# sh) (reduce' f c r sz next)
+          M.unsafeWrite vec (I# sh) (reduceAny get c r sz next)
           iter (sh +# 1#) next
 
 
@@ -44,7 +44,7 @@ foldP :: (Elt a, V.Unbox a)
                                 -- ^ to the operator. eg @0 + a = a@.
       -> Int                    -- ^ inner dimension (length to fold over)
       -> IO ()
-{-# INLINE [0] foldP #-}
+{-# INLINE [1] foldP #-}
 foldP vec !f !c !r !(I# n)
   = gangIO theGang
   $ \(I# tid) -> fill (split tid) (split (tid +# 1#))
@@ -75,16 +75,16 @@ foldP vec !f !c !r !(I# n)
 
 -- | Sequential reduction of all the elements in an array.
 foldAllS :: (Elt a, V.Unbox a)
-         => (Int -> a)          -- ^ function to get an element from the given index
+         => (Int# -> a)         -- ^ function to get an element from the given index
          -> (a -> a -> a)       -- ^ binary associative combining function
          -> a                   -- ^ starting value
-         -> Int                 -- ^ number of elements
+         -> Int#                -- ^ number of elements
          -> a
 
-{-# INLINE [0] foldAllS #-}
-foldAllS !f !c !r !len 
- = case reduce f c r 0 len of
-        x       -> x
+{-# INLINE [1] foldAllS #-}
+foldAllS !f !c !r !len
+ = reduceAny (\i -> f i) c r 0# len 
+
 
 
 -- | Parallel tree reduction of an array to a single value. Each thread takes an
@@ -101,7 +101,7 @@ foldAllP :: (Elt a, V.Unbox a)
          -> a                   -- ^ starting value
          -> Int                 -- ^ number of elements
          -> IO a
-{-# INLINE [0] foldAllP #-}
+{-# INLINE [1] foldAllP #-}
 
 foldAllP !f !c !r !len
   | len == 0    = return r
@@ -124,15 +124,26 @@ foldAllP !f !c !r !len
       | otherwise    = M.unsafeWrite mvec tid (reduce f c (f start) (start+1) end)
 
 
-reduce :: (Int -> a) -> (a -> a -> a) -> a -> Int -> Int -> a
+
+-- Reduce ---------------------------------------------------------------------
+-- | This is the primitive reduction function.
+--   We use manual specialisations and rewrite rules to avoid the result
+--   being boxed up in the final iteration.
+{-# INLINE [0] reduce #-}
+reduce  :: (Int -> a)           -- ^ Get data from the array.
+        -> (a -> a -> a)        -- ^ Function to combine elements.
+        -> a                    -- ^ Starting value.
+        -> Int                  -- ^ Starting index in array.
+        -> Int                  -- ^ Ending index in array.
+        -> a                    -- ^ Result.
 reduce f c r (I# start) (I# end)
- = reduce' (\i -> f (I# i)) c r start end
+ = reduceAny (\i -> f (I# i)) c r start end
 
 
 -- | Sequentially reduce values between the given indices
-{-# INLINE reduce' #-}
-reduce' :: (Int# -> a) -> (a -> a -> a) -> a -> Int# -> Int# -> a
-reduce' !f !c !r !start !end 
+{-# INLINE [0] reduceAny #-}
+reduceAny :: (Int# -> a) -> (a -> a -> a) -> a -> Int# -> Int# -> a
+reduceAny !f !c !r !start !end 
  = iter start r
  where
    {-# INLINE iter #-}
@@ -140,5 +151,106 @@ reduce' !f !c !r !start !end
     | i >=# end  = z 
     | otherwise  = iter (i +# 1#) (f i `c` z)
 
+
+{-# INLINE [0] reduceInt #-}
+reduceInt
+        :: (Int# -> Int#)
+        -> (Int# -> Int# -> Int#)
+        -> Int# 
+        -> Int# -> Int# 
+        -> Int#
+
+reduceInt !f !c !r !start !end 
+ = iter start r
+ where
+   {-# INLINE iter #-}
+   iter !i !z 
+    | i >=# end  = z 
+    | otherwise  = iter (i +# 1#) (f i `c` z)
+
+
+{-# INLINE [0] reduceFloat #-}
+reduceFloat
+        :: (Int# -> Float#) 
+        -> (Float# -> Float# -> Float#)
+        -> Float# 
+        -> Int# -> Int# 
+        -> Float#
+
+reduceFloat !f !c !r !start !end 
+ = iter start r
+ where
+   {-# INLINE iter #-}
+   iter !i !z 
+    | i >=# end  = z 
+    | otherwise  = iter (i +# 1#) (f i `c` z)
+
+
+{-# INLINE [0] reduceDouble #-}
+reduceDouble
+        :: (Int# -> Double#) 
+        -> (Double# -> Double# -> Double#)
+        -> Double# 
+        -> Int# -> Int# 
+        -> Double#
+
+reduceDouble !f !c !r !start !end 
+ = iter start r
+ where
+   {-# INLINE iter #-}
+   iter !i !z 
+    | i >=# end  = z 
+    | otherwise  = iter (i +# 1#) (f i `c` z)
+
+
+{-# INLINE unboxInt #-}
+unboxInt :: Int -> Int#
+unboxInt (I# i) = i
+
+
+{-# INLINE unboxFloat #-}
+unboxFloat :: Float -> Float#
+unboxFloat (F# f) = f
+
+
+{-# INLINE unboxDouble #-}
+unboxDouble :: Double -> Double#
+unboxDouble (D# d) = d
+
+
+{-# RULES "reduceInt" 
+    forall (get :: Int# -> Int) f r start end
+    . reduceAny get f r start end 
+    = I# (reduceInt 
+                (\i     -> unboxInt (get i))
+                (\d1 d2 -> unboxInt (f (I# d1) (I# d2)))
+                (unboxInt r)
+                start
+                end)
+ #-}
+
+
+{-# RULES "reduceFloat" 
+    forall (get :: Int# -> Float) f r start end
+    . reduceAny get f r start end 
+    = F# (reduceFloat
+                (\i     -> unboxFloat (get i))
+                (\d1 d2 -> unboxFloat (f (F# d1) (F# d2)))
+                (unboxFloat r)
+                start
+                end)
+ #-}
+
+
+{-# RULES "reduceDouble" 
+    forall (get :: Int# -> Double) f r start end
+    . reduceAny get f r start end 
+    = D# (reduceDouble 
+                (\i     -> unboxDouble (get i))
+                (\d1 d2 -> unboxDouble (f (D# d1) (D# d2)))
+                (unboxDouble r)
+                start
+                end)
+ #-}
 
 

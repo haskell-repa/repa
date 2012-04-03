@@ -45,11 +45,6 @@ instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
  {-# INLINE [4] fillP #-}
  fillP (ADelayed sh getElem) marr
   = fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
-        -- pass in index transform as separate function.
-        -- so we don't get distribution of sh.
-        -- Want getElem function near the top, not trapped behind fromIndex, so it fuses ot other things
-        -- before we need to inline fillChunkedP.
-
 
  {-# INLINE [4] fillS #-}
  fillS (ADelayed sh getElem) marr
