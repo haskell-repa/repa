@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.0.0.1
+Version:             3.0.0.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -43,6 +43,7 @@ Executable repa-mmult
         random               == 1.0.*
 
   Main-is: examples/MMult/src-repa/Main.hs
+  other-modules: Solver
   hs-source-dirs: examples/MMult/src-repa .
   ghc-options: 
         -rtsopts 
