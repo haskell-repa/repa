@@ -12,11 +12,11 @@ import GHC.Exts
 
 -- | Sequential reduction of a multidimensional array along the innermost dimension.
 foldS :: (Elt a, V.Unbox a)
-      => M.IOVector a           -- ^ vector to write elements into
-      -> (Int# -> a)            -- ^ function to get an element from the given index
-      -> (a -> a -> a)          -- ^ binary associative combination function
-      -> a                      -- ^ starting value (typically an identity)
-      -> Int#                   -- ^ inner dimension (length to fold over)
+      => M.IOVector a   -- ^ vector to write elements into
+      -> (Int# -> a)    -- ^ function to get an element from the given index
+      -> (a -> a -> a)  -- ^ binary associative combination function
+      -> a              -- ^ starting value (typically an identity)
+      -> Int#           -- ^ inner dimension (length to fold over)
       -> IO ()
 {-# INLINE [1] foldS #-}
 foldS vec !get !c !r !n
@@ -37,12 +37,12 @@ foldS vec !get !c !r !n
 --   Each output value is computed by a single thread, with the output values
 --   distributed evenly amongst the available threads.
 foldP :: (Elt a, V.Unbox a)
-      => M.IOVector a           -- ^ vector to write elements into
-      -> (Int -> a)             -- ^ function to get an element from the given index
-      -> (a -> a -> a)          -- ^ binary associative combination operator 
-      -> a                      -- ^ starting value. Must be neutral with respect
-                                -- ^ to the operator. eg @0 + a = a@.
-      -> Int                    -- ^ inner dimension (length to fold over)
+      => M.IOVector a   -- ^ vector to write elements into
+      -> (Int -> a)     -- ^ function to get an element from the given index
+      -> (a -> a -> a)  -- ^ binary associative combination operator 
+      -> a              -- ^ starting value. Must be neutral with respect
+                        -- ^ to the operator. eg @0 + a = a@.
+      -> Int            -- ^ inner dimension (length to fold over)
       -> IO ()
 {-# INLINE [1] foldP #-}
 foldP vec !f !c !r !(I# n)

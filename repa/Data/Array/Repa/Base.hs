@@ -6,8 +6,9 @@ module Data.Array.Repa.Base
 where
 import Data.Array.Repa.Shape
 
-
 -- | Arrays with a representation tag, shape, and element type.
+--   Use one of the type tags like `D`, `U` and so on for @r@, 
+--   one of `DIM1`, `DIM2` ... for @sh@.
 data family Array r sh e
 
 

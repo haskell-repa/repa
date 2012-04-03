@@ -7,7 +7,7 @@ module Data.Array.Repa.Operators.IndexSpace
 	, extend
 	, slice
 	, backpermute,         unsafeBackpermute
-	, backpermuteDft)
+	, backpermuteDft,      unsafeBackpermuteDft)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
@@ -20,7 +20,7 @@ import qualified Prelude		as P
 
 stage	= "Data.Array.Repa.Operators.IndexSpace"
 
--- Index space transformations --------------------------------------------------------------------
+-- Index space transformations ------------------------------------------------
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
 reshape	:: (Shape sh2, Shape sh1
@@ -32,7 +32,8 @@ reshape	:: (Shape sh2, Shape sh1
 {-# INLINE [3] reshape #-}
 reshape sh2 arr
 	| not $ S.size sh2 == S.size (extent arr)
-	= error $ stage P.++ ".reshape: reshaped array will not match size of the original"
+	= error 
+        $ stage P.++ ".reshape: reshaped array will not match size of the original"
 
 reshape sh2 arr
         = fromFunction sh2 
@@ -119,16 +120,17 @@ backpermute, unsafeBackpermute
 	:: forall r sh1 sh2 e
 	.  ( Shape sh1, Shape sh2
 	   , Repr r e)
-	=> sh2 				-- ^ Extent of result array.
-	-> (sh2 -> sh1) 		-- ^ Function mapping each index in the result array
-					--	to an index of the source array.
-	-> Array r  sh1 e 		-- ^ Source array.
+	=> sh2 			-- ^ Extent of result array.
+	-> (sh2 -> sh1) 	-- ^ Function mapping each index in the result array
+				--	to an index of the source array.
+	-> Array r  sh1 e 	-- ^ Source array.
 	-> Array D  sh2 e
 
 {-# INLINE [3] backpermute #-}
 backpermute newExtent perm arr
 	= traverse arr (const newExtent) (. perm)
 
+{-# INLINE [3] unsafeBackpermute #-}
 unsafeBackpermute newExtent perm arr
         = unsafeTraverse arr (const newExtent) (. perm)
 
@@ -136,14 +138,14 @@ unsafeBackpermute newExtent perm arr
 -- | Default backwards permutation of an array's elements.
 --	If the function returns `Nothing` then the value at that index is taken
 --	from the default array (@arrDft@)
-backpermuteDft
+backpermuteDft, unsafeBackpermuteDft
 	:: forall r0 r1 sh1 sh2 e
 	.  ( Shape sh1, Shape sh2
 	   , Repr  r0 e, Repr r1 e)
-	=> Array r0 sh2 e		-- ^ Default values (@arrDft@)
-	-> (sh2 -> Maybe sh1) 		-- ^ Function mapping each index in the result array
-					--	to an index in the source array.
-	-> Array r1 sh1 e			-- ^ Source array.
+	=> Array r0 sh2 e	-- ^ Default values (@arrDft@)
+	-> (sh2 -> Maybe sh1) 	-- ^ Function mapping each index in the result array
+				--	to an index in the source array.
+	-> Array r1 sh1 e	-- ^ Source array.
 	-> Array D  sh2 e
 
 {-# INLINE [3] backpermuteDft #-}
@@ -154,4 +156,11 @@ backpermuteDft arrDft fnIndex arrSrc
 			Just ix'	-> arrSrc `index` ix'
 			Nothing		-> arrDft `index` ix
 
+{-# INLINE [3] unsafeBackpermuteDft #-}
+unsafeBackpermuteDft arrDft fnIndex arrSrc
+        = fromFunction (extent arrDft) fnElem
+        where   fnElem ix
+                 = case fnIndex ix of
+                        Just ix'        -> arrSrc `unsafeIndex` ix'
+                        Nothing         -> arrDft `unsafeIndex` ix
 

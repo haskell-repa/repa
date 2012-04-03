@@ -7,7 +7,7 @@ module Data.Array.Repa.Shape
         , showShape )
 where
 
--- Shape ------------------------------------------------------------------------------------------
+-- Shape ----------------------------------------------------------------------
 -- | Class of types that can be used as array shapes and indices.
 class Eq sh => Shape sh where
 

@@ -74,7 +74,7 @@ instance U.Unbox e => Fillable U e where
 -- Conversions ----------------------------------------------------------------
 -- | Sequential computation of array elements..
 --
---   * This is an alias for `compute` with a more specific type.
+--   * This is an alias for `computeS` with a more specific type.
 --
 computeUnboxedS
         :: Fill r1 U sh e
@@ -83,7 +83,10 @@ computeUnboxedS
 computeUnboxedS = computeS
 
 
--- | Parallel computation of array elements..
+-- | Parallel computation of array elements.
+--
+--   * This is an alias for `computeP` with a more specific type.
+--
 computeUnboxedP
         :: Fill r1 U sh e
         => Array r1 sh e -> Array U sh e

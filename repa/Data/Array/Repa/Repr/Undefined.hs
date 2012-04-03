@@ -16,7 +16,7 @@ data instance Array X sh e
         = AUndefined sh
 
 
--- | Read an undefined array elements. Inspecting their values yields `error`.
+-- | Undefined array elements. Inspecting them yields `error`.
 --
 instance Repr X e where
  {-# INLINE deepSeqArray #-}

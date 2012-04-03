@@ -17,8 +17,8 @@ data Boundary a
 	deriving (Show)
 
 
--- | Represents a convolution stencil that we can apply to array. Only statically known stencils
---   are supported right now.
+-- | Represents a convolution stencil that we can apply to array.
+--   Only statically known stencils are supported right now.
 data Stencil sh a
 
 	-- | Static stencils are used when the coefficients are fixed,

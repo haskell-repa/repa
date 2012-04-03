@@ -112,9 +112,11 @@ instance Combine B Word8 D b where
 
 -- Cursored ---------------------------
 instance Combine C a C b where
+ {-# INLINE [4] cmap #-}
  cmap f (ACursored sh makec shiftc loadc)
         = ACursored sh makec shiftc (f . loadc)
 
+ {-# INLINE [3] czipWith #-}
  czipWith f arr1 (ACursored sh makec shiftc loadc)
   = let {-# INLINE makec' #-}
         makec' ix               = (ix, makec ix)
@@ -147,9 +149,11 @@ instance (Combine r11 a r21 b
         , Combine r12 a r22 b)
        => Combine (P r11 r12) a (P r21 r22) b where
 
+ {-# INLINE [4] cmap #-}
  cmap f (APart sh range arr1 arr2)
         = APart sh range (cmap f arr1) (cmap f arr2)
 
+ {-# INLINE [3] czipWith #-}
  czipWith f arr1 (APart sh range arr21 arr22)
         = APart sh range (czipWith f arr1 arr21)
                          (czipWith f arr1 arr22)

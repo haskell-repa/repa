@@ -45,7 +45,8 @@ selectChunkedS !fnWrite !fnMatch !fnProduce !shSize
 --  
 --   * This primitive can be useful for writing filtering functions.
 --
---   * The array is split into linear chunks, with one chunk being given to each thread.
+--   * The array is split into linear chunks, with one chunk being given to
+--     each thread.
 --
 --   * The number of elements in the result array depends on how many threads
 --     you're running the program with.

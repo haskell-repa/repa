@@ -81,14 +81,17 @@ makeStencil2' sizeX sizeY coeffs
 	let fnCoeffs
 		= LamE  [VarP ix']
 	 	$ CaseE (VarE (mkName "ix"))
-	 	$   [ Match	(InfixP (InfixP z' (mkName ":.") (LitP (IntegerL oy))) (mkName ":.") (LitP (IntegerL ox)))
+	 	$   [ Match	(InfixP (InfixP z' (mkName ":.") (LitP (IntegerL oy)))
+                                        (mkName ":.") (LitP (IntegerL ox)))
 				(NormalB $ ConE (mkName "Just") `AppE` LitE (IntegerL v))
 				[] | (oy, ox, v) <- coeffs ]
 	  	    ++ [Match WildP
 				(NormalB $ ConE (mkName "Nothing")) []]
 
 	return
-	 $ AppE (VarE (mkName "makeStencil2") `AppE` (LitE (IntegerL sizeX)) `AppE` (LitE (IntegerL sizeY)))
+	 $ AppE (VarE (mkName "makeStencil2") 
+                        `AppE` (LitE (IntegerL sizeX)) 
+                        `AppE` (LitE (IntegerL sizeY)))
          $ LetE [ PragmaD (InlineP (mkName "coeffs") (InlineSpec True False Nothing))
 		, ValD 	  (VarP    coeffs')          (NormalB fnCoeffs) [] ]
 		(VarE (mkName "coeffs"))

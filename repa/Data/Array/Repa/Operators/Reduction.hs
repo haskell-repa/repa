@@ -18,7 +18,7 @@ import qualified Data.Array.Repa.Eval.Reduction as E
 import System.IO.Unsafe
 import GHC.Exts
 
--- foldS ------------------------------------------------------------------------------------------
+-- foldS ----------------------------------------------------------------------
 -- | Sequential reduction of the innermost dimension of an arbitrary rank array.
 --
 --   Combine this with `transpose` to fold any other dimension.
@@ -40,11 +40,11 @@ foldS f z arr
 
 -- | Parallel reduction of the innermost dimension of an arbitray rank array.
 --
---   The first argument needs to be an /associative/ operator. The starting element must
---   be neutral with respect to the operator, for example @0@ is neutral with
---   respect to @(+)@ as @0 + a = a@. These restrictions are required to support
---   parallel evaluation, as the starting element may be used multiple
---   times depending on the number of threads.
+--   The first argument needs to be an associative sequential operator.
+--   The starting element must be neutral with respect to the operator, for
+--   example @0@ is neutral with respect to @(+)@ as @0 + a = a@.
+--   These restrictions are required to support parallel evaluation, as the
+--   starting element may be used multiple times depending on the number of threads.
 foldP 	:: (Shape sh, Elt a, Unbox a, Repr r a)
 	=> (a -> a -> a)
 	-> a
@@ -54,8 +54,9 @@ foldP 	:: (Shape sh, Elt a, Unbox a, Repr r a)
 foldP f z arr 
  = let  sh@(sz :. n) = extent arr
    in   case rank sh of
-           -- specialise rank-1 arrays, else one thread does all the work. We can't
-           -- match against the shape constructor, otherwise type error: (sz ~ Z)
+           -- specialise rank-1 arrays, else one thread does all the work.
+           -- We can't match against the shape constructor,
+           -- otherwise type error: (sz ~ Z)
            --
            1 -> let !vec = V.singleton $ foldAllP f z arr
                 in  fromUnboxed sz vec
@@ -67,7 +68,7 @@ foldP f z arr
                    return $ fromUnboxed sz vec
 
 
--- foldAll ----------------------------------------------------------------------------------------
+-- foldAll --------------------------------------------------------------------
 -- | Sequential reduction of an array of arbitrary rank to a single scalar value.
 --
 foldAllS :: (Shape sh, Elt a, Unbox a, Repr r a)
@@ -87,11 +88,11 @@ foldAllS f z arr
 
 -- | Parallel reduction of an array of arbitrary rank to a single scalar value.
 --
---   The first argument needs to be an /associative/ operator.
---   The starting element must be neutral with respect to the operator, for exampl
---   @0@ is neutral with respect to @(+)@ as @0 + a = a@. These restrictions are
---   required to support parallel evaluation, as the starting element may be used multiple
---   times depending on the number of threads.
+--   The first argument needs to be an associative sequential operator.
+--   The starting element must be neutral with respect to the operator,
+--   for example @0@ is neutral with respect to @(+)@ as @0 + a = a@.
+--   These restrictions are required to support parallel evaluation, as the
+--   starting element may be used multiple times depending on the number of threads.
 foldAllP :: (Shape sh, Elt a, Unbox a, Repr r a)
 	 => (a -> a -> a)
 	 -> a
@@ -101,10 +102,11 @@ foldAllP :: (Shape sh, Elt a, Unbox a, Repr r a)
 foldAllP f z arr 
  = let  sh = extent arr
         n  = size sh
-   in   unsafePerformIO $ E.foldAllP (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
+   in   unsafePerformIO 
+         $ E.foldAllP (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
 
 
--- sum --------------------------------------------------------------------------------------------
+-- sum ------------------------------------------------------------------------
 -- | Sequential sum the innermost dimension of an array.
 sumS	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
@@ -121,7 +123,7 @@ sumP	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 sumP = foldP (+) 0
 
 
--- sumAll -----------------------------------------------------------------------------------------
+-- sumAll ---------------------------------------------------------------------
 -- | Sequential sum of all the elements of an array.
 sumAllS	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a

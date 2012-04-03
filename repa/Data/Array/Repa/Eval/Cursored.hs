@@ -15,10 +15,11 @@ import GHC.Base					(remInt, quotInt)
 import Prelude					as P
 import GHC.Exts
 
--- Non-cursored interface -------------------------------------------------------------------------
+-- Non-cursored interface -----------------------------------------------------
 -- | Fill a block in a rank-2 array in parallel.
 --
---   * Blockwise filling can be more cache-efficient than linear filling for rank-2 arrays.
+--   * Blockwise filling can be more cache-efficient than linear filling for
+--    rank-2 arrays.
 --
 --   * Coordinates given are of the filled edges of the block.
 -- 
@@ -46,7 +47,8 @@ fillBlock2P !write !getElem !imageWidth !x0 !y0 !x1 !y1
 
 -- | Fill a block in a rank-2 array sequentially.
 --
---   * Blockwise filling can be more cache-efficient than linear filling for rank-2 arrays.
+--   * Blockwise filling can be more cache-efficient than linear filling for
+--    rank-2 arrays.
 --
 --   * Coordinates given are of the filled edges of the block.
 -- 

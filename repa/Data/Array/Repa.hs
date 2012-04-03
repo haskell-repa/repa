@@ -1,6 +1,6 @@
 
--- | Repa arrays are wrappers around a linear structure that holds the element data.
---   The representation tag determines what structure holds the data.
+-- | Repa arrays are wrappers around a linear structure that holds the element
+--   data. The representation tag determines what structure holds the data.
 --
 --   Delayed Representations (functions that compute elements)
 --
@@ -24,12 +24,35 @@
 --
 --   * `X`  -- Arrays whose elements are all undefined.
 --
---  Array fusion is achieved via the delayed (`D`) and cursored (`C`) representations. 
---  At compile time, the GHC simplifier combines the functions contained within `D` and `C` 
---  arrays without needing to create manifest intermediate arrays. 
+--  Array fusion is achieved via the delayed (`D`) and cursored (`C`)
+--  representations. At compile time, the GHC simplifier combines the functions
+--  contained within `D` and `C` arrays without needing to create manifest
+--  intermediate arrays. 
 --
---  Converting between the parallel manifest representations (eg `U` and `B`) is either
---  constant time or parallel copy, depending on the compatability of the physical representation.
+--  Converting between the parallel manifest representations (eg `U` and `B`)
+--  is either constant time or parallel copy, depending on the compatability
+--  of the physical representation.
+--
+--  /Writing fast code:/
+--
+--  1. Repa does not support nested parallellism. 
+--     This means that you cannot `map` a parallel worker function across
+--     an array and then call `computeP` to evaluate it, or pass a parallel
+--     worker to parallel reductions such as `foldP`. If you do then you will
+--     get a run-time warning and the code will run very slowly.
+--
+--  2. Arrays of type @(Array D sh a)@ or @(Array C sh a)@ are /not real arrays/.
+--     They are represented as functions that compute each element on demand.
+--     You need to use a function like `computeS`, `computeP`, `computeUnboxedP`
+--     and so on to actually evaluate the elements.
+--     
+--  3. You should add @INLINE@ pragmas to all leaf-functions in your code, 
+--     expecially ones that compute numberic results. This ensures they are 
+--     specialised at the appropriate element types.
+--
+--  4. Scheduling a parallel computation takes about 200us on an OSX machine. 
+--     You should sequential computation for small arrays in inner loops, 
+--     or a the bottom of a divide-and-conquer algorithm.
 --
 module Data.Array.Repa
         ( -- * Abstract array representation
