@@ -58,15 +58,15 @@ fillBlock2S
         :: Elt a
 	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
         -> (DIM2 -> a)          -- ^ Function to evaluate the element at an index.
-	-> Int			-- ^ Width of the whole array.
-	-> Int			-- ^ x0 lower left corner of block to fill
-	-> Int			-- ^ y0
-	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1
+	-> Int#			-- ^ Width of the whole array.
+	-> Int#			-- ^ x0 lower left corner of block to fill
+	-> Int#			-- ^ y0
+	-> Int#			-- ^ x1 upper right corner of block to fill
+	-> Int#			-- ^ y1
         -> IO ()
 
 {-# INLINE [0] fillBlock2S #-}
-fillBlock2S !write !getElem !(I# imageWidth) !(I# x0) !(I# y0) !(I# x1) !(I# y1)
+fillBlock2S !write !getElem imageWidth x0 y0 x1 y1
  = fillCursoredBlock2S
         write id addDim getElem 
         imageWidth x0 y0 x1 y1

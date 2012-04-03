@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MagicHash #-}
 module Data.Array.Repa.Repr.Delayed
         ( D, Array(..)
         , fromFunction, toFunction
@@ -11,7 +11,7 @@ import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
-
+import GHC.Exts
 
 -- | Delayed arrays are represented as functions from the index to element value.
 data D
@@ -61,8 +61,8 @@ instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
                 w x0 y0 x1 y1
 
  {-# INLINE [1] fillRangeS #-}
- fillRangeS  (ADelayed (Z :. _h :. w) getElem) marr
-             (Z :. y0 :. x0) (Z :. y1 :. x1)
+ fillRangeS  (ADelayed (Z :. _h :. (I# w)) getElem) marr
+             (Z :. (I# y0) :. (I# x0)) (Z :. (I# y1) :. (I# x1))
   = fillBlock2S (unsafeWriteMArr marr) 
                 getElem
                 w x0 y0 x1 y1
