@@ -108,7 +108,7 @@ foldAllP f z arr
 sumS	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE [2] sumS #-}
+{-# INLINE [5] sumS #-}
 sumS arr 
  = let  result   = foldS (+) 0 arr
    in   result `seq` result
@@ -118,7 +118,7 @@ sumS arr
 sumP	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
-{-# INLINE [2] sumP #-}
+{-# INLINE [5] sumP #-}
 sumP arr 
  = let  result   = foldP (+) 0 arr
    in   result `seq` result
@@ -129,7 +129,7 @@ sumP arr
 sumAllS	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a
 	-> a
-{-# INLINE [2] sumAllS #-}
+{-# INLINE [5] sumAllS #-}
 sumAllS arr = foldAllS (+) 0 arr
 
 
@@ -137,5 +137,5 @@ sumAllS arr = foldAllS (+) 0 arr
 sumAllP	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	=> Array r sh a
 	-> a
-{-# INLINE [2] sumAllP #-}
+{-# INLINE [5] sumAllP #-}
 sumAllP arr = foldAllP (+) 0 arr
