@@ -91,6 +91,7 @@ module Data.Array.Repa
 
 	, module Data.Array.Repa.Slice
 	, slice
+        , extract
 
 	-- from Data.Array.Repa.Operators.Mapping -------------------
         -- ** Structure preserving operations
@@ -118,6 +119,7 @@ module Data.Array.Repa
 	, foldAllP, foldAllS
 	, sumP,     sumS
 	, sumAllP,  sumAllS
+        , equalsP,  equalsS
 	
 	-- from Data.Array.Repa.Operators.Selection ------------------
 	, select)

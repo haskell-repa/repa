@@ -6,6 +6,7 @@ module Data.Array.Repa.Operators.IndexSpace
 	, transpose
 	, extend
 	, slice
+        , extract
 	, backpermute,         unsafeBackpermute
 	, backpermuteDft,      unsafeBackpermuteDft)
 where
@@ -29,7 +30,6 @@ reshape	:: (Shape sh2, Shape sh1
 	-> Array r1 sh1 e
 	-> Array D  sh2 e
 
-{-# INLINE [2] reshape #-}
 reshape sh2 arr
 	| not $ S.size sh2 == S.size (extent arr)
 	= error 
@@ -38,6 +38,7 @@ reshape sh2 arr
 reshape sh2 arr
         = fromFunction sh2 
         $ unsafeIndex arr . fromIndex (extent arr) . toIndex sh2
+{-# INLINE [2] reshape #-}
  
 
 -- | Append two arrays.
@@ -48,7 +49,6 @@ append, (++)
 	-> Array r2 (sh :. Int) e
 	-> Array D  (sh :. Int) e
 
-{-# INLINE [2] append #-}
 append arr1 arr2
  = unsafeTraverse2 arr1 arr2 fnExtent fnElem
  where
@@ -60,9 +60,11 @@ append arr1 arr2
 	fnElem f1 f2 (sh :. i)
       		| i < n		= f1 (sh :. i)
   		| otherwise	= f2 (sh :. (i - n))
+{-# INLINE [2] append #-}
 
-{-# INLINE (++) #-}
+
 (++) arr1 arr2 = append arr1 arr2
+{-# INLINE (++) #-}
 
 
 -- | Transpose the lowest two dimensions of an array.
@@ -73,11 +75,11 @@ transpose
 	=> Array r (sh :. Int :. Int) e
 	-> Array D (sh :. Int :. Int) e
 
-{-# INLINE [2] transpose #-}
 transpose arr
  = unsafeTraverse arr
 	(\(sh :. m :. n) 	-> (sh :. n :.m))
 	(\f -> \(sh :. i :. j) 	-> f (sh :. j :. i))
+{-# INLINE [2] transpose #-}
 
 
 -- | Extend an array, according to a given slice specification.
@@ -90,12 +92,13 @@ extend
 	-> Array r (SliceShape sl) e
 	-> Array D (FullShape sl)  e
 
-{-# INLINE [2] extend #-}
 extend sl arr
 	= unsafeBackpermute
 		(fullOfSlice sl (extent arr))
 		(sliceOfFull sl)
 		arr
+{-# INLINE [2] extend #-}
+
 
 -- | Take a slice from an array, according to a given specification.
 slice	:: ( Slice sl
@@ -106,12 +109,23 @@ slice	:: ( Slice sl
 	-> sl
 	-> Array D (SliceShape sl) e
 
-{-# INLINE [2] slice #-}
 slice arr sl
 	= unsafeBackpermute
 		(sliceOfFull sl (extent arr))
 		(fullOfSlice sl)
 		arr
+{-# INLINE [2] slice #-}
+
+
+-- | Extract a sub-range of elements from an array.
+extract :: (Shape sh, Repr r e)
+        => sh                   -- ^ Starting index.
+        -> sh                   -- ^ Size of result.
+        -> Array r sh e 
+        -> Array D sh e
+extract start sz arr
+        = fromFunction sz (\ix -> arr `unsafeIndex` (addDim start ix))
+{-# INLINE [2] extract #-}
 
 
 -- | Backwards permutation of an array's elements.
@@ -126,13 +140,13 @@ backpermute, unsafeBackpermute
 	-> Array r  sh1 e 	-- ^ Source array.
 	-> Array D  sh2 e
 
-{-# INLINE [2] backpermute #-}
 backpermute newExtent perm arr
 	= traverse arr (const newExtent) (. perm)
+{-# INLINE [2] backpermute #-}
 
-{-# INLINE [2] unsafeBackpermute #-}
 unsafeBackpermute newExtent perm arr
         = unsafeTraverse arr (const newExtent) (. perm)
+{-# INLINE [2] unsafeBackpermute #-}
 
 
 -- | Default backwards permutation of an array's elements.
@@ -148,19 +162,19 @@ backpermuteDft, unsafeBackpermuteDft
 	-> Array r1 sh1 e	-- ^ Source array.
 	-> Array D  sh2 e
 
-{-# INLINE [2] backpermuteDft #-}
 backpermuteDft arrDft fnIndex arrSrc
 	= fromFunction (extent arrDft) fnElem
 	where	fnElem ix
 		 = case fnIndex ix of
 			Just ix'	-> arrSrc `index` ix'
 			Nothing		-> arrDft `index` ix
+{-# INLINE [2] backpermuteDft #-}
 
-{-# INLINE [2] unsafeBackpermuteDft #-}
 unsafeBackpermuteDft arrDft fnIndex arrSrc
         = fromFunction (extent arrDft) fnElem
         where   fnElem ix
                  = case fnIndex ix of
                         Just ix'        -> arrSrc `unsafeIndex` ix'
                         Nothing         -> arrDft `unsafeIndex` ix
+{-# INLINE [2] unsafeBackpermuteDft #-}
 

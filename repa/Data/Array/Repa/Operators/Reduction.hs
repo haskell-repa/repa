@@ -1,15 +1,17 @@
 {-# LANGUAGE BangPatterns, ExplicitForAll, TypeOperators, MagicHash #-}
-
+{-# OPTIONS -fno-warn-orphans #-}
 module Data.Array.Repa.Operators.Reduction
 	( foldS,        foldP
 	, foldAllS,     foldAllP
 	, sumS,         sumP
-	, sumAllS,      sumAllP)
+	, sumAllS,      sumAllP
+        , equalsS,      equalsP)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Index
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Repr.Unboxed
+import Data.Array.Repa.Operators.Mapping        as R
 import Data.Array.Repa.Shape		        as S
 import qualified Data.Vector.Unboxed	        as V
 import qualified Data.Vector.Unboxed.Mutable    as M
@@ -142,4 +144,33 @@ sumAllP	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
 	-> a
 sumAllP = foldAllP (+) 0
 {-# INLINE [3] sumAllP #-}
+
+
+-- Equality ------------------------------------------------------------------
+instance (Shape sh, Repr r e, Eq e) => Eq (Array r sh e) where
+ (==) arr1 arr2
+        =   extent arr1 == extent arr2
+        && (foldAllS (&&) True (R.zipWith (==) arr1 arr2))
+
+
+-- | Check whether two arrays have the same shape and contain equal elements,
+--   in parallel.
+equalsP :: (Shape sh, Repr r1 e, Repr r2 e, Eq e) 
+        => Array r1 sh e 
+        -> Array r2 sh e
+        -> Bool
+equalsP arr1 arr2
+        =   extent arr1 == extent arr2
+        && (foldAllP (&&) True (R.zipWith (==) arr1 arr2))
+
+
+-- | Check whether two arrays have the same shape and contain equal elements,
+--   sequentially.
+equalsS :: (Shape sh, Repr r1 e, Repr r2 e, Eq e) 
+        => Array r1 sh e 
+        -> Array r2 sh e
+        -> Bool
+equalsS arr1 arr2
+        =   extent arr1 == extent arr2
+        && (foldAllS (&&) True (R.zipWith (==) arr1 arr2))
 

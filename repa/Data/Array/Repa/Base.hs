@@ -12,6 +12,7 @@ import Data.Array.Repa.Shape
 data family Array r sh e
 
 
+-- Repr -----------------------------------------------------------------------
 -- | Class of array representations that we can read elements from.
 --
 class Repr r e where
@@ -82,4 +83,6 @@ deepSeqArrays arrs x
          -> a1 `deepSeqArray` a2 `deepSeqArray` a3 `deepSeqArray` a4 `deepSeqArray` x
 
         _ -> error "deepSeqArrays: only works for up to four arrays"
+
+ 
 
