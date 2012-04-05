@@ -12,6 +12,7 @@ import qualified Data.Array.Repa.Repr.Unboxed   as U
 import Data.Array.Repa.Stencil		        as A
 import Data.Array.Repa.Stencil.Dim2	        as A
 import Prelude				        as P
+import System.IO.Unsafe
 
 main 
  = do	args	<- getArgs

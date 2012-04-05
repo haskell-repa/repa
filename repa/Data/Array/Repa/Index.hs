@@ -8,12 +8,8 @@ module Data.Array.Repa.Index
 	, (:.)	(..)
 
 	-- * Common dimensions.
-	, DIM0
-	, DIM1
-	, DIM2
-	, DIM3
-	, DIM4
-	, DIM5)
+	, DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
+        ,       ix1,  ix2,  ix3,  ix4,  ix5)
 where
 import Data.Array.Repa.Shape
 import GHC.Base 		(quotInt, remInt)
@@ -39,7 +35,33 @@ type DIM4	= DIM3 :. Int
 type DIM5	= DIM4 :. Int
 
 
--- Shape ------------------------------------------------------------------------------------------
+-- | Helper for index construction.
+--
+--   Use this instead of explicit constructors like @(Z :. (x :: Int))@.
+--   The this is sometimes needed to ensure that 'x' is constrained to 
+--   be in @Int@.
+ix1 :: Int -> DIM1
+ix1 x = Z :. x
+{-# INLINE ix1 #-}
+
+ix2 :: Int -> Int -> DIM2
+ix2 y x = Z :. y :. x
+{-# INLINE ix2 #-}
+
+ix3 :: Int -> Int -> Int -> DIM3
+ix3 z y x = Z :. z :. y :. x
+{-# INLINE ix3 #-}
+
+ix4 :: Int -> Int -> Int -> Int -> DIM4
+ix4 a z y x = Z :. a :. z :. y :. x
+{-# INLINE ix4 #-}
+
+ix5 :: Int -> Int -> Int -> Int -> Int -> DIM5
+ix5 b a z y x = Z :. b :. a :. z :. y :. x
+{-# INLINE ix5 #-}
+
+
+-- Shape ----------------------------------------------------------------------
 instance Shape Z where
 	{-# INLINE [1] rank #-}
 	rank _			= 0
