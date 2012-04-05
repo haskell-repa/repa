@@ -11,9 +11,8 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Gang
-import Prelude					as P
 import GHC.Base
-import GHC.Exts
+import Prelude                          as P
 
 -- Non-cursored interface -----------------------------------------------------
 -- | Fill a block in a rank-2 array in parallel.
@@ -31,11 +30,11 @@ fillBlock2P
         :: Elt a
 	=> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
         -> (DIM2 -> a)          -- ^ Function to evaluate the element at an index.
-	-> Int			-- ^ Width of the whole array.
-	-> Int			-- ^ x0 lower left corner of block to fill
-	-> Int			-- ^ y0 
-	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1
+	-> Int#			-- ^ Width of the whole array.
+	-> Int#			-- ^ x0 lower left corner of block to fill
+	-> Int#			-- ^ y0 
+	-> Int#			-- ^ x1 upper right corner of block to fill
+	-> Int#			-- ^ y1
         -> IO ()
 
 {-# INLINE [0] fillBlock2P #-}
@@ -92,27 +91,27 @@ fillCursoredBlock2P
 	-> (DIM2   -> cursor)		-- ^ Make a cursor to a particular element.
 	-> (DIM2   -> cursor -> cursor)	-- ^ Shift the cursor by an offset.
 	-> (cursor -> a)		-- ^ Function to evaluate the element at an index.
-	-> Int			-- ^ Width of the whole array.
-	-> Int			-- ^ x0 lower left corner of block to fill
-	-> Int			-- ^ y0
-	-> Int			-- ^ x1 upper right corner of block to fill
-	-> Int			-- ^ y1
+	-> Int#			-- ^ Width of the whole array.
+	-> Int#			-- ^ x0 lower left corner of block to fill
+	-> Int#			-- ^ y0
+	-> Int#			-- ^ x1 upper right corner of block to fill
+	-> Int#			-- ^ y1
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2P #-}
 fillCursoredBlock2P
 	!write
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
-	!(I# imageWidth) !(I# x0) !(I# y0) !(I# x1) !(I# y1)
+	!imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
- where	!(I# threads)   = gangSize theGang
-	!blockWidth     = x1 -# x0 +# 1#
+ where	!(I# threads)  = gangSize theGang
+	!blockWidth    = x1 -# x0 +# 1#
 
 	-- All columns have at least this many pixels.
-	!colChunkLen	= blockWidth `quotInt#` threads
+	!colChunkLen   = blockWidth `quotInt#` threads
 
 	-- Extra pixels that we have to divide between some of the threads.
-	!colChunkSlack	= blockWidth `remInt#` threads
+	!colChunkSlack = blockWidth `remInt#` threads
 
 	-- Get the starting pixel of a column in the image.
 	{-# INLINE colIx #-}

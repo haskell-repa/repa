@@ -60,8 +60,8 @@ instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
 
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
- fillRangeP  (ADelayed (Z :. _h :. w) getElem) marr
-             (Z :. y0 :. x0) (Z :. y1 :. x1)
+ fillRangeP  (ADelayed (Z :. _h :. (I# w)) getElem) marr
+             (Z :. (I# y0) :. (I# x0)) (Z :. (I# y1) :. (I# x1))
   = marr `deepSeqMArr` 
     do  traceEventIO "Repa.fillRangeP[Delayed]: start"
         fillBlock2P (unsafeWriteMArr marr) 
