@@ -46,8 +46,8 @@ import System.IO.Unsafe
 
 -- | Parallel computation of array elements.
 --
---   * The `Fill` class is defined so that the source array must have a
---     delayed representation (`D` or `C`)
+--   * The source array must have a delayed representation like `D`, `C` or `P`, 
+--     and the result a manifest representation like `U` or `F`.
 --
 --   * If you want to copy data between manifest representations then use
 --    `copyP` instead.
@@ -112,15 +112,22 @@ copyS arr1 = computeS $ delay arr1
 --   * Haskell's laziness means that applications of `computeP` and `copyP` are
 --     automatically suspended.
 --
---   * Laziness can be problematic for data parallel programs, because we want
+--   * This is problematic for data parallel programs, because we want
 --     each array to be constructed in parallel before moving onto the next one.
---   
---   For example:
 --
---   @ do  arr2 <- now $ computeP $ map f arr1
---     arr3 <- now $ computeP $ zipWith arr2 arr1
---     return arr3
+--   If you're not sure, then just use the following programming pattern:
+--
+--   @ someFunction arr1 arr2
+--  = arr1 \`deepSeqArray\` arr2 \`deepSeqArray\`
+--    do arr3 <- now $ computeP $ map f arr1
+--       arr4 <- now $ computeP $ zipWith g arr3 arr2
+--       return arr4
 --   @
+--
+--  The @someFunction@ is your own function. Apply `deepSeqArray` to argument arrays, 
+--  and apply `now` to arrays constructed with @compute@ or @copy@ functions. You can
+--  do this in any state-like monad: `IO`, `ST` and @Control.Monad.State.Strict@ are all
+--  good choices.
 --
 now     :: (Shape sh, Repr r e, Monad m)
         => Array r sh e -> m (Array r sh e)
