@@ -40,30 +40,29 @@ data instance Array C sh e
 -- Repr -----------------------------------------------------------------------
 -- | Compute elements of a cursored array.
 instance Repr C a where
- {-# INLINE index #-}
  index (ACursored _ makec _ loadc)
         = loadc . makec
+ {-# INLINE index #-}
 
- {-# INLINE unsafeIndex #-}
  unsafeIndex    = index
+ {-# INLINE unsafeIndex #-}
  
- {-# INLINE linearIndex #-}
  linearIndex (ACursored sh makec _ loadc)
         = loadc . makec . fromIndex sh
+ {-# INLINE linearIndex #-}
 
- {-# INLINE extent #-}
  extent (ACursored sh _ _ _)
         = sh
+ {-# INLINE extent #-}
         
- {-# INLINE deepSeqArray #-}
  deepSeqArray (ACursored sh makec shiftc loadc) y
   = sh `deepSeq` makec  `seq` shiftc `seq` loadc `seq` y
+ {-# INLINE deepSeqArray #-}
 
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an rank-2 array. 
 instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
- {-# INLINE fillP #-}
  fillP (ACursored (Z :. h :. w) makec shiftc loadc) marr
   = do  traceEventIO "Repa.fillP[Cursored]: start"
         fillCursoredBlock2P 
@@ -71,8 +70,8 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
                 makec shiftc loadc
                 w 0 0 (w - 1) (h - 1) 
         traceEventIO "Repa.fillP[Cursored]: end"
+ {-# INLINE fillP #-}
         
- {-# INLINE fillS #-}
  fillS (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
   = do  traceEventIO "Repa.fillS[Cursored]: start"
         fillCursoredBlock2S 
@@ -80,11 +79,11 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
                 makec shiftc loadc
                 w 0# 0# (w -# 1#) (h -# 1#) 
         traceEventIO "Repa.fillS[Cursored]: end"
+ {-# INLINE fillS #-}
         
 
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
- {-# INLINE fillRangeP #-}
  fillRangeP  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
   = do  traceEventIO "Repa.fillRangeP[Cursored]: start"
@@ -93,8 +92,8 @@ instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
                 makec shiftc loadc
                 w x0 y0 x1 y1
         traceEventIO "Repa.fillRangeP[Cursored]: end"
+ {-# INLINE fillRangeP #-}
         
- {-# INLINE fillRangeS #-}
  fillRangeS  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
              (Z :. (I# y0) :. (I# x0)) 
              (Z :. (I# y1) :. (I# x1))
@@ -104,6 +103,7 @@ instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
                 makec shiftc loadc
                 w x0 y0 x1 y1
         traceEventIO "Repa.fillRangeS[Cursored]: end"
+ {-# INLINE fillRangeS #-}
         
 
 -- Conversions ----------------------------------------------------------------

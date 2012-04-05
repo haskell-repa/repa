@@ -22,7 +22,6 @@ data instance Array F sh e
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a foreign buffer.
 instance Storable a => Repr F a where
- {-# INLINE linearIndex #-}
  linearIndex (AForeignPtr _ len fptr) ix
   | ix < len  
         = unsafePerformIO 
@@ -31,21 +30,22 @@ instance Storable a => Repr F a where
   
   | otherwise
   = error "Repa: foreign array index out of bounds"
-
- {-# INLINE unsafeLinearIndex #-}
+ {-# INLINE linearIndex #-}
+ 
  unsafeLinearIndex (AForeignPtr _ _ fptr) ix
         = unsafePerformIO
         $ withForeignPtr fptr 
         $ \ptr -> peekElemOff ptr ix
+ {-# INLINE unsafeLinearIndex #-}
 
- {-# INLINE extent #-}
  extent (AForeignPtr sh _ _)
         = sh
+ {-# INLINE extent #-}
 
- {-# INLINE deepSeqArray #-}
  deepSeqArray (AForeignPtr sh len fptr) x 
   = sh `deepSeq` len `seq` fptr `seq` x
-
+ {-# INLINE deepSeqArray #-}
+ 
 
 -- Fill -----------------------------------------------------------------------
 -- | Filling of foreign buffers.
@@ -53,7 +53,6 @@ instance Storable e => Fillable F e where
  data MArr F e 
   = FPArr !Int !(ForeignPtr e)
 
- {-# INLINE newMArr #-}
  newMArr n
   = do  let (proxy :: e) = undefined
         ptr              <- mallocBytes (sizeOf proxy * n)
@@ -61,18 +60,19 @@ instance Storable e => Fillable F e where
         
         fptr             <- newForeignPtr finalizerFree ptr
         return           $ FPArr n fptr
+ {-# INLINE newMArr #-}
 
- {-# INLINE unsafeWriteMArr #-}
  unsafeWriteMArr (FPArr _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
+ {-# INLINE unsafeWriteMArr #-}
 
- {-# INLINE unsafeFreezeMArr #-}
  unsafeFreezeMArr !sh (FPArr len fptr)     
   =     return  $ AForeignPtr sh len fptr
+ {-# INLINE unsafeFreezeMArr #-}
 
- {-# INLINE deepSeqMArr #-}
  deepSeqMArr !(FPArr _ ptr) x
   = Unsafe.unsafeForeignPtrToPtr ptr `seq` x
+ {-# INLINE deepSeqMArr #-}
 
 
 -- Conversions ----------------------------------------------------------------
@@ -80,16 +80,16 @@ instance Storable e => Fillable F e where
 fromForeignPtr
         :: Shape sh
         => sh -> ForeignPtr e -> Array F sh e
-{-# INLINE fromForeignPtr #-}
 fromForeignPtr !sh !fptr
         = AForeignPtr sh (size sh) fptr
+{-# INLINE fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
 toForeignPtr :: Array F sh e -> ForeignPtr e
-{-# INLINE toForeignPtr #-}
 toForeignPtr (AForeignPtr _ _ fptr)
         = fptr
+{-# INLINE toForeignPtr #-}
 
 
 -- | Compute an array sequentially and write the elements into a foreign
@@ -98,9 +98,9 @@ toForeignPtr (AForeignPtr _ _ fptr)
 computeIntoS
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
-{-# INLINE computeIntoS #-}
 computeIntoS !fptr !arr
  = fillS arr (FPArr 0 fptr)
+{-# INLINE computeIntoS #-}
 
 
 -- | Compute an array in parallel and write the elements into a foreign
@@ -109,7 +109,7 @@ computeIntoS !fptr !arr
 computeIntoP
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
-{-# INLINE computeIntoP #-}
 computeIntoP !fptr !arr
  = fillP arr (FPArr 0 fptr)
+{-# INLINE computeIntoP #-}
 

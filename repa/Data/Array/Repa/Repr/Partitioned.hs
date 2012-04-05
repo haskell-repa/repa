@@ -34,49 +34,49 @@ data Range sh
                 (sh -> Bool)               -- predicate to check whether were in range
 
 -- | Check whether an index is within the given range.
-{-# INLINE inRange #-}
 inRange :: Range sh -> sh -> Bool
 inRange (Range _ _ p) ix
         = p ix
+{-# INLINE inRange #-}
 
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a partitioned array.
 instance (Repr r1 e, Repr r2 e) => Repr (P r1 r2) e where
- {-# INLINE index #-}
  index (APart _ range arr1 arr2) ix
    | inRange range ix   = index arr1 ix
    | otherwise          = index arr2 ix
+ {-# INLINE index #-}
 
- {-# INLINE linearIndex #-}
  linearIndex arr@(APart sh _ _ _) ix
         = index arr $ fromIndex sh ix
+ {-# INLINE linearIndex #-}
 
- {-# INLINE extent #-}
  extent (APart sh _ _ _) 
         = sh
+ {-# INLINE extent #-}
 
- {-# INLINE deepSeqArray #-}
  deepSeqArray (APart sh range arr1 arr2) y
   = sh `deepSeq` range `deepSeqRange` arr1 `deepSeqArray` arr2 `deepSeqArray` y
+ {-# INLINE deepSeqArray #-}
 
 
-{-# INLINE deepSeqRange #-}
 deepSeqRange :: Shape sh => Range sh -> b -> b
 deepSeqRange (Range low high f) y
         = low `deepSeq` high `deepSeq` f `seq` y
+{-# INLINE deepSeqRange #-}
 
 
 -- Fill -----------------------------------------------------------------------
 instance ( FillRange r1 r3 sh e, Fill r2 r3 sh e
          , Fillable r3 e)
         => Fill (P r1 r2) r3 sh e where
- {-# INLINE fillP #-}
  fillP (APart _ (Range ix10 ix11 _) arr1 arr2) marr
   = do  fillRangeP arr1 marr ix10 ix11
         fillP arr2 marr
+ {-# INLINE fillP #-}
 
- {-# INLINE fillS #-}
  fillS (APart _ (Range ix10 ix11 _) arr1 arr2) marr
   = do  fillRangeS arr1 marr ix10 ix11
         fillS arr2 marr
+ {-# INLINE fillS #-}

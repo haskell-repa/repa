@@ -34,21 +34,21 @@ deriving instance (Show sh, Show e, U.Unbox e)
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from an unboxed vector array.
 instance U.Unbox a => Repr U a where
- {-# INLINE linearIndex #-}
  linearIndex (AUnboxed _ vec) ix
         = vec U.! ix
+ {-# INLINE linearIndex #-}
 
- {-# INLINE unsafeLinearIndex #-}
  unsafeLinearIndex (AUnboxed _ vec) ix
         = vec `U.unsafeIndex` ix
+ {-# INLINE unsafeLinearIndex #-}
 
- {-# INLINE extent #-}
  extent (AUnboxed sh _)
         = sh
+ {-# INLINE extent #-}
 
- {-# INLINE deepSeqArray #-}
  deepSeqArray (AUnboxed sh vec) x 
   = sh `deepSeq` vec `seq` x
+ {-# INLINE deepSeqArray #-}
 
 
 -- Fill -----------------------------------------------------------------------
@@ -57,22 +57,22 @@ instance U.Unbox e => Fillable U e where
  data MArr U e 
   = UMArr (UM.IOVector e)
 
- {-# INLINE newMArr #-}
  newMArr n
   = liftM UMArr (UM.new n)
+ {-# INLINE newMArr #-}
 
- {-# INLINE unsafeWriteMArr #-}
  unsafeWriteMArr (UMArr v) ix
   = UM.unsafeWrite v ix
+ {-# INLINE unsafeWriteMArr #-}
 
- {-# INLINE unsafeFreezeMArr #-}
  unsafeFreezeMArr sh (UMArr mvec)     
   = do  vec     <- U.unsafeFreeze mvec
         return  $  AUnboxed sh vec
+ {-# INLINE unsafeFreezeMArr #-}
 
- {-# INLINE deepSeqMArr #-}
  deepSeqMArr (UMArr vec) x
   = vec `seq` x
+ {-# INLINE deepSeqMArr #-}
 
 
 -- Conversions ----------------------------------------------------------------
@@ -83,8 +83,8 @@ instance U.Unbox e => Fillable U e where
 computeUnboxedS
         :: Fill r1 U sh e
         => Array r1 sh e -> Array U sh e
-{-# INLINE computeUnboxedS #-}
 computeUnboxedS = computeS
+{-# INLINE computeUnboxedS #-}
 
 
 -- | Parallel computation of array elements.
@@ -94,8 +94,8 @@ computeUnboxedS = computeS
 computeUnboxedP
         :: Fill r1 U sh e
         => Array r1 sh e -> Array U sh e
-{-# INLINE computeUnboxedP #-}
 computeUnboxedP = computeP
+{-# INLINE computeUnboxedP #-}
 
 
 -- | O(n). Convert a list to an unboxed vector array.
@@ -105,26 +105,27 @@ computeUnboxedP = computeP
 fromListUnboxed
         :: (Shape sh, U.Unbox a)
         => sh -> [a] -> Array U sh a
-{-# INLINE fromListUnboxed #-}
 fromListUnboxed = R.fromList
+{-# INLINE fromListUnboxed #-}
 
 
 -- | O(1). Wrap an unboxed vector as an array.
 fromUnboxed
         :: (Shape sh, U.Unbox e)
         => sh -> U.Vector e -> Array U sh e
-{-# INLINE fromUnboxed #-}
 fromUnboxed sh vec
         = AUnboxed sh vec
+{-# INLINE fromUnboxed #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
 toUnboxed
         :: U.Unbox e
         => Array U sh e -> U.Vector e
-{-# INLINE toUnboxed #-}
 toUnboxed (AUnboxed _ vec)
         = vec
+{-# INLINE toUnboxed #-}
+
 
 -- Zip ------------------------------------------------------------------------
 -- | O(1). Zip some unboxed arrays.
@@ -132,10 +133,10 @@ toUnboxed (AUnboxed _ vec)
 zip     :: (Shape sh, U.Unbox a, U.Unbox b)
         => Array U sh a -> Array U sh b
         -> Array U sh (a, b)
-{-# INLINE zip #-}
 zip (AUnboxed sh1 vec1) (AUnboxed sh2 vec2)
  | sh1 /= sh2   = error "Repa: zip array shapes not identical"
  | otherwise    = AUnboxed sh1 (U.zip vec1 vec2)
+{-# INLINE zip #-}
 
 
 -- | O(1). Zip some unboxed arrays.
@@ -143,11 +144,11 @@ zip (AUnboxed sh1 vec1) (AUnboxed sh2 vec2)
 zip3    :: (Shape sh, U.Unbox a, U.Unbox b, U.Unbox c)
         => Array U sh a -> Array U sh b -> Array U sh c
         -> Array U sh (a, b, c)
-{-# INLINE zip3 #-}
 zip3 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3)
  | sh1 /= sh2 || sh1 /= sh3
  = error "Repa: zip array shapes not identical"
  | otherwise    = AUnboxed sh1 (U.zip3 vec1 vec2 vec3)
+{-# INLINE zip3 #-}
 
 
 -- | O(1). Zip some unboxed arrays.
@@ -155,11 +156,11 @@ zip3 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3)
 zip4    :: (Shape sh, U.Unbox a, U.Unbox b, U.Unbox c, U.Unbox d)
         => Array U sh a -> Array U sh b -> Array U sh c -> Array U sh d
         -> Array U sh (a, b, c, d)
-{-# INLINE zip4 #-}
 zip4 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3) (AUnboxed sh4 vec4)
  | sh1 /= sh2 || sh1 /= sh3 || sh1 /= sh4
  = error "Repa: zip array shapes not identical"
  | otherwise    = AUnboxed sh1 (U.zip4 vec1 vec2 vec3 vec4)
+{-# INLINE zip4 #-}
 
 
 -- | O(1). Zip some unboxed arrays.
@@ -167,11 +168,11 @@ zip4 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3) (AUnboxed sh4 v
 zip5    :: (Shape sh, U.Unbox a, U.Unbox b, U.Unbox c, U.Unbox d, U.Unbox e)
         => Array U sh a -> Array U sh b -> Array U sh c -> Array U sh d -> Array U sh e
         -> Array U sh (a, b, c, d, e)
-{-# INLINE zip5 #-}
 zip5 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3) (AUnboxed sh4 vec4) (AUnboxed sh5 vec5)
  | sh1 /= sh2 || sh1 /= sh3 || sh1 /= sh4 || sh1 /= sh5
  = error "Repa: zip array shapes not identical"
  | otherwise    = AUnboxed sh1 (U.zip5 vec1 vec2 vec3 vec4 vec5)
+{-# INLINE zip5 #-}
 
 
 -- | O(1). Zip some unboxed arrays.
@@ -179,11 +180,11 @@ zip5 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3) (AUnboxed sh4 v
 zip6    :: (Shape sh, U.Unbox a, U.Unbox b, U.Unbox c, U.Unbox d, U.Unbox e, U.Unbox f)
         => Array U sh a -> Array U sh b -> Array U sh c -> Array U sh d -> Array U sh e -> Array U sh f
         -> Array U sh (a, b, c, d, e, f)
-{-# INLINE zip6 #-}
 zip6 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3) (AUnboxed sh4 vec4) (AUnboxed sh5 vec5) (AUnboxed sh6 vec6)
  | sh1 /= sh2 || sh1 /= sh3 || sh1 /= sh4 || sh1 /= sh5 || sh1 /= sh6
  = error "Repa: zip array shapes not identical"
  | otherwise    = AUnboxed sh1 (U.zip6 vec1 vec2 vec3 vec4 vec5 vec6)
+{-# INLINE zip6 #-}
  
 
 -- Unzip ----------------------------------------------------------------------
@@ -191,47 +192,47 @@ zip6 (AUnboxed sh1 vec1) (AUnboxed sh2 vec2) (AUnboxed sh3 vec3) (AUnboxed sh4 v
 unzip   :: (U.Unbox a, U.Unbox b)
         => Array U sh (a, b)
         -> (Array U sh a, Array U sh b)
-{-# INLINE unzip #-}
 unzip (AUnboxed sh vec)
  = let  (as, bs)        = U.unzip vec
    in   (AUnboxed sh as, AUnboxed sh bs)
+{-# INLINE unzip #-}
 
 
 -- | O(1). Unzip an unboxed array.
 unzip3   :: (U.Unbox a, U.Unbox b, U.Unbox c)
         => Array U sh (a, b, c)
         -> (Array U sh a, Array U sh b, Array U sh c)
-{-# INLINE unzip3 #-}
 unzip3 (AUnboxed sh vec)
  = let  (as, bs, cs) = U.unzip3 vec
    in   (AUnboxed sh as, AUnboxed sh bs, AUnboxed sh cs)
+{-# INLINE unzip3 #-}
 
 
 -- | O(1). Unzip an unboxed array.
 unzip4   :: (U.Unbox a, U.Unbox b, U.Unbox c, U.Unbox d)
         => Array U sh (a, b, c, d)
         -> (Array U sh a, Array U sh b, Array U sh c, Array U sh d)
-{-# INLINE unzip4 #-}
 unzip4 (AUnboxed sh vec)
  = let  (as, bs, cs, ds) = U.unzip4 vec
    in   (AUnboxed sh as, AUnboxed sh bs, AUnboxed sh cs, AUnboxed sh ds)
+{-# INLINE unzip4 #-}
 
 
 -- | O(1). Unzip an unboxed array.
 unzip5   :: (U.Unbox a, U.Unbox b, U.Unbox c, U.Unbox d, U.Unbox e)
         => Array U sh (a, b, c, d, e)
         -> (Array U sh a, Array U sh b, Array U sh c, Array U sh d, Array U sh e)
-{-# INLINE unzip5 #-}
 unzip5 (AUnboxed sh vec)
  = let  (as, bs, cs, ds, es) = U.unzip5 vec
    in   (AUnboxed sh as, AUnboxed sh bs, AUnboxed sh cs, AUnboxed sh ds, AUnboxed sh es)
+{-# INLINE unzip5 #-}
 
 
 -- | O(1). Unzip an unboxed array.
 unzip6  :: (U.Unbox a, U.Unbox b, U.Unbox c, U.Unbox d, U.Unbox e, U.Unbox f)
         => Array U sh (a, b, c, d, e, f)
         -> (Array U sh a, Array U sh b, Array U sh c, Array U sh d, Array U sh e, Array U sh f)
-{-# INLINE unzip6 #-}
 unzip6 (AUnboxed sh vec)
  = let  (as, bs, cs, ds, es, fs) = U.unzip6 vec
    in   (AUnboxed sh as, AUnboxed sh bs, AUnboxed sh cs, AUnboxed sh ds, AUnboxed sh es, AUnboxed sh fs)
+{-# INLINE unzip6 #-}

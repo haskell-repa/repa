@@ -24,21 +24,21 @@ deriving instance Show sh
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a `ByteString`.
 instance Repr B Word8 where
- {-# INLINE linearIndex #-}
  linearIndex (AByteString _ bs) ix
         = bs `B.index` ix
+ {-# INLINE linearIndex #-}
 
- {-# INLINE unsafeLinearIndex #-}
  unsafeLinearIndex (AByteString _ bs) ix
         = bs `BU.unsafeIndex` ix
+ {-# INLINE unsafeLinearIndex #-}
 
- {-# INLINE extent #-}
  extent (AByteString sh _)
         = sh
+ {-# INLINE extent #-}
 
- {-# INLINE deepSeqArray #-}
  deepSeqArray (AByteString sh bs) x 
   = sh `deepSeq` bs `seq` x
+ {-# INLINE deepSeqArray #-}
 
 
 -- Conversions ----------------------------------------------------------------
@@ -46,12 +46,12 @@ instance Repr B Word8 where
 fromByteString
         :: Shape sh
         => sh -> ByteString -> Array B sh Word8
-{-# INLINE fromByteString #-}
 fromByteString sh bs
         = AByteString sh bs
+{-# INLINE fromByteString #-}
 
 
 -- | O(1). Unpack a `ByteString` from an array.
 toByteString :: Array B sh Word8 -> ByteString
-{-# INLINE toByteString #-}
 toByteString (AByteString _ bs) = bs
+{-# INLINE toByteString #-}

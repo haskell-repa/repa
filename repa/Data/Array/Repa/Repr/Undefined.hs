@@ -19,19 +19,19 @@ data instance Array X sh e
 -- | Undefined array elements. Inspecting them yields `error`.
 --
 instance Repr X e where
- {-# INLINE deepSeqArray #-}
  deepSeqArray _ x
         = x
+ {-# INLINE deepSeqArray #-}
 
- {-# INLINE extent #-}
  extent (AUndefined sh) 
         = sh
+ {-# INLINE extent #-}
 
- {-# INLINE index #-}
  index (AUndefined _) _        = error "Repa: array element is undefined."
+ {-# INLINE index #-}
         
- {-# INLINE linearIndex #-}
  linearIndex (AUndefined _) _  = error "Repa: array element is undefined."
+ {-# INLINE linearIndex #-}
  
 
 instance (Shape sh, Fillable r2 e, Num e) => Fill X r2 sh e where
