@@ -8,6 +8,7 @@ module Data.Array.Repa.Specialised.Dim2
 	, makeBordered2)
 where
 import Data.Array.Repa.Index
+import Data.Array.Repa.Base
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined
 
@@ -70,10 +71,9 @@ clampToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 --   The two arrays must have the same extent.
 --   The border must be the same width on all sides.
 --
---   TODO: Check arrays have same extent.
---
 makeBordered2
-	:: DIM2			-- ^ Extent of array.
+	:: (Repr r1 a, Repr r2 a)
+        => DIM2			-- ^ Extent of array.
 	-> Int			-- ^ Width of border.
 	-> Array r1 DIM2 a	-- ^ Array for internal elements.
 	-> Array r2 DIM2 a	-- ^ Array for border elements.
@@ -81,21 +81,21 @@ makeBordered2
 
 {-# INLINE makeBordered2 #-}
 makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth arrInternal arrBorder
- = let
+ = checkDims `seq` 
+   let
 	-- minimum and maximum indicies of values in the inner part of the image.
 	!xMin		= borderWidth
 	!yMin		= borderWidth
 	!xMax		= aWidth  - borderWidth  - 1
 	!yMax		= aHeight - borderWidth - 1
 
-
-	{-# INLINE inInternal #-}
 	inInternal (Z :. y :. x)
 		=  x >= xMin && x <= xMax
 		&& y >= yMin && y <= yMax
+        {-# INLINE inInternal #-}
 
-	{-# INLINE inBorder #-}
 	inBorder 	= not . inInternal
+        {-# INLINE inBorder #-}
 
    in	
     --  internal region
@@ -107,3 +107,11 @@ makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth arrInternal arrBorder
     $   APart sh (Range (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)   inBorder)   arrBorder
     $   APart sh (Range (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) inBorder)   arrBorder
     $   AUndefined sh
+
+ where
+        checkDims
+         = if (extent arrInternal) == (extent arrBorder)
+                then ()
+                else error "makeBordered2: internal and border arrays have different extents"
+        {-# NOINLINE checkDims #-}
+        --  NOINLINE because we don't want the branch in the core code.
