@@ -96,31 +96,36 @@ selectChunkedP !fnMatch !fnProduce !len
 	-- Fill the given chunk with elements selected from this range of indices.
 	makeChunk :: IORef (IOVector a) -> Int -> Int -> IO ()
 	makeChunk !ref !ixSrc !ixSrcEnd
-	 = do	vecDst	<- VM.new (len `div` threads)
-		vecDst'	<- fillChunk ixSrc ixSrcEnd vecDst 0 (VM.length vecDst - 1)
-		writeIORef ref vecDst'
+         | ixSrc > ixSrcEnd
+         = do  vecDst   <- VM.new 0
+               writeIORef ref vecDst
+
+         | otherwise
+	 = do  vecDst	<- VM.new (len `div` threads)
+               vecDst'	<- fillChunk ixSrc ixSrcEnd vecDst 0 (VM.length vecDst)
+	       writeIORef ref vecDst'
 
 
 	-- The main filling loop.
 	fillChunk :: Int -> Int -> IOVector a -> Int -> Int -> IO (IOVector a)
-	fillChunk !ixSrc !ixSrcEnd !vecDst !ixDst !ixDstEnd
+	fillChunk !ixSrc !ixSrcEnd !vecDst !ixDst !ixDstLen
          -- If we've finished selecting elements, then slice the vector down
          -- so it doesn't have any empty space at the end.
-	 | ixSrc >= ixSrcEnd
+	 | ixSrc > ixSrcEnd
 	 = 	return	$ VM.slice 0 ixDst vecDst
 
 	 -- If we've run out of space in the chunk then grow it some more.
-	 | ixDst >= ixDstEnd
-	 = do	let ixDstEnd'	= VM.length vecDst * 2 - 1
-		vecDst' 	<- VM.grow vecDst (ixDstEnd + 1)
-		fillChunk (ixSrc + 1) ixSrcEnd vecDst' (ixDst + 1) ixDstEnd'
+	 | ixDst >= ixDstLen
+	 = do	let ixDstLen'	= (VM.length vecDst + 1) * 2
+		vecDst' 	<- VM.grow vecDst ixDstLen'
+		fillChunk ixSrc ixSrcEnd vecDst' ixDst ixDstLen'
 
 	 -- We've got a maching element, so add it to the chunk.
 	 | fnMatch ixSrc
 	 = do	VM.unsafeWrite vecDst ixDst (fnProduce ixSrc)
-		fillChunk (ixSrc + 1) ixSrcEnd vecDst (ixDst + 1)  ixDstEnd
+		fillChunk (ixSrc + 1) ixSrcEnd vecDst (ixDst + 1) ixDstLen
 
 	 -- The element doesnt match, so keep going.
 	 | otherwise
-	 =	fillChunk (ixSrc + 1) ixSrcEnd vecDst ixDst ixDstEnd
+	 =	fillChunk (ixSrc + 1) ixSrcEnd vecDst ixDst ixDstLen
 

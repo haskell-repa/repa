@@ -108,25 +108,25 @@ fillCursoredBlock2P
 	!blockWidth    = x1 -# x0 +# 1#
 
 	-- All columns have at least this many pixels.
-	!colChunkLen   = blockWidth `quotInt#` threads
+	!colChunkLen   = I# (blockWidth `quotInt#` threads)
 
 	-- Extra pixels that we have to divide between some of the threads.
-	!colChunkSlack = blockWidth `remInt#` threads
+	!colChunkSlack = I# (blockWidth `remInt#` threads)
 
 	-- Get the starting pixel of a column in the image.
 	{-# INLINE colIx #-}
 	colIx !ix
-	 | ix <# colChunkSlack	= x0 +#  ix *# (colChunkLen +# 1#)
-	 | otherwise		= x0 +# (ix *# colChunkLen) +# colChunkSlack
+	 | ix < colChunkSlack = (I# x0) +  ix * (colChunkLen  + 1)
+	 | otherwise	      = (I# x0) + (ix * colChunkLen) + colChunkSlack
 
 	-- Give one column to each thread
 	{-# INLINE fillBlock #-}
 	fillBlock :: Int -> IO ()
-	fillBlock !(I# ix)
-	 = let	!x0'	= colIx ix
-		!x1'	= colIx (ix +# 1#) -# 1#
-		!y0'	= y0
-		!y1'	= y1
+	fillBlock !ix
+	 = let	!(I# x0')	= colIx ix
+		!(I# x1')	= colIx (ix + 1) - 1
+		!y0'	  = y0
+		!y1'	  = y1
 	   in	fillCursoredBlock2S
 			write
 			makeCursorFCB shiftCursorFCB getElemFCB
