@@ -53,7 +53,9 @@ instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
  {-# INLINE [4] fillS #-}
  fillS (ADelayed sh getElem) marr
   = marr `deepSeqMArr` 
-    fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
+    do  traceEventIO "Repa.fillS[Delayed]: start"
+        fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
+        traceEventIO "Repa.fillS[Delayed]: end"
 
 
 -- | Compute a range of elements in a rank-2 array.
@@ -72,9 +74,11 @@ instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
  fillRangeS  (ADelayed (Z :. _h :. (I# w)) getElem) marr
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# y1) :. (I# x1))
   = marr `deepSeqMArr`
-    fillBlock2S (unsafeWriteMArr marr) 
+    do  traceEventIO "Repa.fillRangeS[Delayed]: start"
+        fillBlock2S (unsafeWriteMArr marr) 
                 getElem
                 w x0 y0 x1 y1
+        traceEventIO "Repa.fillRangeS[Delayed]: end"
 
 
 -- Conversions ----------------------------------------------------------------
@@ -85,7 +89,8 @@ fromFunction sh f
         = ADelayed sh f 
 
 
--- | O(1). Produce the extent of an array and a function to retrieve an arbitrary element.
+-- | O(1). Produce the extent of an array and a function to retrieve an
+--         arbitrary element.
 toFunction 
         :: (Shape sh, Repr r1 a)
         => Array r1 sh a -> (sh, sh -> a)

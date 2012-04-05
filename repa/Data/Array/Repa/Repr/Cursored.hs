@@ -12,6 +12,7 @@ import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
 import GHC.Exts
+import Debug.Trace
 
 -- | Cursored Arrays.
 --   These are produced by Repa's stencil functions, and help the fusion
@@ -64,38 +65,47 @@ instance Repr C a where
 instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
  {-# INLINE fillP #-}
  fillP (ACursored (Z :. h :. w) makec shiftc loadc) marr
-  = fillCursoredBlock2P 
+  = do  traceEventIO "Repa.fillP[Cursored]: start"
+        fillCursoredBlock2P 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w 0 0 (w - 1) (h - 1) 
-
+        traceEventIO "Repa.fillP[Cursored]: end"
+        
  {-# INLINE fillS #-}
  fillS (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
-  = fillCursoredBlock2S 
+  = do  traceEventIO "Repa.fillS[Cursored]: start"
+        fillCursoredBlock2S 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w 0# 0# (w -# 1#) (h -# 1#) 
-
+        traceEventIO "Repa.fillS[Cursored]: end"
+        
 
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
  {-# INLINE fillRangeP #-}
  fillRangeP  (ACursored (Z :. _h :. w) makec shiftc loadc) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
-  = fillCursoredBlock2P 
+  = do  traceEventIO "Repa.fillRangeP[Cursored]: start"
+        fillCursoredBlock2P 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 x1 y1
-
+        traceEventIO "Repa.fillRangeP[Cursored]: end"
+        
  {-# INLINE fillRangeS #-}
  fillRangeS  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
              (Z :. (I# y0) :. (I# x0)) 
              (Z :. (I# y1) :. (I# x1))
-  = fillCursoredBlock2S
+  = do  traceEventIO "Repa.fillRangeS[Cursored]: start"
+        fillCursoredBlock2S
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 x1 y1
- 
+        traceEventIO "Repa.fillRangeS[Cursored]: end"
+        
+
 -- Conversions ----------------------------------------------------------------
 -- | Define a new cursored array.
 makeCursored 
@@ -107,3 +117,4 @@ makeCursored
 
 {-# INLINE makeCursored #-}
 makeCursored = ACursored
+
