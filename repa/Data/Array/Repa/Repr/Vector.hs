@@ -64,6 +64,9 @@ instance Fillable V e where
   = do  vec     <- V.unsafeFreeze mvec
         return  $  AVector sh vec
 
+ {-# INLINE deepSeqMArr #-}
+ deepSeqMArr !_vec x
+  = x
 
 -- Conversions ----------------------------------------------------------------
 -- | Sequential computation of array elements.

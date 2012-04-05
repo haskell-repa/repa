@@ -70,6 +70,10 @@ instance U.Unbox e => Fillable U e where
   = do  vec     <- U.unsafeFreeze mvec
         return  $  AUnboxed sh vec
 
+ {-# INLINE deepSeqMArr #-}
+ deepSeqMArr (UMArr vec) x
+  = vec `seq` x
+
 
 -- Conversions ----------------------------------------------------------------
 -- | Sequential computation of array elements..

@@ -12,6 +12,7 @@ import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import System.IO.Unsafe
+import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 
 -- | Arrays represented as foreign buffers in the C heap.
 data F
@@ -63,12 +64,15 @@ instance Storable e => Fillable F e where
 
  {-# INLINE unsafeWriteMArr #-}
  unsafeWriteMArr (FPArr _ fptr) !ix !x
-  = withForeignPtr fptr
-  $ \ptr -> pokeElemOff ptr ix x
+  = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
 
  {-# INLINE unsafeFreezeMArr #-}
  unsafeFreezeMArr !sh (FPArr len fptr)     
   =     return  $ AForeignPtr sh len fptr
+
+ {-# INLINE deepSeqMArr #-}
+ deepSeqMArr !(FPArr _ ptr) x
+  = Unsafe.unsafeForeignPtrToPtr ptr `seq` x
 
 
 -- Conversions ----------------------------------------------------------------

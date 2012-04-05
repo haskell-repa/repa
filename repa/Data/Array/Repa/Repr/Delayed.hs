@@ -11,6 +11,7 @@ import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
+import Debug.Trace
 import GHC.Exts
 
 -- | Delayed arrays are represented as functions from the index to element value.
@@ -44,11 +45,15 @@ instance Repr D a where
 instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
  {-# INLINE [4] fillP #-}
  fillP (ADelayed sh getElem) marr
-  = fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
+  = marr `deepSeqMArr` 
+    do  traceEventIO "Repa.fillP[Delayed]: start"
+        fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
+        traceEventIO "Repa.fillP[Delayed]: end"
 
  {-# INLINE [4] fillS #-}
  fillS (ADelayed sh getElem) marr
-  = fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
+  = marr `deepSeqMArr` 
+    fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
 
 
 -- | Compute a range of elements in a rank-2 array.
@@ -56,14 +61,18 @@ instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
  {-# INLINE [1] fillRangeP #-}
  fillRangeP  (ADelayed (Z :. _h :. w) getElem) marr
              (Z :. y0 :. x0) (Z :. y1 :. x1)
-  = fillBlock2P (unsafeWriteMArr marr) 
-                getElem
-                w x0 y0 x1 y1
+  = marr `deepSeqMArr` 
+    do  traceEventIO "Repa.fillRangeP[Delayed]: start"
+        fillBlock2P (unsafeWriteMArr marr) 
+                        getElem
+                        w x0 y0 x1 y1
+        traceEventIO "Repa.fillRangeP[Delayed]: end"
 
  {-# INLINE [1] fillRangeS #-}
  fillRangeS  (ADelayed (Z :. _h :. (I# w)) getElem) marr
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# y1) :. (I# x1))
-  = fillBlock2S (unsafeWriteMArr marr) 
+  = marr `deepSeqMArr`
+    fillBlock2S (unsafeWriteMArr marr) 
                 getElem
                 w x0 y0 x1 y1
 
@@ -94,6 +103,6 @@ toFunction arr
 delay   :: (Shape sh, Repr r e)
         => Array r sh e -> Array D sh e
 {-# INLINE delay #-}
-delay arr = ADelayed (extent arr) (index arr)
+delay arr = ADelayed (extent arr) (unsafeIndex arr)
 
 

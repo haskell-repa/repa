@@ -26,6 +26,9 @@ class Fillable r e where
  -- | Freeze the mutable array into an immutable Repa array.
  unsafeFreezeMArr :: sh  -> MArr r e -> IO (Array r sh e)
 
+ -- | Ensure the strucure of a mutable array is fully evaluated.
+ deepSeqMArr      :: MArr r e -> a -> a
+
 
 -- | O(n). Construct a manifest array from a list.
 fromList
