@@ -103,34 +103,29 @@ fillCursoredBlock2P
 fillCursoredBlock2P
 	!write
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
-	!(I# imageWidth) !x0b@(I# x0) !(I# y0) !x1b@(I# x1) !(I# y1)
+	!(I# imageWidth) !(I# x0) !(I# y0) !(I# x1) !(I# y1)
  = 	gangIO theGang fillBlock
- where	!threads        = gangSize theGang
-	!blockWidth     = x1b - x0b + 1
+ where	!(I# threads)   = gangSize theGang
+	!blockWidth     = x1 -# x0 +# 1#
 
 	-- All columns have at least this many pixels.
-	!colChunkLen	= blockWidth `quotInt` threads
+	!colChunkLen	= blockWidth `quotInt#` threads
 
 	-- Extra pixels that we have to divide between some of the threads.
-	!colChunkSlack	= blockWidth `remInt` threads
+	!colChunkSlack	= blockWidth `remInt#` threads
 
 	-- Get the starting pixel of a column in the image.
-{-	{-# INLINE colIx #-}
-	colIx !(I# ix)
+	{-# INLINE colIx #-}
+	colIx !ix
 	 | ix <# colChunkSlack	= x0 +#  ix *# (colChunkLen +# 1#)
 	 | otherwise		= x0 +# (ix *# colChunkLen) +# colChunkSlack
--}
-        {-# INLINE colIx #-}
-        colIx !ix
-         | ix < colChunkSlack   = x0b +  ix * (colChunkLen + 1)
-         | otherwise            = x0b + (ix * colChunkLen) + colChunkSlack
 
 	-- Give one column to each thread
 	{-# INLINE fillBlock #-}
 	fillBlock :: Int -> IO ()
-	fillBlock !ix
-	 = let	!(I# x0')	= colIx ix
-		!(I# x1')	= colIx (ix + 1) - 1
+	fillBlock !(I# ix)
+	 = let	!x0'	= colIx ix
+		!x1'	= colIx (ix +# 1#) -# 1#
 		!y0'	= y0
 		!y1'	= y1
 	   in	fillCursoredBlock2S
