@@ -25,7 +25,6 @@ select	:: Unbox a
 	-> Int			-- ^ Range between 0 and this maximum.
 	-> Array U DIM1 a	-- ^ Array containing produced values.
 
-{-# INLINE [2] select #-}
 select match produce len
  = unsafePerformIO
  $ do   (sh, vec)	<- selectIO
@@ -41,3 +40,4 @@ select match produce len
 		let result	= V.concat vecs'
 
 		return	(Z :. V.length result, result)
+{-# INLINE [1] select #-}

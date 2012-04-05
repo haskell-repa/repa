@@ -29,7 +29,7 @@ interleave2
 	-> Array r2 (sh :. Int) a
 	-> Array D  (sh :. Int) a
 
-{-# INLINE [3] interleave2 #-}
+{-# INLINE [2] interleave2 #-}
 interleave2 arr1 arr2
  = arr1 `deepSeqArray` arr2 `deepSeqArray`
    unsafeTraverse2 arr1 arr2 shapeFn elemFn
@@ -58,7 +58,7 @@ interleave3
 	-> Array r3 (sh :. Int) a
 	-> Array D  (sh :. Int) a
 
-{-# INLINE [3] interleave3 #-}
+{-# INLINE [2] interleave3 #-}
 interleave3 arr1 arr2 arr3
  = arr1 `deepSeqArray` arr2 `deepSeqArray` arr3 `deepSeqArray`
    unsafeTraverse3 arr1 arr2 arr3 shapeFn elemFn
@@ -90,7 +90,7 @@ interleave4
 	-> Array r4 (sh :. Int) a
 	-> Array D  (sh :. Int) a
 
-{-# INLINE [3] interleave4 #-}
+{-# INLINE [2] interleave4 #-}
 interleave4 arr1 arr2 arr3 arr4
  = arr1 `deepSeqArray` arr2 `deepSeqArray` arr3 `deepSeqArray` arr4 `deepSeqArray`
    unsafeTraverse4 arr1 arr2 arr3 arr4 shapeFn elemFn

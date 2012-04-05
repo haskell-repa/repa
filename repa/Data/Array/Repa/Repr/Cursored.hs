@@ -115,6 +115,6 @@ makeCursored
         -> (cursor -> e)                -- ^ Compute the element at the cursor.
         -> Array C sh e
 
-{-# INLINE makeCursored #-}
 makeCursored = ACursored
+{-# INLINE makeCursored #-}
 

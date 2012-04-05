@@ -29,7 +29,7 @@ reshape	:: (Shape sh2, Shape sh1
 	-> Array r1 sh1 e
 	-> Array D  sh2 e
 
-{-# INLINE [3] reshape #-}
+{-# INLINE [2] reshape #-}
 reshape sh2 arr
 	| not $ S.size sh2 == S.size (extent arr)
 	= error 
@@ -48,7 +48,7 @@ append, (++)
 	-> Array r2 (sh :. Int) e
 	-> Array D  (sh :. Int) e
 
-{-# INLINE [3] append #-}
+{-# INLINE [2] append #-}
 append arr1 arr2
  = unsafeTraverse2 arr1 arr2 fnExtent fnElem
  where
@@ -73,7 +73,7 @@ transpose
 	=> Array r (sh :. Int :. Int) e
 	-> Array D (sh :. Int :. Int) e
 
-{-# INLINE [3] transpose #-}
+{-# INLINE [2] transpose #-}
 transpose arr
  = unsafeTraverse arr
 	(\(sh :. m :. n) 	-> (sh :. n :.m))
@@ -90,7 +90,7 @@ extend
 	-> Array r (SliceShape sl) e
 	-> Array D (FullShape sl)  e
 
-{-# INLINE [3] extend #-}
+{-# INLINE [2] extend #-}
 extend sl arr
 	= unsafeBackpermute
 		(fullOfSlice sl (extent arr))
@@ -106,7 +106,7 @@ slice	:: ( Slice sl
 	-> sl
 	-> Array D (SliceShape sl) e
 
-{-# INLINE [3] slice #-}
+{-# INLINE [2] slice #-}
 slice arr sl
 	= unsafeBackpermute
 		(sliceOfFull sl (extent arr))
@@ -126,11 +126,11 @@ backpermute, unsafeBackpermute
 	-> Array r  sh1 e 	-- ^ Source array.
 	-> Array D  sh2 e
 
-{-# INLINE [3] backpermute #-}
+{-# INLINE [2] backpermute #-}
 backpermute newExtent perm arr
 	= traverse arr (const newExtent) (. perm)
 
-{-# INLINE [3] unsafeBackpermute #-}
+{-# INLINE [2] unsafeBackpermute #-}
 unsafeBackpermute newExtent perm arr
         = unsafeTraverse arr (const newExtent) (. perm)
 
@@ -148,7 +148,7 @@ backpermuteDft, unsafeBackpermuteDft
 	-> Array r1 sh1 e	-- ^ Source array.
 	-> Array D  sh2 e
 
-{-# INLINE [3] backpermuteDft #-}
+{-# INLINE [2] backpermuteDft #-}
 backpermuteDft arrDft fnIndex arrSrc
 	= fromFunction (extent arrDft) fnElem
 	where	fnElem ix
@@ -156,7 +156,7 @@ backpermuteDft arrDft fnIndex arrSrc
 			Just ix'	-> arrSrc `index` ix'
 			Nothing		-> arrDft `index` ix
 
-{-# INLINE [3] unsafeBackpermuteDft #-}
+{-# INLINE [2] unsafeBackpermuteDft #-}
 unsafeBackpermuteDft arrDft fnIndex arrSrc
         = fromFunction (extent arrDft) fnElem
         where   fnElem ix

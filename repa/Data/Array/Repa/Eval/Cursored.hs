@@ -11,8 +11,8 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Gang
-import GHC.Base					(remInt, quotInt)
 import Prelude					as P
+import GHC.Base
 import GHC.Exts
 
 -- Non-cursored interface -----------------------------------------------------
@@ -103,7 +103,7 @@ fillCursoredBlock2P
 fillCursoredBlock2P
 	!write
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
-	!(I# imageWidth) !x0 !y0 !x1 !y1
+	!imageWidth !x0 !y0 !x1 !y1
  = 	gangIO theGang fillBlock
  where	!threads	= gangSize theGang
 	!blockWidth	= x1 - x0 + 1
@@ -128,10 +128,11 @@ fillCursoredBlock2P
 		!(I# x1')	= colIx (ix + 1) - 1
 		!(I# y0')	= y0
 		!(I# y1')	= y1
+                !(I# width)     = imageWidth
 	   in	fillCursoredBlock2S
 			write
 			makeCursorFCB shiftCursorFCB getElemFCB
-			imageWidth x0' y0' x1' y1'
+			width x0' y0' x1' y1'
 
 
 -- | Fill a block in a rank-2 array, sequentially.

@@ -20,15 +20,15 @@ traverse, unsafeTraverse
 	 				--   It is passed a lookup function to get elements of the source.
 	-> Array D sh' b
 
-{-# INLINE [4] traverse #-}
 traverse arr transExtent newElem
  = arr `deepSeqArray` 
    fromFunction (transExtent (extent arr)) (newElem (index arr))
+{-# INLINE [3] traverse #-}
 
-{-# INLINE [4] unsafeTraverse #-}
 unsafeTraverse arr transExtent newElem
  = arr `deepSeqArray`
    fromFunction (transExtent (extent arr)) (newElem (unsafeIndex arr))
+{-# INLINE [3] unsafeTraverse #-}
 
 
 -- | Unstructured traversal over two arrays at once.
@@ -45,17 +45,17 @@ traverse2, unsafeTraverse2
 					--   source arrays.
         -> Array D sh'' c
 
-{-# INLINE [4] traverse2 #-}
 traverse2 arrA arrB transExtent newElem
  = arrA `deepSeqArray` arrB `deepSeqArray`
    fromFunction  (transExtent (extent arrA) (extent arrB))
  	         (newElem     (index  arrA) (index  arrB))
+{-# INLINE [3] traverse2 #-}
 
-{-# INLINE [4] unsafeTraverse2 #-}
 unsafeTraverse2 arrA arrB transExtent newElem
  = arrA `deepSeqArray` arrB `deepSeqArray`
    fromFunction  (transExtent (extent arrA) (extent arrB))
                  (newElem     (unsafeIndex arrA) (unsafeIndex arrB))
+{-# INLINE [3] unsafeTraverse2 #-}
 
 
 -- | Unstructured traversal over three arrays at once.
@@ -74,17 +74,17 @@ traverse3, unsafeTraverse3
            ->  sh4 -> d )
         -> Array D sh4 d
 
-{-# INLINE [4] traverse3 #-}
 traverse3 arrA arrB arrC transExtent newElem
  = arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray`
    fromFunction (transExtent (extent arrA) (extent arrB) (extent arrC))
  	        (newElem     (index arrA)  (index arrB)  (index  arrC))
+{-# INLINE [3] traverse3 #-}
 
-{-# INLINE [4] unsafeTraverse3 #-}
 unsafeTraverse3 arrA arrB arrC transExtent newElem
  = arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray`
    fromFunction	(transExtent (extent arrA) (extent arrB) (extent arrC))
 	        (newElem     (unsafeIndex arrA) (unsafeIndex arrB) (unsafeIndex arrC))
+{-# INLINE [3] unsafeTraverse3 #-}
 
 
 -- | Unstructured traversal over four arrays at once.
@@ -104,17 +104,17 @@ traverse4, unsafeTraverse4
            ->  sh5 -> e )
         -> Array D sh5 e
 
-{-# INLINE [4] traverse4 #-}
 traverse4 arrA arrB arrC arrD transExtent newElem
  = arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray` arrD `deepSeqArray`
    fromFunction	(transExtent (extent arrA) (extent arrB) (extent arrC) (extent arrD))
 		(newElem     (index  arrA) (index  arrB) (index  arrC) (index  arrD))
+{-# INLINE [3] traverse4 #-}
 
 
-{-# INLINE [4] unsafeTraverse4 #-}
 unsafeTraverse4 arrA arrB arrC arrD transExtent newElem
  = arrA `deepSeqArray` arrB `deepSeqArray` arrC `deepSeqArray` arrD `deepSeqArray`
    fromFunction (transExtent (extent arrA) (extent arrB) (extent arrC) (extent arrD))
 		(newElem     (unsafeIndex arrA) (unsafeIndex arrB) (unsafeIndex arrC) (unsafeIndex arrD))
+{-# INLINE [3] unsafeTraverse4 #-}
 
 
