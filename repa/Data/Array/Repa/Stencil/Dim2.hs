@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash #-}
 --   This is specialised for stencils up to 7x7.
 --   Due to limitations in the GHC optimiser, using larger stencils doesn't
 --   work, and will yield `error` at runtime. We can probably increase the
@@ -23,6 +24,7 @@ import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
+import GHC.Exts
 
 -- | A index into the flat array.
 --   Should be abstract outside the stencil modules.
@@ -167,34 +169,34 @@ unsafeAppStencilCursor2_clamp shift
 	   (StencilStatic sExtent zero loads)
 	   arr cur
 
-	| _ :. sHeight :. sWidth	<- sExtent
-	, _ :. aHeight :. aWidth	<- extent arr
+	| _ :. sHeight      :. sWidth	    <- sExtent
+	, _ :. (I# aHeight) :. (I# aWidth)  <- extent arr
 	, sHeight <= 7, sWidth <= 7
 	= let
 		-- Get data from the manifest array.
 		{-# INLINE getData #-}
 		getData :: DIM2 -> a
-		getData (Z :. y :. x)
+		getData (Z :. (I# y) :. (I# x))
 		 = wrapLoadX x y
 
-		-- TODO: Inlining this into above makes SpecConstr choke
-		wrapLoadX :: Int -> Int -> a
+                {-# NOINLINE wrapLoadX #-}
+		wrapLoadX :: Int# -> Int# -> a
 		wrapLoadX !x !y
-		 | x < 0	= wrapLoadY 0      	 y
-		 | x >= aWidth	= wrapLoadY (aWidth - 1) y
+		 | x <# 0#	= wrapLoadY 0#      	   y
+		 | x >=# aWidth	= wrapLoadY (aWidth -# 1#) y
 		 | otherwise    = wrapLoadY x y
 
-		{-# INLINE wrapLoadY #-}
-		wrapLoadY :: Int -> Int -> a
+		{-# NOINLINE wrapLoadY #-}
+		wrapLoadY :: Int# -> Int# -> a
 		wrapLoadY !x !y
-		 | y <  0	= loadXY x 0
-		 | y >= aHeight = loadXY x (aHeight - 1)
-		 | otherwise    = loadXY x y
+		 | y <#  0#	 = loadXY x 0#
+		 | y >=# aHeight = loadXY x (aHeight -# 1#)
+		 | otherwise     = loadXY x y
 
 		{-# INLINE loadXY #-}
-		loadXY :: Int -> Int -> a
+		loadXY :: Int# -> Int# -> a
 		loadXY !x !y
-		 = arr `unsafeIndex` (Z :. y :.  x)
+		 = arr `unsafeIndex` (Z :. (I# y) :.  (I# x))
 
 		-- Build a function to pass data from the array to our stencil.
 		{-# INLINE oload #-}
