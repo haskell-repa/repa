@@ -2,21 +2,20 @@
 
 -- | Calculation of roots of unity for the forward and inverse DFT\/FFT.
 module Data.Array.Repa.Algorithms.DFT.Roots
-	( calcRootsOfUnity
-	, calcInverseRootsOfUnity)
+	( calcRootsOfUnityP
+	, calcInverseRootsOfUnityP)
 where
 import Data.Array.Repa
 import Data.Array.Repa.Algorithms.Complex
 
 
 -- | Calculate roots of unity for the forward transform.
-calcRootsOfUnity
-	:: forall sh
-	.  Shape sh
+calcRootsOfUnityP
+	:: (Shape sh, Monad m)
 	=> (sh :. Int) 			-- ^ Length of lowest dimension of result.
-	-> Array U (sh :. Int) Complex
+	-> m (Array U (sh :. Int) Complex)
 
-calcRootsOfUnity sh@(_ :. n) 
+calcRootsOfUnityP sh@(_ :. n) 
  = computeP $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex
@@ -28,13 +27,12 @@ calcRootsOfUnity sh@(_ :. n)
 
 
 -- | Calculate roots of unity for the inverse transform.
-calcInverseRootsOfUnity
-	:: forall sh
-	.  Shape sh
+calcInverseRootsOfUnityP
+	:: (Shape sh, Monad m)
 	=> (sh :. Int) 			-- ^ Length of lowest dimension of result.
-	-> Array U (sh :. Int) Complex
+	-> m (Array U (sh :. Int) Complex)
 
-calcInverseRootsOfUnity sh@(_ :. n) 
+calcInverseRootsOfUnityP sh@(_ :. n) 
  = computeP $ fromFunction sh f
  where
     f :: Shape sh => (sh :. Int) -> Complex

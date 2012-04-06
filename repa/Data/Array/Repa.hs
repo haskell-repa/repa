@@ -83,6 +83,7 @@ module Data.Array.Repa
         -- * Converting between array representations
         , computeP, computeS
         , copyP,    copyS
+        , now
 
         -- * Concrete array representations
         -- ** Delayed representation
@@ -120,10 +121,10 @@ module Data.Array.Repa
 
 	-- from Data.Array.Repa.Operators.Traversal ------------------
 	-- ** Generic traversal
-	, traverse,            unsafeTraverse
-	, traverse2,           unsafeTraverse2
-	, traverse3,           unsafeTraverse3
-	, traverse4,           unsafeTraverse4
+	, traverse 
+	, traverse2
+	, traverse3
+	, traverse4
 	
 	-- from Data.Array.Repa.Operators.Interleave -----------------
 	-- ** Interleaving

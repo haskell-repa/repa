@@ -14,53 +14,53 @@
 --
 --   You can also compute single values of the transform using `dftWithRootsSingle`.
 module Data.Array.Repa.Algorithms.DFT 
-	( dft
-	, idft
-	, dftWithRoots
-	, dftWithRootsSingle)
+	( dftP
+	, idftP
+	, dftWithRootsP
+	, dftWithRootsSingleS)
 where
 import Data.Array.Repa.Algorithms.DFT.Roots
 import Data.Array.Repa.Algorithms.Complex
-import Data.Array.Repa				as A
+import Data.Array.Repa				as R
 import Prelude					as P
 
 
 -- | Compute the DFT along the low order dimension of an array.
-dft 	:: forall sh
-	.  Shape sh
+dftP 	:: (Shape sh, Monad m)
 	=> Array U (sh :. Int) Complex
-	-> Array U (sh :. Int) Complex
+	-> m (Array U (sh :. Int) Complex)
 
-dft v
- = let	rofu	= calcRootsOfUnity (extent v)
-   in	dftWithRoots rofu v
+dftP v
+ = do   rofu	<- calcRootsOfUnityP (extent v)
+        dftWithRootsP rofu v
+{-# INLINE dftP #-}
 
 
 -- | Compute the inverse DFT along the low order dimension of an array.
-idft 	:: forall sh
-	.  Shape sh
+idftP 	:: (Shape sh, Monad m)
 	=> Array U (sh :. Int) Complex
-	-> Array U (sh :. Int) Complex
+	-> m (Array U (sh :. Int) Complex)
 
-idft v
- = let	_ :. len	= extent v
-	scale		= (fromIntegral len, 0)
-	rofu		= calcInverseRootsOfUnity (extent v)
-   in	computeP $ A.map (/ scale) $ dftWithRoots rofu v
+idftP v
+ = do   let _ :. len	= extent v
+	let scale	= (fromIntegral len, 0)
+	rofu		<- calcInverseRootsOfUnityP (extent v)
+        roots           <- dftWithRootsP rofu v
+        computeP $ R.map (/ scale) roots
+{-# INLINE idftP #-}
 
 
 -- | Generic function for computation of forward or inverse DFT.
 --	This function is also useful if you transform many arrays with the same extent, 
 --	and don't want to recompute the roots for each one.
 --	The extent of the given roots must match that of the input array, else `error`.
-dftWithRoots
-	:: forall sh
-	.  Shape sh
+dftWithRootsP
+	:: (Shape sh, Monad m)
 	=> Array U (sh :. Int) Complex		-- ^ Roots of unity.
 	-> Array U (sh :. Int) Complex		-- ^ Input array.
-	-> Array U (sh :. Int) Complex
+	-> m (Array U (sh :. Int) Complex)
 
-dftWithRoots rofu arr
+dftWithRootsP rofu arr
 	| _ :. rLen 	<- extent rofu
 	, _ :. vLen 	<- extent arr
 	, rLen /= vLen
@@ -68,21 +68,20 @@ dftWithRoots rofu arr
 		P.++ " does not match the length of the roots (" P.++ show rLen P.++ ")"
 
 	| otherwise
-	= computeP $ traverse arr id (\_ k -> dftWithRootsSingle rofu arr k)
-		
+	= computeP $ traverse arr id (\_ k -> dftWithRootsSingleS rofu arr k)
+{-# INLINE dftWithRootsP #-}		
+
 
 -- | Compute a single value of the DFT.
 --	The extent of the given roots must match that of the input array, else `error`.
-dftWithRootsSingle
-	:: forall sh
-	.  Shape sh
+dftWithRootsSingleS
+	:: Shape sh
 	=> Array U (sh :. Int) Complex 		-- ^ Roots of unity.
 	-> Array U (sh :. Int) Complex		-- ^ Input array.
 	-> (sh :. Int)				-- ^ Index of the value we want.
 	-> Complex
 
-{-# INLINE dftWithRootsSingle #-}
-dftWithRootsSingle rofu arrX (_ :. k)
+dftWithRootsSingleS rofu arrX (_ :. k)
 	| _ :. rLen 	<- extent rofu
 	, _ :. vLen 	<- extent arrX
 	, rLen /= vLen
@@ -97,6 +96,7 @@ dftWithRootsSingle rofu arrX (_ :. k)
 		elemFn (sh' :. n) 
 			= rofu ! (sh' :. (k * n) `mod` len)
 
-	  in  A.sumAllP $ A.zipWith (*) arrX wroots
+	  in  R.sumAllS $ R.zipWith (*) arrX wroots
+{-# INLINE dftWithRootsSingleS #-}
 
 

@@ -21,6 +21,8 @@ module Data.Array.Repa.Algorithms.Matrix
         , transpose2P, transpose2S) 
 where
 import Data.Array.Repa                  as R
+import Data.Array.Repa.Unsafe           as R
+import Control.Monad.ST.Strict
 
 
 -- Projections ----------------------------------------------------------------
@@ -38,19 +40,20 @@ col (Z :. _ :. c) = c
 
 -- MMult ----------------------------------------------------------------------
 -- | Matrix matrix multiply, in parallel.
-mmultP  :: Array U DIM2 Double 
+mmultP  :: Monad m
+        => Array U DIM2 Double 
         -> Array U DIM2 Double 
-        -> Array U DIM2 Double
+        -> m (Array U DIM2 Double)
 
-mmultP arr' brr 
- = mmult' arr' (transpose2P brr) 
- where mmult' arr trr
-        = trr `deepSeqArray` computeP
-        $ fromFunction (extent arr)
-        $ \ix   -> R.sumAllS 
-                 $ R.zipWith (*)
-                        (slice arr (Any :. (row ix) :. All))
-                        (slice trr (Any :. (col ix) :. All))
+mmultP arr brr 
+ = [arr, brr] `deepSeqArrays` 
+   do   trr      <- transpose2P brr
+        computeP 
+         $ fromFunction (extent arr)
+         $ \ix   -> R.sumAllS 
+                  $ R.zipWith (*)
+                        (unsafeSlice arr (Any :. (row ix) :. All))
+                        (unsafeSlice trr (Any :. (col ix) :. All))
 {-# NOINLINE mmultP #-}
 
 
@@ -59,28 +62,29 @@ mmultS  :: Array U DIM2 Double
         -> Array U DIM2 Double 
         -> Array U DIM2 Double
 
-mmultS arr' brr 
- = mmult' arr' (transpose2S brr) 
- where mmult' arr trr
-        = trr `deepSeqArray` computeS
-        $ fromFunction (extent arr)
-        $ \ix   -> R.sumAllS 
-                 $ R.zipWith (*)
-                        (slice arr (Any :. (row ix) :. All))
-                        (slice trr (Any :. (col ix) :. All))
+mmultS arr brr
+ = [arr, brr]  `deepSeqArrays` runST $
+   do   trr     <- R.now $ transpose2S brr
+        return $ computeS 
+         $ fromFunction (extent arr)
+         $ \ix   -> R.sumAllS 
+                  $ R.zipWith (*)
+                        (unsafeSlice arr (Any :. (row ix) :. All))
+                        (unsafeSlice trr (Any :. (col ix) :. All))
 {-# NOINLINE mmultS #-}
 
 
 -- Transpose ------------------------------------------------------------------
 -- | Transpose a 2D matrix, in parallel.
 transpose2P
-        :: Array U DIM2 Double 
-        -> Array U DIM2 Double
+        :: Monad m 
+        => Array U DIM2 Double 
+        -> m (Array U DIM2 Double)
 
 transpose2P arr
  = arr `deepSeqArray`
-   computeUnboxedP
- $ unsafeBackpermute new_extent swap arr
+   do   computeUnboxedP 
+         $ unsafeBackpermute new_extent swap arr
  where  swap (Z :. i :. j)      = Z :. j :. i
         new_extent              = swap (extent arr)
 {-# NOINLINE transpose2P #-}
@@ -93,8 +97,8 @@ transpose2S
 
 transpose2S arr
  = arr `deepSeqArray`
-   computeUnboxedS
- $ unsafeBackpermute new_extent swap arr
+   do   computeUnboxedS
+         $ unsafeBackpermute new_extent swap arr
  where  swap (Z :. i :. j)      = Z :. j :. i
         new_extent              = swap (extent arr)
 {-# NOINLINE transpose2S #-}

@@ -10,12 +10,14 @@
 module Data.Array.Repa.Algorithms.FFT
 	( Mode(..)
 	, isPowerOfTwo
-	, fft3d
-	, fft2d
-	, fft1d)
+	, fft3dP
+	, fft2dP
+	, fft1dP)
 where
 import Data.Array.Repa.Algorithms.Complex
-import Data.Array.Repa				as A
+import Data.Array.Repa				as R
+import Data.Array.Repa.Eval                     as R
+import Data.Array.Repa.Unsafe                   as R
 import Prelude                                  as P
 
 
@@ -26,16 +28,15 @@ data Mode
 	deriving (Show, Eq)
 
 
-{-# INLINE signOfMode #-}
 signOfMode :: Mode -> Double
 signOfMode mode
  = case mode of
 	Forward		-> (-1)
 	Reverse		->   1
 	Inverse		->   1
+{-# INLINE signOfMode #-}
 
 
-{-# INLINE isPowerOfTwo #-}
 -- | Check if an `Int` is a power of two.
 isPowerOfTwo :: Int -> Bool
 isPowerOfTwo n
@@ -43,16 +44,16 @@ isPowerOfTwo n
 	| 2	<- n		= True
 	| n `mod` 2 == 0	= isPowerOfTwo (n `div` 2)
 	| otherwise		= False
+{-# INLINE isPowerOfTwo #-}
 
 
 -- 3D Transform -----------------------------------------------------------------------------------
 -- | Compute the DFT of a 3d array. Array dimensions must be powers of two else `error`.
-fft3d 	:: Repr r Complex
+fft3dP 	:: (Repr r Complex, Monad m)
         => Mode
 	-> Array r DIM3 Complex
-	-> Array U DIM3 Complex
-{-# INLINE fft3d #-}
-fft3d mode arr
+	-> m (Array U DIM3 Complex)
+fft3dP mode arr
  = let	_ :. depth :. height :. width	= extent arr
 	!sign	= signOfMode mode
 	!scale 	= fromIntegral (depth * width * height) 
@@ -66,11 +67,13 @@ fft3d mode arr
 	           
 	 else arr `deepSeqArray` 
 		case mode of
-			Forward	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
-			Reverse	-> fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+			Forward	-> now $ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+			Reverse	-> now $ fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
 			Inverse	-> computeP
-			        $  A.map (/ scale) 
+			        $  R.map (/ scale) 
 				$  fftTrans3d sign $ fftTrans3d sign $ fftTrans3d sign arr
+{-# INLINE fft3dP #-}
+
 
 fftTrans3d 
 	:: Repr r Complex
@@ -78,31 +81,30 @@ fftTrans3d
 	-> Array r DIM3 Complex 
 	-> Array U DIM3 Complex
 
-{-# INLINE fftTrans3d #-}
 fftTrans3d sign arr
  = let	(sh :. len)	= extent arr
-   in	computeP $ rotate3d $ fft sign sh len arr
+   in	suspendedComputeP $ rotate3d $ fft sign sh len arr
+{-# INLINE fftTrans3d #-}
 
 
 rotate3d 
         :: Repr r Complex
         => Array r DIM3 Complex -> Array D DIM3 Complex
-{-# INLINE rotate3d #-}
 rotate3d arr
  = backpermute (sh :. m :. k :. l) f arr
  where	(sh :. k :. l :. m)		= extent arr
 	f (sh' :. m' :. k' :. l')	= sh' :. k' :. l' :. m'
+{-# INLINE rotate3d #-}
 
 
 
 -- Matrix Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a matrix. Array dimensions must be powers of two else `error`.
-fft2d 	:: Repr r Complex
+fft2dP 	:: (Repr r Complex, Monad m)
         => Mode
 	-> Array r DIM2 Complex
-	-> Array U DIM2 Complex
-{-# INLINE fft2d #-}
-fft2d mode arr
+	-> m (Array U DIM2 Complex)
+fft2dP mode arr
  = let	_ :. height :. width	= extent arr
 	sign	= signOfMode mode
 	scale 	= fromIntegral (width * height) 
@@ -115,30 +117,31 @@ fft2d mode arr
 	 
 	 else arr `deepSeqArray` 
 		case mode of
-			Forward	-> fftTrans2d sign $ fftTrans2d sign arr
-			Reverse	-> fftTrans2d sign $ fftTrans2d sign arr
-			Inverse	-> computeP $ A.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
+			Forward	-> now $ fftTrans2d sign $ fftTrans2d sign arr
+			Reverse	-> now $ fftTrans2d sign $ fftTrans2d sign arr
+			Inverse	-> computeP $ R.map (/ scale) $ fftTrans2d sign $ fftTrans2d sign arr
+{-# INLINE fft2dP #-}
 
-fftTrans2d 
+
+fftTrans2d
 	:: Repr r Complex
 	=> Double
 	-> Array r DIM2 Complex 
 	-> Array U DIM2 Complex
 
-{-# INLINE fftTrans2d #-}
 fftTrans2d sign arr
  = let  (sh :. len)	= extent arr
-   in	computeP $ transpose $ fft sign sh len arr
+   in	suspendedComputeP $ transpose $ fft sign sh len arr
+{-# INLINE fftTrans2d #-}
 
 
 -- Vector Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a vector. Array dimensions must be powers of two else `error`.
-fft1d	:: Repr r Complex
+fft1dP	:: (Repr r Complex, Monad m)
         => Mode 
 	-> Array r DIM1 Complex 
-	-> Array U DIM1 Complex
-{-# INLINE fft1d #-}
-fft1d mode arr
+	-> m (Array U DIM1 Complex)
+fft1dP mode arr
  = let	_ :. len	= extent arr
 	sign	= signOfMode mode
 	scale	= fromIntegral len
@@ -151,9 +154,11 @@ fft1d mode arr
 	      
 	 else arr `deepSeqArray`
 		case mode of
-			Forward	-> fftTrans1d sign arr
-			Reverse	-> fftTrans1d sign arr
-			Inverse -> computeP $ A.map (/ scale) $ fftTrans1d sign arr
+			Forward	-> now $ fftTrans1d sign arr
+			Reverse	-> now $ fftTrans1d sign arr
+			Inverse -> computeP $ R.map (/ scale) $ fftTrans1d sign arr
+{-# INLINE fft1dP #-}
+
 
 fftTrans1d
 	:: Repr r Complex
@@ -161,10 +166,10 @@ fftTrans1d
 	-> Array r DIM1 Complex
 	-> Array U DIM1 Complex
 
-{-# INLINE fftTrans1d #-}
 fftTrans1d sign arr
  = let	(sh :. len)	= extent arr
    in	fft sign sh len arr
+{-# INLINE fftTrans1d #-}
 
 
 -- Rank Generalised Worker ------------------------------------------------------------------------
@@ -173,12 +178,11 @@ fft     :: (Shape sh, Repr r Complex)
         -> Array r (sh :. Int) Complex
         -> Array U (sh :. Int) Complex
 
-{-# INLINE fft #-}
 fft !sign !sh !lenVec !vec
  = go lenVec 0 1
  where	go !len !offset !stride
 	 | len == 2
-	 = computeP $ fromFunction (sh :. 2) swivel
+	 = suspendedComputeP $ fromFunction (sh :. 2) swivel
 	
 	 | otherwise
 	 = combine len 
@@ -194,7 +198,8 @@ fft !sign !sh !lenVec !vec
 		combine !len' 	evens odds
  	 	 = evens `deepSeqArray` odds `deepSeqArray`
    	   	   let	odds'	= unsafeTraverse odds id (\get ix@(_ :. k) -> twiddle sign k len' * get ix) 
-   	   	   in	computeP $ (evens +^ odds') A.++ (evens -^ odds')
+   	   	   in	suspendedComputeP $ (evens +^ odds') R.++ (evens -^ odds')
+{-# INLINE fft #-}
 
 
 -- Compute a twiddle factor.
@@ -203,8 +208,9 @@ twiddle :: Double
 	-> Int 			-- length
 	-> Complex
 
-{-# INLINE twiddle #-}
 twiddle sign k' n'
  	=  (cos (2 * pi * k / n), sign * sin  (2 * pi * k / n))
 	where 	k	= fromIntegral k'
 		n	= fromIntegral n'
+{-# INLINE twiddle #-}
+

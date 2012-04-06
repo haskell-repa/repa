@@ -13,16 +13,17 @@
 --
 module Data.Array.Repa.Algorithms.Convolve
 	( -- * Arbitrary boundary handling
-          convolve
+          convolveP
 
           -- * Specialised boundary handling
 	, GetOut
 	, outAs
 	, outClamp
-	, convolveOut )
+	, convolveOutP )
 where
-import Data.Array.Repa 					as A
-import Data.Array.Repa.Repr.Unboxed                     as A
+import Data.Array.Repa 					as R
+import Data.Array.Repa.Unsafe                           as R
+import Data.Array.Repa.Repr.Unboxed                     as R
 import qualified Data.Vector.Unboxed			as V
 import qualified Data.Array.Repa.Shape			as S
 import Prelude						as P
@@ -32,15 +33,15 @@ import Prelude						as P
 -- | Image-kernel convolution,
 --   which takes a function specifying what value to return when the
 --   kernel doesn't apply.
-convolve
-	:: (Num a, Unbox a)
+convolveP
+	:: (Num a, Unbox a, Monad m)
 	=> (DIM2 -> a) 		-- ^ Function to get border elements when 
                                 --   the stencil does not apply.
 	-> Array U DIM2 a	-- ^ Stencil to use in the convolution.
 	-> Array U DIM2 a	-- ^ Input image.
-	-> Array U DIM2 a
+	-> m (Array U DIM2 a)
 
-convolve makeOut kernel image
+convolveP makeOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
    computeP $ unsafeTraverse image id update
  where	
@@ -87,7 +88,7 @@ convolve makeOut kernel image
 		krnZ	= krnVec `V.unsafeIndex` krnCur 
 		here	= imgZ * krnZ 
 	   in	integrate (acc + here) (x + 1) y (imgCur + 1) (krnCur + 1)
-{-# INLINE convolve #-}
+{-# INLINE convolveP #-}
 
 
 -- Convolve Out -----------------------------------------------------------------------------------
@@ -126,15 +127,14 @@ outClamp get (_ :. yLen :. xLen) (sh :. j :. i)
 
 -- | Image-kernel convolution, 
 --   which takes a function specifying what value to use for out-of-range elements.
-convolveOut
-	:: (Num a, Unbox a)
+convolveOutP
+	:: (Num a, Unbox a, Monad m)
 	=> GetOut a		-- ^ How to handle out-of-range elements.
 	-> Array U DIM2 a	-- ^ Stencil to use in the convolution.
 	-> Array U DIM2 a	-- ^ Input image.
-	-> Array U DIM2 a
+	-> m (Array U DIM2 a)
 
-{-# INLINE convolveOut #-}
-convolveOut getOut kernel image
+convolveOutP getOut kernel image
  = kernel `deepSeqArray` image `deepSeqArray` 
    computeP $ unsafeTraverse image id stencil
  where	
@@ -177,4 +177,5 @@ convolveOut getOut kernel image
 		   in	integrate (count + 1) (acc + here)
 
 	   in	integrate 0 0
+{-# INLINE convolveOutP #-}
 

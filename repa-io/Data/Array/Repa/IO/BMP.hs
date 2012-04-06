@@ -6,6 +6,7 @@ module Data.Array.Repa.IO.BMP
         , writeImageToBMP)
 where
 import Data.Array.Repa				as R
+import Data.Array.Repa.Unsafe                   as R
 import Data.Array.Repa.Repr.ForeignPtr		as R
 import Data.Array.Repa.Repr.ByteString		as R
 import Data.Vector.Unboxed                      as U
@@ -47,16 +48,16 @@ readImageFromBMP' bmp
 
         -- Read out the components into their own arrays, 
         -- skipping the alpha channel.
-	vecRed         <- now $ computeP 
-                        $ traverse arr shapeFn
+	vecRed         <- computeP 
+                        $ unsafeTraverse arr shapeFn
                 	       (\get (sh :. x) -> get (sh :. (x * 4)))
 
-	vecGreen       <- now $ computeP 
-                        $ traverse arr shapeFn
+	vecGreen       <- computeP 
+                        $ unsafeTraverse arr shapeFn
                 		(\get (sh :. x) -> get (sh :. (x * 4 + 1)))
 
-	vecBlue        <- now $ computeP
-                        $ traverse arr shapeFn
+	vecBlue        <- computeP
+                        $ unsafeTraverse arr shapeFn
                 		(\get (sh :. x) -> get (sh :. (x * 4 + 2)))
 
 	-- O(1). zip the components together
