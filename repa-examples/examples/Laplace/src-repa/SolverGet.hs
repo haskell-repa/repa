@@ -2,25 +2,29 @@
 module SolverGet
 	(solveLaplace)
 where	
-import Data.Array.Repa		as A
+import Data.Array.Repa		        as R
+import Data.Array.Repa.Unsafe           as R
 import qualified Data.Array.Repa.Shape	as S
 
 -- | Solver for the Laplace equation.
 solveLaplace
-	:: Int			-- ^ Number of iterations to use.
+	:: Monad m
+        => Int			-- ^ Number of iterations to use.
 	-> Array U DIM2 Double	-- ^ Boundary value mask.
 	-> Array U DIM2 Double	-- ^ Boundary values.
 	-> Array U DIM2 Double	-- ^ Initial state.
-	-> Array U DIM2 Double
+	-> m (Array U DIM2 Double)
 
-{-# NOINLINE solveLaplace #-}
 solveLaplace steps arrBoundMask arrBoundValue arrInit
  = go steps arrInit
  where	go !i !arr
-	   | i == 0	= arr
+	   | i == 0	
+           = return     arr
+
 	   | otherwise	
-	   = let arr'	= relaxLaplace arrBoundMask arrBoundValue arr
-	     in	 arr' `deepSeqArray` go (i - 1) arr'
+	   = do arr' <- relaxLaplace arrBoundMask arrBoundValue arr
+                go (i - 1) arr'
+{-# NOINLINE solveLaplace #-}
 
 
 -- | Perform matrix relaxation for the Laplace equation,
@@ -37,17 +41,17 @@ solveLaplace steps arrBoundMask arrBoundValue arrInit
 --	and 0 otherwise.
 -- 
 relaxLaplace
-	:: Array U DIM2 Double	-- ^ Boundary condition mask
+	:: Monad m
+        => Array U DIM2 Double	-- ^ Boundary condition mask
 	-> Array U DIM2 Double	-- ^ Boundary condition values
 	-> Array U DIM2 Double	-- ^ Initial matrix
-	-> Array U DIM2 Double	
+	-> m (Array U DIM2 Double)
 
-{-# INLINE relaxLaplace #-}
 relaxLaplace arrBoundMask arrBoundValue arr
   = [arrBoundMask, arrBoundValue, arr] 
    `deepSeqArrays` computeP
-  $ A.zipWith (+) arrBoundValue
-  $ A.zipWith (*) arrBoundMask
+  $ R.zipWith (+) arrBoundValue
+  $ R.zipWith (*) arrBoundMask
   $ unsafeTraverse arr id elemFn
   where
 	_ :. height :. width	
@@ -68,5 +72,6 @@ relaxLaplace arrBoundMask arrBoundValue arr
 	isBorder !i !j
 	 	=  (i == 0) || (i >= width  - 1) 
 	 	|| (j == 0) || (j >= height - 1) 
+{-# INLINE relaxLaplace #-}
 
 

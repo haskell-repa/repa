@@ -1,11 +1,8 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, RankNTypes, FlexibleContexts #-}
 -- | Solver for the Laplace equation
 --	You supply a BMP files specifying the boundary conditions.
 --	The output is written back to another BMP file.
 --
-import SolverGet	                	as SG
-import SolverStencil	                	as SS
-import Data.Array.Repa	                	as A
 import Data.Array.Repa.Algorithms.Pixel
 import Data.Array.Repa.Algorithms.ColorRamp
 import Data.Array.Repa.IO.BMP	
@@ -13,14 +10,18 @@ import Data.Array.Repa.IO.Timing
 import System.Environment
 import Data.Word
 import Control.Monad
-import Prelude 			as P
+import SolverGet                as SG
+import SolverStencil            as SS
+import Data.Array.Repa          as R
+import Prelude                  as P
 
-type Solver 
-	=  Int			-- ^ Number of iterations to use.
+type Solver m 
+	=  Monad m
+        => Int			-- ^ Number of iterations to use.
 	-> Array U DIM2 Double	-- ^ Boundary value mask.
 	-> Array U DIM2 Double	-- ^ Boundary values.
 	-> Array U DIM2 Double	-- ^ Initial state.
-	-> Array U DIM2 Double
+	-> m (Array U DIM2 Double)
 
 solvers 
  = 	[ ("get", 	SG.solveLaplace)
@@ -64,7 +65,7 @@ usage	= unlines
 			
 
 -- | Solve it.
-laplace :: Solver
+laplace :: Solver IO
 	-> Int			-- ^ Number of iterations to use.
 	-> FilePath 		-- ^ Input file.
 	-> FilePath		-- ^ Output file
@@ -76,20 +77,19 @@ laplace solve steps fileInput fileOutput
 	arrImage	<- liftM (either (error . show) id)
 			$  readImageFromBMP fileInput
 
-	arrBoundValue   <- now $ computeP $ A.map slurpBoundValue arrImage
-	arrBoundMask	<- now $ computeP $ A.map slurpBoundMask  arrImage
+	arrBoundValue   <- computeP $ R.map slurpBoundValue arrImage
+	arrBoundMask	<- computeP $ R.map slurpBoundMask  arrImage
 	let arrInitial	= arrBoundValue		
 	
 	-- Run the Laplace solver and print how long it took.
-	(arrFinal, t)   <- time $ now 
-	                $  solve steps arrBoundMask arrBoundValue arrInitial
+	(arrFinal, t)   <- time $ solve steps arrBoundMask arrBoundValue arrInitial
 
 	putStr (prettyTime t)
 
 	-- Write out the result to a file.
-	arrImageOut     <- now $ computeP
-	                $  A.map rgb8OfDouble
-	                $  A.map (rampColorHotToCold 0.0 1.0) arrFinal
+	arrImageOut     <- computeP
+	                $  R.map rgb8OfDouble
+	                $  R.map (rampColorHotToCold 0.0 1.0) arrFinal
 
 	writeImageToBMP	fileOutput arrImageOut
 

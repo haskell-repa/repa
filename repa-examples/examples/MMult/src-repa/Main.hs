@@ -87,7 +87,7 @@ main' args
         	mat1 `deepSeqArray` mat2 `deepSeqArray` return ()
 		
 		-- Run the solver.
-		(matResult, t)	<- time $ now $ mmultP mat1 mat2
+		(matResult, t)	<- time $ mmultP mat1 mat2
 
 		-- Print how long it took.
 		putStr (prettyTime t)

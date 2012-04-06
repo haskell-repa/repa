@@ -6,11 +6,11 @@ import Data.Array.Repa.Algorithms.DFT.Center
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
-import Data.Array.Repa				as A
-import qualified Data.Array.Repa.Repr.Unboxed   as U
 import System.Environment
 import Control.Monad
 import Data.Word
+import Data.Array.Repa                          as R
+import qualified Data.Array.Repa.Repr.Unboxed   as U
 
 
 main :: IO ()
@@ -39,9 +39,9 @@ mainWithArgs cutoff fileIn fileOut
 	-- Do the transform on each component individually
 	((arrRed', arrGreen', arrBlue'), t)
 		<- time
-		$ do	arrRed'		<- now $ transform cutoff arrRed
-			arrGreen'	<- now $ transform cutoff arrGreen
-			arrBlue'	<- now $ transform cutoff arrBlue
+		$ do	arrRed'		<- transformP cutoff arrRed
+			arrGreen'	<- transformP cutoff arrGreen
+			arrBlue'	<- transformP cutoff arrBlue
                         return  (arrRed', arrGreen', arrBlue')
 	
 	putStr (prettyTime t)
@@ -52,21 +52,21 @@ mainWithArgs cutoff fileIn fileOut
 		
 
 -- | Perform high-pass filtering on a rank-2 array.
-transform :: Int -> Array U DIM2 Word8 -> Array U DIM2 Word8
-transform cutoff arrReal
- = let	arrComplex	= A.map (\r -> (fromIntegral r, 0)) arrReal
+transformP :: Monad m => Int -> Array U DIM2 Word8 -> m (Array U DIM2 Word8)
+transformP cutoff arrReal
+ = do	let arrComplex	= R.map (\r -> (fromIntegral r, 0)) arrReal
 			
 	-- Do the 2d transform.
-	arrCentered	= computeUnboxedP $ center2d arrComplex
-	arrFreq		= fft2d Forward arrCentered
+	arrCentered	<- computeUnboxedP $ center2d arrComplex
+	arrFreq		<- fft2dP Forward arrCentered
 
 	-- Zap out the low frequency components.
-	_ :. height :. width = extent arrFreq
-	centerX		= width  `div` 2
-	centerY		= height `div` 2
+	let _ :. height :. width = extent arrFreq
+	let centerX		 = width  `div` 2
+	let centerY		 = height `div` 2
 	
-	{-# INLINE highpass #-}
-	highpass get ix@(_ :. y :. x)
+	let {-# INLINE highpass #-}
+	    highpass get ix@(_ :. y :. x)
 		|   x > centerX + cutoff
 		 || x < centerX - cutoff
 		 || y > centerY + cutoff
@@ -76,13 +76,11 @@ transform cutoff arrReal
 		| otherwise
 		= 0
 		
-	arrFilt	= computeUnboxedP $ traverse arrFreq id highpass
+	arrFilt	<- computeUnboxedP $ traverse arrFreq id highpass
 
 	-- Do the inverse transform to get back to image space.
-	arrInv	= fft2d Inverse arrFilt
+	arrInv	<- fft2dP Inverse arrFilt
 		
 	-- Get the magnitude of the transformed array, 
-	arrMag	= computeUnboxedP $ A.map (truncate . mag) arrInv
-
-   in	arrMag
+	computeUnboxedP $ R.map (truncate . mag) arrInv
 

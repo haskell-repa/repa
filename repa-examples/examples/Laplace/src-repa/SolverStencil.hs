@@ -11,18 +11,19 @@ import Language.Haskell.TH.Quote
 
 -- | Solver for the Laplace equation.
 solveLaplace
-	:: Int			-- ^ Number of iterations to use.
+	:: Monad m
+        => Int			-- ^ Number of iterations to use.
 	-> Array U DIM2 Double	-- ^ Boundary value mask.
 	-> Array U DIM2 Double	-- ^ Boundary values.
 	-> Array U DIM2 Double	-- ^ Initial state.
-	-> Array U DIM2 Double
+	-> m (Array U DIM2 Double)
 
-{-# NOINLINE solveLaplace #-}
 solveLaplace !steps !arrBoundMask !arrBoundValue !arrInit
  = go steps arrInit
- where 	go 0 !arr = arr
-	go n !arr = go (n - 1) 
-                  $ relaxLaplace arrBoundMask arrBoundValue arr
+ where 	go 0 !arr = return arr
+	go n !arr 
+         = do   arr'    <- relaxLaplace arrBoundMask arrBoundValue arr
+                go (n - 1) arr'
 
         relaxLaplace arrBoundMask arrBoundValue arr
          = computeP
@@ -33,3 +34,4 @@ solveLaplace !steps !arrBoundMask !arrBoundValue !arrInit
             [stencil2|   0 1 0
                          1 0 1 
                          0 1 0 |] arr
+{-# NOINLINE solveLaplace #-}

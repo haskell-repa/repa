@@ -48,8 +48,10 @@ mmultP  :: Monad m
 mmultP arr brr 
  = [arr, brr] `deepSeqArrays` 
    do   trr      <- transpose2P brr
+        let (Z :. h1  :. _)  = extent arr
+        let (Z :. _   :. w2) = extent brr
         computeP 
-         $ fromFunction (extent arr)
+         $ fromFunction (Z :. h1 :. w2)
          $ \ix   -> R.sumAllS 
                   $ R.zipWith (*)
                         (unsafeSlice arr (Any :. (row ix) :. All))
@@ -65,8 +67,10 @@ mmultS  :: Array U DIM2 Double
 mmultS arr brr
  = [arr, brr]  `deepSeqArrays` runST $
    do   trr     <- R.now $ transpose2S brr
+        let (Z :. h1  :. _)  = extent arr
+        let (Z :. _   :. w2) = extent brr
         return $ computeS 
-         $ fromFunction (extent arr)
+         $ fromFunction (Z :. h1 :. w2)
          $ \ix   -> R.sumAllS 
                   $ R.zipWith (*)
                         (unsafeSlice arr (Any :. (row ix) :. All))

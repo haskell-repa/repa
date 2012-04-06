@@ -6,12 +6,12 @@ import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa.Algorithms.ColorRamp
 import Data.Array.Repa.IO.BMP
 import Data.Array.Repa.IO.Timing
-import Data.Array.Repa				as A
-import qualified Data.Array.Repa.Repr.Unboxed   as U
+import Data.Array.Repa				as R
 import Data.Word
 import System.Environment
 import Control.Monad
 import Prelude					as P
+import qualified Data.Array.Repa.Repr.Unboxed   as U
 
 main :: IO ()
 main 
@@ -35,34 +35,35 @@ mainWithArgs size prefixOut
 	let center	= size `div` 2
 	let cutoff		= 4
 
-	arrInit	<- now $ computeP
+	arrInit	<- computeP
                 $  fromFunction shape 
 			(\ix -> if isInCenteredCube center cubeSize ix 
 					then (1, 0) else (0, 0))
 
-	(arrFinal, t) <- time $ now $ transform arrInit center cutoff
+	(arrFinal, t) <- time $ transformP arrInit center cutoff
 	putStr (prettyTime t)
 
  	mapM_ (dumpSlice prefixOut arrFinal) [0..size - 1]
 
 
 -- | To the high pass transform.
-transform
-	:: Array U DIM3 Complex
+transformP
+	:: Monad m
+        => Array U DIM3 Complex
 	-> Int
 	-> Int
-	-> Array U DIM3 Complex
-transform arrInit center cutoff
- = let	-- Transform to frequency space.
-	arrCentered	= center3d arrInit
-	arrFreq		= fft3d Forward arrCentered
+	-> m (Array U DIM3 Complex)
+
+transformP arrInit center cutoff
+ = do	-- Transform to frequency space.
+	let arrCentered	= center3d arrInit
+	arrFreq		<- fft3dP Forward arrCentered
 	
 	-- Zap out the high frequency components
-	arrFilt		= traverse arrFreq id (highpass center cutoff)
+	let arrFilt	= traverse arrFreq id (highpass center cutoff)
 	
 	-- Do the inverse transform to get back to image space.
-	arrInv		= fft3d Inverse arrFilt
-   in	arrInv
+	fft3dP Inverse arrFilt
 
 
 -- | Dump a numbered slice of this array to a BMP file.
@@ -73,8 +74,8 @@ dumpSlice
 	-> IO ()
 
 dumpSlice prefix arr sliceNum
- = do	let arrSlice	= slice arr (Any :. sliceNum :. All)
-	let arrGrey	= computeUnboxedP $ A.map (truncate . (* 255) . mag) arrSlice
+ = do	let arrSlice    = slice arr (Any :. sliceNum :. All)
+	arrGrey	        <- computeUnboxedP $ R.map (truncate . (* 255) . mag) arrSlice
 	let fileName	= prefix P.++ (pad0 3 (show sliceNum)) P.++ ".bmp"
 
 	writeImageToBMP fileName

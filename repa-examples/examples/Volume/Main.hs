@@ -72,9 +72,8 @@ dumpSlice fileBase arr sliceNum low high
                                         else rampColorHotToCold 0 255 x)
                         $ R.map fromIntegral arrInv
         
-        let arrColor' :: Array U DIM2 (Word8, Word8, Word8)
-            arrColor'   = computeP
-                        $ R.map (\(r, g, b) ->  ( truncate (r * 255)
+        (arrColor' :: Array U DIM2 (Word8, Word8, Word8))
+         <- computeP    $ R.map (\(r, g, b) ->  ( truncate (r * 255)
                                                 , truncate (g * 255)
                                                 , truncate (b * 255)))
                         $ arrColor
