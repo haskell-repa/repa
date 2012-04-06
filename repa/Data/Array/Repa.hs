@@ -72,6 +72,9 @@
 --  7. The implementation writes to the GHC eventlog at the start and end of 
 --     each parallel computation. Use threadscope to see what your program is doing.
 --
+--  8. When you're sure your program works, switch to the unsafe versions
+--     of functions like `traverse`. These don't do bounds checks.
+-- 
 module Data.Array.Repa
         ( -- * Abstract array representation
           module Data.Array.Repa.Shape
@@ -83,7 +86,6 @@ module Data.Array.Repa
         -- * Converting between array representations
         , computeP, computeS
         , copyP,    copyS
-        , now
 
         -- * Concrete array representations
         -- ** Delayed representation

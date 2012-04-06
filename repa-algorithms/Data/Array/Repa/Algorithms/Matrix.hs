@@ -21,6 +21,7 @@ module Data.Array.Repa.Algorithms.Matrix
         , transpose2P, transpose2S) 
 where
 import Data.Array.Repa                  as R
+import Data.Array.Repa.Eval             as R
 import Data.Array.Repa.Unsafe           as R
 import Control.Monad.ST.Strict
 
