@@ -143,7 +143,8 @@ module Data.Array.Repa
         , equalsP,  equalsS
 	
 	-- from Data.Array.Repa.Operators.Selection ------------------
-	, select)
+        -- ** Selection
+	, selectP)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape

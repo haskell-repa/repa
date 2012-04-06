@@ -9,7 +9,7 @@ module Data.Array.Repa.Operators.Reduction
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Index
-import Data.Array.Repa.Eval.Elt
+import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Operators.Mapping        as R
 import Data.Array.Repa.Shape		        as S
@@ -20,24 +20,25 @@ import qualified Data.Array.Repa.Eval.Reduction as E
 import System.IO.Unsafe
 import GHC.Exts
 
--- foldS ----------------------------------------------------------------------
+-- fold ----------------------------------------------------------------------
 -- | Sequential reduction of the innermost dimension of an arbitrary rank array.
 --
 --   Combine this with `transpose` to fold any other dimension.
-foldS 	:: (Shape sh, Elt a, Unbox a, Repr r a)
-	=> (a -> a -> a)
-	-> a
-	-> Array r (sh :. Int) a
-	-> Array U sh a
+foldS   :: (Shape sh, Elt a, Unbox a, Repr r a)
+        => (a -> a -> a)
+        -> a
+        -> Array r (sh :. Int) a
+        -> Array U sh a
 
 foldS f z arr
- = let  sh@(sz :. n') = extent arr
+ = arr `deepSeqArray`
+   let  sh@(sz :. n') = extent arr
         !(I# n)       = n'
    in unsafePerformIO
     $ do mvec   <- M.unsafeNew (S.size sz)
          E.foldS mvec (\ix -> arr `unsafeIndex` fromIndex sh (I# ix)) f z n
          !vec   <- V.unsafeFreeze mvec
-         return $ fromUnboxed sz vec
+         now $ fromUnboxed sz vec
 {-# INLINE [1] foldS #-}
 
 
@@ -48,27 +49,31 @@ foldS f z arr
 --   example @0@ is neutral with respect to @(+)@ as @0 + a = a@.
 --   These restrictions are required to support parallel evaluation, as the
 --   starting element may be used multiple times depending on the number of threads.
-foldP 	:: (Shape sh, Elt a, Unbox a, Repr r a)
-	=> (a -> a -> a)
-	-> a
-	-> Array r (sh :. Int) a
-	-> Array U sh a
+foldP   
+        :: (Shape sh, Elt a, Unbox a, Repr r a, Monad m)
+        => (a -> a -> a)
+        -> a
+        -> Array r (sh :. Int) a
+        -> m (Array U sh a)
 
 foldP f z arr 
- = let  sh@(sz :. n) = extent arr
+ = arr `deepSeqArray`
+   let  sh@(sz :. n) = extent arr
    in   case rank sh of
            -- specialise rank-1 arrays, else one thread does all the work.
            -- We can't match against the shape constructor,
            -- otherwise type error: (sz ~ Z)
            --
-           1 -> let !vec = V.singleton $ foldAllP f z arr
-                in  fromUnboxed sz vec
+           1 -> do
+                x       <- foldAllP f z arr
+                now $ fromUnboxed sz $ V.singleton x
 
-           _ -> unsafePerformIO 
+           _ -> now
+              $ unsafePerformIO 
               $ do mvec   <- M.unsafeNew (S.size sz)
                    E.foldP mvec (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
                    !vec   <- V.unsafeFreeze mvec
-                   return $ fromUnboxed sz vec
+                   now $ fromUnboxed sz vec
 {-# INLINE [1] foldP #-}
 
 
@@ -98,16 +103,19 @@ foldAllS f z arr
 --   for example @0@ is neutral with respect to @(+)@ as @0 + a = a@.
 --   These restrictions are required to support parallel evaluation, as the
 --   starting element may be used multiple times depending on the number of threads.
-foldAllP :: (Shape sh, Elt a, Unbox a, Repr r a)
-	 => (a -> a -> a)
-	 -> a
-	 -> Array r sh a
-	 -> a
+foldAllP 
+        :: (Shape sh, Elt a, Unbox a, Repr r a, Monad m)
+	=> (a -> a -> a)
+	-> a
+	-> Array r sh a
+	-> m a
 
 foldAllP f z arr 
- = let  sh = extent arr
+ = arr `deepSeqArray`
+   let  sh = extent arr
         n  = size sh
-   in   unsafePerformIO 
+   in   return
+         $ unsafePerformIO 
          $ E.foldAllP (\ix -> arr `unsafeIndex` fromIndex sh ix) f z n
 {-# INLINE [1] foldAllP #-}
 
@@ -121,11 +129,11 @@ sumS = foldS (+) 0
 {-# INLINE [3] sumS #-}
 
 
--- | Sequential sum the innermost dimension of an array.
-sumP	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a)
+-- | Parallel sum the innermost dimension of an array.
+sumP	:: (Shape sh, Num a, Elt a, Unbox a, Repr r a, Monad m)
 	=> Array r (sh :. Int) a
-	-> Array U sh a
-sumP = foldP (+) 0
+	-> m (Array U sh a)
+sumP = foldP (+) 0 
 {-# INLINE [3] sumP #-}
 
 
@@ -139,9 +147,9 @@ sumAllS = foldAllS (+) 0
 
 
 -- | Parallel sum all the elements of an array.
-sumAllP	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a)
+sumAllP	:: (Shape sh, Elt a, Unbox a, Num a, Repr r a, Monad m)
 	=> Array r sh a
-	-> a
+	-> m a
 sumAllP = foldAllP (+) 0
 {-# INLINE [3] sumAllP #-}
 
@@ -155,13 +163,13 @@ instance (Shape sh, Repr r e, Eq e) => Eq (Array r sh e) where
 
 -- | Check whether two arrays have the same shape and contain equal elements,
 --   in parallel.
-equalsP :: (Shape sh, Repr r1 e, Repr r2 e, Eq e) 
+equalsP :: (Shape sh, Repr r1 e, Repr r2 e, Eq e, Monad m) 
         => Array r1 sh e 
         -> Array r2 sh e
-        -> Bool
+        -> m Bool
 equalsP arr1 arr2
-        =   extent arr1 == extent arr2
-        && (foldAllP (&&) True (R.zipWith (==) arr1 arr2))
+ = do   same    <- foldAllP (&&) True (R.zipWith (==) arr1 arr2)
+        return  $ (extent arr1 == extent arr2) && same
 
 
 -- | Check whether two arrays have the same shape and contain equal elements,

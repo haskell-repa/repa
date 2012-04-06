@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Data.Array.Repa.Operators.Selection
-	(select)
+	(selectP)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Base
@@ -19,14 +19,15 @@ import System.IO.Unsafe
 --
 --   * Use the integer as the index into the array you're filtering.
 --
-select	:: Unbox a
+selectP	:: (Unbox a, Monad m)
         => (Int -> Bool)	-- ^ If the Int matches this predicate,
 	-> (Int -> a)		-- ^  ... then pass it to this fn to produce a value
 	-> Int			-- ^ Range between 0 and this maximum.
-	-> Array U DIM1 a	-- ^ Array containing produced values.
+	-> m (Array U DIM1 a)	-- ^ Array containing produced values.
 
-select match produce len
- = unsafePerformIO
+selectP match produce len
+ = return
+ $ unsafePerformIO
  $ do   (sh, vec)	<- selectIO
 	return $ sh `seq` vec `seq`
 	         fromUnboxed sh vec
@@ -40,4 +41,4 @@ select match produce len
 		let result	= V.concat vecs'
 
 		return	(Z :. V.length result, result)
-{-# INLINE [1] select #-}
+{-# INLINE [1] selectP #-}
