@@ -66,7 +66,10 @@ toList arr
 --   to argument arrays before using them in a @compute@ or @copy@ expression.
 --   For example:
 --
--- @  processArrays :: Array U DIM2 Int -> Array U DIM2 Int -> IO (Array U DIM2 Int)
+-- @  processArrays 
+--     :: Monad m 
+--     => Array U DIM2 Int -> Array U DIM2 Int 
+--     -> m (Array U DIM2 Int)
 --  processArrays arr1 arr2
 --   = [arr1, arr2] \`deepSeqArrays\` 
 --     do arr3 <- computeP $ map f arr1
