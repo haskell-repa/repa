@@ -93,7 +93,8 @@ main' args
 		putStr (prettyTime t)
 
 		-- Print a checksum of all the elements
-		putStrLn $ "checkSum        = " P.++ show (A.sumAllP matResult)
+                checkSum        <- A.sumAllP matResult
+		putStrLn $ "checkSum        = " P.++ show checkSum
 
 		-- Write the output to file if requested.
 		case mArgOut of 

@@ -308,7 +308,7 @@ selectStrong img
 	process' ix	= ix
         {-# INLINE process' #-}
 	
-   in	return $ select match process' (size $ extent img)
+   in	selectP match process' (size $ extent img)
 {-# NOINLINE selectStrong #-}
 
 
