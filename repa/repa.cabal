@@ -72,6 +72,7 @@ Library
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
         Data.Array.Repa.Stencil
+        Data.Array.Repa.Unsafe
         Data.Array.Repa
 
   Other-modules:

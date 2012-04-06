@@ -29,11 +29,8 @@
 --  contained within `D` and `C` arrays without needing to create manifest
 --  intermediate arrays. 
 --
---  Converting between the parallel manifest representations (eg `U` and `B`)
---  is either constant time or parallel copy, depending on the compatability
---  of the physical representation.
 --
---  /Writing fast code:/
+--  /Advice for writing fast code:/
 --
 --  1. Repa does not support nested parallellism. 
 --     This means that you cannot `map` a parallel worker function across
@@ -43,16 +40,37 @@
 --
 --  2. Arrays of type @(Array D sh a)@ or @(Array C sh a)@ are /not real arrays/.
 --     They are represented as functions that compute each element on demand.
---     You need to use a function like `computeS`, `computeP`, `computeUnboxedP`
+--     You need to use `computeS`, `computeP`, `computeUnboxedP`
 --     and so on to actually evaluate the elements.
 --     
---  3. You should add @INLINE@ pragmas to all leaf-functions in your code, 
---     expecially ones that compute numberic results. This ensures they are 
---     specialised at the appropriate element types.
+--  3. Add @INLINE@ pragmas to all leaf-functions in your code, expecially ones
+--     that compute numeric results. Non-inlined lazy function calls can cost
+--     upwards of 50 cycles each, while each numeric operator only costs one (or less).
+--     Inlining leaf functions also ensures they are specialised at the appropriate
+--     numeric types.
+--     
+--  4. Add bang patterns to all function arguments, and all fields of your data
+--     types. In a high-performance Haskell program, the cost of lazy evaluation
+--     can easily dominate the run time if not handled correctly. You don't want
+--     to rely on the strictness analyser in numeric code because if it does not
+--     return a perfect result then the performance of your program will be awful.
+--     This is less of a problem for general Haskell code, and in a different
+--     context relying on strictness analysis is fine.
 --
---  4. Scheduling a parallel computation takes about 200us on an OSX machine. 
---     You should sequential computation for small arrays in inner loops, 
---     or a the bottom of a divide-and-conquer algorithm.
+--  5. Scheduling a parallel computation takes about 200us on an OSX machine. 
+--     You should switch to sequential evaluation functions like `computeS` and
+--     `foldS` for small arrays in inner loops, and at the bottom of a 
+--     divide-and-conquer algorithm. Consider using a `computeP` that evaluates
+--     an array defined using `computeS` or `foldS` for each element.
+--
+--  6. Compile your program with 
+--     @-Odph -rtsopts -threaded -fno-liberate-case -fllvm -optlo-O3@
+--     You don't want the liberate-case transform because it tends to duplicate
+--     too much intermediate code, and is not needed if you use bang patterns
+--     as per point 4. 
+--
+--  7. The implementation writes to the GHC eventlog at the start and end of 
+--     each parallel computation. Use threadscope to see what your program is doing.
 --
 module Data.Array.Repa
         ( -- * Abstract array representation
@@ -65,7 +83,6 @@ module Data.Array.Repa
         -- * Converting between array representations
         , computeP, computeS
         , copyP,    copyS
-        , now
 
         -- * Concrete array representations
         -- ** Delayed representation
@@ -84,14 +101,15 @@ module Data.Array.Repa
 	-- ** Index space transformations
 	, reshape
 	, append, (++)
+        , extract
 	, transpose
-	, extend
-	, backpermute,         unsafeBackpermute
+	, backpermute
 	, backpermuteDft
 
+        -- ** Slice transformations
 	, module Data.Array.Repa.Slice
 	, slice
-        , extract
+        , extend
 
 	-- from Data.Array.Repa.Operators.Mapping -------------------
         -- ** Structure preserving operations

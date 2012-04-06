@@ -4,11 +4,11 @@ module Data.Array.Repa.Operators.IndexSpace
 	( reshape
 	, append, (++)
 	, transpose
-	, extend
-	, slice
         , extract
 	, backpermute,         unsafeBackpermute
-	, backpermuteDft,      unsafeBackpermuteDft)
+	, backpermuteDft,      unsafeBackpermuteDft
+        , extend,              unsafeExtend 
+        , slice,               unsafeSlice)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Slice
@@ -82,41 +82,6 @@ transpose arr
 {-# INLINE [2] transpose #-}
 
 
--- | Extend an array, according to a given slice specification.
-extend
-	:: ( Slice sl
-	   , Shape (FullShape sl)
-	   , Shape (SliceShape sl)
-	   , Repr r e)
-	=> sl
-	-> Array r (SliceShape sl) e
-	-> Array D (FullShape sl)  e
-
-extend sl arr
-	= unsafeBackpermute
-		(fullOfSlice sl (extent arr))
-		(sliceOfFull sl)
-		arr
-{-# INLINE [2] extend #-}
-
-
--- | Take a slice from an array, according to a given specification.
-slice	:: ( Slice sl
-	   , Shape (FullShape sl)
-	   , Shape (SliceShape sl)
-	   , Repr r e)
-	=> Array r (FullShape sl) e
-	-> sl
-	-> Array D (SliceShape sl) e
-
-slice arr sl
-	= unsafeBackpermute
-		(sliceOfFull sl (extent arr))
-		(fullOfSlice sl)
-		arr
-{-# INLINE [2] slice #-}
-
-
 -- | Extract a sub-range of elements from an array.
 extract :: (Shape sh, Repr r e)
         => sh                   -- ^ Starting index.
@@ -178,3 +143,69 @@ unsafeBackpermuteDft arrDft fnIndex arrSrc
                         Nothing         -> arrDft `unsafeIndex` ix
 {-# INLINE [2] unsafeBackpermuteDft #-}
 
+
+
+-- | Extend an array, according to a given slice specification.
+--
+--   For example, to replicate the rows of an array use the following:
+--
+--   @extend arr (Any :. (5::Int) :. All)@
+--
+extend, unsafeExtend
+        :: ( Slice sl
+           , Shape (FullShape sl)
+           , Shape (SliceShape sl)
+           , Repr r e)
+        => sl
+        -> Array r (SliceShape sl) e
+        -> Array D (FullShape sl)  e
+
+extend sl arr
+        = backpermute
+                (fullOfSlice sl (extent arr))
+                (sliceOfFull sl)
+                arr
+{-# INLINE [2] extend #-}
+
+unsafeExtend sl arr
+        = unsafeBackpermute
+                (fullOfSlice sl (extent arr))
+                (sliceOfFull sl)
+                arr
+{-# INLINE [2] unsafeExtend #-}
+
+
+
+-- | Take a slice from an array, according to a given specification.
+--
+--   For example, to take a row from a matrix use the following:
+--
+--   @slice arr (Any :. (5::Int) :. All)@
+--
+--   To take a column use:
+--
+--   @slice arr (Any :. (5::Int))@
+--
+slice, unsafeSlice
+        :: ( Slice sl
+           , Shape (FullShape sl)
+           , Shape (SliceShape sl)
+           , Repr r e)
+        => Array r (FullShape sl) e
+        -> sl
+        -> Array D (SliceShape sl) e
+
+slice arr sl
+        = backpermute
+                (sliceOfFull sl (extent arr))
+                (fullOfSlice sl)
+                arr
+{-# INLINE [2] slice #-}
+
+
+unsafeSlice arr sl
+        = unsafeBackpermute
+                (sliceOfFull sl (extent arr))
+                (fullOfSlice sl)
+                arr
+{-# INLINE [2] unsafeSlice #-}

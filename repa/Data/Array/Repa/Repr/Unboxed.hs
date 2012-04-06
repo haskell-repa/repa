@@ -19,10 +19,11 @@ import Prelude hiding (zip, zip3, unzip, unzip3)
 
 -- | Unboxed arrays are represented as unboxed vectors.
 --
---   The implementation of `Data.Vector.Unboxed` is based on type families and
---   picks an efficient, specialised representation for every element type. In
---   particular, unboxed vectors of pairs are represented as pairs of unboxed
---   vectors. This is the most efficient representation for numerical data.
+--   The implementation uses @Data.Vector.Unboxed@ which is based on type
+--   families and picks an efficient, specialised representation for every
+--   element type. In particular, unboxed vectors of pairs are represented
+--   as pairs of unboxed vectors.
+--   This is the most efficient representation for numerical data.
 --
 data U
 data instance U.Unbox e => Array U sh e
@@ -92,8 +93,8 @@ computeUnboxedS = computeS
 --   * This is an alias for `computeP` with a more specific type.
 --
 computeUnboxedP
-        :: Fill r1 U sh e
-        => Array r1 sh e -> Array U sh e
+        :: (Fill r1 U sh e, Monad m, U.Unbox e)
+        => Array r1 sh e -> m (Array U sh e)
 computeUnboxedP = computeP
 {-# INLINE computeUnboxedP #-}
 

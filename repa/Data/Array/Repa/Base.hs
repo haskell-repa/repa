@@ -16,7 +16,7 @@ data family Array r sh e
 -- | Class of array representations that we can read elements from.
 --
 class Repr r e where
- -- | O(1). Take the extent of an array.
+ -- | O(1). Take the extent (size) of an array.
  extent       :: Shape sh => Array r sh e -> sh
 
  -- | O(1). Shape polymorphic indexing.
@@ -62,6 +62,29 @@ toList arr
 --   The implementation of this function has been hand-unwound to work for up to
 --   four arrays. Putting more in the list yields `error`.
 -- 
+--   For functions that are /not/ marked as INLINE, you should apply `deepSeqArrays`
+--   to argument arrays before using them in a @compute@ or @copy@ expression.
+--   For example:
+--
+-- @  processArrays :: Array U DIM2 Int -> Array U DIM2 Int -> IO (Array U DIM2 Int)
+--  processArrays arr1 arr2
+--   = [arr1, arr2] \`deepSeqArrays\` 
+--     do arr3 <- computeP $ map f arr1
+--        arr4 <- computeP $ zipWith g arr3 arr2
+--        return arr4
+--  @
+--
+--  Applying `deepSeqArrays` tells the GHC simplifier that it's ok to unbox 
+--  size fields and the pointers to the underlying array data at the start
+--  of the function. Without this, then they may be unboxed repeatedly when
+--  computing elements in the result arrays, which will make your program slow.
+--
+--  If you INLINE @processArrays@ into the function that computes @arr1@ and @arr2@,
+--  then you don't need to apply `deepSeqArrays`. This is because a pointer
+--  to the underlying data will be passed directly to the consumers and never boxed.
+--
+--  If you're not sure, then just follow the example code above.
+--   
 deepSeqArrays 
         :: (Shape sh, Repr r e)
         => [Array r sh e] -> b -> b

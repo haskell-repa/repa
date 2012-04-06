@@ -15,6 +15,9 @@ import Debug.Trace
 import GHC.Exts
 
 -- | Delayed arrays are represented as functions from the index to element value.
+--
+--   Every time you index into a delayed array the element at that position 
+--   is recomputed.
 data D
 data instance Array D sh e
         = ADelayed  
@@ -89,8 +92,8 @@ fromFunction sh f
 {-# INLINE fromFunction #-}
 
 
--- | O(1). Produce the extent of an array and a function to retrieve an
---         arbitrary element.
+-- | O(1). Produce the extent of an array, and a function to retrieve an
+--   arbitrary element.
 toFunction 
         :: (Shape sh, Repr r1 a)
         => Array r1 sh a -> (sh, sh -> a)

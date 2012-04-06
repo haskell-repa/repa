@@ -82,8 +82,8 @@ computeVectorS   = computeS
 
 -- | Parallel computation of array elements.
 computeVectorP
-        :: Fill r1 V sh e
-        => Array r1 sh e -> Array V sh e
+        :: (Fill r1 V sh e, Monad m)
+        => Array r1 sh e -> m (Array V sh e)
 computeVectorP   = computeP
 {-# INLINE computeVectorP #-}
 

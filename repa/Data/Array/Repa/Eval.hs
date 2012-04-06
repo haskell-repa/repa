@@ -12,8 +12,8 @@ module Data.Array.Repa.Eval
         , fromList
         
         -- * Converting between representations
-        , computeP, computeS
-        , copyP,    copyS
+        , computeS, computeP, suspendedComputeP
+        , copyS,    copyP,    suspendedCopyP
         , now
         
         -- * Chunked filling
@@ -55,30 +55,47 @@ import System.IO.Unsafe
 --   * If you want to convert a manifest array back to a delayed representation
 --     then use `delay` instead.
 --
-computeP :: Fill r1 r2 sh e
-        => Array r1 sh e -> Array r2 sh e
+computeP 
+        :: (Shape sh, Fill r1 r2 sh e, Repr r2 e, Monad m)
+        => Array r1 sh e -> m (Array r2 sh e)
+computeP arr = now $ suspendedComputeP arr
 {-# INLINE [4] computeP #-}
-computeP arr1
- = arr1 `deepSeqArray` 
-   unsafePerformIO
- $ do   marr2    <- newMArr (size $ extent arr1) 
-        fillP arr1 marr2
-        unsafeFreezeMArr (extent arr1) marr2
 
 
 -- | Sequential computation of array elements.
 computeS 
         :: Fill r1 r2 sh e
         => Array r1 sh e -> Array r2 sh e
-{-# INLINE [4] computeS #-}
 computeS arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO
  $ do   marr2    <- newMArr (size $ extent arr1) 
         fillS arr1 marr2
         unsafeFreezeMArr (extent arr1) marr2
+{-# INLINE [4] computeS #-}
 
 
+-- | Suspended parallel computation of array elements.
+--
+--   This version creates a thunk that will evaluate the array on demand.
+--   If you force it when another parallel computation is already running
+--   then you  will get a runtime warning and evaluation will be sequential. 
+--   Use `deepSeqArray` and `now` to ensure that each array is evaluated
+--   before proceeding to the next one. 
+--  
+--   If unsure then just use the monadic version `computeP`. This one ensures
+--   that each array is fully evaluated before continuing.
+--
+suspendedComputeP 
+        :: Fill r1 r2 sh e
+        => Array r1 sh e -> Array r2 sh e
+suspendedComputeP arr1
+ = arr1 `deepSeqArray` 
+   unsafePerformIO
+ $ do   marr2    <- newMArr (size $ extent arr1) 
+        fillP arr1 marr2
+        unsafeFreezeMArr (extent arr1) marr2
+{-# INLINE [4] suspendedComputeP #-}
 
 
 -- | Parallel copying of arrays.
@@ -87,51 +104,41 @@ computeS arr1
 -- 
 --   * You can use it to copy manifest arrays between representations.
 --
---   * You can also use it to compute elements, but doing this may not be as
---     efficient. This is because delaying it the second time can hide
---     information about the structure of the original computation.
---
-copyP   :: (Repr r1 e, Fill D r2 sh e)
-        => Array r1 sh e -> Array r2 sh e
+copyP  :: (Shape sh, Fill D r2 sh e, Repr r1 e, Repr r2 e, Monad m)
+        => Array r1 sh e -> m (Array r2 sh e)
+copyP arr = now $ suspendedCopyP arr
 {-# INLINE [4] copyP #-}
-copyP arr1 = computeP $ delay arr1
 
 
 -- | Sequential copying of arrays.
 copyS   :: (Repr r1 e, Fill D r2 sh e)
         => Array r1 sh e -> Array r2 sh e
+copyS arr1  = computeS $ delay arr1
 {-# INLINE [4] copyS #-}
-copyS arr1 = computeS $ delay arr1
 
 
-        
+-- | Suspended parallel copy of array elements.
+suspendedCopyP   
+        :: (Repr r1 e, Fill D r2 sh e)
+        => Array r1 sh e -> Array r2 sh e
+suspendedCopyP arr1  = suspendedComputeP $ delay arr1
+{-# INLINE [4] suspendedCopyP #-}
 
--- | Apply `deepSeqArray` to an array so the result is actually constructed
---   at this point in a monadic computation. 
+
+-- | Monadic version of `deepSeqArray`. 
+-- 
+--   Forces an suspended array computation to be completed at this point
+--   in a monadic computation.
 --
---   * Haskell's laziness means that applications of `computeP` and `copyP` are
---     automatically suspended.
---
---   * This is problematic for data parallel programs, because we want
---     each array to be constructed in parallel before moving onto the next one.
---
---   If you're not sure, then just use the following programming pattern:
---
---   @ someFunction arr1 arr2
---  = arr1 \`deepSeqArray\` arr2 \`deepSeqArray\`
---    do arr3 <- now $ computeP $ map f arr1
---       arr4 <- now $ computeP $ zipWith g arr3 arr2
---       return arr4
---   @
---
---  The @someFunction@ is your own function. Apply `deepSeqArray` to argument arrays, 
---  and apply `now` to arrays constructed with @compute@ or @copy@ functions. You can
---  do this in any state-like monad: `IO`, `ST` and @Control.Monad.State.Strict@ are all
---  good choices.
+-- @ do  let arr2 = suspendedComputeP arr1
+--     ...
+--     arr3 <- now $ arr2
+--     ...
+-- @
 --
 now     :: (Shape sh, Repr r e, Monad m)
         => Array r sh e -> m (Array r sh e)
-{-# INLINE [4] now #-}
 now arr
  = do   arr `deepSeqArray` return ()
         return arr
+{-# INLINE [4] now #-}
