@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.1.0.1
+Version:             3.1.0.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -19,7 +19,7 @@ Synopsis:
 
 Executable repa-canny
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         repa                 == 3.1.*,
         repa-algorithms      == 3.1.*,
         template-haskell     >= 2.5 && < 2.8
@@ -36,7 +36,7 @@ Executable repa-canny
 
 Executable repa-mmult
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         random               == 1.0.*,
         repa                 == 3.1.*,
         repa-io              == 3.1.*,
@@ -57,7 +57,7 @@ Executable repa-mmult
 
 Executable repa-laplace
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         repa                 == 3.1.*,
         repa-io              == 3.1.*
 
@@ -74,7 +74,7 @@ Executable repa-laplace
 
 Executable repa-fft2d
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         repa                 == 3.1.*,
         repa-algorithms      == 3.1.*,
         repa-io              == 3.1.*
@@ -93,7 +93,7 @@ Executable repa-fft2d
 
 Executable repa-fft2d-highpass
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         repa                 == 3.1.*,
         repa-algorithms      == 3.1.*,
         repa-io              == 3.1.*
@@ -113,7 +113,7 @@ Executable repa-fft2d-highpass
 
 Executable repa-fft3d-highpass
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         repa                 == 3.1.*,
         repa-algorithms      == 3.1.*
 
@@ -131,7 +131,7 @@ Executable repa-fft3d-highpass
 
 Executable repa-blur
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         vector               == 0.9.*,
         repa                 == 3.1.*,
         repa-algorithms      == 3.1.*
@@ -150,7 +150,7 @@ Executable repa-blur
 
 Executable repa-sobel
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         template-haskell     >= 2.5 && < 2.8,
         repa                 == 3.1.*,
         repa-algorithms      == 3.1.*
@@ -170,7 +170,7 @@ Executable repa-sobel
 
 Executable repa-volume
   Build-depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         repa                 == 3.1.*,
         repa-io              == 3.1.*
 

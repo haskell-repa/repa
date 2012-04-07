@@ -1,5 +1,5 @@
 Name:                repa
-Version:             3.1.0.1
+Version:             3.1.0.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -23,7 +23,7 @@ Tested-with: GHC == 7.0.1
 
 Library
   Build-Depends: 
-        base                 == 4.5.*,
+        base                 == 4.*,
         ghc-prim             == 0.2.*,
         vector               == 0.9.*,
         bytestring           == 0.9.*,
