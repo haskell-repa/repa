@@ -4,7 +4,6 @@
 module Data.Array.Repa.Eval.Chunked
 	( fillChunkedP
 	, fillChunkedS
-        , fillChunkedS'
 	, fillChunkedIOP)
 where
 import Data.Array.Repa.Eval.Gang
@@ -29,21 +28,6 @@ fillChunkedS !(I# len) !write !getElem
 	 | otherwise
 	 = do	write (I# ix) (getElem (I# ix))
 		fill (ix +# 1#)
-
-fillChunkedS'
-        :: Int
-        -> (Int -> IO ())
-        -> IO ()
-
-fillChunkedS' !(I# len) eat
- = fill 0#
- where fill !ix
-        | ix >=# len    = return ()
-        | otherwise
-        = do    eat (I# ix)
-                fill (ix +# 1#)
-
-
 
 
 -- | Fill something in parallel.
