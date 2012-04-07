@@ -63,16 +63,23 @@
 --     divide-and-conquer algorithm. Consider using a `computeP` that evaluates
 --     an array defined using `computeS` or `foldS` for each element.
 --
---  6. Compile your program with 
---     @-Odph -rtsopts -threaded -fno-liberate-case -fllvm -optlo-O3@
+--  6. Compile the modules that use Repa with the following flags:
+--     @-Odph -rtsopts -threaded@
+--     @-fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000@
+--     @-fllvm -optlo-O3@
 --     You don't want the liberate-case transform because it tends to duplicate
 --     too much intermediate code, and is not needed if you use bang patterns
---     as per point 4. 
+--     as per point 4. The unfolding flags tell the inliner to not to fool around with 
+--     heuristics, and just inline everything. If the binaries become too big then 
+--     split the array part of your program into separate modules and only compile
+--     those with the unfolding flags.
 --
---  7. The implementation writes to the GHC eventlog at the start and end of 
---     each parallel computation. Use threadscope to see what your program is doing.
+--  7. Repa writes to the GHC eventlog at the start and end of  each parallel computation.
+--     Use threadscope to see what your program is doing.
 --
---  8. When you're sure your program works, switch to the unsafe versions
+--  8. Follow the advice on program structure in the comment for `deepSeqArrays`
+--
+--  9. When you're sure your program works, switch to the unsafe versions
 --     of functions like `traverse`. These don't do bounds checks.
 -- 
 module Data.Array.Repa
@@ -83,7 +90,7 @@ module Data.Array.Repa
         , Repr(..), (!), toList
         , deepSeqArrays
 
-        -- * Converting between array representations
+        -- * Computation
         , computeP, computeS
         , copyP,    copyS
 

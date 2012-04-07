@@ -79,7 +79,7 @@ toList arr
 --
 --  Applying `deepSeqArrays` tells the GHC simplifier that it's ok to unbox 
 --  size fields and the pointers to the underlying array data at the start
---  of the function. Without this, then they may be unboxed repeatedly when
+--  of the function. Without this, they may be unboxed repeatedly when
 --  computing elements in the result arrays, which will make your program slow.
 --
 --  If you INLINE @processArrays@ into the function that computes @arr1@ and @arr2@,
