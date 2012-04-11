@@ -166,6 +166,7 @@ import Data.Array.Repa.Repr.ForeignPtr
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined           ()
+import Data.Array.Repa.Repr.Hint
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace

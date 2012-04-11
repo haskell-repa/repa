@@ -15,6 +15,7 @@ import Data.Array.Repa.Repr.ByteString
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.ForeignPtr
+import Data.Array.Repa.Repr.Hint
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.Undefined
@@ -149,14 +150,26 @@ instance (Combine r11 a r21 b
         , Combine r12 a r22 b)
        => Combine (P r11 r12) a (P r21 r22) b where
 
- {-# INLINE [3] cmap #-}
  cmap f (APart sh range arr1 arr2)
         = APart sh range (cmap f arr1) (cmap f arr2)
+ {-# INLINE [3] cmap #-}
 
- {-# INLINE [2] czipWith #-}
  czipWith f arr1 (APart sh range arr21 arr22)
         = APart sh range (czipWith f arr1 arr21)
                          (czipWith f arr1 arr22)
+ {-# INLINE [2] czipWith #-}
+
+
+-- Small ------------------------------
+instance   Combine r1 a r2 b
+        => Combine (S r1) a (S r2) b where
+ cmap f (ASmall arr1)
+        = ASmall (cmap f arr1)
+ {-# INLINE [3] cmap #-}
+
+ czipWith f arr1 (ASmall arr2)
+        = ASmall (czipWith f arr1 arr2)
+ {-# INLINE [3] czipWith #-}
 
 
 -- Unboxed ----------------------------

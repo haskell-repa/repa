@@ -21,6 +21,7 @@ where
 import Data.Array.Repa
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
+import Data.Array.Repa.Repr.Hint
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
@@ -31,7 +32,7 @@ import GHC.Exts
 data Cursor
 	= Cursor Int
 
-type PC5 = P C (P D (P D (P D (P D X))))
+type PC5 = P C (P (S D) (P (S D) (P (S D) (P (S D) X))))
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -106,7 +107,7 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
         arrInternal     = makeCursored (extent arr) makec shiftc getInner' 
         
         {-# INLINE arrBorder #-}
-        arrBorder       = fromFunction (extent arr) getBorder'
+        arrBorder       = ASmall (fromFunction (extent arr) getBorder')
 
    in
     --  internal region
