@@ -6,6 +6,9 @@ import Data.Array.Repa.Base
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Shape
 
+-- | Hints that evaluating this array is only a small amount of work.
+--   It will be evaluated sequentially in the main thread, instead of
+--   in parallel on the gang. This avoids the associated scheduling overhead.
 data S r1
 
 data instance Array (S r1) sh e
