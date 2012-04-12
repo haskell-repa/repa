@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fno-warn-unused-imports #-}
 -- | Repa arrays are wrappers around a linear structure that holds the element
 --   data. The representation tag determines what structure holds the data.
 --
@@ -22,6 +22,9 @@
 --
 --   * `P`  -- Arrays that are partitioned into several representations.
 --
+--   * `S`  -- Hints that computing this array is a small amount of work that should
+--             not be done in parallel.
+-- 
 --   * `X`  -- Arrays whose elements are all undefined.
 --
 --  Array fusion is achieved via the delayed (`D`) and cursored (`C`)
@@ -163,6 +166,7 @@ import Data.Array.Repa.Repr.Vector
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.ByteString
 import Data.Array.Repa.Repr.ForeignPtr
+import Data.Array.Repa.Repr.Hint
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined           ()

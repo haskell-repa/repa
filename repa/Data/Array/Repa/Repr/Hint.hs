@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Repr.Hint
-        (S, Array (..)) 
+        (S, Array (..), hintSmall)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Eval.Fill
@@ -13,6 +13,11 @@ data S r1
 
 data instance Array (S r1) sh e
         = ASmall !(Array r1 sh e)
+
+-- | Wrap an array with a smallness hint.
+hintSmall :: Array r1 sh e -> Array (S r1) sh e
+hintSmall = ASmall
+
 
 instance Repr r1 a => Repr (S r1) a where
  extent (ASmall arr) 
