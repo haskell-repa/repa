@@ -126,7 +126,7 @@ instance Combine C a C b where
         shiftc' off (ix, cur)   = (addDim off ix, shiftc off cur)
 
         {-# INLINE load' #-}
-        load' (ix, cur)         = f (arr1 `unsafeIndex` ix) (loadc cur)
+        load' (ix, cur)         = f (arr1 `index` ix) (loadc cur)
 
     in  ACursored 
                 (intersectDim (extent arr1) sh)
@@ -179,9 +179,9 @@ instance Unbox a => Combine U a D b where
 
 
 -- Undefined --------------------------
-instance Combine X a D b where
- cmap           = map
- czipWith       = zipWith
+instance Combine X a X b where
+ cmap     _   (AUndefined sh) = AUndefined sh
+ czipWith _ _ (AUndefined sh) = AUndefined sh
 
 
  

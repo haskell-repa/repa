@@ -27,10 +27,12 @@ instance Repr X e where
         = sh
  {-# INLINE extent #-}
 
- index (AUndefined _) _        = error "Repa: array element is undefined."
+ index (AUndefined _) _ 
+        = error $ "Repa: array element is undefined."
  {-# INLINE index #-}
         
- linearIndex (AUndefined _) _  = error "Repa: array element is undefined."
+ linearIndex (AUndefined _) ix
+        = error $ "Repa: array element at " ++ show ix ++ " is undefined."
  {-# INLINE linearIndex #-}
  
 

@@ -68,7 +68,7 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
         fillCursoredBlock2P 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
-                w 0# 0# (w -# 1#) (h -# 1#) 
+                w 0# 0# w h
         traceEventIO "Repa.fillP[Cursored]: end"
  {-# INLINE fillP #-}
         
@@ -77,7 +77,7 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
         fillCursoredBlock2S 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
-                w 0# 0# (w -# 1#) (h -# 1#) 
+                w 0# 0# w h
         traceEventIO "Repa.fillS[Cursored]: end"
  {-# INLINE fillS #-}
         
@@ -85,23 +85,23 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
 -- | Compute a range of elements in a rank-2 array.
 instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
  fillRangeP  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
-             (Z :. (I# y0) :. (I# x0)) (Z :. (I# y1) :. (I# x1))
+             (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
   = do  traceEventIO "Repa.fillRangeP[Cursored]: start"
         fillCursoredBlock2P 
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
-                w x0 y0 x1 y1
+                w x0 y0 w0 h0
         traceEventIO "Repa.fillRangeP[Cursored]: end"
  {-# INLINE fillRangeP #-}
         
  fillRangeS  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
              (Z :. (I# y0) :. (I# x0)) 
-             (Z :. (I# y1) :. (I# x1))
+             (Z :. (I# h0) :. (I# w0))
   = do  traceEventIO "Repa.fillRangeS[Cursored]: start"
         fillCursoredBlock2S
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
-                w x0 y0 x1 y1
+                w x0 y0 w0 h0
         traceEventIO "Repa.fillRangeS[Cursored]: end"
  {-# INLINE fillRangeS #-}
         

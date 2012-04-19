@@ -1,5 +1,5 @@
 Name:                repa
-Version:             3.1.1.1
+Version:             3.1.2.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -68,6 +68,7 @@ Library
         Data.Array.Repa.Repr.Vector
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil.Dim2
+        Data.Array.Repa.Stencil.Partition
         Data.Array.Repa.Eval
         Data.Array.Repa.Index
         Data.Array.Repa.Shape

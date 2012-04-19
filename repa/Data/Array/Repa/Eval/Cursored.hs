@@ -33,15 +33,15 @@ fillBlock2P
 	-> Int#			-- ^ Width of the whole array.
 	-> Int#			-- ^ x0 lower left corner of block to fill
 	-> Int#			-- ^ y0 
-	-> Int#			-- ^ x1 upper right corner of block to fill
-	-> Int#			-- ^ y1
+	-> Int#			-- ^ w0 width of block to fill.
+	-> Int#			-- ^ h0 height of block to fill.
         -> IO ()
 
 {-# INLINE [0] fillBlock2P #-}
-fillBlock2P !write !getElem !imageWidth !x0 !y0 !x1 !y1
+fillBlock2P !write !getElem !imageWidth !x0 !y0 !w0 h0
  = fillCursoredBlock2P 
         write id addDim getElem 
-        imageWidth x0 y0 x1 y1
+        imageWidth x0 y0 w0 h0
 
 
 -- | Fill a block in a rank-2 array sequentially.
@@ -60,15 +60,15 @@ fillBlock2S
 	-> Int#			-- ^ Width of the whole array.
 	-> Int#			-- ^ x0 lower left corner of block to fill
 	-> Int#			-- ^ y0
-	-> Int#			-- ^ x1 upper right corner of block to fill
-	-> Int#			-- ^ y1
+	-> Int#			-- ^ w0 width of block to fill
+	-> Int#			-- ^ h0 height of block to filll
         -> IO ()
 
 {-# INLINE [0] fillBlock2S #-}
-fillBlock2S !write !getElem imageWidth x0 y0 x1 y1
+fillBlock2S !write !getElem imageWidth x0 y0 w0 h0
  = fillCursoredBlock2S
         write id addDim getElem 
-        imageWidth x0 y0 x1 y1
+        imageWidth x0 y0 w0 h0
 
 
 -- Block filling ----------------------------------------------------------------------------------
@@ -91,46 +91,46 @@ fillCursoredBlock2P
 	-> (DIM2   -> cursor)		-- ^ Make a cursor to a particular element.
 	-> (DIM2   -> cursor -> cursor)	-- ^ Shift the cursor by an offset.
 	-> (cursor -> a)		-- ^ Function to evaluate the element at an index.
-	-> Int#			-- ^ Width of the whole array.
-	-> Int#			-- ^ x0 lower left corner of block to fill
-	-> Int#			-- ^ y0
-	-> Int#			-- ^ x1 upper right corner of block to fill
-	-> Int#			-- ^ y1
+	-> Int#			        -- ^ Width of the whole array.
+	-> Int#			        -- ^ x0 lower left corner of block to fill
+	-> Int#			        -- ^ y0
+	-> Int#			        -- ^ w0 width of block to fill
+	-> Int#			        -- ^ h0 height of block to fill
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2P #-}
 fillCursoredBlock2P
 	!write
 	!makeCursorFCB !shiftCursorFCB !getElemFCB
-	!imageWidth !x0 !y0 !x1 !y1
+	!imageWidth !x0 !y0 !w0 !h0
  = 	gangIO theGang fillBlock
- where	!(I# threads)  = gangSize theGang
-	!blockWidth    = x1 -# x0 +# 1#
+ where	
+        !(I# threads)  = gangSize theGang
 
 	-- All columns have at least this many pixels.
-	!colChunkLen   = I# (blockWidth `quotInt#` threads)
+	!colChunkLen   = w0 `quotInt#` threads
 
 	-- Extra pixels that we have to divide between some of the threads.
-	!colChunkSlack = I# (blockWidth `remInt#` threads)
+	!colChunkSlack = w0 `remInt#` threads
 
 	-- Get the starting pixel of a column in the image.
 	{-# INLINE colIx #-}
 	colIx !ix
-	 | ix < colChunkSlack = (I# x0) +  ix * (colChunkLen  + 1)
-	 | otherwise	      = (I# x0) + (ix * colChunkLen) + colChunkSlack
+	 | ix <# colChunkSlack = x0 +#  ix *# (colChunkLen +# 1#)
+	 | otherwise	       = x0 +# (ix *# colChunkLen) +# colChunkSlack
 
 	-- Give one column to each thread
 	{-# INLINE fillBlock #-}
 	fillBlock :: Int -> IO ()
-	fillBlock !ix
-	 = let	!(I# x0')	= colIx ix
-		!(I# x1')	= colIx (ix + 1) - 1
+	fillBlock !(I# ix)
+	 = let	!x0'	  = colIx ix
+		!w0'      = colIx (ix +# 1#) -# x0'
 		!y0'	  = y0
-		!y1'	  = y1
+		!h0'	  = h0
 	   in	fillCursoredBlock2S
 			write
 			makeCursorFCB shiftCursorFCB getElemFCB
-			imageWidth x0' y0' x1' y1'
+			imageWidth x0' y0' w0' h0'
 
 
 -- | Fill a block in a rank-2 array, sequentially.
@@ -153,30 +153,32 @@ fillCursoredBlock2S
 	-> Int#				-- ^ Width of the whole array.
 	-> Int#				-- ^ x0 lower left corner of block to fill.
 	-> Int#				-- ^ y0
-	-> Int#				-- ^ x1 upper right corner of block to fill.
-	-> Int#				-- ^ y1
+	-> Int#				-- ^ w0 width of block to fill
+	-> Int#				-- ^ h0 height of block to fill
 	-> IO ()
 
 {-# INLINE [0] fillCursoredBlock2S #-}
 fillCursoredBlock2S
 	!write
 	!makeCursor !shiftCursor !getElem
-	!imageWidth !x0 !y0 !x1 !y1
+	!imageWidth !x0 !y0 !w0 h0
 
- = fillBlock y0
+ = do   fillBlock y0
+ where	!x1     = x0 +# w0
+        !y1     = y0 +# h0
 
- where	{-# INLINE fillBlock #-}
+        {-# INLINE fillBlock #-}
 	fillBlock !y
-	 | y ># y1	= return ()
+	 | y >=# y1	= return ()
 	 | otherwise
 	 = do	fillLine4 x0
 		fillBlock (y +# 1#)
 
 	 where	{-# INLINE fillLine4 #-}
 		fillLine4 !x
- 	   	 | x +# 4# ># x1 	= fillLine1 x
+ 	   	 | x +# 4# >=# x1 	= fillLine1 x
 	   	 | otherwise
-	   	 = do	-- Compute each source cursor based on the previous one so that
+	   	 = do   -- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
 			let srcCur0	= makeCursor  (Z :. (I# y) :. (I# x))
 			let srcCur1	= shiftCursor (Z :. 0 :. 1) srcCur0
@@ -208,9 +210,9 @@ fillCursoredBlock2S
 
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x
- 	   	 | x ># x1		= return ()
+ 	   	 | x >=# x1		= return ()
 	   	 | otherwise
-	   	 = do	write (I# (x +# (y *# imageWidth)))
-                              (getElem $ makeCursor (Z :. (I# y) :. (I# x)))
+	   	 = do	let val0     = (getElem $ makeCursor (Z :. (I# y) :. (I# x)))
+                        write (I# (x +# (y *# imageWidth))) val0
 			fillLine1 (x +# 1#)
 

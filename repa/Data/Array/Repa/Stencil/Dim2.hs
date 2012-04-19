@@ -25,6 +25,7 @@ import Data.Array.Repa.Repr.Hint
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template
+import Data.Array.Repa.Stencil.Partition
 import GHC.Exts
 
 -- | A index into the flat array.
@@ -67,19 +68,24 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
 	sHeight2	= sHeight `div` 2
 	sWidth2		= sWidth  `div` 2
 
-	-- minimum and maximum indicies of values in the inner part of the image.
-	!xMin		= sWidth2
-	!yMin		= sHeight2
-	!xMax		= aWidth  - sWidth2  - 1
-	!yMax		= aHeight - sHeight2 - 1
+        -- Partition the array into the internal and border regions.
+        ![ Region    inX    inY    inW    inH
+         , Region  westX  westY  westW  westH
+         , Region  eastX  eastY  eastW  eastH
+         , Region northX northY northW northH 
+         , Region southX southY southW southH ] 
+           = partitionForStencil 
+                (Size   aWidth   aHeight) 
+                (Size   sWidth   sHeight)
+                (Offset sWidth2  sHeight2)
 
 	{-# INLINE inInternal #-}
 	inInternal (Z :. y :. x)
-		=  x >= xMin && x <= xMax
-		&& y >= yMin && y <= yMax
+		=  x >= inX && x < (inX + inW)
+		&& y >= inY && y < (inY + inH)
 
 	{-# INLINE inBorder #-}
-	inBorder 	= not . inInternal
+	inBorder       = not . inInternal
 
 	-- Cursor functions ----------------
 	{-# INLINE makec #-}
@@ -92,32 +98,31 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
 	 $ case ix of
 		Z :. y :. x	-> off + y * aWidth + x
 
-	{-# INLINE getInner' #-}
-	getInner' cur
-	 = unsafeAppStencilCursor2 shiftc stencil arr cur
-
-	{-# INLINE getBorder' #-}
-	getBorder' ix
-	 = case boundary of
-		BoundConst c	-> c
-		BoundClamp 	-> unsafeAppStencilCursor2_clamp addDim stencil
-					arr ix
-
         {-# INLINE arrInternal #-}
         arrInternal     = makeCursored (extent arr) makec shiftc getInner' 
-        
+
+        {-# INLINE getInner' #-}
+        getInner' cur   = unsafeAppStencilCursor2 shiftc stencil arr cur
+
         {-# INLINE arrBorder #-}
         arrBorder       = ASmall (fromFunction (extent arr) getBorder')
 
+        {-# INLINE getBorder' #-}
+        getBorder' ix
+         = case boundary of
+                BoundConst c    -> c
+                BoundClamp      -> unsafeAppStencilCursor2_clamp addDim stencil
+                                        arr ix
+
    in
     --  internal region
-        APart sh (Range (Z :. yMin :. xMin)         (Z :. yMax :. xMax )    inInternal) arrInternal
+        APart sh (Range (Z :.    inY :.    inX) (Z :.    inH :.    inW) inInternal) arrInternal
 
     --  border regions
-    $   APart sh (Range (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1) inBorder)   arrBorder
-    $   APart sh (Range (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1) inBorder)   arrBorder
-    $   APart sh (Range (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)   inBorder)   arrBorder
-    $   APart sh (Range (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) inBorder)   arrBorder
+    $   APart sh (Range (Z :.  westY :.  westX) (Z :.  westH :.  westW) inBorder)   arrBorder
+    $   APart sh (Range (Z :.  eastY :.  eastX) (Z :.  eastH :.  eastW) inBorder)   arrBorder
+    $   APart sh (Range (Z :. northY :. northX) (Z :. northH :. northW) inBorder)   arrBorder
+    $   APart sh (Range (Z :. southY :. southX) (Z :. southH :. southW) inBorder)   arrBorder
     $   AUndefined sh
 
 

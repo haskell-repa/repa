@@ -66,6 +66,7 @@ clampToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 	  | otherwise	= sh :. y	   :. x
 
 
+
 -- | Make a 2D partitioned array from two others, one to produce the elements
 --   in the internal region, and one to produce elements in the border region.
 --   The two arrays must have the same extent.
@@ -80,18 +81,18 @@ makeBordered2
 	-> Array (P r1 (P r2 (P r2 (P r2 (P r2 X))))) DIM2 a
 
 {-# INLINE makeBordered2 #-}
-makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth arrInternal arrBorder
+makeBordered2 sh@(_ :. aHeight :. aWidth) bWidth arrInternal arrBorder
  = checkDims `seq` 
    let
 	-- minimum and maximum indicies of values in the inner part of the image.
-	!xMin		= borderWidth
-	!yMin		= borderWidth
-	!xMax		= aWidth  - borderWidth  - 1
-	!yMax		= aHeight - borderWidth - 1
+	!inX		= bWidth
+	!inY		= bWidth
+        !inW            = aWidth  - 2 * bWidth 
+        !inH            = aHeight - 2 * bWidth
 
 	inInternal (Z :. y :. x)
-		=  x >= xMin && x <= xMax
-		&& y >= yMin && y <= yMax
+		=  x >= inX && x < (inX + inW)
+		&& y >= inY && y < (inY + inH)
         {-# INLINE inInternal #-}
 
 	inBorder 	= not . inInternal
@@ -99,13 +100,13 @@ makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth arrInternal arrBorder
 
    in	
     --  internal region
-        APart sh (Range (Z :. yMin :. xMin)         (Z :. yMax :. xMax )    inInternal) arrInternal
+        APart sh (Range (Z :. inY     :. inX)       (Z :. inH :. inW )    inInternal) arrInternal
 
     --  border regions
-    $   APart sh (Range (Z :. 0        :. 0)        (Z :. yMin -1        :. aWidth - 1) inBorder)   arrBorder
-    $   APart sh (Range (Z :. yMax + 1 :. 0)        (Z :. aHeight - 1    :. aWidth - 1) inBorder)   arrBorder
-    $   APart sh (Range (Z :. yMin     :. 0)        (Z :. yMax           :. xMin - 1)   inBorder)   arrBorder
-    $   APart sh (Range (Z :. yMin     :. xMax + 1) (Z :. yMax           :. aWidth - 1) inBorder)   arrBorder
+    $   APart sh (Range (Z :. 0         :. 0)         (Z :. bWidth :. aWidth) inBorder) arrBorder
+    $   APart sh (Range (Z :. inY + inH :. 0)         (Z :. bWidth :. aWidth) inBorder) arrBorder
+    $   APart sh (Range (Z :. inY       :. 0)         (Z :. inH    :. bWidth) inBorder) arrBorder
+    $   APart sh (Range (Z :. inY       :. inX + inW) (Z :. inH    :. bWidth) inBorder) arrBorder
     $   AUndefined sh
 
  where
@@ -115,3 +116,4 @@ makeBordered2 sh@(_ :. aHeight :. aWidth) borderWidth arrInternal arrBorder
                 else error "makeBordered2: internal and border arrays have different extents"
         {-# NOINLINE checkDims #-}
         --  NOINLINE because we don't want the branch in the core code.
+

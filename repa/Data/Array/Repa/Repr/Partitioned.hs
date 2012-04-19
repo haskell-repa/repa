@@ -9,7 +9,6 @@ import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.Undefined
 
 
 -- | Partitioned arrays.
@@ -62,8 +61,8 @@ instance (Repr r1 e, Repr r2 e) => Repr (P r1 r2) e where
 
 
 deepSeqRange :: Shape sh => Range sh -> b -> b
-deepSeqRange (Range low high f) y
-        = low `deepSeq` high `deepSeq` f `seq` y
+deepSeqRange (Range ix sz f) y
+        = ix `deepSeq` sz `deepSeq` f `seq` y
 {-# INLINE deepSeqRange #-}
 
 
@@ -71,12 +70,12 @@ deepSeqRange (Range low high f) y
 instance ( FillRange r1 r3 sh e, Fill r2 r3 sh e
          , Fillable r3 e)
         => Fill (P r1 r2) r3 sh e where
- fillP (APart _ (Range ix10 ix11 _) arr1 arr2) marr
-  = do  fillRangeP arr1 marr ix10 ix11
+ fillP (APart _ (Range ix sz _) arr1 arr2) marr
+  = do  fillRangeP arr1 marr ix sz
         fillP arr2 marr
  {-# INLINE fillP #-}
 
- fillS (APart _ (Range ix10 ix11 _) arr1 arr2) marr
-  = do  fillRangeS arr1 marr ix10 ix11
+ fillS (APart _ (Range ix sz _) arr1 arr2) marr
+  = do  fillRangeS arr1 marr ix sz
         fillS arr2 marr
  {-# INLINE fillS #-}
