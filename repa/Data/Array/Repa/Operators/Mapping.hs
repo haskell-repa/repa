@@ -126,7 +126,7 @@ instance Combine C a C b where
         shiftc' off (ix, cur)   = (addDim off ix, shiftc off cur)
 
         {-# INLINE load' #-}
-        load' (ix, cur)         = f (arr1 `index` ix) (loadc cur)
+        load' (ix, cur)         = f (arr1 `unsafeIndex` ix) (loadc cur)
 
     in  ACursored 
                 (intersectDim (extent arr1) sh)
