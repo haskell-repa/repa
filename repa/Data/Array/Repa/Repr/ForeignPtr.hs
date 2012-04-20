@@ -62,6 +62,8 @@ instance Storable e => Fillable F e where
         return           $ FPArr n fptr
  {-# INLINE newMArr #-}
 
+ -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
+ -- to touch it after the last use, otherwise the finaliser might run too early.
  unsafeWriteMArr (FPArr _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
  {-# INLINE unsafeWriteMArr #-}
@@ -70,9 +72,13 @@ instance Storable e => Fillable F e where
   =     return  $ AForeignPtr sh len fptr
  {-# INLINE unsafeFreezeMArr #-}
 
- deepSeqMArr !(FPArr _ ptr) x
-  = Unsafe.unsafeForeignPtrToPtr ptr `seq` x
+ deepSeqMArr !(FPArr _ fptr) x
+  = Unsafe.unsafeForeignPtrToPtr fptr `seq` x
  {-# INLINE deepSeqMArr #-}
+
+ touchMArr (FPArr _ fptr)
+  = touchForeignPtr fptr
+ {-# INLINE touchMArr #-}
 
 
 -- Conversions ----------------------------------------------------------------

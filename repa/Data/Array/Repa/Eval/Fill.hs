@@ -29,6 +29,10 @@ class Fillable r e where
  -- | Ensure the strucure of a mutable array is fully evaluated.
  deepSeqMArr      :: MArr r e -> a -> a
 
+ -- | Ensure the array is still live at this point.
+ --   Needed when the mutable array is a ForeignPtr with a finalizer.
+ touchMArr        :: MArr r e -> IO ()
+
 
 -- | O(n). Construct a manifest array from a list.
 fromList

@@ -69,6 +69,7 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w 0# 0# w h
+        touchMArr marr
         traceEventIO "Repa.fillP[Cursored]: end"
  {-# INLINE fillP #-}
         
@@ -78,6 +79,7 @@ instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w 0# 0# w h
+        touchMArr marr
         traceEventIO "Repa.fillS[Cursored]: end"
  {-# INLINE fillS #-}
         
@@ -91,6 +93,7 @@ instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 w0 h0
+        touchMArr marr
         traceEventIO "Repa.fillRangeP[Cursored]: end"
  {-# INLINE fillRangeP #-}
         
@@ -102,6 +105,7 @@ instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
                 (unsafeWriteMArr marr) 
                 makec shiftc loadc
                 w x0 y0 w0 h0
+        touchMArr marr
         traceEventIO "Repa.fillRangeS[Cursored]: end"
  {-# INLINE fillRangeS #-}
         

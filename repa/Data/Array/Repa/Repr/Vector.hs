@@ -68,6 +68,11 @@ instance Fillable V e where
   = x
  {-# INLINE deepSeqMArr #-}
 
+ touchMArr _ 
+  = return ()
+ {-# INLINE touchMArr #-}
+
+
 -- Conversions ----------------------------------------------------------------
 -- | Sequential computation of array elements.
 --

@@ -75,6 +75,10 @@ instance U.Unbox e => Fillable U e where
   = vec `seq` x
  {-# INLINE deepSeqMArr #-}
 
+ touchMArr _ 
+  = return ()
+ {-# INLINE touchMArr #-}
+
 
 -- Conversions ----------------------------------------------------------------
 -- | Sequential computation of array elements..

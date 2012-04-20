@@ -50,6 +50,7 @@ instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
   = marr `deepSeqMArr` 
     do  traceEventIO "Repa.fillP[Delayed]: start"
         fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
+        touchMArr marr
         traceEventIO "Repa.fillP[Delayed]: end"
  {-# INLINE [4] fillP #-}
 
@@ -57,7 +58,9 @@ instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
   = marr `deepSeqMArr` 
     do  traceEventIO "Repa.fillS[Delayed]: start"
         fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
+        touchMArr marr
         traceEventIO "Repa.fillS[Delayed]: end"
+
  {-# INLINE [4] fillS #-}
 
 
@@ -70,6 +73,7 @@ instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
         fillBlock2P (unsafeWriteMArr marr) 
                         getElem
                         w x0 y0 w0 h0
+        touchMArr marr
         traceEventIO "Repa.fillRangeP[Delayed]: end"
  {-# INLINE [1] fillRangeP #-}
 
@@ -80,6 +84,7 @@ instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
         fillBlock2S (unsafeWriteMArr marr) 
                 getElem
                 w x0 y0 w0 h0
+        touchMArr marr
         traceEventIO "Repa.fillRangeS[Delayed]: end"
  {-# INLINE [1] fillRangeS #-}
 
