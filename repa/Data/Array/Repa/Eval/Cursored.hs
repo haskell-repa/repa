@@ -116,7 +116,7 @@ fillCursoredBlock2P
 	-- Get the starting pixel of a column in the image.
 	{-# INLINE colIx #-}
 	colIx !ix
-	 | ix <# colChunkSlack = x0 +#  ix *# (colChunkLen +# 1#)
+	 | ix <# colChunkSlack = x0 +# (ix *# (colChunkLen +# 1#))
 	 | otherwise	       = x0 +# (ix *# colChunkLen) +# colChunkSlack
 
 	-- Give one column to each thread
