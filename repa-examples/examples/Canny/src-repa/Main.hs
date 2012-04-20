@@ -32,13 +32,11 @@ import Prelude                                  hiding (compare)
 type Image a	= Array U DIM2 a
 
 -- Constants ------------------------------------------------------------------
--- TODO: It would be better to use Word8 to represent the edge orientations,
---       but doing so currently triggers a bug in the LLVM mangler.
-orientUndef	= 0	:: Int
-orientPosDiag	= 64	:: Int
-orientVert	= 128	:: Int
-orientNegDiag	= 192	:: Int
-orientHoriz	= 255	:: Int
+orientUndef	= 0	:: Word8
+orientPosDiag	= 64	:: Word8
+orientVert	= 128	:: Word8
+orientNegDiag	= 192	:: Word8
+orientHoriz	= 255	:: Word8
 
 data Edge	= None | Weak | Strong
 edge None	= 0 	:: Word8
@@ -198,13 +196,13 @@ gradientY img
 -- | Classify the magnitude and orientation of the vector gradient.
 gradientMagOrient 
         :: Monad m 
-        => Float -> Image Float -> Image Float -> m (Image (Float, Int))
+        => Float -> Image Float -> Image Float -> m (Image (Float, Word8))
 
 gradientMagOrient !threshLow dX dY
         = [dX, dY] `deepSeqArrays` computeP
         $ R.zipWith magOrient dX dY
 
- where	magOrient :: Float -> Float -> (Float, Int)
+ where	magOrient :: Float -> Float -> (Float, Word8)
 	magOrient !x !y
 		= (magnitude x y, orientation x y)
 	{-# INLINE magOrient #-}
@@ -215,7 +213,7 @@ gradientMagOrient !threshLow dX dY
         {-# INLINE magnitude #-}
 	
         {-# INLINE orientation #-}
-	orientation :: Float -> Float -> Int
+	orientation :: Float -> Float -> Word8
 	orientation !x !y
 
 	 -- Don't bother computing orientation if vector is below threshold.
@@ -233,7 +231,8 @@ gradientMagOrient !threshLow dX dY
 		!dNorm	= if dRot < 0 then dRot + 8 else dRot
 
 		-- Doing explicit tests seems to be faster than using the FP floor function.
-	   in	I# (if dNorm >= 4
+	   in fromIntegral 
+               $ I# (if dNorm >= 4
 		     then if dNorm >= 6
 	   		  then if dNorm >= 7
 			  	then 255#               -- 7
@@ -251,14 +250,12 @@ gradientMagOrient !threshLow dX dY
 			else if dNorm >= 1
 				then 128#               -- 1
 				else 64#)               -- 0
-
-
 {-# NOINLINE gradientMagOrient #-}
 
 
 -- | Suppress pixels that are not local maxima, and use the magnitude to classify maxima
 --   into strong and weak (potential) edges.
-suppress :: Monad m => Float -> Float -> Image (Float, Int) -> m (Image Word8)
+suppress :: Monad m => Float -> Float -> Image (Float, Word8) -> m (Image Word8)
 suppress !threshLow !threshHigh !dMagOrient
  = dMagOrient `deepSeqArray` 
    computeP
