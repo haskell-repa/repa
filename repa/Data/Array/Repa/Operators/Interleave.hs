@@ -31,8 +31,7 @@ interleave2
 
 {-# INLINE [2] interleave2 #-}
 interleave2 arr1 arr2
- = arr1 `deepSeqArray` arr2 `deepSeqArray`
-   unsafeTraverse2 arr1 arr2 shapeFn elemFn
+ = unsafeTraverse2 arr1 arr2 shapeFn elemFn
  where
 	shapeFn dim1 dim2
 	 | dim1 == dim2
@@ -60,8 +59,7 @@ interleave3
 
 {-# INLINE [2] interleave3 #-}
 interleave3 arr1 arr2 arr3
- = arr1 `deepSeqArray` arr2 `deepSeqArray` arr3 `deepSeqArray`
-   unsafeTraverse3 arr1 arr2 arr3 shapeFn elemFn
+ = unsafeTraverse3 arr1 arr2 arr3 shapeFn elemFn
  where
 	shapeFn dim1 dim2 dim3
 	 | dim1 == dim2
@@ -92,8 +90,7 @@ interleave4
 
 {-# INLINE [2] interleave4 #-}
 interleave4 arr1 arr2 arr3 arr4
- = arr1 `deepSeqArray` arr2 `deepSeqArray` arr3 `deepSeqArray` arr4 `deepSeqArray`
-   unsafeTraverse4 arr1 arr2 arr3 arr4 shapeFn elemFn
+ = unsafeTraverse4 arr1 arr2 arr3 arr4 shapeFn elemFn
  where
 	shapeFn dim1 dim2 dim3 dim4
 	 | dim1 == dim2

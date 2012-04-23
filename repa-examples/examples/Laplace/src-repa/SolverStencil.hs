@@ -19,13 +19,20 @@ solveLaplace
 	-> m (Array U DIM2 Double)
 
 solveLaplace !steps !arrBoundMask !arrBoundValue !arrInit
- = go steps arrInit
+
+ | not $ (  extent arrBoundMask == extent arrBoundValue
+         || extent arrBoundMask == extent arrInit)
+ = error "solveLapace: array sizes do not match"
+
+ | otherwise
+ = [arrBoundMask, arrBoundValue, arrInit] `deepSeqArrays`
+   go steps arrInit
  where 	go 0 !arr = return arr
 	go n !arr 
-         = do   arr'    <- relaxLaplace arrBoundMask arrBoundValue arr
+         = do   arr'    <- relaxLaplace arr
                 go (n - 1) arr'
 
-        relaxLaplace arrBoundMask arrBoundValue arr
+        relaxLaplace arr
          = computeP
          $ A.czipWith (+) arrBoundValue
          $ A.czipWith (*) arrBoundMask
@@ -34,4 +41,5 @@ solveLaplace !steps !arrBoundMask !arrBoundValue !arrInit
             [stencil2|   0 1 0
                          1 0 1 
                          0 1 0 |] arr
+
 {-# NOINLINE solveLaplace #-}

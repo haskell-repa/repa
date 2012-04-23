@@ -25,7 +25,7 @@ selectChunkedS
 	-> IO Int		-- ^ Number of elements written to destination array.
 
 {-# INLINE selectChunkedS #-}
-selectChunkedS !fnWrite !fnMatch !fnProduce !shSize
+selectChunkedS fnWrite fnMatch fnProduce !shSize
  = fill 0 0
  where	lenSrc	= size shSize
 
@@ -60,7 +60,7 @@ selectChunkedP
 	-> IO [IOVector a]	-- Chunks containing array elements.
 
 {-# INLINE selectChunkedP #-}
-selectChunkedP !fnMatch !fnProduce !len
+selectChunkedP fnMatch fnProduce !len
  = do
 	-- Make IORefs that the threads will write their result chunks to.
 	-- We start with a chunk size proportial to the number of threads we have,

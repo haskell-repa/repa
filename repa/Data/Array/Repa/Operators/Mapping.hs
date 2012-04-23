@@ -28,10 +28,10 @@ import Data.Word
 --
 map     :: (Shape sh, Repr r a)
         => (a -> b) -> Array r sh a -> Array D sh b
-{-# INLINE [3] map #-}
 map f arr
  = case delay arr of
         ADelayed sh g -> ADelayed sh (f . g)
+{-# INLINE [3] map #-}
 
 
 -- ZipWith --------------------------------------------------------------------
@@ -43,16 +43,14 @@ zipWith :: (Shape sh, Repr r1 a, Repr r2 b)
         => (a -> b -> c)
         -> Array r1 sh a -> Array r2 sh b
         -> Array D sh c
-{-# INLINE [2] zipWith #-}
 zipWith f arr1 arr2
- = arr1 `deepSeqArray` arr2 `deepSeqArray`
-   let 
-        {-# INLINE get #-}
+ = let  {-# INLINE get #-}
         get ix  = f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
 
    in   fromFunction 
                 (intersectDim (extent arr1) (extent arr2)) 
                 get
+{-# INLINE [2] zipWith #-}
 
 
 {-# INLINE (+^) #-}
@@ -183,5 +181,3 @@ instance Combine X a X b where
  cmap     _   (AUndefined sh) = AUndefined sh
  czipWith _ _ (AUndefined sh) = AUndefined sh
 
-
- 

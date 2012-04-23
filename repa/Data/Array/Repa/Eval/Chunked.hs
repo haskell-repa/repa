@@ -21,7 +21,7 @@ fillChunkedS
 	-> IO ()
 
 {-# INLINE [0] fillChunkedS #-}
-fillChunkedS !(I# len) !write !getElem
+fillChunkedS !(I# len) write getElem
  = fill 0#
  where	fill !ix
 	 | ix >=# len	= return ()
@@ -41,7 +41,7 @@ fillChunkedP
 	-> IO ()
 
 {-# INLINE [0] fillChunkedP #-}
-fillChunkedP !(I# len) !write !getElem
+fillChunkedP !(I# len) write getElem
  = 	gangIO theGang
 	 $  \(I# thread) -> 
               let !start   = splitIx thread
@@ -80,7 +80,7 @@ fillChunkedIOP
         -> IO ()
 
 {-# INLINE [0] fillChunkedIOP #-}
-fillChunkedIOP !(I# len) !write !mkGetElem
+fillChunkedIOP !(I# len) write mkGetElem
  = 	gangIO theGang
 	 $  \(I# thread) -> 
               let !start = splitIx thread

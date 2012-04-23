@@ -28,13 +28,13 @@ data instance Array C sh e
         { cursoredExtent :: sh 
                 
           -- | Make a cursor to a particular element.
-	, makeCursor    :: sh -> cursor
+	, makeCursor     :: sh -> cursor
 
 	  -- | Shift the cursor by an offset, to get to another element.
-	, shiftCursor   :: sh -> cursor -> cursor
+	, shiftCursor    :: sh -> cursor -> cursor
 
 	  -- | Load\/compute the element at the given cursor.
-	, loadCursor	:: cursor -> e }
+	, loadCursor	 :: cursor -> e }
 
 
 -- Repr -----------------------------------------------------------------------

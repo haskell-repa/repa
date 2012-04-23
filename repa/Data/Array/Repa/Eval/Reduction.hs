@@ -19,7 +19,7 @@ foldS :: (Elt a, V.Unbox a)
       -> Int#           -- ^ inner dimension (length to fold over)
       -> IO ()
 {-# INLINE [1] foldS #-}
-foldS vec !get !c !r !n
+foldS !vec get c !r !n
   = iter 0# 0#
   where
     !(I# end) = M.length vec
@@ -45,7 +45,7 @@ foldP :: (Elt a, V.Unbox a)
       -> Int            -- ^ inner dimension (length to fold over)
       -> IO ()
 {-# INLINE [1] foldP #-}
-foldP vec !f !c !r !(I# n)
+foldP vec f c !r (I# n)
   = gangIO theGang
   $ \(I# tid) -> fill (split tid) (split (tid +# 1#))
   where
@@ -82,7 +82,7 @@ foldAllS :: (Elt a, V.Unbox a)
          -> a
 
 {-# INLINE [1] foldAllS #-}
-foldAllS !f !c !r !len
+foldAllS f c !r !len
  = reduceAny (\i -> f i) c r 0# len 
 
 
@@ -103,7 +103,7 @@ foldAllP :: (Elt a, V.Unbox a)
          -> IO a
 {-# INLINE [1] foldAllP #-}
 
-foldAllP !f !c !r !len
+foldAllP f c !r !len
   | len == 0    = return r
   | otherwise   = do
       mvec <- M.unsafeNew chunks
@@ -136,14 +136,14 @@ reduce  :: (Int -> a)           -- ^ Get data from the array.
         -> Int                  -- ^ Starting index in array.
         -> Int                  -- ^ Ending index in array.
         -> a                    -- ^ Result.
-reduce f c r (I# start) (I# end)
+reduce f c !r (I# start) (I# end)
  = reduceAny (\i -> f (I# i)) c r start end
 
 
 -- | Sequentially reduce values between the given indices
 {-# INLINE [0] reduceAny #-}
 reduceAny :: (Int# -> a) -> (a -> a -> a) -> a -> Int# -> Int# -> a
-reduceAny !f !c !r !start !end 
+reduceAny f c !r !start !end 
  = iter start r
  where
    {-# INLINE iter #-}
@@ -160,7 +160,7 @@ reduceInt
         -> Int# -> Int# 
         -> Int#
 
-reduceInt !f !c !r !start !end 
+reduceInt f c !r !start !end 
  = iter start r
  where
    {-# INLINE iter #-}
@@ -177,7 +177,7 @@ reduceFloat
         -> Int# -> Int# 
         -> Float#
 
-reduceFloat !f !c !r !start !end 
+reduceFloat f c !r !start !end 
  = iter start r
  where
    {-# INLINE iter #-}
@@ -194,7 +194,7 @@ reduceDouble
         -> Int# -> Int# 
         -> Double#
 
-reduceDouble !f !c !r !start !end 
+reduceDouble f c !r !start !end 
  = iter start r
  where
    {-# INLINE iter #-}

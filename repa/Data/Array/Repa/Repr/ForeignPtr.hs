@@ -17,7 +17,7 @@ import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 -- | Arrays represented as foreign buffers in the C heap.
 data F
 data instance Array F sh e
-        = AForeignPtr !sh !Int !(ForeignPtr e)
+        = AForeignPtr sh !Int !(ForeignPtr e)
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a foreign buffer.

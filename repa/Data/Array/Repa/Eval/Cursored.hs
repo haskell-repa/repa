@@ -38,7 +38,7 @@ fillBlock2P
         -> IO ()
 
 {-# INLINE [0] fillBlock2P #-}
-fillBlock2P !write !getElem !imageWidth !x0 !y0 !w0 h0
+fillBlock2P write getElem !imageWidth !x0 !y0 !w0 h0
  = fillCursoredBlock2P 
         write id addDim getElem 
         imageWidth x0 y0 w0 h0
@@ -65,7 +65,7 @@ fillBlock2S
         -> IO ()
 
 {-# INLINE [0] fillBlock2S #-}
-fillBlock2S !write !getElem imageWidth x0 y0 w0 h0
+fillBlock2S write getElem !imageWidth !x0 !y0 !w0 !h0
  = fillCursoredBlock2S
         write id addDim getElem 
         imageWidth x0 y0 w0 h0
@@ -100,8 +100,8 @@ fillCursoredBlock2P
 
 {-# INLINE [0] fillCursoredBlock2P #-}
 fillCursoredBlock2P
-	!write
-	!makeCursorFCB !shiftCursorFCB !getElemFCB
+	write
+	makeCursorFCB shiftCursorFCB getElemFCB
 	!imageWidth !x0 !y0 !w0 !h0
  = 	gangIO theGang fillBlock
  where	
@@ -159,8 +159,8 @@ fillCursoredBlock2S
 
 {-# INLINE [0] fillCursoredBlock2S #-}
 fillCursoredBlock2S
-	!write
-	!makeCursor !shiftCursor !getElem
+	write
+	makeCursor shiftCursor getElem
 	!imageWidth !x0 !y0 !w0 h0
 
  = do   fillBlock y0
