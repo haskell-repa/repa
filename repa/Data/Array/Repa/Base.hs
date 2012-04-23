@@ -58,7 +58,9 @@ toList arr
 
 
 -- | Apply `deepSeqArray` to up to four arrays. 
---
+---
+--   NOTE: this shouldn't be needed anymore, as we've made all the shape fields strict.
+--      
 --   The implementation of this function has been hand-unwound to work for up to
 --   four arrays. Putting more in the list yields `error`.
 -- 

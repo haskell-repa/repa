@@ -80,9 +80,7 @@
 --  7. Repa writes to the GHC eventlog at the start and end of  each parallel computation.
 --     Use threadscope to see what your program is doing.
 --
---  8. Follow the advice on program structure in the comment for `deepSeqArrays`
---
---  9. When you're sure your program works, switch to the unsafe versions
+--  8. When you're sure your program works, switch to the unsafe versions
 --     of functions like `traverse`. These don't do bounds checks.
 -- 
 module Data.Array.Repa
