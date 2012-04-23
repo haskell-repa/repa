@@ -15,7 +15,7 @@ import Data.ByteString                  (ByteString)
 -- | Strict ByteStrings arrays are represented as ForeignPtr buffers of Word8
 data B
 data instance Array B sh Word8
-        = AByteString sh !ByteString
+        = AByteString !sh !ByteString
         
 deriving instance Show sh
         => Show (Array B sh Word8)

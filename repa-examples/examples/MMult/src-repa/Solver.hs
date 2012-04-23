@@ -11,8 +11,7 @@ mmultP  :: Monad m
         -> m (Array U DIM2 Double)
 
 mmultP arr brr 
- = [arr, brr] `deepSeqArrays` 
-   do   trr      <- transpose2P brr
+ = do   trr      <- transpose2P brr
         let (Z :. h1  :. _)  = extent arr
         let (Z :. _   :. w2) = extent brr
         computeP 

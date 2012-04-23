@@ -142,7 +142,7 @@ timeStage loops name fn
 -- | RGB to greyscale conversion.
 toGreyScale :: Monad m => Image (Word8, Word8, Word8) -> m (Image Float)
 toGreyScale arr
-        = arr `deepSeqArray` computeP
+        = computeP
         $ R.map (* 255)
         $ R.map floatLuminanceOfRGB8 arr 
 {-# NOINLINE toGreyScale #-}
@@ -151,7 +151,7 @@ toGreyScale arr
 -- | Separable Gaussian blur in the X direction.
 blurSepX :: Monad m => Image Float -> m (Image Float)
 blurSepX arr
-        = arr `deepSeqArray` computeP
+        = computeP
         $ forStencil2  BoundClamp arr
           [stencil2|	1 4 6 4 1 |]	
 {-# NOINLINE blurSepX #-}
@@ -160,7 +160,7 @@ blurSepX arr
 -- | Separable Gaussian blur in the Y direction.
 blurSepY :: Monad m => Image Float -> m (Image Float)
 blurSepY arr
-	= arr `deepSeqArray` computeP
+	= computeP
 	$ R.cmap (/ 256)
 	$ forStencil2  BoundClamp arr
 	  [stencil2|	1
@@ -174,7 +174,7 @@ blurSepY arr
 -- | Compute gradient in the X direction.
 gradientX :: Monad m => Image Float -> m (Image Float)
 gradientX img
- 	= img `deepSeqArray` computeP
+ 	= computeP
     	$ forStencil2 BoundClamp img
 	  [stencil2|	-1  0  1
 			-2  0  2
@@ -185,7 +185,7 @@ gradientX img
 -- | Compute gradient in the Y direction.
 gradientY :: Monad m => Image Float -> m (Image Float)
 gradientY img
-	= img `deepSeqArray` computeP
+	= computeP
 	$ forStencil2 BoundClamp img
 	  [stencil2|	 1  2  1
 			 0  0  0
@@ -199,7 +199,7 @@ gradientMagOrient
         => Float -> Image Float -> Image Float -> m (Image (Float, Word8))
 
 gradientMagOrient !threshLow dX dY
-        = [dX, dY] `deepSeqArrays` computeP
+        = computeP
         $ R.zipWith magOrient dX dY
 
  where	magOrient :: Float -> Float -> (Float, Word8)
@@ -257,8 +257,7 @@ gradientMagOrient !threshLow dX dY
 --   into strong and weak (potential) edges.
 suppress :: Monad m => Float -> Float -> Image (Float, Word8) -> m (Image Word8)
 suppress !threshLow !threshHigh !dMagOrient
- = dMagOrient `deepSeqArray` 
-   computeP
+ = computeP
  $ makeBordered2 
         (extent dMagOrient) 1 
  	(makeCursored (extent dMagOrient) id addDim comparePts)
@@ -296,8 +295,7 @@ suppress !threshLow !threshHigh !dMagOrient
 --         doesn't provide a fused mapFilter primitive yet.
 selectStrong :: Monad m => Image Word8 -> m (Array U DIM1 Int)
 selectStrong img
- = img `deepSeqArray`
-   let 	vec             = toUnboxed img
+ = let 	vec             = toUnboxed img
 
 	match ix	= vec `V.unsafeIndex` ix == edge Strong
         {-# INLINE match #-}
@@ -317,8 +315,7 @@ wildfire
 	-> IO (Image Word8)
 
 wildfire img arrStrong
- = img `deepSeqArray` arrStrong `deepSeqArray`
-   do	(sh, vec)	<- wildfireIO 
+ = do	(sh, vec)	<- wildfireIO 
 	return	$ sh `seq` vec `seq` fromUnboxed sh vec
 
  where	lenImg		= R.size $ R.extent img

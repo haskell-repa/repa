@@ -20,7 +20,7 @@ import Control.Monad
 --   representation will be faster.
 data V
 data instance Array V sh e
-        = AVector sh !(V.Vector e)
+        = AVector !sh !(V.Vector e)
         
 deriving instance (Show sh, Show e)
         => Show (Array V sh e)

@@ -17,14 +17,14 @@ gradientX_sep = gradientX1 . gradientX2
 gradientX1 :: Image -> Image
 {-# NOINLINE gradientX1 #-}
 gradientX1 img
-	= img `deepSeqArray` force2
+	= force2
 	$ forStencil2 BoundClamp img
 	  [stencil2|    1 0 -1 |]
 
 gradientX2 :: Image -> Image
 {-# NOINLINE gradientX2 #-}
 gradientX2 img
-	= img `deepSeqArray` force2
+	= force2
 	$ forStencil2 BoundClamp img
 	  [stencil2|    1
 	                2
@@ -37,14 +37,14 @@ gradientY_sep = gradientY1 . gradientY2
 gradientY1 :: Image -> Image
 {-# NOINLINE gradientY1 #-}
 gradientY1 img
-	= img `deepSeqArray` force2
+	= force2
 	$ forStencil2 BoundClamp img
 	  [stencil2|    1 2 1 |]
 
 gradientY2 :: Image -> Image
 {-# NOINLINE gradientY2 #-}
 gradientY2 img
-	= img `deepSeqArray` force2
+	= force2
 	$ forStencil2 BoundClamp img
 	  [stencil2|     1
 	                 0

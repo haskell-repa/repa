@@ -24,13 +24,13 @@ import Data.Array.Repa.Repr.Delayed
 data P r1 r2
 
 data instance Array (P r1 r2) sh e
-        = APart sh                         -- size of the whole array
-                (Range sh) (Array r1 sh e) -- if in range use this array
-                (Array r2 sh e)            -- otherwise use this array
+        = APart !sh                          -- size of the whole array
+                !(Range sh) !(Array r1 sh e) -- if in range use this array
+                !(Array r2 sh e)             -- otherwise use this array
 
 data Range sh
-        = Range sh sh                      -- indices defining the range
-                (sh -> Bool)               -- predicate to check whether were in range
+        = Range !sh !sh                      -- indices defining the range
+                (sh -> Bool)                -- predicate to check whether were in range
 
 -- | Check whether an index is within the given range.
 inRange :: Range sh -> sh -> Bool

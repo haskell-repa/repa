@@ -27,7 +27,7 @@ import Prelude hiding (zip, zip3, unzip, unzip3)
 --
 data U
 data instance U.Unbox e => Array U sh e
-        = AUnboxed sh !(U.Vector e)
+        = AUnboxed !sh !(U.Vector e)
         
 deriving instance (Show sh, Show e, U.Unbox e)
         => Show (Array U sh e)

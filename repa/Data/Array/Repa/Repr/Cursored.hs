@@ -25,7 +25,7 @@ data C
 
 data instance Array C sh e
         = forall cursor. ACursored
-        { cursoredExtent :: sh 
+        { cursoredExtent :: !sh 
                 
           -- | Make a cursor to a particular element.
 	, makeCursor     :: sh -> cursor

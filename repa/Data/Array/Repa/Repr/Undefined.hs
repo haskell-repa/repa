@@ -13,7 +13,7 @@ import Data.Array.Repa.Eval.Fill
 --     as the previous partitions are expected to provide full coverage.
 data X
 data instance Array X sh e
-        = AUndefined sh
+        = AUndefined !sh
 
 
 -- | Undefined array elements. Inspecting them yields `error`.

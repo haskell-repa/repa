@@ -48,8 +48,7 @@ relaxLaplace
 	-> m (Array U DIM2 Double)
 
 relaxLaplace arrBoundMask arrBoundValue arr
-  = [arrBoundMask, arrBoundValue, arr] 
-   `deepSeqArrays` computeP
+  = computeP
   $ R.zipWith (+) arrBoundValue
   $ R.zipWith (*) arrBoundMask
   $ unsafeTraverse arr id elemFn

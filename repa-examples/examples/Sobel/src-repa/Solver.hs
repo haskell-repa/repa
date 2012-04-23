@@ -14,7 +14,7 @@ type Image	= Array U DIM2 Float
 
 gradientX :: Monad m => Image -> m Image
 gradientX img
- 	= img `deepSeqArray` computeP
+ 	= computeP
  	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	-1  0  1
 			-2  0  2
@@ -24,7 +24,7 @@ gradientX img
 
 gradientY :: Monad m => Image -> m Image
 gradientY img
-	= img `deepSeqArray` computeP
+	= computeP
 	$ forStencil2 (BoundConst 0) img
 	  [stencil2|	 1  2  1
 			 0  0  0

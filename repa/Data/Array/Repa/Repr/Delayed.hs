@@ -21,7 +21,7 @@ import GHC.Exts
 data D
 data instance Array D sh e
         = ADelayed  
-                sh 
+                !sh 
                 (sh -> e) 
 
 

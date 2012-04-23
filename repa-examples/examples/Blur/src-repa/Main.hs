@@ -73,8 +73,7 @@ blur !iterations arrInit
  = go iterations arrInit
  where  go !0 !arr = return arr
         go !n !arr  
- 	 = arr `deepSeqArray` 
-           do   arr'    <- computeP
+ 	 = do   arr'    <- computeP
                          $ A.cmap (/ 159)
                          $ forStencil2 BoundClamp arr
                            [stencil2|   2  4  5  4  2
