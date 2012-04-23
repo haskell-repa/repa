@@ -30,7 +30,7 @@ data instance Array (P r1 r2) sh e
 
 data Range sh
         = Range !sh !sh                      -- indices defining the range
-                (sh -> Bool)                -- predicate to check whether were in range
+                (sh -> Bool)                 -- predicate to check whether were in range
 
 -- | Check whether an index is within the given range.
 inRange :: Range sh -> sh -> Bool

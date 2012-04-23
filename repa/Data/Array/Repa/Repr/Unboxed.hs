@@ -32,6 +32,14 @@ data instance U.Unbox e => Array U sh e
 deriving instance (Show sh, Show e, U.Unbox e)
         => Show (Array U sh e)
 
+deriving instance (Read sh, Read e, U.Unbox e)
+        => Read (Array U sh e)
+
+-- | Sequential equality. The parallel version is `equalsP`.
+deriving instance (Eq sh, Eq e, U.Unbox e)
+        => Eq (Array U sh e)
+
+
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from an unboxed vector array.
 instance U.Unbox a => Repr U a where

@@ -15,6 +15,12 @@ data X
 data instance Array X sh e
         = AUndefined !sh
 
+deriving instance Show sh 
+        => Show (Array X sh e)
+
+deriving instance Read sh 
+        => Read (Array X sh e)
+
 
 -- | Undefined array elements. Inspecting them yields `error`.
 --

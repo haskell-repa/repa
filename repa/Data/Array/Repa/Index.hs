@@ -18,13 +18,13 @@ stage	= "Data.Array.Repa.Index"
 
 -- | An index of dimension zero
 data Z	= Z
-	deriving (Show, Eq, Ord)
+	deriving (Show, Read, Eq, Ord)
 
 -- | Our index type, used for both shapes and indices.
 infixl 3 :.
 data tail :. head
 	= !tail :. !head
-	deriving (Show, Eq, Ord)
+	deriving (Show, Read, Eq, Ord)
 
 -- Common dimensions
 type DIM0	= Z
