@@ -20,10 +20,6 @@ deriving instance Show (Array r1 sh e)
 deriving instance Read (Array r1 sh e) 
         => Read (Array (S r1) sh e)
 
--- | Sequential equality. The parallel version is `equalsP`.
-deriving instance Eq (Array r1 sh e)
-        => Eq (Array (S r1) sh e)
-
 
 -- | Wrap an array with a smallness hint.
 hintSmall :: Array r1 sh e -> Array (S r1) sh e

@@ -19,6 +19,7 @@ data F
 data instance Array F sh e
         = AForeignPtr !sh !Int !(ForeignPtr e)
 
+
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a foreign buffer.
 instance Storable a => Repr F a where

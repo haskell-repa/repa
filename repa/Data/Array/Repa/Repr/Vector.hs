@@ -28,10 +28,6 @@ deriving instance (Show sh, Show e)
 deriving instance (Read sh, Read e)
         => Read (Array V sh e)
 
--- | Sequential equality. The parallel version is `equalsP`.
-deriving instance (Eq sh, Eq e)
-        => Eq (Array V sh e)
-
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a boxed vector array.

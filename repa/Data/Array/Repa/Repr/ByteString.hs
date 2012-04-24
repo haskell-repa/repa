@@ -23,10 +23,6 @@ deriving instance Show sh
 deriving instance Read sh
         => Read (Array B sh Word8)
 
--- | Sequential equality. The parallel version is `equalsP`.
-deriving instance Eq sh
-        => Eq (Array B sh Word8)
-
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a `ByteString`.
