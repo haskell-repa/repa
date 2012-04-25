@@ -42,7 +42,7 @@ interleave2 arr1 arr2
 	 = error "Data.Array.Repa.interleave2: arrays must have same extent"
 
 	elemFn get1 get2 (sh :. ix)
-	 = case ix `mod` 3 of
+	 = case ix `mod` 2 of
 		0	-> get1 (sh :. ix `div` 2)
 		1	-> get2 (sh :. ix `div` 2)
 		_	-> error "Data.Array.Repa.interleave2: this never happens :-P"
