@@ -18,7 +18,10 @@ module Data.Array.Repa.Stencil.Dim2
 	-- * Stencil operators
 	, PC5, mapStencil2, forStencil2)
 where
-import Data.Array.Repa
+import Data.Array.Repa.Base
+import Data.Array.Repa.Index
+import Data.Array.Repa.Shape
+import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.HintSmall
