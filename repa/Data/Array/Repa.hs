@@ -22,11 +22,13 @@
 --
 --   * `P`  -- Arrays that are partitioned into several representations.
 --
---   * `S`  -- Hints that computing this array is a small amount of work that should
---             not be done in parallel.
+--   * `S`  -- Hints that computing this array is a small amount of work,
+--             so computation should be sequential rather than parallel to avoid
+--             scheduling overheads.
 -- 
---   * `I`  -- Hints that computing this array will be an unbalanced workload and
---             it should be computed in interleaved fashion to even out the load.
+--   * `I`  -- Hints that computing this array will be an unbalanced workload,
+--             so computation of successive elements should be interleaved between
+--             the processors
 --
 --   * `X`  -- Arrays whose elements are all undefined.
 --
