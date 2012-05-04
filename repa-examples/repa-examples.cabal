@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.1.3.1
+Version:             3.2.1.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -20,8 +20,8 @@ Synopsis:
 Executable repa-canny
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.1.*,
-        repa-algorithms      == 3.1.*,
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*,
         template-haskell     >= 2.5 && < 2.8
 
   Main-is: examples/Canny/src-repa/Main.hs
@@ -38,9 +38,9 @@ Executable repa-mmult
   Build-depends: 
         base                 == 4.*,
         random               == 1.0.*,
-        repa                 == 3.1.*,
-        repa-io              == 3.1.*,
-        repa-algorithms      == 3.1.*
+        repa                 == 3.2.*,
+        repa-io              == 3.2.*,
+        repa-algorithms      == 3.2.*
 
   Main-is: examples/MMult/src-repa/Main.hs
   other-modules: Solver
@@ -58,8 +58,8 @@ Executable repa-mmult
 Executable repa-laplace
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.1.*,
-        repa-io              == 3.1.*
+        repa                 == 3.2.*,
+        repa-io              == 3.2.*
 
   Main-is: examples/Laplace/src-repa/Main.hs
   other-modules: SolverGet SolverStencil
@@ -75,9 +75,9 @@ Executable repa-laplace
 Executable repa-fft2d
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.1.*,
-        repa-algorithms      == 3.1.*,
-        repa-io              == 3.1.*
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*,
+        repa-io              == 3.2.*
 
   Main-is: examples/FFT/FFT2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/FFT2d/src-repa .
@@ -94,9 +94,9 @@ Executable repa-fft2d
 Executable repa-fft2d-highpass
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.1.*,
-        repa-algorithms      == 3.1.*,
-        repa-io              == 3.1.*
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*,
+        repa-io              == 3.2.*
 
   Main-is: examples/FFT/HighPass2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass2d/src-repa .
@@ -114,8 +114,8 @@ Executable repa-fft2d-highpass
 Executable repa-fft3d-highpass
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.1.*,
-        repa-algorithms      == 3.1.*
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*
 
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
@@ -133,8 +133,8 @@ Executable repa-blur
   Build-depends: 
         base                 == 4.*,
         vector               == 0.9.*,
-        repa                 == 3.1.*,
-        repa-algorithms      == 3.1.*
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
@@ -152,8 +152,8 @@ Executable repa-sobel
   Build-depends: 
         base                 == 4.*,
         template-haskell     >= 2.5 && < 2.8,
-        repa                 == 3.1.*,
-        repa-algorithms      == 3.1.*
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*
 
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
@@ -171,8 +171,8 @@ Executable repa-sobel
 Executable repa-volume
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.1.*,
-        repa-io              == 3.1.*
+        repa                 == 3.2.*,
+        repa-io              == 3.2.*
 
   Main-is: examples/Volume/Main.hs
   ghc-options: 
