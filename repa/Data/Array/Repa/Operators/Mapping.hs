@@ -15,7 +15,7 @@ import Data.Array.Repa.Repr.ByteString
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.ForeignPtr
-import Data.Array.Repa.Repr.Hint
+import Data.Array.Repa.Repr.HintSmall
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.Undefined

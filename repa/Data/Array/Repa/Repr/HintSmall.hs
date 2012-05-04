@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Repr.Hint
+module Data.Array.Repa.Repr.HintSmall
         (S, Array (..), hintSmall)
 where
 import Data.Array.Repa.Base

@@ -1,5 +1,5 @@
 Name:                repa
-Version:             3.1.3.2
+Version:             3.1.4.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -61,7 +61,8 @@ Library
         Data.Array.Repa.Repr.Cursored
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.ForeignPtr
-        Data.Array.Repa.Repr.Hint
+        Data.Array.Repa.Repr.HintSmall
+        Data.Array.Repa.Repr.HintInterleave
         Data.Array.Repa.Repr.Partitioned
         Data.Array.Repa.Repr.Unboxed
         Data.Array.Repa.Repr.Undefined
@@ -79,6 +80,7 @@ Library
   Other-modules:
         Data.Array.Repa.Eval.Chunked
         Data.Array.Repa.Eval.Cursored
+        Data.Array.Repa.Eval.Interleaved
         Data.Array.Repa.Eval.Elt
         Data.Array.Repa.Eval.Fill
         Data.Array.Repa.Eval.Reduction

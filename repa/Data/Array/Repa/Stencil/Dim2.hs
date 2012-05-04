@@ -21,7 +21,7 @@ where
 import Data.Array.Repa
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
-import Data.Array.Repa.Repr.Hint
+import Data.Array.Repa.Repr.HintSmall
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
 import Data.Array.Repa.Stencil.Template

@@ -21,6 +21,9 @@ module Data.Array.Repa.Eval
         , fillChunkedP
         , fillChunkedIOP
 
+        -- * Interleaved filling
+        , fillInterleavedP
+
         -- * Blockwise filling
         , fillBlock2P
         , fillBlock2S
@@ -36,6 +39,7 @@ where
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Chunked
+import Data.Array.Repa.Eval.Interleaved
 import Data.Array.Repa.Eval.Cursored
 import Data.Array.Repa.Eval.Selection
 import Data.Array.Repa.Repr.Delayed

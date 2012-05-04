@@ -25,6 +25,9 @@
 --   * `S`  -- Hints that computing this array is a small amount of work that should
 --             not be done in parallel.
 -- 
+--   * `I`  -- Hints that computing this array will be an unbalanced workload and
+--             it should be computed in interleaved fashion to even out the load.
+--
 --   * `X`  -- Arrays whose elements are all undefined.
 --
 --  Array fusion is achieved via the delayed (`D`) and cursored (`C`)
@@ -164,11 +167,11 @@ import Data.Array.Repa.Repr.Vector
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.ByteString
 import Data.Array.Repa.Repr.ForeignPtr
-import Data.Array.Repa.Repr.Hint
+import Data.Array.Repa.Repr.HintSmall
+import Data.Array.Repa.Repr.HintInterleave
 import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Undefined           ()
-import Data.Array.Repa.Repr.Hint
 import Data.Array.Repa.Operators.Mapping
 import Data.Array.Repa.Operators.Traversal
 import Data.Array.Repa.Operators.IndexSpace
