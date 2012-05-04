@@ -44,27 +44,26 @@ zipWith :: (Shape sh, Repr r1 a, Repr r2 b)
         -> Array r1 sh a -> Array r2 sh b
         -> Array D sh c
 zipWith f arr1 arr2
- = let  {-# INLINE get #-}
-        get ix  = f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
-
+ = let  get ix  = f (arr1 `unsafeIndex` ix) (arr2 `unsafeIndex` ix)
+        {-# INLINE get #-}
+        
    in   fromFunction 
                 (intersectDim (extent arr1) (extent arr2)) 
                 get
 {-# INLINE [2] zipWith #-}
 
 
-{-# INLINE (+^) #-}
 (+^)	= zipWith (+)
+{-# INLINE (+^) #-}
 
-{-# INLINE (-^) #-}
 (-^)	= zipWith (-)
+{-# INLINE (-^) #-}
 
-{-# INLINE (*^) #-}
 (*^)	= zipWith (*)
+{-# INLINE (*^) #-}
 
-{-# INLINE (/^) #-}
 (/^)	= zipWith (/)
-
+{-# INLINE (/^) #-}
 
 
 -- Combine --------------------------------------------------------------------
@@ -84,13 +83,15 @@ zipWith f arr1 arr2
 --   If the source array is not cursored or partitioned then `cmap` and 
 --   `czipWith` are identical to the plain functions.
 --
-class Combine r1 a r2 b | r1 -> r2 where
+class Combine r1 a b where
+ -- | The target representation.
+ type T r1
 
  -- | Combining @map@.
  cmap   :: Shape sh 
         => (a -> b) 
-        -> Array r1 sh a 
-        -> Array r2 sh b
+        -> Array r1     sh a 
+        -> Array (T r1) sh b
 
  -- | Combining @zipWith@.
  --   If you have a cursored or partitioned source array then use that as
@@ -98,55 +99,61 @@ class Combine r1 a r2 b | r1 -> r2 where
  czipWith
         :: (Shape sh, Repr r c)
         => (c -> a -> b)
-        -> Array r  sh c
-        -> Array r1 sh a
-        -> Array r2 sh b
+        -> Array r      sh c
+        -> Array r1     sh a
+        -> Array (T r1) sh b
 
 
 -- ByteString -------------------------
-instance Combine B Word8 D b where
+instance Combine B Word8 b where
+ type T B = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- Cursored ---------------------------
-instance Combine C a C b where
- {-# INLINE [3] cmap #-}
+instance Combine C a b where
+ type T C = C
+
  cmap f (ACursored sh makec shiftc loadc)
         = ACursored sh makec shiftc (f . loadc)
+ {-# INLINE [3] cmap #-}
 
- {-# INLINE [2] czipWith #-}
  czipWith f arr1 (ACursored sh makec shiftc loadc)
-  = let {-# INLINE makec' #-}
-        makec' ix               = (ix, makec ix)
-
-        {-# INLINE shiftc' #-}
+  = let makec' ix               = (ix, makec ix)
+        {-# INLINE makec' #-}
+        
         shiftc' off (ix, cur)   = (addDim off ix, shiftc off cur)
+        {-# INLINE shiftc' #-}
 
-        {-# INLINE load' #-}
         load' (ix, cur)         = f (arr1 `unsafeIndex` ix) (loadc cur)
+        {-# INLINE load' #-}
 
     in  ACursored 
                 (intersectDim (extent arr1) sh)
                 makec' shiftc' load'
+ {-# INLINE [2] czipWith #-}
 
 
 -- Delayed ----------------------------
-instance Combine D a D b where
+instance Combine D a b where
+ type T D = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- ForeignPtr -------------------------
-instance Storable a => Combine F a D b where
+instance Storable a => Combine F a b where
+ type T F = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- Partitioned ------------------------
-instance (Combine r11 a r21 b
-        , Combine r12 a r22 b)
-       => Combine (P r11 r12) a (P r21 r22) b where
+instance (Combine r1 a b
+        , Combine r2 a b)
+       => Combine (P r1 r2) a b where
+ type T (P r1 r2) = P (T r1) (T r2)
 
  cmap f (APart sh range arr1 arr2)
         = APart sh range (cmap f arr1) (cmap f arr2)
@@ -159,8 +166,10 @@ instance (Combine r11 a r21 b
 
 
 -- Small ------------------------------
-instance   Combine r1 a r2 b
-        => Combine (S r1) a (S r2) b where
+instance   Combine r1 a b
+        => Combine (S r1) a b where
+ type T (S r1) = S (T r1)
+
  cmap f (ASmall arr1)
         = ASmall (cmap f arr1)
  {-# INLINE [3] cmap #-}
@@ -171,13 +180,15 @@ instance   Combine r1 a r2 b
 
 
 -- Unboxed ----------------------------
-instance Unbox a => Combine U a D b where
+instance Unbox a => Combine U a b where
+ type T U = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- Undefined --------------------------
-instance Combine X a X b where
+instance Combine X a b where
+ type T X = X
  cmap     _   (AUndefined sh) = AUndefined sh
  czipWith _ _ (AUndefined sh) = AUndefined sh
 
