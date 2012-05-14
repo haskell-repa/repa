@@ -9,8 +9,11 @@ import Data.Array.Repa.Index
 
 -- | How to handle the case when the stencil lies partly outside the array.
 data Boundary a
-	-- | Treat points outside as having a constant value.
-	= BoundConst a
+        -- | Use a fixed value for border regions.
+        = BoundFixed a
+
+	-- | Treat points outside the array as having a constant value.
+	| BoundConst a
 
 	-- | Clamp points outside to the same value as the edge pixel.
 	| BoundClamp

@@ -113,9 +113,9 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
         {-# INLINE getBorder' #-}
         getBorder' ix
          = case boundary of
-                BoundConst c    -> c
-                BoundClamp      -> unsafeAppStencilCursor2_clamp addDim stencil
-                                        arr ix
+                BoundFixed c    -> c
+                BoundConst c    -> unsafeAppStencilCursor2_const addDim stencil c arr ix
+                BoundClamp      -> unsafeAppStencilCursor2_clamp addDim stencil arr ix
 
    in
     --  internal region
@@ -156,6 +156,55 @@ unsafeAppStencilCursor2 shift
 		   in	loads (Z :. oy :. ox) (getData cur')
 
 	   in	template7x7 oload zero
+
+        | otherwise
+        = error $ unlines 
+                [ "mapStencil2: Your stencil is too big for this method."
+                , " It must fit within a 7x7 tile to be compiled statically." ]
+
+
+-- | Like above, but treat elements outside the array has having a constant value.
+unsafeAppStencilCursor2_const
+        :: forall r a
+        .  Repr r a
+        => (DIM2 -> DIM2 -> DIM2)
+        -> Stencil DIM2 a
+        -> a
+        -> Array r DIM2 a
+        -> DIM2
+        -> a
+
+{-# INLINE unsafeAppStencilCursor2_const #-}
+unsafeAppStencilCursor2_const shift
+           (StencilStatic sExtent zero loads)
+           fixed arr cur
+
+        | _ :. sHeight      :. sWidth       <- sExtent
+        , _ :. (I# aHeight) :. (I# aWidth)  <- extent arr
+        , sHeight <= 7, sWidth <= 7
+        = let
+                -- Get data from the manifest array.
+                {-# INLINE getData #-}
+                getData :: DIM2 -> a
+                getData (Z :. (I# y) :. (I# x))
+                 = getData' x y
+
+                {-# NOINLINE getData' #-}
+                getData' :: Int# -> Int# -> a
+                getData' !x !y
+                 | x <# 0#       = fixed
+                 | x >=# aWidth  = fixed
+                 | y <# 0#       = fixed
+                 | y >=# aHeight = fixed
+                 | otherwise     = arr `unsafeIndex` (Z :. (I# y) :.  (I# x))
+
+                -- Build a function to pass data from the array to our stencil.
+                {-# INLINE oload #-}
+                oload oy ox
+                 = let  !cur' = shift (Z :. oy :. ox) cur
+                   in   loads (Z :. oy :. ox) (getData cur')
+
+           in   template7x7 oload zero
 
         | otherwise
         = error $ unlines 
