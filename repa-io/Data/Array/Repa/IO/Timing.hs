@@ -2,7 +2,9 @@
 -- | Timing utilities used for benchmarks in the @repa-examples@ package.
 module Data.Array.Repa.IO.Timing
 	( Time
-	, milliseconds, cpuTime, wallTime
+	, milliseconds
+        , microseconds
+        , cpuTime, wallTime
 	, time, minus, plus
 	, showTime
 	, prettyTime)
@@ -37,6 +39,9 @@ plus  = zipT (+)
 -- | Conversion 
 type TimeUnit 
 	= Integer -> Integer
+
+microseconds :: TimeUnit 
+microseconds n = n `div` 1000000
 
 milliseconds :: TimeUnit
 milliseconds n = n `div` 1000000000
