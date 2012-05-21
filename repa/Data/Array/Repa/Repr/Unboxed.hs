@@ -26,19 +26,12 @@ import Prelude hiding (zip, zip3, unzip, unzip3)
 --   This is the most efficient representation for numerical data.
 --
 data U
-data instance U.Unbox e => Array U sh e
-        = AUnboxed !sh !(U.Vector e)
-        
-deriving instance (Show sh, Show e, U.Unbox e)
-        => Show (Array U sh e)
 
-deriving instance (Read sh, Read e, U.Unbox e)
-        => Read (Array U sh e)
-
-
--- Repr -----------------------------------------------------------------------
 -- | Read elements from an unboxed vector array.
 instance (Shape sh, U.Unbox a) => Source U sh a where
+ data Array U sh a
+        = AUnboxed !sh !(U.Vector a)
+
  linearIndex (AUnboxed _ vec) ix
         = vec U.! ix
  {-# INLINE linearIndex #-}
@@ -54,6 +47,13 @@ instance (Shape sh, U.Unbox a) => Source U sh a where
  deepSeqArray (AUnboxed sh vec) x 
   = sh `deepSeq` vec `seq` x
  {-# INLINE deepSeqArray #-}
+
+
+deriving instance (Show sh, Show e, U.Unbox e)
+        => Show (Array U sh e)
+
+deriving instance (Read sh, Read e, U.Unbox e)
+        => Read (Array U sh e)
 
 
 -- Fill -----------------------------------------------------------------------

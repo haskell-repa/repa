@@ -12,19 +12,14 @@ import Data.Array.Repa.Eval
 --   * This is normally used as the last representation in a partitioned array, 
 --     as the previous partitions are expected to provide full coverage.
 data X
-data instance Array X sh e
-        = AUndefined !sh
-
-deriving instance Show sh 
-        => Show (Array X sh e)
-
-deriving instance Read sh 
-        => Read (Array X sh e)
 
 
 -- | Undefined array elements. Inspecting them yields `error`.
 --
 instance Shape sh => Source X sh e where
+ data Array X sh e
+        = AUndefined !sh
+
  deepSeqArray _ x
         = x
  {-# INLINE deepSeqArray #-}
@@ -40,7 +35,14 @@ instance Shape sh => Source X sh e where
  linearIndex (AUndefined _) ix
         = error $ "Repa: array element at " ++ show ix ++ " is undefined."
  {-# INLINE linearIndex #-}
- 
+
+
+deriving instance Show sh 
+        => Show (Array X sh e)
+
+deriving instance Read sh 
+        => Read (Array X sh e)
+
 
 instance (Shape sh, Target r2 e, Num e) => Fill X r2 sh e where
  fillS _ _ = return ()

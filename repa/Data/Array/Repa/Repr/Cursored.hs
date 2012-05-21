@@ -24,23 +24,24 @@ import Debug.Trace
 --   array representation has changed since this paper was published.
 data C
 
-data instance Array C sh e
+
+-- | Compute elements of a cursored array.
+instance Shape sh => Source C sh a where
+
+ data Array C sh a
         = forall cursor. ACursored
         { cursoredExtent :: !sh 
                 
           -- | Make a cursor to a particular element.
-	, makeCursor     :: sh -> cursor
+        , makeCursor     :: sh -> cursor
 
-	  -- | Shift the cursor by an offset, to get to another element.
-	, shiftCursor    :: sh -> cursor -> cursor
+          -- | Shift the cursor by an offset, to get to another element.
+        , shiftCursor    :: sh -> cursor -> cursor
 
-	  -- | Load\/compute the element at the given cursor.
-	, loadCursor	 :: cursor -> e }
+          -- | Load\/compute the element at the given cursor.
+        , loadCursor     :: cursor -> a }
 
 
--- Source ---------------------------------------------------------------------
--- | Compute elements of a cursored array.
-instance Shape sh => Source C sh a where
  index (ACursored _ makec _ loadc)
         = loadc . makec
  {-# INLINE index #-}

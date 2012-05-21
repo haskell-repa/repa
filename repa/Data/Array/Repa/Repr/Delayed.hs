@@ -20,15 +20,14 @@ import GHC.Exts
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
 data D
-data instance Array D sh e
-        = ADelayed  
-                !sh 
-                (sh -> e) 
 
-
--- Repr -----------------------------------------------------------------------
 -- | Compute elements of a delayed array.
 instance Shape sh => Source D sh a where
+ data Array D sh a
+        = ADelayed  
+                !sh 
+                (sh -> a) 
+
  index       (ADelayed _  f) ix  = f ix
  {-# INLINE index #-}
 

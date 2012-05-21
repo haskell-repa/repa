@@ -1,20 +1,19 @@
 
 module Data.Array.Repa.Base
-        ( Array
-        , Source (..), (!), toList
+        ( Source (..), (!), toList
         , deepSeqArrays)
 where
 import Data.Array.Repa.Shape
-
--- | Arrays with a representation tag, shape, and element type.
---   Use one of the type tags like `D`, `U` and so on for @r@, 
---   one of `DIM1`, `DIM2` ... for @sh@.
-data family Array r sh e
 
 
 -- Source -----------------------------------------------------------------------
 -- | Class of array representations that we can read elements from.
 class Shape sh => Source r sh e where
+-- | Arrays with a representation tag, shape, and element type.
+--   Use one of the type tags like `D`, `U` and so on for @r@, 
+--   one of `DIM1`, `DIM2` ... for @sh@.
+ data Array r sh e
+
  -- | O(1). Take the extent (size) of an array.
  extent :: Array r sh e -> sh
 

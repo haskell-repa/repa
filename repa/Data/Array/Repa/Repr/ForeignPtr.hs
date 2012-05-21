@@ -17,13 +17,12 @@ import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 
 -- | Arrays represented as foreign buffers in the C heap.
 data F
-data instance Array F sh e
-        = AForeignPtr !sh !Int !(ForeignPtr e)
 
-
--- Repr -----------------------------------------------------------------------
 -- | Read elements from a foreign buffer.
 instance (Shape sh, Storable a) => Source F sh a where
+ data Array F sh a
+        = AForeignPtr !sh !Int !(ForeignPtr a)
+
  linearIndex (AForeignPtr _ len fptr) ix
   | ix < len  
         = unsafePerformIO 

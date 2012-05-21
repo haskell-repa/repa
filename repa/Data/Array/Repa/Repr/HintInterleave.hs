@@ -15,22 +15,10 @@ import Debug.Trace
 --   and evaluation should be interleaved between the processors.
 data I r1
 
-data instance Array (I r1) sh e
-        = AInterleave !(Array r1 sh e)
-
-deriving instance Show (Array r1 sh e) 
-        => Show (Array (I r1) sh e)
-
-deriving instance Read (Array r1 sh e) 
-        => Read (Array (I r1) sh e)
-
-
--- | Wrap an array with a unbalanced-ness hint.
-hintInterleave :: Array r1 sh e -> Array (I r1) sh e
-hintInterleave = AInterleave
-
-
 instance Source r1 sh a => Source (I r1) sh a where
+ data Array (I r1) sh a
+        = AInterleave !(Array r1 sh a)
+
  extent (AInterleave arr) 
         = extent arr
  {-# INLINE extent #-}
@@ -54,6 +42,18 @@ instance Source r1 sh a => Source (I r1) sh a where
  deepSeqArray (AInterleave arr) x
         = deepSeqArray arr x
  {-# INLINE deepSeqArray #-}
+
+
+deriving instance Show (Array r1 sh e) 
+        => Show (Array (I r1) sh e)
+
+deriving instance Read (Array r1 sh e) 
+        => Read (Array (I r1) sh e)
+
+
+-- | Wrap an array with a unbalanced-ness hint.
+hintInterleave :: Array r1 sh e -> Array (I r1) sh e
+hintInterleave = AInterleave
 
 
 -- Fill -----------------------------------------------------------------------

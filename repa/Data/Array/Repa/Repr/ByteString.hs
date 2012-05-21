@@ -14,19 +14,12 @@ import Data.ByteString                  (ByteString)
 
 -- | Strict ByteStrings arrays are represented as ForeignPtr buffers of Word8
 data B
-data instance Array B sh Word8
-        = AByteString !sh !ByteString
         
-deriving instance Show sh
-        => Show (Array B sh Word8)
-
-deriving instance Read sh
-        => Read (Array B sh Word8)
-
-
--- Source -----------------------------------------------------------------------
 -- | Read elements from a `ByteString`.
 instance Shape sh => Source B sh Word8 where
+ data Array B sh Word8
+        = AByteString !sh !ByteString
+
  linearIndex (AByteString _ bs) ix
         = bs `B.index` ix
  {-# INLINE linearIndex #-}
@@ -42,6 +35,13 @@ instance Shape sh => Source B sh Word8 where
  deepSeqArray (AByteString sh bs) x 
   = sh `deepSeq` bs `seq` x
  {-# INLINE deepSeqArray #-}
+
+
+deriving instance Show sh
+        => Show (Array B sh Word8)
+
+deriving instance Read sh
+        => Read (Array B sh Word8)
 
 
 -- Conversions ----------------------------------------------------------------

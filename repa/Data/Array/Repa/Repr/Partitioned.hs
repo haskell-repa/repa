@@ -23,11 +23,6 @@ import Data.Array.Repa.Repr.Delayed
 --
 data P r1 r2
 
-data instance Array (P r1 r2) sh e
-        = APart !sh                          -- size of the whole array
-                !(Range sh) !(Array r1 sh e) -- if in range use this array
-                !(Array r2 sh e)             -- otherwise use this array
-
 data Range sh
         = Range !sh !sh                      -- indices defining the range
                 (sh -> Bool)                 -- predicate to check whether were in range
@@ -42,6 +37,12 @@ inRange (Range _ _ p) ix
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a partitioned array.
 instance (Source r1 sh e, Source r2 sh e) => Source (P r1 r2) sh e where
+ data Array (P r1 r2) sh e
+        = APart !sh                          -- size of the whole array
+                !(Range sh) !(Array r1 sh e) -- if in range use this array
+                !(Array r2 sh e)             -- otherwise use this array
+
+
  index (APart _ range arr1 arr2) ix
    | inRange range ix   = index arr1 ix
    | otherwise          = index arr2 ix

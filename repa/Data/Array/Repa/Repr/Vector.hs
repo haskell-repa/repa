@@ -19,19 +19,12 @@ import Control.Monad
 --   have an `Unbox` instsance. If it does, then use the Unboxed `U`
 --   representation will be faster.
 data V
-data instance Array V sh e
-        = AVector !sh !(V.Vector e)
         
-deriving instance (Show sh, Show e)
-        => Show (Array V sh e)
-
-deriving instance (Read sh, Read e)
-        => Read (Array V sh e)
-
-
--- Source -----------------------------------------------------------------------
 -- | Read elements from a boxed vector array.
 instance Shape sh => Source V sh a where
+ data Array V sh a
+        = AVector !sh !(V.Vector a)
+
  linearIndex (AVector _ vec) ix
         = vec V.! ix
  {-# INLINE linearIndex #-}
@@ -47,6 +40,13 @@ instance Shape sh => Source V sh a where
  deepSeqArray (AVector sh vec) x 
   = sh `deepSeq` vec `seq` x
  {-# INLINE deepSeqArray #-}
+
+
+deriving instance (Show sh, Show e)
+        => Show (Array V sh e)
+
+deriving instance (Read sh, Read e)
+        => Read (Array V sh e)
 
 
 -- Fill -----------------------------------------------------------------------
