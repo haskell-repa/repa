@@ -9,9 +9,9 @@ import Data.Array.Repa.Shape
 -- Source -----------------------------------------------------------------------
 -- | Class of array representations that we can read elements from.
 class Shape sh => Source r sh e where
--- | Arrays with a representation tag, shape, and element type.
---   Use one of the type tags like `D`, `U` and so on for @r@, 
---   one of `DIM1`, `DIM2` ... for @sh@.
+ -- Arrays with a representation tag, shape, and element type.
+ --   Use one of the type tags like `D`, `U` and so on for @r@, 
+ --   one of `DIM1`, `DIM2` ... for @sh@.
  data Array r sh e
 
  -- | O(1). Take the extent (size) of an array.

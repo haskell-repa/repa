@@ -84,14 +84,14 @@ zipWith f arr1 arr2
 --   `czipWith` are identical to the plain functions.
 --
 class Combine r1 a b where
- -- | The target representation.
- type T r1
+ -- | The result representation.
+ type R r1
 
  -- | Combining @map@.
  cmap   :: Shape sh 
         => (a -> b) 
         -> Array r1     sh a 
-        -> Array (T r1) sh b
+        -> Array (R r1) sh b
 
  -- | Combining @zipWith@.
  --   If you have a cursored or partitioned source array then use that as
@@ -101,19 +101,19 @@ class Combine r1 a b where
         => (c -> a -> b)
         -> Array r      sh c
         -> Array r1     sh a
-        -> Array (T r1) sh b
+        -> Array (R r1) sh b
 
 
 -- ByteString -------------------------
 instance Combine B Word8 b where
- type T B = D
+ type R B = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- Cursored ---------------------------
 instance Combine C a b where
- type T C = C
+ type R C = C
 
  cmap f (ACursored sh makec shiftc loadc)
         = ACursored sh makec shiftc (f . loadc)
@@ -137,14 +137,14 @@ instance Combine C a b where
 
 -- Delayed ----------------------------
 instance Combine D a b where
- type T D = D
+ type R D = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- ForeignPtr -------------------------
 instance Storable a => Combine F a b where
- type T F = D
+ type R F = D
  cmap           = map
  czipWith       = zipWith
 
@@ -153,7 +153,7 @@ instance Storable a => Combine F a b where
 instance (Combine r1 a b
         , Combine r2 a b)
        => Combine (P r1 r2) a b where
- type T (P r1 r2) = P (T r1) (T r2)
+ type R (P r1 r2) = P (R r1) (R r2)
 
  cmap f (APart sh range arr1 arr2)
         = APart sh range (cmap f arr1) (cmap f arr2)
@@ -168,7 +168,7 @@ instance (Combine r1 a b
 -- Small ------------------------------
 instance   Combine r1 a b
         => Combine (S r1) a b where
- type T (S r1) = S (T r1)
+ type R (S r1) = S (R r1)
 
  cmap f (ASmall arr1)
         = ASmall (cmap f arr1)
@@ -181,14 +181,14 @@ instance   Combine r1 a b
 
 -- Unboxed ----------------------------
 instance Unbox a => Combine U a b where
- type T U = D
+ type R U = D
  cmap           = map
  czipWith       = zipWith
 
 
 -- Undefined --------------------------
 instance Combine X a b where
- type T X = X
+ type R X = X
  cmap     _   (AUndefined sh) = AUndefined sh
  czipWith _ _ (AUndefined sh) = AUndefined sh
 
