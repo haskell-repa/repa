@@ -61,7 +61,7 @@ import System.IO.Unsafe
 --     then use `delay` instead.
 --
 computeP 
-        :: (Source r1 sh e, Fill r1 r2 sh e, Source r2 sh e, Monad m)
+        :: (Fill r1 r2 sh e, Source r2 sh e, Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 computeP arr = now $ suspendedComputeP arr
 {-# INLINE [4] computeP #-}
