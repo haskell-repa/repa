@@ -11,8 +11,8 @@ import Data.Array.Repa.Algorithms.Complex
 
 -- | Apply the centering transform to a vector.
 center1d
-        :: Repr r Complex
-        => Array r DIM1 Complex -> Array D DIM1 Complex
+        :: Source r DIM1 Complex
+        => Array  r DIM1 Complex -> Array D DIM1 Complex
 {-# INLINE center1d #-}
 center1d arr
  = traverse arr id
@@ -21,8 +21,8 @@ center1d arr
 
 -- | Apply the centering transform to a matrix.
 center2d
-        :: Repr r Complex
-        => Array r DIM2 Complex -> Array D DIM2 Complex
+        :: Source r DIM2 Complex
+        => Array  r DIM2 Complex -> Array D DIM2 Complex
 {-# INLINE center2d #-}
 center2d arr
  = traverse arr id
@@ -31,8 +31,8 @@ center2d arr
 
 -- | Apply the centering transform to a 3d array.
 center3d 
-        :: Repr r Complex
-        => Array r DIM3 Complex -> Array D DIM3 Complex
+        :: Source r DIM3 Complex
+        => Array  r DIM3 Complex -> Array D DIM3 Complex
 {-# INLINE center3d #-}
 center3d arr
  = traverse arr id

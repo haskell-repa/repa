@@ -82,6 +82,7 @@ Library
         Data.Array.Repa.Eval.Cursored
         Data.Array.Repa.Eval.Interleaved
         Data.Array.Repa.Eval.Elt
+        Data.Array.Repa.Eval.Target
         Data.Array.Repa.Eval.Fill
         Data.Array.Repa.Eval.Reduction
         Data.Array.Repa.Eval.Selection

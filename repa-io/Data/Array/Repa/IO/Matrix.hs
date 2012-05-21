@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports, FlexibleContexts #-}
 -- | Read and write matrices as ASCII text files.
 --
 --   The file format is like:
@@ -49,7 +49,7 @@ readMatrixFromTextFile fileName
 
 -- | Write a matrix as a text file.
 writeMatrixToTextFile 
-	:: (Show e, Repr r e)
+	:: (Show e, Source r DIM2 e)
 	=> FilePath
 	-> Array r DIM2 e
 	-> IO ()

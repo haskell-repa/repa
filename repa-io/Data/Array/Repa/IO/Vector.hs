@@ -1,4 +1,4 @@
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports, FlexibleContexts #-}
 -- | Read and write vectors as ASCII text files.
 --
 --   The file format is like:
@@ -59,7 +59,7 @@ readInt str
 	
 -- | Write a vector as a text file.
 writeVectorToTextFile 
-	:: (Show e, Repr r e)
+	:: (Show e, Source r DIM1 e)
 	=> Array r DIM1 e
 	-> FilePath
 	-> IO ()

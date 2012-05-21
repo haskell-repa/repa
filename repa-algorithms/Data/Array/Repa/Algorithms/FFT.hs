@@ -49,7 +49,7 @@ isPowerOfTwo n
 
 -- 3D Transform -----------------------------------------------------------------------------------
 -- | Compute the DFT of a 3d array. Array dimensions must be powers of two else `error`.
-fft3dP 	:: (Repr r Complex, Monad m)
+fft3dP 	:: (Source r DIM3 Complex, Monad m)
         => Mode
 	-> Array r DIM3 Complex
 	-> m (Array U DIM3 Complex)
@@ -76,7 +76,7 @@ fft3dP mode arr
 
 
 fftTrans3d 
-	:: Repr r Complex
+	:: Source r DIM3 Complex
 	=> Double
 	-> Array r DIM3 Complex 
 	-> Array U DIM3 Complex
@@ -88,7 +88,7 @@ fftTrans3d sign arr
 
 
 rotate3d 
-        :: Repr r Complex
+        :: Source r DIM3 Complex
         => Array r DIM3 Complex -> Array D DIM3 Complex
 rotate3d arr
  = backpermute (sh :. m :. k :. l) f arr
@@ -100,7 +100,7 @@ rotate3d arr
 
 -- Matrix Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a matrix. Array dimensions must be powers of two else `error`.
-fft2dP 	:: (Repr r Complex, Monad m)
+fft2dP 	:: (Source r DIM2 Complex, Monad m)
         => Mode
 	-> Array r DIM2 Complex
 	-> m (Array U DIM2 Complex)
@@ -124,7 +124,7 @@ fft2dP mode arr
 
 
 fftTrans2d
-	:: Repr r Complex
+	:: Source r DIM2 Complex
 	=> Double
 	-> Array r DIM2 Complex 
 	-> Array U DIM2 Complex
@@ -137,7 +137,7 @@ fftTrans2d sign arr
 
 -- Vector Transform -------------------------------------------------------------------------------
 -- | Compute the DFT of a vector. Array dimensions must be powers of two else `error`.
-fft1dP	:: (Repr r Complex, Monad m)
+fft1dP	:: (Source r DIM1 Complex, Monad m)
         => Mode 
 	-> Array r DIM1 Complex 
 	-> m (Array U DIM1 Complex)
@@ -161,7 +161,7 @@ fft1dP mode arr
 
 
 fftTrans1d
-	:: Repr r Complex
+	:: Source r DIM1 Complex
 	=> Double 
 	-> Array r DIM1 Complex
 	-> Array U DIM1 Complex
@@ -173,7 +173,7 @@ fftTrans1d sign arr
 
 
 -- Rank Generalised Worker ------------------------------------------------------------------------
-fft     :: (Shape sh, Repr r Complex)
+fft     :: Source r (sh :. Int) Complex
         => Double -> sh -> Int 
         -> Array r (sh :. Int) Complex
         -> Array U (sh :. Int) Complex
