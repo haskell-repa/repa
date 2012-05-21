@@ -27,7 +27,7 @@ data instance Array D sh e
 
 -- Repr -----------------------------------------------------------------------
 -- | Compute elements of a delayed array.
-instance Repr D a where
+instance Shape sh => Source D sh a where
  index       (ADelayed _  f) ix  = f ix
  {-# INLINE index #-}
 
@@ -100,7 +100,7 @@ fromFunction sh f
 -- | O(1). Produce the extent of an array, and a function to retrieve an
 --   arbitrary element.
 toFunction 
-        :: (Shape sh, Repr r1 a)
+        :: Source r1 sh a
         => Array r1 sh a -> (sh, sh -> a)
 toFunction arr
  = case delay arr of
@@ -113,7 +113,7 @@ toFunction arr
 --   indices to elements, so consumers don't need to worry about
 --   what the previous representation was.
 --
-delay   :: (Shape sh, Repr r e)
+delay   :: Source r sh e
         => Array r sh e -> Array D sh e
 delay arr = ADelayed (extent arr) (unsafeIndex arr)
 {-# INLINE delay #-}

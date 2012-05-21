@@ -9,8 +9,8 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Base
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Operators.Traversal
-import Data.Array.Repa.Shape		as S
 import Prelude				hiding ((++))
+
 
 -- Interleave -----------------------------------------------------------------
 -- | Interleave the elements of two arrays.
@@ -23,8 +23,9 @@ import Prelude				hiding ((++))
 -- @
 --
 interleave2
-	:: (Shape sh
-	   , Repr r1 a, Repr r2 a)
+	:: ( Source r1 (sh :. Int) a
+           , Source r2 (sh :. Int) a
+           , Eq sh)
 	=> Array r1 (sh :. Int) a
 	-> Array r2 (sh :. Int) a
 	-> Array D  (sh :. Int) a
@@ -50,8 +51,10 @@ interleave2 arr1 arr2
 
 -- | Interleave the elements of three arrays.
 interleave3
-	:: ( Shape sh
-	   , Repr r1 a, Repr r2 a, Repr r3 a)
+	:: ( Source r1 (sh :. Int) a
+           , Source r2 (sh :. Int) a
+           , Source r3 (sh :. Int) a
+           , Eq sh)
 	=> Array r1 (sh :. Int) a
 	-> Array r2 (sh :. Int) a
 	-> Array r3 (sh :. Int) a
@@ -80,8 +83,11 @@ interleave3 arr1 arr2 arr3
 
 -- | Interleave the elements of four arrays.
 interleave4
-	:: ( Shape sh
-	   , Repr r1 a, Repr r2 a, Repr r3 a, Repr r4 a)
+	:: ( Source r1 (sh :. Int) a
+           , Source r2 (sh :. Int) a
+           , Source r3 (sh :. Int) a
+           , Source r4 (sh :. Int) a
+           , Eq sh)
 	=> Array r1 (sh :. Int) a
 	-> Array r2 (sh :. Int) a
 	-> Array r3 (sh :. Int) a
@@ -109,3 +115,5 @@ interleave4 arr1 arr2 arr3 arr4
 		2	-> get3 (sh :. ix `div` 4)
 		3	-> get4 (sh :. ix `div` 4)
 		_	-> error "Data.Array.Repa.interleave4: this never happens :-P"
+
+

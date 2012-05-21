@@ -11,11 +11,10 @@
 --   fits in the 7x7 tile.
 --
 module Data.Array.Repa.Stencil.Dim2
-	( 
-	-- * Stencil creation
+	( -- * Stencil creation
 	  makeStencil2, stencil2
 
-	-- * Stencil operators
+	  -- * Stencil operators
 	, PC5, mapStencil2, forStencil2)
 where
 import Data.Array.Repa.Base
@@ -42,10 +41,10 @@ type PC5 = P C (P (S D) (P (S D) (P (S D) (P (S D) X))))
 -- Wrappers -------------------------------------------------------------------
 -- | Like `mapStencil2` but with the parameters flipped.
 forStencil2
-        :: Repr r a
+        :: Source r DIM2 a
         => Boundary a
-	-> Array r DIM2 a
-	-> Stencil DIM2 a
+	-> Array  r DIM2 a
+	-> Stencil  DIM2 a
 	-> Array PC5 DIM2 a
 
 {-# INLINE forStencil2 #-}
@@ -56,7 +55,7 @@ forStencil2 boundary arr stencil
 -------------------------------------------------------------------------------
 -- | Apply a stencil to every element of a 2D array.
 mapStencil2
-        :: Repr r a
+        :: Source r DIM2 a
         => Boundary a		-- ^ How to handle the boundary of the array.
 	-> Stencil DIM2 a	-- ^ Stencil to apply.
 	-> Array r DIM2 a		-- ^ Array to apply stencil to.
@@ -130,7 +129,7 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
 
 
 unsafeAppStencilCursor2
-	:: Repr r a
+	:: Source r DIM2 a
 	=> (DIM2 -> Cursor -> Cursor)
 	-> Stencil DIM2 a
 	-> Array r DIM2 a
@@ -166,7 +165,7 @@ unsafeAppStencilCursor2 shift
 -- | Like above, but treat elements outside the array has having a constant value.
 unsafeAppStencilCursor2_const
         :: forall r a
-        .  Repr r a
+        .  Source r DIM2 a
         => (DIM2 -> DIM2 -> DIM2)
         -> Stencil DIM2 a
         -> a
@@ -215,7 +214,7 @@ unsafeAppStencilCursor2_const shift
 -- | Like above, but clamp out of bounds array values to the closest real value.
 unsafeAppStencilCursor2_clamp
 	:: forall r a
-	.  Repr r a
+	.  Source r DIM2 a
 	=> (DIM2 -> DIM2 -> DIM2)
 	-> Stencil DIM2 a
 	-> Array r DIM2 a

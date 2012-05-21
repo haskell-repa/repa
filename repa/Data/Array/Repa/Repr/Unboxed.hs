@@ -38,7 +38,7 @@ deriving instance (Read sh, Read e, U.Unbox e)
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from an unboxed vector array.
-instance U.Unbox a => Repr U a where
+instance (Shape sh, U.Unbox a) => Source U sh a where
  linearIndex (AUnboxed _ vec) ix
         = vec U.! ix
  {-# INLINE linearIndex #-}

@@ -13,7 +13,7 @@ import Data.Array.Repa.Repr.Delayed
 -- | Unstructured traversal.
 traverse, unsafeTraverse
 	:: forall r sh sh' a b
-	.  (Shape sh, Shape sh', Repr r a)
+	.  (Source r sh a, Shape sh')
 	=> Array r sh a		        -- ^ Source array.
 	-> (sh  -> sh')			-- ^ Function to produce the extent of the result.
 	-> ((sh -> a) -> sh' -> b)	-- ^ Function to produce elements of the result.
@@ -32,8 +32,8 @@ unsafeTraverse arr transExtent newElem
 -- | Unstructured traversal over two arrays at once.
 traverse2, unsafeTraverse2
 	:: forall r1 r2 sh sh' sh'' a b c
-	.  ( Shape sh,  Shape sh', Shape sh''
-	   , Repr r1 a, Repr r2 b)
+	.  ( Source r1 sh a, Source r2 sh' b
+           , Shape sh'')
         => Array r1 sh  a 		-- ^ First source array.
 	-> Array r2 sh' b		-- ^ Second source array.
         -> (sh -> sh' -> sh'')		-- ^ Function to produce the extent of the result.
@@ -59,8 +59,8 @@ traverse3, unsafeTraverse3
 	:: forall r1  r2  r3
 	          sh1 sh2 sh3 sh4
 	          a   b   c   d
-	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4
-	   , Repr r1 a, Repr r2 b, Repr r3 c)
+	.  ( Source r1 sh1 a, Source r2 sh2 b, Source r3 sh3 c
+           , Shape sh4)
         => Array r1 sh1 a
 	-> Array r2 sh2 b
 	-> Array r3 sh3 c
@@ -86,8 +86,8 @@ traverse4, unsafeTraverse4
 	:: forall r1  r2  r3  r4
 	          sh1 sh2 sh3 sh4 sh5
 	          a   b   c   d   e
-	.  ( Shape sh1, Shape sh2, Shape sh3, Shape sh4, Shape sh5
-	   , Repr r1 a, Repr r2 b, Repr r3 c, Repr r4 d)
+	.  ( Source r1 sh1 a, Source r2 sh2 b, Source r3 sh3 c, Source r4 sh4 d
+           , Shape sh5)
         => Array r1 sh1 a
 	-> Array r2 sh2 b
 	-> Array r3 sh3 c

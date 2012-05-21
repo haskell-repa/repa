@@ -22,7 +22,7 @@ data instance Array F sh e
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a foreign buffer.
-instance Storable a => Repr F a where
+instance (Shape sh, Storable a) => Source F sh a where
  linearIndex (AForeignPtr _ len fptr) ix
   | ix < len  
         = unsafePerformIO 

@@ -92,8 +92,8 @@ module Data.Array.Repa
         ( -- * Abstract array representation
           module Data.Array.Repa.Shape
         , module Data.Array.Repa.Index
-        , Array(..)
-        , Repr(..), (!), toList
+        , Array (..)
+        , Source(..), (!), toList
         , deepSeqArrays
 
         -- * Computation

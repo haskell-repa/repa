@@ -24,7 +24,7 @@ deriving instance Read sh
 
 -- | Undefined array elements. Inspecting them yields `error`.
 --
-instance Repr X e where
+instance Shape sh => Source X sh e where
  deepSeqArray _ x
         = x
  {-# INLINE deepSeqArray #-}

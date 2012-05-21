@@ -41,7 +41,7 @@ inRange (Range _ _ p) ix
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a partitioned array.
-instance (Repr r1 e, Repr r2 e) => Repr (P r1 r2) e where
+instance (Source r1 sh e, Source r2 sh e) => Source (P r1 r2) sh e where
  index (APart _ range arr1 arr2) ix
    | inRange range ix   = index arr1 ix
    | otherwise          = index arr2 ix

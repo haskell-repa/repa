@@ -24,8 +24,7 @@ stage	= "Data.Array.Repa.Operators.IndexSpace"
 -- Index space transformations ------------------------------------------------
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
-reshape	:: (Shape sh2, Shape sh1
-           , Repr r1 e)
+reshape	:: (Source r1 sh1 e, Shape sh2)
 	=> sh2
 	-> Array r1 sh1 e
 	-> Array D  sh2 e
@@ -43,8 +42,8 @@ reshape sh2 arr
 
 -- | Append two arrays.
 append, (++)
-	:: ( Shape sh
-	   , Repr r1 e, Repr r2 e)
+	:: (Source r1 (sh :. Int) e
+          , Source r2 (sh :. Int) e)
 	=> Array r1 (sh :. Int) e
 	-> Array r2 (sh :. Int) e
 	-> Array D  (sh :. Int) e
@@ -70,10 +69,9 @@ append arr1 arr2
 -- | Transpose the lowest two dimensions of an array.
 --	Transposing an array twice yields the original.
 transpose
-	:: ( Shape sh
-	   , Repr r e)
-	=> Array r (sh :. Int :. Int) e
-	-> Array D (sh :. Int :. Int) e
+	:: Source r (sh :. Int :. Int) e
+	=> Array  r (sh :. Int :. Int) e
+	-> Array  D (sh :. Int :. Int) e
 
 transpose arr
  = unsafeTraverse arr
@@ -83,7 +81,7 @@ transpose arr
 
 
 -- | Extract a sub-range of elements from an array.
-extract :: (Shape sh, Repr r e)
+extract :: Source r sh e
         => sh                   -- ^ Starting index.
         -> sh                   -- ^ Size of result.
         -> Array r sh e 
@@ -97,8 +95,7 @@ extract start sz arr
 --	The result array has the same extent as the original.
 backpermute, unsafeBackpermute
 	:: forall r sh1 sh2 e
-	.  ( Shape sh1, Shape sh2
-	   , Repr r e)
+	.  (Source r sh1 e, Shape sh2)
 	=> sh2 			-- ^ Extent of result array.
 	-> (sh2 -> sh1) 	-- ^ Function mapping each index in the result array
 				--	to an index of the source array.
@@ -118,10 +115,9 @@ unsafeBackpermute newExtent perm arr
 --	If the function returns `Nothing` then the value at that index is taken
 --	from the default array (@arrDft@)
 backpermuteDft, unsafeBackpermuteDft
-	:: forall r0 r1 sh1 sh2 e
-	.  ( Shape sh1, Shape sh2
-	   , Repr  r0 e, Repr r1 e)
-	=> Array r0 sh2 e	-- ^ Default values (@arrDft@)
+	:: forall r1 r2 sh1 sh2 e
+	.  (Source r1 sh1 e, Source r2 sh2 e)
+	=> Array r2 sh2 e	-- ^ Default values (@arrDft@)
 	-> (sh2 -> Maybe sh1) 	-- ^ Function mapping each index in the result array
 				--	to an index in the source array.
 	-> Array r1 sh1 e	-- ^ Source array.
@@ -153,9 +149,8 @@ unsafeBackpermuteDft arrDft fnIndex arrSrc
 --
 extend, unsafeExtend
         :: ( Slice sl
-           , Shape (FullShape sl)
-           , Shape (SliceShape sl)
-           , Repr r e)
+           , Source r (SliceShape sl) e
+           , Shape    (FullShape sl))
         => sl
         -> Array r (SliceShape sl) e
         -> Array D (FullShape sl)  e
@@ -188,9 +183,8 @@ unsafeExtend sl arr
 --
 slice, unsafeSlice
         :: ( Slice sl
-           , Shape (FullShape sl)
-           , Shape (SliceShape sl)
-           , Repr r e)
+           , Source r (FullShape sl) e
+           , Shape    (SliceShape sl))
         => Array r (FullShape sl) e
         -> sl
         -> Array D (SliceShape sl) e

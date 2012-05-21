@@ -56,7 +56,7 @@ fromList sh xx
 --   Note that instances require that the source array to have a delayed
 --   representation such as `D` or `C`. If you want to use a pre-existing
 --   manifest array as the source then `delay` it first.
-class (Shape sh, Repr r1 e, Fillable r2 e) => Fill r1 r2 sh e where
+class (Source r1 sh e, Fillable r2 e) => Fill r1 r2 sh e where
  -- | Fill an entire array sequentially.
  fillS          :: Array r1 sh e -> MArr r2 e -> IO ()
 
@@ -67,7 +67,7 @@ class (Shape sh, Repr r1 e, Fillable r2 e) => Fill r1 r2 sh e where
 -- FillRange ------------------------------------------------------------------
 -- | Compute a range of elements defined by an array and write them to a fillable
 --   representation.
-class (Shape sh, Repr r1 e, Fillable r2 e) => FillRange r1 r2 sh e where
+class (Source r1 sh e, Fillable r2 e) => FillRange r1 r2 sh e where
  -- | Fill a range of an array sequentially.
  fillRangeS     :: Array r1 sh e -> MArr r2 e -> sh -> sh -> IO ()
 

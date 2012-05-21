@@ -37,9 +37,9 @@ data instance Array C sh e
 	, loadCursor	 :: cursor -> e }
 
 
--- Repr -----------------------------------------------------------------------
+-- Source ---------------------------------------------------------------------
 -- | Compute elements of a cursored array.
-instance Repr C a where
+instance Shape sh => Source C sh a where
  index (ACursored _ makec _ loadc)
         = loadc . makec
  {-# INLINE index #-}

@@ -29,9 +29,9 @@ deriving instance (Read sh, Read e)
         => Read (Array V sh e)
 
 
--- Repr -----------------------------------------------------------------------
+-- Source -----------------------------------------------------------------------
 -- | Read elements from a boxed vector array.
-instance Repr V a where
+instance Shape sh => Source V sh a where
  linearIndex (AVector _ vec) ix
         = vec V.! ix
  {-# INLINE linearIndex #-}

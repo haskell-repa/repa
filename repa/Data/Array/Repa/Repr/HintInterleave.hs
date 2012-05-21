@@ -29,7 +29,7 @@ hintInterleave :: Array r1 sh e -> Array (I r1) sh e
 hintInterleave = AInterleave
 
 
-instance Repr r1 a => Repr (I r1) a where
+instance Source r1 sh a => Source (I r1) sh a where
  extent (AInterleave arr) 
         = extent arr
  {-# INLINE extent #-}

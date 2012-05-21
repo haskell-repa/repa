@@ -26,7 +26,7 @@ hintSmall :: Array r1 sh e -> Array (S r1) sh e
 hintSmall = ASmall
 
 
-instance Repr r1 a => Repr (S r1) a where
+instance Source r1 sh a => Source (S r1) sh a where
  extent (ASmall arr) 
         = extent arr
  {-# INLINE extent #-}

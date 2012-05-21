@@ -24,9 +24,9 @@ deriving instance Read sh
         => Read (Array B sh Word8)
 
 
--- Repr -----------------------------------------------------------------------
+-- Source -----------------------------------------------------------------------
 -- | Read elements from a `ByteString`.
-instance Repr B Word8 where
+instance Shape sh => Source B sh Word8 where
  linearIndex (AByteString _ bs) ix
         = bs `B.index` ix
  {-# INLINE linearIndex #-}

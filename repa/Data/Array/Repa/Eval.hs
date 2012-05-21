@@ -60,7 +60,7 @@ import System.IO.Unsafe
 --     then use `delay` instead.
 --
 computeP 
-        :: (Shape sh, Fill r1 r2 sh e, Repr r2 e, Monad m)
+        :: (Source r1 sh e, Fill r1 r2 sh e, Source r2 sh e, Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 computeP arr = now $ suspendedComputeP arr
 {-# INLINE [4] computeP #-}
@@ -108,14 +108,14 @@ suspendedComputeP arr1
 -- 
 --   * You can use it to copy manifest arrays between representations.
 --
-copyP  :: (Shape sh, Fill D r2 sh e, Repr r1 e, Repr r2 e, Monad m)
+copyP  :: (Source r1 sh e, Source r2 sh e, Fill D r2 sh e, Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 copyP arr = now $ suspendedCopyP arr
 {-# INLINE [4] copyP #-}
 
 
 -- | Sequential copying of arrays.
-copyS   :: (Repr r1 e, Fill D r2 sh e)
+copyS   :: (Source r1 sh e, Fill D r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 copyS arr1  = computeS $ delay arr1
 {-# INLINE [4] copyS #-}
@@ -123,7 +123,7 @@ copyS arr1  = computeS $ delay arr1
 
 -- | Suspended parallel copy of array elements.
 suspendedCopyP   
-        :: (Repr r1 e, Fill D r2 sh e)
+        :: (Source r1 sh e, Fill D r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 suspendedCopyP arr1  = suspendedComputeP $ delay arr1
 {-# INLINE [4] suspendedCopyP #-}
@@ -140,9 +140,11 @@ suspendedCopyP arr1  = suspendedComputeP $ delay arr1
 --     ...
 -- @
 --
-now     :: (Shape sh, Repr r e, Monad m)
+now     :: (Source r sh e, Monad m)
         => Array r sh e -> m (Array r sh e)
 now arr
  = do   arr `deepSeqArray` return ()
         return arr
 {-# INLINE [4] now #-}
+
+
