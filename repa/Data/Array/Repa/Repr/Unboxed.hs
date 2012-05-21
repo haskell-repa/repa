@@ -58,30 +58,30 @@ instance (Shape sh, U.Unbox a) => Source U sh a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Filling of unboxed vector arrays.
-instance U.Unbox e => Fillable U e where
- data MArr U e 
-  = UMArr (UM.IOVector e)
+instance U.Unbox e => Target U e where
+ data MVec U e 
+  = UMVec (UM.IOVector e)
 
- newMArr n
-  = liftM UMArr (UM.new n)
- {-# INLINE newMArr #-}
+ newMVec n
+  = liftM UMVec (UM.new n)
+ {-# INLINE newMVec #-}
 
- unsafeWriteMArr (UMArr v) ix
+ unsafeWriteMVec (UMVec v) ix
   = UM.unsafeWrite v ix
- {-# INLINE unsafeWriteMArr #-}
+ {-# INLINE unsafeWriteMVec #-}
 
- unsafeFreezeMArr sh (UMArr mvec)     
+ unsafeFreezeMVec sh (UMVec mvec)     
   = do  vec     <- U.unsafeFreeze mvec
         return  $  AUnboxed sh vec
- {-# INLINE unsafeFreezeMArr #-}
+ {-# INLINE unsafeFreezeMVec #-}
 
- deepSeqMArr (UMArr vec) x
+ deepSeqMVec (UMVec vec) x
   = vec `seq` x
- {-# INLINE deepSeqMArr #-}
+ {-# INLINE deepSeqMVec #-}
 
- touchMArr _ 
+ touchMVec _ 
   = return ()
- {-# INLINE touchMArr #-}
+ {-# INLINE touchMVec #-}
 
 
 -- Conversions ----------------------------------------------------------------

@@ -4,10 +4,11 @@ module Data.Array.Repa.Repr.Delayed
         , fromFunction, toFunction
         , delay)
 where
-import Data.Array.Repa.Eval.Elt
-import Data.Array.Repa.Eval.Cursored
+import Data.Array.Repa.Eval.Target
 import Data.Array.Repa.Eval.Chunked
+import Data.Array.Repa.Eval.Cursored
 import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Index
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
@@ -45,46 +46,45 @@ instance Shape sh => Source D sh a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an array.
-instance (Fillable r2 e, Shape sh) => Fill D r2 sh e where
- fillP (ADelayed sh getElem) marr
-  = marr `deepSeqMArr` 
+instance (Shape sh, Target r2 e) => Fill D r2 sh e where
+ fillP (ADelayed sh getElem) mvec
+  = mvec `deepSeqMVec` 
     do  traceEventIO "Repa.fillP[Delayed]: start"
-        fillChunkedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
-        touchMArr marr
+        fillChunkedP (size sh) (unsafeWriteMVec mvec) (getElem . fromIndex sh) 
+        touchMVec mvec
         traceEventIO "Repa.fillP[Delayed]: end"
  {-# INLINE [4] fillP #-}
 
- fillS (ADelayed sh getElem) marr
-  = marr `deepSeqMArr` 
+ fillS (ADelayed sh getElem) mvec
+  = mvec `deepSeqMVec` 
     do  traceEventIO "Repa.fillS[Delayed]: start"
-        fillChunkedS (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh)
-        touchMArr marr
+        fillChunkedS (size sh) (unsafeWriteMVec mvec) (getElem . fromIndex sh)
+        touchMVec mvec
         traceEventIO "Repa.fillS[Delayed]: end"
-
  {-# INLINE [4] fillS #-}
 
 
 -- | Compute a range of elements in a rank-2 array.
-instance (Fillable r2 e, Elt e) => FillRange D r2 DIM2 e where
- fillRangeP  (ADelayed (Z :. _h :. (I# w)) getElem) marr
+instance (Target r2 e, Elt e) => FillRange D r2 DIM2 e where
+ fillRangeP  (ADelayed (Z :. _h :. (I# w)) getElem) mvec
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
-  = marr `deepSeqMArr` 
+  = mvec `deepSeqMVec` 
     do  traceEventIO "Repa.fillRangeP[Delayed]: start"
-        fillBlock2P (unsafeWriteMArr marr) 
+        fillBlock2P (unsafeWriteMVec mvec) 
                         getElem
                         w x0 y0 w0 h0
-        touchMArr marr
+        touchMVec mvec
         traceEventIO "Repa.fillRangeP[Delayed]: end"
  {-# INLINE [1] fillRangeP #-}
 
- fillRangeS  (ADelayed (Z :. _h :. (I# w)) getElem) marr
+ fillRangeS  (ADelayed (Z :. _h :. (I# w)) getElem) mvec
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
-  = marr `deepSeqMArr`
+  = mvec `deepSeqMVec`
     do  traceEventIO "Repa.fillRangeS[Delayed]: start"
-        fillBlock2S (unsafeWriteMArr marr) 
+        fillBlock2S (unsafeWriteMVec mvec) 
                 getElem
                 w x0 y0 w0 h0
-        touchMArr marr
+        touchMVec mvec
         traceEventIO "Repa.fillRangeS[Delayed]: end"
  {-# INLINE [1] fillRangeS #-}
 

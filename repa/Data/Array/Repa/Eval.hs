@@ -6,7 +6,7 @@ module Data.Array.Repa.Eval
           Elt       (..)
 
         -- * Parallel array filling
-        , Fillable  (..)
+        , Target    (..)
         , Fill      (..)
         , FillRange (..)
         , fromList
@@ -37,6 +37,7 @@ module Data.Array.Repa.Eval
         , selectChunkedP)
 where
 import Data.Array.Repa.Eval.Elt
+import Data.Array.Repa.Eval.Target
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Chunked
 import Data.Array.Repa.Eval.Interleaved
@@ -73,9 +74,9 @@ computeS
 computeS arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO
- $ do   marr2    <- newMArr (size $ extent arr1) 
-        fillS arr1 marr2
-        unsafeFreezeMArr (extent arr1) marr2
+ $ do   mvec2   <- newMVec (size $ extent arr1) 
+        fillS arr1 mvec2
+        unsafeFreezeMVec (extent arr1) mvec2
 {-# INLINE [4] computeS #-}
 
 
@@ -96,9 +97,9 @@ suspendedComputeP
 suspendedComputeP arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO
- $ do   marr2    <- newMArr (size $ extent arr1) 
-        fillP arr1 marr2
-        unsafeFreezeMArr (extent arr1) marr2
+ $ do   mvec2    <- newMVec (size $ extent arr1) 
+        fillP arr1 mvec2
+        unsafeFreezeMVec (extent arr1) mvec2
 {-# INLINE [4] suspendedComputeP #-}
 
 

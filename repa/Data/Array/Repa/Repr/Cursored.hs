@@ -11,6 +11,7 @@ import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
+import Data.Array.Repa.Eval.Target
 import GHC.Exts
 import Debug.Trace
 
@@ -62,38 +63,38 @@ instance Shape sh => Source C sh a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an rank-2 array. 
-instance (Fillable r2 e, Elt e) => Fill C r2 DIM2 e where
+instance (Target r2 e, Elt e) => Fill C r2 DIM2 e where
  fillP (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
   = do  traceEventIO "Repa.fillP[Cursored]: start"
         fillCursoredBlock2P 
-                (unsafeWriteMArr marr) 
+                (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w 0# 0# w h
-        touchMArr marr
+        touchMVec marr
         traceEventIO "Repa.fillP[Cursored]: end"
  {-# INLINE fillP #-}
         
  fillS (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
   = do  traceEventIO "Repa.fillS[Cursored]: start"
         fillCursoredBlock2S 
-                (unsafeWriteMArr marr) 
+                (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w 0# 0# w h
-        touchMArr marr
+        touchMVec marr
         traceEventIO "Repa.fillS[Cursored]: end"
  {-# INLINE fillS #-}
         
 
 -- | Compute a range of elements in a rank-2 array.
-instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
+instance (Target r2 e, Elt e) => FillRange C r2 DIM2 e where
  fillRangeP  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
   = do  traceEventIO "Repa.fillRangeP[Cursored]: start"
         fillCursoredBlock2P 
-                (unsafeWriteMArr marr) 
+                (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w x0 y0 w0 h0
-        touchMArr marr
+        touchMVec marr
         traceEventIO "Repa.fillRangeP[Cursored]: end"
  {-# INLINE fillRangeP #-}
         
@@ -102,10 +103,10 @@ instance (Fillable r2 e, Elt e) => FillRange C r2 DIM2 e where
              (Z :. (I# h0) :. (I# w0))
   = do  traceEventIO "Repa.fillRangeS[Cursored]: start"
         fillCursoredBlock2S
-                (unsafeWriteMArr marr) 
+                (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w x0 y0 w0 h0
-        touchMArr marr
+        touchMVec marr
         traceEventIO "Repa.fillRangeS[Cursored]: end"
  {-# INLINE fillRangeS #-}
         

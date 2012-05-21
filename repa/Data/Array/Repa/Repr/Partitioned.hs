@@ -67,8 +67,7 @@ deepSeqRange (Range ix sz f) y
 
 
 -- Fill -----------------------------------------------------------------------
-instance ( FillRange r1 r3 sh e, Fill r2 r3 sh e
-         , Fillable r3 e)
+instance (FillRange r1 r3 sh e, Fill r2 r3 sh e)
         => Fill (P r1 r2) r3 sh e where
  fillP (APart _ (Range ix sz _) arr1 arr2) marr
   = do  fillRangeP arr1 marr ix sz

@@ -51,30 +51,30 @@ instance Shape sh => Source V sh a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Filling of boxed vector arrays.
-instance Fillable V e where
- data MArr V e 
-  = MVec (VM.IOVector e)
+instance Target V e where
+ data MVec V e 
+  = MVector (VM.IOVector e)
 
- newMArr n
-  = liftM MVec (VM.new n)
- {-# INLINE newMArr #-}
+ newMVec n
+  = liftM MVector (VM.new n)
+ {-# INLINE newMVec #-}
 
- unsafeWriteMArr (MVec v) ix
+ unsafeWriteMVec (MVector v) ix
   = VM.unsafeWrite v ix
- {-# INLINE unsafeWriteMArr #-}
+ {-# INLINE unsafeWriteMVec #-}
 
- unsafeFreezeMArr sh (MVec mvec)     
+ unsafeFreezeMVec sh (MVector mvec)     
   = do  vec     <- V.unsafeFreeze mvec
         return  $  AVector sh vec
- {-# INLINE unsafeFreezeMArr #-}
+ {-# INLINE unsafeFreezeMVec #-}
 
- deepSeqMArr !_vec x
+ deepSeqMVec !_vec x
   = x
- {-# INLINE deepSeqMArr #-}
+ {-# INLINE deepSeqMVec #-}
 
- touchMArr _ 
+ touchMVec _ 
   = return ()
- {-# INLINE touchMArr #-}
+ {-# INLINE touchMVec #-}
 
 
 -- Conversions ----------------------------------------------------------------

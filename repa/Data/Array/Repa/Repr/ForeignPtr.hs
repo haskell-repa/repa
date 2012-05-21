@@ -7,6 +7,7 @@ where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
 import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Target
 import Data.Array.Repa.Repr.Delayed
 import Foreign.Storable
 import Foreign.ForeignPtr
@@ -50,36 +51,36 @@ instance (Shape sh, Storable a) => Source F sh a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Filling of foreign buffers.
-instance Storable e => Fillable F e where
- data MArr F e 
-  = FPArr !Int !(ForeignPtr e)
+instance Storable e => Target F e where
+ data MVec F e 
+  = FPVec !Int !(ForeignPtr e)
 
- newMArr n
+ newMVec n
   = do  let (proxy :: e) = undefined
         ptr              <- mallocBytes (sizeOf proxy * n)
         _                <- peek ptr  `asTypeOf` return proxy
         
         fptr             <- newForeignPtr finalizerFree ptr
-        return           $ FPArr n fptr
- {-# INLINE newMArr #-}
+        return           $ FPVec n fptr
+ {-# INLINE newMVec #-}
 
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
  -- to touch it after the last use, otherwise the finaliser might run too early.
- unsafeWriteMArr (FPArr _ fptr) !ix !x
+ unsafeWriteMVec (FPVec _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
- {-# INLINE unsafeWriteMArr #-}
+ {-# INLINE unsafeWriteMVec #-}
 
- unsafeFreezeMArr !sh (FPArr len fptr)     
+ unsafeFreezeMVec !sh (FPVec len fptr)
   =     return  $ AForeignPtr sh len fptr
- {-# INLINE unsafeFreezeMArr #-}
+ {-# INLINE unsafeFreezeMVec #-}
 
- deepSeqMArr !(FPArr _ fptr) x
+ deepSeqMVec !(FPVec _ fptr) x
   = Unsafe.unsafeForeignPtrToPtr fptr `seq` x
- {-# INLINE deepSeqMArr #-}
+ {-# INLINE deepSeqMVec #-}
 
- touchMArr (FPArr _ fptr)
+ touchMVec (FPVec _ fptr)
   = touchForeignPtr fptr
- {-# INLINE touchMArr #-}
+ {-# INLINE touchMVec #-}
 
 
 -- Conversions ----------------------------------------------------------------
@@ -106,7 +107,7 @@ computeIntoS
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
 computeIntoS !fptr !arr
- = fillS arr (FPArr 0 fptr)
+ = fillS arr (FPVec 0 fptr)
 {-# INLINE computeIntoS #-}
 
 
@@ -117,6 +118,6 @@ computeIntoP
         :: Fill r1 F sh e
         => ForeignPtr e -> Array r1 sh e -> IO ()
 computeIntoP !fptr !arr
- = fillP arr (FPArr 0 fptr)
+ = fillP arr (FPVec 0 fptr)
 {-# INLINE computeIntoP #-}
 

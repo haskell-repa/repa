@@ -3,6 +3,7 @@ module Data.Array.Repa.Repr.HintInterleave
         (I, Array (..), hintInterleave)
 where
 import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Target
 import Data.Array.Repa.Eval.Interleaved
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Shape
@@ -59,10 +60,10 @@ instance Source r1 sh a => Source (I r1) sh a where
 instance ( Shape sh, Fill D r2 sh e) 
         => Fill (I D) r2 sh e where
  fillP (AInterleave (ADelayed sh getElem)) marr
-  = marr `deepSeqMArr`
+  = marr `deepSeqMVec`
     do  traceEventIO "Repa.fillP[Interleaved]: start"
-        fillInterleavedP (size sh) (unsafeWriteMArr marr) (getElem . fromIndex sh) 
-        touchMArr marr
+        fillInterleavedP (size sh) (unsafeWriteMVec marr) (getElem . fromIndex sh) 
+        touchMVec marr
         traceEventIO "Repa.fillP[Interleaved]: end"
  {-# INLINE [4] fillP #-}
 

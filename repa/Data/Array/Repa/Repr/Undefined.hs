@@ -4,7 +4,7 @@ module Data.Array.Repa.Repr.Undefined
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape
-import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval
 
 
 -- | An array with undefined elements.
@@ -42,7 +42,7 @@ instance Shape sh => Source X sh e where
  {-# INLINE linearIndex #-}
  
 
-instance (Shape sh, Fillable r2 e, Num e) => Fill X r2 sh e where
+instance (Shape sh, Target r2 e, Num e) => Fill X r2 sh e where
  fillS _ _ = return ()
  fillP _ _ = return ()
 
