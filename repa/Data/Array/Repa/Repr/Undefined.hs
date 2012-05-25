@@ -16,7 +16,7 @@ data X
 
 -- | Undefined array elements. Inspecting them yields `error`.
 --
-instance Shape sh => Source X sh e where
+instance Source X e where
  data Array X sh e
         = AUndefined !sh
 

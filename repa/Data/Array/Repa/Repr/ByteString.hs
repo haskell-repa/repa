@@ -16,7 +16,7 @@ import Data.ByteString                  (ByteString)
 data B
         
 -- | Read elements from a `ByteString`.
-instance Shape sh => Source B sh Word8 where
+instance Source B Word8 where
  data Array B sh Word8
         = AByteString !sh !ByteString
 

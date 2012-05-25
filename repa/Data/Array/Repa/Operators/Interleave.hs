@@ -5,6 +5,7 @@ module Data.Array.Repa.Operators.Interleave
 	, interleave3
 	, interleave4)
 where
+import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Base
 import Data.Array.Repa.Repr.Delayed
@@ -23,9 +24,8 @@ import Prelude				hiding ((++))
 -- @
 --
 interleave2
-	:: ( Source r1 (sh :. Int) a
-           , Source r2 (sh :. Int) a
-           , Eq sh)
+	:: ( Shape sh
+           , Source r1 a, Source r2 a)
 	=> Array r1 (sh :. Int) a
 	-> Array r2 (sh :. Int) a
 	-> Array D  (sh :. Int) a
@@ -51,10 +51,8 @@ interleave2 arr1 arr2
 
 -- | Interleave the elements of three arrays.
 interleave3
-	:: ( Source r1 (sh :. Int) a
-           , Source r2 (sh :. Int) a
-           , Source r3 (sh :. Int) a
-           , Eq sh)
+	:: ( Shape sh
+           , Source r1 a, Source r2 a, Source r3 a)
 	=> Array r1 (sh :. Int) a
 	-> Array r2 (sh :. Int) a
 	-> Array r3 (sh :. Int) a
@@ -83,11 +81,8 @@ interleave3 arr1 arr2 arr3
 
 -- | Interleave the elements of four arrays.
 interleave4
-	:: ( Source r1 (sh :. Int) a
-           , Source r2 (sh :. Int) a
-           , Source r3 (sh :. Int) a
-           , Source r4 (sh :. Int) a
-           , Eq sh)
+	:: ( Shape sh
+           , Source r1 a, Source r2 a, Source r3 a, Source r4 a)
 	=> Array r1 (sh :. Int) a
 	-> Array r2 (sh :. Int) a
 	-> Array r3 (sh :. Int) a

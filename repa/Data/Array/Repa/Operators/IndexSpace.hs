@@ -24,7 +24,8 @@ stage	= "Data.Array.Repa.Operators.IndexSpace"
 -- Index space transformations ------------------------------------------------
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
-reshape	:: (Source r1 sh1 e, Shape sh2)
+reshape	:: ( Shape sh1, Shape sh2
+           , Source r1 e)
 	=> sh2
 	-> Array r1 sh1 e
 	-> Array D  sh2 e
@@ -42,8 +43,8 @@ reshape sh2 arr
 
 -- | Append two arrays.
 append, (++)
-	:: (Source r1 (sh :. Int) e
-          , Source r2 (sh :. Int) e)
+	:: ( Shape sh
+           , Source r1 e, Source r2 e)
 	=> Array r1 (sh :. Int) e
 	-> Array r2 (sh :. Int) e
 	-> Array D  (sh :. Int) e
@@ -69,7 +70,7 @@ append arr1 arr2
 -- | Transpose the lowest two dimensions of an array.
 --	Transposing an array twice yields the original.
 transpose
-	:: Source r (sh :. Int :. Int) e
+	:: (Shape sh, Source r e)
 	=> Array  r (sh :. Int :. Int) e
 	-> Array  D (sh :. Int :. Int) e
 
@@ -81,7 +82,7 @@ transpose arr
 
 
 -- | Extract a sub-range of elements from an array.
-extract :: Source r sh e
+extract :: (Shape sh, Source r e)
         => sh                   -- ^ Starting index.
         -> sh                   -- ^ Size of result.
         -> Array r sh e 
@@ -95,7 +96,8 @@ extract start sz arr
 --	The result array has the same extent as the original.
 backpermute, unsafeBackpermute
 	:: forall r sh1 sh2 e
-	.  (Source r sh1 e, Shape sh2)
+        .  ( Shape sh1, Shape sh2
+	   , Source r e)
 	=> sh2 			-- ^ Extent of result array.
 	-> (sh2 -> sh1) 	-- ^ Function mapping each index in the result array
 				--	to an index of the source array.
@@ -116,7 +118,8 @@ unsafeBackpermute newExtent perm arr
 --	from the default array (@arrDft@)
 backpermuteDft, unsafeBackpermuteDft
 	:: forall r1 r2 sh1 sh2 e
-	.  (Source r1 sh1 e, Source r2 sh2 e)
+        .  ( Shape sh1,   Shape sh2
+           , Source r1 e, Source r2 e)
 	=> Array r2 sh2 e	-- ^ Default values (@arrDft@)
 	-> (sh2 -> Maybe sh1) 	-- ^ Function mapping each index in the result array
 				--	to an index in the source array.
@@ -149,8 +152,9 @@ unsafeBackpermuteDft arrDft fnIndex arrSrc
 --
 extend, unsafeExtend
         :: ( Slice sl
-           , Source r (SliceShape sl) e
-           , Shape    (FullShape sl))
+           , Shape (SliceShape sl)
+           , Shape (FullShape sl)
+           , Source r e)
         => sl
         -> Array r (SliceShape sl) e
         -> Array D (FullShape sl)  e
@@ -183,8 +187,9 @@ unsafeExtend sl arr
 --
 slice, unsafeSlice
         :: ( Slice sl
-           , Source r (FullShape sl) e
-           , Shape    (SliceShape sl))
+           , Shape (FullShape sl)
+           , Shape (SliceShape sl)
+           , Source r e)
         => Array r (FullShape sl) e
         -> sl
         -> Array D (SliceShape sl) e

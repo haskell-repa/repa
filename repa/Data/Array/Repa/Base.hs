@@ -8,18 +8,18 @@ import Data.Array.Repa.Shape
 
 -- Source -----------------------------------------------------------------------
 -- | Class of array representations that we can read elements from.
-class Shape sh => Source r sh e where
+class Source r e where
  -- Arrays with a representation tag, shape, and element type.
  --   Use one of the type tags like `D`, `U` and so on for @r@, 
  --   one of `DIM1`, `DIM2` ... for @sh@.
  data Array r sh e
 
  -- | O(1). Take the extent (size) of an array.
- extent :: Array r sh e -> sh
+ extent :: Shape sh => Array r sh e -> sh
 
  -- | O(1). Shape polymorphic indexing.
- index, unsafeIndex
-        :: Array r sh e -> sh -> e
+ index, unsafeIndex 
+        :: Shape sh => Array r sh e -> sh -> e
 
  {-# INLINE index #-}
  index arr ix           = arr `linearIndex`       toIndex (extent arr) ix
@@ -29,22 +29,23 @@ class Shape sh => Source r sh e where
 
  -- | O(1). Linear indexing into underlying, row-major, array representation.
  linearIndex, unsafeLinearIndex
-        :: Array r sh e -> Int -> e
+        :: Shape sh => Array r sh e -> Int -> e
 
  {-# INLINE unsafeLinearIndex #-}
  unsafeLinearIndex      = linearIndex
 
  -- | Ensure an array's data structure is fully evaluated.
- deepSeqArray :: Array r sh e -> b -> b
+ deepSeqArray 
+        :: Shape sh =>Array r sh e -> b -> b
 
 
 -- | O(1). Alias for `index`
-(!) :: Source r sh e => Array r sh e -> sh -> e
+(!) :: Shape sh => Source r e => Array r sh e -> sh -> e
 (!) = index
 
 
 -- | O(n). Convert an array to a list.
-toList  :: Source r sh e
+toList  :: Shape sh => Source r e
         => Array r sh e -> [e]
 {-# INLINE toList #-}
 toList arr 
@@ -89,7 +90,7 @@ toList arr
 --  If you're not sure, then just follow the example code above.
 --   
 deepSeqArrays 
-        :: Source r sh e
+        :: Shape sh => Source r e
         => [Array r sh e] -> b -> b
 {-# INLINE deepSeqArrays #-}
 deepSeqArrays arrs x

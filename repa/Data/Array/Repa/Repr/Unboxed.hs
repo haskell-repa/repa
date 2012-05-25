@@ -28,7 +28,7 @@ import Prelude hiding (zip, zip3, unzip, unzip3)
 data U
 
 -- | Read elements from an unboxed vector array.
-instance (Shape sh, U.Unbox a) => Source U sh a where
+instance U.Unbox a => Source U a where
  data Array U sh a
         = AUnboxed !sh !(U.Vector a)
 
@@ -90,7 +90,7 @@ instance U.Unbox e => Target U e where
 --   * This is an alias for `computeS` with a more specific type.
 --
 computeUnboxedS
-        :: Fill r1 U sh e
+        :: (Shape sh, Fill r1 U sh e)
         => Array r1 sh e -> Array U sh e
 computeUnboxedS = computeS
 {-# INLINE computeUnboxedS #-}
@@ -101,7 +101,7 @@ computeUnboxedS = computeS
 --   * This is an alias for `computeP` with a more specific type.
 --
 computeUnboxedP
-        :: (Fill r1 U sh e, Monad m, U.Unbox e)
+        :: (Shape sh, Fill r1 U sh e, Monad m, U.Unbox e)
         => Array r1 sh e -> m (Array U sh e)
 computeUnboxedP = computeP
 {-# INLINE computeUnboxedP #-}

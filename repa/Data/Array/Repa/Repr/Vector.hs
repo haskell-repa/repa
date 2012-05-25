@@ -21,7 +21,7 @@ import Control.Monad
 data V
         
 -- | Read elements from a boxed vector array.
-instance Shape sh => Source V sh a where
+instance Source V a where
  data Array V sh a
         = AVector !sh !(V.Vector a)
 
@@ -83,7 +83,7 @@ instance Target V e where
 --   * This is an alias for `compute` with a more specific type.
 --
 computeVectorS
-        :: Fill r1 V sh e
+        :: (Shape sh, Fill r1 V sh e)
         => Array r1 sh e -> Array V sh e
 computeVectorS   = computeS
 {-# INLINE computeVectorS #-}
@@ -91,7 +91,7 @@ computeVectorS   = computeS
 
 -- | Parallel computation of array elements.
 computeVectorP
-        :: (Fill r1 V sh e, Monad m)
+        :: (Shape sh, Fill r1 V sh e, Monad m)
         => Array r1 sh e -> m (Array V sh e)
 computeVectorP   = computeP
 {-# INLINE computeVectorP #-}

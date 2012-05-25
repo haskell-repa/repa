@@ -24,7 +24,7 @@ import GHC.Exts
 -- | Sequential reduction of the innermost dimension of an arbitrary rank array.
 --
 --   Combine this with `transpose` to fold any other dimension.
-foldS   :: (Shape sh, Source r (sh :. Int) a, Elt a, Unbox a)
+foldS   :: (Shape sh, Source r a, Elt a, Unbox a)
         => (a -> a -> a)
         -> a
         -> Array r (sh :. Int) a
@@ -49,7 +49,7 @@ foldS f z arr
 --   example @0@ is neutral with respect to @(+)@ as @0 + a = a@.
 --   These restrictions are required to support parallel evaluation, as the
 --   starting element may be used multiple times depending on the number of threads.
-foldP   :: (Shape sh, Source r (sh :. Int) a, Elt a, Unbox a, Monad m)
+foldP   :: (Shape sh, Source r a, Elt a, Unbox a, Monad m)
         => (a -> a -> a)
         -> a
         -> Array r (sh :. Int) a
@@ -79,7 +79,7 @@ foldP f z arr
 -- foldAll --------------------------------------------------------------------
 -- | Sequential reduction of an array of arbitrary rank to a single scalar value.
 --
-foldAllS :: (Source r sh a, Elt a, Unbox a)
+foldAllS :: (Shape sh, Source r a, Elt a, Unbox a)
 	=> (a -> a -> a)
 	-> a
 	-> Array r sh a
@@ -103,7 +103,7 @@ foldAllS f z arr
 --   These restrictions are required to support parallel evaluation, as the
 --   starting element may be used multiple times depending on the number of threads.
 foldAllP 
-        :: (Source r sh a, Elt a, Unbox a, Monad m)
+        :: (Shape sh, Source r a, Elt a, Unbox a, Monad m)
 	=> (a -> a -> a)
 	-> a
 	-> Array r sh a
@@ -121,7 +121,7 @@ foldAllP f z arr
 
 -- sum ------------------------------------------------------------------------
 -- | Sequential sum the innermost dimension of an array.
-sumS	:: (Shape sh, Source r (sh :. Int) a, Num a, Elt a, Unbox a)
+sumS	:: (Shape sh, Source r a, Num a, Elt a, Unbox a)
 	=> Array r (sh :. Int) a
 	-> Array U sh a
 sumS = foldS (+) 0
@@ -129,7 +129,7 @@ sumS = foldS (+) 0
 
 
 -- | Parallel sum the innermost dimension of an array.
-sumP	:: (Shape sh, Source r (sh :. Int) a, Num a, Elt a, Unbox a, Monad m)
+sumP	:: (Shape sh, Source r a, Num a, Elt a, Unbox a, Monad m)
 	=> Array r (sh :. Int) a
 	-> m (Array U sh a)
 sumP = foldP (+) 0 
@@ -138,7 +138,7 @@ sumP = foldP (+) 0
 
 -- sumAll ---------------------------------------------------------------------
 -- | Sequential sum of all the elements of an array.
-sumAllS	:: (Source r sh a, Elt a, Unbox a, Num a)
+sumAllS	:: (Shape sh, Source r a, Elt a, Unbox a, Num a)
 	=> Array r sh a
 	-> a
 sumAllS = foldAllS (+) 0
@@ -146,7 +146,7 @@ sumAllS = foldAllS (+) 0
 
 
 -- | Parallel sum all the elements of an array.
-sumAllP	:: (Source r sh a, Elt a, Unbox a, Num a, Monad m)
+sumAllP	:: (Shape sh, Source r a, Elt a, Unbox a, Num a, Monad m)
 	=> Array r sh a
 	-> m a
 sumAllP = foldAllP (+) 0
@@ -154,7 +154,7 @@ sumAllP = foldAllP (+) 0
 
 
 -- Equality ------------------------------------------------------------------
-instance (Source r sh a, Eq a) => Eq (Array r sh a) where
+instance (Shape sh, Eq sh, Source r a, Eq a) => Eq (Array r sh a) where
  (==) arr1 arr2
         =   extent arr1 == extent arr2
         && (foldAllS (&&) True (R.zipWith (==) arr1 arr2))
@@ -162,7 +162,7 @@ instance (Source r sh a, Eq a) => Eq (Array r sh a) where
 
 -- | Check whether two arrays have the same shape and contain equal elements,
 --   in parallel.
-equalsP :: (Source r1 sh a, Source r2 sh a, Eq a, Monad m) 
+equalsP :: (Shape sh, Eq sh, Source r1 a, Source r2 a, Eq a, Monad m) 
         => Array r1 sh a 
         -> Array r2 sh a
         -> m Bool
@@ -173,7 +173,7 @@ equalsP arr1 arr2
 
 -- | Check whether two arrays have the same shape and contain equal elements,
 --   sequentially.
-equalsS :: (Source r1 sh a, Source r2 sh a, Eq a) 
+equalsS :: (Shape sh, Eq sh, Source r1 a, Source r2 a, Eq a) 
         => Array r1 sh a 
         -> Array r2 sh a
         -> Bool
