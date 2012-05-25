@@ -67,7 +67,7 @@ readArrayFromStorableFile filePath sh
 --   Data appears in host byte order.
 writeArrayToStorableFile
         :: forall sh a r
-        .  (Shape sh, Source r sh a, Storable a)
+        .  (Shape sh, Source r a, Storable a)
         => FilePath 
         -> Array r sh a
         -> IO ()

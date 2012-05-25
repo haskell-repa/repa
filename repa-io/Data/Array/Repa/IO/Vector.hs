@@ -59,7 +59,7 @@ readInt str
 	
 -- | Write a vector as a text file.
 writeVectorToTextFile 
-	:: (Show e, Source r DIM1 e)
+	:: (Show e, Source r e)
 	=> Array r DIM1 e
 	-> FilePath
 	-> IO ()

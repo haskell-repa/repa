@@ -49,7 +49,7 @@ readMatrixFromTextFile fileName
 
 -- | Write a matrix as a text file.
 writeMatrixToTextFile 
-	:: (Show e, Source r DIM2 e)
+	:: (Show e, Source r e)
 	=> FilePath
 	-> Array r DIM2 e
 	-> IO ()
