@@ -67,15 +67,18 @@ deepSeqRange (Range ix sz f) y
 {-# INLINE deepSeqRange #-}
 
 
--- Fill -----------------------------------------------------------------------
-instance (FillRange r1 sh e, Fill r2 sh e)
-        => Fill (P r1 r2) sh e where
- fillP (APart _ (Range ix sz _) arr1 arr2) marr
-  = do  fillRangeP arr1 marr ix sz
-        fillP arr2 marr
- {-# INLINE fillP #-}
+-- Load -----------------------------------------------------------------------
+instance (LoadRange r1 sh e, Load r2 sh e)
+        => Load (P r1 r2) sh e where
+ loadP (APart _ (Range ix sz _) arr1 arr2) marr
+  = do  loadRangeP arr1 marr ix sz
+        loadP arr2 marr
+ {-# INLINE loadP #-}
 
- fillS (APart _ (Range ix sz _) arr1 arr2) marr
-  = do  fillRangeS arr1 marr ix sz
-        fillS arr2 marr
- {-# INLINE fillS #-}
+ loadS (APart _ (Range ix sz _) arr1 arr2) marr
+  = do  loadRangeS arr1 marr ix sz
+        loadS arr2 marr
+ {-# INLINE loadS #-}
+
+
+

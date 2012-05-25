@@ -2,7 +2,7 @@
 module Data.Array.Repa.Repr.HintInterleave
         (I, Array (..), hintInterleave)
 where
-import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Load
 import Data.Array.Repa.Eval.Target
 import Data.Array.Repa.Eval.Interleaved
 import Data.Array.Repa.Repr.Delayed
@@ -56,20 +56,21 @@ hintInterleave :: Array r1 sh e -> Array (I r1) sh e
 hintInterleave = AInterleave
 
 
--- Fill -----------------------------------------------------------------------
-instance ( Shape sh, Fill D sh e) 
-        => Fill (I D) sh e where
- fillP (AInterleave (ADelayed sh getElem)) marr
+-- Load -----------------------------------------------------------------------
+instance (Shape sh, Load D sh e) 
+        => Load (I D) sh e where
+ loadP (AInterleave (ADelayed sh getElem)) marr
   = marr `deepSeqMVec`
-    do  traceEventIO "Repa.fillP[Interleaved]: start"
+    do  traceEventIO "Repa.loadP[Interleaved]: start"
         fillInterleavedP (size sh) (unsafeWriteMVec marr) (getElem . fromIndex sh) 
         touchMVec marr
-        traceEventIO "Repa.fillP[Interleaved]: end"
- {-# INLINE [4] fillP #-}
+        traceEventIO "Repa.loadP[Interleaved]: end"
+ {-# INLINE [4] loadP #-}
 
  -- The fact that the workload is unbalanced doesn't affect us when the
  -- program is run sequentially, so just use the filling method of the inner
  -- representation
- fillS (AInterleave arr) marr
-  = fillS arr marr
- {-# INLINE fillS #-}
+ loadS (AInterleave arr) marr
+  = loadS arr marr
+ {-# INLINE loadS #-}
+

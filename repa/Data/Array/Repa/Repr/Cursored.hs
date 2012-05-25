@@ -8,7 +8,7 @@ import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Undefined
-import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Load
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Cursored
 import Data.Array.Repa.Eval.Target
@@ -64,52 +64,52 @@ instance Source C a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an rank-2 array. 
-instance Elt e => Fill C DIM2 e where
- fillP (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
-  = do  traceEventIO "Repa.fillP[Cursored]: start"
+instance Elt e => Load C DIM2 e where
+ loadP (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
+  = do  traceEventIO "Repa.loadP[Cursored]: start"
         fillCursoredBlock2P 
                 (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w 0# 0# w h
         touchMVec marr
-        traceEventIO "Repa.fillP[Cursored]: end"
- {-# INLINE fillP #-}
+        traceEventIO "Repa.loadP[Cursored]: end"
+ {-# INLINE loadP #-}
         
- fillS (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
-  = do  traceEventIO "Repa.fillS[Cursored]: start"
+ loadS (ACursored (Z :. (I# h) :. (I# w)) makec shiftc loadc) marr
+  = do  traceEventIO "Repa.loadS[Cursored]: start"
         fillCursoredBlock2S 
                 (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w 0# 0# w h
         touchMVec marr
-        traceEventIO "Repa.fillS[Cursored]: end"
- {-# INLINE fillS #-}
+        traceEventIO "Repa.loadS[Cursored]: end"
+ {-# INLINE loadS #-}
         
 
 -- | Compute a range of elements in a rank-2 array.
-instance Elt e => FillRange C DIM2 e where
- fillRangeP  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
+instance Elt e => LoadRange C DIM2 e where
+ loadRangeP  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
-  = do  traceEventIO "Repa.fillRangeP[Cursored]: start"
+  = do  traceEventIO "Repa.loadRangeP[Cursored]: start"
         fillCursoredBlock2P 
                 (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w x0 y0 w0 h0
         touchMVec marr
-        traceEventIO "Repa.fillRangeP[Cursored]: end"
- {-# INLINE fillRangeP #-}
+        traceEventIO "Repa.loadRangeP[Cursored]: end"
+ {-# INLINE loadRangeP #-}
         
- fillRangeS  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
+ loadRangeS  (ACursored (Z :. _h :. (I# w)) makec shiftc loadc) marr
              (Z :. (I# y0) :. (I# x0)) 
              (Z :. (I# h0) :. (I# w0))
-  = do  traceEventIO "Repa.fillRangeS[Cursored]: start"
+  = do  traceEventIO "Repa.loadRangeS[Cursored]: start"
         fillCursoredBlock2S
                 (unsafeWriteMVec marr) 
                 makec shiftc loadc
                 w x0 y0 w0 h0
         touchMVec marr
-        traceEventIO "Repa.fillRangeS[Cursored]: end"
- {-# INLINE fillRangeS #-}
+        traceEventIO "Repa.loadRangeS[Cursored]: end"
+ {-# INLINE loadRangeS #-}
         
 
 -- Conversions ----------------------------------------------------------------

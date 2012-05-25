@@ -2,8 +2,8 @@
 module Data.Array.Repa.Repr.HintSmall
         (S, Array (..), hintSmall)
 where
+import Data.Array.Repa.Eval.Load
 import Data.Array.Repa.Base
-import Data.Array.Repa.Eval.Fill
 import Data.Array.Repa.Shape
 
 
@@ -53,25 +53,25 @@ deriving instance Read (Array r1 sh e)
         => Read (Array (S r1) sh e)
 
 
--- Fill -----------------------------------------------------------------------
-instance ( Shape sh, Fill r1 sh e) 
-        => Fill (S r1) sh e where
- fillP (ASmall arr) marr
-  = fillS arr marr
- {-# INLINE fillP #-}
+-- Load ----------------------------------------------------------------------
+instance ( Shape sh, Load r1 sh e) 
+        => Load (S r1) sh e where
+ loadP (ASmall arr) marr
+  = loadS arr marr
+ {-# INLINE loadP #-}
 
- fillS (ASmall arr) marr
-  = fillS arr marr
- {-# INLINE fillS #-}
+ loadS (ASmall arr) marr
+  = loadS arr marr
+ {-# INLINE loadS #-}
 
 
--- FillRange ------------------------------------------------------------------
-instance ( Shape sh, FillRange r1 sh e)
-        => FillRange (S r1) sh e where
- fillRangeP (ASmall arr) marr ix1 ix2
-  = fillRangeS arr marr ix1 ix2
- {-# INLINE fillRangeP #-}
+-- LoadRange ------------------------------------------------------------------
+instance ( Shape sh, LoadRange r1 sh e)
+        => LoadRange (S r1) sh e where
+ loadRangeP (ASmall arr) marr ix1 ix2
+  = loadRangeS arr marr ix1 ix2
+ {-# INLINE loadRangeP #-}
 
- fillRangeS (ASmall arr) marr ix1 ix2
-  = fillRangeS arr marr ix1 ix2
- {-# INLINE fillRangeS #-}
+ loadRangeS (ASmall arr) marr ix1 ix2
+  = loadRangeS arr marr ix1 ix2
+ {-# INLINE loadRangeS #-}

@@ -6,7 +6,7 @@ module Data.Array.Repa.Repr.ForeignPtr
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
-import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Load
 import Data.Array.Repa.Eval.Target
 import Data.Array.Repa.Repr.Delayed
 import Foreign.Storable
@@ -48,8 +48,8 @@ instance Storable a => Source F a where
  {-# INLINE deepSeqArray #-}
  
 
--- Fill -----------------------------------------------------------------------
--- | Filling of foreign buffers.
+-- Load -----------------------------------------------------------------------
+-- | Filling foreign buffers.
 instance Storable e => Target F e where
  data MVec F e 
   = FPVec !Int !(ForeignPtr e)
@@ -103,10 +103,10 @@ toForeignPtr (AForeignPtr _ _ fptr)
 --   buffer without intermediate copying. If you want to copy a
 --   pre-existing manifest array to a foreign buffer then `delay` it first.
 computeIntoS
-        :: (Fill r1 sh e, Storable e)
+        :: (Load r1 sh e, Storable e)
         => ForeignPtr e -> Array r1 sh e -> IO ()
 computeIntoS !fptr !arr
- = fillS arr (FPVec 0 fptr)
+ = loadS arr (FPVec 0 fptr)
 {-# INLINE computeIntoS #-}
 
 
@@ -114,9 +114,9 @@ computeIntoS !fptr !arr
 --   buffer without intermediate copying. If you want to copy a
 --   pre-existing manifest array to a foreign buffer then `delay` it first.
 computeIntoP
-        :: (Fill r1 sh e, Storable e)
+        :: (Load r1 sh e, Storable e)
         => ForeignPtr e -> Array r1 sh e -> IO ()
 computeIntoP !fptr !arr
- = fillP arr (FPVec 0 fptr)
+ = loadP arr (FPVec 0 fptr)
 {-# INLINE computeIntoP #-}
 

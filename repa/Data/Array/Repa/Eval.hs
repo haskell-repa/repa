@@ -7,8 +7,8 @@ module Data.Array.Repa.Eval
 
         -- * Parallel array filling
         , Target    (..)
-        , Fill      (..)
-        , FillRange (..)
+        , Load      (..)
+        , LoadRange (..)
         , fromList
         
         -- * Converting between representations
@@ -38,7 +38,7 @@ module Data.Array.Repa.Eval
 where
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Target
-import Data.Array.Repa.Eval.Fill
+import Data.Array.Repa.Eval.Load
 import Data.Array.Repa.Eval.Chunked
 import Data.Array.Repa.Eval.Interleaved
 import Data.Array.Repa.Eval.Cursored
@@ -61,8 +61,8 @@ import System.IO.Unsafe
 --     then use `delay` instead.
 --
 computeP 
-        :: ( Shape sh, Fill r1 sh e
-           , Source r2 e, Target r2 e, Monad m)
+        :: ( Shape sh, Load r1 sh e
+           , Target r2 e, Source r2 e, Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 computeP arr = now $ suspendedComputeP arr
 {-# INLINE [4] computeP #-}
@@ -71,13 +71,13 @@ computeP arr = now $ suspendedComputeP arr
 -- | Sequential computation of array elements.
 computeS 
         :: ( Shape sh
-           , Fill r1 sh e, Target r2 e)
+           , Load r1 sh e, Target r2 e)
         => Array r1 sh e -> Array r2 sh e
 computeS arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO
  $ do   mvec2   <- newMVec (size $ extent arr1) 
-        fillS arr1 mvec2
+        loadS arr1 mvec2
         unsafeFreezeMVec (extent arr1) mvec2
 {-# INLINE [4] computeS #-}
 
@@ -94,13 +94,13 @@ computeS arr1
 --   that each array is fully evaluated before continuing.
 --
 suspendedComputeP 
-        :: (Shape sh, Fill r1 sh e, Target r2 e)
+        :: (Shape sh, Load r1 sh e, Target r2 e)
         => Array r1 sh e -> Array r2 sh e
 suspendedComputeP arr1
  = arr1 `deepSeqArray` 
    unsafePerformIO
  $ do   mvec2    <- newMVec (size $ extent arr1) 
-        fillP arr1 mvec2
+        loadP arr1 mvec2
         unsafeFreezeMVec (extent arr1) mvec2
 {-# INLINE [4] suspendedComputeP #-}
 
@@ -111,8 +111,9 @@ suspendedComputeP arr1
 -- 
 --   * You can use it to copy manifest arrays between representations.
 --
-copyP  :: ( Shape sh, Source r1 e, Source r2 e
-          , Fill D sh e, Target r2 e
+copyP  :: ( Shape sh
+          , Source r1 e, Source r2 e
+          , Load D sh e, Target r2 e
           , Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 copyP arr = now $ suspendedCopyP arr
@@ -120,8 +121,8 @@ copyP arr = now $ suspendedCopyP arr
 
 
 -- | Sequential copying of arrays.
-copyS   :: (Shape sh, Source r1 e
-           , Fill D sh e, Target r2 e)
+copyS   :: ( Shape sh, Source r1 e
+           , Load D sh e, Target r2 e)
         => Array r1 sh e -> Array r2 sh e
 copyS arr1  = computeS $ delay arr1
 {-# INLINE [4] copyS #-}
@@ -129,7 +130,9 @@ copyS arr1  = computeS $ delay arr1
 
 -- | Suspended parallel copy of array elements.
 suspendedCopyP   
-        :: (Shape sh, Source r1 e, Fill D sh e, Target r2 e)
+        :: ( Shape sh
+           , Source r1 e
+           , Load D sh e, Target r2 e)
         => Array r1 sh e -> Array r2 sh e
 suspendedCopyP arr1  = suspendedComputeP $ delay arr1
 {-# INLINE [4] suspendedCopyP #-}
