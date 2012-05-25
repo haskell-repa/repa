@@ -45,7 +45,7 @@ instance Source D a where
 
 -- Fill -----------------------------------------------------------------------
 -- | Compute all elements in an array.
-instance (Shape sh, Target r2 e) => Fill D r2 sh e where
+instance Shape sh => Fill D sh e where
  fillP (ADelayed sh getElem) mvec
   = mvec `deepSeqMVec` 
     do  traceEventIO "Repa.fillP[Delayed]: start"
@@ -64,7 +64,7 @@ instance (Shape sh, Target r2 e) => Fill D r2 sh e where
 
 
 -- | Compute a range of elements in a rank-2 array.
-instance (Target r2 e, Elt e) => FillRange D r2 DIM2 e where
+instance Elt e => FillRange D DIM2 e where
  fillRangeP  (ADelayed (Z :. _h :. (I# w)) getElem) mvec
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
   = mvec `deepSeqMVec` 

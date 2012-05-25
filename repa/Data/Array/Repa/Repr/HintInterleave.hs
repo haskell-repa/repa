@@ -57,8 +57,8 @@ hintInterleave = AInterleave
 
 
 -- Fill -----------------------------------------------------------------------
-instance ( Shape sh, Fill D r2 sh e) 
-        => Fill (I D) r2 sh e where
+instance ( Shape sh, Fill D sh e) 
+        => Fill (I D) sh e where
  fillP (AInterleave (ADelayed sh getElem)) marr
   = marr `deepSeqMVec`
     do  traceEventIO "Repa.fillP[Interleaved]: start"

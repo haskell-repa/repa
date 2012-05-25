@@ -44,7 +44,7 @@ deriving instance Read sh
         => Read (Array X sh e)
 
 
-instance (Shape sh, Target r2 e, Num e) => Fill X r2 sh e where
+instance (Shape sh, Num e) => Fill X sh e where
  fillS _ _ = return ()
  fillP _ _ = return ()
 

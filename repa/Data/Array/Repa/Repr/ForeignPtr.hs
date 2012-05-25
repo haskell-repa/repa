@@ -103,7 +103,7 @@ toForeignPtr (AForeignPtr _ _ fptr)
 --   buffer without intermediate copying. If you want to copy a
 --   pre-existing manifest array to a foreign buffer then `delay` it first.
 computeIntoS
-        :: Fill r1 F sh e
+        :: (Fill r1 sh e, Storable e)
         => ForeignPtr e -> Array r1 sh e -> IO ()
 computeIntoS !fptr !arr
  = fillS arr (FPVec 0 fptr)
@@ -114,7 +114,7 @@ computeIntoS !fptr !arr
 --   buffer without intermediate copying. If you want to copy a
 --   pre-existing manifest array to a foreign buffer then `delay` it first.
 computeIntoP
-        :: Fill r1 F sh e
+        :: (Fill r1 sh e, Storable e)
         => ForeignPtr e -> Array r1 sh e -> IO ()
 computeIntoP !fptr !arr
  = fillP arr (FPVec 0 fptr)

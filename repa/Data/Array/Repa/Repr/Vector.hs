@@ -83,7 +83,7 @@ instance Target V e where
 --   * This is an alias for `compute` with a more specific type.
 --
 computeVectorS
-        :: (Shape sh, Fill r1 V sh e)
+        :: (Shape sh, Fill r1 sh e)
         => Array r1 sh e -> Array V sh e
 computeVectorS   = computeS
 {-# INLINE computeVectorS #-}
@@ -91,7 +91,7 @@ computeVectorS   = computeS
 
 -- | Parallel computation of array elements.
 computeVectorP
-        :: (Shape sh, Fill r1 V sh e, Monad m)
+        :: (Shape sh, Fill r1 sh e, Monad m)
         => Array r1 sh e -> m (Array V sh e)
 computeVectorP   = computeP
 {-# INLINE computeVectorP #-}

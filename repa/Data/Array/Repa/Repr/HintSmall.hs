@@ -54,8 +54,8 @@ deriving instance Read (Array r1 sh e)
 
 
 -- Fill -----------------------------------------------------------------------
-instance ( Shape sh, Fill r1 r2 sh e) 
-        => Fill (S r1) r2 sh e where
+instance ( Shape sh, Fill r1 sh e) 
+        => Fill (S r1) sh e where
  fillP (ASmall arr) marr
   = fillS arr marr
  {-# INLINE fillP #-}
@@ -66,8 +66,8 @@ instance ( Shape sh, Fill r1 r2 sh e)
 
 
 -- FillRange ------------------------------------------------------------------
-instance ( Shape sh, FillRange r1 r2 sh e)
-        => FillRange (S r1) r2 sh e where
+instance ( Shape sh, FillRange r1 sh e)
+        => FillRange (S r1) sh e where
  fillRangeP (ASmall arr) marr ix1 ix2
   = fillRangeS arr marr ix1 ix2
  {-# INLINE fillRangeP #-}
