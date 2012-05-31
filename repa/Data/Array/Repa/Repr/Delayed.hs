@@ -57,7 +57,7 @@ instance Shape sh => Load D sh e where
  loadS (ADelayed sh getElem) mvec
   = mvec `deepSeqMVec` 
     do  traceEventIO "Repa.loadS[Delayed]: start"
-        fillChunkedS (size sh) (unsafeWriteMVec mvec) (getElem . fromIndex sh)
+        fillLinearS (size sh) (unsafeWriteMVec mvec) (getElem . fromIndex sh)
         touchMVec mvec
         traceEventIO "Repa.loadS[Delayed]: end"
  {-# INLINE [4] loadS #-}

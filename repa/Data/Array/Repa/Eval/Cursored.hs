@@ -3,7 +3,6 @@
 --   each block in parallel.
 module Data.Array.Repa.Eval.Cursored
 	( fillBlock2P
-	, fillBlock2S
 	, fillCursoredBlock2P
 	, fillCursoredBlock2S )
 where
@@ -43,7 +42,7 @@ fillBlock2P write getElem !imageWidth !x0 !y0 !w0 h0
         write id addDim getElem 
         imageWidth x0 y0 w0 h0
 
-
+{-
 -- | Fill a block in a rank-2 array sequentially.
 --
 --   * Blockwise filling can be more cache-efficient than linear filling for
@@ -69,7 +68,7 @@ fillBlock2S write getElem !imageWidth !x0 !y0 !w0 !h0
  = fillCursoredBlock2S
         write id addDim getElem 
         imageWidth x0 y0 w0 h0
-
+-}
 
 -- Block filling ----------------------------------------------------------------------------------
 -- | Fill a block in a rank-2 array in parallel.

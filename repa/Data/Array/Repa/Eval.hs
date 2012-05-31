@@ -17,7 +17,7 @@ module Data.Array.Repa.Eval
         , now
         
         -- * Chunked filling
-        , fillChunkedS
+        , fillLinearS
         , fillChunkedP
         , fillChunkedIOP
 

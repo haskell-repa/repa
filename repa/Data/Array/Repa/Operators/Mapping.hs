@@ -16,6 +16,7 @@ import Data.Array.Repa.Repr.Cursored
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.ForeignPtr
 import Data.Array.Repa.Repr.HintSmall
+import Data.Array.Repa.Repr.HintInterleave
 import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Repr.Undefined
@@ -176,6 +177,20 @@ instance   Combine r1 a b
 
  czipWith f arr1 (ASmall arr2)
         = ASmall (czipWith f arr1 arr2)
+ {-# INLINE [3] czipWith #-}
+
+
+-- Interleaved ------------------------
+instance   Combine r1 a b
+        => Combine (I r1) a b where
+ type R (I r1) = I (R r1)
+
+ cmap f (AInterleave arr1)
+        = AInterleave (cmap f arr1)
+ {-# INLINE [3] cmap #-}
+
+ czipWith f arr1 (AInterleave arr2)
+        = AInterleave (czipWith f arr1 arr2)
  {-# INLINE [3] czipWith #-}
 
 

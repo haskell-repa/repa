@@ -115,7 +115,6 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
                 BoundFixed c    -> c
                 BoundConst c    -> unsafeAppStencilCursor2_const addDim stencil c arr ix
                 BoundClamp      -> unsafeAppStencilCursor2_clamp addDim stencil arr ix
-
    in
     --  internal region
         APart sh (Range (Z :.    inY :.    inX) (Z :.    inH :.    inW) inInternal) arrInternal
@@ -191,11 +190,12 @@ unsafeAppStencilCursor2_const shift
                 {-# NOINLINE getData' #-}
                 getData' :: Int# -> Int# -> a
                 getData' !x !y
-                 | x <# 0#       = fixed
-                 | x >=# aWidth  = fixed
-                 | y <# 0#       = fixed
-                 | y >=# aHeight = fixed
-                 | otherwise     = arr `unsafeIndex` (Z :. (I# y) :.  (I# x))
+                 |   x <# 0# || x >=# aWidth
+                  || y <# 0# || y >=# aHeight
+                 = fixed
+
+                 | otherwise
+                 = arr `unsafeIndex` (Z :. (I# y) :.  (I# x))
 
                 -- Build a function to pass data from the array to our stencil.
                 {-# INLINE oload #-}
