@@ -1,6 +1,7 @@
 {-# OPTIONS -fno-warn-unused-imports #-}
 -- | Repa arrays are wrappers around a linear structure that holds the element
---   data. The representation tag determines what structure holds the data.
+--   data. The representation tag is a type index that determines what structure
+--   holds the data.
 --
 --   Delayed Representations (functions that compute elements)
 --
@@ -87,7 +88,18 @@
 --
 --  8. When you're sure your program works, switch to the unsafe versions
 --     of functions like `traverse`. These don't do bounds checks.
--- 
+--
+-- /Changes for Repa 3.2:/
+--
+--  1. Renamed some Repa 3.1 type classes to have more intuitive names: 
+--     `Repr` -> `Source`, `Fill` -> `Load`, `Fillable` -> `Target`.
+--
+--  2. Also renamed `MArray` -> `MVec`. `MVec` is a linear structure.
+--
+--  3. Made `Array` and `MVec` associated types of `Source` and `Target` respectively.
+--
+--  4. Added the `S` (Smallness) and `I` (Interleave) hints.
+--
 module Data.Array.Repa
         ( -- * Abstract array representation
           module Data.Array.Repa.Shape
