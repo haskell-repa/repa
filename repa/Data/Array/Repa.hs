@@ -1,7 +1,8 @@
 {-# OPTIONS -fno-warn-unused-imports #-}
 -- | Repa arrays are wrappers around a linear structure that holds the element
---   data. The representation tag is a type index that determines what structure
---   holds the data.
+--   data. 
+-- 
+--  The representation tag determines what structure holds the data.
 --
 --   Delayed Representations (functions that compute elements)
 --
@@ -66,7 +67,7 @@
 --     This is less of a problem for general Haskell code, and in a different
 --     context relying on strictness analysis is fine.
 --
---  5. Scheduling a parallel computation takes about 200us on an OSX machine. 
+--  5. Scheduling an 8-thread parallel computation can take 50us on a Linux machine. 
 --     You should switch to sequential evaluation functions like `computeS` and
 --     `foldS` for small arrays in inner loops, and at the bottom of a 
 --     divide-and-conquer algorithm. Consider using a `computeP` that evaluates
@@ -92,9 +93,9 @@
 -- /Changes for Repa 3.2:/
 --
 --  1. Renamed some Repa 3.1 type classes to have more intuitive names: 
---     `Repr` -> `Source`, `Fill` -> `Load`, `Fillable` -> `Target`.
+--     `Repr` -> `Source`, `Fill` -> `Load`, `Fillable` -> `Target`, `Combine` -> `Structured`.
 --
---  2. Also renamed `MArray` -> `MVec`. `MVec` is a linear structure.
+--  2. Also renamed `MArray` -> `MVec` to emphasise its linear structure.
 --
 --  3. Made `Array` and `MVec` associated types of `Source` and `Target` respectively.
 --
@@ -144,7 +145,7 @@ module Data.Array.Repa
 	, map
 	, zipWith
 	, (+^), (-^), (*^), (/^)
-        , Combine(..)
+        , Structured(..)
 
 	-- from Data.Array.Repa.Operators.Traversal ------------------
 	-- ** Generic traversal

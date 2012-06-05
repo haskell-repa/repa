@@ -161,7 +161,7 @@ blurSepX arr
 blurSepY :: Monad m => Image Float -> m (Image Float)
 blurSepY arr
 	= computeP
-	$ R.cmap (/ 256)
+	$ R.smap (/ 256)
 	$ forStencil2  BoundClamp arr
 	  [stencil2|	1
 	 		4

@@ -6,8 +6,8 @@ module Data.Array.Repa.Operators.Mapping
         , zipWith
         , (+^), (-^), (*^), (/^)
 
-          -- * Combining maps
-        , Combine(..))
+          -- * Structured maps
+        , Structured(..))
 where
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Base
@@ -67,8 +67,8 @@ zipWith f arr1 arr2
 {-# INLINE (/^) #-}
 
 
--- Combine --------------------------------------------------------------------
--- | Combining versions of @map@ and @zipWith@ that preserve the representation
+-- Structured -------------------------------------------------------------------
+-- | Structured versions of @map@ and @zipWith@ that preserve the representation
 --   of cursored and partitioned arrays. 
 --
 --   For cursored (@C@) arrays, the cursoring of the source array is preserved.
@@ -81,46 +81,46 @@ zipWith f arr1 arr2
 --   is will make follow-on computation more efficient than if the array was
 --   converted to a vanilla Delayed (@D@) array as with plain `map` and `zipWith`.
 --
---   If the source array is not cursored or partitioned then `cmap` and 
---   `czipWith` are identical to the plain functions.
+--   If the source array is not cursored or partitioned then `smap` and 
+--   `szipWith` are identical to the plain functions.
 --
-class Combine r1 a b where
- -- | The result representation.
- type R r1
+class Structured r1 a b where
+ -- | The target result representation.
+ type TR r1
 
- -- | Combining @map@.
- cmap   :: Shape sh 
+ -- | Structured @map@.
+ smap   :: Shape sh 
         => (a -> b) 
         -> Array r1     sh a 
-        -> Array (R r1) sh b
+        -> Array (TR r1) sh b
 
- -- | Combining @zipWith@.
+ -- | Structured @zipWith@.
  --   If you have a cursored or partitioned source array then use that as
  --   the third argument (corresponding to @r1@ here)
- czipWith
+ szipWith
         :: (Shape sh, Source r c)
         => (c -> a -> b)
         -> Array r      sh c
         -> Array r1     sh a
-        -> Array (R r1) sh b
+        -> Array (TR r1) sh b
 
 
 -- ByteString -------------------------
-instance Combine B Word8 b where
- type R B = D
- cmap           = map
- czipWith       = zipWith
+instance Structured B Word8 b where
+ type TR B = D
+ smap           = map
+ szipWith       = zipWith
 
 
 -- Cursored ---------------------------
-instance Combine C a b where
- type R C = C
+instance Structured C a b where
+ type TR C = C
 
- cmap f (ACursored sh makec shiftc loadc)
+ smap f (ACursored sh makec shiftc loadc)
         = ACursored sh makec shiftc (f . loadc)
- {-# INLINE [3] cmap #-}
+ {-# INLINE [3] smap #-}
 
- czipWith f arr1 (ACursored sh makec shiftc loadc)
+ szipWith f arr1 (ACursored sh makec shiftc loadc)
   = let makec' ix               = (ix, makec ix)
         {-# INLINE makec' #-}
         
@@ -133,51 +133,51 @@ instance Combine C a b where
     in  ACursored 
                 (intersectDim (extent arr1) sh)
                 makec' shiftc' load'
- {-# INLINE [2] czipWith #-}
+ {-# INLINE [2] szipWith #-}
 
 
 -- Delayed ----------------------------
-instance Combine D a b where
- type R D = D
- cmap           = map
- czipWith       = zipWith
+instance Structured D a b where
+ type TR D = D
+ smap           = map
+ szipWith       = zipWith
 
 
 -- ForeignPtr -------------------------
-instance Storable a => Combine F a b where
- type R F = D
- cmap           = map
- czipWith       = zipWith
+instance Storable a => Structured F a b where
+ type TR F = D
+ smap           = map
+ szipWith       = zipWith
 
 
 -- Partitioned ------------------------
-instance (Combine r1 a b
-        , Combine r2 a b)
-       => Combine (P r1 r2) a b where
- type R (P r1 r2) = P (R r1) (R r2)
+instance (Structured r1 a b
+        , Structured r2 a b)
+       => Structured (P r1 r2) a b where
+ type TR (P r1 r2) = P (TR r1) (TR r2)
 
- cmap f (APart sh range arr1 arr2)
-        = APart sh range (cmap f arr1) (cmap f arr2)
- {-# INLINE [3] cmap #-}
+ smap f (APart sh range arr1 arr2)
+        = APart sh range (smap f arr1) (smap f arr2)
+ {-# INLINE [3] smap #-}
 
- czipWith f arr1 (APart sh range arr21 arr22)
-        = APart sh range (czipWith f arr1 arr21)
-                         (czipWith f arr1 arr22)
- {-# INLINE [2] czipWith #-}
+ szipWith f arr1 (APart sh range arr21 arr22)
+        = APart sh range (szipWith f arr1 arr21)
+                         (szipWith f arr1 arr22)
+ {-# INLINE [2] szipWith #-}
 
 
 -- Small ------------------------------
-instance   Combine r1 a b
-        => Combine (S r1) a b where
- type R (S r1) = S (R r1)
+instance   Structured r1 a b
+        => Structured (S r1) a b where
+ type TR (S r1) = S (TR r1)
 
- cmap f (ASmall arr1)
-        = ASmall (cmap f arr1)
- {-# INLINE [3] cmap #-}
+ smap f (ASmall arr1)
+        = ASmall (smap f arr1)
+ {-# INLINE [3] smap #-}
 
- czipWith f arr1 (ASmall arr2)
-        = ASmall (czipWith f arr1 arr2)
- {-# INLINE [3] czipWith #-}
+ szipWith f arr1 (ASmall arr2)
+        = ASmall (szipWith f arr1 arr2)
+ {-# INLINE [3] szipWith #-}
 
 
 -- Interleaved ------------------------
@@ -195,15 +195,15 @@ instance   Combine r1 a b
 
 
 -- Unboxed ----------------------------
-instance Unbox a => Combine U a b where
- type R U = D
- cmap           = map
- czipWith       = zipWith
+instance Unbox a => Structured U a b where
+ type TR U = D
+ smap           = map
+ szipWith       = zipWith
 
 
 -- Undefined --------------------------
-instance Combine X a b where
- type R X = X
- cmap     _   (AUndefined sh) = AUndefined sh
- czipWith _ _ (AUndefined sh) = AUndefined sh
+instance Structured X a b where
+ type TR X = X
+ smap     _   (AUndefined sh) = AUndefined sh
+ szipWith _ _ (AUndefined sh) = AUndefined sh
 

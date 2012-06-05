@@ -74,7 +74,7 @@ blur !iterations arrInit
  where  go !0 !arr = return arr
         go !n !arr  
  	 = do   arr'    <- computeP
-                         $ A.cmap (/ 159)
+                         $ A.smap (/ 159)
                          $ forStencil2 BoundClamp arr
                            [stencil2|   2  4  5  4  2
                                         4  9 12  9  4

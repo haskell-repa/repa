@@ -27,9 +27,9 @@ solveLaplace !steps !arrBoundMask !arrBoundValue !arrInit
 
         relaxLaplace arr
          = computeP
-         $ A.czipWith (+) arrBoundValue
-         $ A.czipWith (*) arrBoundMask
-         $ A.cmap (/ 4)
+         $ A.szipWith (+) arrBoundValue
+         $ A.szipWith (*) arrBoundMask
+         $ A.smap (/ 4)
          $ mapStencil2 (BoundConst 0)
             [stencil2|   0 1 0
                          1 0 1 
