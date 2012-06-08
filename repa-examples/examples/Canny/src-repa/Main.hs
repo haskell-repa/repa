@@ -117,16 +117,15 @@ timeStage
 timeStage loops name fn
  = do	
         let burn !n
-	     = do arr	<- fn
-		  arr `deepSeqArray` return ()
+	     = do !arr	<- fn
 		  if n <= 1 then return arr
 		            else burn (n - 1)
 
 	traceEventIO $ "**** Stage " P.++ name P.++ " begin."
 		
 	(arrResult, t)
-	 <- time $ do	arrResult' <- burn loops
-		   	arrResult' `deepSeqArray` return arrResult'
+	 <- time $ do  !arrResult' <- burn loops
+	               return arrResult'
 
         traceEventIO $ "**** Stage " P.++ name P.++ " end."
 
@@ -140,7 +139,7 @@ timeStage loops name fn
 
 -------------------------------------------------------------------------------
 -- | RGB to greyscale conversion.
-toGreyScale :: Monad m => Image (Word8, Word8, Word8) -> m (Image Float)
+toGreyScale :: Image (Word8, Word8, Word8) -> IO (Image Float)
 toGreyScale arr
         = computeP
         $ R.map (* 255)
@@ -149,7 +148,7 @@ toGreyScale arr
 
 
 -- | Separable Gaussian blur in the X direction.
-blurSepX :: Monad m => Image Float -> m (Image Float)
+blurSepX :: Image Float -> IO (Image Float)
 blurSepX arr
         = computeP
         $ forStencil2  BoundClamp arr
@@ -158,7 +157,7 @@ blurSepX arr
 
 
 -- | Separable Gaussian blur in the Y direction.
-blurSepY :: Monad m => Image Float -> m (Image Float)
+blurSepY :: Image Float -> IO (Image Float)
 blurSepY arr
 	= computeP
 	$ R.smap (/ 256)
@@ -172,7 +171,7 @@ blurSepY arr
 
 
 -- | Compute gradient in the X direction.
-gradientX :: Monad m => Image Float -> m (Image Float)
+gradientX :: Image Float -> IO (Image Float)
 gradientX img
  	= computeP
     	$ forStencil2 BoundClamp img
@@ -183,7 +182,7 @@ gradientX img
 
 
 -- | Compute gradient in the Y direction.
-gradientY :: Monad m => Image Float -> m (Image Float)
+gradientY :: Image Float -> IO (Image Float)
 gradientY img
 	= computeP
 	$ forStencil2 BoundClamp img
@@ -195,8 +194,7 @@ gradientY img
 
 -- | Classify the magnitude and orientation of the vector gradient.
 gradientMagOrient 
-        :: Monad m 
-        => Float -> Image Float -> Image Float -> m (Image (Float, Word8))
+        :: Float -> Image Float -> Image Float -> IO (Image (Float, Word8))
 
 gradientMagOrient !threshLow dX dY
         = computeP
@@ -255,7 +253,7 @@ gradientMagOrient !threshLow dX dY
 
 -- | Suppress pixels that are not local maxima, and use the magnitude to classify maxima
 --   into strong and weak (potential) edges.
-suppress :: Monad m => Float -> Float -> Image (Float, Word8) -> m (Image Word8)
+suppress :: Float -> Float -> Image (Float, Word8) -> IO (Image Word8)
 suppress !threshLow !threshHigh !dMagOrient
  = computeP
  $ makeBordered2 
@@ -293,7 +291,7 @@ suppress !threshLow !threshHigh !dMagOrient
 --   TODO: If would better if we could medge this into the above stage, and
 --         record the strong edge during non-maximum suppression, but Repa
 --         doesn't provide a fused mapFilter primitive yet.
-selectStrong :: Monad m => Image Word8 -> m (Array U DIM1 Int)
+selectStrong :: Image Word8 -> IO (Array U DIM1 Int)
 selectStrong img
  = let 	vec             = toUnboxed img
 
