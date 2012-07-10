@@ -92,7 +92,7 @@ makeStencil2' sizeX sizeY coeffs
 	 $ AppE (VarE (mkName "makeStencil2") 
                         `AppE` (LitE (IntegerL sizeX)) 
                         `AppE` (LitE (IntegerL sizeY)))
-         $ LetE [ PragmaD (InlineP (mkName "coeffs") (InlineSpec True False Nothing))
+         $ LetE [ PragmaD (InlineP (mkName "coeffs") (InlineSpec Inline False Nothing))
 		, ValD 	  (VarP    coeffs')          (NormalB fnCoeffs) [] ]
 		(VarE (mkName "coeffs"))
 

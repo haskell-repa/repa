@@ -181,17 +181,17 @@ instance   Structured r1 a b
 
 
 -- Interleaved ------------------------
-instance   Combine r1 a b
-        => Combine (I r1) a b where
- type R (I r1) = I (R r1)
+instance   Structured r1 a b
+        => Structured (I r1) a b where
+ type TR (I r1) = I (TR r1)
 
- cmap f (AInterleave arr1)
-        = AInterleave (cmap f arr1)
- {-# INLINE [3] cmap #-}
+ smap f (AInterleave arr1)
+        = AInterleave (smap f arr1)
+ {-# INLINE [3] smap #-}
 
- czipWith f arr1 (AInterleave arr2)
-        = AInterleave (czipWith f arr1 arr2)
- {-# INLINE [3] czipWith #-}
+ szipWith f arr1 (AInterleave arr2)
+        = AInterleave (szipWith f arr1 arr2)
+ {-# INLINE [3] szipWith #-}
 
 
 -- Unboxed ----------------------------
