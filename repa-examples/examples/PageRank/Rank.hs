@@ -101,3 +101,4 @@ spread rank (Page pageId links)
 
         insert m link 
          = M.insertWith (+) link contrib m
+
