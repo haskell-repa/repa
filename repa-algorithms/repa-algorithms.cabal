@@ -31,8 +31,6 @@ Library
         -funfolding-keeness-factor=1000
         -funbox-strict-fields
         -fcpr-off
-        -fllvm
-        -optlo-O3
 
   extensions:
         NoMonomorphismRestriction
