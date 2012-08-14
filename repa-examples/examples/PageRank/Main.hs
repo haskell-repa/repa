@@ -7,25 +7,28 @@ import Data.Conduit             as C
 import System.Environment
 import Data.IntMap              as M
 import Control.Monad
+import qualified GrowBuffer     as G
 
 main
  = do   [filePath]      <- getArgs
+        buffer          <- G.new 1 1.5
 
         C.runResourceT 
          $  B.sourceFile filePath
-         $= T.decode T.utf8
-         $= T.lines
+--         $= T.decode T.utf8
+         $= B.lines
          $$ C.foldM
             (\(n, mm) line
-                -> do   let !mm' = M.insert n line mm
+                -> do   unsafeLiftIO
+                         $ G.extend mm line
+
                         let !n'  = n + 1
 
                         when (n `mod` 100000 == 0)
                          $ unsafeLiftIO
                          $ do   putStrLn $ "loaded " ++ show n
 
-                        return (n', mm'))
-            (0, M.empty)
+                        return (n', mm))
+            (0, buffer)
 
 
-accumulate :: U.Vector Rank -> 
