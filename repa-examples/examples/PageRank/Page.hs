@@ -4,6 +4,8 @@ module Page
           PageId
         , Page (..)
         , pageIsDangling
+        , parsePage
+        , parsePageId
 
           -- * Ranks
         , Rank
@@ -11,10 +13,11 @@ module Page
         , mergeRankMaps
         , initialRanks)
 where
+import Data.Text
 import qualified Data.Vector            as V
 import qualified Data.Vector.Unboxed    as U
 import qualified Data.IntMap            as M
-
+import qualified Data.Attoparsec.Text   as AT
 
 -- Page -----------------------------------------------------------------------
 -- | Unique identifier for a page.
@@ -33,6 +36,35 @@ pageIsDangling :: Page -> Bool
 pageIsDangling page
         = U.length (pageLinks page) == 0
 
+
+parsePage :: Text -> Maybe Page
+parsePage tx
+ = case AT.parseOnly pPage tx of
+        Right page        -> Just page
+        _                 -> Nothing
+
+ where  pPage
+         = do   pageId  <- AT.decimal
+                AT.char ':'
+                AT.skipSpace
+                links   <- AT.manyTill  
+                           (do  x       <- AT.decimal
+                                AT.skipSpace
+                                return x)
+                           AT.endOfInput
+                return  $ Page pageId (U.fromList links)
+
+
+parsePageId :: Text -> Maybe PageId
+parsePageId tx
+ = case AT.parseOnly pPageId tx of
+        Right page      -> Just page
+        _               -> Nothing
+
+ where  pPageId
+         = do   x       <- AT.decimal
+                AT.char ':'
+                return x
 
 -- Ranks ----------------------------------------------------------------------
 -- | A single PageRank value.
@@ -55,3 +87,5 @@ initialRanks :: V.Vector Page -> U.Vector Rank
 initialRanks pages
  = let  pageCount       = V.length pages
    in   U.replicate pageCount (1 / fromIntegral pageCount)
+
+
