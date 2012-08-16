@@ -13,6 +13,7 @@ import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Progress
 
+
 -- | Perform one iteration step for the Page Rank algorithm.
 step    :: FilePath             -- ^ Pages file.
         -> Int                  -- ^ Total number of lines in the file.
@@ -23,10 +24,10 @@ step    :: FilePath             -- ^ Pages file.
 step pageFile lineCount pageCount ranks
  = do
         -- Create a new ranks vector full of zeros.
-        !ranks1         <- UM.replicate pageCount 0
+        !ranks1            <- UM.replicate pageCount 0
 
         -- Add ranks contributions due to forward-links to the vector.
-        (_, deadScore)  <- accLinks pageFile lineCount pageCount ranks ranks1
+        (_, _, deadScore)  <- accLinks pageFile lineCount pageCount ranks ranks1
         printProgress "  lines read: " 10000 lineCount lineCount
 
         -- Normalise the deadScore by the total number of pages.
@@ -46,26 +47,32 @@ accLinks
         -> Int                  -- ^ Total number of pages.
         -> U.Vector Rank        -- ^ Old ranks of the pages.
         -> UM.IOVector Rank     -- ^ New ranks being computed.
-        -> IO (Int, Rank)
+        -> IO (Int, Int, Rank)
 
 accLinks filePath lineCount _pageCount ranks0 ranks1
  =  C.runResourceT
  $  B.sourceFile filePath
  $= B.lines
  $= T.decode T.utf8
- $$ C.foldM eat (0, 0)
+ $$ C.foldM eat (0, 1, 0)
 
- where  eat (nLines, deadScore) !line
-         = nLines `seq` deadScore `seq`
+ where  eat (ixLine, ixPage, deadScore) !line
+         = ixLine `seq` deadScore `seq`
            unsafeLiftIO $ do
                 -- Print how far along we are.
-                printProgress "  lines read: " 10000 nLines lineCount
+                printProgress "  lines read: " 10000 ixLine lineCount
 
                 -- Parse the line for this page.
                 let Just page   = parsePage line
 
-                -- Read the rank of the current page.
-                let !rank       = ranks0 U.! (pageId page)
+                handle ixLine ixPage deadScore page
+
+
+        handle ixLine ixPage deadScore page
+         -- Ok, we read the page we were expecting.
+         | pageId page == ixPage
+         = do   -- Read the rank of the current page.
+                let !rank       = ranks0 U.! pageId page
 
                 -- Accumulate ranks given to other pages by this one.
                 accSpread ranks1 rank page
@@ -75,9 +82,24 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                         | pageIsDangling page   = deadScore + rank
                         | otherwise             = deadScore
 
-                return (nLines + 1, deadScore')
+                return (ixLine + 1, ixPage + 1, deadScore')
 
-                
+         -- The page id was higher than what we were expecting.
+         -- We've skipped over some page with no out-links.
+         | pageId page >= ixPage
+         = do   -- Read the rank of the expected page.
+                let !rank       = ranks0 U.! ixPage
+
+                -- This page is dangling because it had no out-links.
+                let deadScore'  = deadScore + rank
+                handle ixLine (ixPage + 1) deadScore' page
+
+         -- If the page id read from the file is less than what 
+         -- we were expecting then the links file isn't sorted.
+         | otherwise
+         = error $ "accLinks: page ids in links file are not monotonically increasing"
+
+
 -- | Accumulate forward score given from this page to others.
 accSpread :: IOVector Rank
           -> Rank -> Page -> IO ()
@@ -112,6 +134,4 @@ accDangling ranks danglingRank
         = do    !r      <- UM.read ranks i
                 UM.write ranks i (r + danglingRank)
                 go (i + 1)
-
-
 
