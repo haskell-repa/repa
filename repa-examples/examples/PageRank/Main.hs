@@ -3,45 +3,52 @@
 import Page
 import Step
 import Progress
+import Data.Text                                as T
 import Data.Conduit.Binary                      as B
 import Data.Conduit.List                        as C
 import Data.Conduit.Text                        as T
 import Data.Conduit                             as C
 import qualified Data.Vector.Algorithms.Heap    as VA
 import qualified Data.Vector.Unboxed            as U
+import qualified Data.Vector                    as V
+import qualified Data.IntMap                    as M
 import Prelude                                  as P
 import System.IO
 import System.Environment
+import Data.IORef
 
 -- TODO: Scores for dangling pages aren't being added
---       Because the links file doesn't contain records for pages with no out-links
---       Should count these in getMaxPageId pass.
---       Also determine maximum out-links at this stage, 
---          inc compute average out-links.
 --       Add in alpha parameter so we can compare against baseline.
 --       Show difference between previous and current vector, to check convergence.
 --
 main :: IO ()
 main
- = do   [pagesPath]             <- getArgs
+ = do   args    <- getArgs
+        case args of
+         [pagesPath, titlesPath] -> run pagesPath titlesPath
+         _                       -> error "bad usage"
+        
 
-        (lineCount, pageCount)  <- countPages pagesPath
+run :: FilePath -> FilePath -> IO ()
+run pagesPath titlesPath
+ = do   (lineCount, pageCount)  <- countPages pagesPath
 
         let startRank   = 1 / fromIntegral pageCount
         let ranks       = U.replicate pageCount startRank
 
-        run 10 pagesPath lineCount pageCount ranks
+        pageRank 10 pagesPath titlesPath lineCount pageCount ranks
 
 
 -- | Run several iterations of the algorithm.
-run     :: Int                  -- ^ Iterations to run.
+pageRank :: Int                  -- ^ Iterations to run.
         -> FilePath             -- ^ Pages file.
+        -> FilePath             -- ^ Titles file.
         -> Int                  -- ^ Total number of lines in the file.
         -> Int                  -- ^ Maximum Page Id
         -> U.Vector Rank        -- ^ Initial pageranks.     
         -> IO ()
 
-run maxIters pageFile lineCount maxPageId ranks0
+pageRank maxIters pageFile titlesFile lineCount maxPageId ranks0
  = go maxIters ranks0
  where  go 0 _ = return ()
         go !i ranks
@@ -61,9 +68,9 @@ run maxIters pageFile lineCount maxPageId ranks0
 
                 -- Write the top ranks
                 putStrLn $ "* Writing top ranks."
-                topRanks        <- slurpTopRanks rankMax ranks1
-                let si  = replicate (2 - length (show i)) '0' ++ show i
-                writeRanks ("out/step" ++ si ++ ".ranks") topRanks 
+                let topRanks    = slurpTopRanks rankMax ranks1
+                let si          = P.replicate (2 - P.length (show i)) '0' ++ show i
+                mergeRanks ("out/step" ++ si ++ ".ranks") titlesFile topRanks 
 
                 go (i - 1) ranks1
 
@@ -92,41 +99,75 @@ countPages !filePath
                 printPosition False "  lines read: " 10000 lineCount
                 let !maxPageId' = max pid maxPageId
                 return (maxPageId', lineCount + 1)
-        {-# INLINE eat #-}
 
+
+-- | Given the dense PageRank vector, 
+--   slurp out the page ids and ranks of the top ranked pages.
 slurpTopRanks 
         :: Rank
         -> U.Vector Rank
-        -> IO (U.Vector (PageId, Rank))
+        -> U.Vector (PageId, Rank)
 
 slurpTopRanks rankMax ranks
- = do   pidRanks 
-                <- U.thaw
-                $ U.filter  (\(_pid, rank) -> rank >= rankMax * 0.01)
-                $ U.zip     (U.enumFromN 0 (U.length ranks))
-                            ranks
-
-        VA.sortBy compare pidRanks
-        U.freeze pidRanks
+        = U.filter  (\(_pid, rank) -> rank >= rankMax * 0.01)
+        $ U.zip     (U.enumFromN 0 (U.length ranks))
+                    ranks
 
 
-writeRanks 
-        :: FilePath 
+-- | Given some PageIds and their ranks, 
+--   lookup their titles from the titles file, 
+--   and pretty print the lot to the result file.
+mergeRanks 
+        :: FilePath             -- Result file
+        -> FilePath             -- Titles file
         -> U.Vector (PageId, Rank)
         -> IO ()
 
-writeRanks filePath ranks
- = do   hFile   <- openFile filePath WriteMode
-        go hFile 0
-        hClose hFile
+mergeRanks resultPath titlesPath ranks
+ = do   hOut   <- openFile resultPath WriteMode
 
- where  go h !i
-         | i >= U.length ranks
-         = return ()
+        -- Build a map of the pages we want, and their ranks.
+        let mm  = M.fromList
+                $ U.toList ranks
 
-         | otherwise
-         = do   let (pid, rank) = ranks U.! i
-                hPutStr  h (padR 10 (show pid) ++ ": " ++ (show $ rank))
-                hPutChar h '\n'
-                go h (i + 1)
+        -- Read titles and add to this ref.
+        outRef  <- newIORef []
+        _       <-  C.runResourceT
+                 $  B.sourceFile titlesPath
+                 $= B.lines
+                 $= T.decode T.utf8
+                 $$ C.foldM (eat outRef mm) 1
+
+        -- Sort the resulting titles.
+        outList         <- readIORef outRef
+        outVec'         <- V.thaw $ V.fromList outList
+        VA.sortBy compareRanks outVec'
+        outVec_sorted   <- V.freeze outVec'
+
+        -- Write out to file.
+        V.mapM_ (\(pid, rank, title)
+                -> hPutStrLn hOut
+                        $  padR 10 (show pid) 
+                        ++ " "
+                        ++ padL 25 (show rank)
+                        ++ ": " 
+                        ++ T.unpack title)
+            outVec_sorted
+
+        return ()
+
+ where  eat !outRef !mm !pid !title
+         = unsafeLiftIO
+         $ case M.lookup pid mm of
+            Nothing     
+             -> return (pid + 1)
+
+            Just rank
+             -> do out <- readIORef outRef
+                   writeIORef outRef ((pid, rank, title) : out)
+                   return (pid + 1)
+
+        {-# INLINE compareRanks #-}
+        compareRanks (_, r1, _) (_, r2, _)
+         = compare r2 r1
 
