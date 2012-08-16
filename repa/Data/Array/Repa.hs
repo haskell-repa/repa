@@ -193,6 +193,7 @@ import Data.Array.Repa.Operators.IndexSpace
 import Data.Array.Repa.Operators.Interleave
 import Data.Array.Repa.Operators.Reduction
 import Data.Array.Repa.Operators.Selection
+import Data.Array.Repa.Arbitrary                ()
 import Prelude          ()
 
 

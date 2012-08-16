@@ -67,6 +67,7 @@ Library
         Data.Array.Repa.Repr.Vector
         Data.Array.Repa.Specialised.Dim2
         Data.Array.Repa.Stencil.Dim2
+        Data.Array.Repa.Arbitrary
         Data.Array.Repa.Eval
         Data.Array.Repa.Index
         Data.Array.Repa.Shape
