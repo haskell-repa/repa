@@ -8,7 +8,6 @@ module Page
         , parsePageId)
 where
 import Data.Text
-import qualified Data.Vector            as V
 import qualified Data.Vector.Unboxed    as U
 import qualified Data.Attoparsec.Text   as AT
 
@@ -40,15 +39,15 @@ parsePage tx
         _                 -> Nothing
 
  where  pPage
-         = do   pageId  <- AT.decimal
-                AT.char ':'
+         = do   pid  <- AT.decimal
+                _    <- AT.char ':'
                 AT.skipSpace
                 links   <- AT.manyTill  
                            (do  x       <- AT.decimal
                                 AT.skipSpace
                                 return x)
                            AT.endOfInput
-                return  $ Page pageId (U.fromList links)
+                return  $ Page pid (U.fromList links)
 
 
 parsePageId :: Text -> Maybe PageId
@@ -59,5 +58,5 @@ parsePageId tx
 
  where  pPageId
          = do   x       <- AT.decimal
-                AT.char ':'
+                _       <- AT.char ':'
                 return x

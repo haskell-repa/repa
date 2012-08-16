@@ -4,31 +4,30 @@ module Step
         (step)
 where
 import Page
-import Data.Conduit.Binary                      as B
 import Data.Conduit.List                        as C
 import Data.Conduit.Text                        as T
 import Data.Conduit                             as C
 import Data.Conduit.Binary                      as B
-import Control.Monad
 import Data.Vector.Unboxed.Mutable              (IOVector)
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
-import System.IO
-
+import Progress
 
 -- | Perform one iteration step for the Page Rank algorithm.
 step    :: FilePath             -- ^ Pages file.
-        -> Int                  -- ^ Total number of pages in the file.
+        -> Int                  -- ^ Total number of lines in the file.
+        -> Int                  -- ^ Total number of pages.
         -> U.Vector Rank        -- ^ Old ranks vector.
         -> IO (U.Vector Rank)   -- ^ New ranks vector.
 
-step pageFile pageCount ranks
+step pageFile lineCount pageCount ranks
  = do
         -- Create a new ranks vector full of zeros.
         !ranks1         <- UM.replicate pageCount 0
 
         -- Add ranks contributions due to forward-links to the vector.
-        (_, deadScore)  <- accLinks pageFile pageCount ranks ranks1
+        (_, deadScore)  <- accLinks pageFile lineCount pageCount ranks ranks1
+        printProgress "  lines read: " 10000 lineCount lineCount
 
         -- Normalise the deadScore by the total number of pages.
         let !deadRank   = deadScore / fromIntegral pageCount
@@ -37,32 +36,30 @@ step pageFile pageCount ranks
         accDangling ranks1 deadRank
 
         -- Freeze the ranks into an immutable vector.
-        !ranks1  <- unsafeLiftIO $ U.unsafeFreeze ranks1
-
-        return ranks1
+        unsafeLiftIO $ U.unsafeFreeze ranks1
 
 
 -- | Add rank contributions due to forward-links to a ranks vector.
 accLinks
         :: FilePath             -- ^ Pages file.
-        -> Int                  -- ^ Total number of pages in the file.
+        -> Int                  -- ^ Number of lines in the file.
+        -> Int                  -- ^ Total number of pages.
         -> U.Vector Rank        -- ^ Old ranks of the pages.
         -> UM.IOVector Rank     -- ^ New ranks being computed.
         -> IO (Int, Rank)
 
-accLinks filePath pageCount ranks0 ranks1
+accLinks filePath lineCount _pageCount ranks0 ranks1
  =  C.runResourceT
  $  B.sourceFile filePath
  $= B.lines
  $= T.decode T.utf8
  $$ C.foldM eat (0, 0)
 
- where  eat (nPages, deadScore) !line
-         = nPages `seq` deadScore `seq`
+ where  eat (nLines, deadScore) !line
+         = nLines `seq` deadScore `seq`
            unsafeLiftIO $ do
                 -- Print how far along we are.
-                when (nPages `mod` 100000 == 0)
-                 $ print nPages
+                printProgress "  lines read: " 10000 nLines lineCount
 
                 -- Parse the line for this page.
                 let Just page   = parsePage line
@@ -78,7 +75,7 @@ accLinks filePath pageCount ranks0 ranks1
                         | pageIsDangling page   = deadScore + rank
                         | otherwise             = deadScore
 
-                return (nPages + 1, deadScore')
+                return (nLines + 1, deadScore')
 
                 
 -- | Accumulate forward score given from this page to others.
