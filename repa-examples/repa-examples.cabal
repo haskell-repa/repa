@@ -182,3 +182,20 @@ Executable repa-volume
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
+
+Executable repa-unit-test
+  Build-depends: 
+        base                 == 4.*,
+        repa                 == 3.2.*
+
+  Main-is: examples/UnitTesting/UnitTesting.hs
+  hs-source-dirs: examples/UnitTesting .
+  ghc-options: 
+        -rtsopts 
+        -threaded 
+        -eventlog
+        -Odph -fllvm -optlo-O3
+        -fno-liberate-case
+        -funfolding-use-threshold100
+        -funfolding-keeness-factor100
+
