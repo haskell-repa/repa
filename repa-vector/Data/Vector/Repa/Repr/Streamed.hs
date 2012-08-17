@@ -1,4 +1,3 @@
-
 module Data.Vector.Repa.Repr.Streamed
 where
 import Data.Vector.Repa.Base
@@ -17,11 +16,12 @@ data R
 
 -- Multistreams, 
 -- We know the total length of the stream.
+-- Cannot zip two streams that have been chunked differently.
 instance U.Unbox e => Source R e where
  data Array R sh e
         = AStreamed
                 sh                              -- Overall extent of stream
-                (Int# -> (Int, V.Stream e))    -- Starting point and stream for each thread.
+                (Int# -> (Int, V.Stream e))     -- Starting point and stream for each thread.
                 (Vector U e)                    -- Cache of unstreamed elements.
 
  extent (AStreamed ex _ _) 
@@ -33,6 +33,21 @@ instance U.Unbox e => Source R e where
  {-# INLINE deepSeqArray #-}
 
 
+--- Zips ----------------------------------------------------------------------
+instance Zip R R a b where
+ type TZ R R            = R
+ vzip !arr1 !arr2
+ 
+
+
+instance U.Unbox a => Zip U R a b where
+ type TZ U R            = R
+ vzip !arr1 !arr2
+  = vzip (stream arr1) arr2
+ {-# INLINE [4] vzip #-}
+
+
+-- start ----------------------------------------------------------------------
 -- Get the starting point for a chunk.
 sstart  :: Int# -> Int# -> Int#
 sstart len c
