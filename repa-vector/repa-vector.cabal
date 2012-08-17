@@ -1,0 +1,54 @@
+Name:                repa-vector
+Version:             3.3.1.1
+License:             BSD3
+License-file:        LICENSE
+Author:              The DPH Team
+Maintainer:          Ben Lippmeier <benl@ouroborus.net>
+Build-Type:          Simple
+Cabal-Version:       >=1.6
+Stability:           experimental
+Category:            Data Structures
+Homepage:            http://repa.ouroborus.net
+Bug-reports:         repa@ouroborus.net
+Description:
+
+
+Library
+  Build-Depends: 
+        base                 == 4.6.*,
+        vector               == 0.9.*,
+        repa                 == 3.3.*
+
+  ghc-options:
+        -Wall -fno-warn-missing-signatures
+        -Odph
+        -fno-liberate-case
+        -fsimplifier-phases=4
+        -funfolding-use-threshold=1000
+        -funfolding-keeness-factor=1000
+        -funbox-strict-fields
+        -fcpr-off
+        -fllvm
+        -optlo-O3
+
+  extensions:
+        NoMonomorphismRestriction
+        ExplicitForAll
+        EmptyDataDecls
+        BangPatterns
+        TypeFamilies
+        MultiParamTypeClasses
+        FlexibleInstances
+        FlexibleContexts
+        StandaloneDeriving
+        ScopedTypeVariables
+        PatternGuards
+        OverlappingInstances
+        MagicHash
+
+  Exposed-modules:
+        Data.Vector.Repa.Repr.Streamed
+        Data.Vector.Repa.Repr.Chunked
+        Data.Vector.Repa.Repr.Sliced
+        Data.Vector.Repa.Base
+        Data.Vector.Repa
