@@ -17,8 +17,7 @@ import System.IO
 import System.Environment
 import Data.IORef
 
--- TODO: Scores for dangling pages aren't being added
---       Add in alpha parameter so we can compare against baseline.
+-- TODO: Add in alpha parameter so we can compare against baseline.
 --       Show difference between previous and current vector, to check convergence.
 --
 main :: IO ()

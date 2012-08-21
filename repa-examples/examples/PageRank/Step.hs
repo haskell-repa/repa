@@ -57,7 +57,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
  $$ C.foldM eat (0, 1, 0)
 
  where  eat (ixLine, ixPage, deadScore) !line
-         = ixLine `seq` deadScore `seq`
+         = ixLine `seq` ixPage `seq` deadScore `seq`
            unsafeLiftIO $ do
                 -- Print how far along we are.
                 printProgress "  lines read: " 10000 ixLine lineCount
@@ -68,7 +68,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                 handle ixLine ixPage deadScore page
 
 
-        handle ixLine ixPage deadScore page
+        handle !ixLine !ixPage !deadScore !page
          -- Ok, we read the page we were expecting.
          | pageId page == ixPage
          = do   -- Read the rank of the current page.
