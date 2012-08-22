@@ -4,6 +4,7 @@ module External.Rank
 where
 import External.Count
 import External.Step
+import External.Titles
 import Page
 import Progress
 import System.IO
@@ -34,7 +35,7 @@ rankExternal pagesPath titlesPath
 
 
 -- | Run several iterations of the algorithm.
-pageRank :: Int                  -- ^ Iterations to run.
+pageRank :: Int                 -- ^ Iterations to run.
         -> FilePath             -- ^ Pages file.
         -> FilePath             -- ^ Titles file.
         -> Int                  -- ^ Total number of lines in the file.
@@ -48,19 +49,20 @@ pageRank maxIters pageFile titlesFile lineCount maxPageId ranks0
         go !i ranks
          = do   putStr   "\n"
                 putStrLn $ "* Step " ++ show i
-                ranks1  <- step pageFile lineCount maxPageId ranks
+                ranks1   <- stepExternal pageFile lineCount maxPageId ranks
 
-                -- Get the rank sum, should be 1.
+                -- Sum up the ranks for all the pages, 
+                -- this should be very close to 1, minus some some round-off error.
                 let rankSum     = U.sum ranks1
                 putStrLn $ "  rank sum  : "  ++ show rankSum
 
-                -- Get the maximum rank
+                -- Show the page with the maximum rank.
                 let rankMaxIx   = U.maxIndex ranks1
                 let rankMax     = ranks1 U.! rankMaxIx
                 putStrLn $ "  high ix   : "  ++ show rankMaxIx
                 putStrLn $ "  high rank : "  ++ show rankMax
 
-                -- Write the top ranks
+                -- Write out the pages with the top few ranks.
                 putStrLn $ "* Writing top ranks."
                 let topRanks    = slurpTopRanks rankMax ranks1
 
@@ -75,7 +77,8 @@ pageRank maxIters pageFile titlesFile lineCount maxPageId ranks0
 
 
 -- | Given the dense PageRank vector, 
---   slurp out the page ids and ranks of the top ranked pages.
+--   slurp out the page ids and ranks for some of the
+--   highest ranked pages.
 slurpTopRanks 
         :: Rank
         -> U.Vector Rank
@@ -87,58 +90,3 @@ slurpTopRanks rankMax ranks
                     ranks
 
 
--- | Given some PageIds and their ranks, 
---   lookup their titles from the titles file, 
---   and pretty print the lot to the result file.
-mergeRanks 
-        :: FilePath             -- Result file
-        -> FilePath             -- Titles file
-        -> U.Vector (PageId, Rank)
-        -> IO ()
-
-mergeRanks resultPath titlesPath ranks
- = do   hOut   <- openFile resultPath WriteMode
-
-        -- Build a map of the pages we want, and their ranks.
-        let mm  = M.fromList
-                $ U.toList ranks
-
-        -- Read titles and add to this ref.
-        outRef   <- newIORef []
-        bsTitles <- BL.readFile titlesPath
-        eat outRef mm 1 $ BL.lines bsTitles
-
-        -- Sort the resulting titles.
-        outList         <- readIORef outRef
-        outVec'         <- V.thaw $ V.fromList outList
-        VA.sortBy compareRanks outVec'
-        outVec_sorted   <- V.freeze outVec'
-
-        -- Write out to file.
-        V.mapM_ (\(pid, rank, title)
-                -> hPutStrLn hOut
-                        $  padR 10 (show pid) 
-                        ++ " "
-                        ++ padL 25 (show rank)
-                        ++ ": " 
-                        ++ BL.unpack title)
-            outVec_sorted
-
-        return ()
-
- where  eat _ _ _ []
-         = return ()
-
-        eat !outRef !mm !pid (!title : rest)
-         = case M.lookup pid mm of
-            Nothing     
-             ->    eat outRef mm (pid + 1) rest
-
-            Just rank
-             -> do out <- readIORef outRef
-                   writeIORef outRef ((pid, rank, title) : out)
-                   eat outRef mm (pid + 1) rest
-
-        {-# INLINE compareRanks #-}
-        compareRanks (_, r1, _) (_, r2, _)
-         = compare r2 r1

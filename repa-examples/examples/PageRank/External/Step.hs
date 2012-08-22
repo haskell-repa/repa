@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
 module External.Step
-        (step)
+        (stepExternal)
 where
 import Page
 import Data.Vector.Unboxed.Mutable              (IOVector)
@@ -13,13 +13,14 @@ import Progress
 
 
 -- | Perform one iteration step for the Page Rank algorithm.
-step    :: FilePath             -- ^ Pages file.
+stepExternal
+        :: FilePath             -- ^ Pages file.
         -> Int                  -- ^ Total number of lines in the file.
         -> Int                  -- ^ Total number of pages.
         -> U.Vector Rank        -- ^ Old ranks vector.
         -> IO (U.Vector Rank)   -- ^ New ranks vector.
 
-step pageFile lineCount pageCount ranks
+stepExternal pageFile lineCount pageCount ranks
  = do
         -- Create a new ranks vector full of zeros.
         !ranks1            <- UM.replicate pageCount 0
@@ -54,23 +55,23 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
  where  eatLines (_, _, deadScore) []
          = return deadScore
 
-        eatLines (ixLine, ixPage, deadScore) (line : lines)
-         = ixLine `seq` ixPage `seq` deadScore `seq` line `seq`
-           do   -- Print how far along we are.
+        eatLines (!ixLine, !ixPage, !deadScore) (!line : lines)
+         = do   -- Print how far along we are.
                 printProgress "  lines read: " 10000 ixLine lineCount
 
                 -- Parse the line for this page.
                 let Just page   = parsePage (TE.decodeUtf8 line)
 
+                -- Accumulate data from this page.
                 eatPage ixLine ixPage deadScore page lines
 
         eatPage !ixLine !ixPage !deadScore !page !lines
          -- Ok, we read the page we were expecting.
          | pageId page == ixPage
-         = do   -- Read the rank of the current page.
+         = do   -- Get the rank of the current page.
                 let !rank       = ranks0 U.! pageId page
 
-                -- Accumulate ranks given to other pages by this one.
+                -- Give scores to other pages that are linked to by this one.
                 accSpread ranks1 rank page
 
                 -- If this page is dangling then add its rank to the deadScore
@@ -81,9 +82,10 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                 eatLines (ixLine + 1, ixPage + 1, deadScore') lines
 
          -- The page id was higher than what we were expecting.
-         -- We've skipped over some page with no out-links.
+         -- We've skipped over some page with no out-links that was not
+         -- mentioned in the source file.
          | pageId page >= ixPage
-         = do   -- Read the rank of the expected page.
+         = do   -- Get the rank of the expected page.
                 let !rank       = ranks0 U.! ixPage
 
                 -- This page is dangling because it had no out-links.
@@ -122,6 +124,7 @@ accDangling
         :: IOVector Rank        -- ^ Ranks vector.
         -> Rank                 -- ^ Dangling rank
         -> IO ()
+
 accDangling ranks danglingRank
  = go 0
  where go !i
