@@ -17,7 +17,8 @@ import Prelude                                  as P
 import System.IO
 import System.Environment
 import Data.IORef
-
+import System.Directory
+import Control.Monad
 
 -- TODO: Add in alpha parameter so we can compare against baseline.
 --       Show difference between previous and current vector, to check convergence.
@@ -25,7 +26,8 @@ import Data.IORef
 
 runRankIncremental :: FilePath -> FilePath -> IO ()
 runRankIncremental pagesPath titlesPath
- = do   (lineCount, pageCount)  <- countPages pagesPath
+ = do   (lineCount, maxPageId)  <- countPages pagesPath
+        let pageCount   = maxPageId + 1
 
         let startRank   = 1 / fromIntegral pageCount
         let ranks       = U.replicate pageCount startRank
@@ -63,6 +65,11 @@ pageRank maxIters pageFile titlesFile lineCount maxPageId ranks0
                 -- Write the top ranks
                 putStrLn $ "* Writing top ranks."
                 let topRanks    = slurpTopRanks rankMax ranks1
+
+                exists          <- doesDirectoryExist "out"
+                when (not exists)
+                 $ createDirectory "out"
+
                 let si          = P.replicate (2 - P.length (show i)) '0' ++ show i
                 mergeRanks ("out/step" ++ si ++ ".ranks") titlesFile topRanks 
 

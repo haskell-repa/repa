@@ -4,11 +4,9 @@ module Step
         (step)
 where
 import Page
-import Data.Conduit.List                        as C
-import Data.Conduit.Text                        as T
-import Data.Conduit                             as C
-import Data.Conduit.Binary                      as B
 import Data.Vector.Unboxed.Mutable              (IOVector)
+import qualified Data.Text.Lazy.Encoding        as TE
+import qualified Data.ByteString.Lazy.Char8     as BL
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Progress
@@ -27,7 +25,7 @@ step pageFile lineCount pageCount ranks
         !ranks1            <- UM.replicate pageCount 0
 
         -- Add ranks contributions due to forward-links to the vector.
-        (_, _, deadScore)  <- accLinks pageFile lineCount pageCount ranks ranks1
+        deadScore  <- accLinks pageFile lineCount pageCount ranks ranks1
         printProgress "  lines read: " 10000 lineCount lineCount
 
         -- Normalise the deadScore by the total number of pages.
@@ -37,7 +35,7 @@ step pageFile lineCount pageCount ranks
         accDangling ranks1 deadRank
 
         -- Freeze the ranks into an immutable vector.
-        unsafeLiftIO $ U.unsafeFreeze ranks1
+        U.unsafeFreeze ranks1
 
 
 -- | Add rank contributions due to forward-links to a ranks vector.
@@ -47,28 +45,27 @@ accLinks
         -> Int                  -- ^ Total number of pages.
         -> U.Vector Rank        -- ^ Old ranks of the pages.
         -> UM.IOVector Rank     -- ^ New ranks being computed.
-        -> IO (Int, Int, Rank)
+        -> IO Rank
 
 accLinks filePath lineCount _pageCount ranks0 ranks1
- =  C.runResourceT
- $  B.sourceFile filePath
- $= B.lines
- $= T.decode T.utf8
- $$ C.foldM eat (0, 1, 0)
+ = do   bs      <- BL.readFile filePath
+        eat (0, 1, 0) (BL.lines bs)
 
- where  eat (ixLine, ixPage, deadScore) !line
-         = ixLine `seq` ixPage `seq` deadScore `seq`
-           unsafeLiftIO $ do
-                -- Print how far along we are.
+ where  eat (_, _, deadScore) []
+         = return deadScore
+
+        eat (ixLine, ixPage, deadScore) (line : lines)
+         = ixLine `seq` ixPage `seq` deadScore `seq` line `seq`
+           do   -- Print how far along we are.
                 printProgress "  lines read: " 10000 ixLine lineCount
 
                 -- Parse the line for this page.
-                let Just page   = parsePage line
+                let Just page   = parsePage (TE.decodeUtf8 line)
 
-                handle ixLine ixPage deadScore page
+                handle ixLine ixPage deadScore page lines
 
 
-        handle !ixLine !ixPage !deadScore !page
+        handle !ixLine !ixPage !deadScore !page !lines
          -- Ok, we read the page we were expecting.
          | pageId page == ixPage
          = do   -- Read the rank of the current page.
@@ -82,7 +79,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                         | pageIsDangling page   = deadScore + rank
                         | otherwise             = deadScore
 
-                return (ixLine + 1, ixPage + 1, deadScore')
+                eat (ixLine + 1, ixPage + 1, deadScore') lines
 
          -- The page id was higher than what we were expecting.
          -- We've skipped over some page with no out-links.
@@ -92,7 +89,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
 
                 -- This page is dangling because it had no out-links.
                 let deadScore'  = deadScore + rank
-                handle ixLine (ixPage + 1) deadScore' page
+                handle ixLine (ixPage + 1) deadScore' page lines
 
          -- If the page id read from the file is less than what 
          -- we were expecting then the links file isn't sorted.

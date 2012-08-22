@@ -9,6 +9,7 @@ import System.IO
 import Control.Monad
 
 
+-- | Print position in a stream, without a maximum value.
 printPosition :: Bool -> String -> Int -> Int -> IO ()
 printPosition isLast header block pos
  | pos == 0
@@ -25,7 +26,7 @@ printPosition isLast header block pos
  | otherwise
  =      return ()
 
-
+-- | Print progress in a stream towards a maximum value.
 printProgress :: String -> Int -> Int -> Int -> IO ()
 printProgress header block pos len
  | pos == 0

@@ -7,9 +7,9 @@ module Page
         , parsePage
         , parsePageId)
 where
-import Data.Text
-import qualified Data.Vector.Unboxed    as U
-import qualified Data.Attoparsec.Text   as AT
+import Data.Text.Lazy
+import qualified Data.Vector.Unboxed            as U
+import qualified Data.Attoparsec.Text.Lazy      as AT
 
 
 -- | Unique identifier for a page.
@@ -34,8 +34,8 @@ pageIsDangling page
 
 parsePage :: Text -> Maybe Page
 parsePage tx
- = case AT.parseOnly pPage tx of
-        Right page        -> Just page
+ = case AT.parse pPage tx of
+        AT.Done _ page    -> Just page
         _                 -> Nothing
 
  where  pPage
@@ -52,8 +52,8 @@ parsePage tx
 
 parsePageId :: Text -> Maybe PageId
 parsePageId tx
- = case AT.parseOnly pPageId tx of
-        Right page      -> Just page
+ = case AT.parse pPageId tx of
+        AT.Done _ pid   -> Just pid
         _               -> Nothing
 
  where  pPageId
