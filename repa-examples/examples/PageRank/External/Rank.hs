@@ -19,12 +19,15 @@ import qualified Data.Vector.Unboxed            as U
 rankExternal :: FilePath -> FilePath -> IO ()
 rankExternal pagesPath titlesPath
  = do   (lineCount, maxPageId)  <- countPages pagesPath
-        let pageCount   = maxPageId + 1
-
-        let startRank   = 1 / fromIntegral pageCount
-        let ranks       = U.replicate pageCount startRank
-
+        let !pageCount  = maxPageId + 1
+        let !ranks      = initialRanks pageCount
         pageRank 1 pagesPath titlesPath lineCount pageCount ranks
+
+initialRanks :: Int -> U.Vector Rank
+initialRanks pageCount
+ = let  !startRank   = 1 / fromIntegral pageCount
+   in   U.replicate pageCount startRank
+{-# NOINLINE initialRanks #-}
 
 
 -- | Run several iterations of the algorithm.

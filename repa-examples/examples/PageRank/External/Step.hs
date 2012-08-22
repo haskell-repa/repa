@@ -5,7 +5,6 @@ module External.Step
 where
 import Page
 import Data.Vector.Unboxed.Mutable              (IOVector)
-import qualified Data.Text.Lazy.Encoding        as TE
 import qualified Data.ByteString.Lazy.Char8     as BL
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
@@ -23,7 +22,7 @@ stepExternal
 stepExternal pageFile lineCount pageCount ranks
  = do
         -- Create a new ranks vector full of zeros.
-        !ranks1            <- UM.replicate pageCount 0
+        !ranks1            <- zeroRanks pageCount
 
         -- Add ranks contributions due to forward-links to the vector.
         deadScore  <- accLinks pageFile lineCount pageCount ranks ranks1
@@ -37,6 +36,12 @@ stepExternal pageFile lineCount pageCount ranks
 
         -- Freeze the ranks into an immutable vector.
         U.unsafeFreeze ranks1
+
+
+zeroRanks :: Int -> IO (UM.IOVector Rank)
+zeroRanks pageCount
+ = UM.replicate pageCount 0
+{-# NOINLINE zeroRanks #-}
 
 
 -- | Add rank contributions due to forward-links to a ranks vector.
@@ -60,7 +65,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                 printProgress "  lines read: " 10000 ixLine lineCount
 
                 -- Parse the line for this page.
-                let Just page   = parsePage (TE.decodeUtf8 l)
+                let Just page   = parsePage l
 
                 -- Accumulate data from this page.
                 eatPage ixLine ixPage deadScore page ls

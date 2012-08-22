@@ -42,12 +42,12 @@ mergeRanks resultPath titlesPath ranks
                 -> hPutStrLn hOut
                         $  padR 10 (show pid) 
                         ++ " "
-                        ++ padL 25 (show rank)
+                        ++ padL 18 (show rank)
                         ++ ": " 
                         ++ BL.unpack title)
             outVec_sorted
 
-        return ()
+        hClose hOut
 
 
 compareRanks 

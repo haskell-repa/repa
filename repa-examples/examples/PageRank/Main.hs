@@ -2,6 +2,7 @@
 
 import External.Count
 import External.Rank
+import Internal.Rank
 import System.Environment
 
 
@@ -16,6 +17,9 @@ main
 
          ["-rank-external", pagesPath, titlesPath] 
                 -> rankExternal pagesPath titlesPath
+
+         ["-rank-internal", pagesPath, titlesPath] 
+                -> rankInternal pagesPath titlesPath
 
          _      -> error "bad usage"
         

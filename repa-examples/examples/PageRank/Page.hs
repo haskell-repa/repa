@@ -7,9 +7,10 @@ module Page
         , parsePage
         , parsePageId)
 where
-import Data.Text.Lazy
+import qualified Data.ByteString.Lazy.Char8     as BL
 import qualified Data.Vector.Unboxed            as U
-import qualified Data.Attoparsec.Text.Lazy      as AT
+import qualified Data.Vector.Unboxed.Mutable    as UM
+import Control.Monad.ST
 
 
 -- | Unique identifier for a page.
@@ -24,7 +25,7 @@ data Page
 
 -- | A single PageRank value.
 type Rank       
-        = Double
+        = Float
 
 -- | Check if a page has no out-links.
 pageIsDangling :: Page -> Bool
@@ -32,32 +33,56 @@ pageIsDangling page
         = U.length (pageLinks page) == 0
 
 
-parsePage :: Text -> Maybe Page
-parsePage tx
- = case AT.parse pPage tx of
-        AT.Done _ page    -> Just page
-        _                 -> Nothing
+parsePageId :: BL.ByteString -> Maybe PageId
+parsePageId bs
+        | Just (pid, _)         <- BL.readInt bs
+        = Just pid
 
- where  {-# INLINE pPage #-}
-        pPage
-         = do   pid  <- AT.decimal
-                _    <- AT.char ':'
-                AT.skipSpace
-                links   <- AT.manyTill  
-                           (do  x       <- AT.decimal
-                                AT.skipSpace
-                                return x)
-                           AT.endOfInput
-                return  $ Page pid (U.fromList links)
-{-# INLINE parsePage #-}
+        | otherwise
+        = Nothing
 
-parsePageId :: Text -> Maybe PageId
-parsePageId tx
- = case AT.parse pPageId tx of
-        AT.Done _ pid   -> Just pid
-        _               -> Nothing
 
- where  pPageId
-         = do   x       <- AT.decimal
-                _       <- AT.char ':'
-                return x
+parsePage :: BL.ByteString -> Maybe Page
+parsePage bs
+        | Just (pid, bs2)       <- BL.readInt bs
+        , Just bs3              <- char ':' bs2
+        , (links, _)            <- ints bs3
+        = Just (Page pid links)
+
+        | otherwise
+        = Nothing
+
+
+char   :: Char -> BL.ByteString -> Maybe BL.ByteString
+char c bs
+ | BL.null bs           = Nothing
+ | BL.head bs == c      = Just (BL.tail bs)
+ | otherwise            = Nothing
+{-# INLINE char #-}
+
+
+ints    :: BL.ByteString -> (U.Vector Int, BL.ByteString)
+ints bs0
+ = runST
+ $ do   mvec    <- UM.new 100
+        go mvec 0 100 bs0
+
+ where  go mvec ix ixMax bs
+         | ix >= ixMax
+         = do   mvec'   <- UM.grow mvec ixMax
+                go mvec' ix (2 * ixMax) bs
+
+         | BL.null bs
+         = do   vec     <- U.freeze (UM.slice 0 ix mvec)
+                return (vec, bs)
+
+         | Just bs2     <- char ' ' bs
+         = go mvec ix ixMax bs2
+
+         | Just (i, bs2) <- BL.readInt bs
+         = do   UM.write mvec ix i
+                go mvec (ix + 1) ixMax bs2
+
+         | otherwise
+         = do   vec     <- U.freeze (UM.slice 0 ix mvec)
+                return (vec, bs)
