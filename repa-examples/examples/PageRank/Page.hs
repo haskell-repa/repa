@@ -38,7 +38,8 @@ parsePage tx
         AT.Done _ page    -> Just page
         _                 -> Nothing
 
- where  pPage
+ where  {-# INLINE pPage #-}
+        pPage
          = do   pid  <- AT.decimal
                 _    <- AT.char ':'
                 AT.skipSpace
@@ -48,7 +49,7 @@ parsePage tx
                                 return x)
                            AT.endOfInput
                 return  $ Page pid (U.fromList links)
-
+{-# INLINE parsePage #-}
 
 parsePageId :: Text -> Maybe PageId
 parsePageId tx

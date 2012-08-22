@@ -24,7 +24,7 @@ rankExternal pagesPath titlesPath
         let startRank   = 1 / fromIntegral pageCount
         let ranks       = U.replicate pageCount startRank
 
-        pageRank 10 pagesPath titlesPath lineCount pageCount ranks
+        pageRank 1 pagesPath titlesPath lineCount pageCount ranks
 
 
 -- | Run several iterations of the algorithm.

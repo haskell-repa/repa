@@ -30,13 +30,10 @@ mergeRanks resultPath titlesPath ranks
                 $ U.toList ranks
 
         -- Read titles and add to this ref.
-        outRef   <- newIORef []
-        bsTitles <- BL.readFile titlesPath
-        eat outRef mm 1 $ BL.lines bsTitles
+        outList         <- collectTitles titlesPath mm
 
         -- Sort the resulting titles.
-        outList         <- readIORef outRef
-        outVec'         <- V.thaw $ V.fromList outList
+        outVec'         <- V.thaw $ V.fromList outList      
         VA.sortBy compareRanks outVec'
         outVec_sorted   <- V.freeze outVec'
 
@@ -52,19 +49,39 @@ mergeRanks resultPath titlesPath ranks
 
         return ()
 
- where  eat _ _ _ []
+
+compareRanks 
+        :: (PageId, Rank, BL.ByteString)
+        -> (PageId, Rank, BL.ByteString)
+        -> Ordering
+compareRanks (_, r1, _) (_, r2, _)
+ = compare r2 r1
+{-# INLINE compareRanks #-}
+
+
+-- | For all the pages in the given map,
+--   read the pages title from the titles file,
+--   and return a list of all the pages with their ranks and titles.
+collectTitles 
+        :: FilePath             -- ^ Path to titles file.
+        -> M.IntMap Rank        -- ^ Map of PageId to its rank.
+        -> IO [(PageId, Rank, BL.ByteString)]
+
+collectTitles !titlesPath !mm
+ = do   outRef   <- newIORef []
+        bsTitles <- BL.readFile titlesPath
+        go outRef 1 (BL.lines bsTitles)
+        readIORef outRef
+
+ where  go _ _ [] 
          = return ()
 
-        eat !outRef !mm !pid (!title : rest)
+        go outRef !pid (!title : rest)
          = case M.lookup pid mm of
             Nothing     
-             ->    eat outRef mm (pid + 1) rest
+             ->    go outRef (pid + 1) rest
 
             Just rank
              -> do out <- readIORef outRef
                    writeIORef outRef ((pid, rank, title) : out)
-                   eat outRef mm (pid + 1) rest
-
-        {-# INLINE compareRanks #-}
-        compareRanks (_, r1, _) (_, r2, _)
-         = compare r2 r1
+                   go outRef (pid + 1) rest
