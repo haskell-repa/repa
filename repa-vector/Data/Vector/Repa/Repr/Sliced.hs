@@ -48,17 +48,6 @@ instance Map r e => Map (S r) e where
 
 
 -- Zips -----------------------------------------------------------------------
-instance Zip r1 r2 a b
-      => Zip (S r1) (S r2) a b where
- type TZ (S r1) (S r2) = S (TZ r1 r2)
-
- vzip  (ASliced start shape arr1)
-        (ASliced _     _     arr2)
-  = ASliced start shape (vzip arr1 arr2)
- {-# INLINE [4] vzip #-}
-
-
-
 -------------------------------------------------------------------------------
 -- | Slice a chunk from a vector.
 vslice  :: Source r e 

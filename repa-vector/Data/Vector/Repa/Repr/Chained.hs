@@ -36,7 +36,7 @@ data Chain a
         = forall s
         . Chain Int                     -- Start position of this chain fragment.
                 Int                     -- End   position of this chain fragment.
-                s                       -- Startint state.
+                s                       -- Starting state.
                 (Int# -> s -> Step s a) -- Function to produce a new element.
 
 
@@ -59,9 +59,6 @@ instance U.Unbox e => Source N e where
  {-# INLINE deepSeqArray #-}
 
 
-data T2 a b = T2 !a !b
-
-
 -- Maps ----------------------------------------------------------------------
 instance Map N a where
  type TM N   = N
@@ -79,49 +76,6 @@ instance Map N a where
            in Chain start end s0 mkStep'
         {-# INLINE mkChain' #-}
  {-# INLINE vmap #-}
-
-
--- Zips ----------------------------------------------------------------------
-instance Zip D N a b where
- type TZ D N            = N
- vzip !arr1 !arr2       = vzip (chain arr1) arr2
- {-# INLINE [4] vzip #-}
-
-instance Zip N D a b where
- type TZ N D            = N
- vzip !arr1 !arr2       = vzip arr1 (chain arr2)
- {-# INLINE [4] vzip #-}
-
-
-instance U.Unbox a => Zip U N a b where
- type TZ U N            = N
- vzip !arr1 !arr2       = vzip (chain arr1) arr2
- {-# INLINE [4] vzip #-}
-
-instance U.Unbox b => Zip N U a b where
- type TZ N U            = N
- vzip !arr1 !arr2       = vzip arr1 (chain arr2)
- {-# INLINE [4] vzip #-}
-
-
-instance Zip N N a b where
- type TZ N N    = N
- vzip (AChained sh1 mkChain1 _) 
-      (AChained _   mkChain2 _)
-  =    AChained sh1 mkChain (error "vzip no unstream")
-
-  where mkChain c 
-         | Chain start1   end1 s10 mkStep1 <- mkChain1 c
-         , Chain _start2 _end2 s20 mkStep2 <- mkChain2 c
-         = let  
-                mkStep ix (T2 s1 s2)
-                 | Step s1' x1  <- mkStep1 ix s1
-                 , Step s2' x2  <- mkStep2 ix s2
-                 = Step (T2 s1' s2') (x1, x2)
-                {-# INLINE mkStep #-}
-
-           in   Chain start1 end1 (T2 s10 s20) mkStep
-        {-# INLINE mkChain #-}
 
 
 -- nstart ----------------------------------------------------------------------

@@ -15,9 +15,9 @@ Description:
 
 Library
   Build-Depends: 
-        base                 == 4.5.*,
+        base                 == 4.6.*,
         vector               == 0.9.*,
-        repa                 == 3.2.*
+        repa                 == 3.3.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -48,6 +48,7 @@ Library
         ExistentialQuantification
 
   Exposed-modules:
+        Data.Vector.Repa.Operators.Zip
         Data.Vector.Repa.Repr.Chained
         Data.Vector.Repa.Repr.Chunked
         Data.Vector.Repa.Repr.Sliced
