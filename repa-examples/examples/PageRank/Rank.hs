@@ -4,21 +4,18 @@ import Page
 import Count
 import Step
 import Progress
-import Data.Text                                as T
-import Data.Conduit.Binary                      as B
-import Data.Conduit.List                        as C
-import Data.Conduit.Text                        as T
-import Data.Conduit                             as C
-import qualified Data.Vector.Algorithms.Heap    as VA
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector                    as V
-import qualified Data.IntMap                    as M
-import Prelude                                  as P
 import System.IO
 import System.Environment
 import Data.IORef
 import System.Directory
 import Control.Monad
+import Prelude                                  as P
+import Data.Text                                as T
+import qualified Data.Vector.Algorithms.Heap    as VA
+import qualified Data.Vector.Unboxed            as U
+import qualified Data.Vector                    as V
+import qualified Data.IntMap                    as M
+import qualified Data.ByteString.Lazy.Char8     as BL
 
 -- TODO: Add in alpha parameter so we can compare against baseline.
 --       Show difference between previous and current vector, to check convergence.
@@ -106,12 +103,9 @@ mergeRanks resultPath titlesPath ranks
                 $ U.toList ranks
 
         -- Read titles and add to this ref.
-        outRef  <- newIORef []
-        _       <-  C.runResourceT
-                 $  B.sourceFile titlesPath
-                 $= B.lines
-                 $= T.decode T.utf8
-                 $$ C.foldM (eat outRef mm) 1
+        outRef   <- newIORef []
+        bsTitles <- BL.readFile titlesPath
+        eat outRef mm 1 $ BL.lines bsTitles
 
         -- Sort the resulting titles.
         outList         <- readIORef outRef
@@ -126,21 +120,23 @@ mergeRanks resultPath titlesPath ranks
                         ++ " "
                         ++ padL 25 (show rank)
                         ++ ": " 
-                        ++ T.unpack title)
+                        ++ BL.unpack title)
             outVec_sorted
 
         return ()
 
- where  eat !outRef !mm !pid !title
-         = unsafeLiftIO
-         $ case M.lookup pid mm of
+ where  eat _ _ _ []
+         = return ()
+
+        eat !outRef !mm !pid (!title : rest)
+         = case M.lookup pid mm of
             Nothing     
-             -> return (pid + 1)
+             ->    eat outRef mm (pid + 1) rest
 
             Just rank
              -> do out <- readIORef outRef
                    writeIORef outRef ((pid, rank, title) : out)
-                   return (pid + 1)
+                   eat outRef mm (pid + 1) rest
 
         {-# INLINE compareRanks #-}
         compareRanks (_, r1, _) (_, r2, _)
