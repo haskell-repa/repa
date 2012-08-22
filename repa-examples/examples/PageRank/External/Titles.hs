@@ -6,7 +6,6 @@ import Progress
 import Page
 import System.IO
 import Data.IORef
-import Data.Text                                as T
 import qualified Data.Vector.Algorithms.Heap    as VA
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector                    as V

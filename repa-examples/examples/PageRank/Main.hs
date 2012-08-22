@@ -2,7 +2,6 @@
 
 import External.Count
 import External.Rank
-import System.IO
 import System.Environment
 
 
@@ -12,7 +11,7 @@ main
         case args of
          -- Just count the number of pages in the pages file.
          ["-count", pagesPath] 
-          -> do (lines, pages)  <- countPages pagesPath
+          -> do _       <- countPages pagesPath
                 return ()
 
          ["-rank-external", pagesPath, titlesPath] 

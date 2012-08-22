@@ -6,19 +6,12 @@ import External.Count
 import External.Step
 import External.Titles
 import Page
-import Progress
 import System.IO
-import System.Environment
-import Data.IORef
 import System.Directory
 import Control.Monad
 import Prelude                                  as P
-import Data.Text                                as T
-import qualified Data.Vector.Algorithms.Heap    as VA
 import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector                    as V
-import qualified Data.IntMap                    as M
-import qualified Data.ByteString.Lazy.Char8     as BL
+
 
 -- TODO: Add in alpha parameter so we can compare against baseline.
 --       Show difference between previous and current vector, to check convergence.

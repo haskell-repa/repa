@@ -1,8 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module External.Count where
-import Page
 import Progress
-import System.Environment
 import qualified Data.ByteString.Lazy.Char8     as BL
 
 

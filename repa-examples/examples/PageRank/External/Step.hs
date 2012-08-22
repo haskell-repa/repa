@@ -55,17 +55,17 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
  where  eatLines (_, _, deadScore) []
          = return deadScore
 
-        eatLines (!ixLine, !ixPage, !deadScore) (!line : lines)
+        eatLines (!ixLine, !ixPage, !deadScore) (!l : ls)
          = do   -- Print how far along we are.
                 printProgress "  lines read: " 10000 ixLine lineCount
 
                 -- Parse the line for this page.
-                let Just page   = parsePage (TE.decodeUtf8 line)
+                let Just page   = parsePage (TE.decodeUtf8 l)
 
                 -- Accumulate data from this page.
-                eatPage ixLine ixPage deadScore page lines
+                eatPage ixLine ixPage deadScore page ls
 
-        eatPage !ixLine !ixPage !deadScore !page !lines
+        eatPage !ixLine !ixPage !deadScore !page !ls
          -- Ok, we read the page we were expecting.
          | pageId page == ixPage
          = do   -- Get the rank of the current page.
@@ -79,7 +79,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                         | pageIsDangling page   = deadScore + rank
                         | otherwise             = deadScore
 
-                eatLines (ixLine + 1, ixPage + 1, deadScore') lines
+                eatLines (ixLine + 1, ixPage + 1, deadScore') ls
 
          -- The page id was higher than what we were expecting.
          -- We've skipped over some page with no out-links that was not
@@ -90,7 +90,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
 
                 -- This page is dangling because it had no out-links.
                 let deadScore'  = deadScore + rank
-                eatPage ixLine (ixPage + 1) deadScore' page lines
+                eatPage ixLine (ixPage + 1) deadScore' page ls
 
          -- If the page id read from the file is less than what 
          -- we were expecting then the links file isn't sorted.
