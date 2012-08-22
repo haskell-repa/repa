@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
-import Count
-import Rank
+import External.Count
+import External.Rank
 import System.IO
 import System.Environment
 
@@ -15,8 +15,8 @@ main
           -> do (lines, pages)  <- countPages pagesPath
                 return ()
 
-         ["-rank-incremental", pagesPath, titlesPath] 
-                -> runRankIncremental pagesPath titlesPath
+         ["-rank-external", pagesPath, titlesPath] 
+                -> rankExternal pagesPath titlesPath
 
          _      -> error "bad usage"
         

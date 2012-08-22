@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-module Count where
+module External.Count where
 import Page
 import Progress
 import System.Environment

@@ -1,8 +1,10 @@
 {-# LANGUAGE BangPatterns #-}
-module Rank where
+module External.Rank
+        (rankExternal)
+where
+import External.Count
+import External.Step
 import Page
-import Count
-import Step
 import Progress
 import System.IO
 import System.Environment
@@ -20,9 +22,8 @@ import qualified Data.ByteString.Lazy.Char8     as BL
 -- TODO: Add in alpha parameter so we can compare against baseline.
 --       Show difference between previous and current vector, to check convergence.
 --
-
-runRankIncremental :: FilePath -> FilePath -> IO ()
-runRankIncremental pagesPath titlesPath
+rankExternal :: FilePath -> FilePath -> IO ()
+rankExternal pagesPath titlesPath
  = do   (lineCount, maxPageId)  <- countPages pagesPath
         let pageCount   = maxPageId + 1
 

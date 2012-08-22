@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Step
+module External.Step
         (step)
 where
 import Page
@@ -49,12 +49,12 @@ accLinks
 
 accLinks filePath lineCount _pageCount ranks0 ranks1
  = do   bs      <- BL.readFile filePath
-        eat (0, 1, 0) (BL.lines bs)
+        eatLines (0, 1, 0) (BL.lines bs)
 
- where  eat (_, _, deadScore) []
+ where  eatLines (_, _, deadScore) []
          = return deadScore
 
-        eat (ixLine, ixPage, deadScore) (line : lines)
+        eatLines (ixLine, ixPage, deadScore) (line : lines)
          = ixLine `seq` ixPage `seq` deadScore `seq` line `seq`
            do   -- Print how far along we are.
                 printProgress "  lines read: " 10000 ixLine lineCount
@@ -62,10 +62,9 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                 -- Parse the line for this page.
                 let Just page   = parsePage (TE.decodeUtf8 line)
 
-                handle ixLine ixPage deadScore page lines
+                eatPage ixLine ixPage deadScore page lines
 
-
-        handle !ixLine !ixPage !deadScore !page !lines
+        eatPage !ixLine !ixPage !deadScore !page !lines
          -- Ok, we read the page we were expecting.
          | pageId page == ixPage
          = do   -- Read the rank of the current page.
@@ -79,7 +78,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
                         | pageIsDangling page   = deadScore + rank
                         | otherwise             = deadScore
 
-                eat (ixLine + 1, ixPage + 1, deadScore') lines
+                eatLines (ixLine + 1, ixPage + 1, deadScore') lines
 
          -- The page id was higher than what we were expecting.
          -- We've skipped over some page with no out-links.
@@ -89,7 +88,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
 
                 -- This page is dangling because it had no out-links.
                 let deadScore'  = deadScore + rank
-                handle ixLine (ixPage + 1) deadScore' page lines
+                eatPage ixLine (ixPage + 1) deadScore' page lines
 
          -- If the page id read from the file is less than what 
          -- we were expecting then the links file isn't sorted.
