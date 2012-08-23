@@ -22,11 +22,10 @@ stepExternal
 stepExternal pageFile lineCount pageCount ranks
  = do
         -- Create a new ranks vector full of zeros.
-        !ranks1            <- zeroRanks pageCount
+        !ranks1         <- zeroRanks pageCount
 
         -- Add ranks contributions due to forward-links to the vector.
         deadScore  <- accLinks pageFile lineCount pageCount ranks ranks1
-        printProgress "  lines read: " 10000 lineCount lineCount
 
         -- Normalise the deadScore by the total number of pages.
         let !deadRank   = deadScore / fromIntegral pageCount
@@ -58,7 +57,8 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
         eatLines (0, 1, 0) (BL.lines bs)
 
  where  eatLines (_, _, deadScore) []
-         = return deadScore
+         = do   printProgress "  lines read: " 10000 lineCount lineCount
+                return deadScore
 
         eatLines (!ixLine, !ixPage, !deadScore) (!l : ls)
          = do   -- Print how far along we are.

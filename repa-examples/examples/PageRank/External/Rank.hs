@@ -85,16 +85,3 @@ pageRank maxIters pageFile titlesFile lineCount maxPageId ranks0
 
                 go (i - 1) ranks1
 
-
--- | Given the dense rank vector, slurp out the page ids and ranks for
---   some of the highest ranked pages.
-slurpTopRanks 
-        :: Rank
-        -> U.Vector Rank
-        -> U.Vector (PageId, Rank)
-
-slurpTopRanks rankMax ranks
-        = U.filter  (\(_pid, rank) -> rank >= rankMax * 0.01)
-        $ U.zip     (U.enumFromN 0 (U.length ranks))
-                    ranks
-

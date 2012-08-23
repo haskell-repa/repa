@@ -19,7 +19,7 @@ loadPages filePath
 
         let bufSize     = 1000
         mvec            <- VM.new bufSize
-        vec'            <- go mvec bufSize 0 (1 :: Int) (BL.lines bs)
+        vec'            <- go mvec bufSize 0 0 (BL.lines bs)
 
         return vec'
 

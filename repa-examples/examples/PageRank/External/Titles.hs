@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 module External.Titles
-        (mergeRanks)
+        ( slurpTopRanks
+        , mergeRanks)
 where
 import Progress
 import Page
@@ -11,6 +12,18 @@ import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector                    as V
 import qualified Data.IntMap                    as M
 import qualified Data.ByteString.Lazy.Char8     as BL
+
+-- | Given the dense rank vector, slurp out the page ids and ranks for
+--   some of the highest ranked pages.
+slurpTopRanks 
+        :: Rank
+        -> U.Vector Rank
+        -> U.Vector (PageId, Rank)
+
+slurpTopRanks rankMax ranks
+        = U.filter  (\(_pid, rank) -> rank >= rankMax * 0.01)
+        $ U.zip     (U.enumFromN 0 (U.length ranks))
+                    ranks
 
 
 -- | Given some PageIds and their ranks, 

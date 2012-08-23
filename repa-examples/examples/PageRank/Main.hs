@@ -68,5 +68,5 @@ main
           -> rankExternal (configSteps config) linksPath titlesPath
 
          ModeRankInternal linksPath titlesPath
-          -> rankInternal linksPath titlesPath
+          -> rankInternal (configSteps config) linksPath titlesPath
 
