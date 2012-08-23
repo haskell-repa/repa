@@ -22,7 +22,8 @@ rankInternal
         -> IO ()
 
 rankInternal steps pagesPath titlesPath
- = do   !pages          <- loadPages pagesPath
+ = do   putStrLn "* Loading pages."
+        !pages          <- loadPages pagesPath
         let !pageCount  = V.length pages
         let !ranks      = initialRanks pageCount
         pageRank steps pages titlesPath ranks
@@ -49,20 +50,20 @@ pageRank maxIters pages titlesFile ranks0
  = go maxIters ranks0
  where  go 0  _  = return ()
         go !i ranks
-         = do   putStrLn "\n"
+         = do   putStr "\n"
                 putStrLn $ "* Step " ++ show i
                 ranks1  <- stepInternal pages ranks
 
                 -- Sum up the ranks for all the pages, 
                 -- this should be very close to 1, minus some some round-off error.
                 let rankSum     = U.sum ranks1
-                putStrLn $ "  rank sum  : "  ++ show rankSum
+                putStrLn $ "  rank sum   : "  ++ show rankSum
 
                  -- Show the page with the maximum rank.
                 let rankMaxIx   = U.maxIndex ranks1
                 let rankMax     = ranks1 U.! rankMaxIx
-                putStrLn $ "  high ix   : "  ++ show rankMaxIx
-                putStrLn $ "  high rank : "  ++ show rankMax
+                putStrLn $ "  high ix    : "  ++ show rankMaxIx
+                putStrLn $ "  high rank  : "  ++ show rankMax
 
                 -- Write out the pages with the top few ranks.
                 putStrLn $ "* Writing top ranks."

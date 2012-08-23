@@ -53,12 +53,12 @@ accLinks pages ranks0 ranks1
         eatPages !ixPage !dangleScore
          | ixPage >= V.length pages
          = do   -- Print how many pages we've processed.
-                printProgress " pages eaten: " 10000 ixPage (V.length pages)
+                printProgress "  pages eaten: " 10000 (ixPage + 1) (V.length pages + 1)
                 return dangleScore
 
         eatPages !ixPage !dangleScore
          = do   -- Print how many pages we've processed.
-                printProgress " pages eaten: " 10000 ixPage (V.length pages)
+                printProgress "  pages eaten: " 10000 (ixPage + 1) (V.length pages + 1)
 
                 -- Get the current page.
                 let !page       = pages  V.! ixPage

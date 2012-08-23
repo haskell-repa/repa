@@ -57,12 +57,12 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
         eatLines (0, 1, 0) (BL.lines bs)
 
  where  eatLines (_, _, deadScore) []
-         = do   printProgress "  lines read: " 10000 lineCount lineCount
+         = do   printProgress "  lines read : " 10000 lineCount lineCount
                 return deadScore
 
         eatLines (!ixLine, !ixPage, !deadScore) (!l : ls)
          = do   -- Print how far along we are.
-                printProgress "  lines read: " 10000 ixLine lineCount
+                printProgress "  lines read : " 10000 ixLine lineCount
 
                 -- Parse the line for this page.
                 let Just page   = parsePage l

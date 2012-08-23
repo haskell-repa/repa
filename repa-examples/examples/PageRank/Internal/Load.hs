@@ -27,13 +27,13 @@ loadPages filePath
          -- We've read all the lines.
          -- Slice out the pages we read from the buffer.
          | []       <- ls
-         = do   printPosition True "  lines read: " 10000 ixLine
+         = do   printPosition True "  lines read : " 10000 ixLine
                 V.freeze (VM.slice 0 ixPage mvec)
 
          -- Handle a new line from the file.
          | l : rest <- ls
          = do   -- Print how far along we are.
-                printPosition False "  lines read: " 10000 ixLine
+                printPosition False "  lines read : " 10000 ixLine
 
                 -- Parse the page and add it to the buffer.
                 let Just page   = parsePage l

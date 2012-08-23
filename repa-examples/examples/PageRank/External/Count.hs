@@ -11,8 +11,8 @@ countPages !filePath
  = do   putStrLn $ "* Counting pages in file."
         bs                     <- BL.readFile filePath
         (lineCount, maxPageId) <- eat 0 0 (BL.lines bs)
-        printPosition True "  lines read: " 10000 lineCount
-        putStrLn $ " max page id: " ++ padR 10 (show maxPageId)
+        printPosition True "  lines read : " 10000 lineCount
+        putStrLn $ "  max page id: " ++ padR 10 (show maxPageId)
         return (lineCount, maxPageId)
 
  where  eat !lineCount !maxPageId []
@@ -25,6 +25,6 @@ countPages !filePath
 
             Just (pid', _)
              -> do let !maxPageId' = max pid' maxPageId
-                   printPosition False "  lines read: " 10000 lineCount
+                   printPosition False "  lines read : " 10000 lineCount
                    eat (lineCount + 1) maxPageId' ls
 
