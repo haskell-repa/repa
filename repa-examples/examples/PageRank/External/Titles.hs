@@ -40,15 +40,16 @@ mergeRanks resultPath titlesPath ranks
 
         -- Build a map of the pages we want, and their ranks.
         let mm  = M.fromList
+                $ map (\(pid, x) -> (fromIntegral pid, x))
                 $ U.toList ranks
 
         -- Read titles and add to this ref.
-        outList         <- collectTitles titlesPath mm
+        !outList        <- collectTitles titlesPath mm
 
         -- Sort the resulting titles.
-        outVec'         <- V.thaw $ V.fromList outList      
+        !outVec'        <- V.thaw $ V.fromList outList      
         VA.sortBy compareRanks outVec'
-        outVec_sorted   <- V.freeze outVec'
+        !outVec_sorted  <- V.unsafeFreeze outVec'
 
         -- Write out to file.
         V.mapM_ (\(pid, rank, title)
@@ -90,7 +91,7 @@ collectTitles !titlesPath !mm
          = return ()
 
         go outRef !pid (!title : rest)
-         = case M.lookup pid mm of
+         = case M.lookup (fromIntegral pid) mm of
             Nothing     
              ->    go outRef (pid + 1) rest
 

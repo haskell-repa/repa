@@ -17,7 +17,7 @@ loadPages filePath
  = {-# SCC "loadPages" #-}
    do   bs              <- BL.readFile filePath
 
-        let bufSize     = 1000
+        let bufSize     = 100000
         mvec            <- VM.new bufSize
         vec'            <- go mvec bufSize 0 0 (BL.lines bs)
 
@@ -51,7 +51,7 @@ loadPages filePath
                 addPage mvec' (2 * bufSize) ixLine ixPage ls page
 
          -- Ok, we read the page we were expecting.
-         | pageId page == ixPage
+         | (fromIntegral $ pageId page) == ixPage
          = do   
                 -- Add it to the buffer.
                 VM.write mvec ixPage page
@@ -62,10 +62,10 @@ loadPages filePath
          -- The page id was higher than what we were expecting.
          -- We've skipped over some page with no out-links that was
          -- not mentioned in the source file.
-         | pageId page >= ixPage
+         | (fromIntegral $ pageId page) >= ixPage
          = do   
                 -- Add a place-holder page to the buffer.
-                let !page' = Page ixPage U.empty
+                let !page' = Page (fromIntegral ixPage) U.empty
                 VM.write mvec ixPage page'
 
                 -- Move to the next page id.

@@ -11,11 +11,11 @@ import qualified Data.ByteString.Lazy.Char8     as BL
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad.ST
-
+import Data.Word
 
 -- | Unique identifier for a page.
 type PageId     
-        = Int
+        = Word32
 
 data Page       
         = Page 
@@ -36,7 +36,7 @@ pageIsDangling page
 parsePageId :: BL.ByteString -> Maybe PageId
 parsePageId bs
         | Just (pid, _)         <- BL.readInt bs
-        = Just pid
+        = Just $ fromIntegral pid
 
         | otherwise
         = Nothing
@@ -46,8 +46,8 @@ parsePage :: BL.ByteString -> Maybe Page
 parsePage bs
         | Just (pid, bs2)       <- BL.readInt bs
         , Just bs3              <- char ':' bs2
-        , (links, _)            <- ints bs3
-        = Just (Page pid links)
+        , (links, _)            <- pageIds bs3
+        = Just (Page (fromIntegral pid) links)
 
         | otherwise
         = Nothing
@@ -61,8 +61,8 @@ char c bs
 {-# INLINE char #-}
 
 
-ints    :: BL.ByteString -> (U.Vector Int, BL.ByteString)
-ints bs0
+pageIds    :: BL.ByteString -> (U.Vector PageId, BL.ByteString)
+pageIds bs0
  = runST
  $ do   mvec    <- UM.new 100
         go mvec 0 100 bs0
@@ -80,7 +80,7 @@ ints bs0
          = go mvec ix ixMax bs2
 
          | Just (i, bs2) <- BL.readInt bs
-         = do   UM.write mvec ix i
+         = do   UM.write mvec ix (fromIntegral i)
                 go mvec (ix + 1) ixMax bs2
 
          | otherwise

@@ -48,32 +48,32 @@ pageRank
 
 pageRank maxIters pages titlesFile ranks0
  = go maxIters ranks0
- where  go 0  _  = return ()
-        go !i ranks
-         = do   putStr "\n"
-                putStrLn $ "* Step " ++ show i
-                ranks1  <- stepInternal pages ranks
-
-                -- Sum up the ranks for all the pages, 
-                -- this should be very close to 1, minus some some round-off error.
-                let rankSum     = U.sum ranks1
-                putStrLn $ "  rank sum   : "  ++ show rankSum
-
-                 -- Show the page with the maximum rank.
-                let rankMaxIx   = U.maxIndex ranks1
-                let rankMax     = ranks1 U.! rankMaxIx
+ where  go 0 !ranks
+         = do   -- Show the page with the maximum rank.
+                let !rankMaxIx   = U.maxIndex ranks
+                let !rankMax     = ranks U.! rankMaxIx
                 putStrLn $ "  high ix    : "  ++ show rankMaxIx
                 putStrLn $ "  high rank  : "  ++ show rankMax
 
                 -- Write out the pages with the top few ranks.
                 putStrLn $ "* Writing top ranks."
-                let topRanks    = slurpTopRanks rankMax ranks1
+                let !topRanks   = slurpTopRanks rankMax ranks
 
-                exists          <- doesDirectoryExist "out"
+                !exists          <- doesDirectoryExist "out"
                 when (not exists)
                  $ createDirectory "out"
 
-                let si          = replicate (2 - length (show i)) '0' ++ show i
-                mergeRanks ("out/step" ++ si ++ ".ranks") titlesFile topRanks 
+                mergeRanks ("out/final.ranks") titlesFile topRanks 
+                return ()
+
+        go !i !ranks
+         = do   putStr "\n"
+                putStrLn $ "* Step " ++ show i
+                !ranks1  <- stepInternal pages ranks
+
+                -- Sum up the ranks for all the pages, 
+                -- this should be very close to 1, minus some some round-off error.
+                let !rankSum     = U.sum ranks1
+                putStrLn $ "  rank sum   : "  ++ show rankSum
 
                 go (i - 1) ranks1

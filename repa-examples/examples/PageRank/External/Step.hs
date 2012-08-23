@@ -4,11 +4,11 @@ module External.Step
         (stepExternal)
 where
 import Page
+import Progress
 import Data.Vector.Unboxed.Mutable              (IOVector)
 import qualified Data.ByteString.Lazy.Char8     as BL
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
-import Progress
 
 
 -- | Perform one iteration step for the Page Rank algorithm.
@@ -72,9 +72,9 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
 
         eatPage !ixLine !ixPage !deadScore !page !ls
          -- Ok, we read the page we were expecting.
-         | pageId page == ixPage
+         | (fromIntegral $ pageId page) == ixPage
          = do   -- Get the rank of the current page.
-                let !rank       = ranks0 U.! pageId page
+                let !rank       = ranks0 U.! (fromIntegral $ pageId page)
 
                 -- Give scores to other pages that are linked to by this one.
                 accSpread ranks1 rank page
@@ -89,7 +89,7 @@ accLinks filePath lineCount _pageCount ranks0 ranks1
          -- The page id was higher than what we were expecting.
          -- We've skipped over some page with no out-links that was not
          -- mentioned in the source file.
-         | pageId page >= ixPage
+         | (fromIntegral $ pageId page) >= ixPage
          = do   -- Get the rank of the expected page.
                 let !rank       = ranks0 U.! ixPage
 
@@ -119,8 +119,8 @@ accSpread ranks rank page
 
          | otherwise
          = do   let !pid = links U.! i
-                r        <- UM.read ranks pid
-                UM.write ranks pid (r + contrib)
+                r        <- UM.read ranks (fromIntegral pid)
+                UM.write ranks (fromIntegral pid) (r + contrib)
                 go (i + 1)
 
 
