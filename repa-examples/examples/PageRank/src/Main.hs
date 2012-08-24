@@ -11,9 +11,18 @@ help :: String
 help
  = unlines 
  [ "pagerank -count <LINKS_FILE>"
- , "pagerank [-steps <INT>] -rank-external <LINKS_FILE>"
- , "pagerank [-steps <INT>] -rank-internal <LINKS_FILE> <TITLES_FILE> [+RTS -N<THREADS>]" ]
-
+ , "  Count the number of pages in a links file."
+ , ""
+ , "pagerank [-steps <INT>] -rank-external <LINKS_FILE> <TITLES_FILE>"
+ , "  Run the external verison of the algorithm in constant space."
+ , ""
+ , "pagerank [-steps <INT>] -rank-internal <LINKS_FILE> <TITLES_FILE>"
+ , "                        [+RTS -A10M -N<THREADS>]"
+ , "  Run the internal version of the algorithm."
+ , ""
+ , "  NOTE: The -A10M flag sets the size of the garbage collector nursery"
+ , "        to 10MB. If this flag is omitted the program will spend most"
+ , "        of its time performing minor collections." ]
 
 -- | Command line configuration.
 data Config
