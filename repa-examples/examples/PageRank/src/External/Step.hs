@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 
 module External.Step
         (stepExternal)
@@ -41,6 +40,7 @@ zeroRanks :: Int -> IO (UM.IOVector Rank)
 zeroRanks pageCount
  = UM.replicate pageCount 0
 {-# NOINLINE zeroRanks #-}
+--  NOINLINE so we can see how much data this function allocates when profiling.
 
 
 -- | Add rank contributions due to forward-links to a ranks vector.

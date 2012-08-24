@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+
 module External.Rank
         (rankExternal)
 where
@@ -19,9 +19,6 @@ import qualified Data.Vector.Unboxed            as U
 --   but the new ranks are accumulated incrementally from the links file.
 --   We don't try to read the whole links file into memory at the same time.
 --  
---   TODO: Add in alpha parameter so we can compare against baseline.
---         Show difference between previous and current vector, to check convergence.
---
 rankExternal 
         :: Int                  -- ^ Number of iterations to run.
         -> FilePath             -- ^ Path to links file.
@@ -67,15 +64,19 @@ pageRank maxIters pageFile titlesFile lineCount maxPageId ranks0
                 putStrLn $ "* Writing top ranks."
                 let topRanks    = slurpTopRanks rankMax ranks
 
+                -- Ensure the output directory exists.
                 exists          <- doesDirectoryExist "out"
                 when (not exists)
                  $ createDirectory "out"
 
+                -- Write out the titles of the top few pages.
                 mergeRanks ("out/final.ranks") titlesFile topRanks 
 
         go !i !ranks
          = do   putStr "\n"
                 putStrLn $ "* Step " ++ show i
+
+                -- Run a single step of the algorithm.
                 ranks1   <- stepExternal pageFile lineCount maxPageId ranks
 
                 -- Sum up the ranks for all the pages, 

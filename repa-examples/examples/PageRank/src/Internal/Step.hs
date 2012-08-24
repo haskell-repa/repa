@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+
 module Internal.Step
         (stepInternal)
 where
@@ -38,21 +38,26 @@ stepInternal pages !ranks
         return final
 
 
+-- | Create a zero valued dense ranks vector.
 zeroRanks :: Int -> IO (UM.IOVector Rank)
 zeroRanks pageCount
  = UM.replicate pageCount 0
 {-# NOINLINE zeroRanks #-}
+--  NOINLINE so we can see the allocation this function does when profiling.
 
 
 -- | Add ranks contributions due to forward-links to the ranks vector.
 accLinks
-        :: V.Vector Page                -- ^ Pages graph.
-        -> U.Vector Rank                -- ^ Old ranks of the pages.
-        -> UM.IOVector Rank             -- ^ New ranks of the pages.
-        -> IO Rank                      -- ^ Dangling score.
+        :: V.Vector Page        -- ^ Pages graph.
+        -> U.Vector Rank        -- ^ Old ranks of the pages.
+        -> UM.IOVector Rank     -- ^ New ranks of the pages.
+        -> IO Rank              -- ^ Dangling score.
 
 accLinks pages ranks0 ranks1
- = do   let !threads    = R.gangSize R.theGang
+ = do   
+        -- Create new refs to hold the partial results computed
+        -- by each thread.
+        let !threads    = R.gangSize R.theGang
         refsRank        <- replicateM threads (newIORef Nothing)
         refsDangles     <- replicateM threads (newIORef Nothing)
 
@@ -74,6 +79,7 @@ accLinks pages ranks0 ranks1
         return dangleScore
 
 
+-- | Add a ranks vector to the mutable accumulator.
 accRanks :: UM.IOVector Rank -> U.Vector Rank -> IO ()
 accRanks !dest !ranks
  = go 0
@@ -87,6 +93,8 @@ accRanks !dest !ranks
                 go (ix + 1)
 
 
+-- | Sum up rank contributions due to out-links for the pages assigned
+--   to a single thread.
 accLinksThread 
         :: V.Vector Page                 -- ^ Pages graph.
         -> U.Vector Rank                 -- ^ Old ranks of the pages.
@@ -116,7 +124,7 @@ accLinksThread pages ranks refRank1 refDangleScore nThread
         writeIORef refDangleScore (Just dangleScore)
 
 
--- | Add rank contributions due to forward-links to the ranks vector.
+-- | Add rank contributions due to out-links to the ranks vector.
 accLinksRange
         :: Bool
         -> Int                          -- ^ Starting index.

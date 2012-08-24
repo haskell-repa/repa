@@ -1,29 +1,51 @@
-{-# LANGUAGE BangPatterns #-}
 
 import External.Count
 import External.Rank
 import Internal.Rank
 import System.Environment
+import System.Exit
 import Data.Char
 
+-- | Command-line help.
+help :: String
+help
+ = unlines 
+ [ "pagerank -count <LINKS_FILE>"
+ , "pagerank [-steps <INT>] -rank-external <LINKS_FILE>"
+ , "pagerank [-steps <INT>] -rank-internal <LINKS_FILE> <TITLES_FILE> [+RTS -N<THREADS>]" ]
 
+
+-- | Command line configuration.
 data Config
         = Config
         { configMode    :: Mode
         , configSteps   :: Int }
 
+-- | Program mode.
 data Mode
         = ModeNone
+
+        -- | Count the total number of pages in a links file.
         | ModeCount        FilePath
+
+        -- | Run the external algorithm,
+        --   given the links and titles files.
         | ModeRankExternal FilePath FilePath
+
+        -- | Run the internal algorithm,
+        --   given the links and titles files.
         | ModeRankInternal FilePath FilePath
 
+
+-- | Default program configuration.
 defaultConfig :: Config
 defaultConfig
         = Config
         { configMode    = ModeNone
         , configSteps   = 10 }
 
+
+-- | Parse command line arguments.
 parseArgs :: [String] -> Config -> IO Config
 parseArgs [] config
         = return config
@@ -47,7 +69,8 @@ parseArgs args config
         $ config { configSteps = read count }
 
         | otherwise
-        = error "usage"
+        = do    putStrLn help
+                exitWith ExitSuccess
 
 
 main :: IO ()
@@ -57,8 +80,8 @@ main
 
         case configMode config of
          ModeNone
-          -> do putStrLn "Nothing to do..."
-                return ()
+          -> do putStrLn help
+                exitWith ExitSuccess
 
          ModeCount linksPath
           -> do _       <- countPages linksPath

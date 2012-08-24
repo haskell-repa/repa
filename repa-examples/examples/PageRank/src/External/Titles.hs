@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+
 module External.Titles
         ( slurpTopRanks
         , mergeRanks)
@@ -12,6 +12,7 @@ import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector                    as V
 import qualified Data.IntMap                    as M
 import qualified Data.ByteString.Lazy.Char8     as BL
+
 
 -- | Given the dense rank vector, slurp out the page ids and ranks for
 --   some of the highest ranked pages.

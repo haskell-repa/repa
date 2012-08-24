@@ -13,15 +13,19 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad.ST
 import Data.Word
 
+
 -- | Unique identifier for a page.
 type PageId     
         = Word32
 
+
+-- | Holds a page and its out-links.
 data Page       
         = Page 
         { pageId        :: !PageId 
         , pageLinks     :: !(U.Vector PageId) }
         deriving Show
+
 
 -- | A single PageRank value.
 type Rank       
@@ -33,6 +37,7 @@ pageIsDangling page
         = U.length (pageLinks page) == 0
 
 
+-- | Parse just the PageId from a line in the links file.
 parsePageId :: BL.ByteString -> Maybe PageId
 parsePageId bs
         | Just (pid, _)         <- BL.readInt bs
@@ -42,6 +47,7 @@ parsePageId bs
         = Nothing
 
 
+-- | Parse a whole line of the links file.
 parsePage :: BL.ByteString -> Maybe Page
 parsePage bs
         | Just (pid, bs2)       <- BL.readInt bs
@@ -53,6 +59,7 @@ parsePage bs
         = Nothing
 
 
+-- | Parse a single character.
 char   :: Char -> BL.ByteString -> Maybe BL.ByteString
 char c bs
  | BL.null bs           = Nothing
@@ -61,6 +68,7 @@ char c bs
 {-# INLINE char #-}
 
 
+-- | Parse a vector of PageIds.
 pageIds    :: BL.ByteString -> (U.Vector PageId, BL.ByteString)
 pageIds bs0
  = runST

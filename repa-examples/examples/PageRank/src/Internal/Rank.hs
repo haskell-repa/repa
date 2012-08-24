@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
+
 module Internal.Rank 
         (rankInternal)
 where
@@ -59,16 +59,20 @@ pageRank maxIters pages titlesFile ranks0
                 putStrLn $ "* Writing top ranks."
                 let !topRanks   = slurpTopRanks rankMax ranks
 
+                -- Ensure the output directory exists.
                 !exists          <- doesDirectoryExist "out"
                 when (not exists)
                  $ createDirectory "out"
 
+                -- Write out the titles of the top few pages.
                 mergeRanks ("out/final.ranks") titlesFile topRanks 
                 return ()
 
         go !i !ranks
          = do   putStr "\n"
                 putStrLn $ "* Step " ++ show i
+
+                -- Run a step of the algorithm.
                 !ranks1  <- stepInternal pages ranks
 
                 -- Sum up the ranks for all the pages, 

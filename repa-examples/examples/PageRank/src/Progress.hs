@@ -26,6 +26,7 @@ printPosition isLast header block pos
  | otherwise
  =      return ()
 
+
 -- | Print progress in a stream towards a maximum value.
 printProgress :: String -> Int -> Int -> Int -> IO ()
 printProgress header block pos len
@@ -45,10 +46,13 @@ printProgress header block pos len
  =      return ()
 
 
+-- | Pretty print in a right-justified column.
 padR :: Int -> String -> String
 padR n str
  = replicate (n - length str) ' ' ++ str
 
+
+-- | Pretty print in a left-justified column.
 padL :: Int -> String -> String
 padL n str
  = str ++ replicate (n - length str) ' '

@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+
 module Internal.Load where
 import Page
 import Progress
@@ -8,15 +8,17 @@ import qualified Data.Vector.Mutable            as VM
 import qualified Data.Vector.Unboxed            as U
 
 
--- | Add rank contributions due to forward-links to a ranks vector.
+-- | Load the whole page graph into memory.
 loadPages
         :: FilePath             -- ^ Pages file.
         -> IO (V.Vector Page)
 
 loadPages filePath 
- = {-# SCC "loadPages" #-}
-   do   bs              <- BL.readFile filePath
+ = do   -- Lazilly read the pages files.
+        bs              <- BL.readFile filePath
 
+        -- Create an initial vector to hold the pages.
+        -- We'll grow this as we read more pages.
         let bufSize     = 100000
         mvec            <- VM.new bufSize
         vec'            <- go mvec bufSize 0 0 (BL.lines bs)
@@ -38,10 +40,6 @@ loadPages filePath
                 -- Parse the page and add it to the buffer.
                 let Just page   = parsePage l
                 addPage mvec bufSize (ixLine + 1) ixPage rest page
-
-         | otherwise
-         = error "loadPages failed"
-
 
         addPage !mvec !bufSize !ixLine !ixPage ls !page
          -- We're out of space in the buffer.
