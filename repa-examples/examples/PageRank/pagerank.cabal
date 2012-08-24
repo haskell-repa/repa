@@ -17,7 +17,7 @@ Executable pagerank
         containers        == 0.4.2.*,
         repa              == 3.2.*,
         vector            == 0.9.*,
-        vector-algorithms == 0.5.4
+        vector-algorithms == 0.5.4.*
 
   Main-is: 
         Main.hs
