@@ -31,6 +31,7 @@ data N
 -- | A new seed and an element.
 data Step s a
         = Step s a
+        | Update s 
 
 data Chain a
         = forall s
