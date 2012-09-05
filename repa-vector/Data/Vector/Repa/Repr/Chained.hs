@@ -5,7 +5,8 @@ module Data.Vector.Repa.Repr.Chained
         , Chain(..)
         , Array(..)
         , chain
-        , unchainP)
+        , unchainP
+		, nstart)
 where
 import Data.Vector.Repa.Base
 import Data.Array.Repa
@@ -137,9 +138,14 @@ unchainP (AChained sh getChain _)
          = fill start s0
          where  fill !ix !s 
                  | ix >=# end = return ()
-                 | Step s' x    <- mkStep ix s
-                 = do unsafeWriteMVec mvec (I# ix) x
-                      fill (ix +# 1#) s'
+				 | otherwise
+				 = case mkStep ix s of
+					Step s' x -> do
+						unsafeWriteMVec mvec (I# ix) x
+						fill (ix +# 1#) s'
+
+					Update s' ->
+						fill ix s'
                 {-# INLINE fill #-}
         {-# INLINE fillChunk #-}
 {-# INLINE unchainP #-}

@@ -1,0 +1,1 @@
+ghc Test.hs -package dph-prim-par -package repa-vector -package repa -package QuickCheck -i/home/amos/proj/ghc/libraries/dph/dph-test/framework/ -XTypeSynonymInstances -XTemplateHaskell -XFlexibleContexts
