@@ -17,7 +17,9 @@ Library
   Build-Depends: 
         base                 == 4.6.*,
         vector               == 0.9.*,
-        repa                 == 3.3.*
+        repa                 == 3.3.*,
+        dph-prim-seq,
+        dph-prim-par
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
