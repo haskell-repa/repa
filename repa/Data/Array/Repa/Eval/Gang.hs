@@ -100,7 +100,7 @@ forkGang n
         -- Add finalisers so we can shut the workers down cleanly if they
         -- become unreachable.
         zipWithM_ (\varReq varDone 
-                        -> addMVarFinalizer varReq (finaliseWorker varReq varDone)) 
+                        -> mkWeakMVar varReq (finaliseWorker varReq varDone)) 
                 mvsRequest
                 mvsDone
 

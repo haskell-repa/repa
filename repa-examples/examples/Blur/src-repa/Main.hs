@@ -50,7 +50,7 @@ process iterations
 
 	
 promote	:: Monad m => Array U DIM2 Word8 -> m (Array U DIM2 Double)
-promote arr@(AUnboxed (Z :. y :. x) !vec)
+promote arr
  = computeP $ A.map ffs arr
  where	{-# INLINE ffs #-}
 	ffs	:: Word8 -> Double

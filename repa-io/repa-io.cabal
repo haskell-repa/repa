@@ -1,5 +1,5 @@
 Name:                repa-io
-Version:             3.3.1.1
+Version:             3.2.2.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -19,7 +19,7 @@ Synopsis:
 Library
   Build-Depends: 
         base                 == 4.6.*,
-        repa                 == 3.3.*,
+        repa                 == 3.2.*,
         bmp                  == 1.2.*,
         old-time             == 1.*,
         vector               == 0.9.*,
