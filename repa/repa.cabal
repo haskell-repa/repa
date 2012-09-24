@@ -24,11 +24,11 @@ Tested-with: GHC == 7.0.1
 Library
   Build-Depends: 
         base                 == 4.6.*,
-        ghc-prim             == 0.2.*,
+        ghc-prim             == 0.3.*,
         vector               == 0.9.*,
         bytestring           == 0.10.*,
-        QuickCheck           >= 2.3 && < 2.5,
-        template-haskell     >= 2.5 && < 2.8
+        template-haskell     == 2.8.*,
+        QuickCheck           >= 2.3 && < 2.6
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

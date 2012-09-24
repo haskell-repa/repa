@@ -20,9 +20,9 @@ Synopsis:
 Executable repa-canny
   Build-depends: 
         base                 == 4.6.*,
-        repa                 == 3.3.*,
-        repa-algorithms      == 3.3.*,
-        template-haskell     >= 2.5 && < 2.8
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*,
+        template-haskell     == 2.8.*
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
@@ -151,9 +151,9 @@ Executable repa-blur
 Executable repa-sobel
   Build-depends: 
         base                 == 4.6.*,
-        template-haskell     >= 2.5 && < 2.8,
-        repa                 == 3.3.*,
-        repa-algorithms      == 3.3.*
+        template-haskell     == 2.8.*,
+        repa                 == 3.2.*,
+        repa-algorithms      == 3.2.*
 
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
