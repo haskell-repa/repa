@@ -53,10 +53,10 @@ vreplicates upsegd vec
         
                 -- State: current segment -1 and remaining 0,
                 -- so first step will calculate real values
-                !state  = (segd, seg_off, -1, 0)
+                !state  = segd `seq` seg_off `seq` (segd, seg_off, -1, 0)
 
            in   Chain start end state step 
-        {-# INLINE getChain #-}
+        {-# INLINE [2] getChain #-}
 
 
         -- Stepper is called until the entire buffer is filled
@@ -79,7 +79,7 @@ vreplicates upsegd vec
             else 
              Step (segd, seg_off, seg_cur, remain - 1)
                   (vec `unsafeLinearIndex` (seg_off + seg_cur))
-        {-# INLINE step #-}
+        {-# INLINE [1] step #-}
 
   in    AChained (ix1 (I# len))
                 getChain

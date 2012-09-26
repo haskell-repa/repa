@@ -135,11 +135,11 @@ unchainP (AChained sh getChain _)
  where  fillChunks mvec
          = gangIO theGang 
          $ \(I# thread) -> fillChunk mvec (getChain thread)
-        {-# INLINE fillChunks #-}
+        {-# INLINE [1] fillChunks #-}
 
         fillChunk mvec (Chain (I# start) (I# end) s0 mkStep)
          = fill start s0
-         where  fill !ix !s 
+         where  fill !ix s 
                  | ix >=# end = return ()
 		 | otherwise
 		 = case mkStep ix s of
@@ -149,6 +149,6 @@ unchainP (AChained sh getChain _)
 
 			Update s' 
                          ->     fill ix s'
-                {-# INLINE fill #-}
-        {-# INLINE fillChunk #-}
+                {-# INLINE [1] fill #-}
+        {-# INLINE [1] fillChunk #-}
 {-# INLINE unchainP #-}
