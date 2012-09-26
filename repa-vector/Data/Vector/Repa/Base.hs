@@ -1,15 +1,13 @@
-
 module Data.Vector.Repa.Base
         ( Vector
         , Map(..)
         , Zip(..)
-        , vlength
-        , vreplicate)
+        , vlength)
 where
 import Data.Array.Repa                  as R
 import Prelude                          hiding (length)
 import qualified Data.Vector.Unboxed    as U
-
+import Prelude hiding (zip, map, length, replicate)
 
 type Vector r e 
         = Array r DIM1 e
@@ -50,12 +48,3 @@ vlength !v
  = case extent v of
         Z :. len        -> len
 {-# INLINE [4] vlength #-}
-
-
-vreplicate :: Int -> e -> Vector D e
-vreplicate !n !x
- = ADelayed (Z :. n) get
- where  get _ = x
-        {-# INLINE get #-}
-{-# INLINE [4] vreplicate #-}
-

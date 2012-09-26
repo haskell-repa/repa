@@ -1,4 +1,3 @@
-
 module Data.Vector.Repa.Repr.Chained
         ( N
         , Step (..)
@@ -73,6 +72,9 @@ instance Map N a where
                 mkStep' ix s
                  | Step s' x    <- mkStep ix s
                  = Step s' (f x)
+
+                 | otherwise
+                 = error "vmap: broken, got an update"
                 {-# INLINE mkStep' #-}
 
            in Chain start end s0 mkStep'
@@ -117,8 +119,9 @@ chain vec
                  (error "no chain")
 {-# INLINE chain #-}
 
---data SPEC = SPEC
--- ANN type SPEC ForceSpecConstr #
+
+data SPEC = SPEC | SPEC2
+{-# ANN type SPEC ForceSpecConstr #-}
 
 -- | Convert a chain back to a vector.
 unchainP :: Target r e => Vector N e -> Vector r e
@@ -138,14 +141,14 @@ unchainP (AChained sh getChain _)
          = fill start s0
          where  fill !ix !s 
                  | ix >=# end = return ()
-				 | otherwise
-				 = case mkStep ix s of
-					Step s' x -> do
-						unsafeWriteMVec mvec (I# ix) x
-						fill (ix +# 1#) s'
+		 | otherwise
+		 = case mkStep ix s of
+			Step s' x 
+                         -> do  unsafeWriteMVec mvec (I# ix) x
+				fill (ix +# 1#) s'
 
-					Update s' ->
-						fill ix s'
+			Update s' 
+                         ->     fill ix s'
                 {-# INLINE fill #-}
         {-# INLINE fillChunk #-}
 {-# INLINE unchainP #-}

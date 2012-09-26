@@ -13,6 +13,7 @@ import Data.Vector.Repa.Repr.Chained
 import Data.Vector.Repa.Repr.Sliced
 import Data.Vector.Repa.Base
 import qualified Data.Vector.Unboxed            as U
+import Prelude                                  hiding (zip3, zipWith)
 
 
 -- Unboxed --------------------------------------------------------------------
@@ -49,6 +50,9 @@ instance Zip N N a b where
                  | Step s1' x1  <- mkStep1 ix s1
                  , Step s2' x2  <- mkStep2 ix s2
                  = Step (s1', s2') (x1, x2)
+
+                 | otherwise
+                 = error "vzip: source vectors have different lengths"
                 {-# INLINE mkStep #-}
 
            in   Chain start1 end1 (s10, s20) mkStep

@@ -1,5 +1,5 @@
 Name:                repa-vector
-Version:             3.3.1.1
+Version:             3.2.2.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -17,7 +17,7 @@ Library
   Build-Depends: 
         base                 == 4.6.*,
         vector               == 0.9.*,
-        repa                 == 3.3.*,
+        repa                 == 3.2.*,
         dph-prim-seq,
         dph-prim-par
 
@@ -51,6 +51,7 @@ Library
 
   Exposed-modules:
         Data.Vector.Repa.Operators.Chains
+        Data.Vector.Repa.Operators.Replicate
         Data.Vector.Repa.Operators.Zip
         Data.Vector.Repa.Repr.Chained
         Data.Vector.Repa.Repr.Chunked
