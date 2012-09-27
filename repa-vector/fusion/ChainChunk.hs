@@ -12,9 +12,16 @@ import System.IO.Unsafe
 import GHC.Exts
 
 
-data Step a s
-        = Yield  a s
+data Step s a
+        = Yield  s a
         | Update s 
+
+
+data Chunk s a
+        = Chunk Int#                    -- Start position of this chunk.
+                Int#                    -- End   position of this chunk.
+                (Int -> s -> Step s a)  -- Step function
+                s                       -- Initial state for this chunk.
 
 data Chain a
         = forall s
@@ -22,17 +29,11 @@ data Chain a
                 Int#                    -- Number of chunks.
                 (Int# -> Chunk s a)     -- Chunk for each thread.
 
-data Chunk s a
-        = Chunk Int#                    -- Start position of this chunk.
-                Int#                    -- End   position of this chunk.
-                (Int -> s -> Step a s)  -- Step function
-                s                       -- Initial state for this chunk.
-
 
 -------------------------------------------------------------------------------
 -- | Convert a vector to a chain.
 vchain  :: U.Unbox a 
-        => Int                          -- ^ Number of chunks in the chain.
+        => Int
         -> U.Vector a                   -- ^ Vector to convert.
         -> Chain a
 
@@ -60,7 +61,7 @@ vchunk vec start end
  = Chunk start end mkStep (I# start)
  where  
         mkStep n ix
-         = Yield (vec `U.unsafeIndex` ix) (ix + 1)
+         = Yield (ix + 1) (vec `U.unsafeIndex` ix)
 {-# INLINE [1] vchunk #-}
 
 
@@ -109,7 +110,7 @@ vunchain (Chain len chunks mkChunk)
 
                  | otherwise
                  = case mkStep (I# c) s of
-                        Yield x s'
+                        Yield  s' x
                          -> do  write (I# ix) x
                                 fillChunk' (ix +# 1#) s'
 
@@ -129,7 +130,7 @@ cmap f (Chain len chunks mkChunk)
          | Chunk start end mkStep s0    <- mkChunk c
          = let  mkStep' ix s
                  = case mkStep ix s of
-                        Yield x s'      -> Yield (f x) s'
+                        Yield  s' x     -> Yield s' (f x) 
                         Update s'       -> Update s'
                 {-# INLINE [0] mkStep' #-}
            in   Chunk start end mkStep' s0
@@ -192,8 +193,8 @@ vreplicates upsegd vec
              in  Update (segd, seg_off, seg_cur', remain')
 
             -- Return a value and decrement the count remaining   
-            else Yield  (vec `U.unsafeIndex` (seg_off + seg_cur))
-                        (segd, seg_off, seg_cur, remain - 1)
+            else Yield  (segd, seg_off, seg_cur, remain - 1)
+                        (vec `U.unsafeIndex` (seg_off + seg_cur))
         {-# INLINE [1] step #-}
 
 

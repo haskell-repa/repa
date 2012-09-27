@@ -1,11 +1,12 @@
 module Data.Vector.Repa.Repr.Chained
         ( N
         , Step (..)
-        , Chain(..)
+        , Frag (..)
         , Array(..)
         , chain
         , unchainP
-		, nstart)
+        , unchainS
+	, nstart)
 where
 import Data.Vector.Repa.Base
 import Data.Array.Repa
@@ -13,6 +14,7 @@ import Data.Array.Repa.Eval
 import Data.Array.Repa.Eval.Gang
 import GHC.Exts
 import System.IO.Unsafe
+import Control.Monad.ST
 import qualified Data.Vector.Unboxed                    as U
 
 
@@ -27,35 +29,37 @@ import qualified Data.Vector.Unboxed                    as U
 --   
 data N
 
-
 -- | A new seed and an element.
 data Step s a
-        = Step s a
+        = Yield  s a
         | Update s 
 
-data Chain a
-        = forall s
-        . Chain Int                     -- Start position of this chain fragment.
-                Int                     -- End   position of this chain fragment.
+
+data Frag s a
+        = Frag  Int#                    -- Start position of this chain fragment.
+                Int#                    -- End   position of this chain fragment.
                 s                       -- Starting state.
                 (Int# -> s -> Step s a) -- Function to produce a new element.
 
 
 instance U.Unbox e => Source N e where
  data Array N sh e
-        = AChained
+        = forall s
+        . AChained
                 sh                      -- Overall extent of chain.
-                (Int# -> Chain e)       -- Chain for each thread.
+                Int#                    -- Number of fragments in chain
+                (Int# -> Frag s e)      -- Fragment for each thread.
                 (Vector U e)            -- Cache of unchained elements.
 
- extent (AChained ex _ _) 
+
+ extent (AChained ex _ _ _) 
   = ex
  {-# INLINE extent #-}
 
  linearIndex _
   = error "linearIndex: not finished"
 
- deepSeqArray (AChained ex _ _) x
+ deepSeqArray (AChained ex _ _ _) x
   = ex `deepSeq` x
  {-# INLINE deepSeqArray #-}
 
@@ -64,21 +68,22 @@ instance U.Unbox e => Source N e where
 instance Map N a where
  type TM N   = N
 
- vmap f (AChained sh1 mkChain _)
-  = AChained sh1 mkChain' (error "vmap no unstream")
-  where mkChain' c
-         | Chain start end s0 mkStep <- mkChain c
+ vmap f (AChained sh1 frags mkFrag _)
+  = AChained sh1 frags mkFrag' (error "vmap no unstream")
+
+  where mkFrag' c
+         | Frag start end s0 mkStep <- mkFrag c
          = let
                 mkStep' ix s
-                 | Step s' x    <- mkStep ix s
-                 = Step s' (f x)
+                 | Yield s' x    <- mkStep ix s
+                 = Yield s' (f x)
 
                  | otherwise
                  = error "vmap: broken, got an update"
                 {-# INLINE mkStep' #-}
 
-           in Chain start end s0 mkStep'
-        {-# INLINE mkChain' #-}
+           in Frag start end s0 mkStep'
+        {-# INLINE mkFrag' #-}
  {-# INLINE vmap #-}
 
 
@@ -103,52 +108,95 @@ nstart len c
 chain :: Source r e => Vector r e -> Vector N e
 chain vec
  = let  !(I# len)       = vlength vec
-
-        getChain c
-         = let  start  = I# (nstart len c)
-                end    = I# (nstart len (c +# 1#))
-           in   Chain start end (0 :: Int) step 
-        {-# INLINE getChain #-}
+        !(I# frags)     = 5 -- fix this
+        getFrag c
+         = let  start  = nstart len c
+                end    = nstart len (c +# 1#)
+           in   Frag start end (0 :: Int) step 
+        {-# INLINE getFrag #-}
 
         step ix _
-         = Step 0 (vec `unsafeLinearIndex` (I# ix))
+         = Yield 0 (vec `unsafeLinearIndex` (I# ix))
         {-# INLINE step #-}
 
   in    AChained (extent vec) 
-                 getChain
-                 (error "no chain")
+                frags
+                getFrag
+                (error "no chain")
 {-# INLINE chain #-}
 
 
 data SPEC = SPEC | SPEC2
 {-# ANN type SPEC ForceSpecConstr #-}
 
+
 -- | Convert a chain back to a vector.
 unchainP :: Target r e => Vector N e -> Vector r e
-unchainP (AChained sh getChain _)
+unchainP (AChained sh _ getChain _)
  = unsafePerformIO
  $ do   let (Z :. len)  =  sh
-        mvec2           <- newMVec len
-        fillChunks mvec2 
-        unsafeFreezeMVec (Z :. len) mvec2
+        mvec           <- newMVec len
+        fillChunks (unsafeWriteMVec mvec)
+        unsafeFreezeMVec (Z :. len) mvec
 
- where  fillChunks mvec
+ where  fillChunks write
          = gangIO theGang 
-         $ \(I# thread) -> fillChunk mvec (getChain thread)
-        {-# INLINE [1] fillChunks #-}
+         $ \(I# thread) -> fillChunk write (getChain thread)
+        {-# INLINE [0] fillChunks #-}
 
-        fillChunk mvec (Chain (I# start) (I# end) s0 mkStep)
+        fillChunk write (Frag start end s0 mkStep)
          = fill start s0
+
          where  fill !ix s 
                  | ix >=# end = return ()
+
 		 | otherwise
 		 = case mkStep ix s of
-			Step s' x 
-                         -> do  unsafeWriteMVec mvec (I# ix) x
+			Yield s' x 
+                         -> do  write (I# ix) x
 				fill (ix +# 1#) s'
 
 			Update s' 
                          ->     fill ix s'
-                {-# INLINE [1] fill #-}
-        {-# INLINE [1] fillChunk #-}
+        {-# INLINE [0] fillChunk #-}
 {-# INLINE unchainP #-}
+
+
+-- | Convert a chain back to a vector.
+unchainS :: Target r a => Vector N a -> Vector r a
+unchainS (AChained sh frags mkFrag _)
+ = unsafePerformIO
+ $ do   let (Z :. len)  = sh
+        mvec            <- newMVec len
+        fillFrags (unsafeWriteMVec mvec)
+        unsafeFreezeMVec (Z :. len) mvec
+
+ where  fillFrags write 
+         = fillFrags' 0#
+         where  
+                fillFrags' c
+                 | c >=# frags
+                 = return ()
+
+                 | otherwise
+                 = do   fillFrag   write c (mkFrag c)
+                        fillFrags' (c +# 1#)
+        {-# INLINE [0] fillFrags #-}
+
+        fillFrag write c (Frag start end s0 mkStep)
+         = fillFrag' start s0
+         where  
+                fillFrag' !ix !s
+                 | ix >=# end
+                 = return ()
+
+                 | otherwise
+                 = case mkStep c s of
+                        Yield  s' x
+                         -> do  write (I# ix) x
+                                fillFrag' (ix +# 1#) s'
+
+                        Update s'
+                         ->     fillFrag' ix s'
+        {-# INLINE [0] fillFrag #-}
+{-# INLINE [1] unchainS #-}

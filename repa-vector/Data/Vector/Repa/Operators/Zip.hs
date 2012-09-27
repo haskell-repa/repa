@@ -38,25 +38,25 @@ instance Zip D D a b where
 -- Chained --------------------------------------------------------------------
 instance Zip N N a b where
  type TZ N N    = N
- vzip (AChained sh1 mkChain1 _) 
-      (AChained _   mkChain2 _)
-  =    AChained sh1 mkChain (error "vzip no unstream")
+ vzip (AChained sh1 frags mkFrag1 _) 
+      (AChained _   _     mkFrag2 _)
+  =    AChained sh1 frags mkFrag (error "vzip no unstream")
 
-  where mkChain c 
-         | Chain start1   end1 s10 mkStep1 <- mkChain1 c
-         , Chain _start2 _end2 s20 mkStep2 <- mkChain2 c
+  where mkFrag c 
+         | Frag start1   end1 s10 mkStep1 <- mkFrag1 c
+         , Frag _start2 _end2 s20 mkStep2 <- mkFrag2 c
          = let  
                 mkStep ix (s1, s2)
-                 | Step s1' x1  <- mkStep1 ix s1
-                 , Step s2' x2  <- mkStep2 ix s2
-                 = Step (s1', s2') (x1, x2)
+                 | Yield s1' x1  <- mkStep1 ix s1
+                 , Yield s2' x2  <- mkStep2 ix s2
+                 = Yield (s1', s2') (x1, x2)
 
                  | otherwise
                  = error "vzip: source vectors have different lengths"
                 {-# INLINE mkStep #-}
 
-           in   Chain start1 end1 (s10, s20) mkStep
-        {-# INLINE mkChain #-}
+           in   Frag start1 end1 (s10, s20) mkStep
+        {-# INLINE mkFrag #-}
 
 
 -- Sliced ---------------------------------------------------------------------

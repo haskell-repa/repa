@@ -6,6 +6,7 @@ where
 import Data.Vector.Repa.Repr.Chained
 import Data.Vector.Repa.Base
 import Data.Array.Repa
+import Data.Array.Parallel.Unlifted.Sequential.USegd                    (USegd)
 import Data.Array.Parallel.Unlifted.Parallel.UPSegd                     (UPSegd)
 import qualified Data.Array.Parallel.Unlifted.Sequential.USegd          as USegd
 import qualified Data.Array.Parallel.Unlifted.Parallel.UPSegd           as UPSegd
@@ -31,58 +32,73 @@ vreplicates
         -> Vector r e
         -> Vector N e
 
-vreplicates upsegd vec
- = let  -- Total elements
+vreplicates !upsegd !vec
+ = let  
+        -- Total elements
         !(I# len) = UPSegd.takeElements  upsegd
         
         -- Distribute segd into a chunk for each thread to work on
         !dists    = UPSegd.takeDistributed upsegd
 
+        -- Number of chunks in the distributed segment descriptor.
+        !(I# chunks)    = D.sizeD dists
+
         -- Function to distribute work over gang,
         -- 'c' is thread number
-        getChain !c
+        getFrag !c
          = let  -- TODO: Uh oh, this is assuming segd.takeDistributed works
                 --              the same as nstart...
                 --              We should use the offsets from takeDistributed instead.
-                !start  = I# (nstart len c)
-                !end    = I# (nstart len (c +# 1#))
+                !start  = nstart len c
+                !end    = nstart len (c +# 1#)
         
                 -- Get current chunk of segment.
                 -- Segment offset describes where segment 0 in segd corrseponds in upsegd
-                ((segd, seg_off), _)    = D.indexD "replicates" dists (I# c)
+                !((segd, I# seg_off), _) = D.indexD "replicates" dists (I# c)
         
                 -- State: current segment -1 and remaining 0,
                 -- so first step will calculate real values
-                !state  = segd `seq` seg_off `seq` (segd, seg_off, -1, 0)
+                !state  = RepState segd seg_off (-1#) 0#
 
-           in   Chain start end state step 
-        {-# INLINE [2] getChain #-}
+           in   Frag start end state step 
+        {-# INLINE [2] getFrag #-}
 
 
         -- Stepper is called until the entire buffer is filled
         -- Using boxed arithmetic here for clarity, but it won't be hard to change
-        step _ (segd, seg_off, seg_cur, remain)
-         = segd `seq` seg_off `seq` seg_cur `seq` remain `seq`
-         -- Go to next segment.
-         -- Don't need to handle end case because caller stops looping      
-           if remain == 0
-            then 
-             let !seg_cur'       = seg_cur + 1
+        step _ (RepState segd seg_off seg_cur remain)
+         = -- Go to next segment.
+           -- Don't need to handle end case because caller stops looping      
+           if remain ==# 0#
+            then
+             let !seg_cur'        = seg_cur +# 1#
 
                  -- Find out how many copies we need to fill.
-                 (remain', _)    = USegd.getSeg segd seg_cur'
+                 !(I# remain', _) = USegd.getSeg segd (I# seg_cur')
+
+                 !state'          = RepState segd seg_off seg_cur' remain'
 
                  -- Don't return a value, just update state .
-             in  Update (segd, seg_off, seg_cur', remain')
+             in  Update state'
 
             -- Return a value and decrement the count remaining   
             else 
-             Step (segd, seg_off, seg_cur, remain - 1)
-                  (vec `unsafeLinearIndex` (seg_off + seg_cur))
+             let !state'        = RepState segd seg_off seg_cur (remain -# 1#)
+                 !x             = vec `unsafeLinearIndex` (I# (seg_off +# seg_cur))
+             in  Yield state' x
         {-# INLINE [1] step #-}
 
-  in    AChained (ix1 (I# len))
-                getChain
+  in    AChained 
+                (ix1 (I# len))
+                chunks
+                getFrag
                 (error "replicates: no chain")
 {-# INLINE vreplicates #-}
+
+data RepState
+        = RepState 
+        { _stateUSegd     :: !USegd
+        , _stateSegOff    :: Int# 
+        , _stateCurSeg    :: Int#
+        , _stateRemaining :: Int# }
 

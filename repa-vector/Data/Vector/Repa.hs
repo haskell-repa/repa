@@ -10,7 +10,8 @@ module Data.Vector.Repa
         , vreplicates
         , vcompute
         , vchain
-        , vunchainP)
+        , vunchainP
+        , vunchainS)
 where
 import Data.Vector.Repa.Operators.Zip
 import Data.Vector.Repa.Operators.Replicate
@@ -24,6 +25,9 @@ vcompute  = suspendedComputeP
 
 vunchainP = unchainP
 {-# INLINE [4] vunchainP #-}
+
+vunchainS = unchainS
+{-# INLINE [4] vunchainS #-}
 
 vchain  = chain
 {-# INLINE [4] vchain #-}

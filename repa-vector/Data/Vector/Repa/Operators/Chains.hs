@@ -52,6 +52,7 @@ appendSUP segd !xd !xs !yd !ys
 			start end
 
    in   AChained (ix1 (I# len))
+                len
                 getChain
                 (error "appendSUP: no chain")
 {-# INLINE appendSUP #-}
@@ -69,10 +70,10 @@ appendSegS
         -> Int          -- ^ Element offset
 	-> Int		-- ^ Chain start
 	-> Int		-- ^ Chain end
-        -> Chain e
+        -> Frag AppendState e
 
-appendSegS !xd !xs !yd !ys !n seg_off el_off start end
-  = Chain start end state next
+appendSegS !xd !xs !yd !ys !n seg_off el_off (I# start) (I# end)
+  = Frag start end state next
   where
     !xlens = USegd.takeLengths xd
     !ylens = USegd.takeLengths yd
@@ -143,7 +144,7 @@ appendSegS !xd !xs !yd !ys !n seg_off el_off start end
       = Update (s{as_takefrom=1#, as_next_swap= unbox (ylens `index1` I# (as_seg_off s))})
 
       -- Grab a value from xs
-      | otherwise  =  Step (inc s) (xs `index2` I# (as_xs_index s))
+      | otherwise  =  Yield (inc s) (xs `index2` I# (as_xs_index s))
 
     -- Reading from ys; takefrom nonzero
     next _ s
@@ -156,7 +157,7 @@ appendSegS !xd !xs !yd !ys !n seg_off el_off start end
                 , as_next_swap  = unbox (xlens `index1` I# seg')})
 
       -- Grab a value from ys
-      | otherwise =  Step (inc s) (ys `index2` I# (as_ys_index s))
+      | otherwise =  Yield (inc s) (ys `index2` I# (as_ys_index s))
 
     {-# INLINE inc #-}
     -- Move data pointer forward, and decrease remaining and swap
@@ -187,18 +188,19 @@ indexs  :: (Source r1 Int, Source r2 e)
 indexs ixs vec
  = let  !(I# len)       = vlength ixs
 
-        getChain c
-         = let  start  = I# (nstart len c)
-                end    = I# (nstart len (c +# 1#))
-           in   Chain start end (0 :: Int) step 
-        {-# INLINE getChain #-}
+        getFrag c
+         = let  start  = nstart len c
+                end    = nstart len (c +# 1#)
+           in   Frag start end (0 :: Int) step 
+        {-# INLINE getFrag #-}
 
         step ix _
-         = Step 0 (vec `unsafeLinearIndex` (ixs `unsafeLinearIndex` (I# ix)))
+         = Yield 0 (vec `unsafeLinearIndex` (ixs `unsafeLinearIndex` (I# ix)))
         {-# INLINE step #-}
 
   in    AChained (extent ixs) 
-                 getChain
+                len
+                 getFrag
                  (error "no chain")
 {-# INLINE indexs #-}
 
