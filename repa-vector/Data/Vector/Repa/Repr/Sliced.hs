@@ -47,8 +47,6 @@ instance Map r e => Map (S r) e where
  {-# INLINE [4] vmap #-}
 
 
--- Zips -----------------------------------------------------------------------
--------------------------------------------------------------------------------
 -- | Slice a chunk from a vector.
 vslice  :: Source r e 
         => Int                  -- ^ Starting index.

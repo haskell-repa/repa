@@ -108,7 +108,7 @@ nstart len c
 chain :: Source r e => Vector r e -> Vector N e
 chain vec
  = let  !(I# len)       = vlength vec
-        !(I# frags)     = 5 -- fix this
+        !(I# frags)     = gangSize theGang
         getFrag c
          = let  start  = nstart len c
                 end    = nstart len (c +# 1#)
@@ -126,11 +126,8 @@ chain vec
 {-# INLINE chain #-}
 
 
-data SPEC = SPEC | SPEC2
-{-# ANN type SPEC ForceSpecConstr #-}
-
-
--- | Convert a chain back to a vector.
+-- | Convert a chain to a manifest vector representation,
+--   in parallel.
 unchainP :: Target r e => Vector N e -> Vector r e
 unchainP (AChained sh _ getChain _)
  = unsafePerformIO
@@ -147,7 +144,7 @@ unchainP (AChained sh _ getChain _)
         fillChunk write (Frag start end s0 mkStep)
          = fill start s0
 
-         where  fill !ix s 
+         where  fill !ix !s 
                  | ix >=# end = return ()
 
 		 | otherwise
@@ -162,7 +159,8 @@ unchainP (AChained sh _ getChain _)
 {-# INLINE unchainP #-}
 
 
--- | Convert a chain back to a vector.
+-- | Convert a chain to a manifest vector representation, 
+--   sequentially.
 unchainS :: Target r a => Vector N a -> Vector r a
 unchainS (AChained sh frags mkFrag _)
  = unsafePerformIO

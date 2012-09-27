@@ -55,11 +55,12 @@ vreplicates !upsegd !vec
         
                 -- Get current chunk of segment.
                 -- Segment offset describes where segment 0 in segd corrseponds in upsegd
-                !((!segd, I# seg_off0), _) = D.indexD "replicates" dists (I# c)
+                !((!segd, I# seg_off0), _) 
+                        = D.indexD "replicates" dists (I# c)
         
                 -- State: current segment -1 and remaining 0,
                 -- so first step will calculate real values
-                !state0  = RepState seg_off0 (-1#) 0#
+                !state0 = RepState seg_off0 (-1#) 0#
 
                 -- Inner step function
                 --  This is produces the actual elements.
@@ -67,9 +68,11 @@ vreplicates !upsegd !vec
                  -- Go to next segment.
                  -- Don't need to handle end case because caller stops looping        
                  | remain ==# 0#
-                 = let  !seg_cur'        = seg_cur +# 1#
+                 = let  -- Advance to the next segment.
+                        !seg_cur'        = seg_cur +# 1#
 
-                        -- Find out how many copies we need to fill.
+                        -- Get the length of the current segment.
+                        -- This tells us how many copies of the current value to write.
                         !(I# remain', _) = USegd.getSeg segd (I# seg_cur')
 
                    in   Update $ RepState seg_off seg_cur' remain'
