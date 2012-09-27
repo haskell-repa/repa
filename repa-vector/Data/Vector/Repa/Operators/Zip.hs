@@ -113,10 +113,15 @@ instance Zip N D a b where
 
 
 -- Higher-arity zips ----------------------------------------------------------
+-- NOTE: The first vector / second vector comments are there so Haddock
+--       formats the type signatures in a semi-readable way.
+-- 
 vzip3   :: ( Zip r1 (TZ r2 r3) a (b, c)
            , Zip r2 r3         b c
            , Map (TZ r1 (TZ r2 r3)) (a, (b, c)))
-        => Vector r1 a -> Vector r2 b -> Vector r3 c
+        => Vector r1 a                  -- ^ first vector
+        -> Vector r2 b                  -- ^ second vector
+        -> Vector r3 c                  -- ^ third vector
         -> Vector (TM (TZ r1 (TZ r2 r3))) (a, b, c)
 
 vzip3 !vec1 !vec2 !vec3
@@ -132,7 +137,10 @@ vzip4   :: ( Zip r1 (TZ r2 (TZ r3 r4)) a (b, (c, d))
            , Zip r3 r4                 c d
            , Map (TZ r1 (TZ r2 (TZ r3 r4))) 
                  (a, (b, (c, d))))
-        => Vector r1 a -> Vector r2 b -> Vector r3 c -> Vector r4 d
+        => Vector r1 a                  -- ^ first vector
+        -> Vector r2 b                  -- ^ second vector
+        -> Vector r3 c                  -- ^ third vector
+        -> Vector r4 d                  -- ^ fourth vector
         -> Vector (TM (TZ r1 (TZ r2 (TZ r3 r4))))
                   (a, b, c, d)
 
@@ -147,8 +155,9 @@ vzip4 !vec1 !vec2 !vec3 !vec4
 -- zipWiths -------------------------------------------------------------------
 vzipWith :: ( Zip r1 r2 a b
             , Map (TZ r1 r2) (a, b))
-         => (a -> b -> c)
-         -> Vector r1 a -> Vector r2 b 
+         => (a -> b -> c)               -- ^ function.
+         -> Vector r1 a                 -- ^ first vector.
+         -> Vector r2 b                 -- ^ second vector.
          -> Vector (TM (TZ r1 r2)) c
 
 vzipWith f !vec1 !vec2
@@ -162,8 +171,10 @@ vzipWith f !vec1 !vec2
 vzipWith3 :: ( Zip r1 (TZ r2 r3) a (b, c)
              , Zip r2 r3         b c
              , Map (TZ r1 (TZ r2 r3)) (a, (b, c)))
-          => (a -> b -> c -> d)
-          -> Vector r1 a -> Vector r2 b -> Vector r3 c
+          => (a -> b -> c -> d)         -- ^ function
+          -> Vector r1 a                -- ^ first vector
+          -> Vector r2 b                -- ^ second vector
+          -> Vector r3 c                -- ^ third vector
           -> Vector (TM (TZ r1 (TZ r2 r3))) d
 
 vzipWith3 f !vec1 !vec2 !vec3
@@ -179,8 +190,11 @@ vzipWith4 :: ( Zip r1 (TZ r2 (TZ r3 r4)) a (b, (c, d))
              , Zip r3 r4                 c d
              , Map (TZ r1 (TZ r2 (TZ r3 r4))) 
                    (a, (b, (c, d))))
-        => (a -> b -> c -> d -> e)
-        -> Vector r1 a -> Vector r2 b -> Vector r3 c -> Vector r4 d
+        => (a -> b -> c -> d -> e)      -- ^ function
+        -> Vector r1 a                  -- ^ first vector
+        -> Vector r2 b                  -- ^ second vector
+        -> Vector r3 c                  -- ^ third vector
+        -> Vector r4 d                  -- ^ fourth vector
         -> Vector (TM (TZ r1 (TZ r2 (TZ r3 r4)))) e
 
 vzipWith4 f !vec1 !vec2 !vec3 !vec4
@@ -189,7 +203,4 @@ vzipWith4 f !vec1 !vec2 !vec3 !vec4
  where  merge (x1, (x2, (x3, x4))) = f x1 x2 x3 x4
         {-# INLINE merge #-}
 {-# INLINE [4] vzipWith4 #-}
-
-
-
 

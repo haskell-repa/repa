@@ -24,8 +24,7 @@ vreplicate !n !x
 
 
 -- | Replicate each element such that the resulting array such corresponds to
---   the given segment descriptor e.g.:
---     replicates (Segd [1,3,1]) [1,2,3] = [1,2,2,2,3]
+--   the given segment descriptor.
 vreplicates
         :: U.Unbox e
         => Source r e

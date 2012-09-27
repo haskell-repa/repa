@@ -16,6 +16,7 @@ type Vector r e
 -- Map ------------------------------------------------------------------------
 class Map r a where
  type TM r
+ -- | Vector map that will preserve the chain representation of source vector.
  vmap :: (a -> b) -> Vector r a -> Vector (TM r) b
 
 
@@ -36,7 +37,14 @@ instance Map D e where
 
 class Zip r1 r2 a b where
  type TZ r1 r2
- vzip   :: Vector r1 a -> Vector r2 b
+ -- | Vector zip that uses the least general possible representation for the 
+ --   result.
+ --
+ --   For example, zipping two Delayed (@D@) arrays produces a delayed array,
+ --   but zipping a Delayed (@D@) and a Chained (@N@) array must produce
+ --   a chained array.
+ vzip   :: Vector r1 a 
+        -> Vector r2 b
         -> Vector (TZ r1 r2) (a, b)
 
 
