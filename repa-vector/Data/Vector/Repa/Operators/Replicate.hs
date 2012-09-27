@@ -46,7 +46,8 @@ vreplicates !upsegd !vec
         -- Function to distribute work over gang,
         -- 'c' is thread number
         getFrag !c
-         = let  -- TODO: Uh oh, this is assuming segd.takeDistributed works
+         = Frag start end state0 step
+         where  -- TODO: Uh oh, this is assuming segd.takeDistributed works
                 --              the same as nstart...
                 --              We should use the offsets from takeDistributed instead.
                 !start  = nstart len c
@@ -54,39 +55,32 @@ vreplicates !upsegd !vec
         
                 -- Get current chunk of segment.
                 -- Segment offset describes where segment 0 in segd corrseponds in upsegd
-                !((segd, I# seg_off), _) = D.indexD "replicates" dists (I# c)
+                !((!segd, I# seg_off0), _) = D.indexD "replicates" dists (I# c)
         
                 -- State: current segment -1 and remaining 0,
                 -- so first step will calculate real values
-                !state  = RepState segd seg_off (-1#) 0#
+                !state0  = RepState seg_off0 (-1#) 0#
 
-           in   Frag start end state step 
+                -- Inner step function
+                --  This is produces the actual elements.
+                step _ (RepState seg_off seg_cur remain)
+                 -- Go to next segment.
+                 -- Don't need to handle end case because caller stops looping        
+                 | remain ==# 0#
+                 = let  !seg_cur'        = seg_cur +# 1#
+
+                        -- Find out how many copies we need to fill.
+                        !(I# remain', _) = USegd.getSeg segd (I# seg_cur')
+
+                   in   Update $ RepState seg_off seg_cur' remain'
+
+                 -- Return a value and decrement the count remaining   
+                 | otherwise
+                 = let  !state' = RepState seg_off seg_cur (remain -# 1#)
+                        !x      = vec `unsafeLinearIndex` (I# (seg_off +# seg_cur))
+                   in Yield state' x
+                {-# INLINE [1] step #-}
         {-# INLINE [2] getFrag #-}
-
-
-        -- Stepper is called until the entire buffer is filled
-        -- Using boxed arithmetic here for clarity, but it won't be hard to change
-        step _ (RepState segd seg_off seg_cur remain)
-         = -- Go to next segment.
-           -- Don't need to handle end case because caller stops looping      
-           if remain ==# 0#
-            then
-             let !seg_cur'        = seg_cur +# 1#
-
-                 -- Find out how many copies we need to fill.
-                 !(I# remain', _) = USegd.getSeg segd (I# seg_cur')
-
-                 !state'          = RepState segd seg_off seg_cur' remain'
-
-                 -- Don't return a value, just update state .
-             in  Update state'
-
-            -- Return a value and decrement the count remaining   
-            else 
-             let !state'        = RepState segd seg_off seg_cur (remain -# 1#)
-                 !x             = vec `unsafeLinearIndex` (I# (seg_off +# seg_cur))
-             in  Yield state' x
-        {-# INLINE [1] step #-}
 
   in    AChained 
                 (ix1 (I# len))
@@ -97,8 +91,7 @@ vreplicates !upsegd !vec
 
 data RepState
         = RepState 
-        { _stateUSegd     :: !USegd
-        , _stateSegOff    :: Int# 
+        { _stateSegOff    :: Int# 
         , _stateCurSeg    :: Int#
         , _stateRemaining :: Int# }
 
