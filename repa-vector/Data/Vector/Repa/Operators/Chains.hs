@@ -3,7 +3,7 @@ module Data.Vector.Repa.Operators.Chains
         ( indexs
 	, appendSUP )
 where
-import Data.Vector.Repa.Repr.Chained
+import Data.Vector.Repa.Repr.Chain
 import Data.Vector.Repa.Base
 import Data.Array.Repa
 import Data.Array.Parallel.Unlifted.Sequential.USegd (USegd)
@@ -54,7 +54,7 @@ appendSUP segd !xd !xs !yd !ys
    in   AChained (ix1 (I# len))
                 len
                 getChain
-                (error "appendSUP: no chain")
+                (error "appendSUP: no chain" :: Vector D e)
 {-# INLINE appendSUP #-}
 
 
@@ -201,7 +201,7 @@ indexs ixs vec
   in    AChained (extent ixs) 
                 len
                  getFrag
-                 (error "no chain")
+                 (error "no chain" :: Vector D e)
 {-# INLINE indexs #-}
 
 

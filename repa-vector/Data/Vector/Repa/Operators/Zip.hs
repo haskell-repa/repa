@@ -9,9 +9,10 @@ module Data.Vector.Repa.Operators.Zip
         , vzipWith4)
 where
 import Data.Array.Repa
-import Data.Vector.Repa.Repr.Chained
+import Data.Vector.Repa.Repr.Chain
 import Data.Vector.Repa.Repr.Sliced
 import Data.Vector.Repa.Base
+import qualified Data.Array.Repa                as R
 import qualified Data.Vector.Unboxed            as U
 import Prelude                                  hiding (zip3, zipWith)
 
@@ -38,9 +39,9 @@ instance Zip D D a b where
 -- Chained --------------------------------------------------------------------
 instance Zip N N a b where
  type TZ N N    = N
- vzip (AChained sh1 frags mkFrag1 _) 
-      (AChained _   _     mkFrag2 _)
-  =    AChained sh1 frags mkFrag (error "vzip no unstream")
+ vzip (AChained sh1 frags mkFrag1 vec1) 
+      (AChained _   _     mkFrag2 vec2)
+  =    AChained sh1 frags mkFrag (R.zipWith (,) vec1 vec2)
 
   where mkFrag c 
          | Frag start1   end1 s10 mkStep1 <- mkFrag1 c

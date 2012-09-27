@@ -1,16 +1,17 @@
-Name:                repa-vector
-Version:             3.2.2.1
-License:             BSD3
-License-file:        LICENSE
-Author:              The DPH Team
-Maintainer:          Ben Lippmeier <benl@ouroborus.net>
-Build-Type:          Simple
-Cabal-Version:       >=1.6
-Stability:           experimental
-Category:            Data Structures
-Homepage:            http://repa.ouroborus.net
-Bug-reports:         repa@ouroborus.net
-Description:
+Name:           repa-vector
+Version:        3.2.2.1
+License:        BSD3
+License-file:   LICENSE
+Author:         The DPH Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:            
+Synopsis:       Chain-based segmented vector operations.  
 
 
 Library
@@ -53,7 +54,7 @@ Library
         Data.Vector.Repa.Operators.Chains
         Data.Vector.Repa.Operators.Replicate
         Data.Vector.Repa.Operators.Zip
-        Data.Vector.Repa.Repr.Chained
+        Data.Vector.Repa.Repr.Chain
         Data.Vector.Repa.Repr.Chunked
         Data.Vector.Repa.Repr.Sliced
         Data.Vector.Repa.Base

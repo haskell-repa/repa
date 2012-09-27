@@ -15,7 +15,7 @@ module Data.Vector.Repa
 where
 import Data.Vector.Repa.Operators.Zip
 import Data.Vector.Repa.Operators.Replicate
-import Data.Vector.Repa.Repr.Chained
+import Data.Vector.Repa.Repr.Chain
 import Data.Vector.Repa.Base
 import Data.Array.Repa.Eval
 

@@ -3,14 +3,14 @@ module Data.Vector.Repa.Operators.Replicate
         ( vreplicate
         , vreplicates)
 where
-import Data.Vector.Repa.Repr.Chained
+import Data.Vector.Repa.Repr.Chain
 import Data.Vector.Repa.Base
 import Data.Array.Repa
-import Data.Array.Parallel.Unlifted.Sequential.USegd                    (USegd)
 import Data.Array.Parallel.Unlifted.Parallel.UPSegd                     (UPSegd)
 import qualified Data.Array.Parallel.Unlifted.Sequential.USegd          as USegd
 import qualified Data.Array.Parallel.Unlifted.Parallel.UPSegd           as UPSegd
 import qualified Data.Array.Parallel.Unlifted.Distributed.Primitive.DT  as D
+import qualified Data.Vector.Unboxed                                    as U
 import GHC.Exts
 
 
@@ -27,7 +27,8 @@ vreplicate !n !x
 --   the given segment descriptor e.g.:
 --     replicates (Segd [1,3,1]) [1,2,3] = [1,2,2,2,3]
 vreplicates
-        :: Source r e
+        :: U.Unbox e
+        => Source r e
         => UPSegd
         -> Vector r e
         -> Vector N e
@@ -66,9 +67,10 @@ vreplicates !upsegd !vec
                 --  This is produces the actual elements.
                 step _ (RepState seg_off seg_cur remain)
                  -- Go to next segment.
-                 -- Don't need to handle end case because caller stops looping        
+                 -- Don't need to handle end case because caller stops looping.
                  | remain ==# 0#
-                 = let  -- Advance to the next segment.
+                 = let  
+                        -- Advance to the next segment.
                         !seg_cur'        = seg_cur +# 1#
 
                         -- Get the length of the current segment.
@@ -85,11 +87,17 @@ vreplicates !upsegd !vec
                 {-# INLINE [1] step #-}
         {-# INLINE [2] getFrag #-}
 
+        -- A version of the result without the suspended cache.
+        vecCache = AChained 
+                        (ix1 (I# len))
+                        chunks
+                        getFrag
+                        (error "replicates: no chain" :: Vector D e)
   in    AChained 
                 (ix1 (I# len))
-                chunks
-                getFrag
-                (error "replicates: no chain")
+                chunks 
+                getFrag 
+                (unchainUnboxedP vecCache)
 {-# INLINE vreplicates #-}
 
 data RepState
