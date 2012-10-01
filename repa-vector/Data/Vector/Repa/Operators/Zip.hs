@@ -4,9 +4,13 @@ module Data.Vector.Repa.Operators.Zip
         ( Zip(..)
         , vzip3
         , vzip4
+        , vzip5
+        , vzip6
         , vzipWith
         , vzipWith3
-        , vzipWith4)
+        , vzipWith4
+        , vzipWith5
+        , vzipWith6)
 where
 import Data.Array.Repa
 import Data.Vector.Repa.Repr.Chain
@@ -52,12 +56,19 @@ instance Zip N N a b where
                  , Yield s2' x2  <- mkStep2 ix s2
                  = Yield (s1', s2') (x1, x2)
 
+                 | Update s1'    <- mkStep1 ix s1
+                 = Update (s1', s2)
+
+                 | Update s2'    <- mkStep2 ix s2
+                 = Update (s1, s2')
+
                  | otherwise
-                 = error "vzip: source vectors have different lengths"
+                 = error "vzip: vectors have different lengths."
                 {-# INLINE mkStep #-}
 
            in   Frag start1 end1 (s10, s20) mkStep
         {-# INLINE mkFrag #-}
+ {-# INLINE [4] vzip #-}
 
 
 -- Sliced ---------------------------------------------------------------------
@@ -152,6 +163,52 @@ vzip4 !vec1 !vec2 !vec3 !vec4
 {-# INLINE [4] vzip4 #-}
 
 
+vzip5   :: ( Zip r1 (TZ r2 (TZ r3 (TZ r4 r5))) a (b, (c, (d, e)))
+           , Zip r2 (TZ r3 (TZ r4 r5))         b (c, (d, e))
+           , Zip r3 (TZ r4 r5)                 c (d, e)
+           , Zip r4 r5                         d e
+           , Map (TZ r1 (TZ r2 (TZ r3 (TZ r4 r5))))
+                 (a, (b, (c, (d, e)))))
+        => Vector r1 a                  -- ^ first vector
+        -> Vector r2 b                  -- ^ second vector
+        -> Vector r3 c                  -- ^ third vector
+        -> Vector r4 d                  -- ^ fourth vector
+        -> Vector r5 e                  -- ^ fifth vector
+        -> Vector (TM (TZ r1 (TZ r2 (TZ r3 (TZ r4 r5)))))
+                  (a, b, c, d, e)
+
+vzip5 !vec1 !vec2 !vec3 !vec4 !vec5
+ = vmap merge
+ $ vzip vec1 (vzip vec2 (vzip vec3 (vzip vec4 vec5)))
+ where  merge (x1, (x2, (x3, (x4, x5)))) = (x1, x2, x3, x4, x5)
+        {-# INLINE merge #-}
+{-# INLINE [4] vzip5 #-}
+
+
+vzip6   :: ( Zip r1 (TZ r2 (TZ r3 (TZ r4 (TZ r5 r6)))) a (b, (c, (d, (e, f))))
+           , Zip r2 (TZ r3 (TZ r4 (TZ r5 r6)))         b (c, (d, (e, f)))
+           , Zip r3 (TZ r4 (TZ r5 r6))                 c (d, (e, f))
+           , Zip r4 (TZ r5 r6)                         d (e, f)
+           , Zip r5 r6                                 e f
+           , Map (TZ r1 (TZ r2 (TZ r3 (TZ r4 (TZ r5 r6)))))
+                 (a, (b, (c, (d, (e, f))))))
+        => Vector r1 a                  -- ^ first vector
+        -> Vector r2 b                  -- ^ second vector
+        -> Vector r3 c                  -- ^ third vector
+        -> Vector r4 d                  -- ^ fourth vector
+        -> Vector r5 e                  -- ^ fifth vector
+        -> Vector r6 f                  -- ^ sixth vector
+        -> Vector (TM (TZ r1 (TZ r2 (TZ r3 (TZ r4 (TZ r5 r6))))))
+                  (a, b, c, d, e, f)
+
+vzip6 !vec1 !vec2 !vec3 !vec4 !vec5 !vec6
+ = vmap merge
+ $ vzip vec1 (vzip vec2 (vzip vec3 (vzip vec4 (vzip vec5 vec6))))
+ where  merge (x1, (x2, (x3, (x4, (x5, x6))))) = (x1, x2, x3, x4, x5, x6)
+        {-# INLINE merge #-}
+{-# INLINE [4] vzip6 #-}
+
+
 -- zipWiths -------------------------------------------------------------------
 vzipWith :: ( Zip r1 r2 a b
             , Map (TZ r1 r2) (a, b))
@@ -203,4 +260,50 @@ vzipWith4 f !vec1 !vec2 !vec3 !vec4
  where  merge (x1, (x2, (x3, x4))) = f x1 x2 x3 x4
         {-# INLINE merge #-}
 {-# INLINE [4] vzipWith4 #-}
+
+
+vzipWith5 :: ( Zip r1 (TZ r2 (TZ r3 (TZ r4 r5))) a (b, (c, (d, e)))
+             , Zip r2 (TZ r3 (TZ r4 r5))         b (c, (d, e))
+             , Zip r3 (TZ r4 r5)                 c (d, e)
+             , Zip r4 r5                         d e
+             , Map (TZ r1 (TZ r2 (TZ r3 (TZ r4 r5))))
+                   (a, (b, (c, (d, e)))))
+        => (a -> b -> c -> d -> e -> f) -- ^ function
+        -> Vector r1 a                  -- ^ first vector
+        -> Vector r2 b                  -- ^ second vector
+        -> Vector r3 c                  -- ^ third vector
+        -> Vector r4 d                  -- ^ fourth vector
+        -> Vector r5 e                  -- ^ fifth vector
+        -> Vector (TM (TZ r1 (TZ r2 (TZ r3 (TZ r4 r5))))) f
+
+vzipWith5 f !vec1 !vec2 !vec3 !vec4 !vec5 
+ = vmap merge
+ $ vzip vec1 (vzip vec2 (vzip vec3 (vzip vec4 vec5)))
+ where  merge (x1, (x2, (x3, (x4, x5)))) = f x1 x2 x3 x4 x5
+        {-# INLINE merge #-}
+{-# INLINE [4] vzipWith5 #-}
+
+
+vzipWith6 :: ( Zip r1 (TZ r2 (TZ r3 (TZ r4 (TZ r5 r6)))) a (b, (c, (d, (e, f))))
+             , Zip r2 (TZ r3 (TZ r4 (TZ r5 r6)))         b (c, (d, (e, f)))
+             , Zip r3 (TZ r4 (TZ r5 r6))                 c (d, (e, f))
+             , Zip r4 (TZ r5 r6)                         d (e, f)
+             , Zip r5 r6                                 e f
+             , Map (TZ r1 (TZ r2 (TZ r3 (TZ r4 (TZ r5 r6)))))
+                   (a, (b, (c, (d, (e, f))))))
+        => (a -> b -> c -> d -> e -> f -> g)    -- ^ function
+        -> Vector r1 a                          -- ^ first vector
+        -> Vector r2 b                          -- ^ second vector
+        -> Vector r3 c                          -- ^ third vector
+        -> Vector r4 d                          -- ^ fourth vector
+        -> Vector r5 e                          -- ^ fifth vector
+        -> Vector r6 f
+        -> Vector (TM (TZ r1 (TZ r2 (TZ r3 (TZ r4 (TZ r5 r6)))))) g
+
+vzipWith6 f !vec1 !vec2 !vec3 !vec4 !vec5 !vec6
+ = vmap merge
+ $ vzip vec1 (vzip vec2 (vzip vec3 (vzip vec4 (vzip vec5 vec6))))
+ where  merge (x1, (x2, (x3, (x4, (x5, x6))))) = f x1 x2 x3 x4 x5 x6
+        {-# INLINE merge #-}
+{-# INLINE [4] vzipWith6 #-}
 

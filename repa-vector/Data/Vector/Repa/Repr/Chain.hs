@@ -71,7 +71,7 @@ instance U.Unbox e => Source N e where
         =  forall s r
         .  Source r e
         => AChained
-                sh                  -- Overall extent of chain.
+                !sh                  -- Overall extent of chain.
                 Int#                -- Number of fragments in chain, 
                                     --   equals number of gang threads.
                 (Int# -> Frag s e)  -- Get the fragment for a thread.
