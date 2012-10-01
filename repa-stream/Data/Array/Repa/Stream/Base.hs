@@ -5,8 +5,8 @@ module Data.Array.Repa.Stream.Base
         , Step   (..)
         , Size   (..)
         , stream
-        , foldS
-        , foldMS
+        , fold
+        , foldM
 
           -- * Fragmented Streams
         , StreamF (..)
@@ -27,7 +27,11 @@ import GHC.Exts
 -- 
 data Stream a
         = forall s
-        . Stream Size s (s -> Step s a)
+        . Stream 
+        { streamSize       :: Size
+        , streamStateStart :: s
+        , streamMkStep     :: s -> Step s a
+        }
 
 
 -- | A stream command.
@@ -63,10 +67,9 @@ stream size get
 
 
 -- | Consume a stream.
-foldS :: (a -> b -> b) -> (Size -> b) -> Stream a -> b
-foldS f make (Stream size s0 mkStep)
- = eat s0 (make size)
-
+fold :: (a -> b -> b) -> b -> Stream a -> b
+fold f y0 (Stream _size s0 mkStep)
+ = eat s0 y0
  where  eat s y
          = case mkStep s of
                 Yield  s' x     -> eat s' (f x y)
@@ -76,13 +79,11 @@ foldS f make (Stream size s0 mkStep)
 
 
 -- | Consume a stream in a monad.
-foldMS  :: Monad m 
-        => (a -> b -> m b) -> (Size -> m b) -> Stream a -> m b
+foldM  :: Monad m 
+        => (a -> b -> m b) -> b -> Stream a -> m b
 
-foldMS f make (Stream size s0 mkStep)
- = do   y       <- make size
-        eat s0 y
-
+foldM f y0 (Stream _size s0 mkStep)
+ = eat s0 y0
  where  eat s y
          = case mkStep s of
                 Yield s' x      
@@ -98,6 +99,7 @@ foldMS f make (Stream size s0 mkStep)
 --
 --   The stream is broken into several fragments that can be evaluated
 --   concurrently.
+--
 data StreamF a
         = StreamF
                 Size                    -- Overall size of stream.
@@ -114,7 +116,6 @@ streamF :: Size                         -- ^ Overall size of stream.
 
 streamF size frags start get
  = StreamF size frags getFrag
-
  where  getFrag frag 
          = stream (start (frag +# 1#) -# start frag)
                   get
@@ -123,59 +124,29 @@ streamF size frags start get
 
 
 -- | Consume a fragmented stream.
-foldF :: (a -> b -> b) -> (Size -> b) -> StreamF a -> b
-foldF f make (StreamF size frags getFrag)
- = eatFrags (make size) 0#
-
+foldF :: (a -> b -> b) -> b -> StreamF a -> b
+foldF f y0 (StreamF _size frags getFrag)
+ = eatFrags y0 0#
  where  eatFrags y frag
          | frag >=# frags       = y
          | otherwise            
-         = eatFrags (eatFrag y (getFrag frag)) 
+         = eatFrags (fold f y (getFrag frag))
                     (frag +# 1#)
         {-# INLINE [0] eatFrags #-}
-
-        eatFrag y0 (Stream _size s0 mkStep)
-         = eat s0 y0
-         where  
-                eat s y
-                 = case mkStep s of
-                        Yield s' x      -> eat s' (f x y)
-                        Update s'       -> eat s' y
-                        Done            -> y
-        {-# INLINE [0] eatFrag #-}
 {-# INLINE [1] foldF #-}
 
 
 -- | Consume a fragmented stream, in a monad.
 foldMF  :: Monad m
-        => (a -> b -> m b) -> (Size -> m b) -> StreamF a -> m b
+        => (a -> b -> m b) -> b -> StreamF a -> m b
 
-foldMF f make (StreamF size frags getFrag)
- = do   y       <- make size 
-        eatFrags y 0#
-
+foldMF f y0 (StreamF _size frags getFrag)
+ = eatFrags y0 0#
  where  eatFrags y frag
          | frag >=# frags       = return y
          | otherwise
-         = do   y'      <- eatFrag y (getFrag frag)
+         = do   y'      <- foldM f y (getFrag frag)
                 eatFrags y' (frag +# 1#)
         {-# INLINE [0] eatFrags #-}
-
-        eatFrag y0 (Stream _size s0 mkStep)
-         = eat s0 y0
-         where
-                eat s y
-                 = case mkStep s of
-                        Yield s' x      
-                         -> do  y'      <- f x y
-                                eat s' y'
-                        Update s'       -> eat s' y
-                        Done            -> return y
-                {-# INLINE [0] eat #-}
-        {-# INLINE [0] eatFrag #-}
 {-# INLINE [1] foldMF #-}
-
-
-
-
 
