@@ -5,6 +5,7 @@ module Data.Array.Repa.Stream.Base
         , Step   (..)
         , Size   (..)
         , stream
+        , streamOfChain
         , fold
         , foldM
 
@@ -15,7 +16,7 @@ module Data.Array.Repa.Stream.Base
         , foldMF)
 where
 import GHC.Exts
-
+import qualified Data.Array.Repa.Chain.Base     as C
 
 -- Linear ---------------------------------------------------------------------
 -- | Pure streams.
@@ -58,12 +59,28 @@ stream  :: Int#                 -- ^ Overall size of the stream.
 
 stream size get
  = Stream (Exact size) 0 mkStep
-
  where  mkStep (I# ix)
          | ix >=# size  = Done
          | otherwise    = Yield (I# (ix +# 1#)) (get ix)
         {-# INLINE [0] mkStep #-}
 {-# INLINE [1] stream #-}
+
+
+-- | Convert a chain to a stream.
+---
+--   Notice that when we do this we need to introduce a loop counter.
+streamOfChain :: C.Chain a -> Stream a
+streamOfChain (C.Chain len s0 mkStep)
+ = Stream (Exact len) (0, s0) mkStep'
+ where  
+        mkStep' (I# ix, s)
+         | ix >=# len  = Done
+         | otherwise
+         = case mkStep ix s of
+                C.Yield s' x    -> Yield  (I# (ix +# 1#), s') x
+                C.Update s'     -> Update (I# ix,         s')
+        {-# INLINE [0] mkStep' #-}
+{-# INLINE [1] streamOfChain #-}
 
 
 -- | Consume a stream.
