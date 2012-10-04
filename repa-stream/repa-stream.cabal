@@ -47,5 +47,6 @@ Library
         ExistentialQuantification
 
   Exposed-modules:
-        Data.Array.Repa.Stream.Base
         Data.Array.Repa.Chain.Base
+        Data.Array.Repa.Chain.Replicate
+        Data.Array.Repa.Stream.Base
