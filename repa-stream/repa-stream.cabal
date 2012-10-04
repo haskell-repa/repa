@@ -16,7 +16,8 @@ Synopsis:       Pure stream and chain functions.
 
 Library
   Build-Depends: 
-        base                 == 4.6.*
+        base            == 4.6.*,
+        vector          == 0.9.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -48,5 +49,6 @@ Library
 
   Exposed-modules:
         Data.Array.Repa.Chain.Base
+        Data.Array.Repa.Chain.Eval
         Data.Array.Repa.Chain.Replicate
         Data.Array.Repa.Stream.Base

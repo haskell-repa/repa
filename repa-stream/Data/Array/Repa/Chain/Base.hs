@@ -141,7 +141,7 @@ fold' ix0 f y0 (Chain size s0 mkStep)
                 Yield  s' x     -> eat (ix +# 1#) s' (f x y)
                 Update s'       -> eat ix s' y
        {-# INLINE [0] eat #-}
-{-# INLINE [0] fold' #-}
+{-# INLINE [1] fold' #-}
 
 
 
@@ -177,5 +177,5 @@ foldM' ix0 f y0 (Chain size s0 mkStep)
                 Update s'
                  -> eat ix s' y
        {-# INLINE [0] eat #-}
-{-# INLINE [0] foldM' #-}
+{-# INLINE [1] foldM' #-}
 
