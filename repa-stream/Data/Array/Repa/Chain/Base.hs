@@ -8,8 +8,8 @@ module Data.Array.Repa.Chain.Base
         , foldM
 
           -- * Distributed chains
-        , Distro (..)
         , DistChain(..)
+        , Distro (..)
         , chainD
         , foldD, foldMD)
 where
@@ -91,7 +91,7 @@ data Distro
         , distroFragStart       :: Int# -> Int# }
 
 
--- | Pure fragmented chains.
+-- | Pure distributed chains.
 data DistChain a
         = DistChain
         { distChainDistro       :: !Distro
@@ -112,7 +112,7 @@ chainD distro get
 {-# INLINE [1] chainD #-}
 
 
--- | Consume a fragmented chain.
+-- | Consume a distributed chain.
 foldD :: (a -> b -> b) -> b -> DistChain a -> b
 foldD f y0 (DistChain distro getFrag)
  = eatFrags y0 0#
@@ -145,7 +145,7 @@ fold' ix0 f y0 (Chain size s0 mkStep)
 
 
 
--- | Consume a fragmented chain in a monad.
+-- | Consume a distributed chain in a monad.
 foldMD :: Monad m => (a -> b -> m b) -> b -> DistChain a -> m b
 foldMD f y0 (DistChain distro getFrag)
  = eatFrags y0 0#

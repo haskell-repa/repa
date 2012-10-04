@@ -4,33 +4,39 @@ ghc -Wall -O2 -fno-liberate-case -c Replicate.hs \
 -}
 {-# LANGUAGE MagicHash, BangPatterns #-}
 module Replicate where
-import Data.Array.Repa.Chain.Base       as C
-import Data.Array.Repa.Chain.Eval       as C
-import Data.Array.Repa.Chain.Replicate  as C
+import Data.Array.Repa.Chain            as C
 import Data.Vector.Unboxed              (Vector)
-import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
-
+-- replicate ------------------------------------------------------------------
 fuse_replicate :: Int -> Vector Int
 fuse_replicate (I# size)  
-        = unchain $ C.replicate size 1234
+        = vunchain $ C.replicate size 1234
 
 
+fuse_replicateD :: Distro -> Vector Int
+fuse_replicateD distro
+        = vunchainD $ C.replicateD distro 1234
+
+
+-- replicateEach --------------------------------------------------------------
 fuse_replicateEach 
         :: Int -> Vector (Int, Int) -> Vector Int
-
 fuse_replicateEach (I# size) !vec
- = let  !(I# len)  = U.length vec
-        get ix     = vec `U.unsafeIndex` (I# ix)
+        = vunchain $ C.replicateEach size $ vchain vec
 
-   in   unchain $ C.replicateEach size (chain len get)
+
+fuse_replicateEachD 
+        :: Distro -> Distro -> Vector (Int, Int) -> Vector Int
+fuse_replicateEachD dResult dSrc !vec
+        = vunchainD $ C.replicateEachD dResult $ vchainD dSrc vec
 
 
 fuse_replicateReplicateEach
         :: Int -> Int -> Vector Int
-
 fuse_replicateReplicateEach (I# tot) (I# n)
-        = unchain 
+        = vunchain 
         $ C.replicateEach tot
         $ C.replicate n (10, 1234)
+
+

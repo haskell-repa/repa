@@ -50,8 +50,8 @@ replicateEach len (Chain _segs s0 next)
         next' ix (kElems, mx, s)
          | kElems == 0
          = case next ix s of
-                Yield  s' (!kElems, !x)  -> Update (kElems, Just x,  s')
-                Update s'                -> Update (0,      Nothing, s')
+                Yield  s' (!kElems', !x)  -> Update (kElems', Just x,  s')
+                Update s'                 -> Update (0,       Nothing, s')
 
          -- emit an element.
          | Just x       <- mx
