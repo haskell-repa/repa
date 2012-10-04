@@ -50,6 +50,7 @@ Library
   Exposed-modules:
         Data.Array.Repa.Chain
         Data.Array.Repa.Chain.Base
-        Data.Array.Repa.Chain.Eval
         Data.Array.Repa.Chain.Replicate
+        Data.Array.Repa.Chain.Map
+        Data.Array.Repa.Chain.Eval
         Data.Array.Repa.Stream.Base

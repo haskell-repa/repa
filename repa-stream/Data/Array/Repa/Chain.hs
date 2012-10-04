@@ -17,19 +17,24 @@ module Data.Array.Repa.Chain
         , replicate,     replicateD
         , replicateEach, replicateEachD
 
-        -- * Unboxed vector interface
+          -- * Maps and Zips
+        , map,           mapD
+
+          -- * Unboxed vector interface
         , vchain,        vchainD
         , vunchain,      vunchainD)
 
 where
 import Data.Array.Repa.Chain.Base
 import Data.Array.Repa.Chain.Eval
+import Data.Array.Repa.Chain.Map
 import Data.Array.Repa.Chain.Replicate
 import Control.Monad.ST
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
-import Prelude                                  hiding (replicate)
+import Prelude
+        hiding (replicate, map)
 
 
 -- | Convert an unboxed vector to a chain.
