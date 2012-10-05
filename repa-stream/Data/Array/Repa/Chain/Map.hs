@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Chain.Map
-        ( map,   mapD
-        , zipWith
+        ( map,          mapD
+        , zipWith,      zipWithD
         , zipWith3
         , zipWith4)
 where
@@ -31,8 +31,12 @@ mapD f (DistChain distro frag)
 
 
 -- zipWith ---------------------------------------------------------------------
--- | ZipWith two chains.
---   The chains must have the same length else undefined.
+data T2 a b
+        = T2 !a !b
+
+
+-- | Zip two chains with the same length.
+--   If they don't have the same length then undefined.
 zipWith :: (a -> b -> c) -> Chain a -> Chain b -> Chain c
 zipWith f (Chain len1 start1 next1)
           (Chain _    start2 next2)
@@ -43,23 +47,19 @@ zipWith f (Chain len1 start1 next1)
                 (Yield  s1' x1, Yield s2' x2)   -> Yield  (T2 s1' s2') (f x1 x2)
                 (Update s1',    _)              -> Update (T2 s1' s2)
                 (_,             Update s2')     -> Update (T2 s1  s2')
-{-# INLINE zipWith #-}
+{-# INLINE [1] zipWith #-}
 
 
-         -- = case (next1 ix s1, next2 ix s2) of
-         --       (Yield  s1' x1, Yield s2' x2)   -> Yield  (T2 s1' s2') (f x1 x2)
-         --       (Update s1',    _)              -> Update (T2 s1' s2)
-         --       (_,             Update s2')     -> Update (T2 s1  s2')
-
-         -- = case next1 ix s1 of
-         --       Update !s1'              -> Update (s1', s2)
-
-         --       Yield  !s1' x1
-         --        -> case next2 ix s2 of
-         --               Update !s2'      -> Update (s1, s2')
-         --               Yield  !s2' x2   -> Yield  (s1', s2') (f x1 x2)
+-- | Zip two chains that have the same distribution. 
+--   If they don't have the same distribution then undefined.
+zipWithD :: (a -> b -> c) -> DistChain a -> DistChain b -> DistChain c
+zipWithD f (DistChain distro1 frag1) (DistChain _ frag2)
+ = DistChain distro1 frag'
+ where  frag' i = zipWith f (frag1 i) (frag2 i)
+{-# INLINE [1] zipWithD #-}
 
 
+-- | Zip three chains with the same length.
 zipWith3 :: (a -> b -> c -> d)
          -> Chain a -> Chain b -> Chain c 
          -> Chain d
@@ -72,6 +72,7 @@ zipWith3 f c1 c2 c3
 {-# INLINE zipWith3 #-}
 
 
+-- | Zip four chains with the same length.
 zipWith4 :: (a -> b -> c -> d -> e)
          -> Chain a -> Chain b -> Chain c -> Chain d
          -> Chain e
@@ -83,21 +84,4 @@ zipWith4 f c1 c2 c3 c4
         (zipWith T2 c3 c4)
 {-# INLINE zipWith4 #-}
 
-data T2 a b
-        = T2 !a !b
 
-{-}
-zipWith4 :: (a -> b -> c -> d -> e)
-         -> Chain a -> Chain b -> Chain c -> Chain d
-         -> Chain e
-zipWith4 f (Chain len1 start1 next1)
-           (Chain _    start2 next2)
-           (Chain _    start3 next3)
-           (Chain _    start4 next4)
-
-
-
-
-data T4 a b c d
-        = T4 !a !b !c !d
--}

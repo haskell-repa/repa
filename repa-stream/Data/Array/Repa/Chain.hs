@@ -10,16 +10,16 @@ module Data.Array.Repa.Chain
         , foldM,        foldMD
 
           -- * Evaluation
-        , evalM,         evalMD
+        , evalM,        evalMD
 
           -- * Constructors
-        , chain,         chainD
-        , replicate,     replicateD
+        , chain,        chainD
+        , replicate,    replicateD
         , replicateEach, replicateEachD
 
           -- * Maps and Zips
-        , map,           mapD
-        , zipWith
+        , map,          mapD
+        , zipWith,      zipWithD
         , zipWith3
         , zipWith4
 
