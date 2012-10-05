@@ -16,11 +16,10 @@ Synopsis:       Chain-based segmented vector operations.
 
 Library
   Build-Depends: 
-        base                 == 4.6.*,
-        vector               == 0.9.*,
-        repa                 == 3.2.*,
-        dph-prim-seq,
-        dph-prim-par
+        base            == 4.6.*,
+        vector          == 0.9.*,
+        repa            == 3.2.*,
+        repa-stream     == 3.2.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -51,11 +50,6 @@ Library
         ExistentialQuantification
 
   Exposed-modules:
-        Data.Vector.Repa.Operators.Chains
-        Data.Vector.Repa.Operators.Replicate
-        Data.Vector.Repa.Operators.Zip
-        Data.Vector.Repa.Repr.Chain
-        Data.Vector.Repa.Repr.Chunked
-        Data.Vector.Repa.Repr.Sliced
-        Data.Vector.Repa.Base
-        Data.Vector.Repa
+        Data.Array.Repa.Repr.Chain
+        Data.Array.Repa.Vector.Base
+
