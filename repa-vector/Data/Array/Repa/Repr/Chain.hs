@@ -1,12 +1,14 @@
-
+{-# LANGUAGE UndecidableInstances #-}
 module Data.Array.Repa.Repr.Chain
-        (N)
+        ( N
+        , Array(..)
+        , vcache)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Chain            as C      
 import Data.Array.Repa                  as R
+import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
-
 
 -- | A delayed array defined by chain fragments.
 --
@@ -38,7 +40,8 @@ instance Source N e where
         => AChained
                 sh
                 (DistChain e)
-                (Vector r  e)        -- A LAZY cache of the unchained elements.
+                (Array r sh e)
+                -- A LAZY cache of the unchained elements.
 
  extent (AChained ex _ _)
   = ex
@@ -47,20 +50,30 @@ instance Source N e where
  -- Use the cache when retrieving single elements in a random-access manned.
  -- The first time we index into the vector all elements will be computed,
  -- but then successive operations will use the same cache.
- linearIndex (AChained _ _ elems) ix
-  = linearIndex elems ix
+ linearIndex (AChained _ _ vec) ix
+  = linearIndex vec ix
  {-# INLINE linearIndex #-}
 
- deepSeqArray (AChained _ _ elems) x
-  = elems `deepSeqArray` x
+ deepSeqArray (AChained _ _ vec) x
+  = vec `seq` x
  {-# INLINE deepSeqArray #-}
+
+
+vcache :: U.Unbox e => DistChain e -> Vector N e
+vcache dchain
+ = let  len     = I# (distroLength (distChainDistro dchain))
+   in   AChained       (Z :. len) dchain 
+         $ fromUnboxed (Z :. len) 
+         $ vunchainD dchain
 
 
 -- Maps ----------------------------------------------------------------------
 instance Map N a where
  type TM N   = N
 
- vmap f (AChained sh dchain vec)
-  = AChained sh (C.mapD f dchain) (R.map f vec)
+ vmap f (AChained sh dchain arr)
+  = AChained sh (C.mapD f dchain) (R.map f arr)
  {-# INLINE vmap #-}
+
+
 

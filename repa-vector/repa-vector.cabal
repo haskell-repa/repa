@@ -52,4 +52,5 @@ Library
   Exposed-modules:
         Data.Array.Repa.Repr.Chain
         Data.Array.Repa.Vector.Base
+        Data.Array.Repa.Vector
 

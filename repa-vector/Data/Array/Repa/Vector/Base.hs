@@ -1,7 +1,9 @@
 
 module Data.Array.Repa.Vector.Base
         ( Vector
-        , Map   (..) )
+        , vlength
+        , Map   (..)
+        , Zip   (..))
 where
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
@@ -9,6 +11,14 @@ import qualified Data.Vector.Unboxed    as U
 
 type Vector r e 
         = Array r DIM1 e
+
+
+-- | Get the length of a vector.
+vlength :: Source r e => Vector r e -> Int
+vlength !v
+ = case extent v of
+        Z :. len        -> len
+{-# INLINE [4] vlength #-}
 
 
 -- Map ------------------------------------------------------------------------
@@ -32,3 +42,16 @@ instance Map D e where
  vmap           = R.map
  {-# INLINE [4] vmap #-}
 
+
+-- Zip ------------------------------------------------------------------------
+class Zip r1 r2 a b where
+ type TZ r1 r2
+ -- | Vector zip that uses the least general possible representation for the 
+ --   result.
+ --
+ --   For example, zipping two Delayed (@D@) arrays produces a delayed array,
+ --   but zipping a Delayed (@D@) and a Chained (@N@) array must produce
+ --   a chained array.
+ vzip   :: Vector r1 a 
+        -> Vector r2 b
+        -> Vector (TZ r1 r2) (a, b)
