@@ -2,12 +2,13 @@
 ghc -Wall -O2 -fno-liberate-case -c Map.hs \
     -ddump-prep -dsuppress-all -dppr-case-as-let -dppr-cols200 > Map.prep
 -}
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, MagicHash #-}
 module Map where
 import Data.Array.Repa.Chain            as C
 import Data.Vector.Unboxed              (Vector)
+import GHC.Exts
 
-
+-- map ------------------------------------------------------------------------
 -- Basic map/map fusion.
 fuse_map_2 :: Vector Int -> Vector Int
 fuse_map_2 !vec
@@ -50,4 +51,38 @@ fuse_mapD_replicateEachD !dResult !dSrc !vec
         $ C.replicateEachD dResult
         $ C.mapD (\(len, x) -> (len, x * 5678))
         $ vchainD dSrc vec
+
+
+-- zipWith ------------------------------------------------------------------------
+fuse_zipWith :: Vector Int -> Vector Int -> Vector Int
+fuse_zipWith !vec1 !vec2
+        = vunchain
+        $ C.zipWith (*)
+                (vchain vec1)
+                (vchain vec2)
+
+
+fuse_zipWith_replicateEach
+        :: Int# -> Vector (Int, Int) -> Vector Int -> Vector Int
+fuse_zipWith_replicateEach n !vec1 !vec2
+        = vunchain
+        $ C.zipWith (*)
+                (replicateEach n (vchain vec1))
+                (vchain vec2)
+
+
+-- TODO: This doesn't fuse properly.
+fuse_zipWith4_replicateEach
+        :: Int# -> Vector (Int, Int) 
+                -> Vector Int 
+                -> Vector (Int, Int)
+                -> Vector Int
+                -> Vector Int
+fuse_zipWith4_replicateEach n !vec1 !vec2 !vec3 !vec4
+        = vunchain
+        $ C.zipWith4 (\x1 x2 x3 x4 -> x1 * x2 + x3 * x4)
+                (replicateEach n (vchain vec1))
+                (vchain vec2)
+                (replicateEach n (vchain vec3))
+                (vchain vec4)
 

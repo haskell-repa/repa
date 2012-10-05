@@ -19,22 +19,29 @@ module Data.Array.Repa.Chain
 
           -- * Maps and Zips
         , map,           mapD
+        , zipWith
+        , zipWith3
+        , zipWith4
+
+          -- * Indexed
+        , indexed,      indexedD
 
           -- * Unboxed vector interface
-        , vchain,        vchainD
-        , vunchain,      vunchainD)
+        , vchain,       vchainD
+        , vunchain,     vunchainD)
 
 where
 import Data.Array.Repa.Chain.Base
 import Data.Array.Repa.Chain.Eval
-import Data.Array.Repa.Chain.Map
 import Data.Array.Repa.Chain.Replicate
+import Data.Array.Repa.Chain.Map
+import Data.Array.Repa.Chain.Indexed
 import Control.Monad.ST
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude
-        hiding (replicate, map)
+        hiding (replicate, map, zip, zipWith, zipWith3)
 
 
 -- | Convert an unboxed vector to a chain.

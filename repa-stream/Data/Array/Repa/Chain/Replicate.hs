@@ -37,32 +37,47 @@ replicateD d x
 
 
 -- ReplicateEach --------------------------------------------------------------
--- | Replicate several values the given number of times each.
+-- | Given a chain of pairs containing a count an an element,
+--   replicate element the number of times given by the count.
+--
+--   The first parameter sets the size of the resulting stream.
+-- 
+--   @
+--   replicateEach 10 [(2,10), (5,20), (3,30)]
+--     = [10,10,20,20,20,20,20,30,30,30]
+--   @
+--
 replicateEach
         :: Int#                 -- ^ Total number of elements that will be produced.
         -> Chain (Int, a)       -- ^ Segment length and values.
         -> Chain a
 
 replicateEach len (Chain _segs s0 next)
- = Chain len (0, Nothing, s0) next'
+ = Chain len (ReplicateEachS 0# Nothing s0) next'
  where  
         -- move to the next segment.
-        next' ix (kElems, mx, s)
-         | kElems == 0
+        next' ix !(ReplicateEachS kElems mx s)
+         | kElems ==# 0#
          = case next ix s of
-                Yield  s' (!kElems', !x)  -> Update (kElems', Just x,  s')
-                Update s'                 -> Update (0,       Nothing, s')
+                Yield  s' (I# kElems', !x)  
+                 -> Update (ReplicateEachS kElems' (Just x)  s')
+
+                Update s'
+                 -> Update (ReplicateEachS 0#      Nothing   s')
 
          -- emit an element.
          | Just x       <- mx
-         = Yield (kElems - 1, mx, s) x
+         = Yield (ReplicateEachS (kElems -# 1#) mx s) x
 
          -- NOTE: this is never entered but we add the case to keep
          --       the GHC exhaustive match checker happy.
          | otherwise
-         = Update (0, mx, s)
+         = Update (ReplicateEachS 0# mx s)
         {-# INLINE next' #-}
 {-# INLINE [1] replicateEach #-}
+
+data ReplicateEachS a b
+        = ReplicateEachS Int# !(Maybe a) !b
 
 
 -- | Fill a distributed chain with several values the given number of times each.
