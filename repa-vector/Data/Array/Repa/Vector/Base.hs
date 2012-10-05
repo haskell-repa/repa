@@ -56,3 +56,38 @@ class Zip r1 r2 a b where
  vzip   :: Vector r1 a 
         -> Vector r2 b
         -> Vector (TZ r1 r2) (a, b)
+
+
+-- Unboxed --------------------------------------------------------------------
+instance (U.Unbox a, U.Unbox b) 
+       => Zip U U a b where
+ type TZ U U            = D
+ vzip !arr1 !arr2       = vzip (delay arr1) (delay arr2)
+ {-# INLINE [4] vzip #-}
+
+
+-- Delayed --------------------------------------------------------------------
+instance Zip D D a b where
+ type TZ D D    = D
+ vzip !arr1 !arr2
+  = fromFunction (extent arr1) get
+  where get ix = ( arr1 `unsafeIndex` ix
+                 , arr2 `unsafeIndex` ix)
+        {-# INLINE get #-}
+ {-# INLINE [4] vzip #-}
+
+
+-- Unboxed/Delayed ------------------------------------------------------------
+instance U.Unbox a
+      => Zip U D a b where
+ type TZ U D            = D
+ vzip !arr1 !arr2       = vzip (delay arr1) arr2
+ {-# INLINE [4] vzip #-}
+
+
+instance U.Unbox b
+      => Zip D U a b where
+ type TZ D U    = D
+ vzip !arr1 !arr2       = vzip arr1 (delay arr2)
+ {-# INLINE [4] vzip #-}
+

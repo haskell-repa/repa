@@ -1,23 +1,30 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Array.Repa.Repr.Chain
         ( N
-        , Array(..)
+        , Array (..)
+        , Distro(..)
+        , vchain
         , vcache)
 where
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Chain            as C      
 import Data.Array.Repa                  as R
+import Data.Array.Repa.Chain            (Distro(..), DistChain(..))
+import qualified Data.Array.Repa.Chain  as C      
 import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
 -- | A delayed array defined by chain fragments.
 --
 --      A chain is like a stream, except that we know how many elements will
---      be produced before evaluating it. 
+--      be produced on each node before evaluating it. This information is 
+--      collected into a `Distro`.
 --
---      This implies that chains do not support filtering operations, but when
---      evaluated in parallel the computed elements can be written directly to
---      the target buffer, without needing a copying join.
+--      The fact that we must know the distribution of the result ahead of time, 
+--      means that chains do not support filtering operations. However, when 
+--      evaluated in parallel we can write the computed elements directly to
+--      the target buffer, without needing a copying join to collect the results
+--      from each node.
+--
 data N
 
 
@@ -56,6 +63,16 @@ instance Source N e where
  {-# INLINE deepSeqArray #-}
 
 
+-- | Convert an arbitrary vector to a chain.
+vchain :: Source r a => Distro -> Vector r a -> Vector N a
+vchain distro vec
+ = AChained (Z :. len) (C.chainD distro get) vec
+ where  len     = I# (distroLength distro)
+        get ix  = R.unsafeLinearIndex vec (I# ix)
+        {-# INLINE get #-}
+{-# INLINE [1] vchain #-}
+
+
 -- | Build a vector from a `DistChain`.
 --
 --   The `Vector` contains a suspended cache of evaluated elements, 
@@ -66,7 +83,7 @@ vcache dchain
  = let  len     = I# (distroLength (distChainDistro dchain))
    in   AChained       (Z :. len) dchain 
          $ fromUnboxed (Z :. len) 
-         $ vunchainD dchain             -- TODO: use parallel evaluation
+         $ C.vunchainD dchain             -- TODO: use parallel evaluation
 
 
 -- Maps ----------------------------------------------------------------------
@@ -76,4 +93,28 @@ instance Map N a where
  vmap f (AChained sh dchain arr)
   = AChained sh (C.mapD f dchain) (R.map f arr)
  {-# INLINE vmap #-}
+
+
+-- Unboxed/Chained ------------------------------------------------------------
+-- TODO: need vzipWithD function.
+--instance Zip N N a b where
+-- type TZ N N            = N
+-- vzip !arr1@(AChained sh1 dchain1 vec1)
+--      !arr2@(AChained _   dchain2 vec2)
+-- =     AChained sh1 (C.vzipWithD (,) dchain1 dchain2) (R.zip vec1 vec2)
+
+
+--instance U.Unbox a => Zip U N a b where
+-- type TZ U N            = N
+-- vzip !arr1 !arr2@(AChained _ dchain _)
+--        = vzip (vchain (distChainDistro dchain) arr1) arr2
+-- {-# INLINE [1] vzip #-}
+
+
+--instance U.Unbox b => Zip N U a b where
+-- type TZ N U            = N
+-- vzip !arr1 !arr2       = vzip arr1 (chain arr2)
+-- {-# INLINE [4] vzip #-}
+
+
 

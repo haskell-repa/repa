@@ -3,12 +3,16 @@ module Data.Array.Repa.Vector
         ( Vector
         , N
 
+        -- * Conversions
+        , Distro        (..)
+        , vchain
+
         -- * Projections
         , vlength
 
         -- * Maps and Zips
-        , Map   (..)
-        , Zip   (..)
+        , Map           (..)
+        , Zip           (..)
 
         -- * Replicate
         , vreplicate
@@ -19,7 +23,7 @@ module Data.Array.Repa.Vector
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Repr.Chain
-import Data.Array.Repa.Chain            as C
+import qualified Data.Array.Repa.Chain  as C
 import Data.Array.Repa                  as R
 import Data.Vector.Unboxed              (Unbox)
 
@@ -30,8 +34,9 @@ vreplicate len x
         = R.fromFunction (Z :. len) $ const x
 
 
--- | Given a vector of pairs containing a count an an element,
---   replicate element the number of times given by the count.
+-- | Given the distribution of the result, 
+--   and a vector of pairs containing a count and an element,
+--   replicate each element the number of times given by the count.
 --
 --   @
 --   replicateEach 10 [(2,10), (5,20), (3,30)]
