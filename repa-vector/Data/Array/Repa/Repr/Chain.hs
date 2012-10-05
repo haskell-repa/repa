@@ -12,15 +12,12 @@ import GHC.Exts
 
 -- | A delayed array defined by chain fragments.
 --
---      Chains are like streams, except they are logically divided into several
---      fragments when created. When we finally compute them, each fragment
---      can be evaluated in a different thread.
+--      A chain is like a stream, except that we know how many elements will
+--      be produced before evaluating it. 
 --
---      We also know how many elements will be produced before evaluating it,
---      unlike streams where this is not known. This implies that chains do
---      not support filtering operatons, but means that computed elements can
---      be written directly into the target vector, instead of needing a copying
---      join.
+--      This implies that chains do not support filtering operations, but when
+--      evaluated in parallel the computed elements can be written directly to
+--      the target buffer, without needing a copying join.
 data N
 
 
@@ -59,12 +56,17 @@ instance Source N e where
  {-# INLINE deepSeqArray #-}
 
 
+-- | Build a vector from a `DistChain`.
+--
+--   The `Vector` contains a suspended cache of evaluated elements, 
+--   which we will use for random-access indexing.
+--
 vcache :: U.Unbox e => DistChain e -> Vector N e
 vcache dchain
  = let  len     = I# (distroLength (distChainDistro dchain))
    in   AChained       (Z :. len) dchain 
          $ fromUnboxed (Z :. len) 
-         $ vunchainD dchain
+         $ vunchainD dchain             -- TODO: use parallel evaluation
 
 
 -- Maps ----------------------------------------------------------------------
@@ -74,6 +76,4 @@ instance Map N a where
  vmap f (AChained sh dchain arr)
   = AChained sh (C.mapD f dchain) (R.map f arr)
  {-# INLINE vmap #-}
-
-
 

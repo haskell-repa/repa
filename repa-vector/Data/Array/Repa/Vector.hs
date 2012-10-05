@@ -2,11 +2,20 @@
 module Data.Array.Repa.Vector
         ( Vector
         , N
+
+        -- * Projections
+        , vlength
+
+        -- * Maps and Zips
         , Map   (..)
         , Zip   (..)
-        , vlength
+
+        -- * Replicate
         , vreplicate
-        , vreplicateEach)
+        , vreplicateEachN
+
+        -- * Indexed
+        , vindexed,     vindexedN)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Repr.Chain
@@ -24,13 +33,35 @@ vreplicate len x
 -- | Given a vector of pairs containing a count an an element,
 --   replicate element the number of times given by the count.
 --
---   The first parameter sets the size of the resulting stream.
--- 
 --   @
 --   replicateEach 10 [(2,10), (5,20), (3,30)]
 --     = [10,10,20,20,20,20,20,30,30,30]
 --   @
 --
-vreplicateEach :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
-vreplicateEach distro (AChained _ dchain _)
+vreplicateEachN :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
+vreplicateEachN distro (AChained _ dchain _)
         = vcache (C.replicateEachD distro dchain) 
+
+
+-- | Tag each element of an vector with its index in that vector.
+--
+-- @
+-- indexed [42,93,13]
+--  = [(0,42), (1,93), (2,13)]
+-- @
+vindexed  :: Source r a => Vector r a -> Vector D (Int, a)
+vindexed vec
+        = R.fromFunction (R.extent vec)
+        $ \ ix@(Z :. n) -> (n, R.unsafeIndex vec ix)
+
+
+-- | Chain consuming version.
+--
+--   When the source elements come in a chain, use this verison to avoid
+--   creating an intermediate array.
+--
+vindexedN :: Unbox a    => Vector N a -> Vector N (Int, a)
+vindexedN (AChained _ dchain _)
+        = vcache (C.indexedD dchain)
+
+
