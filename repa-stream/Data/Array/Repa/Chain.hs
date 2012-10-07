@@ -26,9 +26,9 @@ module Data.Array.Repa.Chain
           -- * Indexed
         , indexed,      indexedD
 
-          -- * Unboxed vector interface
-        , vchain,       vchainD
-        , vunchain,     vunchainD)
+          -- * Unboxed vector interface.
+        , chainUnboxed,   chainUnboxedD
+        , unchainUnboxed, unchainUnboxedD)
 
 where
 import Data.Array.Repa.Chain.Base
@@ -45,25 +45,25 @@ import Prelude
 
 
 -- | Convert an unboxed vector to a chain.
-vchain:: U.Unbox a => U.Vector a -> Chain a
-vchain vec
+chainUnboxed :: U.Unbox a => U.Vector a -> Chain a
+chainUnboxed vec
  = let  !(I# len)  = U.length vec
         get ix     = vec `U.unsafeIndex` (I# ix)
    in   chain len get
-{-# INLINE [1] vchain #-}
+{-# INLINE [1] chainUnboxed #-}
 
 
 -- | Convert an unboxed vector to a distributed chain.
-vchainD :: U.Unbox a => Distro -> U.Vector a -> DistChain a
-vchainD distro vec
+chainUnboxedD :: U.Unbox a => Distro -> U.Vector a -> DistChain a
+chainUnboxedD distro vec
  = let  get ix     = vec `U.unsafeIndex` (I# ix)
    in   chainD distro get
-{-# INLINE [1] vchainD #-}
+{-# INLINE [1] chainUnboxedD #-}
 
 
 -- | Evaluate a chain, returning the elements in a vector.
-vunchain :: U.Unbox a => Chain a -> U.Vector a
-vunchain c@(Chain len _ _)
+unchainUnboxed :: U.Unbox a => Chain a -> U.Vector a
+unchainUnboxed c@(Chain len _ _)
  = runST 
  $ do   !mvec    <- UM.unsafeNew (I# len)
 
@@ -74,12 +74,12 @@ vunchain c@(Chain len _ _)
         _       <- evalM write c
 
         U.unsafeFreeze mvec
-{-# INLINE [1] vunchain #-}
+{-# INLINE [1] unchainUnboxed #-}
 
 
 -- | Evaluate a distributed chain, returning the elements in a vector.
-vunchainD :: U.Unbox a => DistChain a -> U.Vector a
-vunchainD dc@(DistChain distro _)
+unchainUnboxedD :: U.Unbox a => DistChain a -> U.Vector a
+unchainUnboxedD dc@(DistChain distro _)
  = runST 
  $ do   !mvec    <- UM.unsafeNew (I# (distroLength distro))
 
@@ -90,6 +90,6 @@ vunchainD dc@(DistChain distro _)
         _       <- evalMD write dc
 
         U.unsafeFreeze mvec
-{-# INLINE [1] vunchainD #-}
+{-# INLINE [1] unchainUnboxedD #-}
 
 

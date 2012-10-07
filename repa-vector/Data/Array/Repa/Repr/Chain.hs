@@ -4,7 +4,7 @@ module Data.Array.Repa.Repr.Chain
         , Array (..)
         , Distro(..)
         , vchain
-        , vcache)
+        , vcacheN)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa                  as R
@@ -78,12 +78,12 @@ vchain distro vec
 --   The `Vector` contains a suspended cache of evaluated elements, 
 --   which we will use for random-access indexing.
 --
-vcache :: U.Unbox e => DistChain e -> Vector N e
-vcache dchain
+vcacheN :: U.Unbox e => DistChain e -> Vector N e
+vcacheN dchain
  = let  len     = I# (distroLength (distChainDistro dchain))
    in   AChained       (Z :. len) dchain 
          $ fromUnboxed (Z :. len) 
-         $ C.vunchainD dchain             -- TODO: use parallel evaluation
+         $ C.unchainUnboxedD dchain     -- TODO: use parallel evaluation
 
 
 -- Maps ----------------------------------------------------------------------

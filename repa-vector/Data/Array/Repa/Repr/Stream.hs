@@ -8,7 +8,6 @@ import Data.Array.Repa.Vector.Base
 import Data.Array.Repa                  as R
 import Data.Array.Repa.Stream           (Distro(..), DistStream(..))
 import qualified Data.Array.Repa.Stream as S
--- import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
 
@@ -60,3 +59,15 @@ vstream distro vec
         {-# INLINE get #-}
 {-# INLINE [1] vstream #-}
 
+
+-- | Build a vector from a `DistStream`.
+--
+--   The `Vector` contains a suspended cache of evaluated elements, 
+--   which we will use for random-access indexing.
+--
+--vcacheS :: U.Unbox e => DistStream e -> Vector S e
+--vcacheS dstream
+-- = let  len     = I# (distroLength (distChainDistro dchain))
+--   in   AStream        (Z :. len) dstream
+--         $ fromUnboxed (Z :. len) 
+--         $ C.vunstreamD dstream             -- TODO: use parallel evaluation

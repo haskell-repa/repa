@@ -48,7 +48,7 @@ vreplicate len x
 --
 vreplicateEachN :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
 vreplicateEachN distro (AChained _ dchain _)
-        = vcache (C.replicateEachD distro dchain) 
+        = vcacheN (C.replicateEachD distro dchain) 
 
 
 -- | Tag each element of an vector with its index in that vector.
@@ -70,6 +70,7 @@ vindexed vec
 --
 vindexedN :: Unbox a    => Vector N a -> Vector N (Int, a)
 vindexedN (AChained _ dchain _)
-        = vcache (C.indexedD dchain)
+        = vcacheN (C.indexedD dchain)
+
 
 
