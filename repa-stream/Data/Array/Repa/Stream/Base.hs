@@ -9,14 +9,15 @@ module Data.Array.Repa.Stream.Base
         , fold
         , foldM
 
-          -- * Fragmented Streams
-        , StreamF (..)
-        , streamF
-        , foldF
-        , foldMF)
+          -- * Distributed Streams
+        , DistStream (..)
+        , streamD
+        , foldD
+        , foldMD)
 where
 import GHC.Exts
 import qualified Data.Array.Repa.Chain.Base     as C
+
 
 -- Linear ---------------------------------------------------------------------
 -- | Pure streams.
@@ -117,32 +118,32 @@ foldM f y0 (Stream _size s0 mkStep)
 --   The stream is broken into several fragments that can be evaluated
 --   concurrently.
 --
-data StreamF a
-        = StreamF
+data DistStream a
+        = DistStream
                 Size                    -- Overall size of stream.
                 Int#                    -- Number of fragments.
                 (Int# -> Stream a)      -- Get a stream fragment.
 
 
 -- | Construct a fragmented stream.
-streamF :: Size                         -- ^ Overall size of stream.
+streamD :: Size                         -- ^ Overall size of stream.
         -> Int#                         -- ^ Number of fragments.
         -> (Int# -> Int#)               -- ^ Get the start position of a fragment.
         -> (Int# -> a)                  -- ^ Get the element at this position.
-        -> StreamF a
+        -> DistStream a
 
-streamF size frags start get
- = StreamF size frags getFrag
+streamD size frags start get
+ = DistStream size frags getFrag
  where  getFrag frag 
          = stream (start (frag +# 1#) -# start frag)
                   get
         {-# INLINE [0] getFrag #-}
-{-# INLINE streamF #-}
+{-# INLINE streamD #-}
 
 
 -- | Consume a fragmented stream.
-foldF :: (a -> b -> b) -> b -> StreamF a -> b
-foldF f y0 (StreamF _size frags getFrag)
+foldD :: (a -> b -> b) -> b -> DistStream a -> b
+foldD f y0 (DistStream _size frags getFrag)
  = eatFrags y0 0#
  where  eatFrags y frag
          | frag >=# frags       = y
@@ -150,14 +151,14 @@ foldF f y0 (StreamF _size frags getFrag)
          = eatFrags (fold f y (getFrag frag))
                     (frag +# 1#)
         {-# INLINE [0] eatFrags #-}
-{-# INLINE [1] foldF #-}
+{-# INLINE [1] foldD #-}
 
 
 -- | Consume a fragmented stream, in a monad.
-foldMF  :: Monad m
-        => (a -> b -> m b) -> b -> StreamF a -> m b
+foldMD  :: Monad m
+        => (a -> b -> m b) -> b -> DistStream a -> m b
 
-foldMF f y0 (StreamF _size frags getFrag)
+foldMD f y0 (DistStream _size frags getFrag)
  = eatFrags y0 0#
  where  eatFrags y frag
          | frag >=# frags       = return y
@@ -165,5 +166,4 @@ foldMF f y0 (StreamF _size frags getFrag)
          = do   y'      <- foldM f y (getFrag frag)
                 eatFrags y' (frag +# 1#)
         {-# INLINE [0] eatFrags #-}
-{-# INLINE [1] foldMF #-}
-
+{-# INLINE [1] foldMD #-}
