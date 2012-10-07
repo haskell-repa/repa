@@ -13,6 +13,7 @@ module Data.Array.Repa.Chain.Base
         , chainD
         , foldD, foldMD)
 where
+import Data.Array.Repa.Distro
 import GHC.Exts
 
 
@@ -69,28 +70,6 @@ foldM f y0 c
 
 
 -- Distributed Chains ---------------------------------------------------------
--- | Describes the size of a chain, and how the elements are distributed
---   across the gang. If this information is not easily computable ahead
---   of time then you need to use a Stream instead of a Chain.
---
---   We have separate 'distroFragLength' and 'distroFragStart' functions
---   for performance reasons, but they must give coherent results, else badness.
---
-data Distro
-        = Distro
-        { -- | Total length of chain.
-          distroLength          :: Int#
-
-          -- | Number of fragments the chain is split into.
-        , distroFrags           :: Int#
-
-          -- | Get the length of a fragment.
-        , distroFragLength      :: Int# -> Int#
-
-          -- | Get where a fragment starts in the result.
-        , distroFragStart       :: Int# -> Int# }
-
-
 -- | Pure distributed chains.
 data DistChain a
         = DistChain

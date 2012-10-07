@@ -48,6 +48,7 @@ Library
         ExistentialQuantification
 
   Exposed-modules:
+        Data.Array.Repa.Distro
         Data.Array.Repa.Chain
         Data.Array.Repa.Chain.Base
         Data.Array.Repa.Chain.Replicate
@@ -55,3 +56,4 @@ Library
         Data.Array.Repa.Chain.Indexed
         Data.Array.Repa.Chain.Eval
         Data.Array.Repa.Stream.Base
+        Data.Array.Repa.Stream.Pack

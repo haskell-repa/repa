@@ -5,6 +5,7 @@ module Data.Array.Repa.Stream.Base
         , Step   (..)
         , Size   (..)
         , stream
+        , stream'
         , streamOfChain
         , fold
         , foldM
@@ -16,6 +17,7 @@ module Data.Array.Repa.Stream.Base
         , foldMD)
 where
 import GHC.Exts
+import Data.Array.Repa.Distro
 import qualified Data.Array.Repa.Chain.Base     as C
 
 
@@ -65,6 +67,21 @@ stream size get
          | otherwise    = Yield (I# (ix +# 1#)) (get ix)
         {-# INLINE [0] mkStep #-}
 {-# INLINE [1] stream #-}
+
+
+-- | Construct a stream from a range of values defined by an element
+--   producing function.
+stream' :: Int#                 -- ^ Starting position
+        -> Int#                 -- ^ One after last element index.
+        -> (Int# -> a)          -- ^ Get the element at this position.
+        -> Stream a
+
+stream' start end get
+ = Stream (Exact (end -# start)) (I# start) step
+ where  step (I# ix)
+         | ix >=# end   = Done
+         | otherwise    = Yield (I# (ix +# 1#)) (get ix)
+{-# INLINE [1] stream' #-}
 
 
 -- | Convert a chain to a stream.
@@ -126,18 +143,21 @@ data DistStream a
 
 
 -- | Construct a fragmented stream.
-streamD :: Size                         -- ^ Overall size of stream.
-        -> Int#                         -- ^ Number of fragments.
-        -> (Int# -> Int#)               -- ^ Get the start position of a fragment.
+streamD :: Distro                       -- ^ Distribution of vector.
         -> (Int# -> a)                  -- ^ Get the element at this position.
         -> DistStream a
 
-streamD size frags start get
- = DistStream size frags getFrag
- where  getFrag frag 
-         = stream (start (frag +# 1#) -# start frag)
-                  get
-        {-# INLINE [0] getFrag #-}
+streamD distro get
+ = DistStream (Exact (distroLength distro))
+              (distroFrags distro) frag
+ where  
+        frag i
+         = let  !start  = distroFragStart  distro i
+                !len    = distroFragLength distro i
+                !end    = start +# len
+
+           in   stream' start end get
+        {-# INLINE [0] frag #-}
 {-# INLINE streamD #-}
 
 
