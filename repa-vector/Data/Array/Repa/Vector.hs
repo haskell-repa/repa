@@ -2,10 +2,12 @@
 module Data.Array.Repa.Vector
         ( Vector
         , N
+        , S
 
         -- * Conversions
         , Distro        (..)
         , vchain
+        , vstream
 
         -- * Projections
         , vlength
@@ -23,6 +25,7 @@ module Data.Array.Repa.Vector
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Repr.Chain
+import Data.Array.Repa.Repr.Stream
 import qualified Data.Array.Repa.Chain  as C
 import Data.Array.Repa                  as R
 import Data.Vector.Unboxed              (Unbox)
