@@ -7,11 +7,14 @@ module Data.Array.Repa.Stream.Base
         , stream
         , stream'
         , streamOfChain
-        , fold
-        , foldM
 
           -- * Distributed Streams
         , DistStream (..)
+
+        -- * 
+        , fold
+        , foldM
+
         , streamD
         , foldD
         , foldMD)
