@@ -11,7 +11,7 @@ import GHC.Exts
 evalM   :: Monad m
         => (Int# -> a -> m ())
         -> Stream a
-        -> m ()
+        -> m Int
 
 evalM write (Stream _size s0 next)
  = go 0# s0
@@ -25,7 +25,7 @@ evalM write (Stream _size s0 next)
                  ->     go ix s'
 
                 Done
-                 ->     return ()
+                 ->     return (I# ix)
 {-# INLINE [1] evalM #-}
 
 
@@ -44,6 +44,6 @@ evalMD write (DistStream _size frags frag)
          = return ()
 
          | otherwise
-         = do   evalM (write i) (frag i)
+         = do   _       <- evalM (write i) (frag i)
                 go (i +# 1#)
 {-# INLINE [1] evalMD #-}
