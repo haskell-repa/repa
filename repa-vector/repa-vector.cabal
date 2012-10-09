@@ -51,6 +51,14 @@ Library
 
   Exposed-modules:
         Data.Array.Repa.Repr.Chain
-        Data.Array.Repa.Vector.Base
+        Data.Array.Repa.Repr.Stream
         Data.Array.Repa.Vector
+        Data.Array.Repa.Segmented.Segd
+
+  Other-modules:
+        Data.Array.Repa.Vector.Base
+        Data.Array.Repa.Vector.Map
+        Data.Array.Repa.Vector.Zip
+        Data.Array.Repa.Vector.Indexed
+
 

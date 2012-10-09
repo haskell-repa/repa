@@ -20,11 +20,11 @@ module Data.Array.Repa.Stream
         , streamOfChain
 
         -- * Packing
-        , pack
+        , pack,         packD
 
         -- * Unboxed vector interface
-        , streamUnboxed
-        , unstreamUnboxed) 
+        , streamUnboxed,        streamUnboxedD
+        , unstreamUnboxed,      unstreamUnboxedD)
 where
 import Data.Array.Repa.Stream.Base
 import Data.Array.Repa.Stream.Eval
@@ -39,17 +39,21 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 -- | Convert an unboxed vector to a stream.
 streamUnboxed :: U.Unbox a => U.Vector a -> Stream a
 streamUnboxed vec
- = let  !(I# len)  = U.length vec
-        get ix     = vec `U.unsafeIndex` (I# ix)
+ = let  !(I# len)       = U.length vec
+        get ix          = vec `U.unsafeIndex` (I# ix)
    in   stream len get
 {-# INLINE [1] streamUnboxed #-}
 
 
 -- | Convert an unboxed vector to a distributed stream.
-... 
+streamUnboxedD :: U.Unbox a => Distro -> U.Vector a -> DistStream a
+streamUnboxedD distro vec
+ = let  get ix          = vec `U.unsafeIndex` (I# ix)
+   in   streamD distro get
+{-# INLINE [1] streamUnboxedD #-}
 
 
--- | Evaluate a stream, returning the elemnets in an unboxed vector.
+-- | Evaluate a stream, returning the elements in an unboxed vector.
 unstreamUnboxed :: U.Unbox a => Stream a -> U.Vector a
 unstreamUnboxed s@(Stream size _ _)
  = case size of
@@ -81,3 +85,16 @@ unstreamUnboxed_max lenMax s
         vec     <- U.unsafeFreeze mvec
         return  $ U.slice len (I# lenMax) vec
 {-# INLINE unstreamUnboxed_max #-}
+
+
+-- | Evalaute a distributed stream, returning the elements in an unboxed vector.
+unstreamUnboxedD :: U.Unbox a => DistStream a -> U.Vector a
+unstreamUnboxedD (DistStream _ frags frag)
+ = let  chunk i = unstreamUnboxed (frag i)
+        chunks  = map (\(I# i) -> chunk i) [0.. (I# (frags -# 1#))]
+   in   U.concat chunks
+{-# INLINE [1] unstreamUnboxedD #-}
+
+
+
+

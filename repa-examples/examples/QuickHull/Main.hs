@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 
-import QuickHull
+import Solver
 import Data.Array.Repa                  as R
 
 

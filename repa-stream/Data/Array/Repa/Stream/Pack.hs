@@ -1,12 +1,12 @@
 
 module Data.Array.Repa.Stream.Pack
-        (pack)
+        (pack,  packD)
 where
 import Data.Array.Repa.Stream.Base
 
 
--- | Given a stream of flags and values, return a stream of values that had
---   their correspondig flag set to `True`.
+-- | Given a stream of flags and values,
+--   return a stream of values that had their correspondig flag set to `True`.
 pack :: Stream (Bool, a) -> Stream a
 pack (Stream size start next)
  = Stream size' start next'
@@ -26,3 +26,18 @@ pack (Stream size start next)
                 Update s'       -> Update s'
                 Done            -> Done
 {-# INLINE [1] pack #-}
+
+
+-- | Pack for distributed streams.
+packD :: DistStream (Bool, a) -> DistStream a
+packD (DistStream size frags frag)
+ = DistStream size' frags frag'
+ where
+        size'
+         = case size of
+                Unknown         -> Unknown
+                Max   len       -> Max len
+                Exact len       -> Max len
+
+        frag' i
+         = pack (frag i)

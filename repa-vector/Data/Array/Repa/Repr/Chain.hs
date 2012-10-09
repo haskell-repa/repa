@@ -86,33 +86,3 @@ vcacheN dchain
          $ C.unchainUnboxedD dchain     -- TODO: use parallel evaluation
 
 
--- Maps ----------------------------------------------------------------------
-instance Map N a where
- type TM N   = N
-
- vmap f (AChained sh dchain arr)
-  = AChained sh (C.mapD f dchain) (R.map f arr)
- {-# INLINE vmap #-}
-
-
--- Unboxed/Chained ------------------------------------------------------------
-instance Zip N N a b where
- type TZ N N            = N
- vzip !(AChained sh1 dchain1 vec1)
-      !(AChained _   dchain2 vec2)
-  =     AChained sh1 (C.zipWithD (,) dchain1 dchain2) (R.zipWith (,) vec1 vec2)
-
-
-instance U.Unbox a => Zip U N a b where
- type TZ U N            = N
- vzip !arr1 !arr2@(AChained _ dchain _)
-        = vzip (vchain (distChainDistro dchain) arr1) arr2
- {-# INLINE [1] vzip #-}
-
-
-instance U.Unbox b => Zip N U a b where
- type TZ N U            = N
- vzip !arr1@(AChained _ dchain _) !arr2       
-        = vzip arr1 (vchain (distChainDistro dchain) arr2)
- {-# INLINE [1] vzip #-}
-

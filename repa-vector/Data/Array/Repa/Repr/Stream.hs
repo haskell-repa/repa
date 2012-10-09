@@ -2,12 +2,14 @@ module Data.Array.Repa.Repr.Stream
         ( S
         , Array (..)
         , Distro(..)
-        , vstream)
+        , vstream
+        , vcacheS)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa                  as R
 import Data.Array.Repa.Stream           (Distro(..), DistStream(..))
 import qualified Data.Array.Repa.Stream as S
+import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
 
@@ -65,9 +67,11 @@ vstream distro vec
 --   The `Vector` contains a suspended cache of evaluated elements, 
 --   which we will use for random-access indexing.
 --
---vcacheS :: U.Unbox e => DistStream e -> Vector S e
---vcacheS dstream
--- = let  len     = I# (distroLength (distChainDistro dchain))
---   in   AStream        (Z :. len) dstream
---         $ fromUnboxed (Z :. len) 
---         $ C.vunstreamD dstream             -- TODO: use parallel evaluation
+vcacheS :: U.Unbox e => DistStream e -> Vector S e
+vcacheS dstream
+ = let  vec     = S.unstreamUnboxedD dstream
+        len     = U.length vec
+   in   AStream        (Z :. len) dstream
+         $ fromUnboxed (Z :. len) 
+         $ vec                          -- TODO: use parallel evaluation
+

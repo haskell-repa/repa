@@ -12,25 +12,35 @@ module Data.Array.Repa.Vector
         -- * Projections
         , vlength
 
-        -- * Maps and Zips
-        , Map           (..)
-        , Zip           (..)
-
         -- * Replicate
         , vreplicate
         , vreplicateEachN
 
+        -- * Mapping
+        , Map           (..)
+
+        -- * Zipping
+        , Zip           (..)
+
         -- * Indexed
-        , vindexed,     vindexedN)
+        , Indexed(..)
+
+        -- * Pack
+        , packS)
 where
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Map
+import Data.Array.Repa.Vector.Zip
+import Data.Array.Repa.Vector.Indexed
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Repr.Stream
 import qualified Data.Array.Repa.Chain  as C
+import qualified Data.Array.Repa.Stream as S
 import Data.Array.Repa                  as R
 import Data.Vector.Unboxed              (Unbox)
 
 
+-- Replicate ------------------------------------------------------------------
 -- | Construct a vector containing copies of the same value.
 vreplicate :: Int -> a -> Vector D a
 vreplicate len x
@@ -51,26 +61,10 @@ vreplicateEachN distro (AChained _ dchain _)
         = vcacheN (C.replicateEachD distro dchain) 
 
 
--- | Tag each element of an vector with its index in that vector.
---
--- @
--- indexed [42,93,13]
---  = [(0,42), (1,93), (2,13)]
--- @
-vindexed  :: Source r a => Vector r a -> Vector D (Int, a)
-vindexed vec
-        = R.fromFunction (R.extent vec)
-        $ \ ix@(Z :. n) -> (n, R.unsafeIndex vec ix)
-
-
--- | Chain consuming version.
---
---   When the source elements come in a chain, use this verison to avoid
---   creating an intermediate array.
---
-vindexedN :: Unbox a    => Vector N a -> Vector N (Int, a)
-vindexedN (AChained _ dchain _)
-        = vcacheN (C.indexedD dchain)
-
-
+-- Pack -----------------------------------------------------------------------
+-- | Given a vector of flags and values,
+--   return just the values that had their corresponding flags set to `True`.
+packS     :: Unbox a => Vector S (Bool, a) -> Vector S a
+packS (AStream _ dstream _)
+        = vcacheS (S.packD dstream)
 
