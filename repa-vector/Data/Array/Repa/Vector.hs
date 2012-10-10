@@ -31,8 +31,9 @@ module Data.Array.Repa.Vector
         -- * Indexed
         , Indexed(..)
 
-        -- * Pack
-        , Pack(..))
+        -- * Pack and Filter
+        , Pack  (..)
+        , Filter(..))
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Map

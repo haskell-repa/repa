@@ -2,9 +2,12 @@
 module Data.Array.Repa.Vector.Zip
         (Zip (..))
 where
+import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Chain
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Map
+import Data.Array.Repa.Stream.Map       as S
 import Data.Array.Repa.Chain.Map        as C
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
@@ -16,7 +19,10 @@ import qualified Data.Vector.Unboxed    as U
 --   For example, zipping two Delayed (@D@) arrays produces a delayed array,
 --   but zipping a Delayed (@D@) and a Chained (@N@) array must produce
 --   a chained array.
-class Zip r1 r2 a b where
+--
+--   The vectors must have the same shape and distribution, else undefined.
+--
+class (Map r1 a, Map r2 b) => Zip r1 r2 a b where
  type ZipR r1 r2
  vzip   :: Vector r1 a 
         -> Vector r2 b
@@ -93,4 +99,14 @@ instance Zip N N a b where
  vzip !(AChain sh1 dchain1 vec1)
       !(AChain _   dchain2 vec2)
   =     AChain sh1 (C.zipWithD (,) dchain1 dchain2) (R.zipWith (,) vec1 vec2)
+
+
+-- Streamed/Streamed ------------------
+-- We want this instance to help write the stream/stream version of filter.
+instance Zip S S a b where
+ type ZipR S S          = S
+ vzip !(AStream sh1 dstream1 vec1)
+      !(AStream _   dstream2 vec2)
+  =     AStream sh1 (S.zipWithD (,) dstream1 dstream2) 
+                    (R.zipWith  (,) vec1 vec2)
 
