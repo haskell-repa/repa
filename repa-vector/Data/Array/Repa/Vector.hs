@@ -20,7 +20,7 @@ module Data.Array.Repa.Vector
 
         -- * Replicate
         , vreplicate
-        , vreplicateEachN
+        , vreplicateEachOfChain
 
         -- * Mapping
         , Map(..)
@@ -49,20 +49,41 @@ import Data.Vector.Unboxed                      (Unbox)
 
 
 -- Computation ----------------------------------------------------------------
--- | Parallel computation of array elements,
+-- | Computation of array elements,
 --   using a computation method appropriate to the vector representation.
+--
+--   TODO: make the parallel verison actually run in parallel.
 class Compute r a where
- vcomputeUnboxedP  :: (Unbox a, Monad m) => Vector r a -> m (Vector U a)
+ -- | Sequential computation.
+ vcomputeUnboxedS :: Unbox a => Vector r a -> Vector U a
 
+ -- | Parallel computation in some state-like monad. Use ST or IO.
+ vcomputeUnboxedP :: (Unbox a, Monad m) => Vector r a -> m (Vector U a)
+ 
+
+-- Delayed
 instance Compute D a where
+ vcomputeUnboxedS arr
+  = R.computeUnboxedS arr
+
  vcomputeUnboxedP arr
   = R.computeUnboxedP arr
 
+
+-- Chained
 instance Compute N a where
+ vcomputeUnboxedS (AChained sh dchain _) 
+  = AUnboxed sh $ C.unchainUnboxedD dchain
+
  vcomputeUnboxedP (AChained sh dchain _) 
   = R.now (AUnboxed sh $ C.unchainUnboxedD dchain)
 
+
+-- Streamed
 instance Compute S a where
+ vcomputeUnboxedS (AStream  sh dstream _)
+  = AUnboxed sh $ S.unstreamUnboxedD dstream
+
  vcomputeUnboxedP (AStream  sh dstream _)
   = R.now (AUnboxed sh $ S.unstreamUnboxedD dstream)
 
@@ -82,7 +103,7 @@ vreplicate len x
 --     = [10,10,20,20,20,20,20,30,30,30]
 --   @
 --
-vreplicateEachN :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
-vreplicateEachN distro (AChained _ dchain _)
+vreplicateEachOfChain :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
+vreplicateEachOfChain distro (AChained _ dchain _)
         = vcacheChain (C.replicateEachD distro dchain) 
 

@@ -6,6 +6,7 @@ import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Stream.Pack      as S
+import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
 
 
@@ -17,6 +18,15 @@ import qualified Data.Vector.Unboxed    as U
 --
 class Pack r a where
  vpack :: Vector r (Bool, a) -> Vector S a
+
+-- Unboxed
+instance U.Unbox a => Pack U a where
+ vpack v = vpack (vstream v)
+
+
+-- Delayed
+instance U.Unbox a => Pack D a where
+ vpack v = vpack (vstream v)
 
 
 -- Chained
