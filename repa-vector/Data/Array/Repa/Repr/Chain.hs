@@ -4,7 +4,8 @@ module Data.Array.Repa.Repr.Chain
         , Array (..)
         , Distro(..)
         , vchain
-        , vcacheN)
+        , vchainWith
+        , vcacheChain)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa                  as R
@@ -16,27 +17,18 @@ import GHC.Exts
 -- | A delayed array defined by chain fragments.
 --
 --      A chain is like a stream, except that we know how many elements will
---      be produced on each node before evaluating it. This information is 
+--      be produced by each thread before evaluating it. This information is 
 --      collected into a `Distro`.
 --
---      The fact that we must know the distribution of the result ahead of time, 
---      means that chains do not support filtering operations. However, when 
---      evaluated in parallel we can write the computed elements directly to
---      the target buffer, without needing a copying join to collect the results
---      from each node.
+--      Because we must know the distribution ahead of time, chains do not
+--      support filtering operations. However, when evaluated in parallel
+--      we can write the computed elements directly to the target buffer,
+--      without needing a copying join to collect the results from each thread.
 --
 data N
 
 
 -- | Chained arrays.
----
---   This contains a lazy cache of the unchained elements, which would be
---   produced if we were to evaluate the whole chain with unchain{P,S}.
---
---   Random access indexing operations can use this to force evaluation 
---   of the chain at this particular point, and re-computing chain prefixes
---   for every element accessed.
---
 instance Source N e where
  data Array N sh e
         =  forall r
@@ -64,22 +56,39 @@ instance Source N e where
 
 
 -- | Convert an arbitrary vector to a chain.
-vchain :: Source r a => Distro -> Vector r a -> Vector N a
-vchain distro vec
+--
+--   The vector is divided evenly among the threads of the global Repa gang.
+vchain :: Source r a => Vector r a -> Vector N a
+vchain vec = vchainWith (balanced (vlength vec)) vec
+{-# INLINE [1] vchain #-}
+
+
+-- | Convert an arbitrary vector to a stream, using a custom `Distro`.
+--
+--   The `C.Distro` length must match the vector length, else undefined.
+vchainWith :: Source r a => C.Distro -> Vector r a -> Vector N a
+vchainWith distro vec
  = AChained (Z :. len) (C.chainD distro get) vec
  where  len     = I# (distroLength distro)
         get ix  = R.unsafeLinearIndex vec (I# ix)
         {-# INLINE get #-}
-{-# INLINE [1] vchain #-}
+{-# INLINE [1] vchainWith #-}
 
 
--- | Build a vector from a `DistChain`.
+-- | Build a chained vector from an underlying `DistChain`.
 --
---   The `Vector` contains a suspended cache of evaluated elements, 
---   which we will use for random-access indexing.
+--   The result `Vector` contains a suspended cache of evaluated elements, 
+--   which can be used for random-access indexing.
 --
-vcacheN :: U.Unbox e => DistChain e -> Vector N e
-vcacheN dchain
+--   The first time the vector is indexed into, the whole lot is evaluated,
+--   and the cache is reused for subsequent indexing operations.
+--
+--   Using vector-specific functions like `vmap` and `vindexed` does not 
+--   force evaluation of the cache, as these consume the vector linearly
+--   instead of in a random-access manner.
+--
+vcacheChain :: U.Unbox e => DistChain e -> Vector N e
+vcacheChain dchain
  = let  len     = I# (distroLength (distChainDistro dchain))
    in   AChained       (Z :. len) dchain 
          $ fromUnboxed (Z :. len) 

@@ -27,5 +27,5 @@ instance U.Unbox a => Pack N a where
 -- Streamed
 instance U.Unbox a => Pack S a where
  vpack (AStream _ dstream _)
-        = vcacheS (S.packD dstream)
+        = vcacheStream (S.packD dstream)
 

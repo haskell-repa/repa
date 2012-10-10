@@ -1,6 +1,7 @@
 
 module Data.Array.Repa.Distro
         ( Distro (..)
+        , balanced
         , fragStart
         , fragLength)
 where
@@ -10,7 +11,7 @@ import GHC.Exts
 --   across the gang.
 --
 --   We have separate 'distroFragLength' and 'distroFragStart' functions
---   for performance reasons, but they must give coherent results, else badness.
+--   for performance reasons, but they must give coherent results, else undefined.
 --
 data Distro
         = Distro
@@ -25,6 +26,20 @@ data Distro
 
           -- | Get where a fragment starts in the result.
         , distroFragStart       :: Int# -> Int# }
+
+
+-- | Create a balanced `Distro`.
+balanced 
+        :: Int#         -- ^ Total length of result.
+        -> Int#         -- ^ Number of fragments.
+        -> Distro
+
+balanced len frags
+        = Distro
+        { distroLength          = len
+        , distroFrags           = frags
+        , distroFragLength      = fragLength len frags
+        , distroFragStart       = fragStart  len frags }
 
 
 -- | Given the length of a vector, 

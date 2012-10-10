@@ -1,10 +1,13 @@
 
 module Data.Array.Repa.Vector.Base
         ( Vector
+        , balanced
         , vlength)
 where
-import Data.Array.Repa                  as R
-
+import Data.Array.Repa                          as R
+import qualified Data.Array.Repa.Eval.Gang      as G
+import qualified Data.Array.Repa.Distro         as D
+import GHC.Exts
 
 -- | Vectors are one-dimensional arrays.
 type Vector r e 
@@ -18,3 +21,10 @@ vlength !v
         Z :. len        -> len
 {-# INLINE [4] vlength #-}
 
+
+-- | Construct a balanced `Distro` for a vector of this length,
+--   dividing it evenly among the threads of the global Repa gang.
+balanced :: Int -> D.Distro
+balanced (I# len)
+ = let  !(I# frags)     = G.gangSize G.theGang
+   in   D.balanced len frags

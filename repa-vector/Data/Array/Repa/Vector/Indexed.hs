@@ -40,6 +40,6 @@ instance Indexed D a where
 instance U.Unbox a => Indexed N a where
  type IndexedR N = N
  vindexed (AChained _ dchain _)
-        = vcacheN (C.indexedD dchain)
+        = vcacheChain (C.indexedD dchain)
 
 

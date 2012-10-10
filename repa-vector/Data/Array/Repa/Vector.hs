@@ -7,7 +7,9 @@ module Data.Array.Repa.Vector
         -- * Conversions
         , Distro(..)
         , vchain
+        , vchainWith
         , vstream
+        , vstreamWith
         , vstreamOfChain
 
         -- * Projections
@@ -36,9 +38,9 @@ import Data.Array.Repa.Vector.Indexed
 import Data.Array.Repa.Vector.Pack
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Repr.Stream
-import qualified Data.Array.Repa.Chain  as C
-import Data.Array.Repa                  as R
-import Data.Vector.Unboxed              (Unbox)
+import Data.Array.Repa                          as R
+import qualified Data.Array.Repa.Chain          as C
+import Data.Vector.Unboxed                      (Unbox)
 
 
 -- Replicate ------------------------------------------------------------------
@@ -58,5 +60,5 @@ vreplicate len x
 --
 vreplicateEachN :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
 vreplicateEachN distro (AChained _ dchain _)
-        = vcacheN (C.replicateEachD distro dchain) 
+        = vcacheChain (C.replicateEachD distro dchain) 
 

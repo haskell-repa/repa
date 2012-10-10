@@ -43,9 +43,8 @@ instance U.Unbox a
 instance U.Unbox a => Zip U N a b where
  type ZipR U N          = N
  vzip !arr1 !arr2@(AChained _ dchain _)
-        = vzip (vchain (distChainDistro dchain) arr1) arr2
+        = vzip (vchainWith (distChainDistro dchain) arr1) arr2
  {-# INLINE [1] vzip #-}
-
 
 
 -- Delayed/Unboxed --------------------
@@ -69,14 +68,14 @@ instance Zip D D a b where
 instance Zip D N a b where
  type ZipR D N  = N
  vzip !arr1 !arr2@(AChained _ dchain _)
-        = vzip (vchain (distChainDistro dchain) arr1) arr2
+        = vzip (vchainWith (distChainDistro dchain) arr1) arr2
 
 
 -- Chained/Unboxed --------------------
 instance U.Unbox b => Zip N U a b where
  type ZipR N U          = N
  vzip !arr1@(AChained _ dchain _) !arr2       
-        = vzip arr1 (vchain (distChainDistro dchain) arr2)
+        = vzip arr1 (vchainWith (distChainDistro dchain) arr2)
  {-# INLINE [1] vzip #-}
 
 
@@ -84,7 +83,7 @@ instance U.Unbox b => Zip N U a b where
 instance U.Unbox b => Zip N D a b where
  type ZipR N D          = N
  vzip !arr1@(AChained _ dchain _) !arr2       
-        = vzip arr1 (vchain (distChainDistro dchain) arr2)
+        = vzip arr1 (vchainWith (distChainDistro dchain) arr2)
  {-# INLINE [1] vzip #-}
 
 
