@@ -36,8 +36,8 @@ instance Map D e where
 -- Chained
 instance Map N a where
  type MapR N   = N
- vmap f (AChained sh dchain arr)
-  = AChained sh (C.mapD f dchain) (R.map f arr)
+ vmap f (AChain sh dchain arr)
+  = AChain sh (C.mapD f dchain) (R.map f arr)
  {-# INLINE vmap #-}
 
 

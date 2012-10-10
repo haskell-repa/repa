@@ -84,7 +84,7 @@ vstreamWith distro vec
 --   The conversion itself is cheap, but evaluating the result will then 
 --   require a copying join to collect the results from each thread.
 vstreamOfChain :: Vector N a -> Vector S a
-vstreamOfChain (AChained sh dchain vec)
+vstreamOfChain (AChain sh dchain vec)
         = AStream sh (S.streamOfChainD dchain) vec
 {-# INLINE [1] vstreamOfChain #-}
 

@@ -36,24 +36,24 @@ instance Source N e where
  data Array N sh e
         =  forall r
         .  Source r e
-        => AChained
+        => AChain
                 sh
                 (DistChain e)
                 (Array r sh e)
                 -- A LAZY cache of the unchained elements.
 
- extent (AChained ex _ _)
+ extent (AChain ex _ _)
   = ex
  {-# INLINE extent #-}
 
  -- Use the cache when retrieving single elements in a random-access manned.
  -- The first time we index into the vector all elements will be computed,
  -- but then successive operations will use the same cache.
- linearIndex (AChained _ _ vec) ix
+ linearIndex (AChain _ _ vec) ix
   = linearIndex vec ix
  {-# INLINE linearIndex #-}
 
- deepSeqArray (AChained _ _ vec) x
+ deepSeqArray (AChain _ _ vec) x
   = vec `seq` x
  {-# INLINE deepSeqArray #-}
 
@@ -71,7 +71,7 @@ vchain vec = vchainWith (balanced (vlength vec)) vec
 --   The `C.Distro` length must match the vector length, else undefined.
 vchainWith :: Source r a => C.Distro -> Vector r a -> Vector N a
 vchainWith distro vec
- = AChained (Z :. len) (C.chainD distro get) vec
+ = AChain (Z :. len) (C.chainD distro get) vec
  where  len     = I# (distroLength distro)
         get ix  = R.unsafeLinearIndex vec (I# ix)
         {-# INLINE get #-}
@@ -93,7 +93,7 @@ vchainWith distro vec
 vcacheChain :: U.Unbox e => DistChain e -> Vector N e
 vcacheChain dchain
  = let  len     = I# (distroLength (distChainDistro dchain))
-   in   AChained       (Z :. len) dchain 
+   in   AChain         (Z :. len) dchain 
          $ fromUnboxed (Z :. len) 
          $ C.unchainUnboxedD dchain     -- TODO: use parallel evaluation
 

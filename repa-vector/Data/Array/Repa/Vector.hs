@@ -72,10 +72,10 @@ instance Compute D a where
 
 -- Chained
 instance Compute N a where
- vcomputeUnboxedS (AChained sh dchain _) 
+ vcomputeUnboxedS (AChain sh dchain _) 
   = AUnboxed sh $ C.unchainUnboxedD dchain
 
- vcomputeUnboxedP (AChained sh dchain _) 
+ vcomputeUnboxedP (AChain sh dchain _) 
   = R.now (AUnboxed sh $ C.unchainUnboxedD dchain)
 
 
@@ -104,6 +104,6 @@ vreplicate len x
 --   @
 --
 vreplicateEachOfChain :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
-vreplicateEachOfChain distro (AChained _ dchain _)
+vreplicateEachOfChain distro (AChain _ dchain _)
         = vcacheChain (C.replicateEachD distro dchain) 
 

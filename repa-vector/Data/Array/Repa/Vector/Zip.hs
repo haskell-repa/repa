@@ -42,7 +42,7 @@ instance U.Unbox a
 -- Unboxed/Chained
 instance U.Unbox a => Zip U N a b where
  type ZipR U N          = N
- vzip !arr1 !arr2@(AChained _ dchain _)
+ vzip !arr1 !arr2@(AChain _ dchain _)
         = vzip (vchainWith (distChainDistro dchain) arr1) arr2
  {-# INLINE [1] vzip #-}
 
@@ -67,14 +67,14 @@ instance Zip D D a b where
 -- Delayed/Chained
 instance Zip D N a b where
  type ZipR D N  = N
- vzip !arr1 !arr2@(AChained _ dchain _)
+ vzip !arr1 !arr2@(AChain _ dchain _)
         = vzip (vchainWith (distChainDistro dchain) arr1) arr2
 
 
 -- Chained/Unboxed --------------------
 instance U.Unbox b => Zip N U a b where
  type ZipR N U          = N
- vzip !arr1@(AChained _ dchain _) !arr2       
+ vzip !arr1@(AChain _ dchain _) !arr2       
         = vzip arr1 (vchainWith (distChainDistro dchain) arr2)
  {-# INLINE [1] vzip #-}
 
@@ -82,7 +82,7 @@ instance U.Unbox b => Zip N U a b where
 -- Chained/Delayed
 instance U.Unbox b => Zip N D a b where
  type ZipR N D          = N
- vzip !arr1@(AChained _ dchain _) !arr2       
+ vzip !arr1@(AChain _ dchain _) !arr2       
         = vzip arr1 (vchainWith (distChainDistro dchain) arr2)
  {-# INLINE [1] vzip #-}
 
@@ -90,7 +90,7 @@ instance U.Unbox b => Zip N D a b where
 -- Chained/Chained
 instance Zip N N a b where
  type ZipR N N          = N
- vzip !(AChained sh1 dchain1 vec1)
-      !(AChained _   dchain2 vec2)
-  =     AChained sh1 (C.zipWithD (,) dchain1 dchain2) (R.zipWith (,) vec1 vec2)
+ vzip !(AChain sh1 dchain1 vec1)
+      !(AChain _   dchain2 vec2)
+  =     AChain sh1 (C.zipWithD (,) dchain1 dchain2) (R.zipWith (,) vec1 vec2)
 
