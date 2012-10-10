@@ -11,7 +11,7 @@ import GHC.Exts
 --   across the gang.
 --
 --   We have separate 'distroFragLength' and 'distroFragStart' functions
---   for performance reasons, but they must give coherent results, else undefined.
+--   for performance reasons, and they must give coherent results, else undefined.
 --
 data Distro
         = Distro

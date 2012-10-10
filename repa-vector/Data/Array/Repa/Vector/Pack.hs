@@ -13,7 +13,7 @@ import qualified Data.Vector.Unboxed    as U
 --   return just the values that had their corresponding flags set to `True`.
 --
 --   `vpack` must return a stream because we don't know how many elements
---   will be produced on each node.
+--   will be produced by each thread.
 --
 class Pack r a where
  vpack :: Vector r (Bool, a) -> Vector S a

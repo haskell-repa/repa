@@ -14,16 +14,19 @@ import qualified Data.Array.Repa.Chain  as C
 import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
--- | A delayed array defined by chain fragments.
+-- | A delayed array defined by a distributed chain.
 --
 --      A chain is like a stream, except that we know how many elements will
---      be produced by each thread before evaluating it. This information is 
+--      be produced by each thread before evaluating them. This information is 
 --      collected into a `Distro`.
 --
---      Because we must know the distribution ahead of time, chains do not
---      support filtering operations. However, when evaluated in parallel
---      we can write the computed elements directly to the target buffer,
---      without needing a copying join to collect the results from each thread.
+--      Because we know the distribution ahead of time, when we compute the 
+--      vector we can write the result elements directly into the target
+--      buffer without requiring a copying join.
+--
+--      The tradeoff is that chains do not support filtering operations, 
+--      because we won't know how many elements will be produced by each 
+--      thread before computing them.
 --
 data N
 

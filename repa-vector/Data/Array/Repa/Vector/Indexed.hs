@@ -11,7 +11,7 @@ import qualified Data.Vector.Unboxed    as U
 -- | Tag each element of a vector with its index in that vector.
 --
 --   `vindexed` doesn't have a stream-consuming version because we won't 
---    know how many elements will be produced on each node.
+--    know how many elements will be produced by each thread.
 --
 -- @
 -- vindexed [42,93,13] 

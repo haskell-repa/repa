@@ -17,6 +17,10 @@ import GHC.Exts
 
 
 -- | A delayed array defined by a distributed stream.
+--
+--   Each thread of the gang has its own local stream fragment.
+--   Computing the vector evaluates all stream fragments in parallel, 
+--   then the results from each thread are combined with a copying join.
 data S
 
 
