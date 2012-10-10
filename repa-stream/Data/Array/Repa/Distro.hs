@@ -47,6 +47,8 @@ fragStart len frags i
 
   in    getStart i
 {-# NOINLINE fragStart #-}
+--  NOINLINE because it's only called when distributing work, 
+--  not in inner loops, and we want to keep the code size down.
 
 
 -- | Get the length of a vector,
@@ -62,4 +64,5 @@ fragLength len frags i
         =  fragStart len frags (i +# 1#)
         -# fragStart len frags i
 {-# NOINLINE fragLength #-}
-
+--  NOINLINE because it's only called when distributing work, 
+--  not in inner loops, and we want to keep the code size down.
