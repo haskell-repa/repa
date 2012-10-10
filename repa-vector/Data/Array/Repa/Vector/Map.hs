@@ -3,8 +3,10 @@ module Data.Array.Repa.Vector.Map
         (Map (..))
 where
 import Data.Array.Repa.Repr.Chain
+import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Chain.Map        as C
+import Data.Array.Repa.Stream.Map       as S
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
 
@@ -34,8 +36,14 @@ instance Map D e where
 -- Chained
 instance Map N a where
  type MapR N   = N
-
  vmap f (AChained sh dchain arr)
   = AChained sh (C.mapD f dchain) (R.map f arr)
  {-# INLINE vmap #-}
 
+
+-- Streamed
+instance Map S a where
+ type MapR S    = S
+ vmap f (AStream sh dchain arr)
+  = AStream sh (S.mapD f dchain) (R.map f arr)
+ {-# INLINE vmap #-}

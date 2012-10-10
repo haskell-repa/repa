@@ -20,6 +20,9 @@ module Data.Array.Repa.Stream
         , streamOfChain
         , streamOfChainD
 
+        -- * Maps
+        , map,          mapD
+
         -- * Packing
         , pack,         packD
 
@@ -29,12 +32,15 @@ module Data.Array.Repa.Stream
 where
 import Data.Array.Repa.Stream.Base
 import Data.Array.Repa.Stream.Eval
+import Data.Array.Repa.Stream.Map
 import Data.Array.Repa.Stream.Pack
 import Data.Array.Repa.Distro
 import Control.Monad.ST
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
+import Prelude                                  hiding (map)
+import qualified Prelude                        as P
 
 
 -- | Convert an unboxed vector to a stream.
@@ -92,7 +98,7 @@ unstreamUnboxed_max lenMax s
 unstreamUnboxedD :: U.Unbox a => DistStream a -> U.Vector a
 unstreamUnboxedD (DistStream _ frags frag)
  = let  chunk i = unstreamUnboxed (frag i)
-        chunks  = map (\(I# i) -> chunk i) [0.. (I# (frags -# 1#))]
+        chunks  = P.map (\(I# i) -> chunk i) [0.. (I# (frags -# 1#))]
    in   U.concat chunks
 {-# INLINE [1] unstreamUnboxedD #-}
 
