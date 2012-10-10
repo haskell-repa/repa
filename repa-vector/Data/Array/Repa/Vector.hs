@@ -48,9 +48,8 @@ vreplicate len x
         = R.fromFunction (Z :. len) $ const x
 
 
--- | Given the distribution of the result, 
---   and a vector of pairs containing a count and an element,
---   replicate each element the number of times given by the count.
+-- | Special case version of `vreplicateEach` where the distribution of the
+--   result vector is known ahead of time.
 --
 --   @
 --   replicateEach 10 [(2,10), (5,20), (3,30)]

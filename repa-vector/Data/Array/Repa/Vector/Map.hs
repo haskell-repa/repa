@@ -9,7 +9,7 @@ import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
 
 
--- | Vector map perserves the representation of the source vector.
+-- | Vector map perserves the representation of delayed source vectors.
 class Map r a where
  type MapR r
  vmap :: (a -> b) -> Vector r a -> Vector (MapR r) b

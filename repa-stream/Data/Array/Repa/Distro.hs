@@ -1,6 +1,8 @@
 
 module Data.Array.Repa.Distro
-        (Distro (..))
+        ( Distro (..)
+        , fragStart
+        , fragLength)
 where
 import GHC.Exts
  
@@ -23,4 +25,41 @@ data Distro
 
           -- | Get where a fragment starts in the result.
         , distroFragStart       :: Int# -> Int# }
+
+
+-- | Given the length of a vector, 
+--   get the starting point for one fragment,
+--   dividing it evenly between the threads.
+fragStart
+        :: Int#         -- ^ Total length of result.
+        -> Int#         -- ^ Number of fragments.
+        -> Int#         -- ^ Fragment (thread) number
+        -> Int#         -- ^ Starting point of this fragment.
+
+fragStart len frags i
+ = let  fragLen         = len `quotInt#` frags
+        fragLeftover    = len `remInt#`  frags
+
+        getStart i'
+         | i' <# fragLeftover   = i' *# (fragLen +# 1#)
+         | otherwise            = i' *# fragLen  +# fragLeftover
+        {-# NOINLINE getStart #-}
+
+  in    getStart i
+{-# NOINLINE fragStart #-}
+
+
+-- | Get the length of a vector,
+--   get the starting point for one fragment,
+--   dividing it evenly between the threads.
+fragLength 
+        :: Int#         -- ^ Total length of result.
+        -> Int#         -- ^ Number of fragments.
+        -> Int#         -- ^ Fragment (thread) number.
+        -> Int#         -- ^ Length of this fragment.
+
+fragLength len frags i
+        =  fragStart len frags (i +# 1#)
+        -# fragStart len frags i
+{-# NOINLINE fragLength #-}
 
