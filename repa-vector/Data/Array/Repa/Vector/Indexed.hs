@@ -8,12 +8,16 @@ import Data.Array.Repa.Chain.Indexed    as C
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
 
--- | Tag each element of an vector with its index in that vector.
+-- | Tag each element of a vector with its index in that vector.
+--
+--   `vindexed` doesn't have a stream-consuming version because we won't 
+--    know how many elements will be produced on each node.
 --
 -- @
--- indexed [42,93,13]
+-- vindexed [42,93,13] 
 --  = [(0,42), (1,93), (2,13)]
 -- @
+--
 class Indexed r a where
  type IndexedR r
  vindexed :: Vector r a -> Vector (IndexedR r) (Int, a)

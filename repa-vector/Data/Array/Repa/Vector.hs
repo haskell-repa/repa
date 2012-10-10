@@ -5,9 +5,10 @@ module Data.Array.Repa.Vector
         , S
 
         -- * Conversions
-        , Distro        (..)
+        , Distro(..)
         , vchain
         , vstream
+        , vstreamOfChain
 
         -- * Projections
         , vlength
@@ -17,25 +18,25 @@ module Data.Array.Repa.Vector
         , vreplicateEachN
 
         -- * Mapping
-        , Map           (..)
+        , Map(..)
 
         -- * Zipping
-        , Zip           (..)
+        , Zip(..)
 
         -- * Indexed
         , Indexed(..)
 
         -- * Pack
-        , packS)
+        , Pack(..))
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Map
 import Data.Array.Repa.Vector.Zip
 import Data.Array.Repa.Vector.Indexed
+import Data.Array.Repa.Vector.Pack
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Repr.Stream
 import qualified Data.Array.Repa.Chain  as C
-import qualified Data.Array.Repa.Stream as S
 import Data.Array.Repa                  as R
 import Data.Vector.Unboxed              (Unbox)
 
@@ -59,12 +60,4 @@ vreplicate len x
 vreplicateEachN :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
 vreplicateEachN distro (AChained _ dchain _)
         = vcacheN (C.replicateEachD distro dchain) 
-
-
--- Pack -----------------------------------------------------------------------
--- | Given a vector of flags and values,
---   return just the values that had their corresponding flags set to `True`.
-packS     :: Unbox a => Vector S (Bool, a) -> Vector S a
-packS (AStream _ dstream _)
-        = vcacheS (S.packD dstream)
 

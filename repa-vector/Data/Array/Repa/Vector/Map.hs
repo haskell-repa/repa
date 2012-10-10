@@ -9,11 +9,10 @@ import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
 
 
+-- | Vector map perserves the representation of the source vector.
 class Map r a where
  type MapR r
- -- | Vector map that uses the least general representation for the result.
  vmap :: (a -> b) -> Vector r a -> Vector (MapR r) b
-
 
 -- Unboxed
 instance U.Unbox e => Map U e where

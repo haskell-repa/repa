@@ -3,11 +3,13 @@ module Data.Array.Repa.Repr.Stream
         , Array (..)
         , Distro(..)
         , vstream
+        , vstreamOfChain
         , vcacheS)
 where
+import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa                  as R
-import Data.Array.Repa.Stream           (Distro(..), DistStream(..))
+import Data.Array.Repa.Stream           (DistStream(..))
 import qualified Data.Array.Repa.Stream as S
 import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
@@ -60,6 +62,12 @@ vstream distro vec
         get ix  = R.unsafeLinearIndex vec (I# ix)
         {-# INLINE get #-}
 {-# INLINE [1] vstream #-}
+
+
+-- | Convert a chained vector to a streamed vector.
+vstreamOfChain :: Vector N a -> Vector S a
+vstreamOfChain (AChained sh dchain vec)
+        = AStream sh (S.streamOfChainD dchain) vec
 
 
 -- | Build a vector from a `DistStream`.

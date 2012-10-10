@@ -4,7 +4,6 @@ module Data.Array.Repa.Vector.Base
         , vlength)
 where
 import Data.Array.Repa                  as R
-import qualified Data.Vector.Unboxed    as U
 
 
 -- | Vectors are one-dimensional arrays.

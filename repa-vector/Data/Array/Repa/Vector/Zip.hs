@@ -11,13 +11,13 @@ import qualified Data.Vector.Unboxed    as U
 
 
 -- Zip ------------------------------------------------------------------------
+-- | Vector zip uses the least general representation for the result.
+--
+--   For example, zipping two Delayed (@D@) arrays produces a delayed array,
+--   but zipping a Delayed (@D@) and a Chained (@N@) array must produce
+--   a chained array.
 class Zip r1 r2 a b where
  type ZipR r1 r2
- -- | Vector zip that uses the least general representation for the result.
- --
- --   For example, zipping two Delayed (@D@) arrays produces a delayed array,
- --   but zipping a Delayed (@D@) and a Chained (@N@) array must produce
- --   a chained array.
  vzip   :: Vector r1 a 
         -> Vector r2 b
         -> Vector (ZipR r1 r2) (a, b)

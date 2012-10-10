@@ -10,12 +10,11 @@ module Data.Array.Repa.Stream.Base
 
           -- * Distributed Streams
         , DistStream (..)
-
-        -- * 
         , fold
         , foldM
 
         , streamD
+        , streamOfChainD
         , foldD
         , foldMD)
 where
@@ -161,7 +160,17 @@ streamD distro get
 
            in   stream' start end get
         {-# INLINE [0] frag #-}
-{-# INLINE streamD #-}
+{-# INLINE [1] streamD #-}
+
+
+-- | Convert a distributed chain to a distributed stream.
+streamOfChainD :: C.DistChain a -> DistStream a
+streamOfChainD (C.DistChain distro frag)
+ = DistStream   (Exact (distroLength distro))
+                (distroFrags distro)
+                frag'
+ where  frag' i = streamOfChain (frag i)
+{-# INLINE [1] streamOfChainD #-}
 
 
 -- | Consume a fragmented stream.

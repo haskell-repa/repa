@@ -18,6 +18,7 @@ module Data.Array.Repa.Stream
         , stream,       streamD
         , stream'
         , streamOfChain
+        , streamOfChainD
 
         -- * Packing
         , pack,         packD
