@@ -62,5 +62,6 @@ Library
         Data.Array.Repa.Vector.Operators.Indexed
         Data.Array.Repa.Vector.Operators.Pack
         Data.Array.Repa.Vector.Segd.Split
+        
 
 

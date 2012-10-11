@@ -20,7 +20,9 @@ module Data.Array.Repa.Vector
 
         -- * Replicate
         , vreplicate
-        , vreplicateEachOfChain
+        , vreplicateEach
+        , vreplicates
+        , vreplicatesSplit
 
         -- * Indexed
         , Indexed(..)
@@ -41,6 +43,7 @@ import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Vector.Operators.Indexed
 import Data.Array.Repa.Vector.Operators.Pack
+import Data.Array.Repa.Vector.Segd
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Eval                     as R
@@ -97,15 +100,15 @@ vreplicate len x
         = R.fromFunction (Z :. len) $ const x
 
 
--- | Special case version of `vreplicateEach` where the distribution of the
---   result vector is known ahead of time.
+-- | Replicate a value the given number of times.
+--   The distribution of the result must be known up-front.
 --
 --   @
 --   replicateEach 10 [(2,10), (5,20), (3,30)]
 --     = [10,10,20,20,20,20,20,30,30,30]
 --   @
 --
-vreplicateEachOfChain :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
-vreplicateEachOfChain distro (AChain _ dchain _)
+vreplicateEach :: Unbox a => Distro -> Vector N (Int, a) -> Vector N a
+vreplicateEach distro (AChain _ dchain _)
         = vcacheChain (C.replicateEachD distro dchain) 
 

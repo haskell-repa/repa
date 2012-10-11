@@ -16,6 +16,7 @@ module Data.Array.Repa.Chain
         , chain,        chainD
         , replicate,    replicateD
         , replicateEach, replicateEachD
+        , replicatesD
 
           -- * Maps and Zips
         , map,           mapD

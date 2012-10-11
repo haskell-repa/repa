@@ -8,14 +8,20 @@ module Data.Array.Repa.Vector.Segd
         , SplitSegd     (..)
         , Chunk         (..)
         , splitSegd
-        , distroOfSplitSegd)
+        , distroOfSplitSegd
+
+          -- * Segmented operations
+        , vreplicates
+        , vreplicatesSplit)
 where
+import Data.Array.Repa.Repr.Chain       
 import Data.Array.Repa.Vector.Segd.Split
-import Data.Array.Repa                  as R
-import Data.Array.Repa.Vector           as R
-import Data.Array.Repa.Eval.Gang        as R
-import qualified Data.Vector            as V
-import qualified Data.Vector.Unboxed    as U
+import Data.Array.Repa                            as R
+import Data.Array.Repa.Vector.Base                as R
+import Data.Array.Repa.Eval.Gang                  as R
+import qualified Data.Vector                      as V
+import qualified Data.Vector.Unboxed              as U
+import qualified Data.Array.Repa.Chain.Replicate  as C
 import GHC.Exts
 
 
@@ -43,6 +49,8 @@ empty   = Segd
 
 
 -- Split Segds ----------------------------------------------------------------
+-- | Split segment descriptors describe the segmentation of an array in a way
+--   that helps segmented operators distribute the work between several threads.
 data SplitSegd
         = SplitSegd
         { -- | Number of chunks this Segd is split into.
@@ -63,8 +71,7 @@ data Chunk
           -- | Number of elements in this chunk @(sum chunkLengths)@
         , chunkElems    :: Int#
 
-          -- | The index of the starting element, 
-          --   relative to the flat array.
+          -- | Id of first segment in the chunk.
         , chunkStart    :: Int#
 
           -- | Starting offset of the first segment, 
@@ -74,7 +81,7 @@ data Chunk
 
 
 -- | Split a `Segd` into chunks, 
---   assigning almost the same number of elements to each chunk.
+--   trying to assign the same number of elements to each chunk.
 splitSegd :: Segd U U -> SplitSegd 
 splitSegd segd
  = SplitSegd 
@@ -109,3 +116,58 @@ distroOfSplitSegd (SplitSegd nChunks nElems chunks)
         , distroFrags           = nChunks
         , distroFragLength      = \ix -> chunkElems (chunks V.! (I# ix))
         , distroFragStart       = \ix -> chunkStart (chunks V.! (I# ix)) }
+
+
+-- | Segmented replicate. 
+--   Each element of the vector is replicated according to the length of
+--   the segment in the segment descriptor.
+--
+--   The vector must contain as many elements as there are segments in the 
+--   descriptor, else undefined.
+--
+--@vreplicates (fromLengths [3, 1, 2]) [5, 6, 7] 
+--  = [5, 5, 5, 6, 7, 7]
+-- @
+--
+vreplicates
+        :: U.Unbox a
+        => Segd U U
+        -> Vector U a
+        -> Vector N a
+vreplicates segd vec
+        = vreplicatesSplit (splitSegd segd) vec
+{-# INLINE [1] vreplicates #-}
+
+
+-- | Segmented replicate. 
+--   Like `vreplicates` except that it takes a pre-split segment descriptor.
+vreplicatesSplit
+        :: U.Unbox a
+        => SplitSegd
+        -> Vector U a
+        -> Vector N a
+
+vreplicatesSplit segd vec
+ = vcacheChain 
+ $ C.replicatesD 
+        (distroOfSplitSegd segd)
+        getFragSegLength
+        getFragSegStart
+        getElem
+ where
+        -- Get the lengths of segments assigned in this fragment.
+        getFragSegLength frag
+         = getSegLength
+         where !lens = chunkLengths $ V.unsafeIndex (splitChunk segd) (I# frag) 
+               getSegLength seg 
+                     = let !(I# i) = R.unsafeLinearIndex lens (I# seg) 
+                       in  i
+
+        -- Get the index of the starting segment in this fragment.
+        getFragSegStart frag
+         = chunkStart (V.unsafeIndex (splitChunk segd) (I# frag))
+
+        -- Get the element to replicate for this segment.
+        getElem seg
+         = R.unsafeLinearIndex vec (I# seg)
+{-# INLINE [1] vreplicatesSplit #-}
