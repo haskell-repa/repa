@@ -71,11 +71,10 @@ instance U.Unbox a => Filter D a where
 -- Chained
 instance U.Unbox a => Filter N a where
  vfilter f vec
-  = vpack (vzip (vmap f vec) vec)
+  = vpack $ vmap (\x -> (f x, x)) vec
 
 
 -- Streamed
 instance U.Unbox a => Filter S a where
  vfilter f vec
-  = vpack (vzip (vmap f vec) vec)
-
+  = vpack $ vmap (\x -> (f x, x)) vec

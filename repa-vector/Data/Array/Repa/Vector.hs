@@ -22,14 +22,14 @@ module Data.Array.Repa.Vector
         , vreplicate
         , vreplicateEachOfChain
 
+        -- * Indexed
+        , Indexed(..)
+
         -- * Mapping
         , Map(..)
 
         -- * Zipping
         , Zip(..)
-
-        -- * Indexed
-        , Indexed(..)
 
         -- * Pack and Filter
         , Pack  (..)

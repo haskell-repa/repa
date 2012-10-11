@@ -18,10 +18,9 @@ module Data.Array.Repa.Chain
         , replicateEach, replicateEachD
 
           -- * Maps and Zips
-        , map,          mapD
-        , zipWith,      zipWithD
-        , zipWith3
-        , zipWith4
+        , map,           mapD
+        , mapIx,         mapIxD
+        , unsafeZipLock, unsafeZipLockD
 
           -- * Indexed
         , indexed,      indexedD
