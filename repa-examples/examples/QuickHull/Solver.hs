@@ -63,27 +63,36 @@ hsplit_l :: Segd U U                    -- Descriptor for points array.
          -> Vector U (Point, Point)     -- Splitting lines for each segment.
          -> IO (Vector U Point)         -- Hull points for all segments.
 
-hsplit_l upsegd points lines
- = error "hsplit_l: finish me"
+hsplit_l segd points lines
+ = do   
+        cross  <- hsplit_dot segd points lines
+
+        return $ error "hsplit_l: finish me"
 
 
 -- Take the dot product between the splitting line and each point
 -- to tell us what side of the line they are on.
 hsplit_dot
-        :: Segd                         -- Descriptor for points array.
+        :: Segd U U                     -- Descriptor for points array.
         -> Vector U Point               -- Segments of points.
         -> Vector U (Point, Point)      -- Splitting lines for each segment.
-        -> Vector U Double              -- Cross products for each point.
+        -> IO (Vector U Double)         -- Cross products for each point.
 
 hsplit_dot !segd !points !lines 
- = vcomputeUnboxedP 
- $ vzipWith
-        cross_fn1
-        points
-        (vreplicates segd lines)
+ = do   let segd_split = Segd.splitSegd segd
+
+        putStrLn $ show segd_split
+        return $ error "hsplit_dot: finish me"
+{- 
+        vcomputeUnboxedP 
+         $ vzipWith
+                cross_fn1
+                points
+                (vreplicates segd lines)
 
  where  cross_fn1 (xo, yo) ((x1, y1), (x2, y2))
          = (x1 - xo) * (y2 - yo) 
          - (y1 - yo) * (x2 - xo)
         {-# INLINE cross_fn1 #-}
+-}
 {-# NOINLINE hsplit_dot #-}
