@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Vector.Map
+module Data.Array.Repa.Vector.Operators.Map
         (Map (..))
 where
 import Data.Array.Repa.Repr.Chain

@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Vector.Indexed
+module Data.Array.Repa.Vector.Operators.Indexed
         (Indexed (..))
 where
 import Data.Array.Repa.Repr.Chain

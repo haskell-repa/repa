@@ -1,12 +1,12 @@
 
-module Data.Array.Repa.Vector.Zip
+module Data.Array.Repa.Vector.Operators.Zip
         ( Zip (..)
         , vzipWith)
 where
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Vector.Map
+import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Chain.Map        as C
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U

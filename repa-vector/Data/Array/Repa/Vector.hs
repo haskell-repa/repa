@@ -37,10 +37,10 @@ module Data.Array.Repa.Vector
         , Filter(..))
 where
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Vector.Map
-import Data.Array.Repa.Vector.Zip
-import Data.Array.Repa.Vector.Indexed
-import Data.Array.Repa.Vector.Pack
+import Data.Array.Repa.Vector.Operators.Map
+import Data.Array.Repa.Vector.Operators.Zip
+import Data.Array.Repa.Vector.Operators.Indexed
+import Data.Array.Repa.Vector.Operators.Pack
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Eval                     as R

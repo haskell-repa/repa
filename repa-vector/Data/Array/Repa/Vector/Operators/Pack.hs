@@ -1,13 +1,13 @@
 
-module Data.Array.Repa.Vector.Pack
+module Data.Array.Repa.Vector.Operators.Pack
         ( Pack   (..)
         , Filter (..))
 where
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Vector.Map
-import Data.Array.Repa.Vector.Zip
+import Data.Array.Repa.Vector.Operators.Map
+import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Stream.Pack      as S
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
