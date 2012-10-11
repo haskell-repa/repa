@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Segmented.Segd
+module Data.Array.Repa.Vector.Segd
         ( Segd (..)
         , empty)
 where

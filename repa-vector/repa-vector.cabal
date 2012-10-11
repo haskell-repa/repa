@@ -53,7 +53,7 @@ Library
         Data.Array.Repa.Repr.Chain
         Data.Array.Repa.Repr.Stream
         Data.Array.Repa.Vector
-        Data.Array.Repa.Segmented.Segd
+        Data.Array.Repa.Vector.Segd
 
   Other-modules:
         Data.Array.Repa.Vector.Base

@@ -30,6 +30,7 @@ module Data.Array.Repa.Vector
 
         -- * Zipping
         , Zip(..)
+        , vzipWith
 
         -- * Pack and Filter
         , Pack  (..)

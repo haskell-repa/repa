@@ -1,10 +1,12 @@
 
 module Data.Array.Repa.Vector.Zip
-        (Zip (..))
+        ( Zip (..)
+        , vzipWith)
 where
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Map
 import Data.Array.Repa.Chain.Map        as C
 import Data.Array.Repa                  as R
 import qualified Data.Vector.Unboxed    as U
@@ -106,4 +108,16 @@ instance Zip N D a b where
                           dchain)
                 (R.zipWith  (,) vec arr2)
  {-# INLINE [1] vzip #-}
+
+
+-- ZipWith --------------------------------------------------------------------
+-- TODO: we should probably make this primitive instead of zip.
+--       that way the type constraints will be simpler.
+-- | Combine two vectors with the given function)
+vzipWith :: ( Map (ZipR r1 r2) (a, b)
+           , Zip r1 r2 a b)
+        => (a -> b -> c) -> Vector r1 a -> Vector r2 b 
+        -> Vector (MapR (ZipR r1 r2)) c
+vzipWith f vec1 vec2
+        = vmap (uncurry f) $ vzip vec1 vec2
 
