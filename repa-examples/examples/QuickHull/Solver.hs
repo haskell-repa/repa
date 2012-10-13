@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, MagicHash #-}
 module Solver
         (quickHull)
 where
@@ -7,8 +7,9 @@ import Data.Array.Repa.Vector                   as R
 import Prelude                                  as P
 import Data.Array.Repa.Vector.Segd              (Segd(..))
 import qualified Data.Array.Repa.Vector.Segd    as Segd
+import GHC.Exts
 
-type Point      = (Int, Int)
+type Point      = (Double, Double)
 
 
 quickHull :: Vector U Point -> IO (Vector U Point)
@@ -17,16 +18,17 @@ quickHull points
         
         -- Find the points that are on the extreme left and right.
         (minx, maxx)    <- minmax points
-        putStrLn $ "min max = " P.++ show (minx, maxx)
+--        putStrLn $ "min max = " P.++ show (minx, maxx)
 
         -- Append the points together. 
         -- We'll find the hull on the top and bottom at the same time.
         !psFlat         <- R.computeUnboxedP $ R.append points points
-        putStrLn $ "psFlat  = " P.++ show psFlat
+--        putStrLn $ "psFlat  = " P.++ show psFlat
 
         let !segd       = Segd  (R.fromListUnboxed (Z :. 2) [n, n])
                                 (R.fromListUnboxed (Z :. 2) [0, n])
-                                (n + n)
+                                (case n + n of I# i -> i)
+--        putStrLn $ "segd    = " P.++ show segd
 
         -- Compute the hull for the top and bottom.
         -- The results from both sides are automatically concatenated.
@@ -65,34 +67,42 @@ hsplit_l :: Segd U U                    -- Descriptor for points array.
 
 hsplit_l segd points lines
  = do   
-        cross  <- hsplit_dot segd points lines
+        flags   <- hsplit_flags segd points lines                                        
+--        putStrLn $ "flags = " P.++ show flags
 
+        packed  <- vcomputeUnboxedP $ vpack $ vzip flags points
         return $ error "hsplit_l: finish me"
 
 
 -- Take the dot product between the splitting line and each point
 -- to tell us what side of the line they are on.
-hsplit_dot
+--
+-- TODO: try to fuse the packs and counts into this.
+--       Twin streams? Can we produce the packed points and new segment lengths
+--       during the same computation?
+--
+--      unstreamTwin :: Stream (a, Maybe b) -> (Vector a, Vector b)
+-- 
+--      unstreamFold :: (a -> a -> a) -> a -> Stream a -> (Vector a, a)
+-- 
+hsplit_flags
         :: Segd U U                     -- Descriptor for points array.
         -> Vector U Point               -- Segments of points.
         -> Vector U (Point, Point)      -- Splitting lines for each segment.
-        -> IO (Vector U Double)         -- Cross products for each point.
+        -> IO (Vector U Bool)           -- Flags for each value.
 
-hsplit_dot !segd !points !lines 
- = do   let segd_split = Segd.splitSegd segd
-
-        putStrLn $ show segd_split
-        return $ error "hsplit_dot: finish me"
-{- 
-        vcomputeUnboxedP 
-         $ vzipWith
-                cross_fn1
+-- BROKEN: the cross results are wrong with +RTS -N2
+hsplit_flags !segd !points !lines 
+        = vcomputeUnboxedP
+        $ vmap (> 0)
+        $ vzipWith
+                cross_fn
                 points
                 (vreplicates segd lines)
 
- where  cross_fn1 (xo, yo) ((x1, y1), (x2, y2))
+ where  cross_fn (xo, yo) ((x1, y1), (x2, y2))
          = (x1 - xo) * (y2 - yo) 
          - (y1 - yo) * (x2 - xo)
-        {-# INLINE cross_fn1 #-}
--}
-{-# NOINLINE hsplit_dot #-}
+        {-# INLINE cross_fn #-}
+
+{-# NOINLINE hsplit_flags #-}

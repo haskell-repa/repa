@@ -1,4 +1,4 @@
-
+{-# LANGUAGE UndecidableInstances #-}
 module Data.Array.Repa.Vector.Segd
         ( -- * Segment Descriptors
           Segd          (..)
@@ -36,6 +36,9 @@ data Segd r1 r2
 
           -- | Number of elements in the flat array.
         , elements      :: Int# }
+
+deriving instance (Show (Vector r1 Int), Show (Vector r2 Int))
+       => Show (Segd r1 r2)
 
 
 -- Constructors ---------------------------------------------------------------
@@ -125,8 +128,9 @@ distroOfSplitSegd (SplitSegd nChunks nElems chunks)
 --   The vector must contain as many elements as there are segments in the 
 --   descriptor, else undefined.
 --
---@vreplicates (fromLengths [3, 1, 2]) [5, 6, 7] 
---  = [5, 5, 5, 6, 7, 7]
+-- @
+--  vreplicates (fromLengths [3, 1, 2]) [5, 6, 7] 
+--   = [5, 5, 5, 6, 7, 7]
 -- @
 --
 vreplicates
