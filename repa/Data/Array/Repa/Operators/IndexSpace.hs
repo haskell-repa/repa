@@ -93,7 +93,6 @@ extract start sz arr
 
 
 -- | Backwards permutation of an array's elements.
---	The result array has the same extent as the original.
 backpermute, unsafeBackpermute
 	:: forall r sh1 sh2 e
         .  ( Shape sh1, Shape sh2
