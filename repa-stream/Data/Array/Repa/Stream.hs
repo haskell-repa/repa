@@ -90,7 +90,7 @@ unstreamUnboxed_max lenMax s
 
         len     <- evalM write s
         vec     <- U.unsafeFreeze mvec
-        return  $ U.slice len (I# lenMax) vec
+        return  $ U.slice 0 len vec
 {-# INLINE unstreamUnboxed_max #-}
 
 
