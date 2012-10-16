@@ -15,6 +15,10 @@ module Data.Array.Repa.Vector
         -- * Computation
         , Compute(..)
 
+        -- * Conversion
+        , vfromListUnboxed
+        , vtoList
+
         -- * Projections
         , vlength
 
@@ -91,6 +95,16 @@ instance Compute S a where
 
  vcomputeUnboxedP (AStream  sh dstream _)
   = R.now (AUnboxed sh $ S.unstreamUnboxedD dstream)
+
+
+-- Conversion -----------------------------------------------------------------
+-- | Convert a list to an unboxed vector.
+vfromListUnboxed :: Unbox a => [a] -> Vector U a
+vfromListUnboxed xs = fromListUnboxed (Z :. length xs) xs
+
+-- | Convert a vector to a list.
+vtoList :: Source r a => Vector r a -> [a]
+vtoList vec = toList vec
 
 
 -- Replicate ------------------------------------------------------------------
