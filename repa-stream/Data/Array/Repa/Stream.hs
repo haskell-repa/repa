@@ -10,6 +10,7 @@ module Data.Array.Repa.Stream
           -- * Reduction
         , fold,         foldD
         , foldM,        foldMD
+        , foldSegs
 
           -- * Evaluation
         , evalM,        evalMD
@@ -34,6 +35,7 @@ import Data.Array.Repa.Stream.Base
 import Data.Array.Repa.Stream.Eval
 import Data.Array.Repa.Stream.Map
 import Data.Array.Repa.Stream.Pack
+import Data.Array.Repa.Stream.Fold
 import Data.Array.Repa.Distro
 import Control.Monad.ST
 import GHC.Exts
