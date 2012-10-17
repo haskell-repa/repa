@@ -18,17 +18,17 @@ quickHull points
         
         -- Find the points that are on the extreme left and right.
         (minx, maxx)    <- minmax points
---        putStrLn $ "min max = " P.++ show (minx, maxx)
+        putStrLn $ "min max = " P.++ show (minx, maxx)
 
         -- Append the points together. 
         -- We'll find the hull on the top and bottom at the same time.
         !psFlat         <- R.computeUnboxedP $ R.append points points
---        putStrLn $ "psFlat  = " P.++ show psFlat
+        putStrLn $ "psFlat  = " P.++ show psFlat
 
         let !segd       = Segd  (R.fromListUnboxed (Z :. 2) [n, n])
                                 (R.fromListUnboxed (Z :. 2) [0, n])
                                 (case n + n of I# i -> i)
---        putStrLn $ "segd    = " P.++ show segd
+        putStrLn $ "segd    = " P.++ show segd
 
         -- Compute the hull for the top and bottom.
         -- The results from both sides are automatically concatenated.
@@ -68,9 +68,13 @@ hsplit_l :: Segd U U                    -- Descriptor for points array.
 hsplit_l segd points lines
  = do   
         flags   <- hsplit_flags segd points lines                                        
---        putStrLn $ "flags = " P.++ show flags
+        putStrLn $ "flags =  " P.++ show flags
 
         packed  <- vcomputeUnboxedP $ vpack $ vzip flags points
+        putStrLn $ "packed = " P.++ show packed
+
+        -- TODO: need count_s to work out how many elements went into each segment.
+
         return $ error "hsplit_l: finish me"
 
 
