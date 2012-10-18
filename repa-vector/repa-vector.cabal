@@ -57,6 +57,7 @@ Library
 
   Other-modules:
         Data.Array.Repa.Vector.Base
+        Data.Array.Repa.Vector.Operators.Fold
         Data.Array.Repa.Vector.Operators.Map
         Data.Array.Repa.Vector.Operators.Zip
         Data.Array.Repa.Vector.Operators.Indexed

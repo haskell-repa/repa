@@ -31,6 +31,9 @@ module Data.Array.Repa.Vector
         -- * Indexed
         , Indexed(..)
 
+		-- * Folding
+		, fold_s
+
         -- * Mapping
         , Map(..)
 
@@ -43,6 +46,7 @@ module Data.Array.Repa.Vector
         , Filter(..))
 where
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Vector.Operators.Indexed
