@@ -14,13 +14,10 @@ import GHC.Exts
 smvm :: Segd U U -> Vector U (Int,Double)
 	 -> Vector U Double
 	 -> IO (Vector U Double)
-smvm segd matrix vector
+smvm !segd !matrix !vector
  = do   let (!ixs,!vals)    = R.unzip matrix
-        smvm_2 segd ixs vals vector
+        let  !vixs         = vmap (\i -> R.unsafeIndex vector (R.Z R.:. i)) ixs
+        let  !vals'        = vzipWith (*) vals vixs
+        let  !res          = R.fold_s (+) 0 segd vals'
+        return res
 
-{-# NOINLINE smvm_2 #-}
-smvm_2 segd ixs vals vector
- = let  vixs    = vmap (\i -> R.unsafeIndex vector (R.Z R.:. i)) ixs
-        vals'   = vzipWith (*) vals vixs
-        res     = R.fold_s (+) 0 segd vals'
-   in   return res

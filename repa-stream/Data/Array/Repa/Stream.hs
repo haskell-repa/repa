@@ -69,6 +69,7 @@ unstreamUnboxed s@(Stream size _ _)
         Exact len       -> unstreamUnboxed_exact len    s
         Max   lenMax    -> unstreamUnboxed_max   lenMax s
         Unknown         -> error "unstreamUnboxed: unknown streams not finished"
+{-# INLINE unstreamUnboxed #-}
 
 unstreamUnboxed_exact len s
  = runST
