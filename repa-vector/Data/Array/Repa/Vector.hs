@@ -31,8 +31,10 @@ module Data.Array.Repa.Vector
         -- * Indexed
         , Indexed(..)
 
-		-- * Folding
-		, fold_s
+        -- * Folding
+	, fold_s
+        , sum_s
+        , count_s
 
         -- * Mapping
         , Map(..)
@@ -46,11 +48,11 @@ module Data.Array.Repa.Vector
         , Filter(..))
 where
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Vector.Operators.Indexed
 import Data.Array.Repa.Vector.Operators.Pack
+import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Segd
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain

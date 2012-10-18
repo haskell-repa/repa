@@ -8,6 +8,7 @@ import Prelude                                  as P
 import Data.Array.Repa.Vector.Segd              (Segd(..))
 import qualified Data.Array.Repa.Vector.Segd    as Segd
 import GHC.Exts
+import qualified Data.Vector.Unboxed            as U
 
 type Point      = (Double, Double)
 
@@ -18,17 +19,18 @@ quickHull points
         
         -- Find the points that are on the extreme left and right.
         (minx, maxx)    <- minmax points
-        putStrLn $ "min max = " P.++ show (minx, maxx)
+        putStrLn $ "min max       = " P.++ show (minx, maxx)
 
         -- Append the points together. 
         -- We'll find the hull on the top and bottom at the same time.
+        --  TODO: shouldn't need to do this, just split the points.
         !psFlat         <- R.computeUnboxedP $ R.append points points
-        putStrLn $ "psFlat  = " P.++ show psFlat
+        putStrLn $ "psFlat        = " P.++ show psFlat
 
         let !segd       = Segd  (R.fromListUnboxed (Z :. 2) [n, n])
                                 (R.fromListUnboxed (Z :. 2) [0, n])
                                 (case n + n of I# i -> i)
-        putStrLn $ "segd    = " P.++ show segd
+        putStrLn $ "segd          = " P.++ show segd
 
         -- Compute the hull for the top and bottom.
         -- The results from both sides are automatically concatenated.
@@ -60,20 +62,94 @@ minmax vec
 {-# NOINLINE minmax #-}
 
 
+-- Segmented selection.
+select_s :: U.Unbox a
+         => (a -> a -> Bool)
+         -> a
+         -> Segd U U
+         -> Vector U a
+         -> Vector U a
+
+select_s choose z segd vec
+ = fold_s f z segd vec
+ where  f x1 x2
+         = if choose x1 x2 then x2 else x1
+
+-- flatten2 
+-- TODO: Implement these as a family of chain operations.
+-- flatten2 :: Vector U (a, a) -> Vector D a
+
+-- flatten2 vec
+--  = vmap get $ vindexed vec
+--  where  get (ix, (a, b))
+--                 = V.map 
+
+
+-- | TODO: When doing this packing etc, should pack point indices
+--         instead of packing the physical points.
+--
 hsplit_l :: Segd U U                    -- Descriptor for points array.
          -> Vector U Point              -- Segments of points.
          -> Vector U (Point, Point)     -- Splitting lines for each segment.
          -> IO (Vector U Point)         -- Hull points for all segments.
 
 hsplit_l segd points lines
- = do   
-        flags   <- hsplit_flags segd points lines                                        
-        putStrLn $ "flags =  " P.++ show flags
+ = do   putStr  $ unlines
+                [ "--- hsplit_l segd points lines --------------------------"
+                , "    segd          = " P.++ show segd
+                , "    points        = " P.++ show points
+                , "    lines         = " P.++ show lines 
+                , "" ]
 
-        packed  <- vcomputeUnboxedP $ vpack $ vzip flags points
-        putStrLn $ "packed = " P.++ show packed
+        -- TODO: check for zero length segments and add first point of lines
+        --       as the new hull points.
 
-        -- TODO: need count_s to work out how many elements went into each segment.
+        -- The dot product tells us how far from its line each point is.
+        dot      <- hsplit_dot segd points lines                                        
+        putStrLn $ "    dot           = " P.++ show dot
+
+        -- Get the points furthest from each line.
+        --  The  (0, 0) below is a dummy point that will get replaced
+        --  by the first point in the segment. 
+        --  TODO: check for zero segment lengths beforehand.
+        let far (d0, p0) (d1, p1) = d1 > d0
+        dpoints  <- computeUnboxedP $ vzip dot points
+        let !fars = select_s far (0, (0, 0)) segd dpoints
+        putStrLn $ "    fars          = " P.++ show fars
+
+        -- The flags tell us which points are above the lines.
+        -- TODO: dots is being consumed by the 'far' check as well as 'flags' check
+        --       it won't fuse into them.
+        flags    <- vcomputeUnboxedP $ vmap (> 0) dot
+        putStrLn $ "    flags         = " P.++ show flags
+
+        -- Select points above the lines.
+        packed   <- vcomputeUnboxedP $ vpack $ vzip flags points
+        putStrLn $ "    packed       = " P.++ show packed
+
+        -- Count how many points ended up in each segment.
+        let !count = count_s segd flags True
+        putStrLn $ "    count         = " P.++ show count
+
+        -- Make the new lines array
+        -- TODO: use flatten2 function for this.
+        -- let newLines ((p1, p2), pFar)
+        --        = ((p1, pFar), (pFar, p2))
+        -- let !lines'  <- vcomputeUnboxedP 
+        --              $ vflatten2 
+        --              $ vmap newLines 
+        --              $ vzip lines fars
+
+        -- Append the points to each other to get the new points array.
+        -- let !points' <- vcomputeUnboxedP
+        --              $ vappends packed packed
+
+
+        -- let !segd'   <- Segd.fromLengths
+        --              $  vappends count count
+
+        -- Recursive call
+        -- hsplit_l segd' points' lines'
 
         return $ error "hsplit_l: finish me"
 
@@ -89,16 +165,15 @@ hsplit_l segd points lines
 -- 
 --      unstreamFold :: (a -> a -> a) -> a -> Stream a -> (Vector a, a)
 -- 
-hsplit_flags
+hsplit_dot
         :: Segd U U                     -- Descriptor for points array.
         -> Vector U Point               -- Segments of points.
         -> Vector U (Point, Point)      -- Splitting lines for each segment.
-        -> IO (Vector U Bool)           -- Flags for each value.
+        -> IO (Vector U Double)         -- Dots for each point
 
 -- BROKEN: the cross results are wrong with +RTS -N2
-hsplit_flags !segd !points !lines 
+hsplit_dot !segd !points !lines 
         = vcomputeUnboxedP
-        $ vmap (> 0)
         $ vzipWith
                 cross_fn
                 points
@@ -108,5 +183,4 @@ hsplit_flags !segd !points !lines
          = (x1 - xo) * (y2 - yo) 
          - (y1 - yo) * (x2 - xo)
         {-# INLINE cross_fn #-}
-
-{-# NOINLINE hsplit_flags #-}
+{-# NOINLINE hsplit_dot #-}
