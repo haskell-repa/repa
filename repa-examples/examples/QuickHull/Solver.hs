@@ -125,20 +125,22 @@ hsplit_l segd points lines
 
         -- Select points above the lines.
         packed   <- vcomputeUnboxedP $ vpack $ vzip flags points
-        putStrLn $ "    packed       = " P.++ show packed
+        putStrLn $ "    packed        = " P.++ show packed
 
         -- Count how many points ended up in each segment.
         let !count = count_s segd flags True
         putStrLn $ "    count         = " P.++ show count
 
-        -- Make the new lines array
-        -- TODO: use flatten2 function for this.
-        -- let newLines ((p1, p2), pFar)
-        --        = ((p1, pFar), (pFar, p2))
-        -- let !lines'  <- vcomputeUnboxedP 
-        --              $ vflatten2 
-        --              $ vmap newLines 
-        --              $ vzip lines fars
+        -- Use the far points to make new splitting lines for the new segments.
+        let newLines ((p1, p2), (_, pFar))
+                = ((p1, pFar), (pFar, p2))
+
+        !lines' <- vcomputeUnboxedP 
+                $  vflatten2 
+                $  vmap newLines 
+                $  vzip lines fars
+        putStrLn $ "    lines         = " P.++ show lines'
+
 
         -- Append the points to each other to get the new points array.
         -- let !points' <- vcomputeUnboxedP
