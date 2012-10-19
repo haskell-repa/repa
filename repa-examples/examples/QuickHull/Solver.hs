@@ -128,6 +128,8 @@ hsplit_l segd points lines
         putStrLn $ "    cross         = " P.++ show cross
 
         -- The flags tell us which points are above the lines.
+        -- TODO: recompute flags from crosses both times instead of
+        --       materializing the flags vector.
         flags    <- vcomputeUnboxedP $ vmap (> 0) cross
         putStrLn $ "    flags         = " P.++ show flags
 
@@ -142,6 +144,8 @@ hsplit_l segd points lines
 
 
         -- if-then-else split -------------------
+        -- TODO: recompute flags from counts both time instead of
+        --       materializing the flags vector.
         !flagsIf <- vcomputeUnboxedP
                  $  vmap (> 0) counts
         putStrLn $ "    flagsIf       = " P.++ show flagsIf
