@@ -3,6 +3,7 @@ module Data.Array.Repa.Vector.Segd
         ( -- * Segment Descriptors
           Segd          (..)
         , empty
+        , fromLengths
 
           -- * Split Segment Descriptors
         , SplitSegd     (..)
@@ -10,9 +11,13 @@ module Data.Array.Repa.Vector.Segd
         , splitSegd
         , distroOfSplitSegd
 
-          -- * Segmented operations
+          -- * Segmented Replicate
         , vreplicates
-        , vreplicatesSplit)
+        , vreplicatesSplit
+
+          -- * Segmented Append
+        , vappends
+        , vappendsSplit)
 where
 import Data.Array.Repa.Repr.Chain       
 import Data.Array.Repa.Vector.Segd.Split
@@ -21,7 +26,7 @@ import Data.Array.Repa.Vector.Base                as R
 import Data.Array.Repa.Eval.Gang                  as R
 import qualified Data.Vector                      as V
 import qualified Data.Vector.Unboxed              as U
-import qualified Data.Array.Repa.Chain.Replicate  as C
+import qualified Data.Array.Repa.Chain            as C
 import GHC.Exts
 
 
@@ -49,6 +54,21 @@ empty   = Segd
         { lengths       = R.fromFunction (Z :. 0) (const 0)
         , indices       = R.fromFunction (Z :. 0) (const 0)
         , elements      = 0# }
+
+
+-- | Construct a segment descriptor from a lengths vector.
+--   TODO: Make this more general wrt array representations.
+--   TODO: computation of indices doesn't run in parallel.
+fromLengths :: Vector U Int -> Segd U U
+fromLengths lens
+ = let !(I# len)        = U.sum (R.toUnboxed lens)
+   in  Segd
+        { lengths       = lens
+
+        , indices       = R.fromUnboxed  (Z :. vlength lens)
+                        $ U.scanl (+) 0 (R.toUnboxed lens)
+
+        , elements      = len }
 
 
 -- Split Segds ----------------------------------------------------------------
@@ -121,6 +141,7 @@ distroOfSplitSegd (SplitSegd nChunks nElems chunks)
         , distroFragStart       = \ix -> chunkStart (chunks V.! (I# ix)) }
 
 
+-- Replicates -----------------------------------------------------------------
 -- | Segmented replicate. 
 --   Each element of the vector is replicated according to the length of
 --   the segment in the segment descriptor.
@@ -175,3 +196,60 @@ vreplicatesSplit segd vec
         getElem seg
          = R.unsafeLinearIndex vec (I# seg)
 {-# INLINE [1] vreplicatesSplit #-}
+
+
+-- Appends --------------------------------------------------------------------
+-- | Segmented append
+vappends
+        :: U.Unbox a
+        => Segd U U                     -- ^ Segment descriptor of result.
+        -> Segd U U                     -- ^ Segment descriptor of first array.
+        -> Vector U a                   -- ^ Elements of first array.
+        -> Segd U U                     -- ^ Segment descriptor of second array.
+        -> Vector U a                   -- ^ Elements of second array.
+        -> Vector N a
+
+vappends segdResult segd1 vec1 segd2 vec2
+        = vappendsSplit 
+                (splitSegd segdResult)
+                segd1 vec1
+                segd2 vec2
+
+
+-- | Segmented append.
+--   Like `vappends` except that it takes a pre-split result segment descriptor.
+vappendsSplit
+        :: U.Unbox a
+        => SplitSegd                    -- ^ Segment descriptor of result.
+        -> Segd U U                     -- ^ Segment descriptor of first array.
+        -> Vector U a                   -- ^ Elements of first array.
+        -> Segd U U                     -- ^ Segment descriptor of second array.
+        -> Vector U a                   -- ^ Elements of second array.
+        -> Vector N a
+
+vappendsSplit 
+        segdResult
+        (Segd lens1 indices1 _) vec1
+        (Segd lens2 indices2 _) vec2
+ = vcacheChain 
+ $ C.DistChain (distroOfSplitSegd segdResult) frag
+ where  
+        unbox (I# i) = i
+        segLen1 i = unbox (vindex lens1    (I# i))
+        segIdx1 i = unbox (vindex indices1 (I# i))
+        elem1   i = vindex vec1 (I# i)
+
+        segLen2 i = unbox (vindex lens2    (I# i))
+        segIdx2 i = unbox (vindex indices2 (I# i))
+        elem2   i = vindex vec2 (I# i)
+
+        frag i
+         = let  chunk   = V.unsafeIndex (splitChunk segdResult) (I# i) 
+           in   C.appendSegs 
+                        segLen1 segIdx1 elem1
+                        segLen2 segIdx2 elem2
+                        (chunkElems  chunk)
+                        (chunkStart  chunk)
+                        (chunkOffset chunk)
+
+

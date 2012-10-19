@@ -72,14 +72,14 @@ segdForVector arr = resize (vlength arr) arbitrary
 main = defaultMain tests
 
 tests
- =      [ testProperty "compute/chain"          prop_compute_chain
-        , testProperty "compute/stream"         prop_compute_stream
-        , testProperty "compute/toStream/chain" prop_compute_toStream_chain
-        , testProperty "replicate"              prop_replicate
-        , testProperty "replicates"             prop_replicates
-        , testProperty "indexed/U"              prop_indexedU 
-        , testProperty "indexed/N"              prop_indexedN
-        , testProperty "pack"                   prop_pack
+ =      [ testProperty "compute/chain          " prop_compute_chain
+        , testProperty "compute/stream         " prop_compute_stream
+        , testProperty "compute/toStream/chain " prop_compute_toStream_chain
+        , testProperty "replicate              " prop_replicate
+        , testProperty "replicates             " prop_replicates
+        , testProperty "indexed/U              " prop_indexedU 
+        , testProperty "indexed/N              " prop_indexedN
+        , testProperty "pack                   " prop_pack
         ]
 
 

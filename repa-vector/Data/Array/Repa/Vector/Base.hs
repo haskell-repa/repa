@@ -2,7 +2,8 @@
 module Data.Array.Repa.Vector.Base
         ( Vector
         , balanced
-        , vlength)
+        , vlength
+        , vindex)
 where
 import Data.Array.Repa                          as R
 import qualified Data.Array.Repa.Eval.Gang      as G
@@ -20,6 +21,12 @@ vlength !v
  = case extent v of
         Z :. len        -> len
 {-# INLINE [4] vlength #-}
+
+
+-- | Retrieve a single element from a vector.
+vindex :: Source r e => Vector r e -> Int -> e
+vindex vec ix
+        = R.unsafeLinearIndex vec ix
 
 
 -- | Construct a balanced `Distro` for a vector of this length,

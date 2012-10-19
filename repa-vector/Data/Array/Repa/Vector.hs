@@ -21,12 +21,17 @@ module Data.Array.Repa.Vector
 
         -- * Projections
         , vlength
+        , vindex
 
         -- * Replicate
         , vreplicate
         , vreplicateEach
         , vreplicates
         , vreplicatesSplit
+
+        -- * Append
+        , vappends
+        , vappendsSplit
 
         -- * Indexed
         , Indexed(..)

@@ -54,6 +54,7 @@ Library
         Data.Array.Repa.Chain.Replicate
         Data.Array.Repa.Chain.Map
         Data.Array.Repa.Chain.Indexed
+        Data.Array.Repa.Chain.Append
         Data.Array.Repa.Chain.Eval
         Data.Array.Repa.Chain
 

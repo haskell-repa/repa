@@ -94,6 +94,10 @@ hsplit_l :: Segd U U                    -- Descriptor for points array.
          -> IO (Vector U Point)         -- Hull points for all segments.
 
 hsplit_l segd points lines
+ | elements segd ==# 0#
+ = error "done"
+
+ | otherwise
  = do   putStr  $ unlines
                 [ "--- hsplit_l segd points lines --------------------------"
                 , "    segd          = " P.++ show segd
@@ -128,8 +132,28 @@ hsplit_l segd points lines
         putStrLn $ "    packed        = " P.++ show packed
 
         -- Count how many points ended up in each segment.
-        let !count = count_s segd flags True
-        putStrLn $ "    count         = " P.++ show count
+        let !counts     = count_s segd flags True
+        let !packedSegd = Segd.fromLengths counts
+        putStrLn $ "    counts        = " P.++ show counts
+
+
+        -- Append the points to each other to get the new points array.
+        let newCount c = (c, c)
+        resultLens <- vcomputeUnboxedP
+                   $  vflatten2
+                   $  vmap newCount counts
+        putStrLn $ "    counts'       = " P.++ show resultLens
+
+        let !segd' = Segd.fromLengths resultLens
+        putStrLn $ "    segd'         = " P.++ show segd'
+
+        !points'   <- vcomputeUnboxedP 
+                   $  vappends segd'
+                        packedSegd packed
+                        packedSegd packed
+
+        putStrLn $ "    points'       = " P.++ show points'
+
 
         -- Use the far points to make new splitting lines for the new segments.
         let newLines ((p1, p2), (_, pFar))
@@ -139,21 +163,11 @@ hsplit_l segd points lines
                 $  vflatten2 
                 $  vmap newLines 
                 $  vzip lines fars
-        putStrLn $ "    lines         = " P.++ show lines'
-
-
-        -- Append the points to each other to get the new points array.
-        -- let !points' <- vcomputeUnboxedP
-        --              $ vappends packed packed
-
-
-        -- let !segd'   <- Segd.fromLengths
-        --              $  vappends count count
+        putStrLn $ "    lines'        = " P.++ show lines'
+        putStrLn $ ""
 
         -- Recursive call
-        -- hsplit_l segd' points' lines'
-
-        return $ error "hsplit_l: finish me"
+        hsplit_l segd' points' lines'
 
 
 -- Take the dot product between the splitting line and each point
