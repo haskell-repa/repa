@@ -27,6 +27,11 @@ module Data.Array.Repa.Stream
         -- * Packing
         , pack,         packD
 
+        -- * Flattening
+        , flatten2
+        , flatten3
+        , flatten4
+
         -- * Unboxed vector interface
         , streamUnboxed,        streamUnboxedD
         , unstreamUnboxed,      unstreamUnboxedD)
@@ -36,6 +41,7 @@ import Data.Array.Repa.Stream.Eval
 import Data.Array.Repa.Stream.Map
 import Data.Array.Repa.Stream.Pack
 import Data.Array.Repa.Stream.Fold
+import Data.Array.Repa.Stream.Flatten
 import Data.Array.Repa.Distro
 import Control.Monad.ST
 import GHC.Exts

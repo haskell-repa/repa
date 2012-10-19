@@ -4,6 +4,7 @@ module Data.Array.Repa.Stream.Base
           Stream (..)
         , Step   (..)
         , Size   (..)
+        , scaleSize
         , stream
         , stream'
         , streamOfChain
@@ -55,6 +56,15 @@ data Size
         | Unknown               -- ^ Stream produces some number of elemements 
                                 --   which was unknown at creation time.
         deriving Show
+
+
+-- | Scale a stream size by a known factor.
+scaleSize :: Size -> Int# -> Size
+scaleSize sz factor
+ = case sz of
+        Exact i -> Exact (i *# factor)
+        Max   i -> Max   (i *# factor)
+        Unknown -> Unknown
 
 
 -- | Construct a stream.
