@@ -26,6 +26,9 @@ module Data.Array.Repa.Chain
           -- * Indexed
         , indexed,      indexedD
 
+          -- * Append
+        , appendSegs
+
           -- * Unboxed vector interface.
         , chainUnboxed,   chainUnboxedD
         , unchainUnboxed, unchainUnboxedD)
@@ -36,6 +39,7 @@ import Data.Array.Repa.Chain.Eval
 import Data.Array.Repa.Chain.Replicate
 import Data.Array.Repa.Chain.Map
 import Data.Array.Repa.Chain.Indexed
+import Data.Array.Repa.Chain.Append
 import Control.Monad.ST
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
