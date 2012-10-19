@@ -17,10 +17,16 @@ module Data.Array.Repa.Vector.Segd
 
           -- * Segmented Append
         , vappends
-        , vappendsSplit)
+        , vappendsSplit
+
+          -- * Segmented Pack
+        , vpacks)
 where
 import Data.Array.Repa.Repr.Chain       
+import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Vector.Segd.Split
+import Data.Array.Repa.Vector.Operators.Pack
+import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa                            as R
 import Data.Array.Repa.Vector.Base                as R
 import Data.Array.Repa.Eval.Gang                  as R
@@ -251,5 +257,19 @@ vappendsSplit
                         (chunkElems  chunk)
                         (chunkStart  chunk)
                         (chunkOffset chunk)
+
+
+-- Packs ----------------------------------------------------------------------
+-- | Segmented Pack
+vpacks  :: U.Unbox a
+        => Vector U Bool
+        -> Segd U U
+        -> Vector U a
+        -> Vector S a
+
+vpacks flags segd vec
+ = let  flags'  = vreplicates segd flags
+   in   vpack $ vzip flags' vec
+
 
 

@@ -1,3 +1,29 @@
+--
+-- TODO: When this is working make a version that does each operation
+--       individually, with debugging. And try to fuse everything
+--       in a separate version.
+
+-- TODO: Should be able to compute cross/flags/above/counts in the same
+--       computation. Twin streams? Can we produce the packed points and
+--       new segment lengths during the same computation?
+--
+--       unstreamTwin :: Stream (a, Maybe b) -> (Vector a, Vector b)
+--       unstreamFold :: (a -> a -> a) -> a -> Stream a -> (Vector a, a)
+-- 
+-- TODO: Make a combinator that produces both sides of a if-then-else split
+--       with the same pass over the source array.
+--
+--       unstream2 :: Stream (Bool, a, b) -> (Vector a, Vector b)
+--
+--       If both results need to be consumed more than once then we can 
+--       make them both manifest in the same computation. If each result
+--       only needs to be consumed once we sholuld fuse the pack into the 
+--       consumer.
+--
+-- TODO: When doing packing etc, should pack point indices
+--       instead of packing the physical points, though this would be 
+--       a change to the original DPH example.
+--
 {-# LANGUAGE BangPatterns, MagicHash #-}
 module Solver
         (quickHull)
@@ -22,8 +48,7 @@ quickHull points
         putStrLn $ "min max       = " P.++ show (minx, maxx)
 
         -- Append the points together. 
-        -- We'll find the hull on the top and bottom at the same time.
-        --  TODO: shouldn't need to do this, just split the points.
+        --  We'll find the hull on the top and bottom at the same time.
         !psFlat         <- R.computeUnboxedP $ R.append points points
         putStrLn $ "psFlat        = " P.++ show psFlat
 
@@ -34,11 +59,11 @@ quickHull points
 
         -- Compute the hull for the top and bottom.
         -- The results from both sides are automatically concatenated.
-        hulls_points    <- hsplit_l segd psFlat 
+        results         <- hsplit_l segd psFlat 
                         $  R.fromListUnboxed (R.Z R.:. (2 :: Int))
                                 [ (minx, maxx), (maxx, minx) ]
 
-        return $ error "quickHull: finish me"
+        return results
 
 
 -- | Find the points on the extreme left and right of the XY plane.
@@ -62,32 +87,17 @@ minmax vec
 {-# NOINLINE minmax #-}
 
 
--- Segmented selection.
-select_s :: U.Unbox a
-         => (a -> a -> Bool)
-         -> a
-         -> Segd U U
-         -> Vector U a
-         -> Vector U a
-
-select_s choose z segd vec
- = fold_s f z segd vec
- where  f x1 x2
-         = if choose x1 x2 then x2 else x1
-
--- flatten2 
--- TODO: Implement these as a family of chain operations.
--- flatten2 :: Vector U (a, a) -> Vector D a
-
--- flatten2 vec
---  = vmap get $ vindexed vec
---  where  get (ix, (a, b))
---                 = V.map 
-
-
--- | TODO: When doing this packing etc, should pack point indices
---         instead of packing the physical points.
+-- hsplit_l -------------------------------------------------------------------
 --
+-- hsplit points line@(p1, p2)
+--  = let cross  = [: distance p line | p <- points :]
+--        above = [: p | (p,c) <- zipP points cross, c D.> 0.0 :]
+--    in  if lengthP packed == 0 
+--          then [:p1:]
+--          else let pm = points !: maxIndexP cross
+--               in  [: hsplit packed ends | ends <- [:(p1, pm), (pm, p2):] :]
+
+
 hsplit_l :: Segd U U                    -- Descriptor for points array.
          -> Vector U Point              -- Segments of points.
          -> Vector U (Point, Point)     -- Splitting lines for each segment.
@@ -95,7 +105,15 @@ hsplit_l :: Segd U U                    -- Descriptor for points array.
 
 hsplit_l segd points lines
  | elements segd ==# 0#
- = error "done"
+ = do   putStr  $ unlines
+                [ "--- hsplit_l segd points lines --------------------------"
+                , "    segd          = " P.++ show segd
+                , "    points        = " P.++ show points
+                , "    lines         = " P.++ show lines 
+                , "" ]
+        putStrLn "DONE"
+        error "done"
+
 
  | otherwise
  = do   putStr  $ unlines
@@ -105,82 +123,116 @@ hsplit_l segd points lines
                 , "    lines         = " P.++ show lines 
                 , "" ]
 
-        -- TODO: check for zero length segments and add first point of lines
-        --       as the new hull points.
-
         -- The dot product tells us how far from its line each point is.
-        dot      <- hsplit_dot segd points lines                                        
-        putStrLn $ "    dot           = " P.++ show dot
-
-        -- Get the points furthest from each line.
-        --  The  (0, 0) below is a dummy point that will get replaced
-        --  by the first point in the segment. 
-        --  TODO: check for zero segment lengths beforehand.
-        let far (d0, p0) (d1, p1) = d1 > d0
-        dpoints  <- computeUnboxedP $ vzip dot points
-        let !fars = select_s far (0, (0, 0)) segd dpoints
-        putStrLn $ "    fars          = " P.++ show fars
+        cross    <- hsplit_dot segd points lines                                        
+        putStrLn $ "    cross         = " P.++ show cross
 
         -- The flags tell us which points are above the lines.
-        -- TODO: dots is being consumed by the 'far' check as well as 'flags' check
-        --       it won't fuse into them.
-        flags    <- vcomputeUnboxedP $ vmap (> 0) dot
+        flags    <- vcomputeUnboxedP $ vmap (> 0) cross
         putStrLn $ "    flags         = " P.++ show flags
 
         -- Select points above the lines.
-        packed   <- vcomputeUnboxedP $ vpack $ vzip flags points
-        putStrLn $ "    packed        = " P.++ show packed
+        above    <- vcomputeUnboxedP $ vpack $ vzip flags points
+        putStrLn $ "    above         = " P.++ show above
 
         -- Count how many points ended up in each segment.
         let !counts     = count_s segd flags True
-        let !packedSegd = Segd.fromLengths counts
         putStrLn $ "    counts        = " P.++ show counts
+                 P.++ "\n"
+
+
+        -- if-then-else split -------------------
+        !flagsIf <- vcomputeUnboxedP
+                 $  vmap (> 0) counts
+        putStrLn $ "    flagsIf       = " P.++ show flagsIf
+
+
+        -- if-then-else ------------------------- THEN
+        !linesThen    <- vcomputeUnboxedP $ vpack  $ vzip (vmap not flagsIf) lines
+        putStrLn $ "    linesThen     = " P.++ show linesThen
+
+        !pointsHull   <- vcomputeUnboxedP $ vmap (\(p1, _) -> p1) linesThen
+        putStrLn $ "    pointsHull    = " P.++ show pointsHull
+        putStrLn $ ""
+
+
+        -- if-then-else ------------------------- ELSE 
+        !linesElse    <- vcomputeUnboxedP $ vpack  $ vzip flagsIf lines
+        !crossElse    <- vcomputeUnboxedP $ vpacks flagsIf segd cross
+
+        !countsElse   <- vcomputeUnboxedP $ vpack  $ vzip flagsIf counts
+
+        !lengthsElse  <- vcomputeUnboxedP $ vpack  $ vzip flagsIf (Segd.lengths segd)
+        let !segdElse =  Segd.fromLengths lengthsElse
+        !pointsElse   <- vcomputeUnboxedP $ vpacks flagsIf segd points
+
+        putStrLn $ "    linesElse     = " P.++ show linesElse
+        putStrLn $ "    crossElse     = " P.++ show crossElse
+
+        putStrLn $ "    segdElse      = " P.++ show segdElse
+        putStrLn $ "    pointsElse    = " P.++ show pointsElse
+
+
+        -- Get the points furthese from each line
+        ----  The  (0, 0) below is a dummy point that will get replaced
+        ----  by the first point in the segment. 
+        let far (d0, p0) (d1, p1) = d1 > d0
+
+        -- TODO: combine the zip with the pack of both crossElse and pointsElse,
+        --       and fuse into select_s.
+        dpoints  <- computeUnboxedP 
+                 $  vzip crossElse pointsElse
+
+        let !fars = select_s far (0, (0, 0)) segdElse dpoints
+        putStrLn $ "    fars          = " P.++ show fars
 
 
         -- Append the points to each other to get the new points array.
-        let newCount c = (c, c)
         resultLens <- vcomputeUnboxedP
                    $  vflatten2
-                   $  vmap newCount counts
-        putStrLn $ "    counts'       = " P.++ show resultLens
-
-        let !segd' = Segd.fromLengths resultLens
-        putStrLn $ "    segd'         = " P.++ show segd'
+                   $  vmap (\c -> (c, c)) countsElse
+        let !segd'         = Segd.fromLengths resultLens
+        let !segdAboveElse = Segd.fromLengths countsElse
 
         !points'   <- vcomputeUnboxedP 
                    $  vappends segd'
-                        packedSegd packed
-                        packedSegd packed
-
+                        segdAboveElse above
+                        segdAboveElse above
+        
+        putStrLn $ "    resultLens    = " P.++ show resultLens
+        putStrLn $ "    segdAboveElse = " P.++ show segdAboveElse
+        putStrLn $ "    segd'         = " P.++ show segd'
         putStrLn $ "    points'       = " P.++ show points'
 
 
         -- Use the far points to make new splitting lines for the new segments.
-        let newLines ((p1, p2), (_, pFar))
-                = ((p1, pFar), (pFar, p2))
-
-        !lines' <- vcomputeUnboxedP 
-                $  vflatten2 
-                $  vmap newLines 
-                $  vzip lines fars
+        !lines'   <- vcomputeUnboxedP 
+                  $  vflatten2 
+                  $  vmap (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
+                  $  vzip linesElse fars
         putStrLn $ "    lines'        = " P.++ show lines'
         putStrLn $ ""
 
         -- Recursive call
-        hsplit_l segd' points' lines'
+        moar        <- if Segd.elements segd' ==# 0#
+                        then return $ vfromListUnboxed []
+                        else hsplit_l segd' points' lines'
+
+        -- TODO: need to do a combine here instead of append,
+        --       otherwise the points come out in the wrong order.
+        results <- computeUnboxedP
+                $ R.append pointsHull moar
+
+        putStrLn $ unlines
+                 [ "--- return"
+                 , "   results        = " P.++ show results ]
+
+        return results
+{-# NOINLINE hsplit_l #-}
 
 
 -- Take the dot product between the splitting line and each point
 -- to tell us what side of the line they are on.
---
--- TODO: try to fuse the packs and counts into this.
---       Twin streams? Can we produce the packed points and new segment lengths
---       during the same computation?
---
---      unstreamTwin :: Stream (a, Maybe b) -> (Vector a, Vector b)
--- 
---      unstreamFold :: (a -> a -> a) -> a -> Stream a -> (Vector a, a)
--- 
 hsplit_dot
         :: Segd U U                     -- Descriptor for points array.
         -> Vector U Point               -- Segments of points.
@@ -200,3 +252,19 @@ hsplit_dot !segd !points !lines
          - (y1 - yo) * (x2 - xo)
         {-# INLINE cross_fn #-}
 {-# NOINLINE hsplit_dot #-}
+
+
+-------------------------------------------------------------------------------
+-- Segmented selection.
+select_s :: U.Unbox a
+         => (a -> a -> Bool)
+         -> a
+         -> Segd U U
+         -> Vector U a
+         -> Vector U a
+
+select_s choose z segd vec
+ = fold_s f z segd vec
+ where  f x1 x2
+         = if choose x1 x2 then x2 else x1
+

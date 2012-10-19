@@ -51,6 +51,7 @@ module Data.Array.Repa.Vector
         -- * Pack and Filter
         , Pack  (..)
         , Filter(..)
+        , vpacks
 
         -- * Flatten
         , Flatten2(..))
