@@ -33,6 +33,7 @@ import Data.Array.Repa.Vector                   as R
 import Prelude                                  as P
 import Data.Array.Repa.Vector.Segd              (Segd(..))
 import qualified Data.Array.Repa.Vector.Segd    as Segd
+import qualified Data.Array.Repa.Vector.Sel     as Sel2
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
 
@@ -59,7 +60,7 @@ quickHull points
 
         -- Compute the hull for the top and bottom.
         -- The results from both sides are automatically concatenated.
-        results         <- hsplit_l segd psFlat 
+        (_, results)    <- hsplit_l segd psFlat 
                         $  R.fromListUnboxed (R.Z R.:. (2 :: Int))
                                 [ (minx, maxx), (maxx, minx) ]
 
@@ -95,24 +96,17 @@ minmax vec
 --    in  if lengthP packed == 0 
 --          then [:p1:]
 --          else let pm = points !: maxIndexP cross
---               in  [: hsplit packed ends | ends <- [:(p1, pm), (pm, p2):] :]
+--               in  concatP [: hsplit packed ends | ends <- [:(p1, pm), (pm, p2):] :]
 
 
-hsplit_l :: Segd U U                    -- Descriptor for points array.
-         -> Vector U Point              -- Segments of points.
-         -> Vector U (Point, Point)     -- Splitting lines for each segment.
-         -> IO (Vector U Point)         -- Hull points for all segments.
+hsplit_l :: Segd U U                      -- Descriptor for points array.
+         -> Vector U Point                -- Segments of points.
+         -> Vector U (Point, Point)       -- Splitting lines for each segment.
+         -> IO (Segd U U, Vector U Point) -- Hull points for all segments.
 
 hsplit_l segd points lines
  | elements segd ==# 0#
- = do   putStr  $ unlines
-                [ "--- hsplit_l segd points lines --------------------------"
-                , "    segd          = " P.++ show segd
-                , "    points        = " P.++ show points
-                , "    lines         = " P.++ show lines 
-                , "" ]
-        putStrLn "DONE"
-        error "done"
+ = do   error "hsplit_l: we're done already"
 
 
  | otherwise
@@ -153,10 +147,13 @@ hsplit_l segd points lines
 
         -- if-then-else ------------------------- THEN
         !linesThen    <- vcomputeUnboxedP $ vpack  $ vzip (vmap not flagsIf) lines
+        putStrLn $ ""
         putStrLn $ "    linesThen     = " P.++ show linesThen
 
-        !pointsHull   <- vcomputeUnboxedP $ vmap (\(p1, _) -> p1) linesThen
-        putStrLn $ "    pointsHull    = " P.++ show pointsHull
+        let !hullSegd =  Segd.fromLengths $ vfromUnboxed $ U.replicate (vlength linesThen) 1
+        !hullPoints   <- vcomputeUnboxedP $ vmap (\(p1, _) -> p1) linesThen
+        putStrLn $ "    hullSegd      = " P.++ show hullSegd
+        putStrLn $ "    hullPoints    = " P.++ show hullPoints
         putStrLn $ ""
 
 
@@ -192,21 +189,24 @@ hsplit_l segd points lines
 
 
         -- Append the points to each other to get the new points array.
-        resultLens <- vcomputeUnboxedP
+        downLens   <- vcomputeUnboxedP
                    $  vflatten2
                    $  vmap (\c -> (c, c)) countsElse
-        let !segd'         = Segd.fromLengths resultLens
+        let !downSegd2     = Segd.fromLengths (vfromUnboxed $ U.replicate (vlength countsElse) 2)
+        let !downSegd      = Segd.fromLengths downLens
         let !segdAboveElse = Segd.fromLengths countsElse
 
-        !points'   <- vcomputeUnboxedP 
-                   $  vappends segd'
+        !downPoints <- vcomputeUnboxedP 
+                    $  vappends downSegd
                         segdAboveElse above
                         segdAboveElse above
         
-        putStrLn $ "    resultLens    = " P.++ show resultLens
         putStrLn $ "    segdAboveElse = " P.++ show segdAboveElse
-        putStrLn $ "    segd'         = " P.++ show segd'
-        putStrLn $ "    points'       = " P.++ show points'
+        putStrLn $ ""
+        putStrLn $ "    downLens      = " P.++ show downLens
+        putStrLn $ "    downSegd2     = " P.++ show downSegd2
+        putStrLn $ "    downSegd      = " P.++ show downSegd
+        putStrLn $ "    downPoints    = " P.++ show downPoints
 
 
         -- Use the far points to make new splitting lines for the new segments.
@@ -218,20 +218,49 @@ hsplit_l segd points lines
         putStrLn $ ""
 
         -- Recursive call
-        moar        <- if Segd.elements segd' ==# 0#
-                        then return $ vfromListUnboxed []
-                        else hsplit_l segd' points' lines'
+        (moarSegd, moarPoints) 
+                <- if Segd.elements downSegd ==# 0#
+                        then return $ ( Segd.fromLengths $ vfromUnboxed 
+                                                $ U.replicate (I# (Segd.elements downSegd)) 0
+                                      , vfromListUnboxed [])
+                        else hsplit_l downSegd downPoints lines'
 
-        -- TODO: need to do a combine here instead of append,
-        --       otherwise the points come out in the wrong order.
-        results <- computeUnboxedP
-                $ R.append pointsHull moar
+        -- Concatenate the segments we get from the recursive call.
+        --   In the recursion we pass two segments for each one that we had from above.
+        let catLengths  = sum_s downSegd2 (Segd.lengths moarSegd)
+        let catSegd     = Segd.fromLengths catLengths
+
+        -- Combine the length of the segments we get from both sides of the if-then-else.
+        let combLengths = vcombineByFlag2 flagsIf (Segd.lengths hullSegd) (Segd.lengths catSegd)
+
+        -- TODO: this needs to be segmented combine using hullSegd and catSegd.
+        let combPoints  = vcombineByFlag2 flagsIf hullPoints moarPoints
+
+        let resultSegd    = Segd.fromLengths combLengths
+        let resultPoints  = combPoints
+
 
         putStrLn $ unlines
                  [ "--- return"
-                 , "   results        = " P.++ show results ]
+                 , "    segd          = " P.++ show segd
+                 , ""
+                 , "    flagsIf       = " P.++ show flagsIf
+                 , "    segdElse      = " P.++ show segdElse
+                 , ""
+                 , "    hullPoints    = " P.++ show hullPoints
+                 , "    hullSegd      = " P.++ show hullSegd
+                 , ""
+                 , "    downSegd2     = " P.++ show downSegd2
+                 , "    downSegd      = " P.++ show downSegd
+                 , "    moarPoints    = " P.++ show moarPoints
+                 , "    moarSegd      = " P.++ show moarSegd
+                 , ""
+                 , "    catSegd       = " P.++ show catSegd
+                 , ""
+                 , "    combLengths   = " P.++ show combLengths
+                 , "    combPoints    = " P.++ show combPoints ]
 
-        return results
+        return (resultSegd, resultPoints)
 {-# NOINLINE hsplit_l #-}
 
 

@@ -54,6 +54,7 @@ Library
         Data.Array.Repa.Repr.Stream
         Data.Array.Repa.Vector
         Data.Array.Repa.Vector.Segd
+        Data.Array.Repa.Vector.Sel
 
   Other-modules:
         Data.Array.Repa.Vector.Base
@@ -63,7 +64,9 @@ Library
         Data.Array.Repa.Vector.Operators.Indexed
         Data.Array.Repa.Vector.Operators.Pack
         Data.Array.Repa.Vector.Operators.Fold
+        Data.Array.Repa.Vector.Operators.Scan
         Data.Array.Repa.Vector.Operators.Flatten
+        Data.Array.Repa.Vector.Operators.Combine
         Data.Array.Repa.Vector.Segd.Split
         
 

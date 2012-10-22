@@ -16,6 +16,7 @@ module Data.Array.Repa.Vector
         , Compute(..)
 
         -- * Conversion
+        , vfromUnboxed
         , vfromListUnboxed
         , vtoList
 
@@ -29,6 +30,9 @@ module Data.Array.Repa.Vector
         , vreplicates
         , vreplicatesSplit
 
+        -- * Flatten
+        , Flatten2(..)
+
         -- * Append
         , vappends
         , vappendsSplit
@@ -36,33 +40,39 @@ module Data.Array.Repa.Vector
         -- * Indexed
         , Indexed(..)
 
-        -- * Folding
+        -- * Folds
 	, fold_s
         , sum_s
         , count_s
 
-        -- * Mapping
+        -- * Maps
         , Map(..)
 
-        -- * Zipping
+        -- * Zips
         , Zip(..)
         , vzipWith
+
+        -- * Scans
+        , vmapAccum
 
         -- * Pack and Filter
         , Pack  (..)
         , Filter(..)
         , vpacks
 
-        -- * Flatten
-        , Flatten2(..))
+        -- * Combine
+        , vcombineByTag2
+        , vcombineByFlag2)
 where
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Operators.Flatten
+import Data.Array.Repa.Vector.Operators.Indexed
+import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
-import Data.Array.Repa.Vector.Operators.Indexed
+import Data.Array.Repa.Vector.Operators.Scan
 import Data.Array.Repa.Vector.Operators.Pack
-import Data.Array.Repa.Vector.Operators.Fold
-import Data.Array.Repa.Vector.Operators.Flatten
+import Data.Array.Repa.Vector.Operators.Combine
 import Data.Array.Repa.Vector.Segd
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Repr.Chain
@@ -70,6 +80,7 @@ import Data.Array.Repa.Eval                     as R
 import Data.Array.Repa                          as R
 import qualified Data.Array.Repa.Chain          as C
 import qualified Data.Array.Repa.Stream         as S
+import qualified Data.Vector.Unboxed            as U
 import Data.Vector.Unboxed                      (Unbox)
 
 
@@ -114,6 +125,10 @@ instance Compute S a where
 
 
 -- Conversion -----------------------------------------------------------------
+vfromUnboxed :: Unbox a => U.Vector a -> Vector U a
+vfromUnboxed vec
+        = R.fromUnboxed (Z :. U.length vec) vec
+
 -- | Convert a list to an unboxed vector.
 vfromListUnboxed :: Unbox a => [a] -> Vector U a
 vfromListUnboxed xs = fromListUnboxed (Z :. length xs) xs

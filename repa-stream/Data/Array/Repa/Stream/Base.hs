@@ -23,7 +23,6 @@ import GHC.Exts
 import Data.Array.Repa.Distro
 import qualified Data.Array.Repa.Chain.Base     as C
 
-
 -- Linear ---------------------------------------------------------------------
 -- | Pure streams.
 --

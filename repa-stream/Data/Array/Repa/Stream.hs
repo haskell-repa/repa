@@ -7,22 +7,25 @@ module Data.Array.Repa.Stream
         , Step          (..)
         , Size          (..)
 
-          -- * Reduction
-        , fold,         foldD
-        , foldM,        foldMD
-        , foldSegs
-
-          -- * Evaluation
-        , evalM,        evalMD
-
           -- * Constructors
         , stream,       streamD
         , stream'
         , streamOfChain
         , streamOfChainD
 
+          -- * Evaluation
+        , evalM,        evalMD
+
+          -- * Reduction
+        , fold,         foldD
+        , foldM,        foldMD
+        , foldSegs
+
         -- * Maps
         , map,          mapD
+
+        -- * Scans
+        , mapAccum
 
         -- * Packing
         , pack,         packD
@@ -31,6 +34,9 @@ module Data.Array.Repa.Stream
         , flatten2
         , flatten3
         , flatten4
+
+        -- * Combine
+        , combine2ByTag
 
         -- * Unboxed vector interface
         , streamUnboxed,        streamUnboxedD
@@ -41,7 +47,9 @@ import Data.Array.Repa.Stream.Eval
 import Data.Array.Repa.Stream.Map
 import Data.Array.Repa.Stream.Pack
 import Data.Array.Repa.Stream.Fold
+import Data.Array.Repa.Stream.Scan
 import Data.Array.Repa.Stream.Flatten
+import Data.Array.Repa.Stream.Combine
 import Data.Array.Repa.Distro
 import Control.Monad.ST
 import GHC.Exts

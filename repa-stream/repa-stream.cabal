@@ -63,6 +63,8 @@ Library
         Data.Array.Repa.Stream.Eval
         Data.Array.Repa.Stream.Map
         Data.Array.Repa.Stream.Fold
+        Data.Array.Repa.Stream.Scan
         Data.Array.Repa.Stream.Flatten
+        Data.Array.Repa.Stream.Combine
         Data.Array.Repa.Stream
 
