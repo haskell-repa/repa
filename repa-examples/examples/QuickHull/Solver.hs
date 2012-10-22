@@ -29,40 +29,44 @@ module Solver
         (quickHull)
 where
 import Data.Array.Repa                          as R
-import Data.Array.Repa.Vector                   as R    hiding (vcomputUnboxedP)
-import Prelude                                  as P
+import Data.Array.Repa.Vector                   as R
 import Data.Array.Repa.Vector.Segd              (Segd(..))
 import qualified Data.Array.Repa.Vector.Segd    as Segd
 import qualified Data.Array.Repa.Vector.Sel     as Sel2
-import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
+import Prelude                                  as P
+import GHC.Exts
 
+
+-- | A point in the 2D plane.
 type Point      = (Double, Double)
 
 
+-- | Compute the convex hull of a vector of points.
 quickHull :: Vector U Point -> IO (Vector U Point)
 quickHull points
- = do   let !n          = vlength points
-        
+ = do
         -- Find the points that are on the extreme left and right.
         (minx, maxx)    <- minmax points
-        putStrLn $ "min max       = " P.++ show (minx, maxx)
 
         -- Append the points together. 
         --  We'll find the hull on the top and bottom at the same time.
-        !psFlat         <- R.computeUnboxedP $ R.append points points
-        putStrLn $ "psFlat        = " P.++ show psFlat
+        let !n          =  vlength points
+        let !downSegd   =  Segd.fromLengths $ vfromUnboxed $ U.fromList [n, n]
+        !downPoints     <- R.computeUnboxedP $ R.append points points
 
-        let !segd       = Segd  (R.fromListUnboxed (Z :. 2) [n, n])
-                                (R.fromListUnboxed (Z :. 2) [0, n])
-                                (case n + n of I# i -> i)
-        putStrLn $ "segd          = " P.++ show segd
+        putStrLn $ "min max       = " P.++ show (minx, maxx)
+        putStrLn $ "downSegd      = " P.++ show downSegd
+        putStrLn $ "downPoints    = " P.++ show downPoints
+
+        -- Use the min/max points in both directions to get the 
+        -- hull on the top and bottom halves of the plane.
+        let !downLines  = vfromListUnboxed [ (minx, maxx), (maxx, minx) ]
+        putStrLn $ "downLines     = " P.++ show downLines
 
         -- Compute the hull for the top and bottom.
         -- The results from both sides are automatically concatenated.
-        (_, results)    <- hsplit_l segd psFlat 
-                        $  R.fromListUnboxed (R.Z R.:. (2 :: Int))
-                                [ (minx, maxx), (maxx, minx) ]
+        (_, results)    <- hsplit_l downSegd downPoints downLines
 
         return results
 
@@ -90,24 +94,34 @@ minmax vec
 
 -- hsplit_l -------------------------------------------------------------------
 --
--- hsplit points line@(p1, p2)
---  = let cross  = [: distance p line | p <- points :]
---        above  = [: p | (p,c) <- zipP points cross, c D.> 0.0 :]
---    in  if lengthP packed == 0 
---          then [:p1:]
---          else let pm = points !: maxIndexP cross
---               in  concat [: hsplit packed ends | ends <- [:(p1, pm), (pm, p2):] :]
-
-
-hsplit_l :: Segd U U                      -- Descriptor for points array.
+-- | Lifted split.
+--   This is the workhorse of the algorithm.
+--
+--   Unvectorised code:
+--
+--   > hsplit points line@(p1, p2)
+--   >  = let cross  = [: distance p line | p <- points :]
+--   >        above  = [: p | (p,c) <- zipP points cross, c D.> 0.0 :]
+--   >    in  if lengthP packed == 0 
+--   >          then [:p1:]
+--   >          else let pm = points !: maxIndexP cross
+--   >               in  concat [: hsplit packed ends 
+--   >                          | ends <- [:(p1, pm), (pm, p2):] :]
+--
+hsplit_l :: Segd U U                      -- Segd for points array.
          -> Vector U Point                -- Segments of points.
          -> Vector U (Point, Point)       -- Splitting lines for each segment.
-         -> IO (Segd U U, Vector U Point) -- Hull points for all segments.
+         -> IO (Segd U U, Vector U Point) -- Hull points found for each segment.
 
 hsplit_l segd points lines
+ -- No points to process, we're done already.
  | elements segd ==# 0#
- = do   error "hsplit_l: we're done already"
+ = do   let !segd'      = Segd.fromLengths 
+                        $ vfromUnboxed
+                        $ U.replicate (I# (Segd.elements segd)) 0
 
+        let !points'    = vfromListUnboxed []
+        return (segd', points')
 
  | otherwise
  = do   putStr  $ unlines
@@ -117,14 +131,14 @@ hsplit_l segd points lines
                 , "    lines         = " P.++ show lines 
                 , "" ]
 
-        -- The dot product tells us how far from its line each point is.
-        cross    <- hsplit_dot segd points lines                                        
-        putStrLn $ "    cross         = " P.++ show cross
+        -- The determinate product tells us how far from its line each point is.
+        det     <- hsplit_det segd points lines                                        
+        putStrLn $ "    det           = " P.++ show det
 
         -- The flags tell us which points are above the lines.
         -- TODO: recompute flags from crosses both times instead of
         --       materializing the flags vector.
-        let !flags = vcomputeUnboxedP $ vmap (> 0) cross
+        let !flags = vcomputeUnboxedP $ vmap (> 0) det
         putStrLn $ "    flags         = " P.++ show flags
 
         -- Select points above the lines.
@@ -140,13 +154,12 @@ hsplit_l segd points lines
         -- if-then-else split -------------------
         -- TODO: recompute flags from counts both time instead of
         --       materializing the flags vector.
-        let !flagsIf    = vcomputeUnboxedP
-                        $  vmap (> 0) counts
+        let !flagsIf    = vcomputeUnboxedP $ vmap (> 0) counts
         putStrLn $ "    flagsIf       = " P.++ show flagsIf
 
 
         -- if-then-else ------------------------- THEN
-        let !linesThen  = vcomputeUnboxedP $ vpack  $ vzip (vmap not flagsIf) lines
+        let !linesThen  = vcomputeUnboxedP $ vpack $ vzip (vmap not flagsIf) lines
         putStrLn $ ""
         putStrLn $ "    linesThen     = " P.++ show linesThen
 
@@ -159,7 +172,7 @@ hsplit_l segd points lines
 
         -- if-then-else ------------------------- ELSE 
         let !linesElse   = vcomputeUnboxedP $ vpack  $ vzip flagsIf lines
-        let !crossElse   = vcomputeUnboxedP $ vpacks flagsIf segd cross
+        let !detElse     = vcomputeUnboxedP $ vpacks flagsIf segd det
 
         let !countsElse  = vcomputeUnboxedP $ vpack  $ vzip flagsIf counts
 
@@ -168,7 +181,7 @@ hsplit_l segd points lines
         let !pointsElse  = vcomputeUnboxedP $ vpacks flagsIf segd points
 
         putStrLn $ "    linesElse     = " P.++ show linesElse
-        putStrLn $ "    crossElse     = " P.++ show crossElse
+        putStrLn $ "    detElse       = " P.++ show detElse
 
         putStrLn $ "    segdElse      = " P.++ show segdElse
         putStrLn $ "    pointsElse    = " P.++ show pointsElse
@@ -181,10 +194,9 @@ hsplit_l segd points lines
 
         -- TODO: combine the zip with the pack of both crossElse and pointsElse,
         --       and fuse into select_s.
-        let !dpoints    = vcomputeUnboxedP 
-                        $ vzip crossElse pointsElse
+        let !dpoints    = vcomputeUnboxedP $ vzip detElse pointsElse
 
-        let !fars       = select_s far (0, (0, 0)) segdElse dpoints
+        let !fars       = vselects far (0, (0, 0)) segdElse dpoints
         putStrLn $ "    fars          = " P.++ show fars
 
 
@@ -220,15 +232,7 @@ hsplit_l segd points lines
 
         -- Recursive call
         (moarSegd, moarPoints) 
-         <- if Segd.elements downSegd ==# 0#
-
-             -- If there are no segments to pass down then we need
-             -- to abort the recursion or we'll loop forever.
-             then return $ ( Segd.fromLengths $ vfromUnboxed 
-                                 $ U.replicate (I# (Segd.elements downSegd)) 0
-                           , vfromListUnboxed [])
-
-             else hsplit_l downSegd downPoints downLines
+                <- hsplit_l downSegd downPoints downLines
 
 
         -- Concatenate the segments we get from the recursive call.
@@ -276,40 +280,41 @@ hsplit_l segd points lines
 {-# NOINLINE hsplit_l #-}
 
 
--- Take the dot product between the splitting line and each point
+-- Take the determinate between the splitting line and each point
 -- to tell us what side of the line they are on.
-hsplit_dot
+--
+-- BROKEN: the results here are wrong with +RTS -N2
+hsplit_det
         :: Segd U U                     -- Descriptor for points array.
         -> Vector U Point               -- Segments of points.
         -> Vector U (Point, Point)      -- Splitting lines for each segment.
-        -> IO (Vector U Double)         -- Dots for each point
+        -> IO (Vector U Double)         -- Determinates for each point
 
--- BROKEN: the cross results are wrong with +RTS -N2
-hsplit_dot !segd !points !lines 
+hsplit_det !segd !points !lines 
         = return
         $ vcomputeUnboxedP
         $ vzipWith
-                cross_fn
+                det_fn
                 points
                 (vreplicates segd lines)
 
- where  cross_fn (xo, yo) ((x1, y1), (x2, y2))
+ where  det_fn (xo, yo) ((x1, y1), (x2, y2))
          = (x1 - xo) * (y2 - yo) 
          - (y1 - yo) * (x2 - xo)
-        {-# INLINE cross_fn #-}
-{-# NOINLINE hsplit_dot #-}
+        {-# INLINE det_fn #-}
+{-# NOINLINE hsplit_det #-}
 
 
 -------------------------------------------------------------------------------
 -- Segmented selection.
-select_s :: U.Unbox a
+vselects :: U.Unbox a
          => (a -> a -> Bool)
          -> a
          -> Segd U U
          -> Vector U a
          -> Vector U a
 
-select_s choose z segd vec
+vselects choose z segd vec
  = fold_s f z segd vec
  where  f x1 x2
          = if choose x1 x2 then x2 else x1
