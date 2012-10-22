@@ -5,6 +5,7 @@ module Data.Array.Repa.Stream.Base
         , Step   (..)
         , Size   (..)
         , scaleSize
+        , addSize
         , stream
         , stream'
         , streamOfChain
@@ -64,6 +65,16 @@ scaleSize sz factor
         Exact i -> Exact (i *# factor)
         Max   i -> Max   (i *# factor)
         Unknown -> Unknown
+
+
+-- | Add two sizes.
+addSize  :: Size -> Size -> Size
+addSize s1 s2
+ = case (s1, s2) of
+        (Exact n1, Exact n2)    -> Exact (n1 +# n2)
+        (Exact n1, Max   n2)    -> Max   (n1 +# n2)
+        (Max   n1, Exact n2)    -> Max   (n1 +# n2)
+        _                       -> Unknown
 
 
 -- | Construct a stream.

@@ -92,11 +92,11 @@ minmax vec
 --
 -- hsplit points line@(p1, p2)
 --  = let cross  = [: distance p line | p <- points :]
---        above = [: p | (p,c) <- zipP points cross, c D.> 0.0 :]
+--        above  = [: p | (p,c) <- zipP points cross, c D.> 0.0 :]
 --    in  if lengthP packed == 0 
 --          then [:p1:]
 --          else let pm = points !: maxIndexP cross
---               in  concatP [: hsplit packed ends | ends <- [:(p1, pm), (pm, p2):] :]
+--               in  concat [: hsplit packed ends | ends <- [:(p1, pm), (pm, p2):] :]
 
 
 hsplit_l :: Segd U U                      -- Descriptor for points array.
@@ -111,7 +111,7 @@ hsplit_l segd points lines
 
  | otherwise
  = do   putStr  $ unlines
-                [ "--- hsplit_l segd points lines --------------------------"
+                [ "--- DIVIDE ---------------------------------------"
                 , "    segd          = " P.++ show segd
                 , "    points        = " P.++ show points
                 , "    lines         = " P.++ show lines 
@@ -203,45 +203,56 @@ hsplit_l segd points lines
         
         putStrLn $ "    segdAboveElse = " P.++ show segdAboveElse
         putStrLn $ ""
-        putStrLn $ "    downLens      = " P.++ show downLens
         putStrLn $ "    downSegd2     = " P.++ show downSegd2
         putStrLn $ "    downSegd      = " P.++ show downSegd
         putStrLn $ "    downPoints    = " P.++ show downPoints
 
 
         -- Use the far points to make new splitting lines for the new segments.
-        !lines'   <- vcomputeUnboxedP 
-                  $  vflatten2 
-                  $  vmap (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
-                  $  vzip linesElse fars
-        putStrLn $ "    lines'        = " P.++ show lines'
+        !downLines <- vcomputeUnboxedP 
+                   $  vflatten2 
+                   $  vmap (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
+                   $  vzip linesElse fars
+
+        putStrLn $ "    downLines     = " P.++ show downLines
         putStrLn $ ""
 
         -- Recursive call
         (moarSegd, moarPoints) 
-                <- if Segd.elements downSegd ==# 0#
-                        then return $ ( Segd.fromLengths $ vfromUnboxed 
-                                                $ U.replicate (I# (Segd.elements downSegd)) 0
-                                      , vfromListUnboxed [])
-                        else hsplit_l downSegd downPoints lines'
+         <- if Segd.elements downSegd ==# 0#
+
+             -- If there are no segments to pass down then we need
+             -- to abort the recursion or we'll loop forever.
+             then return $ ( Segd.fromLengths $ vfromUnboxed 
+                                 $ U.replicate (I# (Segd.elements downSegd)) 0
+                           , vfromListUnboxed [])
+
+             else hsplit_l downSegd downPoints downLines
+
 
         -- Concatenate the segments we get from the recursive call.
-        --   In the recursion we pass two segments for each one that we had from above.
-        let catLengths  = sum_s downSegd2 (Segd.lengths moarSegd)
-        let catSegd     = Segd.fromLengths catLengths
+        --   In the recursion we pass down two segments for each one that we
+        --   had from above.
+        let catLengths    = sum_s downSegd2 (Segd.lengths moarSegd)
+        let catSegd       = Segd.fromLengths catLengths
 
-        -- Combine the length of the segments we get from both sides of the if-then-else.
-        let combLengths = vcombineByFlag2 flagsIf (Segd.lengths hullSegd) (Segd.lengths catSegd)
 
-        -- TODO: this needs to be segmented combine using hullSegd and catSegd.
-        let combPoints  = vcombineByFlag2 flagsIf hullPoints moarPoints
+        -- Combine the lengths of the segments we get from both sides of the
+        -- if-then-else.
+        let combLengths   = vcombine2 flagsIf 
+                                (Segd.lengths hullSegd)
+                                (Segd.lengths catSegd)
 
-        let resultSegd    = Segd.fromLengths combLengths
-        let resultPoints  = combPoints
+        let combSegd      = Segd.fromLengths combLengths
 
+
+        -- Combine the points from both sides of the if-then-else.
+        let combPoints    = vcombineSegs2 flagsIf 
+                                (Segd.lengths hullSegd) hullPoints 
+                                (Segd.lengths catSegd)  moarPoints
 
         putStrLn $ unlines
-                 [ "--- return"
+                 [ "--- RETURN --------------------------------------"
                  , "    segd          = " P.++ show segd
                  , ""
                  , "    flagsIf       = " P.++ show flagsIf
@@ -260,7 +271,7 @@ hsplit_l segd points lines
                  , "    combLengths   = " P.++ show combLengths
                  , "    combPoints    = " P.++ show combPoints ]
 
-        return (resultSegd, resultPoints)
+        return (combSegd, combPoints)
 {-# NOINLINE hsplit_l #-}
 
 

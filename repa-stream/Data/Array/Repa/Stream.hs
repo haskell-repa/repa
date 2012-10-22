@@ -36,7 +36,8 @@ module Data.Array.Repa.Stream
         , flatten4
 
         -- * Combine
-        , combine2ByTag
+        , combine2
+        , combineSegs2
 
         -- * Unboxed vector interface
         , streamUnboxed,        streamUnboxedD

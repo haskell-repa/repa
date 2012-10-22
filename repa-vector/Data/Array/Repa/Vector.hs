@@ -61,8 +61,8 @@ module Data.Array.Repa.Vector
         , vpacks
 
         -- * Combine
-        , vcombineByTag2
-        , vcombineByFlag2)
+        , vcombine2
+        , vcombineSegs2)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Operators.Flatten
