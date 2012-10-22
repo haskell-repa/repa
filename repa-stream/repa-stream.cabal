@@ -17,7 +17,8 @@ Synopsis:       Pure stream and chain functions.
 Library
   Build-Depends: 
         base            == 4.6.*,
-        vector          == 0.9.*
+        vector          == 0.9.*,
+        repa
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -54,7 +55,6 @@ Library
         Data.Array.Repa.Chain.Replicate
         Data.Array.Repa.Chain.Map
         Data.Array.Repa.Chain.Indexed
-        Data.Array.Repa.Chain.Append
         Data.Array.Repa.Chain.Eval
         Data.Array.Repa.Chain
 
@@ -62,6 +62,7 @@ Library
         Data.Array.Repa.Stream.Pack
         Data.Array.Repa.Stream.Eval
         Data.Array.Repa.Stream.Map
+        Data.Array.Repa.Stream.Indexs
         Data.Array.Repa.Stream.Fold
         Data.Array.Repa.Stream.Scan
         Data.Array.Repa.Stream.Flatten

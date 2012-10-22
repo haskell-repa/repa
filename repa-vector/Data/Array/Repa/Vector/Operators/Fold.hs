@@ -3,7 +3,8 @@ module Data.Array.Repa.Vector.Operators.Fold
         ( fold_s
         , foldSegsWithP
         , sum_s
-        , count_s)
+        , count_s
+        , catDistStream)
 where
 import Data.Array.Repa.Repr.Stream
 import Data.Array.Repa.Vector.Segd
@@ -53,18 +54,21 @@ foldSegsWithP fElem zero segd xss
 {-# INLINE catDistStream #-}
 catDistStream :: DistStream a -> Stream a
 catDistStream (DistStream sz frag_max frag_get)
- = Stream sz (0, Nothing) step
+ =  Stream sz (0, Nothing) step
  where
     {-# INLINE step #-}
     step (I# frag, Nothing)
      =  if frag ==# frag_max
         then Done
-        else Update (I# (frag +# 1#), Just $ frag_get frag)
-    step (frag, Just (Stream str_sz s str_step))
+        else let !str = frag_get frag
+             in  case str of
+                Stream !_ !_ !_ -> Update (I# (frag +# 1#), Just str)
+
+    step (!frag, Just (Stream !str_sz !s !str_step))
      =  case str_step s of
-         Done       -> Update (frag, Nothing)
-         Update s'  -> Update (frag, Just (Stream str_sz s' str_step))
-         Yield s' a -> Yield  (frag, Just (Stream str_sz s' str_step)) a
+         Done        -> Update (frag, Nothing)
+         Update !s'  -> Update (frag, Just (Stream str_sz s' str_step))
+         Yield !s' a -> Yield  (frag, Just (Stream str_sz s' str_step)) a
 
 
 -- | Segmented sum.
