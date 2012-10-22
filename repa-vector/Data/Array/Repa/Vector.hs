@@ -94,7 +94,7 @@ class Compute r a where
  vcomputeUnboxedS :: Unbox a => Vector r a -> Vector U a
 
  -- | Parallel computation in some state-like monad. Use ST or IO.
- vcomputeUnboxedP :: (Unbox a, Monad m) => Vector r a -> m (Vector U a)
+ vcomputeUnboxedP :: Unbox a => Vector r a -> Vector U a
  
 
 -- Delayed
@@ -103,7 +103,7 @@ instance Compute D a where
   = R.computeUnboxedS arr
 
  vcomputeUnboxedP arr
-  = R.computeUnboxedP arr
+  = R.suspendedComputeP arr
 
 
 -- Chained
@@ -112,7 +112,7 @@ instance Compute N a where
   = AUnboxed sh $ C.unchainUnboxedD dchain
 
  vcomputeUnboxedP (AChain sh dchain _) 
-  = R.now (AUnboxed sh $ C.unchainUnboxedD dchain)
+  = AUnboxed sh $ C.unchainUnboxedD dchain
 
 
 -- Streamed
@@ -121,7 +121,7 @@ instance Compute S a where
   = AUnboxed sh $ S.unstreamUnboxedD dstream
 
  vcomputeUnboxedP (AStream  sh dstream _)
-  = R.now (AUnboxed sh $ S.unstreamUnboxedD dstream)
+  = AUnboxed sh $ S.unstreamUnboxedD dstream
 
 
 -- Conversion -----------------------------------------------------------------

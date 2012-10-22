@@ -29,7 +29,7 @@ module Solver
         (quickHull)
 where
 import Data.Array.Repa                          as R
-import Data.Array.Repa.Vector                   as R
+import Data.Array.Repa.Vector                   as R    hiding (vcomputUnboxedP)
 import Prelude                                  as P
 import Data.Array.Repa.Vector.Segd              (Segd(..))
 import qualified Data.Array.Repa.Vector.Segd    as Segd
@@ -124,11 +124,11 @@ hsplit_l segd points lines
         -- The flags tell us which points are above the lines.
         -- TODO: recompute flags from crosses both times instead of
         --       materializing the flags vector.
-        flags    <- vcomputeUnboxedP $ vmap (> 0) cross
+        let !flags = vcomputeUnboxedP $ vmap (> 0) cross
         putStrLn $ "    flags         = " P.++ show flags
 
         -- Select points above the lines.
-        above    <- vcomputeUnboxedP $ vpack $ vzip flags points
+        let !above = vcomputeUnboxedP $ vpack $ vzip flags points
         putStrLn $ "    above         = " P.++ show above
 
         -- Count how many points ended up in each segment.
@@ -140,32 +140,32 @@ hsplit_l segd points lines
         -- if-then-else split -------------------
         -- TODO: recompute flags from counts both time instead of
         --       materializing the flags vector.
-        !flagsIf <- vcomputeUnboxedP
-                 $  vmap (> 0) counts
+        let !flagsIf    = vcomputeUnboxedP
+                        $  vmap (> 0) counts
         putStrLn $ "    flagsIf       = " P.++ show flagsIf
 
 
         -- if-then-else ------------------------- THEN
-        !linesThen    <- vcomputeUnboxedP $ vpack  $ vzip (vmap not flagsIf) lines
+        let !linesThen  = vcomputeUnboxedP $ vpack  $ vzip (vmap not flagsIf) lines
         putStrLn $ ""
         putStrLn $ "    linesThen     = " P.++ show linesThen
 
-        let !hullSegd =  Segd.fromLengths $ vfromUnboxed $ U.replicate (vlength linesThen) 1
-        !hullPoints   <- vcomputeUnboxedP $ vmap (\(p1, _) -> p1) linesThen
+        let !hullSegd   = Segd.fromLengths $ vfromUnboxed $ U.replicate (vlength linesThen) 1
+        let !hullPoints = vcomputeUnboxedP $ vmap (\(p1, _) -> p1) linesThen
         putStrLn $ "    hullSegd      = " P.++ show hullSegd
         putStrLn $ "    hullPoints    = " P.++ show hullPoints
         putStrLn $ ""
 
 
         -- if-then-else ------------------------- ELSE 
-        !linesElse    <- vcomputeUnboxedP $ vpack  $ vzip flagsIf lines
-        !crossElse    <- vcomputeUnboxedP $ vpacks flagsIf segd cross
+        let !linesElse   = vcomputeUnboxedP $ vpack  $ vzip flagsIf lines
+        let !crossElse   = vcomputeUnboxedP $ vpacks flagsIf segd cross
 
-        !countsElse   <- vcomputeUnboxedP $ vpack  $ vzip flagsIf counts
+        let !countsElse  = vcomputeUnboxedP $ vpack  $ vzip flagsIf counts
 
-        !lengthsElse  <- vcomputeUnboxedP $ vpack  $ vzip flagsIf (Segd.lengths segd)
-        let !segdElse =  Segd.fromLengths lengthsElse
-        !pointsElse   <- vcomputeUnboxedP $ vpacks flagsIf segd points
+        let !lengthsElse = vcomputeUnboxedP $ vpack  $ vzip flagsIf (Segd.lengths segd)
+        let !segdElse    = Segd.fromLengths lengthsElse
+        let !pointsElse  = vcomputeUnboxedP $ vpacks flagsIf segd points
 
         putStrLn $ "    linesElse     = " P.++ show linesElse
         putStrLn $ "    crossElse     = " P.++ show crossElse
@@ -181,25 +181,26 @@ hsplit_l segd points lines
 
         -- TODO: combine the zip with the pack of both crossElse and pointsElse,
         --       and fuse into select_s.
-        dpoints  <- computeUnboxedP 
-                 $  vzip crossElse pointsElse
+        let !dpoints    = vcomputeUnboxedP 
+                        $ vzip crossElse pointsElse
 
-        let !fars = select_s far (0, (0, 0)) segdElse dpoints
+        let !fars       = select_s far (0, (0, 0)) segdElse dpoints
         putStrLn $ "    fars          = " P.++ show fars
 
 
         -- Append the points to each other to get the new points array.
-        downLens   <- vcomputeUnboxedP
-                   $  vflatten2
-                   $  vmap (\c -> (c, c)) countsElse
+        let !downLens   = vcomputeUnboxedP
+                        $ vflatten2
+                        $ vmap (\c -> (c, c)) countsElse
+
         let !downSegd2     = Segd.fromLengths (vfromUnboxed $ U.replicate (vlength countsElse) 2)
         let !downSegd      = Segd.fromLengths downLens
         let !segdAboveElse = Segd.fromLengths countsElse
 
-        !downPoints <- vcomputeUnboxedP 
-                    $  vappends downSegd
-                        segdAboveElse above
-                        segdAboveElse above
+        let !downPoints = vcomputeUnboxedP 
+                        $ vappends downSegd
+                                segdAboveElse above
+                                segdAboveElse above
         
         putStrLn $ "    segdAboveElse = " P.++ show segdAboveElse
         putStrLn $ ""
@@ -209,10 +210,10 @@ hsplit_l segd points lines
 
 
         -- Use the far points to make new splitting lines for the new segments.
-        !downLines <- vcomputeUnboxedP 
-                   $  vflatten2 
-                   $  vmap (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
-                   $  vzip linesElse fars
+        let !downLines  = vcomputeUnboxedP 
+                        $ vflatten2 
+                        $ vmap (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
+                        $ vzip linesElse fars
 
         putStrLn $ "    downLines     = " P.++ show downLines
         putStrLn $ ""
@@ -233,21 +234,21 @@ hsplit_l segd points lines
         -- Concatenate the segments we get from the recursive call.
         --   In the recursion we pass down two segments for each one that we
         --   had from above.
-        let catLengths    = sum_s downSegd2 (Segd.lengths moarSegd)
-        let catSegd       = Segd.fromLengths catLengths
+        let !catLengths    = sum_s downSegd2 (Segd.lengths moarSegd)
+        let !catSegd       = Segd.fromLengths catLengths
 
 
         -- Combine the lengths of the segments we get from both sides of the
         -- if-then-else.
-        let combLengths   = vcombine2 flagsIf 
+        let !combLengths   = vcombine2 flagsIf 
                                 (Segd.lengths hullSegd)
                                 (Segd.lengths catSegd)
 
-        let combSegd      = Segd.fromLengths combLengths
+        let !combSegd      = Segd.fromLengths combLengths
 
 
         -- Combine the points from both sides of the if-then-else.
-        let combPoints    = vcombineSegs2 flagsIf 
+        let !combPoints    = vcombineSegs2 flagsIf 
                                 (Segd.lengths hullSegd) hullPoints 
                                 (Segd.lengths catSegd)  moarPoints
 
@@ -285,7 +286,8 @@ hsplit_dot
 
 -- BROKEN: the cross results are wrong with +RTS -N2
 hsplit_dot !segd !points !lines 
-        = vcomputeUnboxedP
+        = return
+        $ vcomputeUnboxedP
         $ vzipWith
                 cross_fn
                 points
