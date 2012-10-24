@@ -12,44 +12,88 @@ import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Stream
 import Data.Array.Repa                          as R
 import Data.Array.Repa.Vector.Base
+import qualified Data.Vector                    as V
 import qualified Data.Vector.Unboxed            as U
+import qualified Data.Vector.Unboxed.Mutable    as UM
 import GHC.Exts
+import Control.Monad
+import Control.Monad.ST
 
 
 -- | Segmented Fold
-fold_s  :: (Source r a, Source r1 Int, Source r2 Int, U.Unbox a)
+fold_s  :: (Source r a, U.Unbox a)
         => (a -> a -> a)
         -> a
-        -> Segd r1 r2 -> Vector r a -> Vector U a
-fold_s k z segd vec = foldSegsWithP k z segd (distOf $ vstream vec)
+        -> SplitSegd -> Vector r a -> Vector U a
+fold_s k z segd vec = foldSegsWithP k (foldSegs k z) segd (distOf $ vstream vec)
  where
-    {-# INLINE distOf #-}
-    distOf (AStream _ dist _) = dist
+  distOf (AStream _ dist _) = dist
 {-# INLINE fold_s #-}
 
 
 {-# INLINE foldSegsWithP #-}
 foldSegsWithP
-        :: (Source S a, Source r1 Int, Source r2 Int, U.Unbox a)
+        :: (Source S a, U.Unbox a)
         => (a -> a -> a)
-        -> a
---        -> (Stream Int -> Stream a -> Stream a)
-        -> Segd r1 r2 -> DistStream a -> Vector U a
-
-foldSegsWithP fElem zero segd xss
- = unstream $ foldSegs fElem zero (instream $ lengths segd) (catDistStream xss)
+        -> (Stream Int -> Stream a -> Stream a)
+        -> SplitSegd -> DistStream a -> Vector U a
+foldSegsWithP fElem fSeg segd (DistStream _sz num_frags get_frag)
+ = runST (do
+        mrs <- joinD drs -- V.convert drs
+        --mrs <- joinDM theGang drs
+        fixupFold fElem mrs dcarry
+        liftM vfromUnboxed $ U.unsafeFreeze mrs)
  where
-    {-# INLINE unstream #-}
-    unstream s =
-        let u = unstreamUnboxed s
-        in  AUnboxed (Z :. U.length u) u
+    (dcarry, drs)
+        = V.unzip
+        $ V.generate (I# num_frags) partial
+        -- Note: assuming that (num_frags == splitChunks segd)
+
+    joinD d = U.unsafeThaw
+            $ V.convert
+            $ V.concatMap V.convert d
+
+    partial (I# i)
+        = let chunk = splitChunk segd V.! I# i
+              strm  = get_frag i
+
+              rs    = fSeg (instream $ chunkLengths chunk) strm
+
+              n | chunkOffset chunk ==# 0#  = 0
+                | otherwise                 = 1
+          in  ((I# (chunkStart chunk), U.take n $ unstreamUnboxed rs), U.drop n $ unstreamUnboxed rs)
 
     {-# INLINE instream #-}
     instream v =
-        stream (unbox (vlength v)) (\ix -> R.unsafeLinearIndex v (I# ix))
+        stream (unbox (vlength v))
+               (\ix -> R.unsafeLinearIndex v (I# ix))
 
     {-# INLINE unbox #-}
     unbox (I# int) = int
+
+    vfromUnboxed vec
+        = fromUnboxed (Z :. U.length vec) vec
+
+fixupFold
+        :: (U.Unbox a)
+        => (a -> a -> a)
+        -> UM.MVector s a
+        -> V.Vector (Int, U.Vector a)
+        -> ST s ()
+fixupFold f !mrs !dcarry = go 1
+  where
+    !p = V.length dcarry
+
+    go i | i >= p = return ()
+         | U.null c = go (i+1)
+         | otherwise   = do
+                           x <- UM.read mrs k
+                           UM.write mrs k (f x (c U.! 0))
+                           go (i + 1)
+      where
+        (k,c) = dcarry V.! i
+{-# NOINLINE fixupFold #-}
+
 
 {-# INLINE catDistStream #-}
 catDistStream :: DistStream a -> Stream a
@@ -72,21 +116,22 @@ catDistStream (DistStream sz frag_max frag_get)
 
 
 -- | Segmented sum.
-sum_s   :: (Source r1 Int, Source r2 Int, Source r3 a, U.Unbox a, Num a)
-        => Segd r1 r2 -> Vector r3 a -> Vector U a
+sum_s   :: (Source r3 a, U.Unbox a, Num a)
+        => SplitSegd -> Vector r3 a -> Vector U a
 sum_s segd vec
         = fold_s (+) 0 segd vec
 {-# INLINE sum_s #-}
 
 
 -- | Segmented count.
-count_s :: ( Source r1 Int, Source r2 Int, Source r3 a, U.Unbox a
+count_s :: ( Source r3 a, U.Unbox a
            , Source (MapR r3) Int
            , Map r3 a
            , Eq a)
-        => Segd r1 r2 -> Vector r3 a -> a -> Vector U Int
+        => SplitSegd -> Vector r3 a -> a -> Vector U Int
 
 count_s segd vec x
  = sum_s segd $ vmap (fromBool . (== x)) vec
  where  fromBool True  = 1
         fromBool False = 0
+

@@ -146,7 +146,7 @@ hsplit_l segd points lines
         putStrLn $ "    above         = " P.++ show above
 
         -- Count how many points ended up in each segment.
-        let !counts     = count_s segd flags True
+        let !counts     = count_s (Segd.splitSegd segd) flags True
         putStrLn $ "    counts        = " P.++ show counts
                  P.++ "\n"
 
@@ -238,7 +238,7 @@ hsplit_l segd points lines
         -- Concatenate the segments we get from the recursive call.
         --   In the recursion we pass down two segments for each one that we
         --   had from above.
-        let !catLengths    = sum_s downSegd2 (Segd.lengths moarSegd)
+        let !catLengths    = sum_s (Segd.splitSegd downSegd2) (Segd.lengths moarSegd)
         let !catSegd       = Segd.fromLengths catLengths
 
 
@@ -315,7 +315,7 @@ vselects :: U.Unbox a
          -> Vector U a
 
 vselects choose z segd vec
- = fold_s f z segd vec
+ = fold_s f z (Segd.splitSegd segd) vec
  where  f x1 x2
          = if choose x1 x2 then x2 else x1
 
