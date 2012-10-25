@@ -86,19 +86,19 @@ tests
 -- Computation / Conversion ---------------------------------------------------
 prop_compute_chain :: Vector U Int -> Bool
 prop_compute_chain vec
- = let result =  unsafePerformIO $ vcomputeUnboxedP (vchain vec)
+ = let result =  vcomputeUnboxedP (vchain vec)
    in  result == vec
 
 
 prop_compute_stream :: Vector U Int -> Bool
 prop_compute_stream vec
- = let result =  unsafePerformIO $ vcomputeUnboxedP (vstream vec)
+ = let result =  vcomputeUnboxedP (vstream vec)
    in  result == vec
 
 
 prop_compute_toStream_chain :: Vector U Int -> Bool
 prop_compute_toStream_chain vec
- = let  result = unsafePerformIO $ vcomputeUnboxedP (vstreamOfChain $ vchain vec)
+ = let  result = vcomputeUnboxedP (vstreamOfChain $ vchain vec)
    in   result == vec
 
 
