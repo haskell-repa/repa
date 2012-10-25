@@ -12,12 +12,16 @@ import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Stream
 import Data.Array.Repa                          as R
 import Data.Array.Repa.Vector.Base
+import qualified Data.Array.Repa.Eval.Gang      as G
 import qualified Data.Vector                    as V
+import qualified Data.Vector.Mutable            as VM
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import GHC.Exts
 import Control.Monad
 import Control.Monad.ST
+
+import System.IO.Unsafe
 
 
 -- | Segmented Fold
@@ -39,19 +43,21 @@ foldSegsWithP
         -> SplitSegd -> DistStream a -> Vector U a
 foldSegsWithP fElem fSeg segd (DistStream _sz num_frags get_frag)
  = runST (do
-        mrs <- joinD drs -- V.convert drs
-        --mrs <- joinDM theGang drs
+        mrs <- joinD drs -- joinDM for parallel
         fixupFold fElem mrs dcarry
         liftM vfromUnboxed $ U.unsafeFreeze mrs)
  where
     (dcarry, drs)
         = V.unzip
         $ V.generate (I# num_frags) partial
+--        $ generateD partial
         -- Note: assuming that (num_frags == splitChunks segd)
+        -- AND num_frags == gangSize theGang
 
     joinD d = U.unsafeThaw
             $ V.convert
             $ V.concatMap V.convert d
+
 
     partial (I# i)
         = let chunk = splitChunk segd V.! I# i
@@ -73,6 +79,44 @@ foldSegsWithP fElem fSeg segd (DistStream _sz num_frags get_frag)
 
     vfromUnboxed vec
         = fromUnboxed (Z :. U.length vec) vec
+
+generateD :: (Int -> a) -> V.Vector a
+generateD f
+ = unsafePerformIO (do
+        let n =  G.gangSize G.theGang
+        m     <- VM.new n
+        G.gangIO G.theGang (write m)
+        V.unsafeFreeze m)
+ where
+    write m i
+     = let !v = f i
+       in  VM.unsafeWrite m i v
+
+joinDM  :: (U.Unbox a)
+        => V.Vector (U.Vector a) -> ST s (U.MVector s a)
+joinDM darr
+ = do   marr <- UM.new n
+        G.gangST G.theGang (copy marr)
+        return marr
+ where
+    !di = V.scanl (+) 0
+        $ V.map U.length darr
+
+    !n  = V.last di
+
+    copy marr i
+     = do   w_ix    <- V.indexM di   i
+            source  <- V.indexM darr i
+            let end =  U.length source
+            go marr w_ix source 0 end
+
+    go m wi s ri re
+     = if ri == re
+       then return ()
+       else
+        do  v <- U.indexM s ri
+            UM.unsafeWrite m wi v
+            go m (wi+1) s (ri+1) re
 
 fixupFold
         :: (U.Unbox a)
