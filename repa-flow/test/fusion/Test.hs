@@ -11,7 +11,6 @@ testFlowUnflow vec
         unflow f
 
 
-
 testMap :: U.Vector Int -> IO (U.Vector Int)
 testMap vec
  = do   f       <- flow vec
