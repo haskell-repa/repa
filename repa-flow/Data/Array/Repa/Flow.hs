@@ -1,16 +1,17 @@
-{-# LANGUAGE MagicHash, BangPatterns #-}
+{-# LANGUAGE MagicHash, BangPatterns, ExistentialQuantification #-}
 module Data.Array.Repa.Flow
-        ( Flow (..)
+        ( Flow (..) 
         , flow
         , unflow
         , map
         , zip
         , zipWith
-        , foldl
-        , indexs
         , pack
-        , filter)
+        , filter
+        , foldl
+        , indexs)
 where
+import System.IO.Unsafe
 import Data.IORef
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
@@ -18,33 +19,24 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude  hiding (map, zip, zipWith, foldl, filter)
 
 
---  With perfect stream fusion we'll end up with a single loop that
---  passes many state variables back to itself.
---
---  Instead, keep state in mutable variables local to each function, 
---  and process multiple elements at a time to amortise the cost of
---  reading and writing the state variables. The state will be stored
---  in L1 cache, so reading and writing the state shouldn't cost more
---  than spilling a register to the stack.
---
---  When we have multiple consumers for a flow we'll have to use a 
---  combinator the caches the current packet read from the source.
---
---  With zipWith, the cost of checking for the end-of-stream won't 
---  be as high if we pull several elements at once.
---
+-- TODO: write a separate buffer function that converts the output
+--       of pack back into a flow prepared to give four elements at a time.
 
 data Flow a
         = Flow
         { flowSize      :: Size
 
-          -- | Return either a single element from a flow,
-          --   or Nothing if there are no more elements.
-        , flowPull1     :: () -> IO (Maybe a)
+          -- | Takes a continuation and either calls it with Just an element
+          --   or Nothing if no more elements are available.
+        , flowGet1      :: (Maybe a -> IO ())
+                        -> IO ()
 
-          -- | Returns either a quad of elements or the number of elements
-          --   remaining if there are less than four.
-        , flowPull4     :: () -> IO (Either (a, a, a, a) Int) }
+          -- | Takes a continuation and either calls it with a Left 4-tuple
+          --   of elements or Right Int if less than four elements
+          --   are available.
+        , flowGet4      :: (Either (a, a, a, a) Int -> IO ())
+                        -> IO ()
+        }
 
 data Size
         = Exact Int
@@ -61,57 +53,52 @@ sizeMin s1 s2
 
 -- map ------------------------------------------------------------------------
 map :: (a -> b) -> Flow a -> Flow b
-map f (Flow size pull1 pull4)
- = Flow size pull1' pull4'
+map f (Flow size get1 get4)
+ = Flow size get1' get4'
  where  
-        pull1' ()
-         = do   mx       <- pull1 ()
-                case mx of
-                 Just x  
-                  -> return $ Just $ f x
+        get1' push1
+         =  get1 $ \r 
+         -> case r of
+                Just x  -> push1 $ Just (f x)
+                Nothing -> push1 $ Nothing
 
-                 Nothing 
-                  -> return Nothing
+        get4' push4
+         =  get4 $ \r
+         -> case r of
+                Left (x1, x2, x3, x4)
+                 -> push4 $ Left (f x1, f x2, f x3, f x4)
 
-        pull4' ()
-         = do   mx      <- pull4 ()
-                case mx of
-                 Left (x1, x2, x3, x4)  
-                  -> return $ Left (f x1, f x2, f x3, f x4)
-
-                 Right len
-                  -> return $ Right len
+                Right len
+                 -> push4 $ Right len
 {-# INLINE [1] map #-}
 
 
 -- zip ------------------------------------------------------------------------
 zip :: Flow a -> Flow b -> Flow (a, b)
-zip     (Flow sizeA pullA1 pullA4)
-        (Flow sizeB pullB1 pullB4)
- = Flow (sizeMin sizeA sizeB) pull1' pull4'
+zip    (Flow sizeA getA1 getA4)
+       (Flow sizeB getB1 getB4)
+ = Flow (sizeMin sizeA sizeB) get1' get4'
  where
-        pull1' ()
-         = do   !mxA     <- pullA1 ()
-                !mxB     <- pullB1 ()
-                case (mxA, mxB) of
-                 (Just xA, Just xB)
-                   -> return $ Just $ (xA, xB)
+       get1' push1
+        =  getA1 $ \mxA 
+        -> getB1 $ \mxB
+        -> case (mxA, mxB) of
+                (Just xA, Just xB) -> push1 $ Just (xA, xB)
+                _                  -> push1 $ Nothing
 
-                 _ -> return $ Nothing
+       get4' push4
+        =  getA4 $ \mxA
+        -> getB4 $ \mxB
+        -> case (mxA, mxB) of
+                ( Left (a1, a2, a3, a4)
+                 ,Left (b1, b2, b3, b4))
+                 -> push4 $ Left  ((a1, b1), (a2, b2), (a3, b3), (a4, b4))
 
-        pull4' ()
-         = do   !mxA     <- pullA4 ()
-                !mxB     <- pullB4 ()
-                case (mxA, mxB) of
-                 (  Left (a1, a2, a3, a4)
-                  , Left (b1, b2, b3, b4))
-                  -> return $ Left  ((a1, b1), (a2, b2), (a3, b3), (a4, b4))
+                ( Right len, _) 
+                 -> push4 $ Right len
 
-                 (Right len, _) 
-                  -> return $ Right len
-
-                 (_, Right len) 
-                  -> return $ Right len
+                ( _, Right len) 
+                 -> push4 $ Right len
 {-# INLINE [1] zip #-}
 
 
@@ -122,131 +109,134 @@ zipWith f flowA flowB
 {-# INLINE [1] zipWith #-}
 
 
--- foldl ----------------------------------------------------------------------
-foldl :: (a -> b -> a) -> a -> Flow b -> IO a
-foldl f z (Flow size pull1 pull4)
- = eat4 z
- where
-        eat1 !acc
-         = do   !mx     <- pull1 ()
-                case mx of
-                 Just x1
-                  -> eat1 (acc `f` x1)
-
-                 Nothing
-                  -> return acc
-
-        eat4 !acc 
-         = do   !mx     <- pull4 ()
-                case mx of
-                 Left (x1, x2, x3, x4)
-                  -> eat4 (acc `f` x1 `f` x2 `f` x3 `f` x4)
-
-                 Right _
-                  -> eat1 acc
-{-# INLINE [1] foldl #-}
-
-
--- indexs ---------------------------------------------------------------------
-indexs :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
-indexs vec (Flow size pull1 pull4)
- = Flow size pull1' pull4'
- where
-        pull1' ()
-         = do   !mix    <- pull1 ()
-                case mix of
-                 Just ix        
-                  -> return $ Just (U.unsafeIndex vec ix)
-
-                 Nothing        
-                  -> return $ Nothing
-
-        pull4' ()
-         = do   !mix    <- pull4 ()
-                case mix of
-                 Left (ix1, ix2, ix3, ix4)
-                  -> return $ Left ( U.unsafeIndex vec ix1
-                                   , U.unsafeIndex vec ix2
-                                   , U.unsafeIndex vec ix3
-                                   , U.unsafeIndex vec ix4)
-
-                 Right len
-                  -> return $ Right len
-{-# INLINE [1] indexs #-}
-
-
 -- pack -----------------------------------------------------------------------
-pack :: U.Unbox a => Flow (Bool, a) -> IO (Flow a)
-pack (Flow size pull1 pull4)
- = newIORef Stash0 >>= \refStash
- -> let 
+-- | TODO: This can only produce elements one at a time.
+--   Use a buffer instead to collect elements from the source.
+pack :: U.Unbox a => Flow (Bool, a) -> Flow a
+pack (Flow size get1 get4)
+ = Flow size get1' get4'
+ where
         size'
          = case size of
                 Exact len       -> Max len
                 Max   len       -> Max len
 
-        pull1' ()
-         = do   !mx   <- pull1 ()
-                case mx of
-                 Just (True,  x) -> return $ Just x
-                 Just (False, _) -> pull1' ()
-                 Nothing         -> return $ Nothing
+        get1' push1
+         = eat ()
+         where  eat ()
+                 =  get1 $ \mx
+                 -> case mx of
+                        Just (True,  x) -> push1 (Just x)
+                        Just (False, _) -> eat ()
+                        Nothing         -> push1 Nothing
 
-        pull4' ()
-         = do   return $ Right 1
-
-    in  return $ Flow size pull1' pull4'
-
+        get4' push4
+         = push4 $ Right 1
 {-# INLINE [1] pack #-}
 
 
 -- filter ---------------------------------------------------------------------
-filter :: U.Unbox a => (a -> Bool) -> Flow a -> IO (Flow a)
+filter :: U.Unbox a => (a -> Bool) -> Flow a -> Flow a
 filter f ff
         = pack $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}
 
 
+-- foldl ----------------------------------------------------------------------
+foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> IO a
+foldl f z !(Flow size get1 get4)
+ =  UM.unsafeNew 1 >>= \outRef
+ -> let 
+        eat1 !acc
+         = get1 $ \r 
+         -> case r of
+                Just x1
+                 -> eat1 (acc `f` x1)
+
+                Nothing
+                 -> UM.write outRef 0 acc
+
+        eat4 !acc 
+         =  get4 $ \r 
+         -> case r of
+                Left (x1, x2, x3, x4)
+                  -> eat4 (acc `f` x1 `f` x2 `f` x3 `f` x4)
+
+                Right _
+                  -> eat1 acc
+    in do
+        eat4 z
+        UM.read outRef 0
+
+{-# INLINE [1] foldl #-}
+
+
+-- indexs ---------------------------------------------------------------------
+indexs :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
+indexs vec (Flow size get1 get4)
+ = Flow size get1' get4'
+ where
+        get1' push1
+         =  get1 $ \r
+         -> case r of
+                Just ix 
+                 -> push1 $ Just (U.unsafeIndex vec ix) 
+
+                Nothing
+                 -> push1 $ Nothing
+
+        get4' push4
+         =  get4 $ \r
+         -> case r of
+                Left (ix1, ix2, ix3, ix4)
+                 -> push4 $ Left ( U.unsafeIndex vec ix1
+                                 , U.unsafeIndex vec ix2
+                                 , U.unsafeIndex vec ix3
+                                 , U.unsafeIndex vec ix4)
+
+                Right len
+                 -> push4 $ Right len
+{-# INLINE [1] indexs #-}
+
+
 -- flow -----------------------------------------------------------------------
 -- | Convert an unboxed vector to a flow.
 flow :: U.Unbox a => U.Vector a -> IO (Flow a)
-flow vec
- = newIORef 0 >>= \refIx
+flow !vec
+ =  UM.unsafeNew 1 >>= \refIx
  -> let 
-        pull1 ()
-         = do   ix      <- readIORef refIx
+        get1 push1
+         = do   ix      <- UM.unsafeRead refIx 0
                 if ix >= U.length vec
-                 then   return Nothing
+                 then   push1 Nothing
                  else do
-                        writeIORef refIx (ix + 1)
-                        return  $ Just (U.unsafeIndex vec ix)
+                        UM.unsafeWrite refIx 0 (ix + 1)
+                        push1 (Just (U.unsafeIndex vec ix))
 
-        pull4 ()
-         = do   ix      <- readIORef refIx
+        get4 push4
+         = do   ix      <- UM.unsafeRead refIx 0
                 let len = U.length vec
                 if ix + 4 >= len
-                 then   return  $ Right (len - ix)
+                 then   push4 $ Right (len - ix)
                  else do
-                        writeIORef refIx (ix + 4)
-                        return  $ Left  ( U.unsafeIndex vec ix
-                                        , U.unsafeIndex vec (ix + 1)
-                                        , U.unsafeIndex vec (ix + 2)
-                                        , U.unsafeIndex vec (ix + 3) )
+                        UM.unsafeWrite refIx 0 (ix + 4)
+                        push4 $ Left  ( U.unsafeIndex vec ix
+                                      , U.unsafeIndex vec (ix + 1)
+                                      , U.unsafeIndex vec (ix + 2)
+                                      , U.unsafeIndex vec (ix + 3) )
 
    in   return 
-         $ Flow (Exact (U.length vec))
-                pull1
-                pull4
+         $ Flow (Exact (U.length vec)) get1 get4
 {-# INLINE [1] flow #-}
 
 
 -- unflow ---------------------------------------------------------------------
 -- | Fully evaluate a flow, producing an unboxed vector.
 unflow :: U.Unbox a => Flow a -> IO (U.Vector a)
-unflow flow
+unflow !flow
  = case flowSize flow of
         Exact len       -> unflowExact flow len
-        Max   len       -> unflowExact flow len         -- wrong
+        Max   len       -> unflowExact flow len         -- TODO: this is wrong
 {-# INLINE [1] unflow #-}
 
 
@@ -268,8 +258,8 @@ slurp write flow
  = slurp4 0#
  where  
         slurp1 ix
-         = do   r       <- flowPull1 flow ()
-                case r of
+         =  flowGet1 flow $ \r 
+         -> case r of
                  Just x
                   -> do write (I# ix) x
                         slurp1 (ix +# 1#)
@@ -278,16 +268,29 @@ slurp write flow
                   -> return ()
 
         slurp4 ix 
-         = do   r       <- flowPull4 flow ()
-                case r of
-                 Left (x1, x2, x3, x4)
-                  -> do write (I# ix)         x1
+         = flowGet4 flow $ \r 
+         -> case r of
+                Left (x1, x2, x3, x4)
+                 -> do  write (I# ix)         x1
                         write (I# (ix +# 1#)) x2
                         write (I# (ix +# 2#)) x3
                         write (I# (ix +# 3#)) x4
                         slurp4 (ix +# 4#)
 
-                 Right n
-                  ->    slurp1 ix
+                Right n
+                 ->     slurp1 ix
 {-# INLINE [0] slurp #-}
+
+
+-- Other operators ------------------------------------------------------------
+--
+-- Do we need this in addition to zip?
+--  link2   :: Flow a 
+--         -> (Flow a -> Flow b)
+--         -> (Flow a -> Flow c)
+--         -> (Flow (b, c))
+
+-- Would need to introduce a cache here incase all of 'a's are pulled before b's.
+--  unzip2  :: Flow (a, b)
+--          -> (Flow a, Flow b)
 
