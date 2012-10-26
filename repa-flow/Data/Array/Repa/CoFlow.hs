@@ -4,10 +4,14 @@ module Data.Array.Repa.CoFlow
         , flow
         , unflow
         , map
+        , zip
+        , zipWith
         , pack
         , filter
-        , foldl)
+        , foldl
+        , indexs)
 where
+import System.IO.Unsafe
 import Data.IORef
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
@@ -69,7 +73,45 @@ map f (Flow size get1 get4)
 {-# INLINE [1] map #-}
 
 
+-- zip ------------------------------------------------------------------------
+zip :: Flow a -> Flow b -> Flow (a, b)
+zip    (Flow sizeA getA1 getA4)
+       (Flow sizeB getB1 getB4)
+ = Flow (sizeMin sizeA sizeB) get1' get4'
+ where
+       get1' push1
+        =  getA1 $ \mxA 
+        -> getB1 $ \mxB
+        -> case (mxA, mxB) of
+                (Just xA, Just xB) -> push1 $ Just (xA, xB)
+                _                  -> push1 $ Nothing
+
+       get4' push4
+        =  getA4 $ \mxA
+        -> getB4 $ \mxB
+        -> case (mxA, mxB) of
+                ( Left (a1, a2, a3, a4)
+                 ,Left (b1, b2, b3, b4))
+                 -> push4 $ Left  ((a1, b1), (a2, b2), (a3, b3), (a4, b4))
+
+                ( Right len, _) 
+                 -> push4 $ Right len
+
+                ( _, Right len) 
+                 -> push4 $ Right len
+{-# INLINE [1] zip #-}
+
+
+-- zipWith --------------------------------------------------------------------
+zipWith :: (a -> b -> c) -> Flow a -> Flow b -> Flow c
+zipWith f flowA flowB
+        = map (uncurry f) $ zip flowA flowB
+{-# INLINE [1] zipWith #-}
+
+
 -- pack -----------------------------------------------------------------------
+-- | TODO: This can only produce elements one at a time.
+--   Use a buffer instead to collect elements from the source.
 pack :: U.Unbox a => Flow (Bool, a) -> Flow a
 pack (Flow size get1 get4)
  = Flow size get1' get4'
@@ -101,9 +143,9 @@ filter f ff
 
 
 -- foldl ----------------------------------------------------------------------
-foldl :: (a -> b -> a) -> a -> Flow b -> IO a
-foldl f z (Flow size get1 get4)
- =  newIORef z >>= \outRef
+foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> IO a
+foldl f z !(Flow size get1 get4)
+ =  UM.unsafeNew 1 >>= \outRef
  -> let 
         eat1 !acc
          = get1 $ \r 
@@ -112,7 +154,7 @@ foldl f z (Flow size get1 get4)
                  -> eat1 (acc `f` x1)
 
                 Nothing
-                 -> writeIORef outRef acc
+                 -> UM.write outRef 0 acc
 
         eat4 !acc 
          =  get4 $ \r 
@@ -122,35 +164,62 @@ foldl f z (Flow size get1 get4)
 
                 Right _
                   -> eat1 acc
-
     in do
         eat4 z
-        readIORef outRef
+        UM.read outRef 0
 
 {-# INLINE [1] foldl #-}
+
+
+-- indexs ---------------------------------------------------------------------
+indexs :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
+indexs vec (Flow size get1 get4)
+ = Flow size get1' get4'
+ where
+        get1' push1
+         =  get1 $ \r
+         -> case r of
+                Just ix 
+                 -> push1 $ Just (U.unsafeIndex vec ix) 
+
+                Nothing
+                 -> push1 $ Nothing
+
+        get4' push4
+         =  get4 $ \r
+         -> case r of
+                Left (ix1, ix2, ix3, ix4)
+                 -> push4 $ Left ( U.unsafeIndex vec ix1
+                                 , U.unsafeIndex vec ix2
+                                 , U.unsafeIndex vec ix3
+                                 , U.unsafeIndex vec ix4)
+
+                Right len
+                 -> push4 $ Right len
+{-# INLINE [1] indexs #-}
 
 
 -- flow -----------------------------------------------------------------------
 -- | Convert an unboxed vector to a flow.
 flow :: U.Unbox a => U.Vector a -> IO (Flow a)
-flow vec
- = newIORef 0 >>= \refIx
+flow !vec
+ =  UM.unsafeNew 1 >>= \refIx
  -> let 
         get1 push1
-         = do   ix      <- readIORef refIx
+         = do   ix      <- UM.unsafeRead refIx 0
                 if ix >= U.length vec
                  then   push1 Nothing
                  else do
-                        writeIORef refIx (ix + 1)
+                        UM.unsafeWrite refIx 0 (ix + 1)
                         push1 (Just (U.unsafeIndex vec ix))
 
         get4 push4
-         = do   ix      <- readIORef refIx
+         = do   ix      <- UM.unsafeRead refIx 0
                 let len = U.length vec
                 if ix + 4 >= len
                  then   push4 $ Right (len - ix)
                  else do
-                        writeIORef refIx (ix + 4)
+                        UM.unsafeWrite refIx 0 (ix + 4)
                         push4 $ Left  ( U.unsafeIndex vec ix
                                       , U.unsafeIndex vec (ix + 1)
                                       , U.unsafeIndex vec (ix + 2)
@@ -164,7 +233,7 @@ flow vec
 -- unflow ---------------------------------------------------------------------
 -- | Fully evaluate a flow, producing an unboxed vector.
 unflow :: U.Unbox a => Flow a -> IO (U.Vector a)
-unflow flow
+unflow !flow
  = case flowSize flow of
         Exact len       -> unflowExact flow len
         Max   len       -> unflowExact flow len         -- TODO: this is wrong
@@ -211,4 +280,17 @@ slurp write flow
                 Right n
                  ->     slurp1 ix
 {-# INLINE [0] slurp #-}
+
+
+-- Other operators ------------------------------------------------------------
+--
+-- Do we need this in addition to zip?
+--  link2   :: Flow a 
+--         -> (Flow a -> Flow b)
+--         -> (Flow a -> Flow c)
+--         -> (Flow (b, c))
+
+-- Would need to introduce a cache here incase all of 'a's are pulled before b's.
+--  unzip2  :: Flow (a, b)
+--          -> (Flow a, Flow b)
 
