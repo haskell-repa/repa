@@ -112,7 +112,7 @@ zipWith f flowA flowB
 -- pack -----------------------------------------------------------------------
 -- | TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-pack :: U.Unbox a => Flow (Bool, a) -> Flow a
+pack :: Flow (Bool, a) -> Flow a
 pack (Flow size get1 get4)
  = Flow size get1' get4'
  where
@@ -136,7 +136,7 @@ pack (Flow size get1 get4)
 
 
 -- filter ---------------------------------------------------------------------
-filter :: U.Unbox a => (a -> Bool) -> Flow a -> Flow a
+filter :: (a -> Bool) -> Flow a -> Flow a
 filter f ff
         = pack $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}
