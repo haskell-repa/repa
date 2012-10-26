@@ -1,11 +1,12 @@
-{-# LANGUAGE MagicHash, BangPatterns #-}
+{-# LANGUAGE MagicHash, BangPatterns, ExistentialQuantification #-}
 module Data.Array.Repa.CoFlow
         ( Flow (..) 
         , flow
         , unflow
         , map
         , pack
-        , filter)
+        , filter
+        , foldl)
 where
 import Data.IORef
 import GHC.Exts
@@ -23,14 +24,14 @@ data Flow a
 
           -- | Takes a continuation and either calls it with Just an element
           --   or Nothing if no more elements are available.
-        , flowGet1      :: (Maybe a -> IO ()) 
+        , flowGet1      :: (Maybe a -> IO ())
                         -> IO ()
 
           -- | Takes a continuation and either calls it with a Left 4-tuple
           --   of elements or Right Int if less than four elements
           --   are available.
-        , flowGet4      :: (Either (a, a, a, a) Int -> IO ()) 
-                        -> IO () 
+        , flowGet4      :: (Either (a, a, a, a) Int -> IO ())
+                        -> IO ()
         }
 
 data Size
@@ -98,6 +99,35 @@ filter f ff
         = pack $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}
 
+
+-- foldl ----------------------------------------------------------------------
+foldl :: (a -> b -> a) -> a -> Flow b -> IO a
+foldl f z (Flow size get1 get4)
+ =  newIORef z >>= \outRef
+ -> let 
+        eat1 !acc
+         = get1 $ \r 
+         -> case r of
+                Just x1
+                 -> eat1 (acc `f` x1)
+
+                Nothing
+                 -> writeIORef outRef acc
+
+        eat4 !acc 
+         =  get4 $ \r 
+         -> case r of
+                Left (x1, x2, x3, x4)
+                  -> eat4 (acc `f` x1 `f` x2 `f` x3 `f` x4)
+
+                Right _
+                  -> eat1 acc
+
+    in do
+        eat4 z
+        readIORef outRef
+
+{-# INLINE [1] foldl #-}
 
 
 -- flow -----------------------------------------------------------------------
