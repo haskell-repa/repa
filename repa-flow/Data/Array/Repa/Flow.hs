@@ -6,6 +6,11 @@ module Data.Array.Repa.Flow
         , flow
         , unflow
 
+        -- * Construction
+        , generate
+        , replicate
+        , enumFromN
+
         -- * Pure combinators
         , map
         , zip
@@ -21,13 +26,52 @@ where
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
-import Prelude  hiding (map, zip, zipWith, foldl, filter)
+import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate)
 
+-- TODO: flow fusion.
 
--- TODO: write a separate buffer function that converts the output
+-- TODO: flows are stateful and incremental
+--       Taking a prefix only computes that many.
+--       Use dup2 for sharing, caches only as much data as required to 
+--       handle the desync in the program.
+
+-- TODO: add a separate buffer function that converts the output
 --       of pack back into a flow prepared to give four elements at a time.
 
--- | Flows provide a version of vector fusion that does not depend on the 
+-- TODO: add 'reflow', that evaluate elements into a buffer then 
+--       converts back to a flow, for caching.
+
+-- TODO: could write 'drop' function using an 'flowAdvance' field that
+--       advances the flow without nessesarally computing the elements.
+
+-- TODO: write 'take' to incrementally pull data.
+--       take returns an unboxed vector of the given length
+--       flow retuning take would just keep a second length
+--       and push nothing after this length.
+
+-- TODO: dup2 :: Flow a -> (Flow a, Flow a)
+--       This will save us.
+--       Creates two linked handles that buffer data until it has 
+--       been pulled from both. Can still fuse into both consumers,
+--       and only buffers the data that is required.
+--       Doesn't force whole vector to be evaluated when we have sharing.
+--       With higher degrees of duplication, might not to want to check
+--       all consumers after every pull. Use a pull counter and only 
+--       check for syncronisation after N pulls.
+
+-- TODO: performance check vs Data.Vector.Unboxed
+--
+
+-- TODO: this should make it easy to write the parallel segmented
+--       fold that exchanges data with its neighbours.
+
+-- TODO: write recursive version of pack that buffers results.
+--       until it gets enough to send a quad.
+
+-- Think of situtions where we'll get desync between ends of dup2
+-- Maybe with segmented fold, or pack / zip
+
+-- | Flows provide a version of stream fusion that does not depend on the 
 --   constructor specialisation transform, or strictness analysis working
 --   particularly well.
 -- 
@@ -52,7 +96,8 @@ data Flow a
         }
 
 data Size
-        = Exact Int
+        = Exact Int             -- TODO: exact doesn't work because we can pull
+                                --       from a flow multiple times.
         | Max   Int
 
 sizeMin :: Size -> Size -> Size
@@ -65,22 +110,24 @@ sizeMin s1 s2
 {-# INLINE [0] sizeMin #-}
 
 
--- flow -----------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Convert an unboxed vector to a flow.
 flow :: U.Unbox a => U.Vector a -> IO (Flow a)
 flow !vec
- =  UM.unsafeNew 1 >>= \refIx
- -> let 
-        get1 push1
-         = do   ix      <- UM.unsafeRead refIx 0
+ = do   refIx   <- UM.unsafeNew 1
+        UM.unsafeWrite refIx 0 0
+
+        let 
+         get1 push1
+          = do  ix      <- UM.unsafeRead refIx 0
                 if ix >= U.length vec
                  then   push1 Nothing
                  else do
                         UM.unsafeWrite refIx 0 (ix + 1)
                         push1 (Just (U.unsafeIndex vec ix))
 
-        get4 push4
-         = do   ix      <- UM.unsafeRead refIx 0
+         get4 push4
+          = do  ix      <- UM.unsafeRead refIx 0
                 let len = U.length vec
                 if ix + 4 >= len
                  then   push4 $ Right (len - ix)
@@ -91,12 +138,11 @@ flow !vec
                                       , U.unsafeIndex vec (ix + 2)
                                       , U.unsafeIndex vec (ix + 3) )
 
-   in   return 
-         $ Flow (Exact (U.length vec)) get1 get4
+        return $ Flow (Exact (U.length vec)) get1 get4
 {-# INLINE [1] flow #-}
 
 
--- unflow ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Fully evaluate a flow, producing an unboxed vector.
 unflow :: U.Unbox a => Flow a -> IO (U.Vector a)
 unflow !ff
@@ -105,12 +151,19 @@ unflow !ff
         Max   len       -> unflowExact ff len         -- TODO: this is wrong
 {-# INLINE [1] unflow #-}
 
+-- TODO: keep a mutable length in the flow.
+--       set it to zero after we've pulled all the elements.
+-- After taking just some elements, update the size.
+
+
+
 
 unflowExact :: U.Unbox a => Flow a -> Int -> IO (U.Vector a)
 unflowExact ff len
  = do   mvec    <- UM.unsafeNew len
-        slurp (UM.unsafeWrite mvec) ff
-        U.unsafeFreeze mvec
+        len'    <- slurp (UM.unsafeWrite mvec) ff
+        vec     <- U.unsafeFreeze mvec
+        return  $  U.slice 0 len' vec
 {-# INLINE [1] unflowExact #-}
 
 
@@ -118,24 +171,25 @@ unflowExact ff len
 --   passing them to the provided consumption function.
 slurp   :: (Int -> a -> IO ())
         -> Flow a
-        -> IO ()
+        -> IO Int
 
 slurp write ff
- = slurp4 0#
- where  
-        slurp1 ix
-         =  flowGet1 ff $ \r 
-         -> case r of
+ = do   refCount <- UM.unsafeNew 1
+
+        let 
+         slurp1 ix
+          =  flowGet1 ff $ \r 
+          -> case r of
                  Just x
                   -> do write (I# ix) x
                         slurp1 (ix +# 1#)
 
                  Nothing
-                  -> return ()
+                  ->    UM.unsafeWrite refCount 0 (I# ix)
 
-        slurp4 ix 
-         = flowGet4 ff $ \r 
-         -> case r of
+         slurp4 ix 
+          = flowGet4 ff $ \r 
+          -> case r of
                 Left (x1, x2, x3, x4)
                  -> do  write (I# ix)         x1
                         write (I# (ix +# 1#)) x2
@@ -145,10 +199,81 @@ slurp write ff
 
                 Right _
                  ->     slurp1 ix
+
+        slurp4 0#
+        UM.unsafeRead refCount 0
 {-# INLINE [0] slurp #-}
 
 
--- map ------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- | Construct a flow of the given length by applying the function to each
+--   index.
+generate :: Int -> (Int -> a) -> IO (Flow a)
+generate len f
+ = do   refCount <- UM.unsafeNew 1
+        UM.unsafeWrite refCount 0 0
+
+        let 
+         get1 push1
+          =  UM.unsafeRead refCount 0 >>= \ix
+          -> if ix >= len
+                then push1 Nothing
+                else do UM.unsafeWrite refCount 0 (ix + 1)
+                        push1 $ Just (f ix)
+
+         get4 push4
+          =  UM.unsafeRead refCount 0 >>= \ix 
+          -> if ix + 4 >= len
+                then push4 $ Right 1
+                else do UM.unsafeWrite refCount 0 (ix + 4)
+                        push4 $ Left (f ix, f (ix + 1), f (ix + 2), f (ix + 3))
+
+        return $ Flow (Exact len) get1 get4
+{-# INLINE [1] generate #-}
+
+
+-- | Produce an flow of the given length with the same value in each position.
+replicate :: Int -> a -> IO (Flow a)
+replicate n x
+        = generate n (const x)
+{-# INLINE [1] replicate #-}
+
+
+-- | Yield a vector of the given length containing values @x@, @x+1@ etc.
+enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> IO (Flow a)
+enumFromN start len
+ = do   refCount <- UM.unsafeNew 1
+        UM.unsafeWrite refCount 0 len
+
+        refAcc   <- UM.unsafeNew 1
+        UM.unsafeWrite refAcc   0 start
+
+        let
+         get1 push1
+          = UM.unsafeRead refCount 0 >>= \count
+          -> if count == 0
+                then push1 Nothing
+                else do UM.unsafeWrite refCount 0 (count - 1)
+
+                        acc     <- UM.unsafeRead refAcc 0
+                        UM.unsafeWrite refAcc   0 (acc + 1)
+                        push1 $ Just acc
+
+         get4 push4
+          = UM.unsafeRead refCount 0 >>= \count
+          -> if count <= 4 
+                then push4 (Right 1)
+                else do UM.unsafeWrite refCount 0 (count - 4)
+
+                        acc     <- UM.unsafeRead refAcc 0
+                        UM.unsafeWrite refAcc   0 (acc + 4)
+                        push4 $ Left (acc, acc + 1, acc + 2, acc + 3)
+
+        return $ Flow (Exact len) get1 get4
+{-# INLINE [1] enumFromN #-}
+
+
+------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
 map :: (a -> b) -> Flow a -> Flow b
 map f (Flow size get1 get4)
@@ -171,7 +296,7 @@ map f (Flow size get1 get4)
 {-# INLINE [1] map #-}
 
 
--- zip ------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples.
 zip :: Flow a -> Flow b -> Flow (a, b)
 zip    (Flow sizeA getA1 getA4)
@@ -201,7 +326,7 @@ zip    (Flow sizeA getA1 getA4)
 {-# INLINE [1] zip #-}
 
 
--- zipWith --------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Combine two flows with a function.
 zipWith :: (a -> b -> c) -> Flow a -> Flow b -> Flow c
 zipWith f flowA flowB
@@ -209,7 +334,7 @@ zipWith f flowA flowB
 {-# INLINE [1] zipWith #-}
 
 
--- pack -----------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Produce only the elements that have their corresponding flag set to `True`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
@@ -236,7 +361,7 @@ pack (Flow size get1 _get4)
 {-# INLINE [1] pack #-}
 
 
--- filter ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
 filter :: (a -> Bool) -> Flow a -> Flow a
 filter f ff
@@ -244,7 +369,7 @@ filter f ff
 {-# INLINE [1] filter #-}
 
 
--- gather ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
@@ -274,11 +399,11 @@ gather vec (Flow size get1 get4)
 {-# INLINE [1] gather #-}
 
 
--- foldl ----------------------------------------------------------------------
--- | Reduce a flow to a single value.
+-------------------------------------------------------------------------------
+-- | Fold Left. Reduce a flow to a single value.
 foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> IO a
 foldl f z !(Flow _ get1 get4)
- =  UM.unsafeNew 1 >>= \outRef
+ =  UM.unsafeNew 1 >>= \outRef                  -- TODO: zero counter
  -> let 
         eat1 !acc
          = get1 $ \r 
@@ -304,6 +429,12 @@ foldl f z !(Flow _ get1 get4)
 {-# INLINE [1] foldl #-}
 
 
+-------------------------------------------------------------------------------
+-- Fold Segmented. Takes a flow of segment lengths and a flow of elements,
+-- and reduces each segment to a value individually.
+-- folds :: U.Unbox a => (a -> b -> a) -> a -> Flow Int -> Flow b -> IO (Flow a)
+-- folds = undefined
+
 
 
 -- Other operators ------------------------------------------------------------
@@ -314,7 +445,7 @@ foldl f z !(Flow _ get1 get4)
 --         -> (Flow a -> Flow c)
 --         -> (Flow (b, c))
 
--- Would need to introduce a cache here incase all of 'a's are pulled before b's.
+-- Unzip is dup2 followed by map snd / map fst
 --  unzip2  :: Flow (a, b)
 --          -> (Flow a, Flow b)
 
