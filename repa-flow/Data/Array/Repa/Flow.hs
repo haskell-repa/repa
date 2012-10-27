@@ -92,6 +92,9 @@ data Flow a
           --   elements still available.
         , flowGet4      :: (Either (a, a, a, a) Int -> IO ())
                         -> IO ()
+
+        , flowGet8      :: (Either (a, a, a, a, a, a, a, a) Int -> IO ())
+                        -> IO ()
         }
 
 data Size
@@ -121,6 +124,8 @@ flow !vec
  = do   refIx   <- UM.unsafeNew 1
         UM.unsafeWrite refIx 0 0
 
+        let !(I# len)    = U.length vec
+
         let 
          get1 push1
           = do  !ix      <- UM.unsafeRead refIx 0
@@ -131,19 +136,32 @@ flow !vec
                         push1 (Just (U.unsafeIndex vec ix))
 
          get4 push4
-          = do  !ix      <- UM.unsafeRead refIx 0
-                let !len = U.length vec
-                if ix + 4 >= len
+          = do  !(I# ix) <- UM.unsafeRead refIx 0
+                if ix +# 4# >=# len
                  then   push4 $ Right 1
                  else do
-                        UM.unsafeWrite refIx 0 (ix + 4)
-                        push4 $ Left  ( U.unsafeIndex vec ix
-                                      , U.unsafeIndex vec (ix + 1)
-                                      , U.unsafeIndex vec (ix + 2)
-                                      , U.unsafeIndex vec (ix + 3) )
+                        UM.unsafeWrite refIx 0 (I# (ix +# 4#))
+                        push4 $ Left  ( U.unsafeIndex vec (I#  ix)
+                                      , U.unsafeIndex vec (I# (ix +# 1#))
+                                      , U.unsafeIndex vec (I# (ix +# 2#))
+                                      , U.unsafeIndex vec (I# (ix +# 3#)))
 
-        let !(I# len) = U.length vec
-        return $ Flow (Exact len) get1 get4
+         get8 push8
+          = do  !(I# ix) <- UM.unsafeRead refIx 0
+                if ix +# 8# >=# len
+                 then   push8 $ Right 1
+                 else do
+                        UM.unsafeWrite refIx 0 (I# (ix +# 8#))
+                        push8 $ Left  ( U.unsafeIndex vec (I# ix)
+                                      , U.unsafeIndex vec (I# (ix +# 1#))
+                                      , U.unsafeIndex vec (I# (ix +# 2#))
+                                      , U.unsafeIndex vec (I# (ix +# 3#))
+                                      , U.unsafeIndex vec (I# (ix +# 4#))
+                                      , U.unsafeIndex vec (I# (ix +# 5#))
+                                      , U.unsafeIndex vec (I# (ix +# 6#))
+                                      , U.unsafeIndex vec (I# (ix +# 7#)) )
+
+        return $ Flow (Exact len) get1 get4 get8
 {-# INLINE [1] flow #-}
 
 
@@ -204,7 +222,25 @@ slurp !write ff
                 Right !_
                  ->     slurp1 ix
 
-        slurp4 0#
+
+         slurp8 ix 
+          = flowGet8 ff $ \r 
+          -> case r of
+                Left (x1, x2, x3, x4, x5, x6, x7, x8)
+                 -> do  write (I# ix)         x1
+                        write (I# (ix +# 1#)) x2
+                        write (I# (ix +# 2#)) x3
+                        write (I# (ix +# 3#)) x4
+                        write (I# (ix +# 4#)) x5
+                        write (I# (ix +# 5#)) x6
+                        write (I# (ix +# 6#)) x7
+                        write (I# (ix +# 7#)) x8
+                        slurp8 (ix +# 8#)
+
+                Right !_
+                 ->     slurp1 ix
+
+        slurp8 0#
         UM.unsafeRead refCount 0
 {-# INLINE [0] slurp #-}
 
@@ -232,7 +268,7 @@ generate (I# len) f
                 else do UM.unsafeWrite refCount 0 (ix + 4)
                         push4 $ Left (f ix, f (ix + 1), f (ix + 2), f (ix + 3))
 
-        return $ Flow (Exact len) get1 get4
+        return $ Flow (Exact len) get1 get4 (error "enumFromN: get8")
 {-# INLINE [1] generate #-}
 
 
@@ -273,15 +309,15 @@ enumFromN start (I# len)
                         UM.unsafeWrite refAcc   0 (acc + 4)
                         push4 $ Left (acc, acc + 1, acc + 2, acc + 3)
 
-        return $ Flow (Exact len) get1 get4
+        return $ Flow (Exact len) get1 get4 (error "enumFromN: get8")
 {-# INLINE [1] enumFromN #-}
 
 
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
 map :: (a -> b) -> Flow a -> Flow b
-map f (Flow size get1 get4)
- = Flow size get1' get4'
+map f (Flow size get1 get4 get8)
+ = Flow size get1' get4' get8'
  where  
         get1' push1
          =  get1 $ \r 
@@ -297,15 +333,25 @@ map f (Flow size get1 get4)
 
                 Right len
                  -> push4 $ Right len
+
+        get8' push8
+         =  get8 $ \r
+         -> case r of
+                Left (x1, x2, x3, x4, x5, x6, x7, x8)
+                 -> push8 $ Left (f x1, f x2, f x3, f x4, f x5, f x6, f x7, f x8)
+
+                Right len
+                 -> push8 $ Right len
+
 {-# INLINE [1] map #-}
 
 
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples.
 zip :: Flow a -> Flow b -> Flow (a, b)
-zip    (Flow !sizeA getA1 getA4)
-       (Flow !sizeB getB1 getB4)
- = Flow (sizeMin sizeA sizeB) get1' get4'
+zip    (Flow !sizeA getA1 getA4 getA8)
+       (Flow !sizeB getB1 getB4 getB8)
+ = Flow (sizeMin sizeA sizeB) get1' get4' get8'
  where
        get1' push1
         =  getA1 $ \mxA 
@@ -327,6 +373,23 @@ zip    (Flow !sizeA getA1 getA4)
 
                 ( _, Right len) 
                  -> push4 $ Right len
+
+
+       get8' push8
+        =  getA8 $ \mxA
+        -> getB8 $ \mxB
+        -> case (mxA, mxB) of
+                ( Left (a1, a2, a3, a4, a5, a6, a7, a8)
+                 ,Left (b1, b2, b3, b4, b5, b6, b7, b8))
+                 -> push8 $ Left  ( (a1, b1), (a2, b2), (a3, b3), (a4, b4)
+                                  , (a5, b5), (a6, b6), (a7, b7), (a8, b8))
+
+                ( Right len, _) 
+                 -> push8 $ Right len
+
+                ( _, Right len) 
+                 -> push8 $ Right len
+
 {-# INLINE [1] zip #-}
 
 
@@ -343,8 +406,8 @@ zipWith f flowA flowB
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
 pack :: Flow (Bool, a) -> Flow a
-pack (Flow size get1 _get4)
- = Flow size' get1' get4'
+pack (Flow size get1 _get4 _)
+ = Flow size' get1' get4' (error "pack: get8")
  where
         size'
          = case size of
@@ -377,8 +440,8 @@ filter f ff
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
-gather !vec (Flow size get1 get4)
- = Flow size get1' get4'
+gather !vec (Flow size get1 get4 get8)
+ = Flow size get1' get4' get8'
  where
         get1' push1
          =  get1 $ \r
@@ -400,13 +463,30 @@ gather !vec (Flow size get1 get4)
 
                 Right len
                  -> push4 $ Right len
+
+        get8' push8
+         =  get8 $ \r
+         -> case r of
+                Left (ix1, ix2, ix3, ix4, ix5, ix6, ix7, ix8)
+                 -> push8 $ Left ( U.unsafeIndex vec ix1
+                                 , U.unsafeIndex vec ix2
+                                 , U.unsafeIndex vec ix3
+                                 , U.unsafeIndex vec ix4
+                                 , U.unsafeIndex vec ix5
+                                 , U.unsafeIndex vec ix6
+                                 , U.unsafeIndex vec ix7
+                                 , U.unsafeIndex vec ix8 )
+
+                Right len
+                 -> push8 $ Right len
+
 {-# INLINE [1] gather #-}
 
 
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
 foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> IO a
-foldl f z !(Flow _ get1 get4)
+foldl f z !(Flow _ get1 get4 _)
  = do   outRef  <- UM.unsafeNew 1
         UM.unsafeWrite outRef 0 z
 
@@ -438,8 +518,8 @@ foldl f z !(Flow _ get1 get4)
 -- | Fold Segmented. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
 folds :: U.Unbox a => (a -> b -> a) -> a -> Flow Int -> Flow b -> Flow a
-folds f !z (Flow size getLen1 _) (Flow !_ getElem1 getElem4)
- = Flow size get1' get4'
+folds f !z (Flow size getLen1 _ _) (Flow !_ getElem1 getElem4 getElem8)
+ = Flow size get1' get4' get8'
  where
         -- Pull the length of the first segment.
         get1' push1
@@ -454,6 +534,8 @@ folds f !z (Flow size getLen1 _) (Flow !_ getElem1 getElem4)
         get4' push4
          = push4 $ Right 1
 
+        get8' push8
+         = push8 $ Right 1
 
         -- Fold a single segment
         --  Start out pulling four elements at a time, then switch to
@@ -462,22 +544,23 @@ folds f !z (Flow size getLen1 _) (Flow !_ getElem1 getElem4)
         --  because then we'd have to stash them until the next result
         --  was pulled from us.
         foldSeg push1 !len
-         = go4 len z
+         = go8 len z
          where  
-                go4 n  !acc
+                go8 n  !acc
                  -- There is only one or less elements remaining,
                  -- switch to pulling one element at a time.
-                 |  n <# 4#
+                 |  n <# 8#
                  =  go1 n acc
 
                  -- There are at least four elements remaining, 
                  -- so we can do an unrolled fold.
                  |  otherwise
-                 =  getElem4  $ \r
+                 =  getElem8  $ \r
                  -> case r of
-                        Left (x1, x2, x3, x4)
-                         -> let !acc' = acc `f` x1 `f` x2 `f` x3 `f` x4
-                            in  go4 (n -# 4#) acc'
+                        Left (x1, x2, x3, x4, x5, x6, x7, x8)
+                         -> let !acc' = acc `f` x1 `f` x2 `f` x3 `f` x4 
+                                            `f` x5 `f` x6 `f` x7 `f` x8
+                            in  go8 (n -# 8#) acc'
 
                         Right _
                          -> go1 n acc
@@ -497,7 +580,11 @@ folds f !z (Flow size getLen1 _) (Flow !_ getElem1 getElem4)
                             in   go1 (n -# 1#) acc'
 
                         Nothing 
-                         -> error "folds: not enough elements for segment."
+                         -> go1 0# acc 
+                         -- error "folds: not enough elements for segment."
+                         --  If we hit this case then the segment lengths 
+                         --  don't match the data we have, but just return the
+                         --  current acc to avoid producing code for the error.
 {-# INLINE [1] folds #-}
 
 
