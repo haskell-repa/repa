@@ -138,13 +138,19 @@ splitSegd segd
 
 -- | Take the `Distro` of a `SplitSegd`.
 --   This tells us how the array elements should be distributed on the gang.
-distroOfSplitSegd :: SplitSegd -> Distro
-distroOfSplitSegd (SplitSegd nChunks nElems chunks)
+distroOfSplitSegd :: Segd U U -> SplitSegd -> Distro
+distroOfSplitSegd (Segd _ ixs _) (SplitSegd nChunks nElems chunks)
         = Distro 
         { distroLength          = nElems
         , distroFrags           = nChunks
         , distroFragLength      = \ix -> chunkElems (chunks V.! (I# ix))
-        , distroFragStart       = \ix -> chunkStart (chunks V.! (I# ix)) }
+        , distroFragStart       = \ix ->
+                let chunk  = chunks V.! (I# ix)
+                    seg    = chunkStart chunk
+                    !(I# seg_ix) = ixs `R.unsafeLinearIndex` (I# seg)
+                    offset = chunkOffset chunk
+                in  offset +# seg_ix }
+
 
 
 -- Replicates -----------------------------------------------------------------
@@ -166,7 +172,7 @@ vreplicates
         -> Vector U a
         -> Vector N a
 vreplicates segd vec
-        = vreplicatesSplit (splitSegd segd) vec
+        = vreplicatesSplit segd (splitSegd segd) vec
 {-# INLINE [1] vreplicates #-}
 
 
@@ -174,14 +180,15 @@ vreplicates segd vec
 --   Like `vreplicates` except that it takes a pre-split segment descriptor.
 vreplicatesSplit
         :: U.Unbox a
-        => SplitSegd
+        => Segd U U
+        -> SplitSegd
         -> Vector U a
         -> Vector N a
 
-vreplicatesSplit segd vec
+vreplicatesSplit flatsegd segd vec
  = vcacheChain 
  $ C.replicatesD 
-        (distroOfSplitSegd segd)
+        (distroOfSplitSegd flatsegd segd)
         getFragSegLength
         getFragSegStart
         getElem
@@ -217,6 +224,7 @@ vappends
 
 vappends segdResult segd1 vec1 segd2 vec2
         = vappendsSplit 
+                segdResult
                 (splitSegd segdResult)
                 segd1 vec1
                 segd2 vec2
@@ -226,7 +234,8 @@ vappends segdResult segd1 vec1 segd2 vec2
 --   Like `vappends` except that it takes a pre-split result segment descriptor.
 vappendsSplit
         :: U.Unbox a
-        => SplitSegd                    -- ^ Segment descriptor of result.
+        => Segd U U                     -- ^ Flat segment descriptor of result.
+        -> SplitSegd                    -- ^ Split segment descriptor of result.
         -> Segd U U                     -- ^ Segment descriptor of first array.
         -> Vector U a                   -- ^ Elements of first array.
         -> Segd U U                     -- ^ Segment descriptor of second array.
@@ -234,11 +243,12 @@ vappendsSplit
         -> Vector N a
 
 vappendsSplit 
+        flatsegd
         segdResult
         (Segd lens1 indices1 _) vec1
         (Segd lens2 indices2 _) vec2
  = vcacheChain 
- $ C.DistChain (distroOfSplitSegd segdResult) frag
+ $ C.DistChain (distroOfSplitSegd flatsegd segdResult) frag
  where  
         unbox (I# i) = i
         segLen1 i = unbox (vindex lens1    (I# i))
