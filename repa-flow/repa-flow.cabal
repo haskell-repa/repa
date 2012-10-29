@@ -34,6 +34,15 @@ Library
         NoMonomorphismRestriction
         BangPatterns
         TypeFamilies
+        MagicHash
+        ExistentialQuantification
 
   Exposed-modules:
         Data.Array.Repa.Flow        
+
+  Other-modules:
+        Data.Array.Repa.Flow.Base
+        Data.Array.Repa.Flow.Filter
+        Data.Array.Repa.Flow.Fold
+        Data.Array.Repa.Flow.Generate
+        Data.Array.Repa.Flow.Map
