@@ -110,17 +110,24 @@ stream' start end get
 ---
 --   Notice that when we do this we need to introduce a loop counter.
 streamOfChain :: C.Chain a -> Stream a
-streamOfChain (C.Chain len s0 mkStep)
- = Stream (Exact len) (0, s0) mkStep'
+streamOfChain chain = streamOfChain' chain 0
+{-# INLINE [1] streamOfChain #-}
+
+-- | Convert a chain to a stream, starting from a particular index.
+streamOfChain' :: C.Chain a -> Int -> Stream a
+streamOfChain' (C.Chain len s0 mkStep) ix_init
+ = Stream (Exact len) (ix_init, s0) mkStep'
  where  
+        !(I# max_len) = ix_init + (I# len)
+
         mkStep' (I# ix, s)
-         | ix >=# len  = Done
+         | ix >=# max_len  = Done
          | otherwise
          = case mkStep ix s of
                 C.Yield s' x    -> Yield  (I# (ix +# 1#), s') x
                 C.Update s'     -> Update (I# ix,         s')
         {-# INLINE [0] mkStep' #-}
-{-# INLINE [1] streamOfChain #-}
+{-# INLINE [1] streamOfChain' #-}
 
 
 -- | Consume a stream.
@@ -189,7 +196,7 @@ streamOfChainD (C.DistChain distro frag)
  = DistStream   (Exact (distroLength distro))
                 (distroFrags distro)
                 frag'
- where  frag' i = streamOfChain (frag i)
+ where  frag' i = streamOfChain' (frag i) (I# (distroFragStart distro i))
 {-# INLINE [1] streamOfChainD #-}
 
 
