@@ -85,14 +85,12 @@ data Flow a
         , flowGet1      :: (Maybe a -> IO ())
                         -> IO ()
 
-          -- | Takes a continuation and either calls it with a `Left` 4-tuple
-          --   of elements or `Right` `Int` if less than four elements are available.
+          -- | Takes a continuation and either calls it with a `Left`
+          --   8-tuple of elements or `Right` `Int` if less than eight
+          --   elements are available.
           -- 
           --   The integer value indicates that there are at least this many
           --   elements still available.
-        , flowGet4      :: (Either (a, a, a, a) Int -> IO ())
-                        -> IO ()
-
         , flowGet8      :: (Either (a, a, a, a, a, a, a, a) Int -> IO ())
                         -> IO ()
         }
@@ -135,24 +133,13 @@ flow !vec
                         UM.unsafeWrite refIx 0 (ix + 1)
                         push1 (Just (U.unsafeIndex vec ix))
 
-         get4 push4
-          = do  !(I# ix) <- UM.unsafeRead refIx 0
-                if ix +# 4# >=# len
-                 then   push4 $ Right 1
-                 else do
-                        UM.unsafeWrite refIx 0 (I# (ix +# 4#))
-                        push4 $ Left  ( U.unsafeIndex vec (I#  ix)
-                                      , U.unsafeIndex vec (I# (ix +# 1#))
-                                      , U.unsafeIndex vec (I# (ix +# 2#))
-                                      , U.unsafeIndex vec (I# (ix +# 3#)))
-
          get8 push8
           = do  !(I# ix) <- UM.unsafeRead refIx 0
                 if ix +# 8# >=# len
                  then   push8 $ Right 1
                  else do
                         UM.unsafeWrite refIx 0 (I# (ix +# 8#))
-                        push8 $ Left  ( U.unsafeIndex vec (I# ix)
+                        push8 $ Left  ( U.unsafeIndex vec (I# (ix +# 0#))
                                       , U.unsafeIndex vec (I# (ix +# 1#))
                                       , U.unsafeIndex vec (I# (ix +# 2#))
                                       , U.unsafeIndex vec (I# (ix +# 3#))
@@ -161,7 +148,7 @@ flow !vec
                                       , U.unsafeIndex vec (I# (ix +# 6#))
                                       , U.unsafeIndex vec (I# (ix +# 7#)) )
 
-        return $ Flow (Exact len) get1 get4 get8
+        return $ Flow (Exact len) get1 get8
 {-# INLINE [1] flow #-}
 
 
@@ -173,6 +160,7 @@ unflow !ff
         Exact len       -> unflowExact ff len
         Max   len       -> unflowExact ff len         -- TODO: this is wrong
 {-# INLINE [1] unflow #-}
+
 
 -- TODO: keep a mutable length in the flow.
 --       set it to zero after we've pulled all the elements.
@@ -209,32 +197,18 @@ slurp !write ff
                  Nothing
                   ->    UM.unsafeWrite refCount 0 (I# ix)
 
-         slurp4 ix 
-          = flowGet4 ff $ \r 
-          -> case r of
-                Left (x1, x2, x3, x4)
-                 -> do  write (I# ix)         x1
-                        write (I# (ix +# 1#)) x2
-                        write (I# (ix +# 2#)) x3
-                        write (I# (ix +# 3#)) x4
-                        slurp4 (ix +# 4#)
-
-                Right !_
-                 ->     slurp1 ix
-
-
          slurp8 ix 
           = flowGet8 ff $ \r 
           -> case r of
-                Left (x1, x2, x3, x4, x5, x6, x7, x8)
-                 -> do  write (I# ix)         x1
-                        write (I# (ix +# 1#)) x2
-                        write (I# (ix +# 2#)) x3
-                        write (I# (ix +# 3#)) x4
-                        write (I# (ix +# 4#)) x5
-                        write (I# (ix +# 5#)) x6
-                        write (I# (ix +# 6#)) x7
-                        write (I# (ix +# 7#)) x8
+                Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                 -> do  write (I# (ix +# 0#)) x0
+                        write (I# (ix +# 1#)) x1
+                        write (I# (ix +# 2#)) x2
+                        write (I# (ix +# 3#)) x3
+                        write (I# (ix +# 4#)) x4
+                        write (I# (ix +# 5#)) x5
+                        write (I# (ix +# 6#)) x6
+                        write (I# (ix +# 7#)) x7
                         slurp8 (ix +# 8#)
 
                 Right !_
@@ -261,14 +235,16 @@ generate (I# len) f
                 else do UM.unsafeWrite refCount 0 (ix + 1)
                         push1 $ Just (f ix)
 
-         get4 push4
+         get8 push8
           =  UM.unsafeRead refCount 0 >>= \ix 
-          -> if ix + 4 >= (I# len)
-                then push4 $ Right 1
-                else do UM.unsafeWrite refCount 0 (ix + 4)
-                        push4 $ Left (f ix, f (ix + 1), f (ix + 2), f (ix + 3))
+          -> if ix + 8 >= (I# len)
+                then push8 $ Right 1
+                else do UM.unsafeWrite refCount 0 (ix + 8)
+                        push8 $ Left 
+                         ( f ix,       f (ix + 1), f (ix + 2), f (ix + 3)
+                         , f (ix + 4), f (ix + 5), f (ix + 6), f (ix + 7))
 
-        return $ Flow (Exact len) get1 get4 (error "enumFromN: get8")
+        return $ Flow (Exact len) get1 get8
 {-# INLINE [1] generate #-}
 
 
@@ -299,25 +275,27 @@ enumFromN start (I# len)
                         UM.unsafeWrite refAcc   0 (acc + 1)
                         push1 $ Just acc
 
-         get4 push4
+         get8 push8
           = UM.unsafeRead refCount 0 >>= \count
-          -> if count <= 4 
-                then push4 (Right 1)
-                else do UM.unsafeWrite refCount 0 (count - 4)
+          -> if count <= 8
+                then push8 (Right 1)
+                else do UM.unsafeWrite refCount 0 (count - 8)
 
                         acc     <- UM.unsafeRead refAcc 0
-                        UM.unsafeWrite refAcc   0 (acc + 4)
-                        push4 $ Left (acc, acc + 1, acc + 2, acc + 3)
+                        UM.unsafeWrite refAcc   0 (acc + 8)
+                        push8 $ Left 
+                         ( acc,     acc + 1, acc + 2, acc + 3
+                         , acc + 4, acc + 5, acc + 6, acc + 7)
 
-        return $ Flow (Exact len) get1 get4 (error "enumFromN: get8")
+        return $ Flow (Exact len) get1 get8
 {-# INLINE [1] enumFromN #-}
 
 
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
 map :: (a -> b) -> Flow a -> Flow b
-map f (Flow size get1 get4 get8)
- = Flow size get1' get4' get8'
+map f (Flow size get1 get8)
+ = Flow size get1' get8'
  where  
         get1' push1
          =  get1 $ \r 
@@ -325,20 +303,11 @@ map f (Flow size get1 get4 get8)
                 Just x  -> push1 $ Just (f x)
                 Nothing -> push1 $ Nothing
 
-        get4' push4
-         =  get4 $ \r
-         -> case r of
-                Left (x1, x2, x3, x4)
-                 -> push4 $ Left (f x1, f x2, f x3, f x4)
-
-                Right len
-                 -> push4 $ Right len
-
         get8' push8
          =  get8 $ \r
          -> case r of
-                Left (x1, x2, x3, x4, x5, x6, x7, x8)
-                 -> push8 $ Left (f x1, f x2, f x3, f x4, f x5, f x6, f x7, f x8)
+                Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                 -> push8 $ Left (f x0, f x1, f x2, f x3, f x4, f x5, f x6, f x7)
 
                 Right len
                  -> push8 $ Right len
@@ -349,9 +318,9 @@ map f (Flow size get1 get4 get8)
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples.
 zip :: Flow a -> Flow b -> Flow (a, b)
-zip    (Flow !sizeA getA1 getA4 getA8)
-       (Flow !sizeB getB1 getB4 getB8)
- = Flow (sizeMin sizeA sizeB) get1' get4' get8'
+zip    (Flow !sizeA getA1 getA8)
+       (Flow !sizeB getB1 getB8)
+ = Flow (sizeMin sizeA sizeB) get1' get8'
  where
        get1' push1
         =  getA1 $ \mxA 
@@ -360,29 +329,14 @@ zip    (Flow !sizeA getA1 getA4 getA8)
                 (Just xA, Just xB) -> push1 $ Just (xA, xB)
                 _                  -> push1 $ Nothing
 
-       get4' push4
-        =  getA4 $ \mxA
-        -> getB4 $ \mxB
-        -> case (mxA, mxB) of
-                ( Left (a1, a2, a3, a4)
-                 ,Left (b1, b2, b3, b4))
-                 -> push4 $ Left  ((a1, b1), (a2, b2), (a3, b3), (a4, b4))
-
-                ( Right len, _) 
-                 -> push4 $ Right len
-
-                ( _, Right len) 
-                 -> push4 $ Right len
-
-
        get8' push8
         =  getA8 $ \mxA
         -> getB8 $ \mxB
         -> case (mxA, mxB) of
-                ( Left (a1, a2, a3, a4, a5, a6, a7, a8)
-                 ,Left (b1, b2, b3, b4, b5, b6, b7, b8))
-                 -> push8 $ Left  ( (a1, b1), (a2, b2), (a3, b3), (a4, b4)
-                                  , (a5, b5), (a6, b6), (a7, b7), (a8, b8))
+                ( Left (a0, a1, a2, a3, a4, a5, a6, a7)
+                 ,Left (b0, b1, b2, b3, b4, b5, b6, b7))
+                 -> push8 $ Left  ( (a0, b0), (a1, b1), (a2, b2), (a3, b3)
+                                  , (a4, b4), (a5, b5), (a6, b6), (a7, b7))
 
                 ( Right len, _) 
                  -> push8 $ Right len
@@ -406,8 +360,8 @@ zipWith f flowA flowB
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
 pack :: Flow (Bool, a) -> Flow a
-pack (Flow size get1 _get4 _)
- = Flow size' get1' get4' (error "pack: get8")
+pack (Flow size get1 _)
+ = Flow size' get1' get8'
  where
         size'
          = case size of
@@ -423,8 +377,8 @@ pack (Flow size get1 _get4 _)
                         Just (False, _) -> eat ()
                         Nothing         -> push1 Nothing
 
-        get4' push4
-         = push4 $ Right 1
+        get8' push8
+         = push8 $ Right 1
 {-# INLINE [1] pack #-}
 
 
@@ -440,8 +394,8 @@ filter f ff
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
-gather !vec (Flow size get1 get4 get8)
- = Flow size get1' get4' get8'
+gather !vec (Flow size get1 get8)
+ = Flow size get1' get8'
  where
         get1' push1
          =  get1 $ \r
@@ -452,30 +406,18 @@ gather !vec (Flow size get1 get4 get8)
                 Nothing
                  -> push1 $ Nothing
 
-        get4' push4
-         =  get4 $ \r
-         -> case r of
-                Left (ix1, ix2, ix3, ix4)
-                 -> push4 $ Left ( U.unsafeIndex vec ix1
-                                 , U.unsafeIndex vec ix2
-                                 , U.unsafeIndex vec ix3
-                                 , U.unsafeIndex vec ix4)
-
-                Right len
-                 -> push4 $ Right len
-
         get8' push8
          =  get8 $ \r
          -> case r of
-                Left (ix1, ix2, ix3, ix4, ix5, ix6, ix7, ix8)
-                 -> push8 $ Left ( U.unsafeIndex vec ix1
+                Left (ix0, ix1, ix2, ix3, ix4, ix5, ix6, ix7)
+                 -> push8 $ Left ( U.unsafeIndex vec ix0
+                                 , U.unsafeIndex vec ix1
                                  , U.unsafeIndex vec ix2
                                  , U.unsafeIndex vec ix3
                                  , U.unsafeIndex vec ix4
                                  , U.unsafeIndex vec ix5
                                  , U.unsafeIndex vec ix6
-                                 , U.unsafeIndex vec ix7
-                                 , U.unsafeIndex vec ix8 )
+                                 , U.unsafeIndex vec ix7 )
 
                 Right len
                  -> push8 $ Right len
@@ -486,7 +428,7 @@ gather !vec (Flow size get1 get4 get8)
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
 foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> IO a
-foldl f z !(Flow _ get1 get4 _)
+foldl f z !(Flow _ get1 get8)
  = do   outRef  <- UM.unsafeNew 1
         UM.unsafeWrite outRef 0 z
 
@@ -500,16 +442,17 @@ foldl f z !(Flow _ get1 get4 _)
                 Nothing
                  -> UM.write outRef 0 acc
 
-         eat4 !acc 
-          =  get4 $ \r 
+         eat8 !acc 
+          =  get8 $ \r 
           -> case r of
-                Left (x1, x2, x3, x4)
-                  -> eat4 (acc `f` x1 `f` x2 `f` x3 `f` x4)
+                Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                  -> eat8 ( acc `f` x0 `f` x1 `f` x2 `f` x3
+                                `f` x4 `f` x5 `f` x6 `f` x7) 
 
                 Right _
                   -> eat1 acc
 
-        eat4 z
+        eat8 z
         UM.read outRef 0
 {-# INLINE [1] foldl #-}
 
@@ -518,8 +461,8 @@ foldl f z !(Flow _ get1 get4 _)
 -- | Fold Segmented. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
 folds :: U.Unbox a => (a -> b -> a) -> a -> Flow Int -> Flow b -> Flow a
-folds f !z (Flow size getLen1 _ _) (Flow !_ getElem1 getElem4 getElem8)
- = Flow size get1' get4' get8'
+folds f !z (Flow size getLen1 _) (Flow !_ getElem1 getElem8)
+ = Flow size get1' get8'
  where
         -- Pull the length of the first segment.
         get1' push1
@@ -528,12 +471,9 @@ folds f !z (Flow size getLen1 _ _) (Flow !_ getElem1 getElem4 getElem8)
                 Just (I# len)   -> foldSeg push1 len
                 Nothing         -> push1 Nothing
 
-        -- Producing four copies of the loop that folds a segment won't make
+        -- Producing eight copies of the loop that folds a segment won't make
         -- anything faster, so tell the consumer they can only pull one result
         -- at a time.
-        get4' push4
-         = push4 $ Right 1
-
         get8' push8
          = push8 $ Right 1
 
@@ -552,14 +492,14 @@ folds f !z (Flow size getLen1 _ _) (Flow !_ getElem1 getElem4 getElem8)
                  |  n <# 8#
                  =  go1 n acc
 
-                 -- There are at least four elements remaining, 
+                 -- There are at least eight elements remaining, 
                  -- so we can do an unrolled fold.
                  |  otherwise
                  =  getElem8  $ \r
                  -> case r of
-                        Left (x1, x2, x3, x4, x5, x6, x7, x8)
-                         -> let !acc' = acc `f` x1 `f` x2 `f` x3 `f` x4 
-                                            `f` x5 `f` x6 `f` x7 `f` x8
+                        Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                         -> let !acc' = acc `f` x0 `f` x1 `f` x2 `f` x3 
+                                            `f` x4 `f` x5 `f` x6 `f` x7
                             in  go8 (n -# 8#) acc'
 
                         Right _
@@ -607,7 +547,4 @@ sums ffLens ffElems
 -- Unzip is dup2 followed by map snd / map fst
 --  unzip2  :: Flow (a, b)
 --          -> (Flow a, Flow b)
-
-
-
 
