@@ -43,20 +43,22 @@ foldSegsWithP
         -> SplitSegd -> DistStream a -> Vector U a
 foldSegsWithP fElem fSeg segd (DistStream _sz num_frags get_frag)
  = runST (do
-        mrs <- joinD drs -- joinDM for parallel
+        mrs <- joinDM drs -- joinDM for parallel
         fixupFold fElem mrs dcarry
         liftM vfromUnboxed $ U.unsafeFreeze mrs)
  where
     (dcarry, drs)
         = V.unzip
-        $ V.generate (I# num_frags) partial
---        $ generateD partial
+--        $ V.generate (I# num_frags) partial
+        $ generateD partial
         -- Note: assuming that (num_frags == splitChunks segd)
         -- AND num_frags == gangSize theGang
 
+{-
     joinD d = U.unsafeThaw
             $ V.convert
             $ V.concatMap V.convert d
+-}
 
 
     partial (I# i)
