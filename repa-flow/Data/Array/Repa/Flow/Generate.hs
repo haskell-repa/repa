@@ -2,6 +2,7 @@
 module Data.Array.Repa.Flow.Generate
         ( generate
         , replicate
+        , replicatesDirect
         , enumFromN)
 where
 import Data.Array.Repa.Flow.Base
@@ -103,3 +104,69 @@ enumFromN start (I# len)
 
         return $ Flow getSize get1 get8
 {-# INLINE [1] enumFromN #-}
+
+
+-- | Segmented replicate,
+--   where we have functions that produce segment lengths and elements
+--   directly.
+replicatesDirect 
+        :: Int#                 -- Total length of result.
+        -> (Int# -> Int#)       -- SegmentId -> Segment Length.
+        -> (Int# -> a)          -- SegmentId -> Value to emit for this segment.
+        -> IO (Flow a)
+
+replicatesDirect resultLen getSegLen getValue
+ = do   
+        -- Local state.
+        let !sCount     = 0     -- How many elements we've emitted so far.
+        let !sSeg       = 1     -- Id of current segment.
+        let !sRemain    = 2     -- Elements remaining to emit in this segment.
+        refState        <- UM.unsafeNew 3
+        UM.unsafeWrite refState 0 (0 :: Int)
+        UM.unsafeWrite refState 1 (0 :: Int)
+        UM.unsafeWrite refState 2 (0 :: Int)
+
+        let 
+         getSize _
+          = do  !(I# count) <- UM.unsafeRead refState sCount
+                return  $ Exact (resultLen -# count)
+
+         get1 push1
+          = refState `seq` result
+          where 
+                result
+                 = do   !(I# count)     <- UM.unsafeRead refState sCount
+                        if count >=# resultLen
+                         then push1 Nothing                    -- No more elements in flow.
+                         else result_nextElem count            -- Emit an element.
+                           
+                -- Emit an element.     
+                result_nextElem count
+                 = do   !(I# seg)       <- UM.unsafeRead refState sSeg
+                        !(I# remain)    <- UM.unsafeRead refState sRemain
+                        if remain <=# 0#                       -- Any more elems for this segment?
+                         then result_nextSeg count (seg +# 1#) --  no:  Advance to the next segment.
+                         else result_fromSeg count seg remain  --  yes: Emit from this segment. 
+
+                 -- Advance to the next non-zero length segment.
+                result_nextSeg count seg
+                 = do   let !segLen     = getSegLen seg 
+                        if segLen ># 0#
+                         then result_fromSeg count seg segLen
+                         else result_nextSeg count (seg +# 1#)
+
+                -- Emit a result from this segment.
+                result_fromSeg count seg remain
+                 = do   
+                        -- Update state.
+                        UM.unsafeWrite refState sCount  (I# (count  +# 1#))
+                        UM.unsafeWrite refState sSeg    (I# seg)
+                        UM.unsafeWrite refState sRemain (I# (remain -# 1#))
+
+                        push1 $ Just (getValue seg)
+
+         get8 push8
+          = push8 $ Right 1
+
+        return $ Flow getSize get1 get8
+{-# INLINE replicatesDirect #-}
