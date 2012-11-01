@@ -22,20 +22,22 @@ foldl f z !(Flow _ get1 get8)
          eat1 !acc
           = get1 $ \r 
           -> case r of
-                Just x1
-                 -> eat1 (acc `f` x1)
+                Yield1 x1 hint
+                 -> let !acc' = (acc `f` x1)
+                    in  if hint then eat8 acc'
+                                else eat1 acc'
 
-                Nothing
+                Done
                  -> UM.write outRef 0 acc
 
          eat8 !acc 
           =  get8 $ \r 
           -> case r of
-                Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                   -> eat8 ( acc `f` x0 `f` x1 `f` x2 `f` x3
                                 `f` x4 `f` x5 `f` x6 `f` x7) 
 
-                Right _
+                Pull1
                   -> eat1 acc
 
         eat8 z
@@ -54,15 +56,15 @@ folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
         get1' push1
          =  getLen1 $ \r
          -> case r of 
-                Just (I# len)   -> foldSeg push1 len
-                Nothing         -> push1 Nothing
+                Yield1 (I# len) _ -> foldSeg push1 len
+                Done              -> push1 Done
         {-# INLINE get1' #-}
 
         -- Producing eight copies of the loop that folds a segment won't make
         -- anything faster, so tell the consumer they can only pull one result
         -- at a time.
         get8' push8
-         = push8 $ Right 1
+         = push8 $ Pull1
         {-# INLINE get8' #-}
 
         -- Fold a single segment
@@ -76,7 +78,8 @@ folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
          where  
                 go8 n  !acc
                  -- If there are less than a whole packet of elements
-                 -- reamaining them switch to pulling them one at a time.
+                 -- reamaining in the segment them switch to pulling
+                 -- them one at a time.
                  |  n <# 8#
                  =  go1 n acc
 
@@ -85,29 +88,32 @@ folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
                  |  otherwise
                  =  getElem8  $ \r
                  -> case r of
-                        Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                        Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                          -> let !acc' = acc `f` x0 `f` x1 `f` x2 `f` x3 
                                             `f` x4 `f` x5 `f` x6 `f` x7
                             in  go8 (n -# 8#) acc'
 
-                        Right _
+                        Pull1
                          -> go1 n acc
 
                 -- We've reached the end of the segment.
                 -- Push the final result to the consumer.
+                --  Set the hint to False because we're not going to give it
+                --  eight result elements next time either.
                 go1 0# !acc
-                 = push1 $ Just acc
+                 = push1 $ Yield1 acc False
 
-                -- Less than four elements remaining in the segment,
-                -- fold the rest one at a time.
+                -- Folding elements one at a time.
+                --   Note that we don't need to switch back to go8 here, 
+                --   that happend automatically at the end of each segment.
                 go1 n  !acc
                  =  getElem1 $ \r
                  -> case r of
-                        Just x1
+                        Yield1 x1 _
                          -> let !acc' = acc `f` x1
                             in   go1 (n -# 1#) acc'
 
-                        Nothing 
+                        Done
                          -> go1 0# acc 
                          -- error "folds: not enough elements for segment."
                          --  If we hit this case then the segment lengths 

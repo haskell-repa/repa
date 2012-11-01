@@ -26,26 +26,30 @@ generate (I# len) f
                 return  $ Exact (len -# ix)
 
          get1 push1
-          = do  !(I# ix) <- UM.unsafeRead refCount 0
-                if ix >=# len
-                 then    push1 Nothing
-                 else do UM.unsafeWrite refCount 0 (I# (ix +# 1#))
-                         push1 $ Just (f (I# ix))
+          = do  !(I# ix)        <- UM.unsafeRead refCount 0
+                let !remain     = len -# ix
+                if remain ># 0#
+                 then do
+                        UM.unsafeWrite refCount 0 (I# (ix +# 1#))
+                        push1 $ Yield1  (f (I# ix))
+                                        (remain >=# 9#)
+                 else   push1 Done
 
          get8 push8
           = do  !(I# ix) <- UM.unsafeRead refCount 0
-                if ix +# 8# ># len
-                 then   push8 $ Right 1
-                 else do
+                let !remain     = len -# ix
+                if remain >=# 8#
+                 then do
                         UM.unsafeWrite refCount 0 (I# (ix +# 8#))
-                        push8 $ Left    ( f (I# (ix +# 0#))
-                                        , f (I# (ix +# 1#))
-                                        , f (I# (ix +# 2#))
-                                        , f (I# (ix +# 3#))
-                                        , f (I# (ix +# 4#))
-                                        , f (I# (ix +# 5#))
-                                        , f (I# (ix +# 6#))
-                                        , f (I# (ix +# 7#)))
+                        push8 $ Yield8  (f (I# (ix +# 0#)))
+                                        (f (I# (ix +# 1#)))
+                                        (f (I# (ix +# 2#)))
+                                        (f (I# (ix +# 3#)))
+                                        (f (I# (ix +# 4#)))
+                                        (f (I# (ix +# 5#)))
+                                        (f (I# (ix +# 6#)))
+                                        (f (I# (ix +# 7#)))
+                 else   push8 Pull1
 
         return $ Flow getSize get1 get8
 {-# INLINE [1] generate #-}
@@ -114,7 +118,7 @@ replicatesDirect (I# resultLen) getSegLen getValue
 
                         -- Check if we've finished the flow.
                         if count >=# resultLen
-                         then push1 Nothing
+                         then push1 Done
                          else result_nextElem count
                            
                 -- Emit an element.     
@@ -142,7 +146,7 @@ replicatesDirect (I# resultLen) getSegLen getValue
                         UM.unsafeWrite refState sSeg    (I# seg)
                         UM.unsafeWrite refState sRemain (I# (remain -# 1#))
 
-                        push1 $ Just (getValue seg)
+                        push1 $ Yield1 (getValue seg) (remain >=# 9#)
 
          get8 push8
           = refState `seq` result
@@ -151,8 +155,9 @@ replicatesDirect (I# resultLen) getSegLen getValue
                  = do   !(I# count)     <- UM.unsafeRead refState sCount
 
                         -- Check if we've finished the flow.
+                        -- TODO: should fold this into get1
                         if count >=# resultLen
-                         then push8 (Right 0)
+                         then push8 Pull1
                          else result_nextElems count
 
                 -- If we're far enough from the segment end then emit
@@ -161,9 +166,9 @@ replicatesDirect (I# resultLen) getSegLen getValue
                 result_nextElems count
                  = do   !(I# seg)       <- UM.unsafeRead refState sSeg
                         !(I# remain)    <- UM.unsafeRead refState sRemain
-                        if remain <# 8#
-                         then push8 (Right 1)
-                         else result_fromSeg count seg remain
+                        if remain >=# 8#
+                         then result_fromSeg count seg remain
+                         else push8 Pull1
 
                 -- Emit a packet of elements.
                 result_fromSeg count seg remain
@@ -173,7 +178,7 @@ replicatesDirect (I# resultLen) getSegLen getValue
                         UM.unsafeWrite refState sRemain (I# (remain -# 8#))
 
                         let !x  = getValue seg
-                        push8 $ Left (x, x, x, x, x, x, x, x)
+                        push8 $ Yield8 x x x x x x x x
 
         return $ Flow getSize get1 get8
 {-# INLINE [1] replicatesDirect #-}
@@ -196,34 +201,29 @@ enumFromN start (I# len)
 
          get1 push1
           = do  !(I# count)     <- UM.unsafeRead refCount 0
-                if count ==# 0#
-                 then   push1 Nothing
-                 else do 
+                if count ># 0#
+                 then do 
                         UM.unsafeWrite refCount 0 (I# (count -# 1#))
 
                         acc     <- UM.unsafeRead refAcc 0
                         UM.unsafeWrite refAcc   0 (acc + 1)
 
-                        push1 $ Just acc
+                        push1 $ Yield1 acc (count >=# 9#)
+
+                 else   push1 Done
 
          get8 push8
           = do  !(I# count)     <- UM.unsafeRead refCount 0
-                if count <=# 8#
-                 then   push8 (Right 1)
-                 else do
+                if count >=# 8#
+                 then do
                         UM.unsafeWrite refCount 0 (I# (count -# 8#))
 
                         acc     <- UM.unsafeRead refAcc 0
                         UM.unsafeWrite refAcc   0 (acc + 8)
 
-                        push8 $ Left    ( acc
-                                        , acc + 1
-                                        , acc + 2
-                                        , acc + 3
-                                        , acc + 4
-                                        , acc + 5
-                                        , acc + 6
-                                        , acc + 7)
+                        push8 $ Yield8  (acc + 0) (acc + 1) (acc + 2) (acc + 3)
+                                        (acc + 4) (acc + 5) (acc + 6) (acc + 7)
+                 else   push8 Pull1
 
         return $ Flow getSize get1 get8
 {-# INLINE [1] enumFromN #-}

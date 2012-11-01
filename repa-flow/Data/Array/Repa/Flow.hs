@@ -85,28 +85,28 @@ gather !vec (Flow getSize get1 get8)
         get1' push1
          =  get1 $ \r
          -> case r of
-                Just ix 
-                 -> push1 $ Just (U.unsafeIndex vec ix) 
+                Yield1 ix hint
+                 -> push1 $ Yield1 (U.unsafeIndex vec ix) hint
 
-                Nothing
-                 -> push1 $ Nothing
+                Done
+                 -> push1 $ Done
         {-# INLINE get1' #-}
 
         get8' push8
          =  get8 $ \r
          -> case r of
-                Left (ix0, ix1, ix2, ix3, ix4, ix5, ix6, ix7)
-                 -> push8 $ Left ( U.unsafeIndex vec ix0
-                                 , U.unsafeIndex vec ix1
-                                 , U.unsafeIndex vec ix2
-                                 , U.unsafeIndex vec ix3
-                                 , U.unsafeIndex vec ix4
-                                 , U.unsafeIndex vec ix5
-                                 , U.unsafeIndex vec ix6
-                                 , U.unsafeIndex vec ix7 )
+                Yield8 ix0 ix1 ix2 ix3 ix4 ix5 ix6 ix7
+                 -> push8 $ Yield8      (U.unsafeIndex vec ix0)
+                                        (U.unsafeIndex vec ix1)
+                                        (U.unsafeIndex vec ix2)
+                                        (U.unsafeIndex vec ix3)
+                                        (U.unsafeIndex vec ix4)
+                                        (U.unsafeIndex vec ix5)
+                                        (U.unsafeIndex vec ix6)
+                                        (U.unsafeIndex vec ix7)
 
-                Right len
-                 -> push8 $ Right len
+                Pull1
+                 -> push8 $ Pull1
         {-# INLINE get8' #-}
 
 {-# INLINE [1] gather #-}

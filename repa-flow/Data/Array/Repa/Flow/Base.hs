@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Flow.Base
-        ( Flow(..)
+        ( Flow(..), Step1(..), Step8(..)
         , Size(..)
         , sizeMin
         , flow
@@ -22,20 +22,31 @@ data Flow a
         { -- | How many elements are available in this flow.
           flowSize      :: () -> IO Size
 
-          -- | Takes a continuation and either calls it with `Just` an
-          --   element or `Nothing` if no more elements are available.
-        , flowGet1      :: (Maybe a -> IO ())
+          -- | Takes a continuation and either calls it with Left an element
+          --   or Right some integer.
+          --   The integer says how many elements we should pull next.
+          --   If 
+        , flowGet1      :: (Step1 a -> IO ())
                         -> IO ()
 
-          -- | Takes a continuation and either calls it with a `Left`
-          --   8-tuple of elements or `Right` `Int` if less than eight
-          --   elements are available.
-          -- 
-          --   The integer value indicates that there are at least this many
-          --   elements still available.
-        , flowGet8      :: (Either (a, a, a, a, a, a, a, a) Int -> IO ())
+          -- | Takes a continuation and either applies it to Just an
+          --   8-tuple of elements or Nothing if the full 8 aren't available.
+        , flowGet8      :: (Step8 a -> IO ())
                         -> IO ()
         }
+
+data Step1 a
+        -- | An element and a flag saying whether a full 8 elements are
+        ---  likely to be available next pull.
+        --   We don't want to *force* the consumer to pull the whole 8
+        --   if it doesn't want to, otherwise functions like folds would
+        --   become too complicated.
+        = Yield1 a Bool
+        | Done
+
+data Step8 a
+        = Yield8 a a a a a a a a
+        | Pull1
 
 data Size
         = -- | Flow produces exactly this number of elements.
@@ -77,28 +88,32 @@ flow !vec
          {-# INLINE getSize #-}
 
          get1 push1
-          = do  !(I# ix) <- UM.unsafeRead refIx 0
-                if ix >=# len
-                 then   push1 Nothing
-                 else do
+          = do  !(I# ix)        <- UM.unsafeRead refIx 0
+                let !remain     =  len -# ix
+                if remain ># 0#
+                 then do
                         UM.unsafeWrite refIx 0 (I# (ix +# 1#))
-                        push1 (Just (U.unsafeIndex vec (I# ix)))
+                        push1 $ Yield1  (U.unsafeIndex vec (I# (ix +# 0#)))
+                                        (remain >=# 9#)
+                 else   push1 Done
          {-# INLINE get1 #-}
 
          get8 push8
           = do  !(I# ix) <- UM.unsafeRead refIx 0
-                if ix +# 8# ># len
-                 then   push8 $ Right 1
-                 else do
+                let !remain     = len -# ix
+                if remain >=# 8#
+                 then do
                         UM.unsafeWrite refIx 0 (I# (ix +# 8#))
-                        push8 $ Left    ( U.unsafeIndex vec (I# (ix +# 0#))
-                                        , U.unsafeIndex vec (I# (ix +# 1#))
-                                        , U.unsafeIndex vec (I# (ix +# 2#))
-                                        , U.unsafeIndex vec (I# (ix +# 3#))
-                                        , U.unsafeIndex vec (I# (ix +# 4#))
-                                        , U.unsafeIndex vec (I# (ix +# 5#))
-                                        , U.unsafeIndex vec (I# (ix +# 6#))
-                                        , U.unsafeIndex vec (I# (ix +# 7#)))
+                        push8 $ Yield8  (U.unsafeIndex vec (I# (ix +# 0#)))
+                                        (U.unsafeIndex vec (I# (ix +# 1#)))
+                                        (U.unsafeIndex vec (I# (ix +# 2#)))
+                                        (U.unsafeIndex vec (I# (ix +# 3#)))
+                                        (U.unsafeIndex vec (I# (ix +# 4#)))
+                                        (U.unsafeIndex vec (I# (ix +# 5#)))
+                                        (U.unsafeIndex vec (I# (ix +# 6#)))
+                                        (U.unsafeIndex vec (I# (ix +# 7#)))
+                 else do
+                        push8 Pull1
          {-# INLINE get8 #-}
 
         return $ Flow getSize get1 get8
@@ -144,17 +159,19 @@ slurp !write ff
          slurp1 ix
           =  flowGet1 ff $ \r 
           -> case r of
-                 Just x
+                 Yield1 x switch
                   -> do write (I# ix) x
-                        slurp1 (ix +# 1#)
+                        if switch 
+                         then slurp8 (ix +# 1#)
+                         else slurp1 (ix +# 1#)
 
-                 Nothing
+                 Done
                   ->    UM.unsafeWrite refCount 0 (I# ix)
 
          slurp8 ix 
           = flowGet8 ff $ \r 
           -> case r of
-                Left (x0, x1, x2, x3, x4, x5, x6, x7)
+                Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                  -> do  write (I# (ix +# 0#)) x0
                         write (I# (ix +# 1#)) x1
                         write (I# (ix +# 2#)) x2
@@ -165,7 +182,7 @@ slurp !write ff
                         write (I# (ix +# 7#)) x7
                         slurp8 (ix +# 8#)
 
-                Right !_
+                Pull1
                  ->     slurp1 ix
 
         slurp8 0#

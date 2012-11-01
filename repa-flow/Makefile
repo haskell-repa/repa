@@ -2,7 +2,7 @@
 # Run all the quickcheck tests.
 .PHONY : test
 test   : 
-	ghc test/props/Test.hs -e main -XMagicHash -XBangPatterns
+	ghc -fforce-recomp test/props/Test.hs -e main -XMagicHash -XBangPatterns
 		
 
 # Build the fusion eyeball tests.

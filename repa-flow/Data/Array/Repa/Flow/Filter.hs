@@ -27,12 +27,12 @@ pack (Flow getSize get1 _)
          where  eat ()
                  =  get1 $ \mx
                  -> case mx of
-                        Just (True,  x) -> push1 (Just x)
-                        Just (False, _) -> eat ()
-                        Nothing         -> push1 Nothing
+                        Yield1 (True,  x) _ -> push1 (Yield1 x False)
+                        Yield1 (False, _) _ -> eat ()
+                        Done                -> push1 Done
 
         get8' push8
-         = push8 $ Right 1
+         = push8 $ Pull1
 {-# INLINE [1] pack #-}
 
 
