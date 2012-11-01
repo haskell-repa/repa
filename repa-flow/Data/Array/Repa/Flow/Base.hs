@@ -153,23 +153,37 @@ slurp   :: (Int -> a -> IO ())
 
 slurp !write ff
  = do   refCount <- UM.unsafeNew 1
-        UM.unsafeWrite refCount 0 0
+        UM.unsafeWrite refCount 0 (-1)
 
-        let 
+        let
+         slurp ix
+          = do  slurp8 ix
+                I# ix'     <- UM.unsafeRead refCount 0 
+
+                slurp1 ix'
+                I# ix''    <- UM.unsafeRead refCount 0
+
+                if ix'' ==# ix
+                 then return (I# ix'')
+                 else slurp ix''
+
+
          slurp1 ix
-          =  flowGet1 ff $ \r 
+          =  flowGet1 ff $ \r
           -> case r of
-                 Yield1 x switch
-                  -> do write (I# ix) x
+                Yield1 x switch
+                 -> do  write (I# ix) x
+
                         if switch 
-                         then slurp8 (ix +# 1#)
+                         then UM.unsafeWrite refCount 0 (I# (ix +# 1#))
                          else slurp1 (ix +# 1#)
 
-                 Done
-                  ->    UM.unsafeWrite refCount 0 (I# ix)
+                Done
+                 ->     UM.unsafeWrite refCount 0 (I# ix)
+                        
 
-         slurp8 ix 
-          = flowGet8 ff $ \r 
+         slurp8 ix
+          =  flowGet8 ff $ \r
           -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                  -> do  write (I# (ix +# 0#)) x0
@@ -182,9 +196,10 @@ slurp !write ff
                         write (I# (ix +# 7#)) x7
                         slurp8 (ix +# 8#)
 
-                Pull1
-                 ->     slurp1 ix
+                Pull1   
+                 ->     UM.unsafeWrite refCount 0 (I# ix)
 
-        slurp8 0#
-        UM.unsafeRead refCount 0
+        slurp 0#
 {-# INLINE [0] slurp #-}
+
+

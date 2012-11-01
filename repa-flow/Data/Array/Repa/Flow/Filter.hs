@@ -1,6 +1,6 @@
 module Data.Array.Repa.Flow.Filter
-        ( pack
-        , packInt
+        ( packByTag
+        , pack
         , filter)
 where
 import Data.Array.Repa.Flow.Base
