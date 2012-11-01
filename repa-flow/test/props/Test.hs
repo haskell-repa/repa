@@ -1,4 +1,5 @@
 
+module Main where
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
@@ -6,7 +7,7 @@ import System.IO.Unsafe
 import Data.Array.Repa.Flow             (Flow)
 import qualified Data.Array.Repa.Flow   as F
 import qualified Data.Vector.Unboxed    as U
-
+import Prelude                          as P
 
 
 -- Framework ------------------------------------------------------------------
@@ -17,6 +18,7 @@ tests
         , testProperty "replicate            " prop_replicate
         , testProperty "enumFromN            " prop_enumFromN
         , testProperty "map                  " prop_map
+        , testProperty "replicates           " prop_replicates
         ]
 
 instance (U.Unbox a, Arbitrary a) => Arbitrary (U.Vector a) where
@@ -60,3 +62,12 @@ prop_map vec
         return  $ vec' == U.map (+ 1234) vec
 
 
+prop_replicates :: U.Vector Int -> U.Vector Int -> Bool
+prop_replicates lens0 vec0
+ = unsafePerformIO
+ $ do   let maxRepl     = 100
+        let (lens, vec) = U.unzip $ U.zip (U.map (`mod` maxRepl) lens0) vec0
+        ff              <- F.replicatesUnboxed (U.sum lens) lens vec
+        vec'            <- F.unflow ff
+        return $ U.toList vec'
+             ==  P.concat (P.zipWith P.replicate (U.toList lens) (U.toList vec))

@@ -2,6 +2,7 @@
 module Data.Array.Repa.Flow.Generate
         ( generate
         , replicate
+        , replicatesUnboxed
         , replicatesDirect
         , enumFromN)
 where
@@ -57,74 +58,45 @@ replicate n x
 {-# INLINE [1] replicate #-}
 
 
--- | Yield a vector of the given length containing values @x@, @x+1@ etc.
-enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> IO (Flow a)
-enumFromN start (I# len)
- = do   refCount <- UM.unsafeNew 1
-        UM.unsafeWrite refCount 0 (I# len)
+-- | Segmented replicate,
+--   reading segment lengths and elements from unboxed vectors.
+replicatesUnboxed
+        :: U.Unbox a
+        => Int
+        -> U.Vector Int
+        -> U.Vector a
+        -> IO (Flow a)
 
-        refAcc   <- UM.unsafeNew 1
-        UM.unsafeWrite refAcc   0 start
+replicatesUnboxed resultLen segLen segValue
+ = let  getSegLen ix
+         = case U.unsafeIndex segLen (I# ix) of
+                I# i    -> i
 
-        let
-         getSize _
-          = do  !(I# count)     <- UM.unsafeRead refCount 0
-                return  $ Exact (len -# count)
+        getSegValue ix
+         = U.unsafeIndex segValue (I# ix)
 
-         get1 push1
-          = do  !(I# count)     <- UM.unsafeRead refCount 0
-                if count ==# 0#
-                 then   push1 Nothing
-                 else do 
-                        UM.unsafeWrite refCount 0 (I# (count -# 1#))
-
-                        acc     <- UM.unsafeRead refAcc 0
-                        UM.unsafeWrite refAcc   0 (acc + 1)
-
-                        push1 $ Just acc
-
-         get8 push8
-          = do  !(I# count)     <- UM.unsafeRead refCount 0
-                if count <=# 8#
-                 then   push8 (Right 1)
-                 else do
-                        UM.unsafeWrite refCount 0 (I# (count -# 8#))
-
-                        acc     <- UM.unsafeRead refAcc 0
-                        UM.unsafeWrite refAcc   0 (acc + 8)
-
-                        push8 $ Left    ( acc
-                                        , acc + 1
-                                        , acc + 2
-                                        , acc + 3
-                                        , acc + 4
-                                        , acc + 5
-                                        , acc + 6
-                                        , acc + 7)
-
-        return $ Flow getSize get1 get8
-{-# INLINE [1] enumFromN #-}
+   in   replicatesDirect resultLen getSegLen getSegValue
 
 
 -- | Segmented replicate,
 --   where we have functions that produce segment lengths and elements
 --   directly.
 replicatesDirect 
-        :: Int#                 -- Total length of result.
+        :: Int                  -- Total length of result.
         -> (Int# -> Int#)       -- SegmentId -> Segment Length.
         -> (Int# -> a)          -- SegmentId -> Value to emit for this segment.
         -> IO (Flow a)
 
-replicatesDirect resultLen getSegLen getValue
+replicatesDirect (I# resultLen) getSegLen getValue
  = do   
         -- Local state.
         let !sCount     = 0     -- How many elements we've emitted so far.
         let !sSeg       = 1     -- Id of current segment.
         let !sRemain    = 2     -- Elements remaining to emit in this segment.
         refState        <- UM.unsafeNew 3
-        UM.unsafeWrite refState 0 (0 :: Int)
-        UM.unsafeWrite refState 1 (0 :: Int)
-        UM.unsafeWrite refState 2 (0 :: Int)
+        UM.unsafeWrite refState sCount  (0  :: Int)
+        UM.unsafeWrite refState sSeg    (-1 :: Int)
+        UM.unsafeWrite refState sRemain (0  :: Int)
 
         let 
          getSize _
@@ -169,4 +141,56 @@ replicatesDirect resultLen getSegLen getValue
           = push8 $ Right 1
 
         return $ Flow getSize get1 get8
-{-# INLINE replicatesDirect #-}
+{-# INLINE [1] replicatesDirect #-}
+
+
+-------------------------------------------------------------------------------
+-- | Yield a vector of the given length containing values @x@, @x+1@ etc.
+enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> IO (Flow a)
+enumFromN start (I# len)
+ = do   refCount <- UM.unsafeNew 1
+        UM.unsafeWrite refCount 0 (I# len)
+
+        refAcc   <- UM.unsafeNew 1
+        UM.unsafeWrite refAcc   0 start
+
+        let
+         getSize _
+          = do  !(I# count)     <- UM.unsafeRead refCount 0
+                return  $ Exact count
+
+         get1 push1
+          = do  !(I# count)     <- UM.unsafeRead refCount 0
+                if count ==# 0#
+                 then   push1 Nothing
+                 else do 
+                        UM.unsafeWrite refCount 0 (I# (count -# 1#))
+
+                        acc     <- UM.unsafeRead refAcc 0
+                        UM.unsafeWrite refAcc   0 (acc + 1)
+
+                        push1 $ Just acc
+
+         get8 push8
+          = do  !(I# count)     <- UM.unsafeRead refCount 0
+                if count <=# 8#
+                 then   push8 (Right 1)
+                 else do
+                        UM.unsafeWrite refCount 0 (I# (count -# 8#))
+
+                        acc     <- UM.unsafeRead refAcc 0
+                        UM.unsafeWrite refAcc   0 (acc + 8)
+
+                        push8 $ Left    ( acc
+                                        , acc + 1
+                                        , acc + 2
+                                        , acc + 3
+                                        , acc + 4
+                                        , acc + 5
+                                        , acc + 6
+                                        , acc + 7)
+
+        return $ Flow getSize get1 get8
+{-# INLINE [1] enumFromN #-}
+
+

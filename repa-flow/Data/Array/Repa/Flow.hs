@@ -14,6 +14,8 @@ module Data.Array.Repa.Flow
         -- * Construction
         , generate
         , replicate
+        , replicatesUnboxed
+        , replicatesDirect
         , enumFromN
 
         -- * Pure combinators
