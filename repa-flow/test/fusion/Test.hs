@@ -52,10 +52,10 @@ testFilter vec1
         unflow f2
 
 
-testPackInt :: U.Vector (Int, Int) -> IO (U.Vector Int)
-testPackInt vec1
+testPackByTag :: U.Vector (Int, Int) -> IO (U.Vector Int)
+testPackByTag vec1
  = do   f1      <- flow vec1
-        f2      <- F.packInt f1
+        f2      <- F.packByTag f1
         unflow $ F.map (+2323) f2
 
 

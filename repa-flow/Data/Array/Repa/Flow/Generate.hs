@@ -113,22 +113,23 @@ replicatesDirect (I# resultLen) getSegLen getValue
                 !(I# remain)    <- UM.unsafeRead refState sRemain
                 return  $ Exact ((resultLen -# count) -# remain)
 
-         get1 push1
-          = refState `seq` result
-          where 
-                result
-                 = do   !(I# remain)    <- UM.unsafeRead refState sRemain
-                        !(I# seg)       <- UM.unsafeRead refState sSeg
 
+
+         get1 push1
+          = do  !(I# seg)       <- UM.unsafeRead refState sSeg
+                !(I# remain)    <- UM.unsafeRead refState sRemain
+                result seg remain
+          where 
+                result seg remain
+                 = do   
                         -- Check if there are any more elements to emit for this segment.
                         if remain ># 0#
-                         then result_fromSeg seg remain
-                         else result_doneSeg seg
+                         then do
+                                -- Emit a result from this segment.
+                                UM.unsafeWrite refState sRemain (I# (remain -# 1#))
+                                push1 $ Yield1 (getValue seg) (remain >=# 9#)
 
-                -- Emit a result from this segment.
-                result_fromSeg seg remain
-                 = do   UM.unsafeWrite refState sRemain (I# (remain -# 1#))
-                        push1 $ Yield1 (getValue seg) (remain >=# 9#)
+                         else result_doneSeg seg
 
                 -- Advance to the next segment.
                 result_doneSeg seg
@@ -151,7 +152,7 @@ replicatesDirect (I# resultLen) getSegLen getValue
                          then do
                                 UM.unsafeWrite refState sSeg    (I# seg)
                                 UM.unsafeWrite refState sSegLen (I# segLen)
-                                result_fromSeg seg segLen
+                                result seg segLen
 
                          else result_nextSeg (seg +# 1#)
 

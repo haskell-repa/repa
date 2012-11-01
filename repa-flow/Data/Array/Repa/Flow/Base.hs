@@ -4,9 +4,13 @@ module Data.Array.Repa.Flow.Base
         , Size(..)
         , sizeMin
         , flow
-        , unflow)
+        , unflow
+        , Touch(..))
 where
 import GHC.Exts
+import GHC.Prim
+import GHC.Exts
+import GHC.Types
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 
@@ -74,7 +78,7 @@ sizeMin !s1 !s2
 
 -------------------------------------------------------------------------------
 -- | Convert an unboxed vector to a flow.
-flow :: U.Unbox a => U.Vector a -> IO (Flow a)
+flow :: (Touch a, U.Unbox a) => U.Vector a -> IO (Flow a)
 flow !vec
  = do   -- Offset into the source vector.
         refIx   <- UM.unsafeNew 1
@@ -93,8 +97,17 @@ flow !vec
                 if remain ># 0#
                  then do
                         UM.unsafeWrite refIx 0 (I# (ix +# 1#))
-                        push1 $ Yield1  (U.unsafeIndex vec (I# (ix +# 0#)))
-                                        (remain >=# 9#)
+                        let !x  = U.unsafeIndex vec (I# ix)
+
+                        -- Touch because we want to be sure its unboxed as
+                        -- soon as we read it. It we don't touch it, and
+                        -- the continuation uses the value in multiple
+                        -- case branches then it can be reboxed and then
+                        -- unboxed again multiple times.
+                        touch x
+
+                        push1 $ Yield1 x (remain >=# 9#)
+
                  else   push1 Done
          {-# INLINE get1 #-}
 
@@ -104,14 +117,18 @@ flow !vec
                 if remain >=# 8#
                  then do
                         UM.unsafeWrite refIx 0 (I# (ix +# 8#))
-                        push8 $ Yield8  (U.unsafeIndex vec (I# (ix +# 0#)))
-                                        (U.unsafeIndex vec (I# (ix +# 1#)))
-                                        (U.unsafeIndex vec (I# (ix +# 2#)))
-                                        (U.unsafeIndex vec (I# (ix +# 3#)))
-                                        (U.unsafeIndex vec (I# (ix +# 4#)))
-                                        (U.unsafeIndex vec (I# (ix +# 5#)))
-                                        (U.unsafeIndex vec (I# (ix +# 6#)))
-                                        (U.unsafeIndex vec (I# (ix +# 7#)))
+
+                        !x0     <- here $ U.unsafeIndex vec (I# (ix +# 0#))
+                        !x1     <- here $ U.unsafeIndex vec (I# (ix +# 1#))
+                        !x2     <- here $ U.unsafeIndex vec (I# (ix +# 2#))
+                        !x3     <- here $ U.unsafeIndex vec (I# (ix +# 3#))
+                        !x4     <- here $ U.unsafeIndex vec (I# (ix +# 4#))
+                        !x5     <- here $ U.unsafeIndex vec (I# (ix +# 5#))
+                        !x6     <- here $ U.unsafeIndex vec (I# (ix +# 6#))
+                        !x7     <- here $ U.unsafeIndex vec (I# (ix +# 7#))
+
+                        push8 $ Yield8 x0 x1 x2 x3 x4 x5 x6 x7
+
                  else do
                         push8 Pull1
          {-# INLINE get8 #-}
@@ -122,12 +139,12 @@ flow !vec
 
 -------------------------------------------------------------------------------
 -- | Fully evaluate a flow, producing an unboxed vector.
-unflow :: U.Unbox a => Flow a -> IO (U.Vector a)
+unflow :: (Touch a, U.Unbox a) => Flow a -> IO (U.Vector a)
 unflow !ff
  = do   size    <- flowSize ff ()
         case size of
-         Exact len       -> unflowExact ff len
-         Max   len       -> unflowExact ff len         -- TODO: this is wrong
+          Exact len       -> unflowExact ff len
+          Max   len       -> unflowExact ff len         -- TODO: this is wrong
 {-# INLINE [1] unflow #-}
 
 
@@ -136,7 +153,7 @@ unflow !ff
 -- After taking just some elements, update the size.
 
 
-unflowExact :: U.Unbox a => Flow a -> Int# -> IO (U.Vector a)
+unflowExact :: (Touch a, U.Unbox a) => Flow a -> Int# -> IO (U.Vector a)
 unflowExact ff !len
  = do   !mvec    <- UM.unsafeNew (I# len)
         !len'    <- slurp (UM.unsafeWrite mvec) ff
@@ -147,7 +164,8 @@ unflowExact ff !len
 
 -- | Slurp out all the elements from a flow,
 --   passing them to the provided consumption function.
-slurp   :: (Int -> a -> IO ())
+slurp   :: Touch a
+        => (Int -> a -> IO ())
         -> Flow a
         -> IO Int
 
@@ -160,7 +178,7 @@ slurp !write ff
           = do  slurp8 ix
                 I# ix'     <- UM.unsafeRead refCount 0 
 
-                slurp1 ix'
+                slurp1 ix' 
                 I# ix''    <- UM.unsafeRead refCount 0
 
                 if ix'' ==# ix
@@ -168,11 +186,17 @@ slurp !write ff
                  else slurp ix''
 
 
-         slurp1 ix
+         slurp1 ix 
           =  flowGet1 ff $ \r
           -> case r of
                 Yield1 x switch
-                 -> do  write (I# ix) x
+                 -> do  
+                        write (I# ix) x
+
+                        -- Touch 'x' here beacuse we don't want the code
+                        -- that computes it to be floated into the switch
+                        -- and then copied.
+                        touch x
 
                         if switch 
                          then UM.unsafeWrite refCount 0 (I# (ix +# 1#))
@@ -201,5 +225,27 @@ slurp !write ff
 
         slurp 0#
 {-# INLINE [0] slurp #-}
+
+class Touch a where
+ touch :: a -> IO ()
+
+here x
+ = do   touch x
+        return x
+
+instance Touch Int where
+ touch (I# x)
+  = IO (\state -> case touch# x state of
+                        state' -> (# state', () #))
+
+instance Touch Double where
+ touch (D# x)
+  = IO (\state -> case touch# x state of
+                        state' -> (# state', () #))
+
+instance (Touch a, Touch b) => Touch (a, b) where
+ touch (x, y)
+  = do  touch x
+        touch y
 
 

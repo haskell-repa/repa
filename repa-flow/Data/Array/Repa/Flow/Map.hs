@@ -77,6 +77,11 @@ zip    (Flow !getSizeA getA1 getA8)
 -}
 {-# INLINE [1] zip #-}
 
+-- Don't let the simplifier see the split here,
+-- otherwise we'll get two copies of the body code.
+hack_and b1 b2
+ = b1 && b2
+{-# NOINLINE hack_and #-}
 
 -------------------------------------------------------------------------------
 -- | Combine two flows with a function.

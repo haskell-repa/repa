@@ -2,7 +2,8 @@
 # Run all the quickcheck tests.
 .PHONY : test
 test   : 
-	ghc -fforce-recomp test/props/Test.hs -e main -XMagicHash -XBangPatterns
+	ghc -fforce-recomp test/props/Test.hs -e main \
+		-XMagicHash -XBangPatterns -XUnboxedTuples
 		
 
 # Build the fusion eyeball tests.
@@ -11,7 +12,7 @@ test   :
 fusion :
 	touch test/fusion/Test.hs 
 	ghc --make test/fusion/Test.hs \
-		-XScopedTypeVariables -XMagicHash -XBangPatterns  \
+		-XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
 		-O2 -fno-liberate-case -funfolding-use-threshold1000 \
 		-fllvm -optlo-O3 \
 		-ddump-prep -dsuppress-all -dppr-case-as-let -dppr-cols200 \
