@@ -56,6 +56,10 @@ zip    (Flow !getSizeA getA1 getA8)
         {-# INLINE get1' #-}
 
         get8' push8
+         = push8 $ Pull1
+
+
+{-        get8' push8   -- This is wrong. Can't discard the other side of the pull
          =  getA8 $ \mxA
          -> getB8 $ \mxB
          -> case (mxA, mxB) of
@@ -70,7 +74,7 @@ zip    (Flow !getSizeA getA1 getA8)
                 ( _, Pull1) 
                  -> push8 Pull1
         {-# INLINE get8' #-}
-
+-}
 {-# INLINE [1] zip #-}
 
 
