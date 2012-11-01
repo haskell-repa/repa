@@ -10,18 +10,18 @@ testFlowUnflow vec
  = do   f       <- flow vec
         unflow f
 
-
+-- 1234
 testMap :: U.Vector Int -> IO (U.Vector Int)
 testMap vec
  = do   f       <- flow vec
         unflow  $ F.map (+ 1234) f
 
 
+-- 2345
 testMapMap :: U.Vector Int -> IO (U.Vector Int)
 testMapMap vec
  = do   f       <- flow vec
-        unflow  $ F.map (+ 1234) $ F.map (* 3456) $ f
-
+        unflow  $ F.map (+ 1234) $ F.map (* 2345) $ f
 
 testMapZip :: U.Vector Int -> U.Vector Int -> IO (U.Vector Int)
 testMapZip vec1 vec2
@@ -49,4 +49,16 @@ testPack vec1
         unflow $ F.filter (> 0) f1
 
 
+-- 3434
+testReplicates :: Int -> U.Vector Int -> U.Vector Int -> IO (U.Vector Int)
+testReplicates !len !vLens !vElems
+ = do   ff      <- F.replicatesUnboxed len vLens vElems
+        unflow $ F.map (+ 3434) ff
 
+
+-- 4545
+testFoldReplicate :: Int -> U.Vector Int -> U.Vector Int -> IO (U.Vector Int)
+testFoldReplicate !len !vLens !vElems
+ = do   fLens   <- F.flow vLens
+        ff      <- F.replicatesUnboxed len vLens vElems
+        unflow $ F.sums fLens $ F.map (+ 4545) ff

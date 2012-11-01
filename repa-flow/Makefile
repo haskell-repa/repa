@@ -9,7 +9,11 @@ test   :
 #   Look at test/fusion/Test.prep to see if it worked.
 .PHONY : fusion
 fusion :
-	ghc -O2 -c test/fusion/Test.hs \
-		-funfolding-use-threshold1000 \
+	touch test/fusion/Test.hs 
+	ghc --make test/fusion/Test.hs \
+		-XMagicHash -XBangPatterns \
+		-O2 -fno-liberate-case -funfolding-use-threshold1000 \
+		-fllvm -optlo-O3 \
 		-ddump-prep -dsuppress-all -dppr-case-as-let -dppr-cols200 \
+		-keep-s-files \
 		> test/fusion/Test.prep
