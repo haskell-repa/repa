@@ -43,38 +43,6 @@ import qualified Data.Vector.Unboxed            as U
 import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate)
 
 
--- TODO: add a separate buffer function that converts the output
---       of pack back into a flow prepared to give four elements at a time.
-
--- TODO: add 'reflow', that evaluate elements into a buffer then 
---       converts back to a flow, for caching.
-
--- TODO: could write 'drop' function using an 'flowAdvance' field that
---       advances the flow without nessesarally computing the elements.
-
--- TODO: write 'take' to incrementally pull data.
---       take returns an unboxed vector of the given length
---       flow retuning take would just keep a second length
---       and push nothing after this length.
-
--- TODO: dup2 :: Flow a -> (Flow a, Flow a)
---       Creates two linked handles that buffer data until it has 
---       been pulled from both. Can still fuse into both consumers,
---       and only buffers the data that is required.
---       Doesn't force whole vector to be evaluated when we have sharing.
---       With higher degrees of duplication, might not to want to check
---       all consumers after every pull. Use a pull counter and only 
---       check for syncronisation after N pulls.
-
--- TODO: this should make it easy to write the parallel segmented
---       fold that exchanges data with its neighbours.
-
--- TODO: write recursive version of pack that buffers results.
---       until it gets enough to send a quad.
-
--- Think of situtions where we'll get desync between ends of dup2
--- Maybe with segmented fold, or pack / zip
-
 
 -------------------------------------------------------------------------------
 -- | Takes a vector and a flow of indices, and produces a flow of elements

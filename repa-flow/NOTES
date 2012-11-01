@@ -1,0 +1,116 @@
+
+-------------------------------------------------------------------------------
+* Machines we target are shared memory multicore.
+
+        Shared memory.
+        Not a vector machine.
+        Memory bandwith is expensive, but multiple levels of cache.
+
+
+* Flows are stateful and incremental.
+        
+        Can pull several elements, then come back and pull more without
+        consuming entire source vectors.
+
+        Try to keep intermediate data in the cache of local processors.
+
+
+-------------------------------------------------------------------------------
+* Problems with stream fusion.
+
+unzip :: Vector (a, b) -> (Vector a, Vector b)
+
+        Cannot consume both result vectors independently without forcing the 
+        source vector. With incremental flows, should be able to buffer the 
+        other side of the tuple if only one side is demanded. Don't compute
+        more elements than we have to.
+
+
+addSums :: Vector Int -> Vector (Int, Int) -> Vector Int
+addSums lens abs
+ = let  (as, bs) = unzip abs
+        as'      = folds lens as
+   in   zipWith (+) (replicates lens as') bs
+
+        Should be able to run this incrementally and only demand a single
+        segment of the source vector at a time.
+
+-------------------------------------------------------------------------------
+* Problems with split/join distributed types.
+
+folds is a fusion barrier.
+        
+        Intermediate results are written to a mutable vector then we do a fixup
+        phase to combine partial results from neighbours. Cannot fuse result
+        of the folds into consumer.
+
+        Use a side-channel (MVars) to exchagne partial results with neighbours
+        instead. The folds function then ends up in the IO monad.
+
+
+-------------------------------------------------------------------------------
+* Represent data distribution at the type level.
+
+
+        Vector (L O) Int        -- Balanced flow
+        Vector (N O) Int        -- Unbalanced flow
+
+        mapL unflow :: Vector (L O) a -> Vector (L U) a    ??
+        mapL flow   :: Vector (L U) a -> Vector (L O) a
+
+        splitL      :: Vector r     a -> Vector (L r) a
+        joinL       :: Vector (L U) a -> Vector U a
+
+        vfilter     :: (a -> Bool)    -> Vector (balance r) -> Vector (N r)
+
+        ? Can we make the Dist thing a type function that wraps the inner representation.
+ 
+
+-------------------------------------------------------------------------------
+TODO:
+
+* Add a separate buffer function that converts the output
+  of pack back into a flow prepared to give four elements at a time.
+
+* Add 'reflow', that evaluate elements into a buffer then converts back to a
+  flow, for caching.
+
+* Could write 'drop' function using an 'flowAdvance' field that
+  advances the flow without nessesarally computing the elements.
+
+* Write 'take' to incrementally pull data.
+        Take returns an unboxed vector of the given length
+        Flow retuning take would just keep a second length
+        and push nothing after this length.
+
+* Duplicating flows
+        dup2 :: Flow a -> (Flow a, Flow a)
+
+        Creates two linked handles that buffer data until it has 
+        been pulled from both. Can still fuse into both consumers,
+        and only buffers the data that is required.
+        Doesn't force whole vector to be evaluated when we have sharing.
+        With higher degrees of duplication, might not to want to check
+        all consumers after every pull. Use a pull counter and only 
+        check for syncronisation after N pulls.
+
+* Think of other situation where we'll get a desync between both ends of a
+  dup2. What benchmarks does this happen in? What other benchmarks want to
+  consume a stream multiple times -- possibly at different rates?
+
+* Write recursive version of pack that buffers results.
+  until it gets enough to send a quad.
+
+
+-------------------------------------------------------------------------------
+ When making the repa-vector wrapper,
+      store the distribution in the representation tag.
+      Don't need to distinguish Stream and Chain as whether they 
+      have the skip constructor, but do want to record balancing, 
+      and information about the expected length.
+
+  make vmap    etc as the pure vector versions.
+      ofilter etc as the incremental flow versions.
+
+
+
