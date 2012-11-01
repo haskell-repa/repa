@@ -23,6 +23,7 @@ module Data.Array.Repa.Flow
         , zip
         , zipWith
         , pack
+        , packInt
         , filter
         , gather
 

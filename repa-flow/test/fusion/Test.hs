@@ -43,20 +43,28 @@ testFoldGather vec1 vec2
          $ F.map (* 2345) $ F.gather vec1 f2
 
 
-testPack :: U.Vector Int -> IO (U.Vector Int)
-testPack vec1
+-- TODO: This doesn't work well because we don't have a good way to convert
+--       a bool to an Int without generating a case-expresison in the core code.
+testFilter :: U.Vector Int -> IO (U.Vector Int)
+testFilter vec1
  = do   f1      <- flow vec1
-        unflow $ F.filter (> 0) f1
+        f2      <- F.filter (> 1212) f1
+        unflow f2
 
 
--- 3434
+testPackInt :: U.Vector (Int, Int) -> IO (U.Vector Int)
+testPackInt vec1
+ = do   f1      <- flow vec1
+        f2      <- F.packInt f1
+        unflow $ F.map (+2323) f2
+
+
 testReplicates :: Int -> U.Vector Int -> U.Vector Int -> IO (U.Vector Int)
 testReplicates !len !vLens !vElems
  = do   ff      <- F.replicatesUnboxed len vLens vElems
         unflow $ F.map (+ 3434) ff
 
 
--- 4545
 testFoldReplicate :: Int -> U.Vector Int -> U.Vector Int -> IO (U.Vector Int)
 testFoldReplicate !len !vLens !vElems
  = do   fLens   <- F.flow vLens

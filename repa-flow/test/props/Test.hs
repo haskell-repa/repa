@@ -19,6 +19,7 @@ tests
         , testProperty "enumFromN            " prop_enumFromN
         , testProperty "map                  " prop_map
         , testProperty "replicates           " prop_replicates
+        , testProperty "filter               " prop_filter
         ]
 
 instance (U.Unbox a, Arbitrary a) => Arbitrary (U.Vector a) where
@@ -71,3 +72,13 @@ prop_replicates lens0 vec0
         vec'            <- F.unflow ff
         return $ U.toList vec'
              ==  P.concat (P.zipWith P.replicate (U.toList lens) (U.toList vec))
+
+prop_filter :: U.Vector Int -> Bool
+prop_filter vec
+ = unsafePerformIO
+ $ do   f1      <- F.flow vec
+        f2      <- F.filter (\x -> x `mod` 2 == 0) f1
+        vec'    <- F.unflow f2
+        return  $  vec'
+                == U.filter (\x -> x `mod` 2 == 0) vec
+
