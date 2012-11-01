@@ -81,6 +81,9 @@ replicatesUnboxed resultLen segLen segValue
 -- | Segmented replicate,
 --   where we have functions that produce segment lengths and elements
 --   directly.
+--   TODO: only check for flow end when the current segment is finished.
+--   TODO: pulling a single element should also hint how many we can pull next time.
+--   TODO: could update total count only when we finish a segment.
 replicatesDirect 
         :: Int                  -- Total length of result.
         -> (Int# -> Int#)       -- SegmentId -> Segment Length.
@@ -108,17 +111,21 @@ replicatesDirect (I# resultLen) getSegLen getValue
           where 
                 result
                  = do   !(I# count)     <- UM.unsafeRead refState sCount
+
+                        -- Check if we've finished the flow.
                         if count >=# resultLen
-                         then push1 Nothing                    -- No more elements in flow.
-                         else result_nextElem count            -- Emit an element.
+                         then push1 Nothing
+                         else result_nextElem count
                            
                 -- Emit an element.     
                 result_nextElem count
                  = do   !(I# seg)       <- UM.unsafeRead refState sSeg
                         !(I# remain)    <- UM.unsafeRead refState sRemain
-                        if remain <=# 0#                       -- Any more elems for this segment?
-                         then result_nextSeg count (seg +# 1#) --  no:  Advance to the next segment.
-                         else result_fromSeg count seg remain  --  yes: Emit from this segment. 
+
+                        -- Check if there are any more elements to emit for this segment.
+                        if remain <=# 0#                       
+                         then result_nextSeg count (seg +# 1#) 
+                         else result_fromSeg count seg remain
 
                  -- Advance to the next non-zero length segment.
                 result_nextSeg count seg
@@ -138,7 +145,35 @@ replicatesDirect (I# resultLen) getSegLen getValue
                         push1 $ Just (getValue seg)
 
          get8 push8
-          = push8 $ Right 1
+          = refState `seq` result
+          where 
+                result  
+                 = do   !(I# count)     <- UM.unsafeRead refState sCount
+
+                        -- Check if we've finished the flow.
+                        if count >=# resultLen
+                         then push8 (Right 0)
+                         else result_nextElems count
+
+                -- If we're far enough from the segment end then emit
+                -- a packet of elements, otherwise tell the consumer
+                -- they need to pull a single element at a time.
+                result_nextElems count
+                 = do   !(I# seg)       <- UM.unsafeRead refState sSeg
+                        !(I# remain)    <- UM.unsafeRead refState sRemain
+                        if remain <# 8#
+                         then push8 (Right 1)
+                         else result_fromSeg count seg remain
+
+                -- Emit a packet of elements.
+                result_fromSeg count seg remain
+                 = do
+                        -- Update state
+                        UM.unsafeWrite refState sCount  (I# (count  +# 8#))
+                        UM.unsafeWrite refState sRemain (I# (remain -# 8#))
+
+                        let !x  = getValue seg
+                        push8 $ Left (x, x, x, x, x, x, x, x)
 
         return $ Flow getSize get1 get8
 {-# INLINE [1] replicatesDirect #-}
