@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 module Test 
 where
-import Data.Array.Repa.Flow           as F
+import Data.Array.Repa.Flow             as F
 import qualified Data.Vector.Unboxed    as U
 
 
@@ -36,11 +36,11 @@ testFold !vec1
         F.foldl (+) 0 $ F.map (+ 2345) f1
 
 
-testFoldIndexs :: U.Vector Int -> U.Vector Int -> IO Int
-testFoldIndexs vec1 vec2
+testFoldGather :: U.Vector Int -> U.Vector Int -> IO Int
+testFoldGather vec1 vec2
  = do   f2      <- flow vec2
         F.foldl (+) 0
-         $ F.map (* 2345) $ F.indexs vec1 f2
+         $ F.map (* 2345) $ F.gather vec1 f2
 
 
 testPack :: U.Vector Int -> IO (U.Vector Int)
