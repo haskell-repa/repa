@@ -66,7 +66,7 @@ prop_replicates :: U.Vector Int -> U.Vector Int -> Bool
 prop_replicates lens0 vec0
  = unsafePerformIO
  $ do   let maxRepl     = 100
-        let (lens, vec) = U.unzip $ U.zip (U.map (`mod` maxRepl) lens0) vec0
+        let (lens, vec) = U.unzip $ U.zip (U.map (abs . (`mod` maxRepl)) lens0) vec0
         ff              <- F.replicatesUnboxed (U.sum lens) lens vec
         vec'            <- F.unflow ff
         return $ U.toList vec'

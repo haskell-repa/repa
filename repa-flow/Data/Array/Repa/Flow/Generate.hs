@@ -99,84 +99,80 @@ replicatesDirect (I# resultLen) getSegLen getValue
         -- Local state.
         let !sCount     = 0     -- How many elements we've emitted so far.
         let !sSeg       = 1     -- Id of current segment.
-        let !sRemain    = 2     -- Elements remaining to emit in this segment.
-        refState        <- UM.unsafeNew 3
+        let !sSegLen    = 2     -- Length of current segment.
+        let !sRemain    = 3     -- Elements remaining to emit in this segment.
+        refState        <- UM.unsafeNew 4
         UM.unsafeWrite refState sCount  (0  :: Int)
         UM.unsafeWrite refState sSeg    (-1 :: Int)
+        UM.unsafeWrite refState sSegLen (0  :: Int)
         UM.unsafeWrite refState sRemain (0  :: Int)
 
         let 
          getSize _
-          = do  !(I# count) <- UM.unsafeRead refState sCount
-                return  $ Exact (resultLen -# count)
+          = do  !(I# count)     <- UM.unsafeRead refState sCount
+                !(I# remain)    <- UM.unsafeRead refState sRemain
+                return  $ Exact ((resultLen -# count) -# remain)
 
          get1 push1
           = refState `seq` result
           where 
                 result
-                 = do   !(I# count)     <- UM.unsafeRead refState sCount
-
-                        -- Check if we've finished the flow.
-                        if count >=# resultLen
-                         then push1 Done
-                         else result_nextElem count
-                           
-                -- Emit an element.     
-                result_nextElem count
-                 = do   !(I# seg)       <- UM.unsafeRead refState sSeg
-                        !(I# remain)    <- UM.unsafeRead refState sRemain
+                 = do   !(I# remain)    <- UM.unsafeRead refState sRemain
+                        !(I# seg)       <- UM.unsafeRead refState sSeg
 
                         -- Check if there are any more elements to emit for this segment.
-                        if remain <=# 0#                       
-                         then result_nextSeg count (seg +# 1#) 
-                         else result_fromSeg count seg remain
-
-                 -- Advance to the next non-zero length segment.
-                result_nextSeg count seg
-                 = do   let !segLen     = getSegLen seg 
-                        if segLen ># 0#
-                         then result_fromSeg count seg segLen
-                         else result_nextSeg count (seg +# 1#)
+                        if remain ># 0#
+                         then result_fromSeg seg remain
+                         else result_doneSeg seg
 
                 -- Emit a result from this segment.
-                result_fromSeg count seg remain
-                 = do   
-                        -- Update state.
-                        UM.unsafeWrite refState sCount  (I# (count  +# 1#))
-                        UM.unsafeWrite refState sSeg    (I# seg)
-                        UM.unsafeWrite refState sRemain (I# (remain -# 1#))
-
+                result_fromSeg seg remain
+                 = do   UM.unsafeWrite refState sRemain (I# (remain -# 1#))
                         push1 $ Yield1 (getValue seg) (remain >=# 9#)
+
+                -- Advance to the next segment.
+                result_doneSeg seg
+                 = do   
+                        -- Add the completed segment to the total count.
+                        !(I# count)     <- UM.unsafeRead refState sCount
+                        !(I# segLen)    <- UM.unsafeRead refState sSegLen
+                        let !count'     = count +# segLen
+                        UM.unsafeWrite refState sCount (I# count')
+
+                        -- Check if we've finished the whole flow.
+                        if count' >=# resultLen
+                         then push1 Done
+                         else result_nextSeg (seg +# 1#)
+
+                -- Find the next segment with a non-zero length.
+                result_nextSeg seg 
+                 = do   let !segLen = getSegLen seg
+                        if segLen ># 0#
+                         then do
+                                UM.unsafeWrite refState sSeg    (I# seg)
+                                UM.unsafeWrite refState sSegLen (I# segLen)
+                                result_fromSeg seg segLen
+
+                         else result_nextSeg (seg +# 1#)
+
 
          get8 push8
           = refState `seq` result
           where 
-                result  
-                 = do   !(I# count)     <- UM.unsafeRead refState sCount
-
-                        -- Check if we've finished the flow.
-                        -- TODO: should fold this into get1
-                        if count >=# resultLen
-                         then push8 Pull1
-                         else result_nextElems count
-
                 -- If we're far enough from the segment end then emit
                 -- a packet of elements, otherwise tell the consumer
                 -- they need to pull a single element at a time.
-                result_nextElems count
-                 = do   !(I# seg)       <- UM.unsafeRead refState sSeg
-                        !(I# remain)    <- UM.unsafeRead refState sRemain
+                result
+                 = do   !(I# remain)    <- UM.unsafeRead refState sRemain
                         if remain >=# 8#
-                         then result_fromSeg count seg remain
-                         else push8 Pull1
+                         then   result_fromSeg remain
+                         else   push8 Pull1
 
                 -- Emit a packet of elements.
-                result_fromSeg count seg remain
+                result_fromSeg remain
                  = do
-                        -- Update state
-                        UM.unsafeWrite refState sCount  (I# (count  +# 8#))
                         UM.unsafeWrite refState sRemain (I# (remain -# 8#))
-
+                        !(I# seg)       <- UM.unsafeRead refState sSeg
                         let !x  = getValue seg
                         push8 $ Yield8 x x x x x x x x
 
