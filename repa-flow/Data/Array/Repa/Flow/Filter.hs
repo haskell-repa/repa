@@ -15,8 +15,8 @@ import GHC.Exts
 -- | Produce only the elements that have their corresponding flag set to `True`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packInt :: U.Unbox a => Flow (Int, a) -> IO (Flow a)
-packInt (Flow getSize get1 get8)
+packByTag :: U.Unbox a => Flow (Int, a) -> IO (Flow a)
+packByTag (Flow getSize get1 get8)
  = do   
         -- Buffer to hold elements that we've read from the source.
         buf     <- UM.unsafeNew 8
@@ -115,12 +115,12 @@ packInt (Flow getSize get1 get8)
 
         return $ Flow getSize' get1' get8'
 
-{-# INLINE [1] packInt #-}
+{-# INLINE [1] packByTag #-}
 
 -------------------------------------------------------------------------------
 pack :: U.Unbox a => Flow (Bool, a) -> IO (Flow a)
 pack ff
-        = packInt $ map (\(b, x) -> (if b then 1 else 0, x)) ff
+        = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
 {-# INLINE [1] pack #-}
 
 -------------------------------------------------------------------------------
