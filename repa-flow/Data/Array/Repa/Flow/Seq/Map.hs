@@ -1,12 +1,12 @@
 
-module Data.Array.Repa.Flow.Map
+module Data.Array.Repa.Flow.Seq.Map
         ( map
         , zip,          zipLeft
         , zipWith,      zipLeftWith)
 where
-import Data.Array.Repa.Flow.Base
-import qualified Data.Array.Repa.Flow.Report    as R
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import Data.Array.Repa.Flow.Seq.Base
+import qualified Data.Array.Repa.Flow.Seq.Report        as R
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (map, zip, zipWith)
 import GHC.Exts
 

@@ -43,12 +43,12 @@ Library
         EmptyDataDecls
 
   Exposed-modules:
-        Data.Array.Repa.Flow
-        Data.Array.Repa.Flow.Report    
+        Data.Array.Repa.Flow.Seq
+        Data.Array.Repa.Flow.Seq.Report    
 
   Other-modules:
-        Data.Array.Repa.Flow.Base
-        Data.Array.Repa.Flow.Filter
-        Data.Array.Repa.Flow.Fold
-        Data.Array.Repa.Flow.Generate
-        Data.Array.Repa.Flow.Map
+        Data.Array.Repa.Flow.Seq.Base
+        Data.Array.Repa.Flow.Seq.Filter
+        Data.Array.Repa.Flow.Seq.Fold
+        Data.Array.Repa.Flow.Seq.Generate
+        Data.Array.Repa.Flow.Seq.Map

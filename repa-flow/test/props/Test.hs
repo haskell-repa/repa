@@ -4,10 +4,10 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 import System.IO.Unsafe
-import Data.Array.Repa.Flow             (Flow)
-import qualified Data.Array.Repa.Flow   as F
-import qualified Data.Vector.Unboxed    as U
-import Prelude                          as P
+import Data.Array.Repa.Flow.Seq                 (Flow)
+import qualified Data.Array.Repa.Flow.Seq       as F
+import qualified Data.Vector.Unboxed            as U
+import Prelude                                  as P
 import GHC.Exts
 
 -- Framework ------------------------------------------------------------------

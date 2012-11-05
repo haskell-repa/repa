@@ -1,13 +1,13 @@
-module Data.Array.Repa.Flow.Filter
+module Data.Array.Repa.Flow.Seq.Filter
         ( packByTag
         , pack
         , filter)
 where
-import Data.Array.Repa.Flow.Base
-import Data.Array.Repa.Flow.Map
-import qualified Data.Array.Repa.Flow.Report    as R
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import Data.Array.Repa.Flow.Seq.Base
+import Data.Array.Repa.Flow.Seq.Map
+import qualified Data.Array.Repa.Flow.Seq.Report        as R
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (map, filter)
 import GHC.Exts
 

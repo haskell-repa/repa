@@ -1,7 +1,7 @@
 
--- | Flows provide an incremental version of array fusion that allows the
---   the computation to be suspended and resumed at a later time.
-module Data.Array.Repa.Flow
+-- | Sequential flows provide an incremental version of array fusion that
+--   allows the computation to be suspended and resumed at a later time.
+module Data.Array.Repa.Flow.Seq
         ( FD, FS
         , Flow (..)
         , Step1(..)
@@ -36,13 +36,13 @@ module Data.Array.Repa.Flow
         , sums)
 
 where
-import Data.Array.Repa.Flow.Base
-import Data.Array.Repa.Flow.Generate
-import Data.Array.Repa.Flow.Map
-import Data.Array.Repa.Flow.Filter
-import Data.Array.Repa.Flow.Fold
+import Data.Array.Repa.Flow.Seq.Base
+import Data.Array.Repa.Flow.Seq.Generate
+import Data.Array.Repa.Flow.Seq.Map
+import Data.Array.Repa.Flow.Seq.Filter
+import Data.Array.Repa.Flow.Seq.Fold
 import GHC.Exts
-import qualified Data.Array.Repa.Flow.Report    as R
+import qualified Data.Array.Repa.Flow.Seq.Report    as R
 import qualified Data.Vector.Unboxed            as U
 import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
 

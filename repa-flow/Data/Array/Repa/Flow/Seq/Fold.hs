@@ -1,14 +1,14 @@
 
-module Data.Array.Repa.Flow.Fold
+module Data.Array.Repa.Flow.Seq.Fold
         ( foldl
         , folds
         , sums)
 where
-import Data.Array.Repa.Flow.Base
+import Data.Array.Repa.Flow.Seq.Base
 import GHC.Exts
-import qualified Data.Array.Repa.Flow.Report    as R
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import qualified Data.Array.Repa.Flow.Seq.Report        as R
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (foldl)
 import System.IO.Unsafe
 

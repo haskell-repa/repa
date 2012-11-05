@@ -3,7 +3,7 @@ module Test
 where
 import GHC.Exts
 import Data.Vector.Unboxed              (Vector)
-import Data.Array.Repa.Flow             as F
+import Data.Array.Repa.Flow.Seq         as F
 import qualified Data.Vector.Unboxed    as U
 
 

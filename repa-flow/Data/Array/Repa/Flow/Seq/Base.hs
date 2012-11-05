@@ -1,7 +1,7 @@
 
 -- | Flows provide an incremental version of array fusion that allows the
 --   the computation to be suspended and resumed at a later time.
-module Data.Array.Repa.Flow.Base
+module Data.Array.Repa.Flow.Seq.Base
         ( FD, FS
         , Flow(..)
         , Step1(..)
@@ -16,11 +16,11 @@ module Data.Array.Repa.Flow.Base
 where
 import GHC.Exts
 import GHC.Types
-import qualified Data.Array.Repa.Flow.Report    as R
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import qualified Data.Array.Repa.Flow.Seq.Report        as R
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import System.IO.Unsafe
-import Prelude                                  hiding (take)
+import Prelude                                          hiding (take)
 
 -- | Phantom type tag to indicate a delayed flow.
 --

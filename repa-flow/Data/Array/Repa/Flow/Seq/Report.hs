@@ -6,7 +6,7 @@
 --      convert a report to a function that just loads the state and
 --      computes the expected cost directly.
 --
-module Data.Array.Repa.Flow.Report
+module Data.Array.Repa.Flow.Seq.Report
         (Report(..))
 where
 
