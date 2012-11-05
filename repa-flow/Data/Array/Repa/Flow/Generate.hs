@@ -21,7 +21,7 @@ generate (I# len) f
         UM.unsafeWrite refCount 0 0
 
         let
-         getSize _
+         getSize
           = do  !(I# ix) <- UM.unsafeRead refCount 0
                 return  $ Exact (len -# ix)
 
@@ -108,7 +108,7 @@ replicatesDirect (I# resultLen) getSegLen getValue
         UM.unsafeWrite refState sRemain (0  :: Int)
 
         let 
-         getSize _
+         getSize
           = do  !(I# count)     <- UM.unsafeRead refState sCount
                 !(I# remain)    <- UM.unsafeRead refState sRemain
                 return  $ Exact ((resultLen -# count) -# remain)
@@ -192,7 +192,7 @@ enumFromN start (I# len)
         UM.unsafeWrite refAcc   0 start
 
         let
-         getSize _
+         getSize
           = do  !(I# count)     <- UM.unsafeRead refCount 0
                 return  $ Exact count
 

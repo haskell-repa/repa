@@ -44,9 +44,9 @@ zip    (Flow !getSizeA getA1 _)
        (Flow !getSizeB getB1 _)
  = Flow getSize' get1' get8'
  where
-        getSize' _
-         = do   sizeA   <- getSizeA ()
-                sizeB   <- getSizeB ()
+        getSize'
+         = do   sizeA   <- getSizeA
+                sizeB   <- getSizeB
                 return  $  sizeMin sizeA sizeB
         {-# INLINE getSize' #-}
 

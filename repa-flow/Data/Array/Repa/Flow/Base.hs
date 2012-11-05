@@ -21,7 +21,7 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 data Flow a
         = Flow
         { -- | How many elements are available in this flow.
-          flowSize      :: () -> IO Size
+          flowSize      :: IO Size
 
           -- | Takes a continuation and either calls it with Left an element
           --   or Right some integer.
@@ -83,7 +83,7 @@ flow !vec
         let !(I# len)    = U.length vec
 
         let 
-         getSize _   
+         getSize   
           = do  !(I# ix) <- UM.unsafeRead refIx 0
                 return  $ Exact (len -# ix)
          {-# INLINE getSize #-}
@@ -141,7 +141,7 @@ flow !vec
 -- | Fully evaluate a flow, producing an unboxed vector.
 unflow :: (Touch a, U.Unbox a) => Flow a -> IO (U.Vector a)
 unflow !ff
- = do   size    <- flowSize ff ()
+ = do   size    <- flowSize ff
         case size of
           Exact len       -> unflowExact ff len
           Max   len       -> unflowExact ff len         -- TODO: this is wrong

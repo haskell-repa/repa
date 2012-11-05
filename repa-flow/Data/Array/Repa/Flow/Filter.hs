@@ -31,8 +31,8 @@ packByTag (Flow getSize get1 get8)
 
 
         let 
-         getSize' _
-          = do  size    <- getSize ()
+         getSize'
+          = do  size    <- getSize
                 return  $ case size of
                            Exact len       -> Max len
                            Max   len       -> Max len
