@@ -7,7 +7,7 @@
 --   else undefined.
 --
 module Data.Array.Repa.Flow.Par.Distro
-        ( L, N
+        ( BB, BN
         , Distro (..)
         , balanced)
 where
@@ -17,10 +17,10 @@ import GHC.Exts
 data family Distro d
 
 -- Balanced -------------------------------------------------------------------
--- | Type index to indicate an unbalanced distribution.
-data L
+-- | Type index to indicate an balanced distribution.
+data BB
 
-data instance Distro L
+data instance Distro BB
         = DistroBalanced
         { -- | Number of fragments the flow is split into.
           distroBalancedFrags           :: Int#
@@ -39,7 +39,7 @@ data instance Distro L
 balanced 
         :: Int#         -- ^ Total length of result.
         -> Int#         -- ^ Number of fragments.
-        -> Distro L
+        -> Distro BB
 
 balanced len frags
         = DistroBalanced
@@ -91,10 +91,10 @@ fragLength len frags i
 
 
 -- Unbalanced -----------------------------------------------------------------
--- | Type index to indicate a balanced distribution.
-data N
+-- | Type index to indicate an unbalanced distribution.
+data BN
 
-data instance Distro N
+data instance Distro BN
         = DistroUnbalanced
         { -- | Number of fragments the flow is split into.
           distroFrags           :: Int# }
