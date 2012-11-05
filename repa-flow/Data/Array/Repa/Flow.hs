@@ -20,7 +20,7 @@ module Data.Array.Repa.Flow
         , replicatesDirect
         , enumFromN
 
-        -- * Pure combinators
+        -- * Combinators
         , map
         , zip,          zipLeft
         , zipWith,      zipLeftWith

@@ -8,6 +8,7 @@ module Data.Array.Repa.Flow.Generate
 where
 import Data.Array.Repa.Flow.Base
 import GHC.Exts
+import qualified Data.Array.Repa.Flow.Report    as R
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (replicate)
@@ -23,10 +24,20 @@ generate len f
          = do   refCount <- UM.unsafeNew 1
                 UM.unsafeWrite refCount 0 0
                 return refCount
+        {-# INLINE start #-}
+
 
         size refCount
          = do   !(I# ix) <- UM.unsafeRead refCount 0
                 return  $ Exact (len -# ix)
+        {-# INLINE size #-}
+
+
+        report refCount
+         = do   ix      <- UM.unsafeRead refCount 0
+                return  $ R.Generate (I# len) ix
+        {-# NOINLINE report #-}
+
 
         get1 refCount push1
           = do  !(I# ix)        <- UM.unsafeRead refCount 0
@@ -37,6 +48,8 @@ generate len f
                         push1 $ Yield1  (f ix)
                                         (remain >=# 9#)
                  else   push1 Done
+        {-# INLINE get1 #-}
+
 
         get8 refCount push8
           = do  !(I# ix) <- UM.unsafeRead refCount 0
@@ -53,6 +66,7 @@ generate len f
                                         (f (ix +# 6#))
                                         (f (ix +# 7#))
                  else   push8 Pull1
+        {-# INLINE get8 #-}
 
 {-# INLINE [1] generate #-}
 

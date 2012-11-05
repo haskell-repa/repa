@@ -43,7 +43,8 @@ Library
         EmptyDataDecls
 
   Exposed-modules:
-        Data.Array.Repa.Flow        
+        Data.Array.Repa.Flow
+        Data.Array.Repa.Flow.Report    
 
   Other-modules:
         Data.Array.Repa.Flow.Base

@@ -16,6 +16,7 @@ module Data.Array.Repa.Flow.Base
 where
 import GHC.Exts
 import GHC.Types
+import qualified Data.Array.Repa.Flow.Report    as R
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import System.IO.Unsafe
@@ -55,6 +56,9 @@ data Flow r a
 
           -- | How many elements are available in this flow.
         , flowSize      :: state -> IO Size
+
+          -- | Report the current state of this flow.
+        , flowReport    :: state -> IO R.Report
 
           -- | Takes a continuation and calls it with
           --   a `Step1` containing some data.
@@ -116,7 +120,7 @@ sizeMin !s1 !s2
 -- | Convert an unboxed vector to a delayed flow.
 flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow FD a
 flow !vec
- = Flow start size get1 get8
+ = Flow start size report get1 get8
  where  
         start
          = do   refIx   <- UM.unsafeNew 1
@@ -130,6 +134,13 @@ flow !vec
                 !(I# ix) <- UM.unsafeRead refIx 0
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
+
+
+        report refIx
+         = do   let !len        = U.length vec
+                !ix             <- UM.unsafeRead refIx 0
+                return  $ R.Flow len ix
+        {-# NOINLINE report #-}
 
 
         get1 refIx push1
@@ -196,7 +207,7 @@ unflow ff = unsafePerformIO $ drain ff
 drain :: (Touch a, U.Unbox a) => Flow r a -> IO (U.Vector a)
 drain !ff
  = case ff of
-    Flow fStart fSize fGet1 fGet8
+    Flow fStart fSize _ fGet1 fGet8
      -> do !state   <- fStart
            !size    <- fSize state 
            case size of
@@ -232,7 +243,7 @@ unflowExact !len get1 get8
 take    :: (Touch a, U.Unbox a) 
         => Int# -> Flow r a -> IO (U.Vector a, Flow FS a)
 
-take limit (Flow start size get1 get8)
+take limit (Flow start size report get1 get8)
  = do   state    <- start
 
         !mvec    <- UM.unsafeNew (I# limit)
@@ -240,7 +251,10 @@ take limit (Flow start size get1 get8)
                         (get1 state) (get8 state)
         !vec     <- U.unsafeFreeze mvec
         let !vec' = U.unsafeSlice 0 len' vec        
-        return (vec', Flow (return state) size get1 get8)
+
+        return  ( vec'
+                , Flow (return state) size report get1 get8)
+
 {-# INLINE [1] take #-}
 
 
