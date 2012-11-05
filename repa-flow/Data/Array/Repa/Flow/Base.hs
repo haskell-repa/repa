@@ -5,6 +5,7 @@ module Data.Array.Repa.Flow.Base
         , sizeMin
         , flow
         , unflow
+        , take
         , Touch(..))
 where
 import GHC.Exts
@@ -12,6 +13,7 @@ import GHC.Types
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import System.IO.Unsafe
+import Prelude                                  hiding (take)
 
 
 -- | Flows provide an incremental version of array fusion that allows the
@@ -160,6 +162,10 @@ flow !vec
 
 -------------------------------------------------------------------------------
 -- | Fully evaluate a flow, producing an unboxed vector.
+-- 
+--   TODO: when this is applied to a stateful flow it should really be 
+--   an IO action, because the argument can't be unflowed again.
+--
 unflow :: (Touch a, U.Unbox a) => Flow a -> U.Vector a
 unflow !ff
  = unsafePerformIO 
@@ -183,21 +189,39 @@ unflowExact
 
 unflowExact !len get1 get8
  = do   !mvec    <- UM.unsafeNew (I# len)
-        !len'    <- slurp (UM.unsafeWrite mvec) get1 get8
+        !len'    <- slurp Nothing (UM.unsafeWrite mvec) get1 get8
         !vec     <- U.unsafeFreeze mvec
         return   $  U.unsafeSlice 0 len' vec
 {-# INLINE [1] unflowExact #-}
 
 
+-------------------------------------------------------------------------------
+-- | Take the given number of elements from the front of a flow,
+--   returning a vector of elements and the rest of the flow.
+--   
+--   The returned flow is stateful and will only provide its elements once.
+--
+take    :: (Touch a, U.Unbox a) 
+        => Int# -> Flow a -> IO (U.Vector a, Flow a)
+
+take n (Flow start size get1 get8)
+ = do   state   <- start
+        vec     <- unflowExact n (get1 state) (get8 state)
+        return (vec, Flow (return state) size get1 get8)
+{-# INLINE [1] take #-}
+
+
+-------------------------------------------------------------------------------
 -- | Slurp out all the elements from a flow,
 --   passing them to the provided consumption function.
 slurp   :: Touch a
-        => (Int -> a -> IO ())
+        => Maybe Int
+        -> (Int -> a -> IO ())
         -> ((Step1 a  -> IO ()) -> IO ())
         -> ((Step8 a  -> IO ()) -> IO ())
         -> IO Int
 
-slurp !write get1 get8
+slurp stop !write get1 get8
  = do   refCount <- UM.unsafeNew 1
         UM.unsafeWrite refCount 0 (-1)
 
@@ -209,12 +233,24 @@ slurp !write get1 get8
                 slurp1 ix' 
                 I# ix''    <- UM.unsafeRead refCount 0
 
-                if ix'' ==# ix
-                 then return (I# ix'')
-                 else slurpSome ix''
+                case stop of
+                 Just (I# limit)
+                  -> if ix'' ==# ix || ix'' >=# limit
+                        then return (I# ix'')
+                        else slurpSome ix''
+
+                 Nothing
+                  -> if ix'' ==# ix
+                        then return (I# ix'')
+                        else slurpSome ix''
 
 
          slurp1 ix 
+          | Just (I# limit) <- stop
+          , ix >=# limit
+          =     UM.unsafeWrite refCount 0 (I# ix)
+
+          |  otherwise
           =  get1 $ \r
           -> case r of
                 Yield1 x switch
@@ -235,6 +271,11 @@ slurp !write get1 get8
                         
 
          slurp8 ix
+          | Just (I# limit)     <- stop
+          , ix +# 8# ># limit
+          =     UM.unsafeWrite refCount 0 (I# ix)
+
+          | otherwise
           =  get8 $ \r
           -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7

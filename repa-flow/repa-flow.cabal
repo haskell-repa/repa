@@ -39,6 +39,7 @@ Library
         ExistentialQuantification
         UnboxedTuples
         ScopedTypeVariables
+        PatternGuards
 
   Exposed-modules:
         Data.Array.Repa.Flow        

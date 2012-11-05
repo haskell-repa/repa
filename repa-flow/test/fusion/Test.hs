@@ -1,6 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash, BangPatterns #-}
 module Test 
 where
+import GHC.Exts
 import Data.Vector.Unboxed              (Vector)
 import Data.Array.Repa.Flow             as F
 import qualified Data.Vector.Unboxed    as U
@@ -53,13 +54,13 @@ testPackByTag vec1
 
 
 testReplicates :: Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
-testReplicates !len !vLens !vElems
+testReplicates !(I# len) !vLens !vElems
  =      unflow  $ F.map (+ 3434) 
                 $ F.replicatesUnboxed len vLens vElems
 
 
 testFoldReplicate :: Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
-testFoldReplicate !len !vLens !vElems
+testFoldReplicate !(I# len) !vLens !vElems
  =      unflow  $ F.sums (flow vLens)
                 $ F.map (+ 4545)
                 $ F.replicatesUnboxed len vLens vElems

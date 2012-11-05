@@ -10,6 +10,7 @@ module Data.Array.Repa.Flow
         -- * Conversion
         , flow
         , unflow
+        , take
 
         -- * Construction
         , generate
@@ -41,7 +42,7 @@ import Data.Array.Repa.Flow.Filter
 import Data.Array.Repa.Flow.Fold
 import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
-import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate)
+import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
 
 
 

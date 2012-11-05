@@ -8,7 +8,7 @@ import Data.Array.Repa.Flow             (Flow)
 import qualified Data.Array.Repa.Flow   as F
 import qualified Data.Vector.Unboxed    as U
 import Prelude                          as P
-
+import GHC.Exts
 
 -- Framework ------------------------------------------------------------------
 main = defaultMain tests
@@ -31,54 +31,40 @@ instance (U.Unbox a, Arbitrary a) => Arbitrary (U.Vector a) where
 -- Computation / Conversion ---------------------------------------------------
 prop_flow_unflow :: U.Vector Int -> Bool
 prop_flow_unflow vec
- = unsafePerformIO
- $ do   ff      <- F.flow vec
-        vec'    <- F.unflow ff
-        return  $ vec' == vec
+ =      vec == (F.unflow $ F.flow vec)
 
 
 prop_replicate   :: Positive Int -> Int -> Bool
 prop_replicate (Positive len) x
- = unsafePerformIO
- $ do   let len'  = len `mod` 1000
-        ff      <- F.replicate len' x
-        vec'    <- F.unflow ff
-        return  $ vec' == U.replicate len' x
+ = let  !len'@(I# len#)  = len `mod` 1000
+   in   U.replicate len' x
+     == F.unflow (F.replicate len# x)
 
 
 prop_enumFromN  :: Int -> Positive Int -> Bool
 prop_enumFromN x (Positive len)
- = unsafePerformIO
- $ do   let len'  = len `mod` 1000
-        ff      <- F.enumFromN x len'
-        vec'    <- F.unflow ff
-        return  $ vec' == U.enumFromN x len'
+ = let  len'  = len `mod` 1000
+   in   U.enumFromN x len'
+     == F.unflow (F.enumFromN x len')
 
 
 prop_map :: U.Vector Int -> Bool
 prop_map vec
- = unsafePerformIO
- $ do   ff      <- F.flow vec
-        vec'    <- F.unflow $ F.map (+ 1234) ff
-        return  $ vec' == U.map (+ 1234) vec
+ =      U.map (+ 1234) vec
+     == (F.unflow $ F.map (+ 1234) (F.flow vec))
 
 
 prop_replicates :: U.Vector Int -> U.Vector Int -> Bool
 prop_replicates lens0 vec0
- = unsafePerformIO
- $ do   let maxRepl     = 100
-        let (lens, vec) = U.unzip $ U.zip (U.map (abs . (`mod` maxRepl)) lens0) vec0
-        ff              <- F.replicatesUnboxed (U.sum lens) lens vec
-        vec'            <- F.unflow ff
-        return $ U.toList vec'
-             ==  P.concat (P.zipWith P.replicate (U.toList lens) (U.toList vec))
+ = let  maxRepl         = 100
+        (lens, vec)     = U.unzip $ U.zip (U.map (abs . (`mod` maxRepl)) lens0) vec0
+        !(I# total)     = U.sum lens
+   in   U.toList (F.unflow $ F.replicatesUnboxed total lens vec)
+    ==  P.concat (P.zipWith P.replicate (U.toList lens) (U.toList vec))
+
 
 prop_filter :: U.Vector Int -> Bool
 prop_filter vec
- = unsafePerformIO
- $ do   f1      <- F.flow vec
-        f2      <- F.filter (\x -> x `mod` 2 == 0) f1
-        vec'    <- F.unflow f2
-        return  $  vec'
-                == U.filter (\x -> x `mod` 2 == 0) vec
+ =      U.filter (\x -> x `mod` 2 == 0) vec
+     == F.unflow (F.filter (\x -> x `mod` 2 == 0) (F.flow vec))
 

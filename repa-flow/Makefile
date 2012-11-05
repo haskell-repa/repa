@@ -3,7 +3,7 @@
 .PHONY : test
 test   : 
 	ghc -fforce-recomp test/props/Test.hs -e main \
-		-XMagicHash -XBangPatterns -XUnboxedTuples \
+		-XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
 		-XExistentialQuantification
 		
 
