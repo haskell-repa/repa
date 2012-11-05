@@ -15,32 +15,35 @@ import GHC.Exts
 -- | Produce only the elements that have their corresponding flag set to `True`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packByTag :: U.Unbox a => Flow (Int, a) -> IO (Flow a)
-packByTag (Flow getSize get1 get8)
- = do   
-        -- Buffer to hold elements that we've read from the source.
-        buf     <- UM.unsafeNew 8
+packByTag :: U.Unbox a => Flow (Int, a) -> Flow a
+packByTag (Flow start size get1 get8)
+ = Flow start' size' get1' get8'
+ where
+        start'
+         = do   state   <- start
 
-        -- Number of elements in the buffer.
-        refLen  <- UM.unsafeNew 1
-        UM.unsafeWrite refLen 0 (0 :: Int)
+                -- Buffer to hold elements that we've read from the source.
+                buf     <- UM.unsafeNew 8
 
-        -- Where we're reading elements from.
-        refIx   <- UM.unsafeNew 1
-        UM.unsafeWrite refIx 0 (0 :: Int)
+                -- Number of elements in the buffer.
+                refLen  <- UM.unsafeNew 1
+                UM.unsafeWrite refLen 0 (0 :: Int)
+
+                -- Where we're reading elements from.
+                refIx   <- UM.unsafeNew 1
+                UM.unsafeWrite refIx 0 (0 :: Int)
+                return (state, buf, refLen, refIx)
 
 
-        let 
-         getSize'
-          = do  size    <- getSize
-                return  $ case size of
+        size' (stateA, _, _, _)
+          = do  sz      <- size stateA
+                return  $ case sz of
                            Exact len       -> Max len
                            Max   len       -> Max len
 
-         get1' push1
-          = load
-          where
-                load
+        get1' (!stateA, !buf, !refLen, !refIx) push1
+         = load
+         where  load
                  = do   !(I# ix)  <- UM.unsafeRead refIx  0
                         !(I# len) <- UM.unsafeRead refLen 0
         
@@ -60,7 +63,7 @@ packByTag (Flow getSize get1 get8)
                         push1 $ Yield1  x False
 
                 fill8
-                 =  get8 $ \r
+                 =  get8 stateA $ \r
                  -> case r of
                         Yield8  (b0, x0) (b1, x1) (b2, x2) (b3, x3)
                                 (b4, x4) (b5, x5) (b6, x6) (b7, x7)
@@ -101,7 +104,7 @@ packByTag (Flow getSize get1 get8)
                         Pull1 -> pull1
 
                 pull1
-                 =  get1 $ \r
+                 =  get1 stateA $ \r
                  -> case r of
                         Yield1 (0, _) _ -> pull1
                         Yield1 (1, x) _ -> push1 (Yield1 x False)
@@ -111,23 +114,21 @@ packByTag (Flow getSize get1 get8)
          -- We can't deliver 8 elements at a time because there might not
          -- be that many in the source flow that match the predicate.
          --  TODO: maybe the get8 function should take both push8 and push1
-         get8' push8
-          = push8 $ Pull1
-
-        return $ Flow getSize' get1' get8'
+        get8' _ push8
+         = push8 $ Pull1
 
 {-# INLINE [1] packByTag #-}
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that have their corresponding flag set.
-pack :: U.Unbox a => Flow (Bool, a) -> IO (Flow a)
+pack :: U.Unbox a => Flow (Bool, a) -> Flow a
 pack ff
         = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
 {-# INLINE [1] pack #-}
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter :: U.Unbox a => (a -> Bool) -> Flow a -> IO (Flow a)
+filter :: U.Unbox a => (a -> Bool) -> Flow a -> Flow a
 filter f ff
         = pack $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}

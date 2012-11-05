@@ -9,18 +9,23 @@ import GHC.Exts
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (foldl)
+import System.IO.Unsafe
 
 
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> IO a
-foldl f z !(Flow _ get1 get8)
- = do   outRef  <- UM.unsafeNew 1
+foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> a
+foldl f z !(Flow start _ get1 get8)
+ = unsafePerformIO
+ $ do   
+        outRef  <- UM.unsafeNew 1
         UM.unsafeWrite outRef 0 z
+
+        state  <- start
 
         let 
          eat1 !acc
-          = get1 $ \r 
+          = get1 state $ \r 
           -> case r of
                 Yield1 x1 hint
                  -> let !acc' = (acc `f` x1)
@@ -31,7 +36,7 @@ foldl f z !(Flow _ get1 get8)
                  -> UM.write outRef 0 acc
 
          eat8 !acc 
-          =  get8 $ \r 
+          =  get8 state $ \r 
           -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                   -> eat8 ( acc `f` x0 `f` x1 `f` x2 `f` x3
@@ -49,21 +54,30 @@ foldl f z !(Flow _ get1 get8)
 -- | Fold Segmented. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
 folds :: U.Unbox a => (a -> b -> a) -> a -> Flow Int -> Flow b -> Flow a
-folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
- = Flow getSize get1' get8'
+folds f !z (Flow startA  sizeA getLen1  _) 
+           (Flow startB _sizeB getElem1 getElem8)
+ = Flow start' size' get1' get8'
  where
+        start'
+         = do   stateA  <- startA
+                stateB  <- startB
+                return  (stateA, stateB)
+
+        size' (stateA, _stateB)
+         =      sizeA stateA
+
         -- Pull the length of the first segment.
-        get1' push1
-         =  getLen1 $ \r
+        get1' (!stateA, !stateB) push1
+         =  getLen1 stateA $ \r
          -> case r of 
-                Yield1 (I# len) _ -> foldSeg push1 len
+                Yield1 (I# len) _ -> foldSeg stateB push1 len
                 Done              -> push1 Done
         {-# INLINE get1' #-}
 
         -- Producing eight copies of the loop that folds a segment won't make
         -- anything faster, so tell the consumer they can only pull one result
         -- at a time.
-        get8' push8
+        get8' _ push8
          = push8 $ Pull1
         {-# INLINE get8' #-}
 
@@ -73,7 +87,7 @@ folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
         --  We don't want to pull any elements from the _next_ segment
         --  because then we'd have to stash them until the next result
         --  was pulled from us.
-        foldSeg push1 !len
+        foldSeg stateB push1 !len
          = go8 len z
          where  
                 go8 n  !acc
@@ -86,7 +100,7 @@ folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
                  -- There are at least eight elements remaining, 
                  -- so we can do an unrolled fold.
                  |  otherwise
-                 =  getElem8  $ \r
+                 =  getElem8 stateB  $ \r
                  -> case r of
                         Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                          -> let !acc' = acc `f` x0 `f` x1 `f` x2 `f` x3 
@@ -107,7 +121,7 @@ folds f !z (Flow getSize getLen1 _) (Flow !_ getElem1 getElem8)
                 --   Note that we don't need to switch back to go8 here, 
                 --   that happend automatically at the end of each segment.
                 go1 n  !acc
-                 =  getElem1 $ \r
+                 =  getElem1 stateB $ \r
                  -> case r of
                         Yield1 x1 _
                          -> let !acc' = acc `f` x1

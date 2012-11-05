@@ -3,7 +3,8 @@
 .PHONY : test
 test   : 
 	ghc -fforce-recomp test/props/Test.hs -e main \
-		-XMagicHash -XBangPatterns -XUnboxedTuples
+		-XMagicHash -XBangPatterns -XUnboxedTuples \
+		-XExistentialQuantification
 		
 
 # Build the fusion eyeball tests.
@@ -13,7 +14,10 @@ fusion :
 	touch test/fusion/Test.hs 
 	ghc --make test/fusion/Test.hs \
 		-XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
-		-O2 -fno-liberate-case -funfolding-use-threshold1000 \
+		-XExistentialQuantification \
+		-O2 \
+		-fno-liberate-case -funfolding-use-threshold1000 \
+		-fsimpl-tick-factor=200 \
 		-fllvm -optlo-O3 \
 		-ddump-prep -dsuppress-all -dppr-case-as-let -dppr-cols200 \
 		-keep-s-files \

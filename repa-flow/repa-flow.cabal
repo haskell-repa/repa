@@ -38,6 +38,7 @@ Library
         MagicHash
         ExistentialQuantification
         UnboxedTuples
+        ScopedTypeVariables
 
   Exposed-modules:
         Data.Array.Repa.Flow        

@@ -11,6 +11,7 @@ import GHC.Exts
 import GHC.Types
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
+import System.IO.Unsafe
 
 
 -- | Flows provide an incremental version of array fusion that allows the
@@ -19,35 +20,48 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 --   Using the `flowGet8` interface, eight elements of a flow are computed for
 --   each loop interation, producing efficient object code.
 data Flow a
-        = Flow
-        { -- | How many elements are available in this flow.
-          flowSize      :: IO Size
+        = forall state. Flow
+        { 
+          -- | Start the flow. 
+          --   This returns a state value that needs to be passed to
+          --   the get functions.
+          flowStart     :: IO state
 
-          -- | Takes a continuation and either calls it with Left an element
-          --   or Right some integer.
-          --   The integer says how many elements we should pull next.
-          --   If 
-        , flowGet1      :: (Step1 a -> IO ())
-                        -> IO ()
+          -- | How many elements are available in this flow.
+        , flowSize      :: state -> IO Size
 
-          -- | Takes a continuation and either applies it to Just an
-          --   8-tuple of elements or Nothing if the full 8 aren't available.
-        , flowGet8      :: (Step8 a -> IO ())
-                        -> IO ()
+          -- | Takes a continuation and calls it with
+          --   a `Step1` containing some data.
+        , flowGet1      :: state -> (Step1 a -> IO ()) -> IO ()
+
+          -- | Takes a continuation and calls it with 
+          --  a `Step8` containing some data.
+        , flowGet8      :: state -> (Step8 a -> IO ()) -> IO ()
         }
+
 
 data Step1 a
         -- | An element and a flag saying whether a full 8 elements are
-        ---  likely to be available next pull.
+        --   likely to be available next pull.
+        --
         --   We don't want to *force* the consumer to pull the whole 8
         --   if it doesn't want to, otherwise functions like folds would
         --   become too complicated.
         = Yield1 a Bool
+
+        -- | Stream is finished.
         | Done
 
+
 data Step8 a
+        -- | Eight successive elements of the flow.
         = Yield8 a a a a a a a a
+
+        -- | Indicates that this flow isn't prepared to yield a full eight
+        --   elements right now. You should call `get1` to get the next
+        --   element and try `get8` again later.
         | Pull1
+
 
 data Size
         = -- | Flow produces exactly this number of elements.
@@ -75,21 +89,27 @@ sizeMin !s1 !s2
 
 -------------------------------------------------------------------------------
 -- | Convert an unboxed vector to a flow.
-flow :: (Touch a, U.Unbox a) => U.Vector a -> IO (Flow a)
+flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow a
 flow !vec
- = do   -- Offset into the source vector.
-        refIx   <- UM.unsafeNew 1
-        UM.unsafeWrite refIx 0 0
-        let !(I# len)    = U.length vec
+ = Flow start size get1 get8
+ where  
+        start
+         = do   refIx   <- UM.unsafeNew 1
+                UM.unsafeWrite refIx 0 0
+                return refIx
+        {-# INLINE start #-}
 
-        let 
-         getSize   
-          = do  !(I# ix) <- UM.unsafeRead refIx 0
+
+        size refIx
+         = do   let !(I# len)    = U.length vec
+                !(I# ix) <- UM.unsafeRead refIx 0
                 return  $ Exact (len -# ix)
-         {-# INLINE getSize #-}
+        {-# INLINE size #-}
 
-         get1 push1
-          = do  !(I# ix)        <- UM.unsafeRead refIx 0
+
+        get1 refIx push1
+         = do   let !(I# len)    = U.length vec
+                !(I# ix)        <- UM.unsafeRead refIx 0
                 let !remain     =  len -# ix
                 if remain ># 0#
                  then do
@@ -106,10 +126,12 @@ flow !vec
                         push1 $ Yield1 x (remain >=# 9#)
 
                  else   push1 Done
-         {-# INLINE get1 #-}
+        {-# INLINE get1 #-}
 
-         get8 push8
-          = do  !(I# ix) <- UM.unsafeRead refIx 0
+
+        get8 refIx push8
+         = do   let !(I# len)    = U.length vec
+                !(I# ix) <- UM.unsafeRead refIx 0
                 let !remain     = len -# ix
                 if remain >=# 8#
                  then do
@@ -131,32 +153,37 @@ flow !vec
 
                  else do
                         push8 Pull1
-         {-# INLINE get8 #-}
+        {-# INLINE get8 #-}
 
-        return $ Flow getSize get1 get8
 {-# INLINE [1] flow #-}
 
 
 -------------------------------------------------------------------------------
 -- | Fully evaluate a flow, producing an unboxed vector.
-unflow :: (Touch a, U.Unbox a) => Flow a -> IO (U.Vector a)
+unflow :: (Touch a, U.Unbox a) => Flow a -> U.Vector a
 unflow !ff
- = do   size    <- flowSize ff
-        case size of
-          Exact len       -> unflowExact ff len
-          Max   len       -> unflowExact ff len         -- TODO: this is wrong
+ = unsafePerformIO 
+ $ case ff of
+    Flow fStart fSize fGet1 fGet8
+     -> do !state   <- fStart
+           !size    <- fSize state 
+           case size of
+            Exact len       -> unflowExact len (fGet1 state) (fGet8 state)
+            Max   len       -> unflowExact len (fGet1 state) (fGet8 state)
+                                        -- TODO: this is wrong
 {-# INLINE [1] unflow #-}
 
 
--- TODO: keep a mutable length in the flow.
---       set it to zero after we've pulled all the elements.
--- After taking just some elements, update the size.
+unflowExact 
+        :: (Touch a, U.Unbox a) 
+        => Int# 
+        -> ((Step1 a -> IO ()) -> IO ())
+        -> ((Step8 a -> IO ()) -> IO ())
+        -> IO (U.Vector a)
 
-
-unflowExact :: (Touch a, U.Unbox a) => Flow a -> Int# -> IO (U.Vector a)
-unflowExact ff !len
+unflowExact !len get1 get8
  = do   !mvec    <- UM.unsafeNew (I# len)
-        !len'    <- slurp (UM.unsafeWrite mvec) ff
+        !len'    <- slurp (UM.unsafeWrite mvec) get1 get8
         !vec     <- U.unsafeFreeze mvec
         return   $  U.unsafeSlice 0 len' vec
 {-# INLINE [1] unflowExact #-}
@@ -166,10 +193,11 @@ unflowExact ff !len
 --   passing them to the provided consumption function.
 slurp   :: Touch a
         => (Int -> a -> IO ())
-        -> Flow a
+        -> ((Step1 a  -> IO ()) -> IO ())
+        -> ((Step8 a  -> IO ()) -> IO ())
         -> IO Int
 
-slurp !write ff
+slurp !write get1 get8
  = do   refCount <- UM.unsafeNew 1
         UM.unsafeWrite refCount 0 (-1)
 
@@ -187,7 +215,7 @@ slurp !write ff
 
 
          slurp1 ix 
-          =  flowGet1 ff $ \r
+          =  get1 $ \r
           -> case r of
                 Yield1 x switch
                  -> do  
@@ -207,7 +235,7 @@ slurp !write ff
                         
 
          slurp8 ix
-          =  flowGet8 ff $ \r
+          =  get8 $ \r
           -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                  -> do  write (I# (ix +# 0#)) x0

@@ -7,24 +7,23 @@ where
 import Data.Array.Repa.Flow.Base
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (map, zip, zipWith)
-import Control.Monad
 import GHC.Exts
 
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
 map :: (a -> b) -> Flow a -> Flow b
-map f (Flow getSize get1 get8)
- = Flow getSize get1' get8'
+map f (Flow start size get1 get8)
+ = Flow start size get1' get8'
  where  
-        get1' push1
-         =  get1 $ \r 
+        get1' state push1
+         =  get1 state $ \r 
          -> case r of
                 Yield1 x hint   -> push1 $ Yield1 (f x) hint
                 Done            -> push1 $ Done
         {-# INLINE get1' #-}
 
-        get8' push8
-         =  get8 $ \r
+        get8' state push8
+         =  get8 state $ \r
          -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                  -> push8 $ Yield8      (f x0) (f x1) (f x2) (f x3)
@@ -40,19 +39,25 @@ map f (Flow getSize get1 get8)
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
 zip :: Flow a -> Flow b -> Flow (a, b)
-zip    (Flow !getSizeA getA1 _)
-       (Flow !getSizeB getB1 _)
- = Flow getSize' get1' get8'
+zip    (Flow !startA !sizeA getA1 _)
+       (Flow !startB !sizeB getB1 _)
+ = Flow start' size' get1' get8'
  where
-        getSize'
-         = do   sizeA   <- getSizeA
-                sizeB   <- getSizeB
-                return  $  sizeMin sizeA sizeB
-        {-# INLINE getSize' #-}
+        start'
+         = do   stateA  <- startA
+                stateB  <- startB
+                return  (stateA, stateB)
+        {-# INLINE start' #-}
 
-        get1' push1
-         =  getA1 $ \mxA 
-         -> getB1 $ \mxB
+        size' (stateA, stateB)
+         = do   szA     <- sizeA stateA
+                szB     <- sizeB stateB
+                return  $  sizeMin szA szB
+        {-# INLINE size' #-}
+
+        get1' (stateA, stateB) push1
+         =  getA1 stateA $ \mxA 
+         -> getB1 stateB $ \mxB
          -> case (mxA, mxB) of
                 (Yield1 xA hintA, Yield1 xB hintB) 
                   -> push1 $ Yield1 (xA, xB) (hintA && hintB)
@@ -61,7 +66,7 @@ zip    (Flow !getSizeA getA1 _)
 
         -- We can't provide an 8-way zip because one of the flows
         -- might want to dynamically give us only 1 element at a time.
-        get8' push8
+        get8' _ push8
          = push8 Pull1
         {-# INLINE get8' #-}
 
@@ -82,16 +87,25 @@ zipWith f flowA flowB
 --   Unlike plain 'zip', the fact that we can use the function to retrieve
 --   an arbitary number of elements per step means we can pull up to 
 --   8 elements at a time from the resulting flow.
-zipLeft :: Flow a -> (Int# -> b) -> IO (Flow (a, b))
-zipLeft (Flow !getSizeA getA1 getA8) getB
- = do
-        refIx   <- UM.unsafeNew 1
-        UM.unsafeWrite refIx 0 (0 :: Int)
+--
+zipLeft :: Flow a -> (Int# -> b) -> Flow (a, b)
+zipLeft (Flow startA sizeA getA1 getA8) getB
+ = Flow start' size' get1' get8'
+ where  
+        start'
+         = do   stateA  <- startA
+                refIx   <- UM.unsafeNew 1
+                UM.unsafeWrite refIx 0 (0 :: Int)
+                return (stateA, refIx)
 
-        let 
-         get1' push1
-          =  getA1 $ \r 
-          -> case r of
+
+        size' (!stateA, _)
+         =      sizeA stateA
+
+        
+        get1' (!stateA, !refIx) push1
+         =  getA1 stateA $ \r 
+         -> case r of
                 Yield1 x1 hint
                  -> do  !(I# ix)        <- UM.unsafeRead refIx 0
                         UM.unsafeWrite refIx 0 (I# (ix +# 1#))
@@ -99,9 +113,10 @@ zipLeft (Flow !getSizeA getA1 getA8) getB
 
                 Done -> push1 $ Done
 
-         get8' push8
-          = getA8 $ \r
-          -> case r of
+
+        get8' (!stateA, !refIx) push8
+         = getA8 stateA $ \r
+         -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                  -> do  !(I# ix)        <- UM.unsafeRead refIx 0
                         UM.unsafeWrite refIx 0 (I# (ix +# 8#))
@@ -116,13 +131,13 @@ zipLeft (Flow !getSizeA getA1 getA8) getB
 
                 Pull1 -> push8 Pull1
 
-        return $ Flow getSizeA get1' get8'
 {-# INLINE [1] zipLeft #-}
 
 
 -------------------------------------------------------------------------------
 -- | Combine a flow and elements gained from some function.
-zipLeftWith :: (a -> b -> c) -> Flow a -> (Int# -> b) -> IO (Flow c)
+zipLeftWith :: (a -> b -> c) -> Flow a -> (Int# -> b) -> Flow c
 zipLeftWith f flowA getB
-        = liftM (map (uncurry f)) $ zipLeft flowA getB
+        = map (uncurry f) $ zipLeft flowA getB
 {-# INLINE [1] zipLeftWith #-}
+

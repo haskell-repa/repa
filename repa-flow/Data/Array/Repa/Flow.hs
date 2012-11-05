@@ -49,11 +49,11 @@ import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate)
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
-gather !vec (Flow getSize get1 get8)
- = Flow getSize get1' get8'
+gather !vec (Flow start size get1 get8)
+ = Flow start size get1' get8'
  where
-        get1' push1
-         =  get1 $ \r
+        get1' !state push1
+         =  get1 state $ \r
          -> case r of
                 Yield1 ix hint
                  -> push1 $ Yield1 (U.unsafeIndex vec ix) hint
@@ -62,8 +62,8 @@ gather !vec (Flow getSize get1 get8)
                  -> push1 $ Done
         {-# INLINE get1' #-}
 
-        get8' push8
-         =  get8 $ \r
+        get8' state push8
+         =  get8 state $ \r
          -> case r of
                 Yield8 ix0 ix1 ix2 ix3 ix4 ix5 ix6 ix7
                  -> push8 $ Yield8      (U.unsafeIndex vec ix0)
