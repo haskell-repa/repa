@@ -12,6 +12,7 @@ module Data.Array.Repa.Flow.Seq.Base
         , unflow
         , take
         , drain
+        , slurp
         , Touch(..))
 where
 import GHC.Exts
@@ -226,7 +227,7 @@ unflowExact
 
 unflowExact !len get1 get8
  = do   !mvec    <- UM.unsafeNew (I# len)
-        !len'    <- slurp Nothing (UM.unsafeWrite mvec) get1 get8
+        !len'    <- slurp 0# Nothing (UM.unsafeWrite mvec) get1 get8
         !vec     <- U.unsafeFreeze mvec
         return   $  U.unsafeSlice 0 len' vec
 {-# INLINE [1] unflowExact #-}
@@ -247,7 +248,7 @@ take limit (Flow start size report get1 get8)
  = do   state    <- start
 
         !mvec    <- UM.unsafeNew (I# limit)
-        !len'    <- slurp (Just (I# limit)) (UM.unsafeWrite mvec) 
+        !len'    <- slurp 0# (Just (I# limit)) (UM.unsafeWrite mvec) 
                         (get1 state) (get8 state)
         !vec     <- U.unsafeFreeze mvec
         let !vec' = U.unsafeSlice 0 len' vec        
@@ -262,13 +263,14 @@ take limit (Flow start size report get1 get8)
 -- | Slurp out all the elements from a flow,
 --   passing them to the provided consumption function.
 slurp   :: Touch a
-        => Maybe Int
+        => Int#
+        -> Maybe Int
         -> (Int -> a -> IO ())
         -> ((Step1 a  -> IO ()) -> IO ())
         -> ((Step8 a  -> IO ()) -> IO ())
         -> IO Int
 
-slurp stop !write get1 get8
+slurp start stop !write get1 get8
  = do   refCount <- UM.unsafeNew 1
         UM.unsafeWrite refCount 0 (-1)
 
@@ -339,7 +341,7 @@ slurp stop !write get1 get8
                 Pull1   
                  ->     UM.unsafeWrite refCount 0 (I# ix)
 
-        slurpSome 0#
+        slurpSome start
 {-# INLINE [0] slurp #-}
 
 class Touch a where

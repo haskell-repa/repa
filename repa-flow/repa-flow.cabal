@@ -21,7 +21,8 @@ Library
   Build-Depends: 
         base            == 4.6.*,
         vector          == 0.9.*,
-        ghc-prim        == 0.3.*
+        ghc-prim        == 0.3.*,
+        repa            == 3.2.*
 
   ghc-options:
         -Wall 
@@ -45,7 +46,11 @@ Library
   Exposed-modules:
         Data.Array.Repa.Flow.Seq
         Data.Array.Repa.Flow.Seq.Report    
+
+        Data.Array.Repa.Flow.Par
         Data.Array.Repa.Flow.Par.Distro
+
+        Data.Array.Repa.Flow.Par.Base
 
   Other-modules:
         Data.Array.Repa.Flow.Seq.Base
@@ -53,3 +58,4 @@ Library
         Data.Array.Repa.Flow.Seq.Fold
         Data.Array.Repa.Flow.Seq.Generate
         Data.Array.Repa.Flow.Seq.Map
+
