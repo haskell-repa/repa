@@ -45,6 +45,7 @@ Library
   Exposed-modules:
         Data.Array.Repa.Flow.Seq
         Data.Array.Repa.Flow.Seq.Report    
+        Data.Array.Repa.Flow.Par.Distro
 
   Other-modules:
         Data.Array.Repa.Flow.Seq.Base
