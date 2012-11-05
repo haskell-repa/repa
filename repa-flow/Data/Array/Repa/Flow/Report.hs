@@ -28,7 +28,8 @@ data Report
                 { replicatesLength      :: Int  }
 
         | EnumFromN
-                { enumFromNLength       :: Int  }
+                { enumFromNLength       :: Int
+                , enumFromNPosition     :: Int }
 
         -- Combinators
         | Map   { mapSource             :: Report }

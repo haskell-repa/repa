@@ -42,6 +42,7 @@ import Data.Array.Repa.Flow.Map
 import Data.Array.Repa.Flow.Filter
 import Data.Array.Repa.Flow.Fold
 import GHC.Exts
+import qualified Data.Array.Repa.Flow.Report    as R
 import qualified Data.Vector.Unboxed            as U
 import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
 
@@ -51,9 +52,14 @@ import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather :: U.Unbox a => U.Vector a -> Flow r Int -> Flow r a
-gather !vec (Flow start size get1 get8)
- = Flow start size get1' get8'
+gather !vec (Flow start size report get1 get8)
+ = Flow start size report' get1' get8'
  where
+        report' state
+         = do   r       <- report state
+                return  $ R.Gather r
+        {-# NOINLINE report' #-}
+
         get1' !state push1
          =  get1 state $ \r
          -> case r of

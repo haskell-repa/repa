@@ -5,6 +5,7 @@ module Data.Array.Repa.Flow.Map
         , zipWith,      zipLeftWith)
 where
 import Data.Array.Repa.Flow.Base
+import qualified Data.Array.Repa.Flow.Report    as R
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (map, zip, zipWith)
 import GHC.Exts
@@ -12,9 +13,13 @@ import GHC.Exts
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
 map :: (a -> b) -> Flow r a -> Flow r b
-map f (Flow start size get1 get8)
- = Flow start size get1' get8'
+map f (Flow start size report get1 get8)
+ = Flow start size report' get1' get8'
  where  
+        report' state
+         = do   r       <- report state
+                return  $ R.Map r
+
         get1' state push1
          =  get1 state $ \r 
          -> case r of
@@ -39,9 +44,9 @@ map f (Flow start size get1 get8)
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
 zip :: Flow r a -> Flow r b -> Flow r (a, b)            -- TODO: compute upper bound
-zip    (Flow !startA !sizeA getA1 _)
-       (Flow !startB !sizeB getB1 _)
- = Flow start' size' get1' get8'
+zip    (Flow !startA !sizeA reportA getA1 _)
+       (Flow !startB !sizeB reportB getB1 _)
+ = Flow start' size' report' get1' get8'
  where
         start'
          = do   stateA  <- startA
@@ -54,6 +59,12 @@ zip    (Flow !startA !sizeA getA1 _)
                 szB     <- sizeB stateB
                 return  $  sizeMin szA szB
         {-# INLINE size' #-}
+
+        report' (stateA, stateB)
+         = do   rA      <- reportA stateA
+                rB      <- reportB stateB
+                return  $ R.Zip rA rB
+        {-# NOINLINE report' #-}
 
         get1' (stateA, stateB) push1
          =  getA1 stateA $ \mxA 
@@ -89,8 +100,8 @@ zipWith f flowA flowB
 --   8 elements at a time from the resulting flow.
 --
 zipLeft :: Flow r a -> (Int# -> b) -> Flow r (a, b)
-zipLeft (Flow startA sizeA getA1 getA8) getB
- = Flow start' size' get1' get8'
+zipLeft (Flow startA sizeA reportA getA1 getA8) getB
+ = Flow start' size' report' get1' get8'
  where  
         start'
          = do   stateA  <- startA
@@ -98,10 +109,13 @@ zipLeft (Flow startA sizeA getA1 getA8) getB
                 UM.unsafeWrite refIx 0 (0 :: Int)
                 return (stateA, refIx)
 
-
         size' (!stateA, _)
          =      sizeA stateA
 
+        report' (stateA, _)
+         = do   r       <- reportA stateA
+                return  $ R.ZipLeft r
+        {-# NOINLINE report' #-}
         
         get1' (!stateA, !refIx) push1
          =  getA1 stateA $ \r 

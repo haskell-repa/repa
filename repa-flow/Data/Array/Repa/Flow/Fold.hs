@@ -6,6 +6,7 @@ module Data.Array.Repa.Flow.Fold
 where
 import Data.Array.Repa.Flow.Base
 import GHC.Exts
+import qualified Data.Array.Repa.Flow.Report    as R
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (foldl)
@@ -15,7 +16,7 @@ import System.IO.Unsafe
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
 foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
-foldl f z !(Flow start _ get1 get8)
+foldl f z !(Flow start _ _ get1 get8)
  = unsafePerformIO
  $ do   
         outRef  <- UM.unsafeNew 1
@@ -59,9 +60,9 @@ folds   :: U.Unbox a
         -> Flow r b 
         -> Flow r a                     -- TODO: do upper bound
 
-folds f !z (Flow startA  sizeA getLen1  _) 
-           (Flow startB _sizeB getElem1 getElem8)
- = Flow start' size' get1' get8'
+folds f !z (Flow startA  sizeA reportA getLen1  _) 
+           (Flow startB _sizeB reportB getElem1 getElem8)
+ = Flow start' size' report' get1' get8'
  where
         start'
          = do   stateA  <- startA
@@ -70,6 +71,12 @@ folds f !z (Flow startA  sizeA getLen1  _)
 
         size' (stateA, _stateB)
          =      sizeA stateA
+
+        report' (stateA, stateB)
+         = do   rA      <- reportA stateA
+                rB      <- reportB stateB
+                return  $ R.Folds rA rB
+        {-# NOINLINE report' #-}
 
         -- Pull the length of the first segment.
         get1' (!stateA, !stateB) push1

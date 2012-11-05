@@ -5,6 +5,7 @@ module Data.Array.Repa.Flow.Filter
 where
 import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Flow.Map
+import qualified Data.Array.Repa.Flow.Report    as R
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (map, filter)
@@ -16,8 +17,8 @@ import GHC.Exts
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
 packByTag :: U.Unbox a => Flow r (Int, a) -> Flow r a
-packByTag (Flow start size get1 get8)
- = Flow start' size' get1' get8'
+packByTag (Flow start size report get1 get8)
+ = Flow start' size' report' get1' get8'
  where
         start'
          = do   state   <- start
@@ -36,10 +37,15 @@ packByTag (Flow start size get1 get8)
 
 
         size' (stateA, _, _, _)
-          = do  sz      <- size stateA
+         = do   sz      <- size stateA
                 return  $ case sz of
                            Exact len       -> Max len
                            Max   len       -> Max len
+
+        report' (stateA, _, _, _)
+         = do   r       <- report stateA
+                return  $ R.PackByTag r
+        {-# NOINLINE report' #-}
 
         get1' (!stateA, !buf, !refLen, !refIx) push1
          = load

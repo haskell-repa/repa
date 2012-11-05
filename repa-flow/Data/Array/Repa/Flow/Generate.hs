@@ -18,7 +18,7 @@ import Prelude hiding (replicate)
 --   index.
 generate :: Int# -> (Int# -> a) -> Flow r a
 generate len f
- = Flow start size get1 get8
+ = Flow start size report get1 get8
  where  
         start
          = do   refCount <- UM.unsafeNew 1
@@ -116,7 +116,7 @@ replicatesDirect
         -> Flow r a
 
 replicatesDirect resultLen getSegLen getValue
- = Flow start size get1 get8
+ = Flow start size report get1 get8
  where
         !sCount         = 0     -- How many elements we've emitted so far.
         !sSeg           = 1     -- Id of current segment.
@@ -136,6 +136,11 @@ replicatesDirect resultLen getSegLen getValue
          = do   !(I# count)     <- UM.unsafeRead state sCount
                 !(I# remain)    <- UM.unsafeRead state sRemain
                 return  $ Exact ((resultLen -# count) -# remain)
+
+
+        report _
+         = do   return  $ R.Replicates (I# resultLen)
+        {-# NOINLINE report #-}
 
 
         get1 !state push1
@@ -178,8 +183,8 @@ replicatesDirect resultLen getSegLen getValue
                                 result seg segLen
 
                          else result_nextSeg (seg +# 1#)
-
         
+
         get8 !state push8
          = result
          where  -- If we're far enough from the segment end then emit
@@ -199,6 +204,7 @@ replicatesDirect resultLen getSegLen getValue
                         let !x  = getValue seg
                         push8 $ Yield8 x x x x x x x x
 
+
 {-# INLINE [1] replicatesDirect #-}
 
 
@@ -206,7 +212,7 @@ replicatesDirect resultLen getSegLen getValue
 -- | Yield a vector of the given length containing values @x@, @x+1@ etc.
 enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> Flow r a
 enumFromN first (I# len)
- = Flow start size get1 get8
+ = Flow start size report get1 get8
  where
         start
          = do   refCount <- UM.unsafeNew 1
@@ -217,9 +223,17 @@ enumFromN first (I# len)
 
                 return (refCount, refAcc)
 
+
         size (refCount, _)
          = do   !(I# count)     <- UM.unsafeRead refCount 0
                 return  $ Exact count
+
+
+        report (refCount, _)
+         = do   count           <- UM.unsafeRead refCount 0
+                return  $ R.EnumFromN (I# len) count
+        {-# NOINLINE report #-}
+
 
         get1 (refCount, refAcc) push1
          = do   !(I# count)     <- UM.unsafeRead refCount 0
