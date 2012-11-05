@@ -119,7 +119,7 @@ sizeMin !s1 !s2
 
 -------------------------------------------------------------------------------
 -- | Convert an unboxed vector to a delayed flow.
-flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow FD a
+flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow r a
 flow !vec
  = Flow start size report get1 get8
  where  

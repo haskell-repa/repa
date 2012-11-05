@@ -15,14 +15,14 @@ import System.IO.Unsafe
 import GHC.Exts
 
 
-data Flow r d a
+data Flow rep bal a
         = Flow
         { -- | Flow distribution, keeps track of how well-balanced
           --   our workload is between the threads.
-          flowDistro    :: Distro d
+          flowDistro    :: Distro bal
 
-          -- | Get the flow fragment that runs on the given thread.
-        , flowFrag      :: Int# -> Seq.Flow r a }
+          -- | Get the sequential flow fragment that runs on the given thread.
+        , flowFrag      :: Int# -> Seq.Flow rep a }
 
 
 -------------------------------------------------------------------------------
@@ -52,8 +52,8 @@ flow !vec
         
 
 -------------------------------------------------------------------------------
-class Unflow d where
- unflow :: (Seq.Touch a, U.Unbox a) => Flow Seq.FD d a -> U.Vector a
+class Unflow bal where
+ unflow :: (Seq.Touch a, U.Unbox a) => Flow Seq.FD bal a -> U.Vector a
 
 
 instance Unflow BB where

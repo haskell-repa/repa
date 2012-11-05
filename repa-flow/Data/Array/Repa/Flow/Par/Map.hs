@@ -8,7 +8,7 @@ import Prelude hiding (map)
 
 
 -- | Apply a function to every element of a flow.
-map :: (a -> b) -> Flow d r a -> Flow d r b
+map :: (a -> b) -> Flow rep bal a -> Flow rep bal b
 map f (Flow distro frag)
  = Flow distro frag'
  where  frag' ix = Seq.map f (frag ix)

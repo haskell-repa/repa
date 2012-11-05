@@ -89,7 +89,7 @@ replicatesUnboxed
         => Int#
         -> U.Vector Int
         -> U.Vector a
-        -> Flow FD a
+        -> Flow r a
 
 replicatesUnboxed resultLen segLen segValue
  = let  getSegLen ix
