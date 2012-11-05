@@ -166,6 +166,9 @@ flow !vec
 --   TODO: when this is applied to a stateful flow it should really be 
 --   an IO action, because the argument can't be unflowed again.
 --
+--   Add a type index to say whether the flow has already started, 
+--   and an IO function 'drain' that finishes it.
+--
 unflow :: (Touch a, U.Unbox a) => Flow a -> U.Vector a
 unflow !ff
  = unsafePerformIO 
@@ -204,10 +207,15 @@ unflowExact !len get1 get8
 take    :: (Touch a, U.Unbox a) 
         => Int# -> Flow a -> IO (U.Vector a, Flow a)
 
-take n (Flow start size get1 get8)
- = do   state   <- start
-        vec     <- unflowExact n (get1 state) (get8 state)
-        return (vec, Flow (return state) size get1 get8)
+take limit (Flow start size get1 get8)
+ = do   state    <- start
+
+        !mvec    <- UM.unsafeNew (I# limit)
+        !len'    <- slurp (Just (I# limit)) (UM.unsafeWrite mvec) 
+                        (get1 state) (get8 state)
+        !vec     <- U.unsafeFreeze mvec
+        let !vec' = U.unsafeSlice 0 len' vec        
+        return (vec', Flow (return state) size get1 get8)
 {-# INLINE [1] take #-}
 
 
