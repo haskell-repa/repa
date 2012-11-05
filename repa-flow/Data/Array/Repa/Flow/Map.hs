@@ -1,10 +1,14 @@
 
 module Data.Array.Repa.Flow.Map
         ( map
-        , zip, zipWith)
+        , zip,          zipLeft
+        , zipWith,      zipLeftWith)
 where
 import Data.Array.Repa.Flow.Base
+import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (map, zip, zipWith)
+import Control.Monad
+import GHC.Exts
 
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
@@ -34,10 +38,10 @@ map f (Flow getSize get1 get8)
 
 
 -------------------------------------------------------------------------------
--- | Combine two flows into a flow of tuples.
+-- | Combine two flows into a flow of tuples, pulling one element at a time.
 zip :: Flow a -> Flow b -> Flow (a, b)
-zip    (Flow !getSizeA getA1 getA8)
-       (Flow !getSizeB getB1 getB8)
+zip    (Flow !getSizeA getA1 _)
+       (Flow !getSizeB getB1 _)
  = Flow getSize' get1' get8'
  where
         getSize' _
@@ -55,37 +59,70 @@ zip    (Flow !getSizeA getA1 getA8)
                 _ -> push1 $ Done
         {-# INLINE get1' #-}
 
+        -- We can't provide an 8-way zip because one of the flows
+        -- might want to dynamically give us only 1 element at a time.
         get8' push8
-         = push8 $ Pull1
-
-
-{-        get8' push8   -- This is wrong. Can't discard the other side of the pull
-         =  getA8 $ \mxA
-         -> getB8 $ \mxB
-         -> case (mxA, mxB) of
-                ( Yield8 a0 a1 a2 a3 a4 a5 a6 a7
-                 ,Yield8 b0 b1 b2 b3 b4 b5 b6 b7)
-                 -> push8 $ Yield8 (a0, b0) (a1, b1) (a2, b2) (a3, b3)
-                                   (a4, b4) (a5, b5) (a6, b6) (a7, b7)
-
-                ( Pull1, _)
-                 -> push8 Pull1
-
-                ( _, Pull1) 
-                 -> push8 Pull1
+         = push8 Pull1
         {-# INLINE get8' #-}
--}
+
 {-# INLINE [1] zip #-}
 
--- Don't let the simplifier see the split here,
--- otherwise we'll get two copies of the body code.
-hack_and b1 b2
- = b1 && b2
-{-# NOINLINE hack_and #-}
 
 -------------------------------------------------------------------------------
--- | Combine two flows with a function.
+-- | Combine two flows with a function, pulling one element at a time.
 zipWith :: (a -> b -> c) -> Flow a -> Flow b -> Flow c
 zipWith f flowA flowB
         = map (uncurry f) $ zip flowA flowB
 {-# INLINE [1] zipWith #-}
+
+
+--------------------------------------------------------------------------------
+-- | Pair elements of a flow with elements gained from some function.
+--
+--   Unlike plain 'zip', the fact that we can use the function to retrieve
+--   an arbitary number of elements per step means we can pull up to 
+--   8 elements at a time from the resulting flow.
+zipLeft :: Flow a -> (Int# -> b) -> IO (Flow (a, b))
+zipLeft (Flow !getSizeA getA1 getA8) getB
+ = do
+        refIx   <- UM.unsafeNew 1
+        UM.unsafeWrite refIx 0 (0 :: Int)
+
+        let 
+         get1' push1
+          =  getA1 $ \r 
+          -> case r of
+                Yield1 x1 hint
+                 -> do  !(I# ix)        <- UM.unsafeRead refIx 0
+                        UM.unsafeWrite refIx 0 (I# (ix +# 1#))
+                        push1 $ Yield1 (x1, getB ix) hint
+
+                Done -> push1 $ Done
+
+         get8' push8
+          = getA8 $ \r
+          -> case r of
+                Yield8 x0 x1 x2 x3 x4 x5 x6 x7
+                 -> do  !(I# ix)        <- UM.unsafeRead refIx 0
+                        UM.unsafeWrite refIx 0 (I# (ix +# 8#))
+                        push8 $ Yield8  (x0, getB (ix +# 0#))
+                                        (x1, getB (ix +# 1#))
+                                        (x2, getB (ix +# 2#))
+                                        (x3, getB (ix +# 3#))
+                                        (x4, getB (ix +# 4#))
+                                        (x5, getB (ix +# 5#))
+                                        (x6, getB (ix +# 6#))
+                                        (x7, getB (ix +# 7#))
+
+                Pull1 -> push8 Pull1
+
+        return $ Flow getSizeA get1' get8'
+{-# INLINE [1] zipLeft #-}
+
+
+-------------------------------------------------------------------------------
+-- | Combine a flow and elements gained from some function.
+zipLeftWith :: (a -> b -> c) -> Flow a -> (Int# -> b) -> IO (Flow c)
+zipLeftWith f flowA getB
+        = liftM (map (uncurry f)) $ zipLeft flowA getB
+{-# INLINE [1] zipLeftWith #-}

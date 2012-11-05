@@ -8,18 +8,15 @@ module Data.Array.Repa.Flow.Base
         , Touch(..))
 where
 import GHC.Exts
-import GHC.Prim
-import GHC.Exts
 import GHC.Types
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 
 
--- | Flows provide a version of stream fusion that does not depend on the 
---   constructor specialisation transform, or strictness analysis working
---   particularly well.
+-- | Flows provide an incremental version of array fusion that allows the
+--   the computation to be suspended and resumed at a later time.
 -- 
---   Using the `flowGet4` interface, four elements of a flow are computed for
+--   Using the `flowGet8` interface, eight elements of a flow are computed for
 --   each loop interation, producing efficient object code.
 data Flow a
         = Flow
@@ -118,14 +115,17 @@ flow !vec
                  then do
                         UM.unsafeWrite refIx 0 (I# (ix +# 8#))
 
-                        !x0     <- here $ U.unsafeIndex vec (I# (ix +# 0#))
-                        !x1     <- here $ U.unsafeIndex vec (I# (ix +# 1#))
-                        !x2     <- here $ U.unsafeIndex vec (I# (ix +# 2#))
-                        !x3     <- here $ U.unsafeIndex vec (I# (ix +# 3#))
-                        !x4     <- here $ U.unsafeIndex vec (I# (ix +# 4#))
-                        !x5     <- here $ U.unsafeIndex vec (I# (ix +# 5#))
-                        !x6     <- here $ U.unsafeIndex vec (I# (ix +# 6#))
-                        !x7     <- here $ U.unsafeIndex vec (I# (ix +# 7#))
+                        -- TODO: not sure whether we should force these here
+                        let here' = return
+
+                        !x0     <- here' $ U.unsafeIndex vec (I# (ix +# 0#))
+                        !x1     <- here' $ U.unsafeIndex vec (I# (ix +# 1#))
+                        !x2     <- here' $ U.unsafeIndex vec (I# (ix +# 2#))
+                        !x3     <- here' $ U.unsafeIndex vec (I# (ix +# 3#))
+                        !x4     <- here' $ U.unsafeIndex vec (I# (ix +# 4#))
+                        !x5     <- here' $ U.unsafeIndex vec (I# (ix +# 5#))
+                        !x6     <- here' $ U.unsafeIndex vec (I# (ix +# 6#))
+                        !x7     <- here' $ U.unsafeIndex vec (I# (ix +# 7#))
 
                         push8 $ Yield8 x0 x1 x2 x3 x4 x5 x6 x7
 
@@ -174,7 +174,7 @@ slurp !write ff
         UM.unsafeWrite refCount 0 (-1)
 
         let
-         slurp ix
+         slurpSome ix
           = do  slurp8 ix
                 I# ix'     <- UM.unsafeRead refCount 0 
 
@@ -183,7 +183,7 @@ slurp !write ff
 
                 if ix'' ==# ix
                  then return (I# ix'')
-                 else slurp ix''
+                 else slurpSome ix''
 
 
          slurp1 ix 
@@ -223,15 +223,18 @@ slurp !write ff
                 Pull1   
                  ->     UM.unsafeWrite refCount 0 (I# ix)
 
-        slurp 0#
+        slurpSome 0#
 {-# INLINE [0] slurp #-}
 
 class Touch a where
  touch :: a -> IO ()
 
-here x
- = do   touch x
+ here  :: a -> IO a
+ here x
+  = do  touch x
         return x
+ {-# INLINE here #-}
+
 
 instance Touch Int where
  touch (I# x)

@@ -20,8 +20,9 @@ module Data.Array.Repa.Flow
 
         -- * Pure combinators
         , map
-        , zip
-        , zipWith
+        , zip,          zipLeft
+        , zipWith,      zipLeftWith
+
         , pack
         , packByTag
         , filter

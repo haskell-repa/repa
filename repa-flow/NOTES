@@ -113,4 +113,24 @@ TODO:
       ofilter etc as the incremental flow versions.
 
 
+-------------------------------------------------------------------------------
+Perhaps we want a flowCreate field to initialise the state, instead of
+putting some functions in IO
+
+        flowCreate :: IO a
+
+        data Flow a
+        = forall s. 
+        Flow
+        { flowSize      :: () -> IO Size
+
+        , flowCreate    :: IO s
+
+        , flowGet1      :: (s -> Step1 a -> IO ())
+                        -> IO ()
+
+        , flowGet8      :: (s -> Step8 a -> IO ())
+                        -> IO ()
+        }
+
 

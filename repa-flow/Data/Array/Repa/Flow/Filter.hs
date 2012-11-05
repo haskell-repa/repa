@@ -105,6 +105,7 @@ packByTag (Flow getSize get1 get8)
                  -> case r of
                         Yield1 (0, _) _ -> pull1
                         Yield1 (1, x) _ -> push1 (Yield1 x False)
+                        Yield1 (_, _) _ -> error "Data.Array.Repa.Flow.Filter: tag out of range"
                         Done            -> push1 Done
 
          -- We can't deliver 8 elements at a time because there might not
@@ -118,6 +119,7 @@ packByTag (Flow getSize get1 get8)
 {-# INLINE [1] packByTag #-}
 
 -------------------------------------------------------------------------------
+-- | Produce only those elements that have their corresponding flag set.
 pack :: U.Unbox a => Flow (Bool, a) -> IO (Flow a)
 pack ff
         = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff

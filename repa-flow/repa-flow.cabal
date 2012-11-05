@@ -19,8 +19,9 @@ Synopsis:
 
 Library
   Build-Depends: 
-        base                 == 4.6.*,
-        vector               == 0.9.*
+        base            == 4.6.*,
+        vector          == 0.9.*,
+        ghc-prim        == 0.3.*
 
   ghc-options:
         -Wall 
@@ -36,6 +37,7 @@ Library
         TypeFamilies
         MagicHash
         ExistentialQuantification
+        UnboxedTuples
 
   Exposed-modules:
         Data.Array.Repa.Flow        
