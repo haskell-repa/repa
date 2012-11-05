@@ -40,9 +40,10 @@ flow !vec
 
         frag tid
                 = Seq.flow 
-                $ U.slice (I# (fragStart tid))
-                          (I# (fragLength tid))
-                          vec
+                $ U.unsafeSlice 
+                        (I# (fragStart tid))
+                        (I# (fragLength tid))
+                        vec
         {-# INLINE frag #-}
 
    in   Flow    { flowDistro    = balanced frags len 

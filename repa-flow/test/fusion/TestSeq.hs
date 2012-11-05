@@ -1,5 +1,5 @@
 {-# LANGUAGE MagicHash, BangPatterns #-}
-module Test 
+module TestSeq
 where
 import GHC.Exts
 import Data.Vector.Unboxed              (Vector)
