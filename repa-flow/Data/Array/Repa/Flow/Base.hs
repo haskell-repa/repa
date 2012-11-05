@@ -1,11 +1,17 @@
 
+-- | Flows provide an incremental version of array fusion that allows the
+--   the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow.Base
-        ( Flow(..), Step1(..), Step8(..)
+        ( FD, FS
+        , Flow(..)
+        , Step1(..)
+        , Step8(..)
         , Size(..)
         , sizeMin
         , flow
         , unflow
         , take
+        , drain
         , Touch(..))
 where
 import GHC.Exts
@@ -15,13 +21,31 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 import System.IO.Unsafe
 import Prelude                                  hiding (take)
 
+-- | Phantom type tag to indicate a delayed flow.
+--
+--   A delayed flow is a flow that hasn't started flowing yet.
+--   It does not have any attached state, and we can evaluate it multiple
+--   times to get the same result.
+--
+data FD
+
+
+-- | Phantom type tag to indicate a stateful flow.
+--      
+--   A stateful flow is a flow that has already started flowing.
+--   It has attached state, and we can evaluated prefixes of it
+--   incrementally. Evaluating the whole flow uses it up, 
+--   so we can't evaluate it again.
+--
+data FS
+
 
 -- | Flows provide an incremental version of array fusion that allows the
 --   the computation to be suspended and resumed at a later time.
 -- 
---   Using the `flowGet8` interface, eight elements of a flow are computed for
---   each loop interation, producing efficient object code.
-data Flow a
+--   Using the `flowGet8` interface, eight elements of a flow can be 
+--   computed for each loop iteration, producing efficient object code.
+data Flow r a
         = forall state. Flow
         { 
           -- | Start the flow. 
@@ -46,12 +70,12 @@ data Step1 a
         -- | An element and a flag saying whether a full 8 elements are
         --   likely to be available next pull.
         --
-        --   We don't want to *force* the consumer to pull the whole 8
+        ---  We don't want to *force* the consumer to pull the full 8
         --   if it doesn't want to, otherwise functions like folds would
         --   become too complicated.
         = Yield1 a Bool
 
-        -- | Stream is finished.
+        -- | The flow is finished, no more elements are avaliable.
         | Done
 
 
@@ -59,9 +83,8 @@ data Step8 a
         -- | Eight successive elements of the flow.
         = Yield8 a a a a a a a a
 
-        -- | Indicates that this flow isn't prepared to yield a full eight
-        --   elements right now. You should call `get1` to get the next
-        --   element and try `get8` again later.
+        -- | Indicates that the flow cannot yield a full 8 elements right now.
+        --   You should use `flowGet1` to get the next element and try `flowGet8` again later.
         | Pull1
 
 
@@ -90,8 +113,8 @@ sizeMin !s1 !s2
 
 
 -------------------------------------------------------------------------------
--- | Convert an unboxed vector to a flow.
-flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow a
+-- | Convert an unboxed vector to a delayed flow.
+flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow FD a
 flow !vec
  = Flow start size get1 get8
  where  
@@ -161,18 +184,18 @@ flow !vec
 
 
 -------------------------------------------------------------------------------
--- | Fully evaluate a flow, producing an unboxed vector.
--- 
---   TODO: when this is applied to a stateful flow it should really be 
---   an IO action, because the argument can't be unflowed again.
+-- | Fully evaluate a delayed flow, producing an unboxed vector.
 --
---   Add a type index to say whether the flow has already started, 
---   and an IO function 'drain' that finishes it.
---
-unflow :: (Touch a, U.Unbox a) => Flow a -> U.Vector a
-unflow !ff
- = unsafePerformIO 
- $ case ff of
+unflow :: (Touch a, U.Unbox a) => Flow FD a -> U.Vector a
+unflow ff = unsafePerformIO $ drain ff
+{-# INLINE [1] unflow #-}
+
+
+-- | Fully evaluate a possibly stateful flow,
+--   pulling all the remaining elements.
+drain :: (Touch a, U.Unbox a) => Flow r a -> IO (U.Vector a)
+drain !ff
+ = case ff of
     Flow fStart fSize fGet1 fGet8
      -> do !state   <- fStart
            !size    <- fSize state 
@@ -180,7 +203,7 @@ unflow !ff
             Exact len       -> unflowExact len (fGet1 state) (fGet8 state)
             Max   len       -> unflowExact len (fGet1 state) (fGet8 state)
                                         -- TODO: this is wrong
-{-# INLINE [1] unflow #-}
+{-# INLINE [1] drain #-}
 
 
 unflowExact 
@@ -200,12 +223,14 @@ unflowExact !len get1 get8
 
 -------------------------------------------------------------------------------
 -- | Take the given number of elements from the front of a flow,
---   returning a vector of elements and the rest of the flow.
+--   returning those elements and the rest of the flow.
 --   
---   The returned flow is stateful and will only provide its elements once.
+--   Calling 'take' allocates buffers and other state information, 
+--   and this state will be reused when the remaining elements of
+--   the flow are evaluated.
 --
 take    :: (Touch a, U.Unbox a) 
-        => Int# -> Flow a -> IO (U.Vector a, Flow a)
+        => Int# -> Flow r a -> IO (U.Vector a, Flow FS a)
 
 take limit (Flow start size get1 get8)
  = do   state    <- start

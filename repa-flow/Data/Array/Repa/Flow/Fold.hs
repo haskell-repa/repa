@@ -14,7 +14,7 @@ import System.IO.Unsafe
 
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow b -> a
+foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
 foldl f z !(Flow start _ get1 get8)
  = unsafePerformIO
  $ do   
@@ -53,7 +53,12 @@ foldl f z !(Flow start _ get1 get8)
 -------------------------------------------------------------------------------
 -- | Fold Segmented. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
-folds :: U.Unbox a => (a -> b -> a) -> a -> Flow Int -> Flow b -> Flow a
+folds   :: U.Unbox a 
+        => (a -> b -> a) -> a 
+        -> Flow r Int 
+        -> Flow r b 
+        -> Flow r a                     -- TODO: do upper bound
+
 folds f !z (Flow startA  sizeA getLen1  _) 
            (Flow startB _sizeB getElem1 getElem8)
  = Flow start' size' get1' get8'
@@ -140,7 +145,7 @@ folds f !z (Flow startA  sizeA getLen1  _)
 
 -- | Sum Segmented. Takes a flow of segment lenghths and a flow of elements,
 --   and sums the elements of each segment individually.
-sums :: (U.Unbox a, Num a) => Flow Int -> Flow a -> Flow a
+sums :: (U.Unbox a, Num a) => Flow r Int -> Flow r a -> Flow r a        -- TODO: do upper bound
 sums ffLens ffElems
         = folds (+) 0 ffLens ffElems
 {-# INLINE [1] sums #-}

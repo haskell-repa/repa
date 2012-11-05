@@ -15,7 +15,7 @@ import GHC.Exts
 -- | Produce only the elements that have their corresponding flag set to `True`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packByTag :: U.Unbox a => Flow (Int, a) -> Flow a
+packByTag :: U.Unbox a => Flow r (Int, a) -> Flow r a
 packByTag (Flow start size get1 get8)
  = Flow start' size' get1' get8'
  where
@@ -50,10 +50,10 @@ packByTag (Flow start size get1 get8)
                         -- If we already have some elements in the buffer
                         -- then we can use those.
                         if ix <# len
-                         then drain ix
+                         then drains ix
                          else fill8
 
-                drain ix
+                drains ix
                  = do   -- Update the index
                         let !ix' = ix +# 1#
                         UM.unsafeWrite refIx 0 (I# ix')
@@ -97,7 +97,7 @@ packByTag (Flow start size get1 get8)
                                 if len ># 0#
                                  then do
                                         UM.unsafeWrite refLen 0 (I# len)
-                                        drain 0#
+                                        drains 0#
 
                                  else fill8
 
@@ -121,14 +121,14 @@ packByTag (Flow start size get1 get8)
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that have their corresponding flag set.
-pack :: U.Unbox a => Flow (Bool, a) -> Flow a
+pack :: U.Unbox a => Flow r (Bool, a) -> Flow r a
 pack ff
         = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
 {-# INLINE [1] pack #-}
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter :: U.Unbox a => (a -> Bool) -> Flow a -> Flow a
+filter :: U.Unbox a => (a -> Bool) -> Flow r a -> Flow r a
 filter f ff
         = pack $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}

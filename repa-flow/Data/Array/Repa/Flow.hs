@@ -1,16 +1,17 @@
--- Flows are stateful and incremental.
--- Taking a prefix only computes those elements.
--- 
--- Use dup2 for sharing, caches only as much data as required to 
--- handle the desync in the program.
---
+
+-- | Flows provide an incremental version of array fusion that allows the
+--   the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow
-        ( Flow (..) 
+        ( FD, FS
+        , Flow (..)
+        , Step1(..)
+        , Step8(..)
 
         -- * Conversion
         , flow
         , unflow
         , take
+        , drain
 
         -- * Construction
         , generate
@@ -49,7 +50,7 @@ import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
 -------------------------------------------------------------------------------
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
-gather :: U.Unbox a => U.Vector a -> Flow Int -> Flow a
+gather :: U.Unbox a => U.Vector a -> Flow r Int -> Flow r a
 gather !vec (Flow start size get1 get8)
  = Flow start size get1' get8'
  where

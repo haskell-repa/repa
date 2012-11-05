@@ -15,7 +15,7 @@ import Prelude hiding (replicate)
 ------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying the function to each
 --   index.
-generate :: Int# -> (Int# -> a) -> Flow a
+generate :: Int# -> (Int# -> a) -> Flow r a
 generate len f
  = Flow start size get1 get8
  where  
@@ -58,7 +58,7 @@ generate len f
 
 
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: forall a. Int# -> a -> Flow a
+replicate :: forall a r. Int# -> a -> Flow r a
 replicate n x
         = generate n get
         where   get :: Int# -> a
@@ -75,7 +75,7 @@ replicatesUnboxed
         => Int#
         -> U.Vector Int
         -> U.Vector a
-        -> Flow a
+        -> Flow FD a
 
 replicatesUnboxed resultLen segLen segValue
  = let  getSegLen ix
@@ -99,7 +99,7 @@ replicatesDirect
         :: Int#                 -- Total length of result.
         -> (Int# -> Int#)       -- SegmentId -> Segment Length.
         -> (Int# -> a)          -- SegmentId -> Value to emit for this segment.
-        -> Flow a
+        -> Flow r a
 
 replicatesDirect resultLen getSegLen getValue
  = Flow start size get1 get8
@@ -190,7 +190,7 @@ replicatesDirect resultLen getSegLen getValue
 
 -------------------------------------------------------------------------------
 -- | Yield a vector of the given length containing values @x@, @x+1@ etc.
-enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> Flow a
+enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> Flow r a
 enumFromN first (I# len)
  = Flow start size get1 get8
  where
