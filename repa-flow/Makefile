@@ -1,11 +1,25 @@
 
 # Run all the quickcheck tests.
+.PHONY : test-seq
+test-seq : 
+	@echo "-- Sequential ----------------------------------------------------"
+	ghc -fforce-recomp -fobject-code test/props/TestSeq.hs -e main \
+ 	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
+ 	    -XExistentialQuantification
+	@echo
+
+
+.PHONY : test-par
+test-par : 
+	@echo "-- Parallel ------------------------------------------------------"
+	ghc -fforce-recomp -fobject-code test/props/TestPar.hs -e main \
+	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
+	    -XExistentialQuantification -XTypeFamilies
+	@echo
+
 .PHONY : test
-test   : 
-	ghc -fforce-recomp test/props/Test.hs -e main \
-		-XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
-		-XExistentialQuantification
-		
+test : test-seq test-par
+
 
 # Build the fusion eyeball tests.
 #   Look at test/fusion/Test.prep to see if it worked.

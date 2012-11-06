@@ -51,12 +51,12 @@ balanced
         -> Int#         -- ^ Number of fragments.
         -> Distro BB
 
-balanced len frags
+balanced frags len
         = DistroBalanced
         { distroBalancedLength          = len
         , distroBalancedFrags           = frags
-        , distroBalancedFragLength      = balancedFragLength len frags
-        , distroBalancedFragStart       = balancedFragStart  len frags }
+        , distroBalancedFragLength      = balancedFragLength frags len
+        , distroBalancedFragStart       = balancedFragStart  frags len }
 {-# INLINE [1] balanced #-}
 
 
@@ -64,12 +64,16 @@ balanced len frags
 --   get the starting point for one fragment,
 --   dividing it evenly between the threads.
 balancedFragStart
-        :: Int#         -- ^ Total length of result.
-        -> Int#         -- ^ Number of fragments.
+        :: Int#         -- ^ Number of fragments.
+        -> Int#         -- ^ Total length of result.
         -> Int#         -- ^ Fragment (thread) number
         -> Int#         -- ^ Starting point of this fragment.
 
-balancedFragStart len frags i
+balancedFragStart frags len i
+ | frags ==# 0#   
+ = error "Data.Array.Repa.Flow.Par.Distro.balancedFragStart: no fragments"
+
+ | otherwise
  = let  fragLen         = len `quotInt#` frags
         fragLeftover    = len `remInt#`  frags
 
@@ -93,9 +97,9 @@ balancedFragLength
         -> Int#         -- ^ Fragment (thread) number.
         -> Int#         -- ^ Length of this fragment.
 
-balancedFragLength len frags i
-        =  balancedFragStart len frags (i +# 1#)
-        -# balancedFragStart len frags i
+balancedFragLength frags len i
+        =  balancedFragStart frags len (i +# 1#)
+        -# balancedFragStart frags len i
 {-# NOINLINE balancedFragLength #-}
 --  NOINLINE because it's only called when distributing work, 
 --  not in inner loops, and we want to keep the code size down.

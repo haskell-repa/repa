@@ -42,9 +42,9 @@ prop_replicate (Positive len) x
 
 
 prop_enumFromN  :: Int -> Positive Int -> Bool
-prop_enumFromN x (Positive len)
- = let  len'  = len `mod` 1000
-   in   U.enumFromN x len'
+prop_enumFromN (I# x) (Positive len)
+ = let  !(I# len')  = len `mod` 1000
+   in   U.enumFromN (I# x) (I# len')
      == F.unflow (F.enumFromN x len')
 
 

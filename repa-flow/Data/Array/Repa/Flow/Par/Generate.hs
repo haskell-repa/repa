@@ -25,7 +25,7 @@ generate len get
  = Flow distro frag
  where
         !(I# threads)    = Gang.gangSize Gang.theGang
-        !distro          = balanced len threads
+        !distro          = balanced threads len
 
         frag n
          = let  !len'    = distroBalancedFragLength distro n
@@ -96,7 +96,7 @@ enumFromN first len
  = Flow distro frag
  where
         !(I# threads)   = Gang.gangSize Gang.theGang
-        !distro         = balanced len threads
+        !distro         = balanced threads len
 
         frag n
          = let  !len'   = distroBalancedFragLength distro n

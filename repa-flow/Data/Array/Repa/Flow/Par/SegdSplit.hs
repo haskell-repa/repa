@@ -54,10 +54,10 @@ splitSegsOnElems
 splitSegsOnElems lens idxs (I# nElemsTotal) (I# nThreads) (I# ixThread)
  = let  
         -- Starting element number for this thread
-        !ixStart  = balancedFragStart nElemsTotal nThreads ixThread
+        !ixStart  = balancedFragStart nThreads nElemsTotal ixThread
 
         -- Starting element number for the next thread.
-        !ixStart' = balancedFragStart nElemsTotal nThreads (ixThread +# 1#)
+        !ixStart' = balancedFragStart nThreads nElemsTotal (ixThread +# 1#)
 
         -- Number of elements assigned to this thread.
         !nElems   = ixStart' -# ixStart
