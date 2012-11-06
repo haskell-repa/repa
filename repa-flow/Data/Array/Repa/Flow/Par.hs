@@ -10,6 +10,9 @@ module Data.Array.Repa.Flow.Par
         -- * Construction
         , generate
         , replicate
+        , replicates
+        , replicatesSplit
+        , enumFromN
 
         -- * Combinators
         , map

@@ -2,13 +2,18 @@
 module Data.Array.Repa.Flow.Par.Generate
         ( generate
         , replicate
-        , replicatesDirectFragged
+        , replicates
+        , replicatesSplit
         , enumFromN)
 where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Distro
+import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
+import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq.Generate      as Seq
 import qualified Data.Array.Repa.Eval.Gang              as Gang
+import qualified Data.Vector                            as V
+import qualified Data.Vector.Unboxed                    as U
 import GHC.Exts
 import Prelude hiding (replicate)
 
@@ -44,23 +49,40 @@ replicate n x
 
 
 -------------------------------------------------------------------------------
--- | Segmented replicate, where we have functions that produce the segment
---   lengths and elements directly.
-replicatesDirectFragged
-        :: Distro BB
-        -> (Int# -> Int# -> Int#) -- ^ FragId -> SegId -> Seg Length
-        -> (Int# -> Int# -> a)    -- ^ FragId -> SegId -> Value to emit for this seg.
+-- | Segmented replicate, where we have a function that produces the value
+--   to use for each segment.
+replicates
+        :: Segd
+        -> (Int# -> a)
         -> Flow r BB a
 
-replicatesDirectFragged !distro getSegLen getSegVal
+replicates segd getSegVal
+ = replicatesSplit (Segd.splitSegd segd) getSegVal
+{-# INLINE [1] replicates #-}
+
+
+-- | Segmented replicate, where we have a function that produces the value
+--   to use for each segment.
+--
+--   This version takes a pre-split segment descriptor.
+replicatesSplit
+        :: SplitSegd
+        -> (Int# -> a)
+        -> Flow r BB a
+
+replicatesSplit segd getSegVal
  = Flow distro frag
  where
-        frag n
-         = let  !fragLen        = distroBalancedFragLength distro n
-                !getSegLen'     = getSegLen n
-                !getSegVal'     = getSegVal n
-           in   Seq.replicatesDirect fragLen getSegLen' getSegVal'
-{-# INLINE [1] replicatesDirectFragged #-}
+        !distro = Segd.distroOfSplitSegd segd
+        
+        frag n  
+         = let  chunk            = V.unsafeIndex (Segd.splitChunk segd) (I# n)
+                !elems           = Segd.chunkElems chunk
+                !segStart        = Segd.chunkStart chunk
+                getSegLen'  seg  = let !(I# r) = U.unsafeIndex (Segd.chunkLengths chunk) (I# seg) in r
+                getSegVal'  seg  = getSegVal (seg +# segStart)
+           in   Seq.replicatesDirect elems getSegLen' getSegVal'
+{-# INLINE [1] replicatesSplit #-}
 
 
 -------------------------------------------------------------------------------
