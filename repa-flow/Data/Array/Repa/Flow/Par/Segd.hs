@@ -123,7 +123,7 @@ splitSegd segd
 -- | Take the `Distro` of a `SplitSegd`.
 --   This tells us how the array elements should be distributed on the gang.
 distroOfSplitSegd :: SplitSegd -> Distro BB
-distroOfSplitSegd (SplitSegd (Segd _ ixs _) nChunks nElems chunks)
+distroOfSplitSegd (SplitSegd (Segd _ _ ixs) nElems nChunks chunks)
         = DistroBalanced 
         { distroBalancedFrags      = nChunks
         , distroBalancedLength     = nElems

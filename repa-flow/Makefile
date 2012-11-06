@@ -14,7 +14,7 @@ test-par :
 	@echo "-- Parallel ------------------------------------------------------"
 	ghc -fforce-recomp -fobject-code test/props/TestPar.hs -e main \
 	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
-	    -XExistentialQuantification -XTypeFamilies
+	    -XExistentialQuantification -XTypeFamilies +RTS -N3
 	@echo
 
 .PHONY : test

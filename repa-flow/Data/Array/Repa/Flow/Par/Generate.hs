@@ -3,6 +3,7 @@ module Data.Array.Repa.Flow.Par.Generate
         ( generate
         , replicate
         , replicates
+        , replicatesUnboxed
         , replicatesSplit
         , enumFromN)
 where
@@ -61,6 +62,19 @@ replicates segd getSegVal
 {-# INLINE [2] replicates #-}
 
 
+-- | Segmented replicate, taking an unboxed vector of elemements.
+replicatesUnboxed
+        :: U.Unbox a 
+        => Segd
+        -> U.Vector a
+        -> Flow rep BB a
+
+replicatesUnboxed segd vec
+ = replicates segd get
+ where  get ix  = U.unsafeIndex vec (I# ix)
+{-# INLINE replicatesUnboxed #-}
+
+
 -- | Segmented replicate, where we have a function that produces the value
 --   to use for each segment.
 --
@@ -79,7 +93,10 @@ replicatesSplit segd getSegVal
          = let  chunk            = V.unsafeIndex (Segd.splitChunk segd) (I# n)
                 !elems           = Segd.chunkElems chunk
                 !segStart        = Segd.chunkStart chunk
-                getSegLen'  seg  = let !(I# r) = U.unsafeIndex (Segd.chunkLengths chunk) (I# seg) in r
+                getSegLen'  seg  = let !(I# r) = U.unsafeIndex 
+                                                        (Segd.chunkLengths chunk) 
+                                                        (I# seg)
+                                   in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)
            in   Seq.replicatesDirect elems getSegLen' getSegVal'
 {-# INLINE [2] replicatesSplit #-}

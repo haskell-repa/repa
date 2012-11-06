@@ -76,7 +76,7 @@ instance Unflow BB where
                   case flowFrag ff tid of
                    Seq.Flow start _size _report get1 get8
                     -> do state <- start
-                          _     <- Seq.slurp ixStart Nothing write
+                          _     <- Seq.slurp 0# Nothing write
                                         (get1 state) (get8 state)
                           return ()
 

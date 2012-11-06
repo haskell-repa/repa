@@ -13,14 +13,16 @@ import qualified Data.Vector.Unboxed            as U
 import Prelude                                  as P
 import GHC.Exts
 
+
 -- Framework ------------------------------------------------------------------
-main = defaultMain tests
+main = defaultMainWithArgs tests ["-j", "1"] 
 
 tests
  =      [ testProperty "flow/unflow          " prop_flow_unflow
+        , testProperty "map                  " prop_map
+        , testProperty "map/map              " prop_map_map
         , testProperty "replicate            " prop_replicate
         , testProperty "enumFromN            " prop_enumFromN
-        , testProperty "map                  " prop_map
         , testProperty "replicates           " prop_replicates
 --      , testProperty "filter               " prop_filter
         ]
@@ -55,6 +57,12 @@ prop_map :: U.Vector Int -> Bool
 prop_map vec
  =      U.map (+ 1234) vec
      == (F.unflow $ F.map (+ 1234) (F.flow vec))
+
+
+prop_map_map :: U.Vector Int -> Bool
+prop_map_map vec
+ =      (U.map (+ 1234) $ U.map (* 4567) vec)
+     == (F.unflow $ F.map (+ 1234) $ F.map (* 4567) (F.flow vec))
 
 
 prop_replicates :: U.Vector Int -> U.Vector Int -> Bool
