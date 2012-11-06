@@ -20,7 +20,7 @@ import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Int# -> (Int# -> a) -> Flow r BB a
+generate :: Int# -> (Int# -> a) -> Flow rep BB a
 generate len get
  = Flow distro frag
  where
@@ -34,18 +34,18 @@ generate len get
                 get' ix  = get (start' +# ix)
            in   Seq.generate len' get'
         {-# INLINE frag #-}
-{-# INLINE [1] generate #-}
+{-# INLINE [2] generate #-}
 
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: forall a r. Int# -> a -> Flow r BB a
+replicate :: forall a rep. Int# -> a -> Flow rep BB a
 replicate n x
         = generate n get
         where   get :: Int# -> a
                 get _ = x
                 {-# INLINE get #-}
-{-# INLINE [1] replicate #-}
+{-# INLINE [2] replicate #-}
 
 
 -------------------------------------------------------------------------------
@@ -54,11 +54,11 @@ replicate n x
 replicates
         :: Segd
         -> (Int# -> a)
-        -> Flow r BB a
+        -> Flow rep BB a
 
 replicates segd getSegVal
  = replicatesSplit (Segd.splitSegd segd) getSegVal
-{-# INLINE [1] replicates #-}
+{-# INLINE [2] replicates #-}
 
 
 -- | Segmented replicate, where we have a function that produces the value
@@ -68,7 +68,7 @@ replicates segd getSegVal
 replicatesSplit
         :: SplitSegd
         -> (Int# -> a)
-        -> Flow r BB a
+        -> Flow rep BB a
 
 replicatesSplit segd getSegVal
  = Flow distro frag
@@ -82,7 +82,7 @@ replicatesSplit segd getSegVal
                 getSegLen'  seg  = let !(I# r) = U.unsafeIndex (Segd.chunkLengths chunk) (I# seg) in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)
            in   Seq.replicatesDirect elems getSegLen' getSegVal'
-{-# INLINE [1] replicatesSplit #-}
+{-# INLINE [2] replicatesSplit #-}
 
 
 -------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ replicatesSplit segd getSegVal
 enumFromN 
         :: Int#                 -- ^ Starting value.
         -> Int#                 -- ^ Length of result.
-        -> Flow r BB Int
+        -> Flow rep BB Int
 
 enumFromN first len
  = Flow distro frag
@@ -102,3 +102,5 @@ enumFromN first len
          = let  !len'   = distroBalancedFragLength distro n
                 !start' = distroBalancedFragStart  distro n +# first
            in   Seq.enumFromN start' len'
+{-# INLINE [2] enumFromN #-}
+

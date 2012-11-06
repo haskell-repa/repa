@@ -211,26 +211,29 @@ drain !ff
     Flow fStart fSize _ fGet1 fGet8
      -> do !state   <- fStart
            !size    <- fSize state 
+
+           -- In the sequential case we can use the same code to unflow
+           -- both Exact and Max, and just slice down the vector to the
+           -- final size.
            case size of
-            Exact len       -> unflowExact len (fGet1 state) (fGet8 state)
-            Max   len       -> unflowExact len (fGet1 state) (fGet8 state)
-                                        -- TODO: this is wrong
+            Exact len       -> unflowWith len (fGet1 state) (fGet8 state)
+            Max   len       -> unflowWith len (fGet1 state) (fGet8 state)
 {-# INLINE [1] drain #-}
 
 
-unflowExact 
+unflowWith
         :: (Touch a, U.Unbox a) 
         => Int# 
         -> ((Step1 a -> IO ()) -> IO ())
         -> ((Step8 a -> IO ()) -> IO ())
         -> IO (U.Vector a)
 
-unflowExact !len get1 get8
+unflowWith !len get1 get8
  = do   !mvec    <- UM.unsafeNew (I# len)
         !len'    <- slurp 0# Nothing (UM.unsafeWrite mvec) get1 get8
         !vec     <- U.unsafeFreeze mvec
         return   $  U.unsafeSlice 0 len' vec
-{-# INLINE [1] unflowExact #-}
+{-# INLINE [1] unflowWith #-}
 
 
 -------------------------------------------------------------------------------
@@ -343,6 +346,7 @@ slurp start stop !write get1 get8
 
         slurpSome start
 {-# INLINE [0] slurp #-}
+
 
 class Touch a where
  touch :: a -> IO ()

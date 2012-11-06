@@ -18,7 +18,7 @@ map :: (a -> b) -> Flow rep bal a -> Flow rep bal b
 map f (Flow distro frag)
  = Flow distro frag'
  where  frag' ix = Seq.map f (frag ix)
-{-# INLINE [1] map #-}
+{-# INLINE [2] map #-}
 
 
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
@@ -26,14 +26,14 @@ zip :: Flow rep BB a -> Flow rep BB b -> Flow rep BB (a, b)
 zip (Flow distro1 frag1) (Flow _ frag2)
  = Flow distro1 frag'
  where  frag' ix = Seq.zip (frag1 ix) (frag2 ix)
-{-# INLINE [1] zip #-}
+{-# INLINE [2] zip #-}
 
 
 -- | Combine two flows with a function, pulling one element at a time.
 zipWith :: (a -> b -> c) -> Flow rep BB a -> Flow rep BB b -> Flow rep BB c
 zipWith f flowA flowB
         = map (uncurry f) $ zip flowA flowB
-{-# INLINE [1] zipWith #-}
+{-# INLINE [2] zipWith #-}
 
 
 -- | Pair elements of a flow with elements gained from some function.
@@ -45,11 +45,11 @@ zipLeft (Flow distro frag) getB
                 getB' ix = getB (ix +# start)
            in   Seq.zipLeft (frag n) getB'
         {-# INLINE frag' #-}
-{-# INLINE [1] zipLeft #-}
+{-# INLINE [2] zipLeft #-}
 
 
 -- | Combine a flow with elements gained from some function.
 zipLeftWith :: (a -> b -> c) -> Flow rep BB a -> (Int# -> b) -> Flow rep BB c
 zipLeftWith f flowA getB
         = map (uncurry f) $ zipLeft flowA getB
-{-# INLINE [1] zipLeftWith #-}
+{-# INLINE [2] zipLeftWith #-}

@@ -41,7 +41,7 @@ empty   = Segd
         { elements      = 0#
         , lengths       = U.empty 
         , indices       = U.empty }
-
+{-# INLINE [1] empty #-}
 
 -- | Construct a segment descriptor from a lengths vector.
 --
@@ -54,7 +54,7 @@ fromLengths lens
         { elements      = len
         , lengths       = lens
         , indices       = U.scanl (+) 0 lens }
-
+{-# INLINE [1] fromLengths #-}
 
 -- Split Segds ----------------------------------------------------------------
 -- | Split segment descriptors describe the segmentation of an array in a way
@@ -117,6 +117,7 @@ splitSegd segd
                 , chunkStart    = first
                 , chunkOffset   = offset 
                 , chunkLengths  = lens }
+{-# INLINE [1] splitSegd #-}
 
 
 -- | Take the `Distro` of a `SplitSegd`.
@@ -133,3 +134,4 @@ distroOfSplitSegd (SplitSegd (Segd _ ixs _) nChunks nElems chunks)
                     !(I# seg_ix) = ixs `U.unsafeIndex` (I# seg)
                     offset       = chunkOffset chunk
                 in  offset +# seg_ix }
+{-# INLINE [1] distroOfSplitSegd #-}
