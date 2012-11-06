@@ -9,7 +9,9 @@
 module Data.Array.Repa.Flow.Par.Distro
         ( BB, BN
         , Distro (..)
-        , balanced)
+        , balanced
+        , balancedFragStart
+        , balancedFragLength)
 where
 import GHC.Exts
 
@@ -45,20 +47,20 @@ balanced len frags
         = DistroBalanced
         { distroBalancedLength          = len
         , distroBalancedFrags           = frags
-        , distroBalancedFragLength      = fragLength len frags
-        , distroBalancedFragStart       = fragStart  len frags }
+        , distroBalancedFragLength      = balancedFragLength len frags
+        , distroBalancedFragStart       = balancedFragStart  len frags }
 
 
 -- | Given the length of a vector, 
 --   get the starting point for one fragment,
 --   dividing it evenly between the threads.
-fragStart
+balancedFragStart
         :: Int#         -- ^ Total length of result.
         -> Int#         -- ^ Number of fragments.
         -> Int#         -- ^ Fragment (thread) number
         -> Int#         -- ^ Starting point of this fragment.
 
-fragStart len frags i
+balancedFragStart len frags i
  = let  fragLen         = len `quotInt#` frags
         fragLeftover    = len `remInt#`  frags
 
@@ -68,7 +70,7 @@ fragStart len frags i
         {-# NOINLINE getStart #-}
 
   in    getStart i
-{-# NOINLINE fragStart #-}
+{-# NOINLINE balancedFragStart #-}
 --  NOINLINE because it's only called when distributing work, 
 --  not in inner loops, and we want to keep the code size down.
 
@@ -76,16 +78,16 @@ fragStart len frags i
 -- | Get the length of a vector,
 --   get the starting point for one fragment,
 --   dividing it evenly between the threads.
-fragLength 
+balancedFragLength 
         :: Int#         -- ^ Total length of result.
         -> Int#         -- ^ Number of fragments.
         -> Int#         -- ^ Fragment (thread) number.
         -> Int#         -- ^ Length of this fragment.
 
-fragLength len frags i
-        =  fragStart len frags (i +# 1#)
-        -# fragStart len frags i
-{-# NOINLINE fragLength #-}
+balancedFragLength len frags i
+        =  balancedFragStart len frags (i +# 1#)
+        -# balancedFragStart len frags i
+{-# NOINLINE balancedFragLength #-}
 --  NOINLINE because it's only called when distributing work, 
 --  not in inner loops, and we want to keep the code size down.
 
