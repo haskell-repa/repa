@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Flow.Par.Filter
+module Data.Array.Repa.Flow.Par.Pack
         ( packByTag
         , pack
         , filter)
@@ -7,7 +7,7 @@ where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map
 import Data.Array.Repa.Flow.Par.Distro
-import qualified Data.Array.Repa.Flow.Seq.Filter        as Seq
+import qualified Data.Array.Repa.Flow.Seq.Pack          as Seq
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Array.Repa.Eval.Gang              as Gang
 import GHC.Exts

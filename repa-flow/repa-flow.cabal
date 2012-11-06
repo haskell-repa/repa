@@ -53,13 +53,15 @@ Library
 
   Other-modules:
         Data.Array.Repa.Flow.Seq.Base
-        Data.Array.Repa.Flow.Seq.Filter
-        Data.Array.Repa.Flow.Seq.Fold
         Data.Array.Repa.Flow.Seq.Generate
         Data.Array.Repa.Flow.Seq.Map
+        Data.Array.Repa.Flow.Seq.Pack
+        Data.Array.Repa.Flow.Seq.Project
+        Data.Array.Repa.Flow.Seq.Fold
 
 
         Data.Array.Repa.Flow.Par.Base
+        Data.Array.Repa.Flow.Par.SegdSplit
         Data.Array.Repa.Flow.Par.Generate
         Data.Array.Repa.Flow.Par.Map        
-        Data.Array.Repa.Flow.Par.SegdSplit
+        Data.Array.Repa.Flow.Par.Pack

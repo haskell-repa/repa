@@ -1,4 +1,4 @@
-module Data.Array.Repa.Flow.Seq.Filter
+module Data.Array.Repa.Flow.Seq.Pack
         ( packByTag
         , pack
         , filter)
