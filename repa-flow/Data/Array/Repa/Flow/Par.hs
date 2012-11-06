@@ -19,10 +19,16 @@ module Data.Array.Repa.Flow.Par
         , zip
         , zipWith
         , zipLeft
-        , zipLeftWith)
+        , zipLeftWith
+
+        -- * Packing
+        , packByTag
+        , pack
+        , filter)
 where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map
 import Data.Array.Repa.Flow.Par.Generate
-import Prelude hiding (map, zip, zipWith, replicate)
+import Data.Array.Repa.Flow.Par.Filter
+import Prelude hiding (map, zip, zipWith, replicate, filter)
 

@@ -9,14 +9,22 @@
 module Data.Array.Repa.Flow.Par.Distro
         ( BB, BN
         , Distro (..)
+
+        -- * Balanced Distributions
         , balanced
         , balancedFragStart
-        , balancedFragLength)
+        , balancedFragLength
+
+        -- * Unbalanced Distributions
+        , unbalanced)
+
 where
 import GHC.Exts
 
+
 -- | Describes the distribution of a flow between several threads.
 data family Distro d
+
 
 -- Balanced -------------------------------------------------------------------
 -- | Type index to indicate an balanced distribution.
@@ -49,6 +57,7 @@ balanced len frags
         , distroBalancedFrags           = frags
         , distroBalancedFragLength      = balancedFragLength len frags
         , distroBalancedFragStart       = balancedFragStart  len frags }
+{-# INLINE [1] balanced #-}
 
 
 -- | Given the length of a vector, 
@@ -99,5 +108,14 @@ data BN
 data instance Distro BN
         = DistroUnbalanced
         { -- | Number of fragments the flow is split into.
-          distroFrags           :: Int# }
+          distroUnbalancedFrags :: Int# }
  
+unbalanced 
+        :: Int#         -- ^ Number of fragments.
+        -> Distro BN
+
+unbalanced frags
+        = DistroUnbalanced
+        { distroUnbalancedFrags = frags }
+{-# INLINE [1] unbalanced #-}
+
