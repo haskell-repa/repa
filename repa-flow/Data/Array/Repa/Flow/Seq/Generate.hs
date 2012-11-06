@@ -13,9 +13,8 @@ import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (replicate)
 
-------------------------------------------------------------------------------
--- | Construct a flow of the given length by applying the function to each
---   index.
+-------------------------------------------------------------------------------
+-- | Construct a flow of the given length by applying a function to each index.
 generate :: Int# -> (Int# -> a) -> Flow r a
 generate len f
  = Flow start size report get1 get8
@@ -71,6 +70,7 @@ generate len f
 {-# INLINE [1] generate #-}
 
 
+-------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
 replicate :: forall a r. Int# -> a -> Flow r a
 replicate n x
@@ -210,8 +210,8 @@ replicatesDirect resultLen getSegLen getValue
 
 -------------------------------------------------------------------------------
 -- | Yield a vector of the given length containing values @x@, @x+1@ etc.
-enumFromN :: (U.Unbox a, Num a, Show a) => a -> Int -> Flow r a
-enumFromN first (I# len)
+enumFromN :: Int# -> Int# -> Flow r Int
+enumFromN first len
  = Flow start size report get1 get8
  where
         start
@@ -219,7 +219,7 @@ enumFromN first (I# len)
                 UM.unsafeWrite refCount 0 (I# len)
 
                 refAcc   <- UM.unsafeNew 1
-                UM.unsafeWrite refAcc   0 first
+                UM.unsafeWrite refAcc   0 (I# first)
 
                 return (refCount, refAcc)
 

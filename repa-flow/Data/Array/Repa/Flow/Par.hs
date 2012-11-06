@@ -2,8 +2,14 @@
 module Data.Array.Repa.Flow.Par
         ( Flow   (..)
         , Distro (..)
+
+        -- * Conversion
         , flow
         , Unflow (..)
+
+        -- * Construction
+        , generate
+        , replicate
 
         -- * Combinators
         , map
@@ -14,5 +20,6 @@ module Data.Array.Repa.Flow.Par
 where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map
-import Prelude hiding (map, zip, zipWith)
+import Data.Array.Repa.Flow.Par.Generate
+import Prelude hiding (map, zip, zipWith, replicate)
 
