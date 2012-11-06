@@ -20,14 +20,17 @@ module Data.Array.Repa.Flow.Seq
         , replicatesDirect
         , enumFromN
 
-        -- * Combinators
+        -- * Mapping
         , map
         , zip,          zipLeft
         , zipWith,      zipLeftWith
 
+        -- * Packing
         , pack
         , packByTag
         , filter
+
+        -- * Projection
         , gather
 
         -- * Reduction

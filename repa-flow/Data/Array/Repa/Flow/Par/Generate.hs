@@ -86,8 +86,12 @@ replicatesSplit segd getSegVal
 
 
 -------------------------------------------------------------------------------
--- | Yield a vector of the given length containing values @x@, @x+1@ etc.
-enumFromN :: Int# -> Int# -> Flow r BB Int
+-- | Yield a vector containing values @x@, @x+1@ etc.
+enumFromN 
+        :: Int#                 -- ^ Starting value.
+        -> Int#                 -- ^ Length of result.
+        -> Flow r BB Int
+
 enumFromN first len
  = Flow distro frag
  where

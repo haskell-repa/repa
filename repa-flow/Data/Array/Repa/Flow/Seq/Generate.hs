@@ -209,8 +209,12 @@ replicatesDirect resultLen getSegLen getValue
 
 
 -------------------------------------------------------------------------------
--- | Yield a vector of the given length containing values @x@, @x+1@ etc.
-enumFromN :: Int# -> Int# -> Flow r Int
+-- | Yield a vector containing values @x@, @x+1@ etc.
+enumFromN 
+        :: Int#         -- ^ Starting value.
+        -> Int#         -- ^ Result length.
+        -> Flow r Int
+
 enumFromN first len
  = Flow start size report get1 get8
  where

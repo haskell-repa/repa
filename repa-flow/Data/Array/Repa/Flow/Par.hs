@@ -14,7 +14,7 @@ module Data.Array.Repa.Flow.Par
         , replicatesSplit
         , enumFromN
 
-        -- * Combinators
+        -- * Mapping
         , map
         , zip
         , zipWith
