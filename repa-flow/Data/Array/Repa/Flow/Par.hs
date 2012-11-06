@@ -4,9 +4,15 @@ module Data.Array.Repa.Flow.Par
         , Distro (..)
         , flow
         , Unflow (..)
-        , map)
+
+        -- * Combinators
+        , map
+        , zip
+        , zipWith
+        , zipLeft
+        , zipLeftWith)
 where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map
-import Prelude hiding (map)
+import Prelude hiding (map, zip, zipWith)
 
