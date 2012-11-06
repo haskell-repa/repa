@@ -65,3 +65,5 @@ Library
         Data.Array.Repa.Flow.Par.Generate
         Data.Array.Repa.Flow.Par.Map        
         Data.Array.Repa.Flow.Par.Pack
+        Data.Array.Repa.Flow.Par.Project
+
