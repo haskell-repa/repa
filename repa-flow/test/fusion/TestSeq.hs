@@ -59,8 +59,9 @@ testReplicates !(I# len) !vLens !vElems
                 $ F.replicatesUnboxed len vLens vElems
 
 
-testFoldReplicate :: Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
-testFoldReplicate !(I# len) !vLens !vElems
- =      unflow  $ F.sums (flow vLens)
-                $ F.map (+ 4545)
-                $ F.replicatesUnboxed len vLens vElems
+
+-- testFoldReplicate :: Int -> U.Vector Int -> U.Vector Int -> U.Vector Int
+-- testFoldReplicate !(I# len) !vLens !vElems
+--  =      unflow  $ F.sums (flow vLens)
+--                $ F.map (+ 4545)
+--                $ F.replicatesUnboxed len vLens vElems

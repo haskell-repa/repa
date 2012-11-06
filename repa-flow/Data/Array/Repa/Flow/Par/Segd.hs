@@ -127,9 +127,13 @@ distroOfSplitSegd (SplitSegd (Segd _ _ ixs) nElems nChunks chunks)
         = DistroBalanced 
         { distroBalancedFrags      = nChunks
         , distroBalancedLength     = nElems
-        , distroBalancedFragLength = \ix -> chunkElems (chunks V.! (I# ix))
-        , distroBalancedFragStart  = \ix ->
-                let chunk        = chunks V.! (I# ix)
+
+        , distroBalancedFragLength 
+           = \ix -> chunkElems (V.unsafeIndex chunks (I# ix))
+
+        , distroBalancedFragStart  
+           = \ix ->
+                let chunk        = V.unsafeIndex chunks (I# ix)
                     seg          = chunkStart chunk
                     !(I# seg_ix) = ixs `U.unsafeIndex` (I# seg)
                     offset       = chunkOffset chunk

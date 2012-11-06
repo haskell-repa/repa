@@ -24,7 +24,7 @@ tests
         , testProperty "replicate            " prop_replicate
         , testProperty "enumFromN            " prop_enumFromN
         , testProperty "replicates           " prop_replicates
---      , testProperty "filter               " prop_filter
+        , testProperty "filter               " prop_filter
         ]
 
 instance (U.Unbox a, Arbitrary a) => Arbitrary (U.Vector a) where
@@ -76,8 +76,8 @@ prop_replicates lens0 vec0
     ==  P.concat (P.zipWith P.replicate (U.toList lens) (U.toList vec))
 
 
--- prop_filter :: U.Vector Int -> Bool
--- prop_filter vec
---  =      U.filter (\x -> x `mod` 2 == 0) vec
---      == F.unflow (F.filter (\x -> x `mod` 2 == 0) (F.flow vec))
+prop_filter :: U.Vector Int -> Bool
+prop_filter vec
+ =      U.filter (\x -> x `mod` 2 == 0) vec
+     == F.unflow (F.filter (\x -> x `mod` 2 == 0) (F.flow vec))
 

@@ -8,6 +8,8 @@ where
 import Data.Array.Repa.Flow.Par.Distro
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
+import qualified Data.Vector.Mutable            as VM
+import qualified Data.Vector                    as V
 import qualified Data.Array.Repa.Flow.Seq       as Seq
 import qualified Data.Array.Repa.Flow.Seq.Base  as Seq
 import qualified Data.Array.Repa.Eval.Gang      as Gang
@@ -56,20 +58,28 @@ class Unflow bal where
  unflow :: (Seq.Touch a, U.Unbox a) => Flow Seq.FD bal a -> U.Vector a
 
 
+-- | Unflowing a balanced computation allows results to be written directly
+--   to the final vector without intermediate copying.
 instance Unflow BB where
  unflow !ff
   = unsafePerformIO
-  $ do  let !distro   = flowDistro ff
+  $ do  
+        let !distro     = flowDistro ff
+        let !len        = distroBalancedLength distro
+        let !getStart   = distroBalancedFragStart distro
 
-        !mvec   <- UM.unsafeNew 
-                $  I# (distroBalancedLength distro)
-
-        let !getStart = distroBalancedFragStart distro
+        -- Allocate a mutable vector to hold the final results.
+        !mvec           <- UM.unsafeNew $ I# len
 
         -- The action that runs on each thread.
         let action (I# tid)
-             = do let !ixStart    = getStart tid
+             = do 
+                  -- The starting point for this threads results into 
+                  -- the final vector.
+                  let !ixStart    = getStart tid
 
+                  -- The 'slurp' function below calls on this to write
+                  -- results into the destination vector.
                   let write (I# ix)  
                         = UM.unsafeWrite mvec (I# (ixStart +# ix))
 
@@ -80,7 +90,39 @@ instance Unflow BB where
                                         (get1 state) (get8 state)
                           return ()
 
+        -- Run the actions to write results into the target vector.
         Gang.gangIO Gang.theGang action
 
         U.unsafeFreeze mvec
  {-# INLINE [1] unflow #-}
+
+
+-- | Unflowing an unbalanced computation requires intermediate copying
+--   to gather the intermediate results.
+instance Unflow BN where
+ unflow !ff
+  = unsafePerformIO
+  $ do  
+        let !distro     = flowDistro ff
+        let !frags      = distroUnbalancedFrags distro
+
+        -- Allocate a boxed mutable vector to hold the result from each thread.
+        --  Each thread will write its own unboxed vector.
+        !mchunks        <- VM.unsafeNew (I# frags)
+
+        -- The action that runs on each thread.
+        let action (I# tid)
+             = do uvec  <- Seq.drain (flowFrag ff tid)
+                  VM.unsafeWrite mchunks (I# tid) uvec
+                  return ()
+
+        -- Run the actions to compute each chunk.
+        Gang.gangIO Gang.theGang action
+
+        -- TODO: rubbish concat needs to die
+        --       to a scan to work out target index 
+        --       then each thread should copy its results into the final vector
+        chunks          <- V.unsafeFreeze mchunks
+        return  $ U.concat $ V.toList chunks
+ {-# INLINE [1] unflow #-}
+

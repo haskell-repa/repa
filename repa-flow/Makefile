@@ -3,7 +3,7 @@
 .PHONY : test-seq
 test-seq : 
 	@echo "-- Sequential ----------------------------------------------------"
-	ghc -fforce-recomp -fobject-code test/props/TestSeq.hs -e main \
+	ghc -fforce-recomp -fobject-code -O2 test/props/TestSeq.hs -e main \
  	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
  	    -XExistentialQuantification
 	@echo
@@ -12,7 +12,7 @@ test-seq :
 .PHONY : test-par
 test-par : 
 	@echo "-- Parallel ------------------------------------------------------"
-	ghc -fforce-recomp -fobject-code test/props/TestPar.hs -e main \
+	ghc -fforce-recomp -fobject-code -O2 test/props/TestPar.hs -e main \
 	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
 	    -XExistentialQuantification -XTypeFamilies +RTS -N3
 	@echo
