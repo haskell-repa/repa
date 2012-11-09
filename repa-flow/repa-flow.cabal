@@ -66,4 +66,5 @@ Library
         Data.Array.Repa.Flow.Par.Map        
         Data.Array.Repa.Flow.Par.Pack
         Data.Array.Repa.Flow.Par.Project
+        Data.Array.Repa.Flow.Par.Fold
 

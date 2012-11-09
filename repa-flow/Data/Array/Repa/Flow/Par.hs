@@ -28,12 +28,16 @@ module Data.Array.Repa.Flow.Par
         , filter
 
         -- * Projection
-        , gather)
+        , gather
+
+        -- * Reduction
+        , folds)
 where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map
 import Data.Array.Repa.Flow.Par.Generate
 import Data.Array.Repa.Flow.Par.Pack
 import Data.Array.Repa.Flow.Par.Project
+import Data.Array.Repa.Flow.Par.Fold
 import Prelude hiding (map, zip, zipWith, replicate, filter)
 

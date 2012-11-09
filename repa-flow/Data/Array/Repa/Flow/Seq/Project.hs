@@ -7,7 +7,6 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import qualified Data.Vector.Unboxed                    as U
 
 
--------------------------------------------------------------------------------
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather :: U.Unbox a => U.Vector a -> Flow r Int -> Flow r a
