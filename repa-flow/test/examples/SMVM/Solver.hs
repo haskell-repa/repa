@@ -3,9 +3,9 @@ module Solver
         (smvm)
 where
 import Data.Vector.Unboxed
-import Data.Array.Repa.Flow             (Flow)
-import qualified Data.Array.Repa.Flow   as F
-import qualified Data.Vector.Unboxed    as U
+import Data.Array.Repa.Flow.Seq                 (Flow)
+import qualified Data.Array.Repa.Flow.Seq       as F
+import qualified Data.Vector.Unboxed            as U
 
 
 -- {-# NOINLINE smvm #-}
@@ -25,17 +25,17 @@ import qualified Data.Vector.Unboxed    as U
 smvm    :: Vector Int           -- ^ Row lengths for matrix.
         -> Vector (Int, Double) -- ^ Sparse matrix column number and coefficient.
         -> Vector Double        -- ^ Dense vector.
-        -> IO (Vector Double)
+        -> Vector Double
 
 smvm !vLens !vMatrix !vVector
- = do   fLens           <- F.flow vLens
+ = let  fLens   = F.flow vLens
 
-        let (vColId, vColVal)   = U.unzip vMatrix
-        fColId          <- F.flow vColId
-        fColVal         <- F.flow vColVal
+        (vColId, vColVal)   = U.unzip vMatrix
+        fColId  = F.flow vColId
+        fColVal = F.flow vColVal
 
-        let fVals       = smvm' fLens fColId fColVal vVector
-        F.unflow fVals
+        fVals   = smvm' fLens fColId fColVal vVector
+   in   F.unflow fVals
 
 smvm' fLens fColId fColVal !vVector
  = let  fCoeffs     = F.gather vVector fColId 
