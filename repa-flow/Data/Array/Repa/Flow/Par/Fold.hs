@@ -1,7 +1,8 @@
 
 module Data.Array.Repa.Flow.Par.Fold
         ( folds
-        , foldsSplit)
+        , foldsSplit
+        , sums)
 where
 import GHC.Exts
 import Data.Array.Repa.Flow.Par.Base
@@ -16,6 +17,7 @@ import Control.Concurrent.MVar
 import Control.Monad
 import Prelude hiding (foldl)
 
+
 -------------------------------------------------------------------------------
 -- | Fold Segmented.
 --
@@ -25,13 +27,11 @@ import Prelude hiding (foldl)
 --   TODO: make distroOfSplitSegd handle unbalanced SplitSegds and remove
 --   the requirement that the source blow is balanced.
 --
---   BROKEN: this isn't finished.
---
-folds   :: U.Unbox a   
+folds   :: U.Unbox a
         => (a -> a -> a) -> a
         -> Segd
         -> Flow rep BB a
-        -> Flow rep BB a
+        -> Flow rep BN a
 
 folds f z segd ff
         = foldsSplit f z (Segd.splitSegd segd) ff
@@ -41,23 +41,26 @@ folds f z segd ff
 -------------------------------------------------------------------------------
 -- | Fold Segmented, with a pre-split segment descriptor.
 --
---   BROKEN: this isn't finished.
---
 foldsSplit 
         :: U.Unbox a
         => (a -> a -> a) -> a
         -> SplitSegd
         -> Flow rep BB a
-        -> Flow rep BB a
+        -> Flow rep BN a
 
 foldsSplit f !z segd (Flow distro start frag)
  = Flow distro' start' frag'
  where
         !frags          = distroBalancedFrags distro
-        !(I# segs)      = U.length (Segd.lengths (Segd.splitOriginal segd))
-        distro'         = balanced frags segs
 
-        !chunks = Segd.splitChunks segd
+        -- TODO: When we produce the distribution of the result we know 
+        -- up front which results will be produced on each thread, 
+        -- but that distribution may itself be unbalanced.
+        --  Here the element data is balanced, but the segment lengths are not.
+        --  Want a third sort of 'Distro' for this.
+        distro'         = unbalanced frags
+        
+        !chunks         = Segd.splitChunks segd
 
 
         start'
@@ -67,6 +70,7 @@ foldsSplit f !z segd (Flow distro start frag)
                 -- Create MVars so that neighbouring threads can communicate
                 !mvars  <- V.replicateM (I# chunks) newEmptyMVar
                 return  (state1, mvars)
+
 
 
         frag' (state1, mvars) n
@@ -80,29 +84,41 @@ foldsSplit f !z segd (Flow distro start frag)
                 -- If the first segment is split across a thread boundary
                 -- then we need to send the partial result to our
                 -- left neighbour.
-                mLeftVar
-                 | n ># 0#
-                 , Segd.chunkOffset chunk ># 0#
-                 = Just (V.unsafeIndex mvars (I# (n -# 1#)))
-
-                 | otherwise
-                 = Nothing
+                mLeftVar        = getLeftVar mvars n
 
                  -- If the last segment is split across a thread boundary
                  -- then we need to read the partial result from our 
                  -- right neighbour.
-                mRightVar
-                 | n <# (chunks -# 1#)
-                 , chunkRight <- V.unsafeIndex (Segd.splitChunk segd) (I# (n +# 1#))
-                 , Segd.chunkOffset chunkRight ># 0#
-                 = Just (V.unsafeIndex mvars (I# n))
-
-                 | otherwise
-                 = Nothing
+                mRightVar       = getRightVar mvars n
 
            in   foldsTradeSeq f z segsHere fSegIxLens (frag state1 n) 
                         mLeftVar
                         mRightVar
+
+
+        getLeftVar mvars n
+                | !chunk  <- V.unsafeIndex (Segd.splitChunk segd) (I# n)
+                , n ># 0#
+                , Segd.chunkOffset chunk ># 0#
+                = Just (V.unsafeIndex mvars (I# (n -# 1#)))
+
+                | otherwise
+                = Nothing
+        {-# NOINLINE getLeftVar #-}
+        --  NOINLINE because we don't want the branch in the core code.
+
+
+        getRightVar mvars n
+                | n <# (chunks -# 1#)
+                , chunkRight <- V.unsafeIndex (Segd.splitChunk segd) (I# (n +# 1#))
+                , Segd.chunkOffset chunkRight ># 0#
+                = Just (V.unsafeIndex mvars (I# n))
+
+                | otherwise
+                = Nothing
+        {-# NOINLINE getRightVar #-}
+        --  NOINLINE because we don't want the branch in the core code.
+
 {-# INLINE foldsSplit #-}
 
 
@@ -117,7 +133,7 @@ foldsSplit f !z segd (Flow distro start frag)
 --   the result read from the right MVar.
 --
 foldsTradeSeq   
-        :: U.Unbox a 
+        :: U.Unbox a
         => (a -> a -> a) -> a 
         -> Int#                   -- ^ Total number of segments to fold here.
                                   --   This is one more than the maxium segment index.
@@ -160,17 +176,6 @@ foldsTradeSeq
         --  NOINLINE because it's not performance sensitive, 
         --  and we want to keep the intermediate code small.
 
-
-        -- Pull the length of the first segment.
-        get1' (!stateA, !stateB) push1
-         =  getLen1 stateA $ \r
-         -> case r of 
-                Seq.Yield1 (I# segIx, I# len) _ 
-                         -> foldSeg stateB push1 segIx len
-                Seq.Done -> push1 Seq.Done
-        {-# INLINE get1' #-}
-
-
         -- Producing eight copies of the loop that folds a segment won't make
         -- anything faster, so tell the consumer they can only pull one result
         -- at a time.
@@ -185,15 +190,24 @@ foldsTradeSeq
         --  We don't want to pull any elements from the _next_ segment
         --  because then we'd have to stash them until the next result
         --  was pulled from us.
-        foldSeg stateB push1 !segIx !len
-         = go8 len z
+        get1' (!stateA, !stateB) push1
+         = nextSeg 
          where  
-                go8 n  !acc
+                nextSeg
+                 = getLen1 stateA $ \r
+                 -> case r of
+                        Seq.Yield1 (I# segIx, I# segLen) _
+                         -> go8 segIx segLen z
+ 
+                        Seq.Done 
+                         -> push1 Seq.Done
+
+                go8 segIx remaining !acc
                  -- If there are less than a whole packet of elements
                  -- reamaining in the segment them switch to pulling
                  -- them one at a time.
-                 |  n <# 8#
-                 =  go1 n acc
+                 |  remaining <# 8#
+                 =  go1 segIx remaining acc
 
                  -- There are at least eight elements remaining, 
                  -- so we can do an unrolled fold.
@@ -203,17 +217,17 @@ foldsTradeSeq
                         Seq.Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                          -> let !acc' = acc `f` x0 `f` x1 `f` x2 `f` x3 
                                             `f` x4 `f` x5 `f` x6 `f` x7
-                            in  go8 (n -# 8#) acc'
+                            in  go8 segIx (remaining -# 8#) acc'
 
                         Seq.Pull1
-                         -> go1 n acc
+                         -> go1 segIx remaining acc
 
                 -- We've reached the end of the segment.
                 --  Combine with our left and right neighbours if needed,
                 --  and push the final result to the consumer.
                 --  Set the hint to False because we're not going to give it
                 --  eight result elements next time either.
-                go1 0# !acc
+                go1 segIx 0# !acc
                  = do   
                         -- If the right-var is set then we need to combine
                         -- the partial result with the result from our
@@ -224,27 +238,29 @@ foldsTradeSeq
 
                         -- If the left-var is set then we send our result
                         -- to our right neighbour instead.
-                        sendLeft acc'
+                        result  <- sendLeft segIx acc'
 
+                        case result of
+                         Nothing        -> nextSeg
+                         Just result'   -> push1 $ Seq.Yield1 result' False
 
                 -- Folding elements one at a time.
                 --   Note that we don't need to switch back to go8 here, 
                 --   that happend automatically at the end of each segment.
-                go1 n  !acc
+                go1 segIx remaining !acc
                  =  getElem1 stateB $ \r
                  -> case r of
                         Seq.Yield1 x1 _
                          -> let !acc' = acc `f` x1
-                            in   go1 (n -# 1#) acc'
+                            in   go1 segIx (remaining -# 1#) acc'
 
                         Seq.Done
-                         -> go1 0# acc 
+                         -> go1 segIx 0# acc 
                          -- error "folds: not enough elements for segment."
                          --  If we hit this case then the segment lengths 
                          --  don't match the data we have, but just return the
                          --  current acc to avoid producing code for the error.
                          --  (yeah, you heard me)
-
 
                 recvRight acc
                  | Just vRight  <- mRightVar
@@ -253,21 +269,28 @@ foldsTradeSeq
 
                  | otherwise
                  =      return acc
-                {-# INLINE recvRight #-}
 
 
-                sendLeft acc
+                sendLeft segIx acc
+                 -- The elements we just folded belong to the last segment 
+                 -- of our left neighbour. Send the result and fold a new segment
+                 -- for ourselves.
                  | segIx ==# 0#
                  , Just vLeft   <- mLeftVar
                  = do   putMVar vLeft acc
-                        push1 $ Seq.Done
+                        return Nothing
 
                  | otherwise
-                 =      push1 $ Seq.Yield1 acc False
-                {-# INLINE sendLeft #-}
+                 =      return (Just acc)
 
-        {-# INLINE foldSeg #-}
 {-# INLINE [1] foldsTradeSeq #-}
 
+
+-- | Sum Segmented. Takes a flow of segment lenghths and a flow of elements,
+--   and sums the elements of each segment individually.
+sums :: (U.Unbox a, Num a) => Segd -> Flow r BB a -> Flow r BN a
+sums segd ffElems
+        = folds (+) 0 segd ffElems
+{-# INLINE [1] sums #-}
 
 

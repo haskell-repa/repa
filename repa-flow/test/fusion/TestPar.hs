@@ -41,3 +41,11 @@ testReplicates :: U.Vector Int -> U.Vector Int -> U.Vector Int
 testReplicates !vLens !vElems
  =      unflow  $ F.map (+ 3434) 
                 $ F.replicatesUnboxed (Segd.fromLengths vLens) vElems
+
+
+-- 4567
+testFoldReplicate :: Segd -> U.Vector Int -> U.Vector Int
+testFoldReplicate segd !vElems
+ =      unflow   $ F.sums segd
+                 $ F.map (+ 4545)
+                 $ F.replicatesUnboxed segd vElems

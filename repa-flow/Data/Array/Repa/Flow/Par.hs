@@ -31,7 +31,8 @@ module Data.Array.Repa.Flow.Par
         , gather
 
         -- * Reduction
-        , folds)
+        , folds
+        , sums)
 where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map

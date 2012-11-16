@@ -26,10 +26,10 @@ data Segd
           elements      :: Int# 
 
         -- | Length of each segment.
-        , lengths       :: U.Vector Int
+        , lengths       :: !(U.Vector Int)
 
           -- | Starting index of each segment.
-        , indices       :: U.Vector Int }
+        , indices       :: !(U.Vector Int) }
         deriving Show
 
 
@@ -56,13 +56,14 @@ fromLengths lens
         , indices       = U.scanl (+) 0 lens }
 {-# INLINE [1] fromLengths #-}
 
+
 -- Split Segds ----------------------------------------------------------------
 -- | Split segment descriptors describe the segmentation of an array in a way
 --   that helps segmented operators distribute the work between several threads.
 data SplitSegd
         = SplitSegd
         { -- | The original, unsplit segment descriptor.
-          splitOriginal :: Segd
+          splitOriginal :: !Segd
 
          -- | Total number of elements described by the Segd.
         , splitElems    :: Int#
@@ -71,7 +72,7 @@ data SplitSegd
         , splitChunks   :: Int#
 
           -- | Vector of Segd chunks.
-        , splitChunk    :: V.Vector Chunk }
+        , splitChunk    :: !(V.Vector Chunk) }
         deriving Show
 
 data Chunk
@@ -87,7 +88,7 @@ data Chunk
         , chunkOffset   :: Int# 
 
           -- | Segment lengths in this chunk.
-        , chunkLengths  :: U.Vector Int }
+        , chunkLengths  :: !(U.Vector Int) }
         deriving Show
 
 
@@ -139,3 +140,5 @@ distroOfSplitSegd (SplitSegd (Segd _ _ ixs) nElems nChunks chunks)
                     offset       = chunkOffset chunk
                 in  offset +# seg_ix }
 {-# INLINE [1] distroOfSplitSegd #-}
+
+
