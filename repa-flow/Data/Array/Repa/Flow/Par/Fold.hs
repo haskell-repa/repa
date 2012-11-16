@@ -51,9 +51,13 @@ foldsSplit
         -> Flow rep BB a
         -> Flow rep BB a
 
-foldsSplit f !z segd (Flow _distro frag)
- = Flow (Segd.distroOfSplitSegd segd) frag'
+foldsSplit f !z segd (Flow distro frag)
+ = Flow distro' frag'
  where
+        !frags          = distroBalancedFrags distro
+        !(I# segs)      = U.length (Segd.lengths (Segd.splitOriginal segd))
+        distro'         = balanced frags segs
+
         !chunks = Segd.splitChunks segd
 
         -- TODO: This won't work

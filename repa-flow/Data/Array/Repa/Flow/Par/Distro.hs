@@ -47,8 +47,8 @@ data instance Distro BB
 
 -- | Create a balanced `Distro`.
 balanced 
-        :: Int#         -- ^ Total length of result.
-        -> Int#         -- ^ Number of fragments.
+        :: Int#         -- ^ Number of fragments.
+        -> Int#         -- ^ Total length of result.
         -> Distro BB
 
 balanced frags len

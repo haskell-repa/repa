@@ -42,6 +42,8 @@ Library
         ScopedTypeVariables
         PatternGuards
         EmptyDataDecls
+        StandaloneDeriving
+        FlexibleInstances
 
   Exposed-modules:
         Data.Array.Repa.Flow.Seq
