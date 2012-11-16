@@ -262,16 +262,18 @@ foldsTradeSeq
                          --  current acc to avoid producing code for the error.
                          --  (yeah, you heard me)
 
-                recvRight acc
+                recvRight !acc
                  | Just vRight  <- mRightVar
                  = do   xRight  <- readMVar vRight
                         return  $ f acc xRight
 
                  | otherwise
                  =      return acc
+                {-# NOINLINE recvRight #-}
+                --  NOINLINE because we need to hide the branch to avoid
+                --           code explosion in SMVM.
 
-
-                sendLeft segIx acc
+                sendLeft !segIx !acc
                  -- The elements we just folded belong to the last segment 
                  -- of our left neighbour. Send the result and fold a new segment
                  -- for ourselves.
@@ -282,6 +284,9 @@ foldsTradeSeq
 
                  | otherwise
                  =      return (Just acc)
+                {-# NOINLINE sendLeft #-}
+                --  NOINLINE because we need to hids to branch to avoid 
+                --           code explosion in SMVM.
 
 {-# INLINE [1] foldsTradeSeq #-}
 

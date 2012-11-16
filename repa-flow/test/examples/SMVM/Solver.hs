@@ -1,44 +1,23 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, MagicHash #-}
 module Solver 
         (smvm)
 where
 import Data.Vector.Unboxed
-import Data.Array.Repa.Flow.Seq                 (Flow)
-import qualified Data.Array.Repa.Flow.Seq       as F
+import Data.Array.Repa.Flow.Par                 (Flow)
+import Data.Array.Repa.Flow.Par.Segd            (Segd)
+import qualified Data.Array.Repa.Flow.Par       as F
 import qualified Data.Vector.Unboxed            as U
+import GHC.Exts
 
-
--- {-# NOINLINE smvm #-}
--- smvm :: Segd U U -> Vector U (Int,Double)
---     -> Vector U Double
---     -> IO (Vector U Double)
-
--- smvm !segd !matrix !vector
---  = do   let (!ixs,!vals)   = R.unzip matrix
---        let  !vixs         = I.vindexs ixs vector
---        let  !vals'        = vzipWith (*) vals vixs
---        let  !res          = R.sum_s (Segd.splitSegd segd) vals'
---        return res
-
-
-
-smvm    :: Vector Int           -- ^ Row lengths for matrix.
+smvm    :: Segd                 -- ^ Segment descriptor for matrix.
         -> Vector (Int, Double) -- ^ Sparse matrix column number and coefficient.
         -> Vector Double        -- ^ Dense vector.
         -> Vector Double
 
-smvm !vLens !vMatrix !vVector
- = let  fLens   = F.flow vLens
-
-        (vColId, vColVal)   = U.unzip vMatrix
-        fColId  = F.flow vColId
-        fColVal = F.flow vColVal
-
-        fVals   = smvm' fLens fColId fColVal vVector
-   in   F.unflow fVals
-
-smvm' fLens fColId fColVal !vVector
- = let  fCoeffs     = F.gather vVector fColId 
-        fVals       = F.zipWith (*) fColVal fCoeffs
-   in   F.sums fLens fVals
-{-# INLINE smvm' #-}
+smvm !segd !vMatrix !vVector
+ = let  (vColId, vColVal)   = U.unzip vMatrix
+   in   F.unflow
+          $ F.sums   segd
+          $ F.zipLeftWith (*)
+                (F.gather vVector (F.flow vColId))
+                (\ix -> U.unsafeIndex vColVal (I# ix))
