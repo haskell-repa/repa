@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             3.2.2.1
+Version:             3.2.2.3
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -19,7 +19,7 @@ Synopsis:
 Library
   Build-Depends: 
         base                 == 4.6.*,
-        vector               == 0.9.*,
+        vector               == 0.10.*,
         repa                 == 3.2.*
 
   ghc-options:

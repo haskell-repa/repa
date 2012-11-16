@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.2.2.1
+Version:             3.2.2.3
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -21,8 +21,7 @@ Executable repa-canny
   Build-depends: 
         base                 == 4.6.*,
         repa                 == 3.2.*,
-        repa-algorithms      == 3.2.*,
-        template-haskell     == 2.8.*
+        repa-algorithms      == 3.2.*
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
@@ -59,7 +58,8 @@ Executable repa-laplace
   Build-depends: 
         base                 == 4.6.*,
         repa                 == 3.2.*,
-        repa-io              == 3.2.*
+        repa-io              == 3.2.*,
+        template-haskell     == 2.8.*
 
   Main-is: examples/Laplace/src-repa/Main.hs
   other-modules: SolverGet SolverStencil
@@ -132,7 +132,7 @@ Executable repa-fft3d-highpass
 Executable repa-blur
   Build-depends: 
         base                 == 4.6.*,
-        vector               == 0.9.*,
+        vector               == 0.10.*,
         repa                 == 3.2.*,
         repa-algorithms      == 3.2.*
 
@@ -151,7 +151,6 @@ Executable repa-blur
 Executable repa-sobel
   Build-depends: 
         base                 == 4.6.*,
-        template-haskell     == 2.8.*,
         repa                 == 3.2.*,
         repa-algorithms      == 3.2.*
 
