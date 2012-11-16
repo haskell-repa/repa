@@ -18,13 +18,18 @@ import GHC.Exts
 
 
 data Flow rep bal a
-        = Flow
+        = forall state. Flow
         { -- | Flow distribution, keeps track of how well-balanced
           --   our workload is between the threads.
           flowDistro    :: Distro bal
 
+          -- | Start the flow.
+          --   This returns a state value that needs to be passed to get
+          --   functions.
+        , flowStart     :: IO state
+
           -- | Get the sequential flow fragment that runs on the given thread.
-        , flowFrag      :: Int# -> Seq.Flow rep a }
+        , flowFrag      :: state -> Int# -> Seq.Flow rep a }
 
 
 -------------------------------------------------------------------------------
@@ -40,7 +45,7 @@ flow !vec
         !fragStart      = distroBalancedFragStart  distro
         !fragLength     = distroBalancedFragLength distro
 
-        frag tid
+        frag _ tid
                 = Seq.flow 
                 $ U.unsafeSlice 
                         (I# (fragStart tid))
@@ -49,6 +54,7 @@ flow !vec
         {-# INLINE frag #-}
 
    in   Flow    { flowDistro    = balanced frags len 
+                , flowStart     = return ()
                 , flowFrag      = frag }
 {-# INLINE [1] flow #-}
         
@@ -61,15 +67,17 @@ class Unflow bal where
 -- | Unflowing a balanced computation allows results to be written directly
 --   to the final vector without intermediate copying.
 instance Unflow BB where
- unflow !ff
+ unflow !(Flow distro startPar frag)
   = unsafePerformIO
   $ do  
-        let !distro     = flowDistro ff
         let !len        = distroBalancedLength distro
         let !getStart   = distroBalancedFragStart distro
 
         -- Allocate a mutable vector to hold the final results.
         !mvec           <- UM.unsafeNew $ I# len
+
+        -- Start the parallel flow
+        !statePar       <- startPar
 
         -- The action that runs on each thread.
         let action (I# tid)
@@ -83,11 +91,11 @@ instance Unflow BB where
                   let write (I# ix)  
                         = UM.unsafeWrite mvec (I# (ixStart +# ix))
 
-                  case flowFrag ff tid of
-                   Seq.Flow start _size _report get1 get8
-                    -> do state <- start
-                          _     <- Seq.slurp 0# Nothing write
-                                        (get1 state) (get8 state)
+                  case frag statePar tid of
+                   Seq.Flow startSeq _size _report get1 get8
+                    -> do stateSeq <- startSeq
+                          _        <- Seq.slurp 0# Nothing write
+                                        (get1 stateSeq) (get8 stateSeq)
                           return ()
 
         -- Run the actions to write results into the target vector.
@@ -100,19 +108,21 @@ instance Unflow BB where
 -- | Unflowing an unbalanced computation requires intermediate copying
 --   to gather the intermediate results.
 instance Unflow BN where
- unflow !ff
+ unflow !(Flow distro start frag)
   = unsafePerformIO
   $ do  
-        let !distro     = flowDistro ff
         let !frags      = distroUnbalancedFrags distro
 
         -- Allocate a boxed mutable vector to hold the result from each thread.
         --  Each thread will write its own unboxed vector.
         !mchunks        <- VM.unsafeNew (I# frags)
 
+        -- Start the parallel flow
+        !state          <- start
+
         -- The action that runs on each thread.
         let action (I# tid)
-             = do uvec  <- Seq.drain (flowFrag ff tid)
+             = do uvec  <- Seq.drain (frag state tid)
                   VM.unsafeWrite mchunks (I# tid) uvec
                   return ()
 

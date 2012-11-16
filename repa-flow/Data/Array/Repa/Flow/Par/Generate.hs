@@ -23,12 +23,15 @@ import Prelude hiding (replicate)
 -- | Construct a flow of the given length by applying a function to each index.
 generate :: Int# -> (Int# -> a) -> Flow rep BB a
 generate len get
- = Flow distro frag
+ = Flow distro start frag
  where
         !(I# threads)    = Gang.gangSize Gang.theGang
         !distro          = balanced threads len
 
-        frag n
+        start
+         = return ()
+
+        frag _ n
          = let  !len'    = distroBalancedFragLength distro n
                 !start'  = distroBalancedFragStart  distro n
 
@@ -85,11 +88,14 @@ replicatesSplit
         -> Flow rep BB a
 
 replicatesSplit segd getSegVal
- = Flow distro frag
+ = Flow distro start frag
  where
         !distro = Segd.distroOfSplitSegd segd
         
-        frag n  
+        start
+         = return ()
+
+        frag _ n  
          = let  chunk            = V.unsafeIndex (Segd.splitChunk segd) (I# n)
                 !elems           = Segd.chunkElems chunk
                 !segStart        = Segd.chunkStart chunk
@@ -110,12 +116,15 @@ enumFromN
         -> Flow rep BB Int
 
 enumFromN first len
- = Flow distro frag
+ = Flow distro start frag
  where
         !(I# threads)   = Gang.gangSize Gang.theGang
         !distro         = balanced threads len
 
-        frag n
+        start
+         = return ()
+
+        frag _ n
          = let  !len'   = distroBalancedFragLength distro n
                 !start' = distroBalancedFragStart  distro n +# first
            in   Seq.enumFromN start' len'

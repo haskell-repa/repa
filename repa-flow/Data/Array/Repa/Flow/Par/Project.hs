@@ -14,8 +14,9 @@ gather  :: U.Unbox a
         -> Flow rep bal Int 
         -> Flow rep bal a
 
-gather !vec (Flow distro frag)
- = Flow distro frag'
- where  frag' n = Seq.gather vec (frag n)
+gather !vec (Flow distro start frag)
+ = Flow distro start frag'
+ where  frag' state n 
+         = Seq.gather vec (frag state n)
 {-# INLINE [2] gather #-}
 

@@ -19,12 +19,12 @@ packByTag
         :: U.Unbox a
         => Flow rep bal (Int, a) -> Flow rep BN a
 
-packByTag (Flow _ frag)
- = Flow distro' frag'
+packByTag (Flow _ start frag)
+ = Flow distro' start frag'
  where
         !(I# threads)   = Gang.gangSize Gang.theGang
         distro'         = unbalanced threads
-        frag' n         = Seq.packByTag (frag n)
+        frag' state n   = Seq.packByTag (frag state n)
 {-# INLINE [2] packByTag #-}
 
 

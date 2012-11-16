@@ -15,7 +15,6 @@ import qualified Data.Vector                            as V
 import Control.Concurrent.MVar
 import Control.Monad
 import Prelude hiding (foldl)
-import System.IO.Unsafe
 
 -------------------------------------------------------------------------------
 -- | Fold Segmented.
@@ -51,8 +50,8 @@ foldsSplit
         -> Flow rep BB a
         -> Flow rep BB a
 
-foldsSplit f !z segd (Flow distro frag)
- = Flow distro' frag'
+foldsSplit f !z segd (Flow distro start frag)
+ = Flow distro' start' frag'
  where
         !frags          = distroBalancedFrags distro
         !(I# segs)      = U.length (Segd.lengths (Segd.splitOriginal segd))
@@ -60,11 +59,17 @@ foldsSplit f !z segd (Flow distro frag)
 
         !chunks = Segd.splitChunks segd
 
-        -- TODO: This won't work
-        --       Parallel flows need their own state
-        !mvars  = unsafePerformIO $ V.replicateM (I# chunks) newEmptyMVar
 
-        frag' n
+        start'
+         = do   -- Initialise the source state.
+                state1  <- start
+
+                -- Create MVars so that neighbouring threads can communicate
+                !mvars  <- V.replicateM (I# chunks) newEmptyMVar
+                return  (state1, mvars)
+
+
+        frag' (state1, mvars) n
          = let  !chunk          = V.unsafeIndex (Segd.splitChunk segd) (I# n)
                 !segLens        = Segd.chunkLengths chunk
                 !(I# segsHere)  = U.length segLens
@@ -95,7 +100,7 @@ foldsSplit f !z segd (Flow distro frag)
                  | otherwise
                  = Nothing
 
-           in   foldsTradeSeq f z segsHere fSegIxLens (frag n) 
+           in   foldsTradeSeq f z segsHere fSegIxLens (frag state1 n) 
                         mLeftVar
                         mRightVar
 {-# INLINE foldsSplit #-}
