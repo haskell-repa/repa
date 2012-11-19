@@ -1,9 +1,13 @@
 
 module Data.Array.Repa.Vector.Repr.Flow
         ( O
-        , FD, FS
-        , BB, BN
         , Array (..)
+
+        -- * Modes
+        , FD, FS
+
+        -- * Distributions
+        , BB, BN
 
         -- * Conversions
         , toFlow, fromFlowP
