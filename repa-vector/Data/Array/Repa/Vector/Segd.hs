@@ -10,8 +10,8 @@ module Data.Array.Repa.Vector.Segd
         , splitSegd)
 
 where
-import Data.Array.Repa
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Flow.Par.Segd            hiding (fromLengths)
 import qualified Data.Array.Repa.Flow.Par.Segd  as Segd
 

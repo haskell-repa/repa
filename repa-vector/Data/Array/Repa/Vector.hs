@@ -1,6 +1,8 @@
 
 module Data.Array.Repa.Vector
         ( Vector
+
+        -- * Distributed Flows
         , O
 
         -- * Maps

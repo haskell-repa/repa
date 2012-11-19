@@ -1,5 +1,5 @@
 Name:           repa-vector
-Version:        3.2.2.1
+Version:        4.0.0.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The DPH Team
@@ -17,9 +17,9 @@ Synopsis:       Representation dependent vector operations.
 Library
   Build-Depends: 
         base            == 4.6.*,
+        ghc-prim        == 0.3.*,
         vector          == 0.10.*,
-        repa            == 3.2.*,
-        repa-flow       == 3.2.*
+        repa-flow       == 4.0.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -39,12 +39,19 @@ Library
         PatternGuards
         OverlappingInstances
         MagicHash
+        UnboxedTuples
         ExistentialQuantification
 
   Exposed-modules:
         Data.Array.Repa.Vector
+        Data.Array.Repa.Vector.Elt
+        Data.Array.Repa.Vector.Shape
+        Data.Array.Repa.Vector.Index
         Data.Array.Repa.Vector.Segd
+        Data.Array.Repa.Vector.Repr.Delayed
+        Data.Array.Repa.Vector.Repr.Unboxed
         Data.Array.Repa.Vector.Repr.Flow
+        Data.Array.Repa.Vector.Operators.Bulk
         Data.Array.Repa.Vector.Operators.Map
         Data.Array.Repa.Vector.Operators.Zip
         Data.Array.Repa.Vector.Operators.Project

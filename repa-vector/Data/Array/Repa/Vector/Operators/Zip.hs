@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Vector.Operators.Zip
-        (Zip(..)
+        ( Zip(..)
         , zip3
         , zip4
         , zip5
@@ -12,15 +12,14 @@ module Data.Array.Repa.Vector.Operators.Zip
         , zipWith6)
 where
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Repr.Delayed
+import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Repr.Flow
+import Data.Array.Repa.Vector.Operators.Bulk
 import Data.Array.Repa.Vector.Operators.Map
 import GHC.Exts
-import qualified Data.Array.Repa                as R
 import qualified Data.Array.Repa.Flow.Par       as F
 import qualified Data.Vector.Unboxed            as U
-
-import Data.Array.Repa  
-        hiding (map, zipWith)
 
 import Prelude
         hiding (map, zip, zip3, zipWith, zipWith3)
@@ -37,10 +36,11 @@ class Zip r1 r2 a b where
 
 
 -- Unboxed --------------------------------------------------------------------
-instance (U.Unbox a, U.Unbox b) 
+instance (Elt a, U.Unbox a
+         ,Elt b, U.Unbox b) 
        => Zip U U a b where
  type TZ U U            = D
- zip !arr1 !arr2       = zip (delay arr1) (delay arr2)
+ zip !arr1 !arr2        = zip (delay arr1) (delay arr2)
  {-# INLINE [4] zip #-}
 
 
@@ -49,8 +49,8 @@ instance Zip D D a b where
  type TZ D D    = D
  zip !arr1 !arr2
   = fromFunction (extent arr1) get
-  where get ix = ( arr1 `unsafeIndex` ix
-                 , arr2 `unsafeIndex` ix)
+  where get ix = ( index arr1 ix
+                 , index arr2 ix )
         {-# INLINE get #-}
  {-# INLINE [4] zip #-}
 
@@ -59,10 +59,8 @@ instance Zip D D a b where
 instance Zip (O mode BB) (O mode BB) a b where
  type TZ (O mode BB) (O mode BB)
         = O mode BB
- zip (AFlow sh ff1 arr1) (AFlow _sh ff2 arr2)
-  = AFlow sh
-          (F.zip ff1 ff2)
-          (R.zipWith (,) arr1 arr2)
+ zip (AFlow ff1) (AFlow ff2)
+  = AFlow (F.zip ff1 ff2)
  {-# INLINE [4] zip #-}
 
 
@@ -70,22 +68,18 @@ instance Zip (O mode BB) (O mode BB) a b where
 instance U.Unbox b => Zip (O mode BB) U a b where
  type TZ (O mode BB) U
         = O mode BB
- zip (AFlow sh ff1 arr1) arr2@(AUnboxed _ vec)
+ zip (AFlow ff1) (AUnboxed _ vec)
   = let get ix  = U.unsafeIndex vec (I# ix)
-    in  AFlow   sh 
-                (F.zipLeft ff1 get)
-                (R.zipWith (,) arr1 arr2)
+    in  AFlow (F.zipLeft ff1 get)
  {-# INLINE [4] zip #-}
 
 
 instance U.Unbox a => Zip U (O mode BB) a b where
  type TZ U (O mode BB) 
         = O mode BB
- zip arr1@(AUnboxed _ vec) (AFlow sh ff2 arr2) 
+ zip (AUnboxed _ vec) (AFlow ff2) 
   = let get ix  = U.unsafeIndex vec (I# ix)
-    in  AFlow   sh 
-                (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
-                (R.zipWith (,) arr1 arr2)
+    in  AFlow (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
  {-# INLINE [4] zip #-}
 
 
@@ -93,34 +87,30 @@ instance U.Unbox a => Zip U (O mode BB) a b where
 instance Zip (O mode BB) D a b where
  type TZ (O mode BB) D
         = O mode BB
- zip (AFlow sh ff1 arr1) arr2
-  = let get ix  = R.unsafeLinearIndex arr2 (I# ix)
-    in  AFlow   sh 
-                (F.zipLeft ff1 get)
-                (R.zipWith (,) arr1 arr2)
+ zip (AFlow ff1) arr2
+  = let get ix  = linearIndex arr2 (I# ix)
+    in  AFlow (F.zipLeft ff1 get)
  {-# INLINE [4] zip #-}
 
 
 instance Zip D (O mode BB) a b where
  type TZ D (O mode BB) 
         = O mode BB
- zip arr1 (AFlow sh ff2 arr2) 
-  = let get ix  = R.unsafeLinearIndex arr1 (I# ix)
-    in  AFlow   sh 
-                (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
-                (R.zipWith (,) arr1 arr2)
+ zip arr1 (AFlow ff2) 
+  = let get ix  = linearIndex arr1 (I# ix)
+    in  AFlow (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
  {-# INLINE [4] zip #-}
 
 
 -- Unboxed/Delayed ------------------------------------------------------------
-instance U.Unbox a
+instance (Elt a, U.Unbox a)
       => Zip U D a b where
  type TZ U D            = D
  zip !arr1 !arr2        = zip (delay arr1) arr2
  {-# INLINE [4] zip #-}
 
 
-instance U.Unbox b
+instance (Elt b, U.Unbox b)
       => Zip D U a b where
  type TZ D U    = D
  zip !arr1 !arr2        = zip arr1 (delay arr2)
