@@ -63,6 +63,7 @@ instance Zip (O mode BB) (O mode BB) a b where
   = AFlow sh
           (F.zip ff1 ff2)
           (R.zipWith (,) arr1 arr2)
+ {-# INLINE [4] zip #-}
 
 
 -- Flow/Unboxed ---------------------------------------------------------------
@@ -74,6 +75,7 @@ instance U.Unbox b => Zip (O mode BB) U a b where
     in  AFlow   sh 
                 (F.zipLeft ff1 get)
                 (R.zipWith (,) arr1 arr2)
+ {-# INLINE [4] zip #-}
 
 
 instance U.Unbox a => Zip U (O mode BB) a b where
@@ -84,6 +86,7 @@ instance U.Unbox a => Zip U (O mode BB) a b where
     in  AFlow   sh 
                 (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
                 (R.zipWith (,) arr1 arr2)
+ {-# INLINE [4] zip #-}
 
 
 -- Flow/Delayed ---------------------------------------------------------------
@@ -95,6 +98,7 @@ instance U.Unbox b => Zip (O mode BB) D a b where
     in  AFlow   sh 
                 (F.zipLeft ff1 get)
                 (R.zipWith (,) arr1 arr2)
+ {-# INLINE [4] zip #-}
 
 
 instance U.Unbox a => Zip D (O mode BB) a b where
@@ -105,6 +109,7 @@ instance U.Unbox a => Zip D (O mode BB) a b where
     in  AFlow   sh 
                 (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
                 (R.zipWith (,) arr1 arr2)
+ {-# INLINE [4] zip #-}
 
 
 -- Unboxed/Delayed ------------------------------------------------------------
