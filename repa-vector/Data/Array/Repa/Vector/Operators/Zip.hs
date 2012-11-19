@@ -90,7 +90,7 @@ instance U.Unbox a => Zip U (O mode BB) a b where
 
 
 -- Flow/Delayed ---------------------------------------------------------------
-instance U.Unbox b => Zip (O mode BB) D a b where
+instance Zip (O mode BB) D a b where
  type TZ (O mode BB) D
         = O mode BB
  zip (AFlow sh ff1 arr1) arr2
@@ -101,7 +101,7 @@ instance U.Unbox b => Zip (O mode BB) D a b where
  {-# INLINE [4] zip #-}
 
 
-instance U.Unbox a => Zip D (O mode BB) a b where
+instance Zip D (O mode BB) a b where
  type TZ D (O mode BB) 
         = O mode BB
  zip arr1 (AFlow sh ff2 arr2) 
