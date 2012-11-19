@@ -10,14 +10,18 @@ module Data.Array.Repa.Vector
         , BB, BN
 
         -- * Flow Conversions
-        , flow
-        , unflow
+        , flow,         unflowP
+        , toFlow,       fromFlowP
 
         -- * Maps
         , Map(..)
 
         -- * Zips
-        , Zip(..))
+        , Zip(..)
+
+        -- * Segmented operations
+        , replicatesP
+        , replicatesSplitP)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
