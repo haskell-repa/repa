@@ -14,6 +14,8 @@ where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Operators.Map
+import GHC.Exts
+import qualified Data.Array.Repa                as R
 import qualified Data.Array.Repa.Flow.Par       as F
 import qualified Data.Vector.Unboxed            as U
 
@@ -27,6 +29,8 @@ import Prelude
 class Zip r1 r2 a b where
  type TZ r1 r2
  -- | Vector zip uses the least general possible representation for the result.
+ --   
+ --   The two vectors must have the same length, else undefined.
  zip    :: Vector r1 a 
         -> Vector r2 b
         -> Vector (TZ r1 r2) (a, b)
@@ -49,6 +53,58 @@ instance Zip D D a b where
                  , arr2 `unsafeIndex` ix)
         {-# INLINE get #-}
  {-# INLINE [4] zip #-}
+
+
+-- Flow -----------------------------------------------------------------------
+instance Zip (O mode BB) (O mode BB) a b where
+ type TZ (O mode BB) (O mode BB)
+        = O mode BB
+ zip (AFlow sh ff1 arr1) (AFlow _sh ff2 arr2)
+  = AFlow sh
+          (F.zip ff1 ff2)
+          (R.zipWith (,) arr1 arr2)
+
+
+-- Flow/Unboxed ---------------------------------------------------------------
+instance U.Unbox b => Zip (O mode BB) U a b where
+ type TZ (O mode BB) U
+        = O mode BB
+ zip (AFlow sh ff1 arr1) arr2@(AUnboxed _ vec)
+  = let get ix  = U.unsafeIndex vec (I# ix)
+    in  AFlow   sh 
+                (F.zipLeft ff1 get)
+                (R.zipWith (,) arr1 arr2)
+
+
+instance U.Unbox a => Zip U (O mode BB) a b where
+ type TZ U (O mode BB) 
+        = O mode BB
+ zip arr1@(AUnboxed _ vec) (AFlow sh ff2 arr2) 
+  = let get ix  = U.unsafeIndex vec (I# ix)
+    in  AFlow   sh 
+                (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
+                (R.zipWith (,) arr1 arr2)
+
+
+-- Flow/Delayed ---------------------------------------------------------------
+instance U.Unbox b => Zip (O mode BB) D a b where
+ type TZ (O mode BB) D
+        = O mode BB
+ zip (AFlow sh ff1 arr1) arr2
+  = let get ix  = R.unsafeLinearIndex arr2 (I# ix)
+    in  AFlow   sh 
+                (F.zipLeft ff1 get)
+                (R.zipWith (,) arr1 arr2)
+
+
+instance U.Unbox a => Zip D (O mode BB) a b where
+ type TZ D (O mode BB) 
+        = O mode BB
+ zip arr1 (AFlow sh ff2 arr2) 
+  = let get ix  = R.unsafeLinearIndex arr1 (I# ix)
+    in  AFlow   sh 
+                (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
+                (R.zipWith (,) arr1 arr2)
 
 
 -- Unboxed/Delayed ------------------------------------------------------------
