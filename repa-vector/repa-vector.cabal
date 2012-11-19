@@ -11,27 +11,19 @@ Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
 Description:            
-Synopsis:       Stream and Chain-based vector operations.
+Synopsis:       Representation dependent vector operations.
 
 
 Library
   Build-Depends: 
         base            == 4.6.*,
-        vector          == 0.9.*,
+        vector          == 0.10.*,
         repa            == 3.2.*,
-        repa-stream     == 3.2.*
+        repa-flow       == 3.2.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
-        -Odph
-        -fno-liberate-case
-        -fsimplifier-phases=4
-        -funfolding-use-threshold=1000
-        -funfolding-keeness-factor=1000
-        -funbox-strict-fields
-        -fcpr-off
-        -fllvm
-        -optlo-O3
+        -O2
 
   extensions:
         NoMonomorphismRestriction
@@ -50,24 +42,12 @@ Library
         ExistentialQuantification
 
   Exposed-modules:
-        Data.Array.Repa.Repr.Chain
-        Data.Array.Repa.Repr.Stream
         Data.Array.Repa.Vector
-        Data.Array.Repa.Vector.Segd
-        Data.Array.Repa.Vector.Operators.Fold
-        Data.Array.Repa.Vector.Operators.Indexs
-        Data.Array.Repa.Vector.Sel
 
   Other-modules:
         Data.Array.Repa.Vector.Base
+        Data.Array.Repa.Vector.Repr.Flow
         Data.Array.Repa.Vector.Operators.Map
-        Data.Array.Repa.Vector.Operators.Zip
-        Data.Array.Repa.Vector.Operators.Indexed
-        Data.Array.Repa.Vector.Operators.Pack
-        Data.Array.Repa.Vector.Operators.Scan
-        Data.Array.Repa.Vector.Operators.Flatten
-        Data.Array.Repa.Vector.Operators.Combine
-        Data.Array.Repa.Vector.Segd.Split
         
 
 

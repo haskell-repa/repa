@@ -6,7 +6,8 @@ module Data.Array.Repa.Flow.Seq
         , Flow (..)
         , Step1(..)
         , Step8(..)
-
+        , Touch
+        
         -- * Conversion
         , flow
         , unflow
