@@ -18,6 +18,7 @@ module Data.Array.Repa.Vector
 
         -- * Zips
         , Zip(..)
+        , zipWith
 
         -- * Projections
         , Gather(..)
@@ -29,4 +30,6 @@ where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Operators.Map
+import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Vector.Operators.Project
+import Prelude hiding (zipWith)

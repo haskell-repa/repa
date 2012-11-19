@@ -44,12 +44,13 @@ Library
   Exposed-modules:
         Data.Array.Repa.Vector
         Data.Array.Repa.Vector.Segd
+        Data.Array.Repa.Vector.Operators.Map
+        Data.Array.Repa.Vector.Operators.Zip
+        Data.Array.Repa.Vector.Operators.Project
 
   Other-modules:
         Data.Array.Repa.Vector.Base
         Data.Array.Repa.Vector.Repr.Flow
-        Data.Array.Repa.Vector.Operators.Map
-        Data.Array.Repa.Vector.Operators.Project
         
 
 
