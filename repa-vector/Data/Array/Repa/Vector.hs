@@ -19,6 +19,9 @@ module Data.Array.Repa.Vector
         -- * Zips
         , Zip(..)
 
+        -- * Projections
+        , Gather(..)
+
         -- * Segmented operations
         , replicatesP
         , replicatesSplitP)
@@ -26,3 +29,4 @@ where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Operators.Map
+import Data.Array.Repa.Vector.Operators.Project

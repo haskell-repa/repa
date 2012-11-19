@@ -49,6 +49,7 @@ Library
         Data.Array.Repa.Vector.Base
         Data.Array.Repa.Vector.Repr.Flow
         Data.Array.Repa.Vector.Operators.Map
+        Data.Array.Repa.Vector.Operators.Project
         
 
 

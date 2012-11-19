@@ -70,17 +70,6 @@ unflowP (AFlow sh ff _)
 {-# INLINE [4] unflowP #-}
 
 
-instance Map (O mode dist) a where
- type TM (O mode dist)
-       = (O mode dist)
-
- map f (AFlow sh ff arr)
-        = AFlow sh 
-                (F.map f ff)
-                (R.map f arr)
- {-# INLINE [4] map #-}
-
-
 -------------------------------------------------------------------------------
 -- | Unpack a vector to a raw flow.
 toFlow  :: Vector (O mode dist) a -> F.Flow mode dist a
@@ -105,6 +94,17 @@ fromFlowP ff
                 (fromUnboxed (Z :.len) vec)
 {-# INLINE [4] fromFlowP #-}
 
+
+-------------------------------------------------------------------------------
+instance Map (O mode dist) a where
+ type TM (O mode dist)
+       = (O mode dist)
+
+ map f (AFlow sh ff arr)
+        = AFlow sh 
+                (F.map f ff)
+                (R.map f arr)
+ {-# INLINE [4] map #-}
 
 -------------------------------------------------------------------------------
 -- | Segmented replicate.

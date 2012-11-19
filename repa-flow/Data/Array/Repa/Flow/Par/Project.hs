@@ -4,19 +4,18 @@ module Data.Array.Repa.Flow.Par.Project
 where
 import Data.Array.Repa.Flow.Par.Base
 import qualified Data.Array.Repa.Flow.Seq       as Seq
-import qualified Data.Vector.Unboxed            as U
+import GHC.Exts
 
 
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
-gather  :: U.Unbox a 
-        => U.Vector a 
+gather  :: (Int# -> a)
         -> Flow rep bal Int 
         -> Flow rep bal a
 
-gather !vec (Flow distro start frag)
+gather !get (Flow distro start frag)
  = Flow distro start frag'
  where  frag' state n 
-         = Seq.gather vec (frag state n)
+         = Seq.gather get (frag state n)
 {-# INLINE [2] gather #-}
 

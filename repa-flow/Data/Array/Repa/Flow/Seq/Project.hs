@@ -4,13 +4,13 @@ module Data.Array.Repa.Flow.Seq.Project
 where
 import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
-import qualified Data.Vector.Unboxed                    as U
+import GHC.Exts
 
 
--- | Takes a vector and a flow of indices, and produces a flow of elements
---   corresponding to each index.
-gather :: U.Unbox a => U.Vector a -> Flow r Int -> Flow r a
-gather !vec (Flow start size report get1 get8)
+-- | Takes a function to get elements and a flow of indices, 
+--   and produces a flow of elements corresponding to each index.
+gather :: (Int# -> a) -> Flow r Int -> Flow r a
+gather !get (Flow start size report get1 get8)
  = Flow start size report' get1' get8'
  where
         report' state
@@ -21,8 +21,8 @@ gather !vec (Flow start size report get1 get8)
         get1' !state push1
          =  get1 state $ \r
          -> case r of
-                Yield1 ix hint
-                 -> push1 $ Yield1 (U.unsafeIndex vec ix) hint
+                Yield1 (I# ix) hint
+                 -> push1 $ Yield1 (get ix) hint
 
                 Done
                  -> push1 $ Done
@@ -31,15 +31,10 @@ gather !vec (Flow start size report get1 get8)
         get8' state push8
          =  get8 state $ \r
          -> case r of
-                Yield8 ix0 ix1 ix2 ix3 ix4 ix5 ix6 ix7
-                 -> push8 $ Yield8      (U.unsafeIndex vec ix0)
-                                        (U.unsafeIndex vec ix1)
-                                        (U.unsafeIndex vec ix2)
-                                        (U.unsafeIndex vec ix3)
-                                        (U.unsafeIndex vec ix4)
-                                        (U.unsafeIndex vec ix5)
-                                        (U.unsafeIndex vec ix6)
-                                        (U.unsafeIndex vec ix7)
+                Yield8 (I# ix0) (I# ix1) (I# ix2) (I# ix3)
+                       (I# ix4) (I# ix5) (I# ix6) (I# ix7)
+                 -> push8 $ Yield8 (get ix0) (get ix1) (get ix2) (get ix3)
+                                   (get ix4) (get ix5) (get ix6) (get ix7)
 
                 Pull1
                  -> push8 $ Pull1
