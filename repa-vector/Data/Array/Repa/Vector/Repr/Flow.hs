@@ -16,7 +16,6 @@ module Data.Array.Repa.Vector.Repr.Flow
 where
 import Data.Array.Repa                          as R
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd)
 import Data.Array.Repa.Flow.Par.Distro          (BB, BN)
 import Data.Array.Repa.Flow.Seq                 (FD, FS, Touch)
@@ -94,17 +93,6 @@ fromFlowP ff
                 (fromUnboxed (Z :.len) vec)
 {-# INLINE [4] fromFlowP #-}
 
-
--------------------------------------------------------------------------------
-instance Map (O mode dist) a where
- type TM (O mode dist)
-       = (O mode dist)
-
- map f (AFlow sh ff arr)
-        = AFlow sh 
-                (F.map f ff)
-                (R.map f arr)
- {-# INLINE [4] map #-}
 
 -------------------------------------------------------------------------------
 -- | Segmented replicate.

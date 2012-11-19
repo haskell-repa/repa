@@ -3,9 +3,11 @@ module Data.Array.Repa.Vector.Operators.Map
         (Map(..))
 where
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa                  as R
-import qualified Data.Vector.Unboxed    as U
-import Prelude                          hiding (map)
+import Data.Array.Repa.Vector.Repr.Flow
+import qualified Data.Array.Repa.Flow.Par       as F
+import Data.Array.Repa                          as R
+import qualified Data.Vector.Unboxed            as U
+import Prelude                                  hiding (map)
 
 
 class Map r a where
@@ -15,6 +17,7 @@ class Map r a where
  map :: (a -> b) -> Vector r a -> Vector (TM r) b
 
 
+-- Unboxed
 instance U.Unbox a => Map U a where
  type TM U      = D
 
@@ -24,9 +27,22 @@ instance U.Unbox a => Map U a where
  {-# INLINE [4] map #-}
 
 
+-- Delayed
 instance Map D e where
  type TM D      = D
  map            = R.map
+ {-# INLINE [4] map #-}
+
+
+-- Flows
+instance Map (O mode dist) a where
+ type TM (O mode dist)
+       = (O mode dist)
+
+ map f (AFlow sh ff arr)
+        = AFlow sh 
+                (F.map f ff)
+                (R.map f arr)
  {-# INLINE [4] map #-}
 
 
