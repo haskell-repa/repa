@@ -2,6 +2,7 @@
 module Data.Array.Repa.Vector.Repr.Delayed
         ( D, Array(..)
         , fromFunction
+        , defaultFromFunction
         , checkedFromFunction
         , toFunction
         , delay)
@@ -49,7 +50,29 @@ instance Bulk D a where
 fromFunction :: sh -> (sh -> a) -> Array D sh a
 fromFunction sh f 
         = ADelayed sh f 
-{-# INLINE fromFunction #-}
+{-# INLINE [4] fromFunction #-}
+
+
+-- | O(1). Wrap an element producing function as a delayed array, 
+--         and perform bounds checks.
+--
+--   If the resulting array is indexed out of bounds then return
+--   the default value instead.
+defaultFromFunction
+        :: Shape sh
+        => a 
+        -> sh 
+        -> (sh -> a) -> Array D sh a
+
+defaultFromFunction def sh f
+ = ADelayed sh get
+ where !sz      = size sh
+       get ix
+        = let !lix      = toIndex sh ix
+          in  if lix < 0 || lix >= sz 
+                then def
+                else f ix
+{-# INLINE [4] defaultFromFunction #-}
 
 
 -- | O(1). Wrap an element producing function as a delayed array, 
@@ -64,13 +87,10 @@ checkedFromFunction
         -> (sh -> a) -> Array D sh a
 
 checkedFromFunction msg sh f
- = ADelayed sh get
- where !sz      = size sh
-       get ix
-        = let !lix      = toIndex sh ix
-          in  if lix < 0 || lix >= sz 
-                then error $ "checkedFromFunction out of range -- " ++ show msg
-                else f ix
+ = defaultFromFunction 
+        (error $ "checkedFromFunction out of range -- " ++ show msg)
+        sh f
+{-# INLINE [4] checkedFromFunction #-}
 
 
 -- | O(1). Produce the extent of an array, and a function to retrieve an
@@ -81,7 +101,7 @@ toFunction
 toFunction arr
  = case delay arr of
         ADelayed sh f -> (sh, f)
-{-# INLINE toFunction #-}
+{-# INLINE [4] toFunction #-}
 
 
 -- | O(1). Delay an array.
@@ -92,4 +112,4 @@ toFunction arr
 delay   :: (Shape sh, Bulk r a) 
         => Array  r sh a -> Array D sh a
 delay arr = ADelayed (extent arr) (index arr)
-{-# INLINE delay #-}
+{-# INLINE [4] delay #-}
