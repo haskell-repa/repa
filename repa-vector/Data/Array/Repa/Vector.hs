@@ -1,27 +1,52 @@
 
 module Data.Array.Repa.Vector
-        ( Vector
+        ( Array
+        , Vector
 
-        -- * Distributed Flows
+
+        -- * Delayed Representations
+        -- ** Bulk Delayed arrays
+        , D
+        , fromFunction
+        , toFunction
+        , delay
+
+        -- * Parallel Flows
         , O
+        , flow
+        , unflowP
 
-        -- * Maps
+        -- * Concrete Representations
+        -- ** Unboxed Arrays
+        , U
+        , fromUnboxed
+        , toUnboxed
+
+        -- * Array Operators
+        -- ** Maps
         , Map(..)
 
-        -- * Zips
+        -- ** Zips
         , Zip(..)
         , zipWith
 
-        -- * Projections
+        -- ** Projections
         , Gather(..)
 
-        -- * Segmented folds
+        -- ** Segmented replicates
+        , replicates
+        , replicatesSplit
+
+        -- ** Segmented folds
         , Fold(..))
 where
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Repr.Delayed
+import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Vector.Operators.Project
 import Data.Array.Repa.Vector.Operators.Fold
+import Data.Array.Repa.Vector.Operators.Replicate
 import Prelude hiding (zipWith)

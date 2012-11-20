@@ -11,17 +11,11 @@ module Data.Array.Repa.Vector.Repr.Flow
 
         -- * Conversions
         , flow,   unflowP
-        , toFlow, fromFlow
-
-        -- * Segmented operations
-        , Segd
-        , replicatesP
-        , replicatesSplitP)
+        , toFlow, fromFlow)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Operators.Bulk    as R
-import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd)
 import Data.Array.Repa.Flow.Par.Distro          (BB, BN)
 import Data.Array.Repa.Flow.Seq                 (FD, FS, Touch)
 import qualified Data.Array.Repa.Flow.Par       as F
@@ -66,31 +60,3 @@ toFlow (AFlow ff) = ff
 fromFlow :: F.Flow mode dist a -> Vector (O mode dist) a
 fromFlow ff       = AFlow ff
 {-# INLINE [4] fromFlow #-}
-
-
--------------------------------------------------------------------------------
--- | Segmented replicate.
-replicatesP 
-        :: Bulk r a
-        => Segd 
-        -> Vector r a
-        -> Vector (O mode BB) a
-
-replicatesP segd vec
- = let  get ix  = linearIndex vec (I# ix)
-   in   fromFlow (F.replicates segd get)
-{-# INLINE [4] replicatesP #-}
-
-
--- | Segmented replicate that takes a pre-split segment descriptor.
-replicatesSplitP 
-        :: Bulk r a
-        => SplitSegd 
-        -> Vector r a
-        -> Vector (O mode BB) a
-
-replicatesSplitP segd vec
- = let  get ix  = linearIndex vec (I# ix)
-   in   fromFlow (F.replicatesSplit segd get)
-{-# INLINE [4] replicatesSplitP #-}
-

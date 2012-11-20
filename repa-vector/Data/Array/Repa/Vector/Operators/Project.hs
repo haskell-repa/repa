@@ -13,7 +13,7 @@ import GHC.Exts
 class Gather r a where
  type TG r
 
- gatherP :: Bulk r2 a
+ gather  :: Bulk r2 a
          => Vector r2 a
          -> Vector r Int
          -> Vector (TG r) a
@@ -23,7 +23,7 @@ instance Gather (O mode dist) a where
  type TG (O mode dist)
         = O mode dist
 
- gatherP vec (AFlow ff)
+ gather vec (AFlow ff)
   = let get ix  = linearIndex vec (I# ix)
     in  AFlow   (F.gather get ff)
 
