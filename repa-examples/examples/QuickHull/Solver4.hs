@@ -1,8 +1,11 @@
 
 module SolverFlow where
+import Data.Array.Repa.Vector.Segd              (Segd)
 import Data.Array.Repa.Vector                   as R
-import Data.Array.Repa.Vector.Segd              as R
+import Data.Array.Repa.Vector.Operators.Zip     as R
+import Data.Array.Repa.Vector.Operators.Unzip   as R
 import Data.Array.Repa.Vector.Repr.Unboxed      as R
+import qualified Data.Array.Repa.Vector.Segd    as Segd
 
 -- | A point in the 2D plane.
 type Point      = (Double, Double)
@@ -15,63 +18,39 @@ hsplit_l
         -> Vector U (Point, Point)
         -> (Segd, Vector U Point)
 
-hsplit_l segd points lines
- = let  -- The determinate tells us how far from its line each point is.
-        !dets   = hsplit_det segd points lines 
+hsplit_l segd points' lines'
+ = let  points  = release points'
+        lines   = release lines'
+
+        -- The determinate tells us how far from its line each point is.
+        dets    :: Vector U Double
+        !dets   = release $ R.unflowP
+                $ R.zipWith detFn   points
+                $ R.replicates segd lines
+
+        detFn xp@(xo, yo) ((x1, y1), (x2, y2))
+         = (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
+        {-# INLINE detFn #-}
 
         -- Select points above the lines.
-        !above  = hsplit_above dets points
+        above   :: Vector U Point
+        !above  = release $ R.unflowP 
+                $ R.pack
+                $ R.zip (R.map (> 0) dets) points
 
         -- Count how many points ended up in each segment.
-        !counts = hsplit_count segd dets
+        counts  :: Vector U Int
+        !counts = release $ R.unflowP
+                $ R.counts (> 0) segd dets
 
+        flagsIf :: Vector D Bool
+        !flagsIf = R.map (> 0) counts
 
+        -- if-then-else ------------------------------------ ELSE
+        lines_else      = R.pack $ R.zip flagsIf lines
+        counts_else     = R.pack $ R.zip flagsIf counts
+        lengths_else    = R.pack $ R.zip flagsIf (Segd.lengths segd)
 
 
    in   error "finish me"
 
-
--- Compute determinate of points.
-hsplit_det 
-        :: Segd 
-        -> Vector U Point 
-        -> Vector U (Point, Point) 
-        -> Vector U (Point, Double)
-
-hsplit_det !segd !points !lines
- = R.unflowP 
-         $ R.zipWith detFn   (release points)
-         $ R.replicates segd (release lines)
- where
-        detFn xp@(xo, yo) ((x1, y1), (x2, y2))
-         = (xp, (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo))
-        {-# INLINE detFn #-}
-{-# NOINLINE hsplit_det #-}
-
-
--- Select points above the lines.
-hsplit_above 
-        :: Vector U Double 
-        -> Vector U Point -> Vector U Point
-
-hsplit_above !dets !points
- = R.unflowP
-        $ R.pack 
-        $ R.zip (R.map (> 0) (release dets)) (release points)
-{-# NOINLINE hsplit_above #-}
-
-
--- Count how many points ended up in each segment
-hsplit_count
-        :: Segd
-        -> Vector U Double -> Vector U Int
-
-hsplit_count !segd !dets
- = R.unflowP
-        $ R.counts (> 0) segd (release dets)
-{-# NOINLINE hsplit_count #-}
-
-
--- 
-hsplit_else 
-        :: 
