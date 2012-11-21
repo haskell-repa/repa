@@ -36,6 +36,9 @@ module Data.Array.Repa.Vector
         -- ** Folds
         , Fold(..)
 
+        -- ** Packs
+        , Pack(..)
+
         -- ** Generates
         , replicates
         , replicatesSplit
@@ -52,6 +55,7 @@ import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
 import Data.Array.Repa.Vector.Operators.Unzip
 import Data.Array.Repa.Vector.Operators.Project
+import Data.Array.Repa.Vector.Operators.Pack
 import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Replicate
 import Prelude hiding (zipWith)

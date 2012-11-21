@@ -41,7 +41,7 @@ data instance DistShape BN sh   = DistBN
 -------------------------------------------------------------------------------
 -- | Convert a bulk array  to a balanced flow.
 flow    :: (Shape sh, Bulk r a)
-        => Array r sh a -> Array (O mode BB) sh a
+        => Array r sh a -> Array (O FD BB) sh a
 flow vec
  = AFlow (DistBB $ extent vec) (F.generate len get)
  where  !(I# len)       = R.size $ R.extent vec

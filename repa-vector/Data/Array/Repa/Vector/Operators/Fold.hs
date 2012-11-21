@@ -4,6 +4,7 @@ module Data.Array.Repa.Vector.Operators.Fold
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Delayed
+import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Flow.Par.Segd            (Segd)
 import qualified Data.Array.Repa.Flow.Par       as F
@@ -29,6 +30,13 @@ class Fold r a where
 
 instance U.Unbox a => Fold D a where
  type TF D = O FD BN
+ folds f z segd vec
+        = folds f z segd (flow vec)
+ {-# INLINE [4] folds #-}
+
+
+instance (U.Unbox a, Elt a) => Fold U a where
+ type TF U = O FD BN
  folds f z segd vec
         = folds f z segd (flow vec)
  {-# INLINE [4] folds #-}
