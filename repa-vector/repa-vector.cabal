@@ -54,6 +54,7 @@ Library
         Data.Array.Repa.Vector.Operators.Bulk
         Data.Array.Repa.Vector.Operators.Map
         Data.Array.Repa.Vector.Operators.Zip
+        Data.Array.Repa.Vector.Operators.Unzip
         Data.Array.Repa.Vector.Operators.Project
         Data.Array.Repa.Vector.Operators.Replicate
 
