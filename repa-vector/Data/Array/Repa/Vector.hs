@@ -33,15 +33,16 @@ module Data.Array.Repa.Vector
         -- ** Unzips
         , Unzip(..)
 
-        -- ** Projections
-        , Gather(..)
+        -- ** Folds
+        , Fold(..)
 
-        -- ** Segmented replicates
+        -- ** Generates
         , replicates
         , replicatesSplit
 
-        -- ** Segmented folds
-        , Fold(..))
+        -- ** Projections
+        , gather
+        , gather1)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Delayed

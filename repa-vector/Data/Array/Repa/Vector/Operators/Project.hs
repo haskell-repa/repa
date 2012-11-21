@@ -1,29 +1,25 @@
 
 module Data.Array.Repa.Vector.Operators.Project
-        (Gather(..))
+        ( gather
+        , gather1)
 where
 import Data.Array.Repa.Vector.Base
-import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Operators.Bulk
-import Data.Array.Repa.Flow.Par         as F
-import Prelude                          hiding (map)
-import GHC.Exts
+import Data.Array.Repa.Vector.Operators.Map     as R
+import Prelude                                  hiding (map)
 
 
-class Gather r a where
- type TG r
+-- | Gather elements from a shared array.
+gather  :: (Shape sh, Bulk r1 a, Map r2 sh)
+        => Array r1 sh a -> Vector r2 sh -> Vector (TM r2) a
+gather vec ixs
+        = R.map (index vec) ixs
+{-# INLINE [4] gather #-}
 
- gather  :: Bulk r2 a
-         => Vector r2 a
-         -> Vector r Int
-         -> Vector (TG r) a
 
-
-instance Gather (O mode dist) a where
- type TG (O mode dist)
-        = O mode dist
-
- gather vec (AFlow ff)
-  = let get ix  = linearIndex vec (I# ix)
-    in  AFlow   (F.gather get ff)
-
+-- | Like gather, but specialised to linear indices.
+gather1 :: (Bulk r1 a, Map r2 Int)
+        => Vector r1 a -> Vector r2 Int -> Vector (TM r2) a
+gather1 vec ixs
+        = R.map (linearIndex vec) ixs
+{-# INLINE gather1 #-}

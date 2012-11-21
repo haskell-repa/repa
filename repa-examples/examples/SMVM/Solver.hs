@@ -1,21 +1,19 @@
-{-# LANGUAGE BangPatterns, MagicHash #-}
-module Solver
-        (smvm)
-where
-import Data.Array.Repa.Vector                   as R
-import Prelude                                  as P
 
+module Solver (smvm) where
+import Data.Array.Repa.Vector.Segd
+import Data.Array.Repa.Vector           as R
+import Prelude                          as P
 
 smvm    :: Segd 
         -> Vector U (Int, Double)
         -> Vector U Double
-        -> IO (Vector U Double)
+        -> Vector U Double
 
 smvm !segd !matrix !vector
- = do   let (!ixs,!vals)   = R.unzip matrix
-        let  !vixs         = I.vindexs ixs vector
-        let  !vals'        = vzipWith (*) vals vixs
-        let  !res          = R.sum_s (Segd.splitSegd segd) vals'
-        return res
+ = let  (!ixs, !vals)   = R.unzip matrix
+   in   R.unflowP
+         $ R.sums segd
+         $ R.zipWith (*) vals
+         $ R.gather1  vector ixs
 {-# NOINLINE smvm #-}
 

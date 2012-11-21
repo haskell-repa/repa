@@ -15,7 +15,7 @@ class Map r a where
  type TM r
  -- | Vector map where the representation of the result depends on the 
  --   representation of the source.
- map :: (a -> b) -> Vector r a -> Vector (TM r) b
+ map    :: (a -> b)    -> Vector r a   -> Vector (TM r) b
 
 
 -- Unboxed
