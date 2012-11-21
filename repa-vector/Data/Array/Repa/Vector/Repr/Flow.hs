@@ -44,8 +44,8 @@ flow vec
 unflowP :: (F.Unflow dist, U.Unbox a, Touch a)
         => Vector (O FD dist) a -> Vector U a
 unflowP (AFlow ff)
- = let  vec    = F.unflow ff
-   in   AUnboxed (Z :. U.length vec) vec
+ = let  !vec    = F.unflow ff
+   in   fromUnboxed (Z :. U.length vec) vec
 {-# INLINE [4] unflowP #-}
 
 

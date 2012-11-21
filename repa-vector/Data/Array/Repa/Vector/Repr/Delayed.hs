@@ -1,11 +1,15 @@
 
 module Data.Array.Repa.Vector.Repr.Delayed
         ( D, Array(..)
+
+          -- * Conversions
         , fromFunction
-        , defaultFromFunction
-        , checkedFromFunction
         , toFunction
-        , delay)
+        , delay
+
+          -- * Checked conversions
+        , defaultFromFunction
+        , checkedFromFunction)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Operators.Bulk
@@ -41,12 +45,14 @@ instance Bulk D a where
 --
 --   The first argument gives the nominal extent of the array.
 --
---   To preserve execution sanity in the presence of out-of-bounds indexing, 
---   the provided element function must return a deterministic default value at
---   any possible index, not just the values in the given extent.
---   If the element function does /not/ perform its own bounds checks
---   then use `checkedFromFunction` instead.
--- 
+--   To preserve execution sanity when the result is indexed out-of-bounds,
+--   the provided element function must return a deterministic value at any
+--   possible index, not just the indices in the nominal extent.
+--
+--   If you are using `fromFunction` to index into a physical array then
+--   consider using either `defaultFromFunction` or `checkedFromFunction`
+--   to perform the nessesary bounds checks.
+--
 fromFunction :: sh -> (sh -> a) -> Array D sh a
 fromFunction sh f 
         = ADelayed sh f 

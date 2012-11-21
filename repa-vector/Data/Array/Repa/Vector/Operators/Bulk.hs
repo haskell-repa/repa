@@ -9,6 +9,9 @@ import Prelude                          hiding (length)
 
 -- | Bulk representations support random-access indexing and
 --   their extent is known up-front.
+--
+--   Whether these indexing functions are safe when use out-of-bounds 
+--   depends on how the source array was constructed.
 class Bulk r a where
  -- | Shape-polymorphic indexing.
  index          :: Shape sh => Array r sh a -> sh -> a

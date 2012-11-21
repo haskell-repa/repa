@@ -1,13 +1,19 @@
 
 module Data.Array.Repa.Vector.Repr.Unboxed
         ( U, U.Unbox, Array(..)
+
+          -- * Conversions
         , fromUnboxed
-        , toUnboxed)
+        , toUnboxed
+
+          -- * Unsafe conversions
+        , unsafeFromUnboxed
+        , release)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Operators.Bulk
 import qualified Data.Vector.Unboxed              as U
-
+import GHC.Exts
 
 -- | Unboxed arrays are represented as unboxed vectors.
 --
@@ -20,41 +26,64 @@ import qualified Data.Vector.Unboxed              as U
 data U
 
 data instance Array U sh a
-        = AUnboxed !sh !(U.Vector a)
+        = AUnboxed !sh !(U.Vector a) (Int# -> a)
 
 
 instance (Elt a, U.Unbox a) => Bulk U a where
- linearIndex (AUnboxed _ vec) ix
-        -- Return a zero value for out-of-range indices.
-        | ix >= U.length vec
-        = zero
+ linearIndex (AUnboxed _ _ get) (I# ix)
+        = get ix
+ {-# INLINE [4] linearIndex #-}
 
-        -- This is actually safe because we just checked the bounds.
-        | otherwise           
-        = vec `U.unsafeIndex` ix
- {-# INLINE linearIndex #-}
-
- extent (AUnboxed sh _)
+ extent (AUnboxed sh _ _)
         = sh
- {-# INLINE extent #-}
+ {-# INLINE [4] extent #-}
 
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
---   TODO: make this function safe, have an unsafeFromUnboxed that doesn't do 
---         the check. Put the vector behind a function that checks the bounds.
+--   If the result is indexed outside its nominal range then `error`.
 fromUnboxed
         :: (Shape sh, U.Unbox e)
         => sh -> U.Vector e -> Array U sh e
+
 fromUnboxed sh vec
-        = AUnboxed sh vec
-{-# INLINE fromUnboxed #-}
+ = let  get ix  = vec U.! (I# ix)
+   in   AUnboxed sh vec get
+{-# INLINE [4] fromUnboxed #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
 toUnboxed
         :: U.Unbox e
         => Array U sh e -> U.Vector e
-toUnboxed (AUnboxed _ vec)
+toUnboxed (AUnboxed _ vec _)
         = vec
 {-# INLINE toUnboxed #-}
+
+
+-- Unsafe conversions ---------------------------------------------------------
+-- | O(1). Wrap an unboxed vector as an array, without bounds checks.
+--
+--   All operations that consume the result will be unsafe.
+--   Execution sanity is not preserved if consumers index the array outside
+--   of its nominal range.
+unsafeFromUnboxed
+        :: U.Unbox e
+        => sh -> U.Vector e -> Array U sh e
+
+unsafeFromUnboxed sh vec
+ = let  get ix  = vec `U.unsafeIndex` (I# ix)
+   in   AUnboxed sh vec get
+{-# INLINE [4] unsafeFromUnboxed #-}
+
+
+-- | O(1). Release an unboxed array from bounds checking.
+--      
+--   All operations that consume the result will be unsafe.
+--   Execution sanity is not preserved if consumers index the array outside
+--   of its nominal range.
+release :: U.Unbox a => Array U sh a -> Array U sh a
+release (AUnboxed sh vec _)
+ = unsafeFromUnboxed sh vec
+{-# INLINE [4] release #-}
+
