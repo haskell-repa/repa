@@ -12,8 +12,9 @@ class Unzip r a b where
  type TU r
 
  -- | Convert an array of pairs into a pair of arrays.
- unzip  :: Vector r (a, b)
-        -> (Vector (TU r) a, Vector (TU r) b)
+ unzip  :: Shape sh
+        => Array r sh (a, b)
+        -> (Array (TU r) sh a, Array (TU r) sh b)
 
 
 -- Unboxed --------------------------------------------------------------------

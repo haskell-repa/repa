@@ -14,7 +14,7 @@ module Data.Array.Repa.Vector
         -- * Parallel Flows
         , O
         , flow
-        , unflowP
+        , Unflow(..)
 
         -- * Concrete Representations
         -- ** Unboxed Arrays

@@ -37,8 +37,8 @@ instance U.Unbox a => Fold (O mode BB) a where
  type TF (O mode BB)
         = O mode BN
 
- folds f z segd (AFlow ff)
-        = AFlow (F.folds f z segd ff)
+ folds f z segd (AFlow _ ff)
+        = AFlow DistBN (F.folds f z segd ff)
  {-# INLINE [4] folds #-}
 
 

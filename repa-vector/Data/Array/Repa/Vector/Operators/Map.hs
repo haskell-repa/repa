@@ -15,7 +15,8 @@ class Map r a where
  type TM r
  -- | Vector map where the representation of the result depends on the 
  --   representation of the source.
- map    :: (a -> b)    -> Vector r a   -> Vector (TM r) b
+ map    :: Shape sh
+        => (a -> b)    -> Array r sh a   -> Array (TM r) sh b
 
 
 -- Unboxed
@@ -42,8 +43,8 @@ instance Map (O mode dist) a where
  type TM (O mode dist)
        = (O mode dist)
 
- map f (AFlow ff)
-        = AFlow (F.map f ff)
+ map f (AFlow sh ff)
+        = AFlow sh (F.map f ff)
  {-# INLINE [4] map #-}
 
 

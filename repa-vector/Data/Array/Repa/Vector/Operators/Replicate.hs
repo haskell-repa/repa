@@ -5,7 +5,7 @@ module Data.Array.Repa.Vector.Operators.Replicate
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
-import Data.Array.Repa.Vector.Operators.Bulk
+import Data.Array.Repa.Vector.Operators.Bulk    as R
 import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par       as F
 import Prelude                                  hiding (map)
@@ -21,7 +21,9 @@ replicates
 
 replicates segd vec
  = let  get ix  = linearIndex vec (I# ix)
-   in   fromFlow (F.replicates segd get)
+   in   fromFlowBB 
+                (Z :. R.length vec)
+                (F.replicates segd get)
 {-# INLINE [4] replicates #-}
 
 
@@ -34,6 +36,8 @@ replicatesSplit
 
 replicatesSplit segd vec
  = let  get ix  = linearIndex vec (I# ix)
-   in   fromFlow (F.replicatesSplit segd get)
+   in   fromFlowBB 
+                (Z :. R.length vec)
+                (F.replicatesSplit segd get)
 {-# INLINE [4] replicatesSplit #-}
 

@@ -30,9 +30,10 @@ class Zip r1 r2 a b where
  -- | Vector zip uses the least general possible representation for the result.
  --   
  --   The two vectors must have the same length, else undefined.
- zip    :: Vector r1 a 
-        -> Vector r2 b
-        -> Vector (TZ r1 r2) (a, b)
+ zip    :: Shape sh
+        => Array r1 sh a 
+        -> Array r2 sh b
+        -> Array (TZ r1 r2) sh (a, b)
 
 
 -- Unboxed --------------------------------------------------------------------
@@ -59,8 +60,8 @@ instance Zip D D a b where
 instance Zip (O mode BB) (O mode BB) a b where
  type TZ (O mode BB) (O mode BB)
         = O mode BB
- zip (AFlow ff1) (AFlow ff2)
-  = AFlow (F.zip ff1 ff2)
+ zip (AFlow sh1 ff1) (AFlow _ ff2)
+  = AFlow sh1 (F.zip ff1 ff2)
  {-# INLINE [4] zip #-}
 
 
@@ -68,16 +69,16 @@ instance Zip (O mode BB) (O mode BB) a b where
 instance U.Unbox b => Zip (O mode BB) U a b where
  type TZ (O mode BB) U
         = O mode BB
- zip (AFlow ff1) (AUnboxed _ _ get)
-  = AFlow (F.zipLeft ff1 get)
+ zip (AFlow sh1 ff1) (AUnboxed _ _ get)
+  = AFlow sh1 (F.zipLeft ff1 get)
  {-# INLINE [4] zip #-}
 
 
 instance U.Unbox a => Zip U (O mode BB) a b where
  type TZ U (O mode BB) 
         = O mode BB
- zip (AUnboxed _ _ get) (AFlow ff2) 
-  = AFlow (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
+ zip (AUnboxed _ _ get) (AFlow sh1 ff2) 
+  = AFlow sh1 (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
  {-# INLINE [4] zip #-}
 
 
@@ -85,18 +86,18 @@ instance U.Unbox a => Zip U (O mode BB) a b where
 instance Zip (O mode BB) D a b where
  type TZ (O mode BB) D
         = O mode BB
- zip (AFlow ff1) arr2
+ zip (AFlow sh1 ff1) arr2
   = let get ix  = linearIndex arr2 (I# ix)
-    in  AFlow (F.zipLeft ff1 get)
+    in  AFlow sh1 (F.zipLeft ff1 get)
  {-# INLINE [4] zip #-}
 
 
 instance Zip D (O mode BB) a b where
  type TZ D (O mode BB) 
         = O mode BB
- zip arr1 (AFlow ff2) 
+ zip arr1 (AFlow sh1 ff2) 
   = let get ix  = linearIndex arr1 (I# ix)
-    in  AFlow (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
+    in  AFlow sh1 (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
  {-# INLINE [4] zip #-}
 
 
