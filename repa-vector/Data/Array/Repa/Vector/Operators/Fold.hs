@@ -31,6 +31,7 @@ instance U.Unbox a => Fold D a where
  type TF D = O FD BN
  folds f z segd vec
         = folds f z segd (flow vec)
+ {-# INLINE [4] folds #-}
 
 
 instance U.Unbox a => Fold (O mode BB) a where

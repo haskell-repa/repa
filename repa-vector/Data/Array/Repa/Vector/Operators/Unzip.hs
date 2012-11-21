@@ -24,5 +24,5 @@ instance ( Elt a, Unbox a
 
  unzip vec
         = (R.map fst vec, R.map snd vec)
-
+ {-# INLINE [4] unzip #-}
 

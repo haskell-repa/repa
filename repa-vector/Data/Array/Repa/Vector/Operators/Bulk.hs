@@ -27,3 +27,4 @@ class Bulk r a where
 -- | Yield the length of a bulk vector.
 length :: Bulk r a => Vector r a -> Int
 length = size . extent
+{-# INLINE [4] length #-}

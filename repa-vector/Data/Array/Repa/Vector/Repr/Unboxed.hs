@@ -58,7 +58,7 @@ toUnboxed
         => Array U sh e -> U.Vector e
 toUnboxed (AUnboxed _ vec _)
         = vec
-{-# INLINE toUnboxed #-}
+{-# INLINE [4] toUnboxed #-}
 
 
 -- Unsafe conversions ---------------------------------------------------------
