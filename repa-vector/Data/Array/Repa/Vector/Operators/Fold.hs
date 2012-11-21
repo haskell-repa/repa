@@ -6,10 +6,11 @@ import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Delayed
 import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Repr.Flow
-import Data.Array.Repa.Flow.Par.Segd            (Segd)
-import qualified Data.Array.Repa.Flow.Par       as F
-import qualified Data.Vector.Unboxed            as U
-import Prelude                                  hiding (map)
+import Data.Array.Repa.Flow.Par.Segd                    (Segd)
+import Data.Array.Repa.Vector.Operators.Map             as R
+import qualified Data.Array.Repa.Flow.Par               as F
+import qualified Data.Vector.Unboxed                    as U
+import Prelude                                          hiding (map)
 
 
 class Fold r a where
@@ -26,6 +27,17 @@ class Fold r a where
  sums segd vec
          = folds (+) 0 segd vec
  {-# INLINE [4] sums #-}
+
+
+ -- | Segmented count. 
+ --   Count the number of elements in each segment that match
+ --   the given predicate.
+ counts :: (Eq a, Map r a, Fold (TM r) Int)
+        => (a -> Bool) 
+        -> Segd -> Vector r a -> Vector (TF (TM r)) Int
+ counts f segd vec
+        = sums segd $ R.map (\x -> if f x then 1 else 0) vec
+ {-# INLINE [4] counts #-}
 
 
 instance U.Unbox a => Fold D a where
