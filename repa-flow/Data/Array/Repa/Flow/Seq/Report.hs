@@ -31,6 +31,9 @@ data Report
                 { enumFromNLength       :: Int
                 , enumFromNPosition     :: Int }
 
+        | Appends
+                { appendsResultLen      :: Int }
+
         -- Combinators
         | Map   { mapSource             :: Report }
 

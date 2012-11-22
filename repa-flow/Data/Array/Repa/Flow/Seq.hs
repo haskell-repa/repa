@@ -20,6 +20,7 @@ module Data.Array.Repa.Flow.Seq
         , replicatesUnboxed
         , replicatesDirect
         , enumFromN
+        , appends
 
         -- * Mapping
         , map
@@ -42,6 +43,7 @@ module Data.Array.Repa.Flow.Seq
 where
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Generate
+import Data.Array.Repa.Flow.Seq.Append
 import Data.Array.Repa.Flow.Seq.Map
 import Data.Array.Repa.Flow.Seq.Pack
 import Data.Array.Repa.Flow.Seq.Project
