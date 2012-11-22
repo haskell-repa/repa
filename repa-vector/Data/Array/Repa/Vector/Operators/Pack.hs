@@ -52,11 +52,13 @@ filter f vec
 
 
 -- | Segmented Pack
-packs   :: ( Pack (O FD BB) a, Bulk r Bool
+packs   :: ( Bulk r1 Bool
+           , Zip  (O FD BB) r2 Bool a
+           , Pack (TZ (O FD BB) r2) a
            , U.Unbox a)
-        => Vector r Bool
-        -> Segd
-        -> Vector U a
+        => Vector r1 Bool       -- ^ Flags vector.
+        -> Segd                 -- ^ Segment descriptor.
+        -> Vector r2 a          -- ^ Elements vector.
         -> Vector (O FD BN) a
 
 packs flags segd vec

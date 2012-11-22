@@ -56,8 +56,14 @@ hsplit_l segd points lines
                         $ R.map fst lines_then
 
         -- if-then-else ------------------------------------ ELSE
-        !dets_else      = R.unflowP $ R.packs flagsElse segd dets
-        !points_else    = R.unflowP $ R.packs flagsElse segd points
+        -- Zip these together before packing so we don't need
+        -- to pack them separately.
+        --  TODO: need to unflow here because we don't have a folds 
+        --        instance for unbalanced flows.
+        !detsPoints_else
+                        = R.unflowP
+                        $ R.packs flagsElse segd 
+                        $ R.zip dets points
 
         !lines_else     = R.unflowP $ R.pack $ R.zip flagsElse lines
         !counts_else    = R.unflowP $ R.pack $ R.zip flagsElse counts
@@ -71,8 +77,9 @@ hsplit_l segd points lines
         far (d0, p0) (d1, p1) 
          = d1 > d0
 
-        !dpoints        = R.zip dets_else points_else
-        !fars           = R.unflowP $ R.selects far (0, (0, 0)) segd_else dpoints
+        !fars           = R.unflowP 
+                        $ R.selects far (0, (0, 0)) segd_else 
+                        $ detsPoints_else
 
 
         !downSegd2      = Segd.fromLengths 

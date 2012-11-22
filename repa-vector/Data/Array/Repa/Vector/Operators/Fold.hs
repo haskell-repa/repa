@@ -47,7 +47,6 @@ instance U.Unbox a => Fold (O mode BB) a where
  {-# INLINE [4] folds #-}
 
 
-
 -------------------------------------------------------------------------------
 -- | Segmented sum.
 sums   :: (Num a, Fold r a) 
