@@ -48,8 +48,11 @@ hsplit_l segd points' lines'
 
         -- if-then-else ------------------------------------ ELSE
         lines_else      = R.pack $ R.zip flagsIf lines
+        dets_else       = R.packs flagsIf segd dets
         counts_else     = R.pack $ R.zip flagsIf counts
-        lengths_else    = R.pack $ R.zip flagsIf (Segd.lengths segd)
+        points_else     = R.packs flagsIf segd points
+        lengths_else    = Segd.fromLengths 
+                        $ R.unflowP $ R.pack $ R.zip flagsIf (Segd.lengths segd)
 
 
    in   error "finish me"

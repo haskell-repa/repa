@@ -38,6 +38,8 @@ module Data.Array.Repa.Vector
 
         -- ** Packs
         , Pack(..)
+        , filter
+        , packs
 
         -- ** Generates
         , replicates
@@ -58,4 +60,4 @@ import Data.Array.Repa.Vector.Operators.Project
 import Data.Array.Repa.Vector.Operators.Pack
 import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Replicate
-import Prelude hiding (zipWith)
+import Prelude hiding (zipWith, filter)
