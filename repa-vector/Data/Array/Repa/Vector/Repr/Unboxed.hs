@@ -4,16 +4,12 @@ module Data.Array.Repa.Vector.Repr.Unboxed
 
           -- * Conversions
         , fromUnboxed
-        , toUnboxed
-
-          -- * Unsafe conversions
-        , unsafeFromUnboxed
-        , release)
+        , toUnboxed)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Operators.Bulk
 import qualified Data.Vector.Unboxed              as U
-import GHC.Exts
+
 
 -- | Unboxed arrays are represented as unboxed vectors.
 --
@@ -26,15 +22,15 @@ import GHC.Exts
 data U
 
 data instance Array U sh a
-        = AUnboxed !sh !(U.Vector a) (Int# -> a)
+        = AUnboxed !sh !(U.Vector a)
 
 
 instance (Elt a, U.Unbox a) => Bulk U a where
- linearIndex (AUnboxed _ _ get) (I# ix)
-        = get ix
+ linearIndex (AUnboxed _ vec) ix
+        = U.unsafeIndex vec ix
  {-# INLINE [4] linearIndex #-}
 
- extent (AUnboxed sh _ _)
+ extent (AUnboxed sh _)
         = sh
  {-# INLINE [4] extent #-}
 
@@ -47,8 +43,7 @@ fromUnboxed
         => sh -> U.Vector e -> Array U sh e
 
 fromUnboxed sh vec
- = let  get ix  = vec U.! (I# ix)
-   in   AUnboxed sh vec get
+        = AUnboxed sh vec
 {-# INLINE [4] fromUnboxed #-}
 
 
@@ -56,34 +51,7 @@ fromUnboxed sh vec
 toUnboxed
         :: U.Unbox e
         => Array U sh e -> U.Vector e
-toUnboxed (AUnboxed _ vec _)
+toUnboxed (AUnboxed _ vec)
         = vec
 {-# INLINE [4] toUnboxed #-}
-
-
--- Unsafe conversions ---------------------------------------------------------
--- | O(1). Wrap an unboxed vector as an array, without bounds checks.
---
---   All operations that consume the result will be unsafe.
---   Execution sanity is not preserved if consumers index the array outside
---   of its nominal range.
-unsafeFromUnboxed
-        :: U.Unbox e
-        => sh -> U.Vector e -> Array U sh e
-
-unsafeFromUnboxed sh vec
- = let  get ix  = vec `U.unsafeIndex` (I# ix)
-   in   AUnboxed sh vec get
-{-# INLINE [4] unsafeFromUnboxed #-}
-
-
--- | O(1). Release an unboxed array from bounds checking.
---      
---   All operations that consume the result will be unsafe.
---   Execution sanity is not preserved if consumers index the array outside
---   of its nominal range.
-release :: U.Unbox a => Array U sh a -> Array U sh a
-release (AUnboxed sh vec _)
- = unsafeFromUnboxed sh vec
-{-# INLINE [4] release #-}
 

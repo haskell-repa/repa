@@ -69,16 +69,18 @@ instance Zip (O mode BB) (O mode BB) a b where
 instance U.Unbox b => Zip (O mode BB) U a b where
  type TZ (O mode BB) U
         = O mode BB
- zip (AFlow sh1 ff1) (AUnboxed _ _ get)
-  = AFlow sh1 (F.zipLeft ff1 get)
+ zip (AFlow sh1 ff1) (AUnboxed _ vec)
+  = let get ix  = U.unsafeIndex vec (I# ix)
+    in  AFlow sh1 (F.zipLeft ff1 get)
  {-# INLINE [4] zip #-}
 
 
 instance U.Unbox a => Zip U (O mode BB) a b where
  type TZ U (O mode BB) 
         = O mode BB
- zip (AUnboxed _ _ get) (AFlow sh1 ff2) 
-  = AFlow sh1 (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
+ zip (AUnboxed _ vec) (AFlow sh1 ff2) 
+  = let get ix  = U.unsafeIndex vec (I# ix)
+    in  AFlow sh1 (F.map (\(x, y) -> (y, x)) $ F.zipLeft ff2 get)
  {-# INLINE [4] zip #-}
 
 
