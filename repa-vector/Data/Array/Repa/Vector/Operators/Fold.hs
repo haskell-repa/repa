@@ -1,6 +1,9 @@
 
 module Data.Array.Repa.Vector.Operators.Fold
-        (Fold(..))
+        ( Fold(..)
+        , sums
+        , counts
+        , selects)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Delayed
@@ -20,25 +23,6 @@ class Fold r a where
         -> Segd 
         -> Vector r a 
         -> Vector (TF r) a
-
- -- | Segmented sum.
- sums   :: (Num a, Fold r a) 
-        => Segd -> Vector r a -> Vector (TF r) a
- sums segd vec
-         = folds (+) 0 segd vec
- {-# INLINE [4] sums #-}
-
-
- -- | Segmented count. 
- --   Count the number of elements in each segment that match
- --   the given predicate.
- counts :: (Eq a, Map r a, Fold (TM r) Int)
-        => (a -> Bool) 
-        -> Segd -> Vector r a -> Vector (TF (TM r)) Int
- counts f segd vec
-        = sums segd $ R.map (\x -> if f x then 1 else 0) vec
- {-# INLINE [4] counts #-}
-
 
 instance U.Unbox a => Fold D a where
  type TF D = O FD BN
@@ -61,5 +45,41 @@ instance U.Unbox a => Fold (O mode BB) a where
  folds f z segd (AFlow _ ff)
         = AFlow DistBN (F.folds f z segd ff)
  {-# INLINE [4] folds #-}
+
+
+
+-------------------------------------------------------------------------------
+-- | Segmented sum.
+sums   :: (Num a, Fold r a) 
+       => Segd -> Vector r a -> Vector (TF r) a
+sums segd vec
+        = folds (+) 0 segd vec
+{-# INLINE [4] sums #-}
+
+
+-- | Segmented count. 
+--   Count the number of elements in each segment that match
+--   the given predicate.
+counts :: (Eq a, Map r a, Fold (TM r) Int)
+       => (a -> Bool) 
+       -> Segd -> Vector r a -> Vector (TF (TM r)) Int
+counts f segd vec
+       = sums segd $ R.map (\x -> if f x then 1 else 0) vec
+{-# INLINE [4] counts #-}
+
+
+-- | Segmented selection.
+selects :: (Fold r a, U.Unbox a)
+        => (a -> a -> Bool)
+        -> a
+        -> Segd
+        -> Vector r a
+        -> Vector (TF r) a
+
+selects choose z segd vec
+ = folds f z segd vec
+ where  f x1 x2
+         = if choose x1 x2 then x2 else x1
+{-# INLINE [4] selects #-}
 
 

@@ -1,15 +1,32 @@
 
 module Data.Array.Repa.Vector.Operators.Replicate
-        ( replicates
+        ( replicate
+        , replicate2
+        , replicates
         , replicatesSplit )
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
+import Data.Array.Repa.Vector.Repr.Delayed
 import Data.Array.Repa.Vector.Operators.Bulk    as R
 import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par       as F
-import Prelude                                  hiding (map)
 import GHC.Exts
+import Prelude  hiding (map, replicate)
+
+
+-- | Replicate
+replicate :: sh -> a -> Array D sh a
+replicate ex x
+        = fromFunction ex (const x)
+{-# INLINE [4] replicate #-}
+
+
+-- | Regular replicate, repeating each element by 2.
+replicate2 :: Bulk r a => Vector r a -> Vector D a
+replicate2 vec 
+ = let  len2    = 2 * R.length vec
+   in   fromFunction (Z :. len2) (\(Z :. ix) -> index vec (Z :. ix `div` 2))
 
 
 -- | Segmented replicate.
@@ -27,6 +44,7 @@ replicates segd vec
 {-# INLINE [4] replicates #-}
 
 
+
 -- | Segmented replicate that takes a pre-split segment descriptor.
 replicatesSplit
         :: Bulk r a
@@ -40,4 +58,6 @@ replicatesSplit segd vec
                 (Z :. R.length vec)
                 (F.replicatesSplit segd get)
 {-# INLINE [4] replicatesSplit #-}
+
+
 
