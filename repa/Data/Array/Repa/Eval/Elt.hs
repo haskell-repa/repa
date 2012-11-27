@@ -1,5 +1,6 @@
 -- | Values that can be stored in Repa Arrays.
 {-# LANGUAGE MagicHash, UnboxedTuples, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE DefaultSignatures, FlexibleContexts, TypeOperators #-}
 module Data.Array.Repa.Eval.Elt
 	(Elt (..))
 where
@@ -8,13 +9,14 @@ import GHC.Exts
 import GHC.Types
 import GHC.Word
 import GHC.Int
+import GHC.Generics
 
 
 -- Note that the touch# function is special because we can pass it boxed or unboxed
 -- values. The argument type has kind ?, not just * or #.
 
 -- | Element types that can be used with the blockwise filling functions.
---  
+--
 --   This class is mainly used to define the `touch` method. This is used internally
 --   in the imeplementation of Repa to prevent let-binding from being floated
 --   inappropriately by the GHC simplifier.  Doing a `seq` sometimes isn't enough,
@@ -22,15 +24,89 @@ import GHC.Int
 --
 class Elt a where
 
-	-- | Place a demand on a value at a particular point in an IO computation.
-	touch :: a -> IO ()
+        -- | Place a demand on a value at a particular point in an IO computation.
+        touch :: a -> IO ()
 
-	-- | Generic zero value, helpful for debugging.
-	zero  :: a
+        default touch :: (Generic a, GElt (Rep a)) => a -> IO ()
+        touch = gtouch . from
+        {-# INLINE touch #-}
 
-	-- | Generic one value, helpful for debugging.
-	one   :: a
+        -- | Generic zero value, helpful for debugging.
+        zero  :: a
 
+        default zero :: (Generic a, GElt (Rep a)) => a
+        zero = to gzero
+        {-# INLINE zero #-}
+
+        -- | Generic one value, helpful for debugging.
+        one   :: a
+
+        default one :: (Generic a, GElt (Rep a)) => a
+        one = to gone
+        {-# INLINE one #-}
+
+class GElt f where
+        -- | Generic version of touch
+        gtouch :: f a -> IO ()
+
+        -- | Generic version of zero
+        gzero  :: f a
+
+        -- | Generic version of gone
+        gone   :: f a
+
+-- Generic Definition ----------------------------------------------------------
+
+instance GElt U1 where
+  gtouch _ = return ()
+  {-# INLINE gtouch #-}
+
+  gzero = U1
+  {-# INLINE gzero #-}
+
+  gone = U1
+  {-# INLINE gone #-}
+
+instance (GElt a, GElt b) => GElt (a :*: b) where
+  gtouch (x :*: y) = gtouch x >> gtouch y
+  {-# INLINE gtouch #-}
+
+  gzero = gzero :*: gzero
+  {-# INLINE gzero #-}
+
+  gone = gone :*: gone
+  {-# INLINE gone #-}
+
+instance (GElt a, GElt b) => GElt (a :+: b) where
+  gtouch (L1 x) = gtouch x
+  gtouch (R1 x) = gtouch x
+  {-# INLINE gtouch #-}
+
+  gzero = L1 gzero
+  {-# INLINE gzero #-}
+
+  gone = R1 gone
+  {-# INLINE gone #-}
+
+instance (GElt a) => GElt (M1 i c a) where
+  gtouch (M1 x) = gtouch x
+  {-# INLINE gtouch #-}
+
+  gzero = M1 gzero
+  {-# INLINE gzero #-}
+
+  gone = M1 gone
+  {-# INLINE gone #-}
+
+instance (Elt a) => GElt (K1 i a) where
+  gtouch (K1 x) = touch x
+  {-# INLINE gtouch #-}
+
+  gzero = K1 zero
+  {-# INLINE gzero #-}
+
+  gone = K1 one
+  {-# INLINE gone #-}
 
 -- Bool -----------------------------------------------------------------------
 instance Elt Bool where
