@@ -186,7 +186,8 @@ Executable repa-volume
 Executable repa-unit-test
   Build-depends: 
         base                 == 4.*,
-        repa                 == 3.2.*
+        repa                 == 3.2.*,
+        QuickCheck           >= 2.3 && < 2.6
 
   Main-is: examples/UnitTesting/UnitTesting.hs
   hs-source-dirs: examples/UnitTesting .

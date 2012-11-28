@@ -1,22 +1,19 @@
 {-# LANGUAGE TemplateHaskell, ScopedTypeVariables #-}
-module Main
-where
-
+module Main where
 import Data.Array.Repa
 import Data.Array.Repa.Arbitrary(forAll2UShaped, forAll2VShaped)
 import Test.QuickCheck
 import Test.QuickCheck.All
-import Control.Monad(liftM2)
+import Control.Monad            (liftM2)
 
 -- | Example of how write unit tests for Repa arrays of a given number of dimensions
+arrayAdditionU sh 
+ = forAll2UShaped sh test
+ where  test (a, b)   = a +^ b == fromFunction (extent a) (\i -> ((a!i) + (b!i) :: Double))
 
-arrayAdditionU sh = forAll2UShaped sh test
-  where
-    test (a, b)   = a +^ b == fromFunction (extent a) (\i -> ((a!i) + (b!i) :: Double))
-
-arrayAdditionV sh = forAll2VShaped sh test
-  where
-    test (a, b)   = a +^ b == fromFunction (extent a) (\i -> ((a!i) + (b!i) :: Double))
+arrayAdditionV sh 
+ = forAll2VShaped sh test
+ where  test (a, b)   = a +^ b == fromFunction (extent a) (\i -> ((a!i) + (b!i) :: Double))
 
 prop_addU1D :: DIM1 -> Property
 prop_addU1D = arrayAdditionU
