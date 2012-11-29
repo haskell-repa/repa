@@ -61,6 +61,7 @@ Library
         Data.Array.Repa.Vector.Operators.Flatten
         Data.Array.Repa.Vector.Operators.Project
         Data.Array.Repa.Vector.Operators.Pack
+        Data.Array.Repa.Vector.Operators.Combine
         Data.Array.Repa.Vector.Operators.Replicate
 
   Other-modules:

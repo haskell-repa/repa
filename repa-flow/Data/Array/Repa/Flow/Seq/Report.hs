@@ -53,6 +53,11 @@ data Report
         | PackByTag
                 { packByTagSource       :: Report }
 
+        | Combine
+                { combineSourceFlags    :: Report
+                , combineSource1        :: Report
+                , combineSource2        :: Report }
+
         | Filter
                 { filterSource          :: Report }
 

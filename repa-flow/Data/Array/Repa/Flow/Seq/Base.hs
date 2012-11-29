@@ -1,4 +1,5 @@
 
+
 -- | Flows provide an incremental version of array fusion that allows the
 --   the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow.Seq.Base
@@ -365,6 +366,11 @@ class Touch a where
   = do  touch x
         return x
  {-# INLINE here #-}
+
+instance Touch Bool where
+ touch x
+  = IO (\state -> case touch# x state of
+                        state' -> (# state', () #))
 
 
 instance Touch Int where

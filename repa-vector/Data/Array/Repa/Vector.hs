@@ -51,6 +51,9 @@ module Data.Array.Repa.Vector
         , filter
         , packs
 
+        -- ** Combines
+        , combine2
+
         -- ** Generates
         , replicate
         , replicates
@@ -80,6 +83,7 @@ import Data.Array.Repa.Vector.Operators.Append
 import Data.Array.Repa.Vector.Operators.Unzip
 import Data.Array.Repa.Vector.Operators.Project
 import Data.Array.Repa.Vector.Operators.Pack
+import Data.Array.Repa.Vector.Operators.Combine
 import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Replicate
 import Data.Array.Repa.Vector.Operators.Flatten

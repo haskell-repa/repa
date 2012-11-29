@@ -22,18 +22,21 @@ module Data.Array.Repa.Flow.Seq
         , enumFromN
         , appends
 
-        -- * Mapping
+        -- * Map
         , map
         , zip,          zipLeft
         , zipWith,      zipLeftWith
 
-        -- * Packing
+        -- * Projection
+        , gather
+
+        -- * Pack
         , pack
         , packByTag
         , filter
 
-        -- * Projection
-        , gather
+        -- * Combine
+        , combine2
 
         -- * Reduction
         , foldl
@@ -46,6 +49,7 @@ import Data.Array.Repa.Flow.Seq.Generate
 import Data.Array.Repa.Flow.Seq.Append
 import Data.Array.Repa.Flow.Seq.Map
 import Data.Array.Repa.Flow.Seq.Pack
+import Data.Array.Repa.Flow.Seq.Combine
 import Data.Array.Repa.Flow.Seq.Project
 import Data.Array.Repa.Flow.Seq.Fold
 import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
