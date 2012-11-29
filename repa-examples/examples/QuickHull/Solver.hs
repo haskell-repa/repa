@@ -210,7 +210,7 @@ hsplit_l segd points lines
         let !segdAboveElse = Segd.fromLengths countsElse
 
         let !downPoints = vcomputeUnboxedP 
-                        $ vappends downSegd
+                        $ vappends (Segd.splitSegd downSegd)
                                 segdAboveElse above
                                 segdAboveElse above
         

@@ -5,6 +5,7 @@ import Data.Array.Repa.Vector                   as R
 import Data.Array.Repa.Vector.Index             as R
 import Data.Array.Repa.Vector.Operators.Zip     as R
 import Data.Array.Repa.Vector.Operators.Unzip   as R
+import Data.Array.Repa.Vector.Operators.Append  as R
 import Data.Array.Repa.Vector.Repr.Unboxed      as R
 import qualified Data.Array.Repa.Vector.Segd    as Segd
 
@@ -82,6 +83,7 @@ hsplit_l segd points lines
                         $ detsPoints_else
 
 
+        -- Append the points to each other to get the new points array.
         !downSegd2      = Segd.fromLengths 
                         $ computeP $ R.replicate (ix1 (R.length counts_else)) 2
 
@@ -92,6 +94,12 @@ hsplit_l segd points lines
 
         !segdAbove      = Segd.fromLengths counts_else
 
+        !downPoints     = R.unflowP 
+                        $ appendsWithResultSegd
+                                (Segd.splitSegd downSegd)
+                                segdAbove above
+                                segdAbove above
+
         -- Use the far points to make new splitting lines for the new segments.
         !downLines      = computeP  
                         $ R.flatten2 
@@ -100,7 +108,15 @@ hsplit_l segd points lines
 
         -- Recursive call
         !(moarSegd, moarPoints)
-                = hsplit_l downSegd downPoints downLines
+                        = hsplit_l downSegd downPoints downLines
+
+        -- Concatenate the segments we get from the recursive call.
+        --   In the recursion we pass down two segments for each one that we
+        --   had from above.
+        !catSegd        = Segd.fromLengths
+                        $ unflowP
+                        $ sums downSegd2 (Segd.lengths moarSegd)
+
 
    in   error "finish me"
 
