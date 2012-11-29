@@ -57,6 +57,9 @@ module Data.Array.Repa.Vector
         , replicate2
         , replicatesSplit
 
+        -- * Appends
+        , appends
+
         -- ** Projections
         , gather
         , gather1
@@ -73,6 +76,7 @@ import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Operators.Bulk
 import Data.Array.Repa.Vector.Operators.Map
 import Data.Array.Repa.Vector.Operators.Zip
+import Data.Array.Repa.Vector.Operators.Append
 import Data.Array.Repa.Vector.Operators.Unzip
 import Data.Array.Repa.Vector.Operators.Project
 import Data.Array.Repa.Vector.Operators.Pack
