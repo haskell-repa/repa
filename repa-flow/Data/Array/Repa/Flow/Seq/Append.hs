@@ -124,7 +124,7 @@ appends segLenA segIdxA elemA
                         !(I# segOff)    <- iread state sSegOff
                         let !segOff'    = segOff +# 1#
                         iwrite state sTakeFrom 0#
-                        iwrite state sNextSwap (segLenB segOff')
+                        iwrite state sNextSwap (segLenA segOff')
                         iwrite state sSegOff   segOff'
                         get1_fromA state push1
 
