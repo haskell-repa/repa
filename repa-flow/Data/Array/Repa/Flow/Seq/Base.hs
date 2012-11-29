@@ -13,7 +13,16 @@ module Data.Array.Repa.Flow.Seq.Base
         , take
         , drain
         , slurp
-        , Touch(..))
+        , Touch(..)
+
+        -- Shorthands
+        , unew
+        , uread
+        , uwrite
+
+        , inew
+        , iread
+        , iwrite)
 where
 import GHC.Exts
 import GHC.Types
@@ -124,33 +133,33 @@ flow !vec
  = Flow start size report get1 get8
  where  
         start
-         = do   refIx   <- UM.unsafeNew 1
-                UM.unsafeWrite refIx 0 0
+         = do   refIx   <- inew 1
+                iwrite refIx 0# 0#
                 return refIx
         {-# INLINE start #-}
 
 
         size refIx
-         = do   let !(I# len)    = U.length vec
-                !(I# ix) <- UM.unsafeRead refIx 0
+         = do   let !(I# len)   = U.length vec
+                !(I# ix)        <- iread refIx 0#
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
 
 
         report refIx
          = do   let !len        = U.length vec
-                !ix             <- UM.unsafeRead refIx 0
+                !ix             <- iread refIx 0#
                 return  $ R.Flow len ix
         {-# NOINLINE report #-}
 
 
         get1 refIx push1
          = do   let !(I# len)    = U.length vec
-                !(I# ix)        <- UM.unsafeRead refIx 0
+                !(I# ix)        <- iread refIx 0#
                 let !remain     =  len -# ix
                 if remain ># 0#
                  then do
-                        UM.unsafeWrite refIx 0 (I# (ix +# 1#))
+                        iwrite refIx 0# (ix +# 1#)
                         let !x  = U.unsafeIndex vec (I# ix)
 
                         -- Touch because we want to be sure its unboxed as
@@ -167,12 +176,12 @@ flow !vec
 
 
         get8 refIx push8
-         = do   let !(I# len)    = U.length vec
-                !(I# ix) <- UM.unsafeRead refIx 0
+         = do   let !(I# len)   = U.length vec
+                !(I# ix)        <- iread refIx 0#
                 let !remain     = len -# ix
                 if remain >=# 8#
                  then do
-                        UM.unsafeWrite refIx 0 (I# (ix +# 8#))
+                        iwrite refIx 0# (ix +# 8#)
 
                         -- TODO: not sure whether we should force these here
                         let here' = return
@@ -274,16 +283,16 @@ slurp   :: Touch a
         -> IO Int
 
 slurp start stop !write get1 get8
- = do   refCount <- UM.unsafeNew 1
-        UM.unsafeWrite refCount 0 (-1)
+ = do   refCount <- inew 1
+        iwrite refCount 0# (-1#)
 
         let
          slurpSome ix
           = do  slurp8 ix
-                I# ix'     <- UM.unsafeRead refCount 0 
+                I# ix'     <- iread refCount 0# 
 
                 slurp1 ix' 
-                I# ix''    <- UM.unsafeRead refCount 0
+                I# ix''    <- iread refCount 0#
 
                 case stop of
                  Just (I# limit)
@@ -300,7 +309,7 @@ slurp start stop !write get1 get8
          slurp1 ix 
           | Just (I# limit) <- stop
           , ix >=# limit
-          =     UM.unsafeWrite refCount 0 (I# ix)
+          =     iwrite refCount 0# ix
 
           |  otherwise
           =  get1 $ \r
@@ -315,17 +324,17 @@ slurp start stop !write get1 get8
                         touch x
 
                         if switch 
-                         then UM.unsafeWrite refCount 0 (I# (ix +# 1#))
+                         then iwrite refCount 0# (ix +# 1#)
                          else slurp1 (ix +# 1#)
 
                 Done
-                 ->     UM.unsafeWrite refCount 0 (I# ix)
+                 ->     iwrite refCount 0# ix
                         
 
          slurp8 ix
           | Just (I# limit)     <- stop
           , ix +# 8# ># limit
-          =     UM.unsafeWrite refCount 0 (I# ix)
+          =     iwrite refCount 0# ix
 
           | otherwise
           =  get8 $ \r
@@ -342,7 +351,7 @@ slurp start stop !write get1 get8
                         slurp8 (ix +# 8#)
 
                 Pull1   
-                 ->     UM.unsafeWrite refCount 0 (I# ix)
+                 ->     iwrite refCount 0# ix
 
         slurpSome start
 {-# INLINE [0] slurp #-}
@@ -373,4 +382,30 @@ instance (Touch a, Touch b) => Touch (a, b) where
   = do  touch x
         touch y
 
+
+-- Shorthands -----------------------------------------------------------------
+unew    = UM.unsafeNew
+uread   = UM.unsafeRead
+uwrite  = UM.unsafeWrite
+
+
+-- | Allocate a vector of ints.
+inew :: Int -> IO (UM.IOVector Int)
+inew  len = UM.unsafeNew len
+{-# INLINE inew #-}
+
+
+-- | Read an unboxed int from a vector.
+iread :: UM.IOVector Int -> Int# -> IO Int
+iread  vec ix
+ = do   !x      <- UM.unsafeRead vec (I# ix)
+        return x
+{-# INLINE iread #-}
+
+
+-- | Write an unboxed into to a vector.
+iwrite :: UM.IOVector Int -> Int# -> Int# -> IO ()
+iwrite vec ix x 
+        = UM.unsafeWrite vec (I# ix) (I# x)
+{-# INLINE iwrite #-}
 

@@ -99,8 +99,8 @@ hsplit_l segd points lines
                         $ R.zip lines_else fars
 
         -- Recursive call
---        !(moarSegd, moarPoints)
---                = hsplit_l downSegd downPoints downLines
+        !(moarSegd, moarPoints)
+                = hsplit_l downSegd downPoints downLines
 
    in   error "finish me"
 

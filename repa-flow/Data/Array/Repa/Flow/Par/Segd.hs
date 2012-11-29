@@ -43,6 +43,7 @@ empty   = Segd
         , indices       = U.empty }
 {-# INLINE [1] empty #-}
 
+
 -- | Construct a segment descriptor from a lengths vector.
 --
 --   TODO: computation of indices doesn't run in parallel.

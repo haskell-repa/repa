@@ -72,7 +72,6 @@ instance Unflow BB where
   $ do  
         let !len        = distroBalancedLength distro
         let !getStart   = distroBalancedFragStart distro
-        let !getLength  = distroBalancedFragLength distro
 
         -- Allocate a mutable vector to hold the final results.
         !mvec           <- UM.unsafeNew $ I# len
@@ -86,7 +85,6 @@ instance Unflow BB where
                   -- The starting point for this threads results into 
                   -- the final vector.
                   let !ixStart    = getStart tid
-                  let !fragLen    = getLength tid
 
                   -- The 'slurp' function below calls on this to write
                   -- results into the destination vector.
