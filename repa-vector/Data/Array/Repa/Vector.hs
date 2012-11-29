@@ -1,8 +1,10 @@
 
 module Data.Array.Repa.Vector
-        ( Array
-        , Vector
+        ( module Data.Array.Repa.Vector.Shape
+        , module Data.Array.Repa.Vector.Index
 
+        , Array
+        , Vector
 
         -- * Delayed Representations
         -- ** Bulk Delayed arrays
@@ -20,6 +22,7 @@ module Data.Array.Repa.Vector
         -- ** Unboxed Arrays
         , U
         , fromUnboxed
+        , fromListUnboxed
         , toUnboxed
 
         -- * Array Operators
@@ -61,6 +64,8 @@ module Data.Array.Repa.Vector
         -- * Flattens
         , flatten2)
 where
+import Data.Array.Repa.Vector.Shape
+import Data.Array.Repa.Vector.Index
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Delayed
 import Data.Array.Repa.Vector.Repr.Unboxed

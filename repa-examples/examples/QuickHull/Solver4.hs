@@ -86,7 +86,9 @@ hsplit_l segd points lines
                         $ computeP $ R.replicate (ix1 (R.length counts_else)) 2
 
         !downSegd       = Segd.fromLengths
-                        $ computeP $ replicate2 counts_else
+                        $ computeP 
+                        $ R.flatten2
+                        $ R.map (\c -> (c, c)) counts_else
 
         !segdAbove      = Segd.fromLengths counts_else
 

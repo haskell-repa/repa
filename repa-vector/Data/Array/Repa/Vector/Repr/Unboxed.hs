@@ -4,6 +4,7 @@ module Data.Array.Repa.Vector.Repr.Unboxed
 
           -- * Conversions
         , fromUnboxed
+        , fromListUnboxed
         , toUnboxed)
 where
 import Data.Array.Repa.Vector.Base
@@ -24,6 +25,10 @@ data U
 data instance Array U sh a
         = AUnboxed !sh !(U.Vector a)
 
+deriving instance (U.Unbox a, Show sh, Show a) => Show (Array U sh a)
+deriving instance (U.Unbox a, Read sh, Read a) => Read (Array U sh a)
+ 
+
 
 instance (Elt a, U.Unbox a) => Bulk U a where
  linearIndex (AUnboxed _ vec) ix
@@ -39,18 +44,28 @@ instance (Elt a, U.Unbox a) => Bulk U a where
 -- | O(1). Wrap an unboxed vector as an array.
 --   If the result is indexed outside its nominal range then `error`.
 fromUnboxed
-        :: (Shape sh, U.Unbox e)
-        => sh -> U.Vector e -> Array U sh e
+        :: (Shape sh, U.Unbox a)
+        => sh -> U.Vector a -> Array U sh a
 
 fromUnboxed sh vec
         = AUnboxed sh vec
 {-# INLINE [4] fromUnboxed #-}
 
 
+-- | O(n). Convert a list to an unboxed array.
+fromListUnboxed
+        :: (Shape sh, U.Unbox a)
+        => sh -> [a] -> Array U sh a
+
+fromListUnboxed sh list
+        = AUnboxed sh (U.fromList list)
+{-# INLINE [4] fromListUnboxed #-}
+
+
 -- | O(1). Unpack an unboxed vector from an array.
 toUnboxed
-        :: U.Unbox e
-        => Array U sh e -> U.Vector e
+        :: U.Unbox a
+        => Array U sh a -> U.Vector a
 toUnboxed (AUnboxed _ vec)
         = vec
 {-# INLINE [4] toUnboxed #-}
