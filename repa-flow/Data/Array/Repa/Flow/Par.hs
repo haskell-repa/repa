@@ -14,6 +14,7 @@ module Data.Array.Repa.Flow.Par
         , replicatesUnboxed
         , replicatesSplit
         , enumFromN
+        , appends
 
         -- * Mapping
         , map
@@ -37,6 +38,7 @@ where
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Map
 import Data.Array.Repa.Flow.Par.Generate
+import Data.Array.Repa.Flow.Par.Append
 import Data.Array.Repa.Flow.Par.Pack
 import Data.Array.Repa.Flow.Par.Project
 import Data.Array.Repa.Flow.Par.Fold
