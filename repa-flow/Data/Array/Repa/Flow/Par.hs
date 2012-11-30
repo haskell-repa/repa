@@ -11,7 +11,6 @@ module Data.Array.Repa.Flow.Par
         , generate
         , replicate
         , replicates
-        , replicatesUnboxed
         , replicatesSplit
         , enumFromN
         , appends

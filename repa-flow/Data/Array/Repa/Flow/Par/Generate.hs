@@ -3,7 +3,6 @@ module Data.Array.Repa.Flow.Par.Generate
         ( generate
         , replicate
         , replicates
-        , replicatesUnboxed
         , replicatesSplit
         , enumFromN)
 where
@@ -61,20 +60,6 @@ replicates
 replicates gang segd getSegVal
  = replicatesSplit (Segd.splitSegd gang segd) getSegVal
 {-# INLINE [2] replicates #-}
-
-
--- | Segmented replicate, taking an unboxed vector of elemements.
-replicatesUnboxed
-        :: U.Unbox a 
-        => Gang
-        -> Segd
-        -> U.Vector a
-        -> Flow rep BB a
-
-replicatesUnboxed gang segd vec
- = replicates gang segd get
- where  get ix  = U.unsafeIndex vec (I# ix)
-{-# INLINE replicatesUnboxed #-}
 
 
 -- | Segmented replicate, where we have a function that produces the value
