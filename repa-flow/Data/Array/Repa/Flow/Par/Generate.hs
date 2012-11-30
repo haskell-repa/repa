@@ -7,12 +7,12 @@ module Data.Array.Repa.Flow.Par.Generate
         , replicatesSplit
         , enumFromN)
 where
+import Data.Array.Repa.Bulk.Gang
 import Data.Array.Repa.Flow.Par.Base
 import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq.Generate      as Seq
-import qualified Data.Array.Repa.Eval.Gang              as Gang
 import qualified Data.Vector                            as V
 import qualified Data.Vector.Unboxed                    as U
 import GHC.Exts
@@ -21,12 +21,12 @@ import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Int# -> (Int# -> a) -> Flow rep BB a
-generate len get
- = Flow distro start frag
+generate :: Gang -> Int# -> (Int# -> a) -> Flow rep BB a
+generate gang len get
+ = Flow gang distro start frag
  where
-        !(I# threads)    = Gang.gangSize Gang.theGang
-        !distro          = balanced threads len
+        !threads        = gangSize gang
+        !distro         = balanced threads len
 
         start
          = return ()
@@ -43,12 +43,9 @@ generate len get
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: forall a rep. Int# -> a -> Flow rep BB a
-replicate n x
-        = generate n get
-        where   get :: Int# -> a
-                get _ = x
-                {-# INLINE get #-}
+replicate :: Gang -> Int# -> a -> Flow rep BB a
+replicate gang n x
+        = generate gang n (\_ -> x)
 {-# INLINE [2] replicate #-}
 
 
@@ -56,24 +53,26 @@ replicate n x
 -- | Segmented replicate, where we have a function that produces the value
 --   to use for each segment.
 replicates
-        :: Segd
+        :: Gang
+        -> Segd
         -> (Int# -> a)
         -> Flow rep BB a
 
-replicates segd getSegVal
- = replicatesSplit (Segd.splitSegd segd) getSegVal
+replicates gang segd getSegVal
+ = replicatesSplit (Segd.splitSegd gang segd) getSegVal
 {-# INLINE [2] replicates #-}
 
 
 -- | Segmented replicate, taking an unboxed vector of elemements.
 replicatesUnboxed
         :: U.Unbox a 
-        => Segd
+        => Gang
+        -> Segd
         -> U.Vector a
         -> Flow rep BB a
 
-replicatesUnboxed segd vec
- = replicates segd get
+replicatesUnboxed gang segd vec
+ = replicates gang segd get
  where  get ix  = U.unsafeIndex vec (I# ix)
 {-# INLINE replicatesUnboxed #-}
 
@@ -88,12 +87,12 @@ replicatesSplit
         -> Flow rep BB a
 
 replicatesSplit segd getSegVal
- = Flow distro start frag
+ = Flow gang distro start frag
  where
-        !distro = Segd.distroOfSplitSegd segd
-        
-        start
-         = return ()
+        !gang           = Segd.splitGang segd
+        !distro         = Segd.distroOfSplitSegd segd
+
+        start           = return ()
 
         frag _ n  
          = let  chunk            = V.unsafeIndex (Segd.splitChunk segd) (I# n)
@@ -111,14 +110,15 @@ replicatesSplit segd getSegVal
 -------------------------------------------------------------------------------
 -- | Yield a vector containing values @x@, @x+1@ etc.
 enumFromN 
-        :: Int#                 -- ^ Starting value.
+        :: Gang
+        -> Int#                 -- ^ Starting value.
         -> Int#                 -- ^ Length of result.
         -> Flow rep BB Int
 
-enumFromN first len
- = Flow distro start frag
+enumFromN gang first len
+ = Flow gang distro start frag
  where
-        !(I# threads)   = Gang.gangSize Gang.theGang
+        !threads        = gangSize gang
         !distro         = balanced threads len
 
         start

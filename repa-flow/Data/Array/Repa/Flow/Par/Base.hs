@@ -5,6 +5,7 @@ module Data.Array.Repa.Flow.Par.Base
         , flow
         , Unflow (..))
 where
+import Data.Array.Repa.Bulk.Gang
 import Data.Array.Repa.Flow.Par.Distro
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
@@ -12,16 +13,18 @@ import qualified Data.Vector.Mutable            as VM
 import qualified Data.Vector                    as V
 import qualified Data.Array.Repa.Flow.Seq       as Seq
 import qualified Data.Array.Repa.Flow.Seq.Base  as Seq
-import qualified Data.Array.Repa.Eval.Gang      as Gang
 import System.IO.Unsafe
 import GHC.Exts
 
 
 data Flow rep bal a
         = forall state. Flow
-        { -- | Flow distribution, keeps track of how well-balanced
+        { -- | The Gang that the flow is attached to.
+          flowGang      :: Gang
+
+          -- | Flow distribution, keeps track of how well-balanced
           --   our workload is between the threads.
-          flowDistro    :: Distro bal
+        , flowDistro    :: Distro bal
 
           -- | Start the flow.
           --   This returns a state value that needs to be passed to get
@@ -36,9 +39,9 @@ data Flow rep bal a
 -- | Convert an unboxed vector
 --   to a delayed, balanced, parallel flow.
 flow    :: (Seq.Touch a, U.Unbox a) 
-        => U.Vector a -> Flow Seq.FD BB a
-flow !vec
- = let  !(I# frags)     = Gang.gangSize Gang.theGang
+        => Gang -> U.Vector a -> Flow Seq.FD BB a
+flow !gang !vec
+ = let  !frags          = gangSize gang
         !(I# len)       = U.length vec
 
         !distro         = balanced frags len
@@ -53,7 +56,8 @@ flow !vec
                         vec
         {-# INLINE frag #-}
 
-   in   Flow    { flowDistro    = balanced frags len 
+   in   Flow    { flowGang      = gang
+                , flowDistro    = balanced frags len 
                 , flowStart     = return ()
                 , flowFrag      = frag }
 {-# INLINE [1] flow #-}
@@ -61,13 +65,14 @@ flow !vec
 
 -------------------------------------------------------------------------------
 class Unflow bal where
- unflow :: (Seq.Touch a, U.Unbox a) => Flow Seq.FD bal a -> U.Vector a
+ unflow :: (Seq.Touch a, U.Unbox a) 
+        => Flow Seq.FD bal a -> U.Vector a
 
 
 -- | Unflowing a balanced computation allows results to be written directly
 --   to the final vector without intermediate copying.
 instance Unflow BB where
- unflow !(Flow distro startPar frag)
+ unflow !(Flow gang distro startPar frag)
   = unsafePerformIO
   $ do  
         let !len        = distroBalancedLength distro
@@ -80,7 +85,7 @@ instance Unflow BB where
         !statePar       <- startPar
 
         -- The action that runs on each thread.
-        let action (I# tid)
+        let action tid
              = do 
                   -- The starting point for this threads results into 
                   -- the final vector.
@@ -99,7 +104,7 @@ instance Unflow BB where
                           return ()
 
         -- Run the actions to write results into the target vector.
-        Gang.gangIO Gang.theGang action
+        gangIO gang action
 
         U.unsafeFreeze mvec
  {-# INLINE [1] unflow #-}
@@ -108,7 +113,7 @@ instance Unflow BB where
 -- | Unflowing an unbalanced computation requires intermediate copying
 --   to gather the intermediate results.
 instance Unflow BN where
- unflow !(Flow distro start frag)
+ unflow !(Flow gang distro start frag)
   = unsafePerformIO
   $ do  
         let !frags      = distroUnbalancedFrags distro
@@ -121,13 +126,13 @@ instance Unflow BN where
         !state          <- start
 
         -- The action that runs on each thread.
-        let action (I# tid)
+        let action tid
              = do uvec  <- Seq.drain (frag state tid)
                   VM.unsafeWrite mchunks (I# tid) uvec
                   return ()
 
         -- Run the actions to compute each chunk.
-        Gang.gangIO Gang.theGang action
+        gangIO gang action
 
         -- TODO: rubbish concat needs to die
         --       to a scan to work out target index 

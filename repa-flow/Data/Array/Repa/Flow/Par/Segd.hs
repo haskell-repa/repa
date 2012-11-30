@@ -13,7 +13,7 @@ module Data.Array.Repa.Flow.Par.Segd
 where
 import Data.Array.Repa.Flow.Par.SegdSplit
 import Data.Array.Repa.Flow.Par.Distro
-import Data.Array.Repa.Eval.Gang                  as Gang
+import Data.Array.Repa.Bulk.Gang
 import qualified Data.Vector                      as V
 import qualified Data.Vector.Unboxed              as U
 import GHC.Exts
@@ -63,13 +63,16 @@ fromLengths lens
 --   that helps segmented operators distribute the work between several threads.
 data SplitSegd
         = SplitSegd
-        { -- | The original, unsplit segment descriptor.
-          splitOriginal :: !Segd
+        { -- | Segment descriptor is split across this gang.
+          splitGang     :: Gang
+
+          -- | The original, unsplit segment descriptor.
+        , splitOriginal :: !Segd
 
          -- | Total number of elements described by the Segd.
         , splitElems    :: Int#
 
-        -- | Number of chunks this Segd is split into.
+         -- | Number of chunks this Segd is split into.
         , splitChunks   :: Int#
 
           -- | Vector of Segd chunks.
@@ -95,16 +98,17 @@ data Chunk
 
 -- | Split a `Segd` into chunks, 
 --   trying to assign the same number of elements to each chunk.
-splitSegd :: Segd -> SplitSegd 
-splitSegd segd
+splitSegd :: Gang -> Segd -> SplitSegd 
+splitSegd !gang segd
  = SplitSegd 
+        gang
         segd
         (elements segd)
         chunks
         (V.map makeChunk $ V.enumFromN 0 (I# chunks))
  where  
-        !(I# chunks)
-         = Gang.gangSize $ Gang.theGang
+        !chunks
+         = gangSize gang
 
         makeChunk ix     
          = let  !(lens, I# count, I# first, I# offset) 
@@ -125,7 +129,7 @@ splitSegd segd
 -- | Take the `Distro` of a `SplitSegd`.
 --   This tells us how the array elements should be distributed on the gang.
 distroOfSplitSegd :: SplitSegd -> Distro BB
-distroOfSplitSegd (SplitSegd (Segd _ _ ixs) nElems nChunks chunks)
+distroOfSplitSegd (SplitSegd _ (Segd _ _ ixs) nElems nChunks chunks)
         = DistroBalanced 
         { distroBalancedFrags      = nChunks
         , distroBalancedLength     = nElems

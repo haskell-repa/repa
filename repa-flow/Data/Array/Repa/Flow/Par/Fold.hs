@@ -34,7 +34,7 @@ folds   :: U.Unbox a
         -> Flow rep BN a
 
 folds f z segd ff
-        = foldsSplit f z (Segd.splitSegd segd) ff
+        = foldsSplit f z (Segd.splitSegd (flowGang ff) segd) ff
 {-# INLINE folds #-}
 
 
@@ -48,8 +48,8 @@ foldsSplit
         -> Flow rep BB a
         -> Flow rep BN a
 
-foldsSplit f !z segd (Flow distro start frag)
- = Flow distro' start' frag'
+foldsSplit f !z segd (Flow gang distro start frag)
+ = Flow gang distro' start' frag'
  where
         !frags          = distroBalancedFrags distro
 
@@ -62,7 +62,6 @@ foldsSplit f !z segd (Flow distro start frag)
         
         !chunks         = Segd.splitChunks segd
 
-
         start'
          = do   -- Initialise the source state.
                 state1  <- start
@@ -70,7 +69,6 @@ foldsSplit f !z segd (Flow distro start frag)
                 -- Create MVars so that neighbouring threads can communicate
                 !mvars  <- V.replicateM (I# chunks) newEmptyMVar
                 return  (state1, mvars)
-
 
 
         frag' (state1, mvars) n

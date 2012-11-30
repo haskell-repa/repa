@@ -21,7 +21,7 @@ Library
         base            == 4.6.*,
         ghc-prim        == 0.3.*,
         vector          == 0.10.*,
-        repa            == 3.2.*
+        repa-bulk       == 4.0.*
 
   ghc-options:
         -Wall 

@@ -13,8 +13,8 @@ gather  :: (Int# -> a)
         -> Flow rep bal Int 
         -> Flow rep bal a
 
-gather !get (Flow distro start frag)
- = Flow distro start frag'
+gather !get (Flow gang distro start frag)
+ = Flow gang distro start frag'
  where  frag' state n 
          = Seq.gather get (frag state n)
 {-# INLINE [2] gather #-}

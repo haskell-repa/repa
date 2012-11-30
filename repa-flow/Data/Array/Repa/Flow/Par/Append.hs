@@ -21,10 +21,10 @@ appends :: SplitSegd    -- ^ Segment descriptor of the result.
         -> Flow mode BB a
 
 appends segdr segdA getElemA segdB getElemB 
- = Flow distro start frag
+ = Flow gang distro start frag
  where
-        !distro  
-         = Segd.distroOfSplitSegd segdr
+        !gang    = Segd.splitGang segdr
+        !distro  = Segd.distroOfSplitSegd segdr
 
         start 
          = return ()

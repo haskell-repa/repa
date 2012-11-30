@@ -15,8 +15,8 @@ import GHC.Exts
 
 -- | Apply a function to every element of a flow.
 map :: (a -> b) -> Flow rep bal a -> Flow rep bal b
-map f (Flow distro start frag)
- = Flow distro start frag'
+map f (Flow gang distro start frag)
+ = Flow gang distro start frag'
  where  frag' state ix 
          = Seq.map f (frag state ix)
 {-# INLINE [2] map #-}
@@ -24,8 +24,8 @@ map f (Flow distro start frag)
 
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
 zip :: Flow rep BB a -> Flow rep BB b -> Flow rep BB (a, b)
-zip (Flow distro1 start1 frag1) (Flow _ start2 frag2)
- = Flow distro1 start' frag'
+zip (Flow gang1 distro1 start1 frag1) (Flow _ _ start2 frag2)
+ = Flow gang1 distro1 start' frag'
  where  
         start'
          = do   state1  <- start1
@@ -46,8 +46,8 @@ zipWith f flowA flowB
 
 -- | Pair elements of a flow with elements gained from some function.
 zipLeft :: Flow rep BB a -> (Int# -> b) -> Flow rep BB (a, b)
-zipLeft (Flow distro start frag) getB
- = Flow distro start frag'
+zipLeft (Flow gang distro start frag) getB
+ = Flow gang distro start frag'
  where  frag' state n
          = let  !start'  = distroBalancedFragStart distro n
                 getB' ix = getB (ix +# start')
