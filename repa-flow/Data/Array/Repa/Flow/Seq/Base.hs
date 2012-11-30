@@ -132,7 +132,7 @@ sizeMin !s1 !s2
 flow    :: Elt a 
         => (Int# -> a)  -- ^ Function to get the element at the given index.
         -> Int#         -- ^ Total number of elements.
-        -> Flow r a
+        -> Flow mode a
 
 flow !load !len
  = Flow start size report get1 get8
@@ -208,14 +208,17 @@ flow !load !len
 -------------------------------------------------------------------------------
 -- | Fully evaluate a delayed flow, producing an unboxed vector.
 --
-unflow :: (Elt a, U.Unbox a) => Flow FD a -> U.Vector a  -- TODO: genericise
+unflow :: (Elt a, U.Unbox a) 
+        => Flow FD a -> U.Vector a
 unflow ff = unsafePerformIO $ drain ff
 {-# INLINE [1] unflow #-}
 
 
 -- | Fully evaluate a possibly stateful flow,
 --   pulling all the remaining elements.
-drain :: (Elt a, U.Unbox a) => Flow r a -> IO (U.Vector a)    -- TODO: genericise
+drain   :: (Elt a, U.Unbox a) 
+        => Flow mode a 
+        -> IO (U.Vector a)
 drain !ff
  = case ff of
     Flow fStart fSize _ fGet1 fGet8
@@ -255,7 +258,7 @@ unflowWith !len get1 get8
 --   the flow are evaluated.
 --
 take    :: (Elt a, U.Unbox a) 
-        => Int# -> Flow r a -> IO (U.Vector a, Flow FS a)
+        => Int# -> Flow mode a -> IO (U.Vector a, Flow FS a)
 
 take limit (Flow start size report get1 get8)
  = do   state    <- start
@@ -356,7 +359,6 @@ slurp start stop !write get1 get8
 
         slurpSome start
 {-# INLINE [0] slurp #-}
-
 
 
 -- Shorthands -----------------------------------------------------------------

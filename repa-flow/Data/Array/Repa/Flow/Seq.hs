@@ -16,7 +16,6 @@ module Data.Array.Repa.Flow.Seq
         -- * Construction
         , generate
         , replicate
-        , replicatesUnboxed
         , replicatesDirect
         , enumFromN
         , appends
@@ -30,8 +29,8 @@ module Data.Array.Repa.Flow.Seq
         , gather
 
         -- * Pack
-        , pack
         , packByTag
+        , packByFlag
         , filter
 
         -- * Combine

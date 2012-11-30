@@ -65,9 +65,9 @@ flow !gang !load !len
         
 
 -------------------------------------------------------------------------------
-class Unflow bal where
+class Unflow dist where
  unflow :: (Elt a, U.Unbox a) 
-        => Flow Seq.FD bal a -> U.Vector a
+        => Flow Seq.FD dist a -> U.Vector a
 
 
 -- | Unflowing a balanced computation allows results to be written directly

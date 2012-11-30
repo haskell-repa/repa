@@ -16,10 +16,10 @@ import GHC.Exts
 -- @
 --
 combine2 
-        :: Flow mode1 Bool      -- ^ Flags vector.
-        -> Flow mode2 a         -- ^ Elements of @A@ vector.
-        -> Flow mode3 a         -- ^ Elements of @B@ vector.
-        -> Flow mode4 a
+        :: Flow mode Bool      -- ^ Flags vector.
+        -> Flow mode a         -- ^ Elements of @A@ vector.
+        -> Flow mode a         -- ^ Elements of @B@ vector.
+        -> Flow mode a
 
 combine2 (Flow startF sizeF reportF getF1 _)
          (Flow startA sizeA reportA getA1 _)
@@ -96,12 +96,12 @@ combine2 (Flow startF sizeF reportF getF1 _)
 --   elements from the first stream...
 --
 combines2
-        :: Flow mode1 Bool      -- ^ Flags.
-        -> Flow mode2 Int       -- ^ Segment lengths of @A@ vector.
-        -> Flow mode3 a         -- ^ Elements of @A@ vector.
-        -> Flow mode4 Int       -- ^ Segment lengths of @B@ vector.
-        -> Flow mode5 a         -- ^ Elements of @B@ vector.
-        -> Flow mode6 a
+        :: Flow mode Bool      -- ^ Flags.
+        -> Flow mode Int       -- ^ Segment lengths of @A@ vector.
+        -> Flow mode a         -- ^ Elements of @A@ vector.
+        -> Flow mode Int       -- ^ Segment lengths of @B@ vector.
+        -> Flow mode a         -- ^ Elements of @B@ vector.
+        -> Flow mode a
 
 combines2 (Flow startF     sizeF     reportF     getF1     _)
           (Flow startLenA  sizeLenA  reportLenA  getLenA1  _)

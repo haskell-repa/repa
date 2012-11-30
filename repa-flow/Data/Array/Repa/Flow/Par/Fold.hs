@@ -19,19 +19,17 @@ import Prelude hiding (foldl)
 
 
 -------------------------------------------------------------------------------
--- | Fold Segmented.
---
---   Takes a flow of segment lengths and a flow of elements,
+-- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
---
+---
 --   TODO: make distroOfSplitSegd handle unbalanced SplitSegds and remove
 --   the requirement that the source blow is balanced.
 --
 folds   :: U.Unbox a
         => (a -> a -> a) -> a
         -> Segd
-        -> Flow rep BB a
-        -> Flow rep BN a
+        -> Flow mode BB a
+        -> Flow mode BN a
 
 folds f z segd ff
         = foldsSplit f z (Segd.splitSegd (flowGang ff) segd) ff
@@ -39,14 +37,14 @@ folds f z segd ff
 
 
 -------------------------------------------------------------------------------
--- | Fold Segmented, with a pre-split segment descriptor.
+-- | Segmented fold, with a pre-split segment descriptor.
 --
 foldsSplit 
         :: U.Unbox a
         => (a -> a -> a) -> a
         -> SplitSegd
-        -> Flow rep BB a
-        -> Flow rep BN a
+        -> Flow mode BB a
+        -> Flow mode BN a
 
 foldsSplit f !z segd (Flow gang distro start frag)
  = Flow gang distro' start' frag'
@@ -133,13 +131,13 @@ foldsSplit f !z segd (Flow gang distro start frag)
 foldsTradeSeq   
         :: U.Unbox a
         => (a -> a -> a) -> a 
-        -> Int#                   -- ^ Total number of segments to fold here.
-                                  --   This is one more than the maxium segment index.
-        -> Seq.Flow r1 (Int, Int) -- ^ Flow of segment indices and their lengths.
-        -> Seq.Flow r2 a          -- ^ Flow of input data.
-        -> Maybe (MVar a)         -- ^ Write result of first segment to this MVar.
-        -> Maybe (MVar a)         -- ^ Combine result of last segment with this MVar.
-        -> Seq.Flow r2 a          -- ^ Flow of fold results.
+        -> Int#                     -- ^ Total number of segments to fold here.
+                                    --   This is one more than the maxium segment index.
+        -> Seq.Flow mode (Int, Int) -- ^ Flow of segment indices and their lengths.
+        -> Seq.Flow mode a          -- ^ Flow of input data.
+        -> Maybe (MVar a)           -- ^ Write result of first segment to this MVar.
+        -> Maybe (MVar a)           -- ^ Combine result of last segment with this MVar.
+        -> Seq.Flow mode a          -- ^ Flow of fold results.
 
 foldsTradeSeq 
         f !z 
@@ -289,9 +287,13 @@ foldsTradeSeq
 {-# INLINE [1] foldsTradeSeq #-}
 
 
--- | Sum Segmented. Takes a flow of segment lenghths and a flow of elements,
+-- | Segmented Sum. Takes a flow of segment lenghths and a flow of elements,
 --   and sums the elements of each segment individually.
-sums :: (U.Unbox a, Num a) => Segd -> Flow r BB a -> Flow r BN a
+sums    :: (U.Unbox a, Num a) 
+        => Segd 
+        -> Flow mode BB a 
+        -> Flow mode BN a
+
 sums segd ffElems
         = folds (+) 0 segd ffElems
 {-# INLINE [1] sums #-}

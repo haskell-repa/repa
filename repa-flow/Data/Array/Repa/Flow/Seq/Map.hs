@@ -12,7 +12,7 @@ import GHC.Exts
 
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
-map :: (a -> b) -> Flow r a -> Flow r b
+map :: (a -> b) -> Flow mode a -> Flow mode b
 map f (Flow start size report get1 get8)
  = Flow start size report' get1' get8'
  where  
@@ -43,7 +43,7 @@ map f (Flow start size report get1 get8)
 
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
-zip :: Flow r a -> Flow r b -> Flow r (a, b)            -- TODO: compute upper bound
+zip :: Flow mode a -> Flow mode b -> Flow mode (a, b)
 zip    (Flow !startA !sizeA reportA getA1 _)
        (Flow !startB !sizeB reportB getB1 _)
  = Flow start' size' report' get1' get8'
@@ -86,7 +86,10 @@ zip    (Flow !startA !sizeA reportA getA1 _)
 
 -------------------------------------------------------------------------------
 -- | Combine two flows with a function, pulling one element at a time.
-zipWith :: (a -> b -> c) -> Flow r a -> Flow r b -> Flow r c    -- TODO: compute upper bound
+zipWith :: (a -> b -> c) 
+        -> Flow mode a -> Flow mode b 
+        -> Flow mode c
+
 zipWith f flowA flowB
         = map (uncurry f) $ zip flowA flowB
 {-# INLINE [1] zipWith #-}
@@ -99,7 +102,10 @@ zipWith f flowA flowB
 --   an arbitary number of elements per step means we can pull up to 
 --   8 elements at a time from the resulting flow.
 --
-zipLeft :: Flow r a -> (Int# -> b) -> Flow r (a, b)
+zipLeft :: Flow mode a 
+        -> (Int# -> b) 
+        -> Flow mode (a, b)
+
 zipLeft (Flow startA sizeA reportA getA1 getA8) getB
  = Flow start' size' report' get1' get8'
  where  
@@ -150,7 +156,12 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
 
 -------------------------------------------------------------------------------
 -- | Combine a flow and elements gained from some function.
-zipLeftWith :: (a -> b -> c) -> Flow r a -> (Int# -> b) -> Flow r c
+zipLeftWith 
+        :: (a -> b -> c) 
+        -> Flow mode a 
+        -> (Int# -> b) 
+        -> Flow mode c
+
 zipLeftWith f flowA getB
         = map (uncurry f) $ zipLeft flowA getB
 {-# INLINE [1] zipLeftWith #-}

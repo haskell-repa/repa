@@ -52,13 +52,13 @@ foldl f z !(Flow start _ _ get1 get8)
 
 
 -------------------------------------------------------------------------------
--- | Fold Segmented. Takes a flow of segment lengths and a flow of elements,
+-- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
 folds   :: U.Unbox a 
         => (a -> b -> a) -> a 
-        -> Flow r Int 
-        -> Flow r b 
-        -> Flow r a                     -- TODO: do upper bound
+        -> Flow mode Int 
+        -> Flow mode b 
+        -> Flow mode a                     
 
 folds f !z (Flow startA  sizeA reportA getLen1  _) 
            (Flow startB _sizeB reportB getElem1 getElem8)
@@ -150,9 +150,9 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
 {-# INLINE [1] folds #-}
 
 
--- | Sum Segmented. Takes a flow of segment lenghths and a flow of elements,
+-- | Segmented sum. Takes a flow of segment lenghths and a flow of elements,
 --   and sums the elements of each segment individually.
-sums :: (U.Unbox a, Num a) => Flow r Int -> Flow r a -> Flow r a        -- TODO: do upper bound
+sums :: (U.Unbox a, Num a) => Flow mode Int -> Flow mode a -> Flow mode a 
 sums ffLens ffElems
         = folds (+) 0 ffLens ffElems
 {-# INLINE [1] sums #-}

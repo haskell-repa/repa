@@ -10,8 +10,8 @@ import GHC.Exts
 -- | Takes a vector and a flow of indices, and produces a flow of elements
 --   corresponding to each index.
 gather  :: (Int# -> a)
-        -> Flow rep bal Int 
-        -> Flow rep bal a
+        -> Flow mode dist Int 
+        -> Flow mode dist a
 
 gather !get (Flow gang distro start frag)
  = Flow gang distro start frag'

@@ -1,6 +1,7 @@
+
 module Data.Array.Repa.Flow.Seq.Pack
         ( packByTag
-        , pack
+        , packByFlag
         , filter)
 where
 import Data.Array.Repa.Flow.Seq.Base
@@ -13,10 +14,10 @@ import GHC.Exts
 
 
 -------------------------------------------------------------------------------
--- | Produce only the elements that have their corresponding flag set to `True`.
+-- | Produce only the elements that have their corresponding flag set to `1`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packByTag :: U.Unbox a => Flow r (Int, a) -> Flow r a
+packByTag :: U.Unbox a => Flow mode (Int, a) -> Flow mode a
 packByTag (Flow start size report get1 get8)
  = Flow start' size' report' get1' get8'
  where
@@ -126,15 +127,16 @@ packByTag (Flow start size report get1 get8)
 {-# INLINE [1] packByTag #-}
 
 -------------------------------------------------------------------------------
--- | Produce only those elements that have their corresponding flag set.
-pack :: U.Unbox a => Flow r (Bool, a) -> Flow r a
-pack ff
+-- | Produce only those elements that have their corresponding
+--   flag set to `True`
+packByFlag :: U.Unbox a => Flow mode (Bool, a) -> Flow mode a
+packByFlag ff
         = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
-{-# INLINE [1] pack #-}
+{-# INLINE [1] packByFlag #-}
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter :: U.Unbox a => (a -> Bool) -> Flow r a -> Flow r a
+filter :: U.Unbox a => (a -> Bool) -> Flow mode a -> Flow mode a
 filter f ff
-        = pack $ map (\x -> (f x, x)) ff
+        = packByFlag $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}

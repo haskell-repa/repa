@@ -9,7 +9,7 @@ import GHC.Exts
 
 -- | Takes a function to get elements and a flow of indices, 
 --   and produces a flow of elements corresponding to each index.
-gather :: (Int# -> a) -> Flow r Int -> Flow r a
+gather :: (Int# -> a) -> Flow mode Int -> Flow mode a
 gather !get (Flow start size report get1 get8)
  = Flow start size report' get1' get8'
  where

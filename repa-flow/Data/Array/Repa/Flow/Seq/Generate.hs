@@ -2,20 +2,18 @@
 module Data.Array.Repa.Flow.Seq.Generate
         ( generate
         , replicate
-        , replicatesUnboxed
         , replicatesDirect
         , enumFromN)
 where
 import Data.Array.Repa.Flow.Seq.Base
 import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
-import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Int# -> (Int# -> a) -> Flow r a
+generate :: Int# -> (Int# -> a) -> Flow mode a
 generate len f
  = Flow start size report get1 get8
  where  
@@ -72,36 +70,13 @@ generate len f
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: forall a r. Int# -> a -> Flow r a
+replicate :: Int# -> a -> Flow mode a
 replicate n x
-        = generate n get
-        where   get :: Int# -> a
-                get _ = x
-                {-# INLINE get #-}
+        = generate n (\_ -> x)
 {-# INLINE [1] replicate #-}
 
 
 -------------------------------------------------------------------------------
--- | Segmented replicate,
---   reading segment lengths and elements from unboxed vectors.
-replicatesUnboxed
-        :: U.Unbox a
-        => Int#
-        -> U.Vector Int
-        -> U.Vector a
-        -> Flow r a
-
-replicatesUnboxed resultLen segLen segValue
- = let  getSegLen ix
-         = case U.unsafeIndex segLen (I# ix) of
-                I# i    -> i
-
-        getSegValue ix
-         = U.unsafeIndex segValue (I# ix)
-
-   in   replicatesDirect resultLen getSegLen getSegValue
-
-
 -- | Segmented replicate,
 --   where we have functions that produce segment lengths and elements
 --   directly.
@@ -113,7 +88,7 @@ replicatesDirect
         :: Int#                 -- Total length of result.
         -> (Int# -> Int#)       -- SegmentId -> Segment Length.
         -> (Int# -> a)          -- SegmentId -> Value to emit for this segment.
-        -> Flow r a
+        -> Flow mode a
 
 replicatesDirect resultLen getSegLen getValue
  = Flow start size report get1 get8
@@ -213,7 +188,7 @@ replicatesDirect resultLen getSegLen getValue
 enumFromN 
         :: Int#         -- ^ Starting value.
         -> Int#         -- ^ Result length.
-        -> Flow r Int
+        -> Flow mode Int
 
 enumFromN first len
  = Flow start size report get1 get8

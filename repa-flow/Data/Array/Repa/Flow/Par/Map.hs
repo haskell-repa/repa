@@ -14,7 +14,9 @@ import GHC.Exts
 
 
 -- | Apply a function to every element of a flow.
-map :: (a -> b) -> Flow rep bal a -> Flow rep bal b
+map     :: (a -> b) 
+        -> Flow mode dist a -> Flow mode dist b
+
 map f (Flow gang distro start frag)
  = Flow gang distro start frag'
  where  frag' state ix 
@@ -23,7 +25,9 @@ map f (Flow gang distro start frag)
 
 
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
-zip :: Flow rep BB a -> Flow rep BB b -> Flow rep BB (a, b)
+zip     :: Flow mode BB a -> Flow mode BB b 
+        -> Flow mode BB (a, b)
+
 zip (Flow gang1 distro1 start1 frag1) (Flow _ _ start2 frag2)
  = Flow gang1 distro1 start' frag'
  where  
@@ -38,14 +42,20 @@ zip (Flow gang1 distro1 start1 frag1) (Flow _ _ start2 frag2)
 
 
 -- | Combine two flows with a function, pulling one element at a time.
-zipWith :: (a -> b -> c) -> Flow rep BB a -> Flow rep BB b -> Flow rep BB c
+zipWith :: (a -> b -> c) 
+        -> Flow mode BB a -> Flow mode BB b 
+        -> Flow mode BB c
+
 zipWith f flowA flowB
         = map (uncurry f) $ zip flowA flowB
 {-# INLINE [2] zipWith #-}
 
 
 -- | Pair elements of a flow with elements gained from some function.
-zipLeft :: Flow rep BB a -> (Int# -> b) -> Flow rep BB (a, b)
+zipLeft :: Flow mode BB a 
+        -> (Int# -> b) 
+        -> Flow mode BB (a, b)
+
 zipLeft (Flow gang distro start frag) getB
  = Flow gang distro start frag'
  where  frag' state n
@@ -57,7 +67,11 @@ zipLeft (Flow gang distro start frag) getB
 
 
 -- | Combine a flow with elements gained from some function.
-zipLeftWith :: (a -> b -> c) -> Flow rep BB a -> (Int# -> b) -> Flow rep BB c
+zipLeftWith 
+        :: (a -> b -> c) 
+        -> Flow mode BB a -> (Int# -> b)
+        -> Flow mode BB c
+
 zipLeftWith f flowA getB
         = map (uncurry f) $ zipLeft flowA getB
 {-# INLINE [2] zipLeftWith #-}

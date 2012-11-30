@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Flow.Par.Pack
         ( packByTag
-        , pack
+        , packByFlag
         , filter)
 where
 import Data.Array.Repa.Bulk.Gang
@@ -14,10 +14,10 @@ import GHC.Exts
 import Prelude hiding (map, filter)
 
 -------------------------------------------------------------------------------
--- | Produce only the elements that have their corresponding flag set to `True`.
-packByTag 
-        :: U.Unbox a
-        => Flow rep bal (Int, a) -> Flow rep BN a
+-- | Produce only the elements that have their corresponding
+--   flag set to `1`.
+packByTag :: U.Unbox a
+          => Flow mode dist (Int, a) -> Flow mode BN a
 
 packByTag (Flow gang _ start frag)
  = Flow gang distro' start frag'
@@ -28,19 +28,21 @@ packByTag (Flow gang _ start frag)
 
 
 ------------------------------------------------------------------------------
--- | Produce only those elements that have their corresponding flag set.
-pack    :: U.Unbox a 
-        => Flow rep bal (Bool, a) -> Flow rep BN a
-pack ff 
+-- | Produce only those elements that have their corresponding
+--   flag set to `True`.
+packByFlag      
+        :: U.Unbox a 
+        => Flow mode dist (Bool, a) -> Flow mode BN a
+packByFlag ff 
         = packByTag
         $ map (\(b, x) -> (if b then 1 else 0, x)) ff
-{-# INLINE [2] pack #-}
+{-# INLINE [2] packByFlag #-}
 
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter  :: U.Unbox a 
-        => (a -> Bool) -> Flow rep bal a -> Flow rep BN a
+filter    :: U.Unbox a 
+          => (a -> Bool) -> Flow mode dist a -> Flow mode BN a
 filter f ff
-        = pack $ map (\x -> (f x, x)) ff
+        = packByFlag $ map (\x -> (f x, x)) ff
 {-# INLINE [2] filter #-}

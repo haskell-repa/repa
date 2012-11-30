@@ -20,7 +20,7 @@ import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Gang -> Int# -> (Int# -> a) -> Flow rep BB a
+generate :: Gang -> Int# -> (Int# -> a) -> Flow mode BB a
 generate gang len get
  = Flow gang distro start frag
  where
@@ -42,7 +42,7 @@ generate gang len get
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: Gang -> Int# -> a -> Flow rep BB a
+replicate :: Gang -> Int# -> a -> Flow mode BB a
 replicate gang n x
         = generate gang n (\_ -> x)
 {-# INLINE [2] replicate #-}
@@ -55,7 +55,7 @@ replicates
         :: Gang
         -> Segd
         -> (Int# -> a)
-        -> Flow rep BB a
+        -> Flow mode BB a
 
 replicates gang segd getSegVal
  = replicatesSplit (Segd.splitSegd gang segd) getSegVal
@@ -69,7 +69,7 @@ replicates gang segd getSegVal
 replicatesSplit
         :: SplitSegd
         -> (Int# -> a)
-        -> Flow rep BB a
+        -> Flow mode BB a
 
 replicatesSplit segd getSegVal
  = Flow gang distro start frag
@@ -98,7 +98,7 @@ enumFromN
         :: Gang
         -> Int#                 -- ^ Starting value.
         -> Int#                 -- ^ Length of result.
-        -> Flow rep BB Int
+        -> Flow mode BB Int
 
 enumFromN gang first len
  = Flow gang distro start frag

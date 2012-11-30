@@ -22,13 +22,13 @@ module Data.Array.Repa.Flow.Par
         , zipLeft
         , zipLeftWith
 
-        -- * Packing
-        , packByTag
-        , pack
-        , filter
-
         -- * Projection
         , gather
+
+        -- * Packing
+        , packByTag
+        , packByFlag
+        , filter
 
         -- * Reduction
         , folds
