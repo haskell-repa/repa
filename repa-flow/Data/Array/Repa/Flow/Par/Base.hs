@@ -5,6 +5,7 @@ module Data.Array.Repa.Flow.Par.Base
         , flow
         , Unflow (..))
 where
+import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Bulk.Gang
 import Data.Array.Repa.Flow.Par.Distro
 import qualified Data.Vector.Unboxed            as U
@@ -38,7 +39,7 @@ data Flow rep bal a
 -------------------------------------------------------------------------------
 -- | Convert an unboxed vector
 --   to a delayed, balanced, parallel flow.
-flow    :: (Seq.Touch a, U.Unbox a) 
+flow    :: (Elt a, U.Unbox a) 
         => Gang -> U.Vector a -> Flow Seq.FD BB a
 flow !gang !vec
  = let  !frags          = gangSize gang
@@ -65,7 +66,7 @@ flow !gang !vec
 
 -------------------------------------------------------------------------------
 class Unflow bal where
- unflow :: (Seq.Touch a, U.Unbox a) 
+ unflow :: (Elt a, U.Unbox a) 
         => Flow Seq.FD bal a -> U.Vector a
 
 

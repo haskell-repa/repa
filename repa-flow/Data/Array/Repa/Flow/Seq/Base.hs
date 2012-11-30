@@ -14,7 +14,6 @@ module Data.Array.Repa.Flow.Seq.Base
         , take
         , drain
         , slurp
-        , Touch(..)
 
         -- Shorthands
         , unew
@@ -27,6 +26,7 @@ module Data.Array.Repa.Flow.Seq.Base
 where
 import GHC.Exts
 import GHC.Types
+import Data.Array.Repa.Bulk.Elt
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
@@ -128,8 +128,8 @@ sizeMin !s1 !s2
 
 
 -------------------------------------------------------------------------------
--- | Convert an unboxed vector to a delayed flow.
-flow :: (Touch a, U.Unbox a) => U.Vector a -> Flow r a
+-- | Convert an unboxed vector to a delayed flow.       -- TODO: genericise
+flow :: (Elt a, U.Unbox a) => U.Vector a -> Flow r a
 flow !vec
  = Flow start size report get1 get8
  where  
@@ -208,14 +208,14 @@ flow !vec
 -------------------------------------------------------------------------------
 -- | Fully evaluate a delayed flow, producing an unboxed vector.
 --
-unflow :: (Touch a, U.Unbox a) => Flow FD a -> U.Vector a
+unflow :: (Elt a, U.Unbox a) => Flow FD a -> U.Vector a  -- TODO: genericise
 unflow ff = unsafePerformIO $ drain ff
 {-# INLINE [1] unflow #-}
 
 
 -- | Fully evaluate a possibly stateful flow,
 --   pulling all the remaining elements.
-drain :: (Touch a, U.Unbox a) => Flow r a -> IO (U.Vector a)
+drain :: (Elt a, U.Unbox a) => Flow r a -> IO (U.Vector a)    -- TODO: genericise
 drain !ff
  = case ff of
     Flow fStart fSize _ fGet1 fGet8
@@ -232,7 +232,7 @@ drain !ff
 
 
 unflowWith
-        :: (Touch a, U.Unbox a) 
+        :: (Elt a, U.Unbox a) 
         => Int# 
         -> ((Step1 a -> IO ()) -> IO ())
         -> ((Step8 a -> IO ()) -> IO ())
@@ -254,7 +254,7 @@ unflowWith !len get1 get8
 --   and this state will be reused when the remaining elements of
 --   the flow are evaluated.
 --
-take    :: (Touch a, U.Unbox a) 
+take    :: (Elt a, U.Unbox a) 
         => Int# -> Flow r a -> IO (U.Vector a, Flow FS a)
 
 take limit (Flow start size report get1 get8)
@@ -275,7 +275,7 @@ take limit (Flow start size report get1 get8)
 -------------------------------------------------------------------------------
 -- | Slurp out all the elements from a flow,
 --   passing them to the provided consumption function.
-slurp   :: Touch a
+slurp   :: Elt a
         => Int#
         -> Maybe Int
         -> (Int -> a -> IO ())
@@ -357,36 +357,6 @@ slurp start stop !write get1 get8
         slurpSome start
 {-# INLINE [0] slurp #-}
 
-
-class Touch a where
- touch :: a -> IO ()
-
- here  :: a -> IO a
- here x
-  = do  touch x
-        return x
- {-# INLINE here #-}
-
-instance Touch Bool where
- touch x
-  = IO (\state -> case touch# x state of
-                        state' -> (# state', () #))
-
-
-instance Touch Int where
- touch (I# x)
-  = IO (\state -> case touch# x state of
-                        state' -> (# state', () #))
-
-instance Touch Double where
- touch (D# x)
-  = IO (\state -> case touch# x state of
-                        state' -> (# state', () #))
-
-instance (Touch a, Touch b) => Touch (a, b) where
- touch (x, y)
-  = do  touch x
-        touch y
 
 
 -- Shorthands -----------------------------------------------------------------
