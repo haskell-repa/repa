@@ -1,10 +1,11 @@
 
 module Data.Array.Repa.Flow.Seq.Combine
-        (combine2)
+        ( combine2
+        , combines2)
 where
 import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as Report
-
+import GHC.Exts
 
 -- | Combine two flows, using a tag stream to tell us which of the data
 --   streams to take the next element from.
@@ -15,10 +16,10 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as Report
 -- @
 --
 combine2 
-        :: Flow mode Bool 
-        -> Flow mode a 
-        -> Flow mode a 
-        -> Flow mode a
+        :: Flow mode1 Bool 
+        -> Flow mode2 a 
+        -> Flow mode3 a 
+        -> Flow mode4 a
 
 combine2 (Flow startF sizeF reportF getF1 _)
          (Flow startA sizeA reportA getA1 _)
@@ -31,11 +32,13 @@ combine2 (Flow startF sizeF reportF getF1 _)
                 stateB  <- startB
                 return  (stateF, stateA, stateB)
 
+
         size'   (stateF, stateA, stateB)
-         = do   szF   <- sizeF stateF
-                szA   <- sizeA stateA
-                szB   <- sizeB stateB
+         = do   szF     <- sizeF stateF
+                szA     <- sizeA stateA
+                szB     <- sizeB stateB
                 return  $ sizeMin szF (sizeMin szA szB)
+
 
         report' (stateF, stateA, stateB)
          = do   repF    <- reportF stateF
@@ -43,16 +46,20 @@ combine2 (Flow startF sizeF reportF getF1 _)
                 repB    <- reportB stateB
                 return  $ Report.Combine repF repA repB
 
+
         get1'   (stateF, stateA, stateB) push1
+         -- Get the next flag.
          =  getF1 stateF $ \mxF
          -> case mxF of
                 Yield1 f _
                  -> case f of
+                     -- Emit an element from the first stream.
                      True    -> getA1 stateA $ \mfA
                              -> case mfA of
                                  Yield1 a _     -> out push1 (Just a)
                                  Done           -> out push1 Nothing
 
+                     -- Emit an element from the second stream.
                      False   -> getB1 stateB $ \mfB
                              -> case mfB of
                                  Yield1 b _     -> out push1 (Just b)
@@ -60,12 +67,139 @@ combine2 (Flow startF sizeF reportF getF1 _)
 
                 Done -> out push1 Nothing
 
+
         out push1 mx
          = case mx of
                 Nothing -> push1 Done
                 Just x  -> push1 $ Yield1 x False
 
+
         get8' _ push1
          = push1 Pull1
-
 {-# INLINE [4] combine2 #-}
+
+
+-- | Segmented Stream combine. Like `combine2`, except that the flags select
+--   entire segments of each data stream, instead of selecting one element
+--   at a time.
+--
+-- @
+-- combines2 
+--      [F, F, T, F, T, T]
+--      [2,1,3] [10,20,30,40,50,60]
+--      [1,2,3] [11,22,33,44,55,66]
+--  = [10,20,30,11,40,50,60,22,33,44,55,66]
+-- @
+--
+--   This says take two elements from the first stream, then another one element 
+--   from the first stream, then one element from the second stream, then three
+--   elements from the first stream...
+--
+combines2
+        :: Flow mode1 Bool      -- ^ Flags.
+        -> Flow mode2 Int       -- ^ Segment lengths of 'A' vector.
+        -> Flow mode3 a         -- ^ Elements of 'A' vector.
+        -> Flow mode4 Int       -- ^ Segment lengths of 'B' vector.
+        -> Flow mode5 a         -- ^ Elements of 'B' vector.
+        -> Flow mode6 a
+
+combines2 (Flow startF     sizeF     reportF     getF1     _)
+          (Flow startLenA  sizeLenA  reportLenA  getLenA1  _)
+          (Flow startElemA sizeElemA reportElemA getElemA1 _)
+          (Flow startLenB  sizeLenB  reportLenB  getLenB1  _)
+          (Flow startElemB sizeElemB reportElemB getElemB1 _)
+ = Flow start' size' report' get1' get8'
+ where
+        sSource = 0#    -- Source vector currently being read.
+        sRemain = 0#    -- Number of elements remaining in current segment.
+                        -- Setting this to 0 force the first flag to be loaded
+                        --  on the first call to get1.
+
+        start'
+         = do   stateF          <- startF
+                stateLenA       <- startLenA
+                stateElemA      <- startElemA
+                stateLenB       <- startLenB
+                stateElemB      <- startElemB
+
+                state           <- inew 2
+                iwrite state sSource 0#
+                iwrite state sRemain 0#
+
+                return  (state, stateF, stateLenA, stateElemA, stateLenB, stateElemB)
+
+
+        size'   (!_, !stateF, !stateLenA, !stateElemA, !stateLenB, !stateElemB)
+         = do   szF             <- sizeF       stateF
+                szLenA          <- sizeLenA    stateLenA
+                szElemA         <- sizeElemA   stateElemA
+                szLenB          <- sizeLenB    stateLenB
+                szElemB         <- sizeElemB   stateElemB
+                return  $ sizeMin szF (sizeMin (sizeMin szLenA szElemA) 
+                                               (sizeMin szLenB szElemB))
+
+
+        report' (!_, !stateF, !stateLenA, !stateElemA, !stateLenB, !stateElemB)
+         = do   rpF             <- reportF     stateF
+                rpLenA          <- reportLenA  stateLenA
+                rpElemA         <- reportElemA stateElemA
+                rpLenB          <- reportLenB  stateLenB
+                rpElemB         <- reportElemB stateElemB
+                return  $ Report.Combines rpF rpLenA rpElemA rpLenB rpElemB
+
+
+        get1'   (!state, !stateF
+                       , !stateLenA, !stateElemA
+                       , !stateLenB, !stateElemB) push1
+         = do   !(I# source)    <- iread state sSource 
+                !(I# remain)    <- iread state sRemain
+                next source remain
+
+         where  next source remain
+                 = if remain ==# 0# 
+                        then nextSeg source remain
+                        else fromSeg source remain
+
+                -- Switch to the next segment.
+                nextSeg source remain
+                 =  getF1 stateF $ \mxF
+                 -> case mxF of
+                     Yield1 f _
+                      -> case f of
+                          False -> getLenA1 stateLenA $ \mLenA
+                                -> case mLenA of
+                                    Yield1 (I# lenA) _   -> next 0# lenA
+                                    Done                 -> out source remain Nothing
+
+                          True  -> getLenB1 stateLenB $ \mLenB
+                                -> case mLenB of
+                                    Yield1 (I# lenB) _   -> next 1# lenB
+                                    Done                 -> out source remain Nothing
+
+                     Done -> out source remain Nothing
+
+                -- Emit an element from the given segment.
+                fromSeg source remain
+                 = case source of
+                    0#  -> getElemA1 stateElemA $ \mElemA
+                        -> case mElemA of
+                            Yield1 elemA _  -> out source remain (Just elemA)
+                            Done            -> out source remain Nothing
+
+                    _   -> getElemB1 stateElemB $ \mElemB
+                        -> case mElemB of
+                            Yield1 elemB _  -> out source remain (Just elemB)
+                            Done            -> out source remain Nothing
+
+                out source remain mx
+                 = case mx of
+                    Nothing 
+                     ->     push1 Done
+
+                    Just x  
+                     -> do  iwrite state sSource source
+                            iwrite state sSource (remain -# 1#)
+                            push1 $ Yield1 x False
+
+        get8' _ push1
+         = push1 Pull1

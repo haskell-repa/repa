@@ -37,6 +37,7 @@ module Data.Array.Repa.Flow.Seq
 
         -- * Combine
         , combine2
+        , combines2
 
         -- * Reduction
         , foldl

@@ -58,6 +58,13 @@ data Report
                 , combineSource1        :: Report
                 , combineSource2        :: Report }
 
+        | Combines
+                { combineSourceFlags    :: Report
+                , combineSourceLenA     :: Report
+                , combineSourceElemsA   :: Report 
+                , combineSourceLenB     :: Report
+                , combineSourceElemsB   :: Report }
+
         | Filter
                 { filterSource          :: Report }
 
