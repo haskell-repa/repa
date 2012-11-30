@@ -40,7 +40,7 @@ replicates segd vec
  = let  get ix  = linearIndex vec (I# ix)
    in   fromFlowBB 
                 (Z :. R.length vec)
-                (F.replicates segd get)
+                (F.replicates theGang segd get)
 {-# INLINE [4] replicates #-}
 
 

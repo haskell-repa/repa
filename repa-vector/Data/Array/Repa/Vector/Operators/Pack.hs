@@ -27,7 +27,7 @@ class Pack r a where
 -------------------------------------------------------------------------------
 instance Pack (O FD dist) a where
  pack (AFlow _ ff)
-        = AFlow DistBN (F.pack ff)
+        = AFlow DistBN (F.packByFlag ff)
  {-# INLINE [4] pack #-}
 
 

@@ -29,7 +29,8 @@ appends segdA vecA segdB vecB
                         $ R.zipWith (+) (Segd.lengths segdA)
                                         (Segd.lengths segdB)
 
-        segdResult      = Segd.splitSegd $ Segd.fromLengths lensResult
+        segdResult      = Segd.splitSegd theGang 
+                        $ Segd.fromLengths lensResult
 
    in   appendsWithResultSegd
                 segdResult

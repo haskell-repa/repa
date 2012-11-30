@@ -18,11 +18,12 @@ module Data.Array.Repa.Vector.Repr.Flow
         -- * Computation
         , Unflow (..))
 where
+import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Vector.Base              as R
 import Data.Array.Repa.Vector.Repr.Unboxed      as R
 import Data.Array.Repa.Vector.Operators.Bulk    as R
 import Data.Array.Repa.Flow.Par.Distro          (BB, BN)
-import Data.Array.Repa.Flow.Seq                 (FD, FS, Touch)
+import Data.Array.Repa.Flow.Seq                 (FD, FS)
 import qualified Data.Array.Repa.Flow.Par       as F
 import qualified Data.Vector.Unboxed            as U
 import GHC.Exts
@@ -38,16 +39,16 @@ data family DistShape dist sh
 data instance DistShape BB sh   = DistBB sh
 data instance DistShape BN sh   = DistBN
 
+
 -------------------------------------------------------------------------------
 -- | Convert a bulk array  to a balanced flow.
 flow    :: (Shape sh, Bulk r a)
         => Array r sh a -> Array (O FD BB) sh a
 flow vec
- = AFlow (DistBB $ extent vec) (F.generate len get)
+ = AFlow (DistBB $ extent vec) (F.generate theGang len get)
  where  !(I# len)       = R.size $ R.extent vec
         get ix          = linearIndex vec (I# ix)
 {-# INLINE [4] flow #-}
-
 
 -------------------------------------------------------------------------------
 -- | Unpack a vector to a raw flow.
@@ -69,7 +70,7 @@ class Unflow dist sh where
  --   Computing an unbalanced flow must produce a 1D vector rather than
  --   a more general array because the number of elements that will be 
  --   produced is not known up-front.
- unflowP :: (Shape sh, U.Unbox a, Touch a)
+ unflowP :: (Shape sh, U.Unbox a, Elt a)
          => Array (O FD dist) sh a -> Array U sh a
 
 

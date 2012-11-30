@@ -10,14 +10,14 @@ import Data.Array.Repa.Vector.Segd              (Segd)
 import qualified Data.Array.Repa.Vector.Segd    as Segd
 import qualified Data.Array.Repa.Flow.Seq       as F
 import qualified Data.Vector.Unboxed            as U
-
+import GHC.Exts
 
 -- | Combine two arrays with a flags vector.
 --
 --   TODO: make this parallel and fusable.
 --
 combine2 
-        :: (U.Unbox a, F.Touch a)
+        :: (U.Unbox a, Elt a)
         => Vector U Bool        -- ^ Flags vector.
         -> Vector U a           -- ^ Elements of @A@ vector.
         -> Vector U a           -- ^ Elements of @B@ vector.
@@ -27,9 +27,9 @@ combine2 fs xs ys
         = AUnboxed 
                 (extent fs)
                 (F.unflow $ F.combine2 
-                        (F.flow $ toUnboxed fs)
-                        (F.flow $ toUnboxed xs) 
-                        (F.flow $ toUnboxed ys))
+                        (flowUnboxed fs)
+                        (flowUnboxed xs) 
+                        (flowUnboxed ys))
 {-# INLINE [4] combine2 #-}
 
 
@@ -52,7 +52,7 @@ combine2 fs xs ys
 --   TODO: make this parallel and fusable.
 --
 combines2
-        :: (U.Unbox a, F.Touch a)
+        :: (U.Unbox a, Elt a)
         => Vector U Bool        -- ^ Flags vector.
         -> Segd                 -- ^ Segment descriptor of 'A' vector.
         -> Vector U a           -- ^ Elements of @A@ vector.
@@ -64,9 +64,17 @@ combines2 fs segdA elemsA segdB elemsB
         = AUnboxed
                 (extent fs)
                 (F.unflow $ F.combines2
-                        (F.flow $ toUnboxed fs)
-                        (F.flow $ toUnboxed $ Segd.lengths segdA)
-                        (F.flow $ toUnboxed elemsA)
-                        (F.flow $ toUnboxed $ Segd.lengths segdB)
-                        (F.flow $ toUnboxed elemsB))
+                        (flowUnboxed fs)
+                        (flowUnboxed $ Segd.lengths segdA)
+                        (flowUnboxed elemsA)
+                        (flowUnboxed $ Segd.lengths segdB)
+                        (flowUnboxed elemsB))
 {-# INLINE [4] combines2 #-}
+
+
+flowUnboxed arr
+ = F.flow get len
+ where  !vec      = toUnboxed arr
+        get ix    = U.unsafeIndex vec (I# ix)
+        !(I# len) = U.length vec
+{-# INLINE [4] flowUnboxed #-}
