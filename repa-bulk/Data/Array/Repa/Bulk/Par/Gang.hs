@@ -11,7 +11,7 @@ import Control.Exception        (assert)
 import Control.Monad
 import GHC.Conc                 (numCapabilities)
 import System.IO
-
+import GHC.Exts
 
 -- TheGang --------------------------------------------------------------------
 -- | This globally shared gang is auto-initialised at startup and shared by all
@@ -35,18 +35,18 @@ import System.IO
 -- @
 --
 theGang :: Gang
-{-# NOINLINE theGang #-}
 theGang 
  = unsafePerformIO 
- $ do   let caps        = numCapabilities
+ $ do   let !(I# caps) = numCapabilities
         forkGang caps
+{-# NOINLINE theGang #-}
 
 
 -- Requests -------------------------------------------------------------------
 -- | The 'Req' type encapsulates work requests for individual members of a gang.
 data Req
         -- | Instruct the worker to run the given action.
-        = ReqDo        (Int -> IO ())
+        = ReqDo        (Int# -> IO ())
 
         -- | Tell the worker that we're shutting the gang down.
         --   The worker should signal that it's receieved the request by
@@ -59,7 +59,7 @@ data Req
 data Gang
         = Gang 
         { -- | Number of threads in the gang.
-          _gangThreads           :: !Int           
+          _gangThreads           :: Int#
 
           -- | Workers listen for requests on these vars.
         , _gangRequestVars       :: [MVar Req]     
@@ -74,21 +74,24 @@ data Gang
 instance Show Gang where
   showsPrec p (Gang n _ _ _)
         = showString "<<"
-        . showsPrec p n
+        . showsPrec p (I# n)
         . showString " threads>>"
 
 
 -- | O(1). Yield the number of threads in the 'Gang'.
-gangSize :: Gang -> Int
+gangSize :: Gang -> Int#
 gangSize (Gang n _ _ _) 
         = n
+{-# NOINLINE gangSize #-}
 
 
 -- | Fork a 'Gang' with the given number of threads (at least 1).
-forkGang :: Int -> IO Gang
-forkGang n
- = assert (n > 0)
+forkGang :: Int# -> IO Gang
+forkGang n_
+ = assert (n_ ># 0#)
  $ do
+        let !n  = I# n_
+
         -- Create the vars we'll use to issue work requests.
         mvsRequest     <- sequence $ replicate n $ newEmptyMVar
 
@@ -104,19 +107,19 @@ forkGang n
 
         -- Create all the worker threads
         zipWithM_ forkOn [0..]
-                $ zipWith3 gangWorker 
+                $ zipWith3 (\(I# i) -> gangWorker i)
                         [0 .. n-1] mvsRequest mvsDone
 
         -- The gang is currently idle.
         busy   <- newMVar False
 
-        return $ Gang n mvsRequest mvsDone busy
-
+        return $ Gang n_ mvsRequest mvsDone busy
+{-# NOINLINE forkGang #-}
 
 
 -- | The worker thread of a 'Gang'.
 --   The threads blocks on the MVar waiting for a work request.
-gangWorker :: Int -> MVar Req -> MVar () -> IO ()
+gangWorker :: Int# -> MVar Req -> MVar () -> IO ()
 gangWorker threadId varRequest varDone
  = do   
         -- Wait for a request 
@@ -135,6 +138,7 @@ gangWorker threadId varRequest varDone
 
          ReqShutdown
           ->    putMVar varDone ()
+{-# NOINLINE gangWorker #-}
 
 
 -- | Finaliser for worker threads.
@@ -160,6 +164,7 @@ finaliseWorker varReq varDone
  = do   putMVar varReq ReqShutdown
         takeMVar varDone
         return ()
+{-# NOINLINE finaliseWorker #-}
 
 
 -- | Issue work requests for the 'Gang' and wait until they complete.
@@ -167,10 +172,9 @@ finaliseWorker varReq varDone
 --   If the gang is already busy then print a warning to `stderr` and just
 --   run the actions sequentially in the requesting thread.
 gangIO  :: Gang
-        -> (Int -> IO ())
+        -> (Int# -> IO ())
         -> IO ()
 
-{-# NOINLINE gangIO #-}
 gangIO gang@(Gang _ _ _ busy) action
  = do   b <- swapMVar busy True
         if b
@@ -181,10 +185,11 @@ gangIO gang@(Gang _ _ _ busy) action
                 parIO gang action
                 _ <- swapMVar busy False
                 return ()
+{-# NOINLINE gangIO #-}
 
 
 -- | Run an action on the gang sequentially.
-seqIO   :: Gang -> (Int -> IO ()) -> IO ()
+seqIO   :: Gang -> (Int# -> IO ()) -> IO ()
 seqIO (Gang n _ _ _) action
  = do   hPutStr stderr
          $ unlines
@@ -195,10 +200,12 @@ seqIO (Gang n _ _ _) action
          , "  that each array is fully evaluated before you 'compute' the next one."
          , "" ]
 
-        mapM_ action [0 .. n-1]
+        mapM_ (\(I# i) -> action i) [0 .. (I# n) - 1]
+{-# NOINLINE seqIO #-}
+
 
 -- | Run an action on the gang in parallel.
-parIO   :: Gang -> (Int -> IO ()) -> IO ()
+parIO   :: Gang -> (Int# -> IO ()) -> IO ()
 parIO (Gang _ mvsRequest mvsResult _) action
  = do   
         -- Send requests to all the threads.
@@ -206,8 +213,11 @@ parIO (Gang _ mvsRequest mvsResult _) action
 
         -- Wait for all the requests to complete.
         mapM_ takeMVar mvsResult
+{-# NOINLINE parIO #-}
 
 
 -- | Same as 'gangIO' but in the 'ST' monad.
-gangST :: Gang -> (Int -> ST s ()) -> ST s ()
-gangST g p = unsafeIOToST . gangIO g $ unsafeSTToIO . p
+gangST :: Gang -> (Int# -> ST s ()) -> ST s ()
+gangST g p 
+        = unsafeIOToST $ gangIO g (\i -> unsafeSTToIO $ p i)
+{-# NOINLINE gangST #-}

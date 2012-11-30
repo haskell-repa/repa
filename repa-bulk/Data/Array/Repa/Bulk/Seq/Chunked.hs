@@ -12,17 +12,17 @@ import GHC.Exts
 --   * The array is filled linearly from start to finish.  
 -- 
 fillLinear
-        :: (Int -> a -> IO ())  -- ^ Update function to write into result buffer.
-        -> (Int -> a)           -- ^ Function to get the value at a given index.
-        -> Int                  -- ^ Number of elements to fill.
+        :: (Int# -> a -> IO ())  -- ^ Update function to write into result buffer.
+        -> (Int# -> a)           -- ^ Function to get the value at a given index.
+        -> Int#                  -- ^ Number of elements to fill.
         -> IO ()
 
-fillLinear write getElem !(I# len)
+fillLinear write getElem len
  = fill 0#
  where  fill !ix
          | ix >=# len   = return ()
          | otherwise
-         = do   write (I# ix) (getElem (I# ix))
+         = do   write ix (getElem ix)
                 fill (ix +# 1#)
 {-# INLINE [0] fillLinear #-}
 
@@ -36,7 +36,7 @@ fillLinear write getElem !(I# len)
 --   * The block is filled in row major order from top to bottom.
 --
 fillBlock2
-        :: (Int  -> a -> IO ()) -- ^ Update function to write into result buffer.
+        :: (Int# -> a -> IO ()) -- ^ Update function to write into result buffer.
         -> (Int# -> Int# -> a)  -- ^ Function to get the value at an (x, y) index.
         -> Int#                 -- ^ Width of the whole array.
         -> Int#                 -- ^ x0 lower left corner of block to fill.
@@ -65,7 +65,7 @@ fillBlock2
                 fillLine1 !x !ix'
                  | x >=# x1             = return ()
                  | otherwise
-                 = do   write (I# ix') (getElem x y)
+                 = do   write ix' (getElem x y)
                         fillLine1 (x +# 1#) (ix' +# 1#)
 
 {-# INLINE [0] fillBlock2 #-}
