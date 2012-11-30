@@ -14,6 +14,23 @@ type Point      = (Double, Double)
 
 
 
+
+
+-- hsplit_l -------------------------------------------------------------------
+-- | Lifted split.
+--   This is the workhorse of the algorithm.
+--
+--   Unvectorised code:
+--
+--   > hsplit points line@(p1, p2)
+--   >  = let cross  = [: distance p line | p <- points :]
+--   >        above  = [: p | (p,c) <- zipP points cross, c D.> 0.0 :]
+--   >    in  if lengthP packed == 0 
+--   >          then [:p1:]
+--   >          else let pm = points !: maxIndexP cross
+--   >               in  concat [: hsplit packed ends 
+--   >                          | ends <- [:(p1, pm), (pm, p2):] :]
+--
 hsplit_l 
         :: Segd
         -> Vector U Point
@@ -119,7 +136,6 @@ hsplit_l segd points lines
 
         -- Combine the lengths of the segments we get from both side of 
         -- the if-then-else.
-        -- TODO: combine2 needs a manifest vector.
         !flagsThen'     = computeP flagsThen
         !combLengths    = R.combine2 flagsThen'
                                 (Segd.lengths hullSegd)
@@ -127,10 +143,14 @@ hsplit_l segd points lines
 
         !combSegd       = Segd.fromLengths combLengths
 
+        -- Combine the points from both sides of the if-then-else.
+        !combPoints     = R.combines2 flagsThen'
+                                hullSegd hullPoints
+                                catSegd  moarPoints
 
-
-   in   error "finish me"
+   in   (combSegd, combPoints)
 
 
 -- Until we implement this.
 computeP arr = unflowP $ flow arr
+
