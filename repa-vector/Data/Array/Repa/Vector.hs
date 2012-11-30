@@ -41,7 +41,7 @@ module Data.Array.Repa.Vector
         , Unzip(..)
 
         -- ** Folds
-        , Fold(..)
+        , Folds(..)
         , sums
         , counts
         , selects

@@ -2,13 +2,13 @@
 module Data.Array.Repa.Vector.Base
         ( Array
         , Vector
+        , Elt(..)
         , module Data.Array.Repa.Vector.Index
-        , module Data.Array.Repa.Vector.Shape
-        , module Data.Array.Repa.Vector.Elt)
+        , module Data.Array.Repa.Vector.Shape)
 where
+import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Vector.Index
 import Data.Array.Repa.Vector.Shape
-import Data.Array.Repa.Vector.Elt
 
 
 -- | Arrays with a representation type, shape and element type.

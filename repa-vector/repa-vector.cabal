@@ -19,7 +19,8 @@ Library
         base            == 4.6.*,
         ghc-prim        == 0.3.*,
         vector          == 0.10.*,
-        repa-flow       == 4.0.*
+        repa-flow       == 4.0.*,
+        repa-bulk       == 4.0.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -45,7 +46,6 @@ Library
 
   Exposed-modules:
         Data.Array.Repa.Vector
-        Data.Array.Repa.Vector.Elt
         Data.Array.Repa.Vector.Shape
         Data.Array.Repa.Vector.Index
         Data.Array.Repa.Vector.Segd

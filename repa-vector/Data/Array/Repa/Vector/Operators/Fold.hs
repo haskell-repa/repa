@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Vector.Operators.Fold
-        ( Fold(..)
+        ( Folds         (..)
         , sums
         , counts
         , selects)
@@ -16,29 +16,24 @@ import qualified Data.Vector.Unboxed                    as U
 import Prelude                                          hiding (map)
 
 
-class Fold r a where
+-------------------------------------------------------------------------------
+class Folds r a where
  type TF r
  -- | Segmented fold.
  folds  :: (a -> a -> a) -> a 
-        -> Segd 
-        -> Vector r a 
+        -> Segd
+        -> Vector r a
         -> Vector (TF r) a
 
-instance U.Unbox a => Fold D a where
+
+instance U.Unbox a => Folds D a where
  type TF D = O FD BN
  folds f z segd vec
         = folds f z segd (flow vec)
  {-# INLINE [4] folds #-}
 
 
-instance (U.Unbox a, Elt a) => Fold U a where
- type TF U = O FD BN
- folds f z segd vec
-        = folds f z segd (flow vec)
- {-# INLINE [4] folds #-}
-
-
-instance U.Unbox a => Fold (O mode BB) a where
+instance U.Unbox a => Folds (O mode BB) a where
  type TF (O mode BB)
         = O mode BN
 
@@ -47,10 +42,21 @@ instance U.Unbox a => Fold (O mode BB) a where
  {-# INLINE [4] folds #-}
 
 
+instance (U.Unbox a, Elt a) => Folds U a where
+ type TF U = O FD BN
+ folds f z segd vec
+        = folds f z segd (flow vec)
+ {-# INLINE [4] folds #-}
+
+
 -------------------------------------------------------------------------------
 -- | Segmented sum.
-sums   :: (Num a, Fold r a) 
-       => Segd -> Vector r a -> Vector (TF r) a
+--   Sum up each segment individually,
+--   producing a vector of all the rsults.
+sums    :: (Num a, Folds r a) 
+        => Segd 
+        -> Vector r a 
+        -> Vector (TF r) a
 sums segd vec
         = folds (+) 0 segd vec
 {-# INLINE [4] sums #-}
@@ -59,16 +65,21 @@ sums segd vec
 -- | Segmented count. 
 --   Count the number of elements in each segment that match
 --   the given predicate.
-counts :: (Eq a, Map r a, Fold (TM r) Int)
-       => (a -> Bool) 
-       -> Segd -> Vector r a -> Vector (TF (TM r)) Int
+counts  :: (Eq a, Map r a, Folds (TM r) Int)
+        => (a -> Bool) 
+        -> Segd 
+        -> Vector r a 
+        -> Vector (TF (TM r)) Int
+
 counts f segd vec
        = sums segd $ R.map (\x -> if f x then 1 else 0) vec
 {-# INLINE [4] counts #-}
 
 
--- | Segmented selection.
-selects :: (Fold r a, U.Unbox a)
+-- | Right-biased segmented selection.
+--   If the predicate returns true then keep the right element over the
+--   left one. Produces a single result element for each segment.
+selects :: (Folds r a, U.Unbox a)
         => (a -> a -> Bool)
         -> a
         -> Segd
@@ -80,5 +91,4 @@ selects choose z segd vec
  where  f x1 x2
          = if choose x1 x2 then x2 else x1
 {-# INLINE [4] selects #-}
-
 
