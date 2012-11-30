@@ -53,6 +53,7 @@ module Data.Array.Repa.Vector
 
         -- ** Combines
         , combine2
+        , combines2
 
         -- ** Generates
         , replicate
