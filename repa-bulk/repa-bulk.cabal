@@ -50,3 +50,4 @@ Library
 
         Data.Array.Repa.Bulk.Par.Chunked
         Data.Array.Repa.Bulk.Par.Reduction
+        Data.Array.Repa.Bulk.Par.Interleaved
