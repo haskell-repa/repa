@@ -14,7 +14,7 @@ Description:
         Low-level parallel operators on bulk random-accessble arrays.
 
 Synopsis:
-        Data-flow based array fusion.
+        Low-level parallel operators on bulk random-accessble arrays.
 
 Library
   Build-Depends: 
@@ -39,5 +39,12 @@ Library
         FlexibleInstances
 
   Exposed-modules:
+        Data.Array.Repa.Bulk.Elt
+        Data.Array.Repa.Bulk.Seq
+        Data.Array.Repa.Bulk.Par
         Data.Array.Repa.Bulk.Par.Gang
+
+  Other-modules:
+        Data.Array.Repa.Bulk.Seq.Chunked
+        Data.Array.Repa.Bulk.Par.Chunked
 
