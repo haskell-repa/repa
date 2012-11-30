@@ -117,6 +117,17 @@ hsplit_l segd points lines
                         $ unflowP
                         $ sums downSegd2 (Segd.lengths moarSegd)
 
+        -- Combine the lengths of the segments we get from both side of 
+        -- the if-then-else.
+        -- TODO: combine2 needs a manifest vector.
+        !flagsThen'     = computeP flagsThen
+        !combLengths    = R.combine2 flagsThen'
+                                (Segd.lengths hullSegd)
+                                (Segd.lengths catSegd)
+
+        !combSegd       = Segd.fromLengths combLengths
+
+
 
    in   error "finish me"
 
