@@ -41,11 +41,12 @@ Library
   Exposed-modules:
         Data.Array.Repa.Bulk.Elt
         Data.Array.Repa.Bulk.Seq
-        Data.Array.Repa.Bulk.Seq.Reduction
         Data.Array.Repa.Bulk.Par
         Data.Array.Repa.Bulk.Par.Gang
 
   Other-modules:
         Data.Array.Repa.Bulk.Seq.Chunked
-        Data.Array.Repa.Bulk.Par.Chunked
+        Data.Array.Repa.Bulk.Seq.Reduction
 
+        Data.Array.Repa.Bulk.Par.Chunked
+        Data.Array.Repa.Bulk.Par.Reduction

@@ -60,7 +60,7 @@ fillChunkedIO
                 -- ^ Update function to write into result buffer.
         -> (Int# -> IO (Int# -> IO a))    
                 -- ^ Create a function to get the value at a given index.
-                --   The first `Int` is the thread number, so you can do some
+                --   The first argument is the thread number, so you can do some
                 --   per-thread initialisation.
         -> Int#  -- ^ Number of elements.
         -> IO ()
