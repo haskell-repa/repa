@@ -39,22 +39,22 @@ data Flow rep bal a
 -------------------------------------------------------------------------------
 -- | Convert an unboxed vector
 --   to a delayed, balanced, parallel flow.
-flow    :: (Elt a, U.Unbox a) 
-        => Gang -> U.Vector a -> Flow Seq.FD BB a
-flow !gang !vec
- = let  !frags          = gangSize gang
-        !(I# len)       = U.length vec
+flow    :: Elt a 
+        => Gang 
+        -> (Int# -> a)          -- ^ Get the element at the given index.
+        -> Int#                 -- ^ Total length of flow.
+        -> Flow Seq.FD BB a
 
+flow !gang !load !len
+ = let  !frags          = gangSize gang
         !distro         = balanced frags len
         !fragStart      = distroBalancedFragStart  distro
         !fragLength     = distroBalancedFragLength distro
 
         frag _ tid
-                = Seq.flow 
-                $ U.unsafeSlice 
-                        (I# (fragStart tid))
-                        (I# (fragLength tid))
-                        vec
+         = let  load' ix = load (ix +# fragStart tid)
+                len'     = fragLength tid
+           in   Seq.flow load' len'
         {-# INLINE frag #-}
 
    in   Flow    { flowGang      = gang
@@ -138,6 +138,8 @@ instance Unflow BN where
         -- TODO: rubbish concat needs to die
         --       to a scan to work out target index 
         --       then each thread should copy its results into the final vector
+        --       API should take an update function, 
+        --       only use unboxed vectors internally.
         chunks          <- V.unsafeFreeze mchunks
         return  $ U.concat $ V.toList chunks
  {-# INLINE [1] unflow #-}

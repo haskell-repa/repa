@@ -128,9 +128,13 @@ sizeMin !s1 !s2
 
 
 -------------------------------------------------------------------------------
--- | Convert an unboxed vector to a delayed flow.       -- TODO: genericise
-flow :: (Elt a, U.Unbox a) => U.Vector a -> Flow r a
-flow !vec
+-- | Create a delayed flow.
+flow    :: Elt a 
+        => (Int# -> a)  -- ^ Function to get the element at the given index.
+        -> Int#         -- ^ Total number of elements.
+        -> Flow r a
+
+flow !load !len
  = Flow start size report get1 get8
  where  
         start
@@ -141,27 +145,24 @@ flow !vec
 
 
         size refIx
-         = do   let !(I# len)   = U.length vec
-                !(I# ix)        <- iread refIx 0#
+         = do   !(I# ix)        <- iread refIx 0#
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
 
 
         report refIx
-         = do   let !len        = U.length vec
-                !ix             <- iread refIx 0#
-                return  $ R.Flow len ix
+         = do   !ix             <- iread refIx 0#
+                return  $ R.Flow (I# len) ix
         {-# NOINLINE report #-}
 
 
         get1 refIx push1
-         = do   let !(I# len)    = U.length vec
-                !(I# ix)        <- iread refIx 0#
+         = do   !(I# ix)        <- iread refIx 0#
                 let !remain     =  len -# ix
                 if remain ># 0#
                  then do
                         iwrite refIx 0# (ix +# 1#)
-                        let !x  = U.unsafeIndex vec (I# ix)
+                        let !x  = load ix
 
                         -- Touch because we want to be sure its unboxed as
                         -- soon as we read it. It we don't touch it, and
@@ -177,8 +178,7 @@ flow !vec
 
 
         get8 refIx push8
-         = do   let !(I# len)   = U.length vec
-                !(I# ix)        <- iread refIx 0#
+         = do   !(I# ix)        <- iread refIx 0#
                 let !remain     = len -# ix
                 if remain >=# 8#
                  then do
@@ -187,14 +187,14 @@ flow !vec
                         -- TODO: not sure whether we should force these here
                         let here' = return
 
-                        !x0     <- here' $ U.unsafeIndex vec (I# (ix +# 0#))
-                        !x1     <- here' $ U.unsafeIndex vec (I# (ix +# 1#))
-                        !x2     <- here' $ U.unsafeIndex vec (I# (ix +# 2#))
-                        !x3     <- here' $ U.unsafeIndex vec (I# (ix +# 3#))
-                        !x4     <- here' $ U.unsafeIndex vec (I# (ix +# 4#))
-                        !x5     <- here' $ U.unsafeIndex vec (I# (ix +# 5#))
-                        !x6     <- here' $ U.unsafeIndex vec (I# (ix +# 6#))
-                        !x7     <- here' $ U.unsafeIndex vec (I# (ix +# 7#))
+                        !x0     <- here' $ load (ix +# 0#)
+                        !x1     <- here' $ load (ix +# 1#)
+                        !x2     <- here' $ load (ix +# 2#)
+                        !x3     <- here' $ load (ix +# 3#)
+                        !x4     <- here' $ load (ix +# 4#)
+                        !x5     <- here' $ load (ix +# 5#)
+                        !x6     <- here' $ load (ix +# 6#)
+                        !x7     <- here' $ load (ix +# 7#)
 
                         push8 $ Yield8 x0 x1 x2 x3 x4 x5 x6 x7
 
