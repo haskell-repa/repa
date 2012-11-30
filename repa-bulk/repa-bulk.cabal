@@ -41,6 +41,7 @@ Library
   Exposed-modules:
         Data.Array.Repa.Bulk.Elt
         Data.Array.Repa.Bulk.Seq
+        Data.Array.Repa.Bulk.Seq.Reduction
         Data.Array.Repa.Bulk.Par
         Data.Array.Repa.Bulk.Par.Gang
 
