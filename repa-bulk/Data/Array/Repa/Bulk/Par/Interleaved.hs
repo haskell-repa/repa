@@ -2,11 +2,11 @@
 module Data.Array.Repa.Bulk.Par.Interleaved
         (fillInterleaved)
 where
-import Data.Array.Repa.Bulk.Par.Gang
+import Data.Array.Repa.Bulk.Gang
 import GHC.Exts
 
 
--- | Fill something in parallel.
+-- | Fill something in parallel, using a round-robin order.
 -- 
 --   * Threads handle elements in row major, round-robin order.
 --

@@ -1,5 +1,5 @@
 -- | Gang Primitives.
-module Data.Array.Repa.Bulk.Par.Gang
+module Data.Array.Repa.Bulk.Gang
         ( -- theGang
           Gang, forkGang, gangSize, gangIO, gangST)     
 where

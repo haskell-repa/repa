@@ -3,7 +3,7 @@ module Data.Array.Repa.Bulk.Par.Reduction
         ( foldAll
         , foldInner)
 where
-import Data.Array.Repa.Bulk.Par.Gang
+import Data.Array.Repa.Bulk.Gang
 import GHC.Exts
 import qualified Data.Array.Repa.Bulk.Seq.Reduction     as Seq
 import qualified Data.Vector                            as V

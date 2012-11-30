@@ -3,7 +3,7 @@ module Data.Array.Repa.Bulk.Par.Chunked
         ( fillChunked
         , fillChunkedIO)
 where
-import Data.Array.Repa.Bulk.Par.Gang
+import Data.Array.Repa.Bulk.Gang
 import GHC.Exts
 
 -------------------------------------------------------------------------------
