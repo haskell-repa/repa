@@ -11,11 +11,10 @@ Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
 Description:    
-        Data-flow based array fusion doesn't depend on the construtor specialisation
-        transform or strictness analysis working well.
+        Low-level parallel operators on incremental data flows.
 
 Synopsis:
-        Data-flow based array fusion.
+        Low-level parallel operators on incremental data flows.
 
 Library
   Build-Depends: 
