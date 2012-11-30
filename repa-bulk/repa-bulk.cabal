@@ -1,0 +1,43 @@
+Name:           repa-bulk
+Version:        4.0.0.0
+License:        BSD3
+License-file:   LICENSE
+Author:         The DPH Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:    
+        Low-level parallel operators on bulk random-accessble arrays.
+
+Synopsis:
+        Data-flow based array fusion.
+
+Library
+  Build-Depends: 
+        base            == 4.6.*,
+        ghc-prim        == 0.3.*,
+        vector          == 0.10.*
+
+  ghc-options:
+        -Wall 
+        -fno-warn-missing-signatures
+        -O2
+        -fcpr-off
+        -fno-spec-constr
+        -funbox-strict-fields
+
+  extensions:
+        BangPatterns
+        MagicHash
+        UnboxedTuples
+        ScopedTypeVariables
+        PatternGuards
+        FlexibleInstances
+
+  Exposed-modules:
+        Data.Array.Repa.Bulk.Par.Gang
+
