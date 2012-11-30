@@ -37,6 +37,8 @@ Library
         ScopedTypeVariables
         PatternGuards
         FlexibleInstances
+        TypeOperators
+        FlexibleContexts
 
   Exposed-modules:
         Data.Array.Repa.Bulk.Elt
