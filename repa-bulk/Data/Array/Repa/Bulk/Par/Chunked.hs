@@ -13,23 +13,24 @@ import GHC.Exts
 --     and each thread linearly fills one chunk.
 -- 
 fillChunked
-        :: (Int# -> a -> IO ())  -- ^ Update function to write into result buffer.
+        :: Gang                  -- ^ Gang to run the operation on.
+        -> (Int# -> a -> IO ())  -- ^ Update function to write into result buffer.
         -> (Int# -> a)           -- ^ Function to get the value at a given index.
         -> Int#                  -- ^ Number of elements.
         -> IO ()
 
-fillChunked write getElem len
- =      gangIO theGang
-         $  \thread -> 
-              let !start   = splitIx thread
-                  !end     = splitIx (thread +# 1#)
-              in  fill start end
+fillChunked gang write getElem len
+ = gangIO gang
+ $  \thread -> 
+    let !start   = splitIx thread
+        !end     = splitIx (thread +# 1#)
+    in  fill start end
 
  where
         -- Decide now to split the work across the threads.
         -- If the length of the vector doesn't divide evenly among the threads,
         -- then the first few get an extra element.
-        !threads        = gangSize theGang
+        !threads        = gangSize gang
         !chunkLen       = len `quotInt#` threads
         !chunkLeftover  = len `remInt#`  threads
 
@@ -56,27 +57,28 @@ fillChunked write getElem len
 --     and each thread linearly fills one chunk.
 --
 fillChunkedIO
-        :: (Int# -> a -> IO ())          
-                -- ^ Update function to write into result buffer.
+        :: Gang  -- ^ Gang to run the operation on.
+        -> (Int# -> a -> IO ())          
+                 -- ^ Update function to write into result buffer.
         -> (Int# -> IO (Int# -> IO a))    
-                -- ^ Create a function to get the value at a given index.
-                --   The first argument is the thread number, so you can do some
-                --   per-thread initialisation.
+                 -- ^ Create a function to get the value at a given index.
+                 --   The first argument is the thread number, so you can do some
+                 --   per-thread initialisation.
         -> Int#  -- ^ Number of elements.
         -> IO ()
 
-fillChunkedIO write mkGetElem len
- =      gangIO theGang
-         $  \thread -> 
-              let !start = splitIx thread
-                  !end   = splitIx (thread +# 1#)
-              in fillChunk thread start end 
+fillChunkedIO gang write mkGetElem len
+ = gangIO gang
+ $  \thread -> 
+    let !start = splitIx thread
+        !end   = splitIx (thread +# 1#)
+    in fillChunk thread start end 
 
  where
         -- Decide now to split the work across the threads.
         -- If the length of the vector doesn't divide evenly among the threads,
         -- then the first few get an extra element.
-        !threads        = gangSize theGang
+        !threads        = gangSize gang
         !chunkLen       = len `quotInt#` threads
         !chunkLeftover  = len `remInt#`  threads
 

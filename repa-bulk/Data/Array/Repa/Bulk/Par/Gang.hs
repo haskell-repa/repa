@@ -1,7 +1,7 @@
 -- | Gang Primitives.
 module Data.Array.Repa.Bulk.Par.Gang
-        ( theGang
-        , Gang, forkGang, gangSize, gangIO, gangST)     
+        ( -- theGang
+          Gang, forkGang, gangSize, gangIO, gangST)     
 where
 import GHC.IO
 import GHC.ST
@@ -9,37 +9,8 @@ import GHC.Conc                 (forkOn)
 import Control.Concurrent.MVar
 import Control.Exception        (assert)
 import Control.Monad
-import GHC.Conc                 (numCapabilities)
 import System.IO
 import GHC.Exts
-
--- TheGang --------------------------------------------------------------------
--- | This globally shared gang is auto-initialised at startup and shared by all
---   Repa computations.
---
---   In a data parallel setting, it does not help to have multiple gangs
---   running at the same time. This is because a single data parallel
---   computation should already be able to keep all threads busy. If we had
---   multiple gangs running at the same time, then the system as a whole would
---   run slower as the gangs would contend for cache and thrash the scheduler.
---
---   If, due to laziness or otherwise, you try to start multiple parallel
---   Repa computations at the same time, then you will get the following
---   warning on stderr at runtime:
---
--- @Data.Array.Repa: Performing nested parallel computation sequentially.
---    You've probably called the 'compute' or 'copy' function while another
---    instance was already running. This can happen if the second version
---    was suspended due to lazy evaluation. Use 'deepSeqArray' to ensure that
---    each array is fully evaluated before you 'compute' the next one.
--- @
---
-theGang :: Gang
-theGang 
- = unsafePerformIO 
- $ do   let !(I# caps) = numCapabilities
-        forkGang caps
-{-# NOINLINE theGang #-}
 
 
 -- Requests -------------------------------------------------------------------
@@ -193,11 +164,13 @@ seqIO   :: Gang -> (Int# -> IO ()) -> IO ()
 seqIO (Gang n _ _ _) action
  = do   hPutStr stderr
          $ unlines
-         [ "Data.Array.Repa: Performing nested parallel computation sequentially."
-         , "  You've probably called the 'compute' or 'copy' function while another"
-         , "  instance was already running. This can happen if the second version"
-         , "  was suspended due to lazy evaluation. Use 'deepSeqArray' to ensure"
-         , "  that each array is fully evaluated before you 'compute' the next one."
+         [ "Data.Array.Repa.Bulk.Par: Performing nested parallel computation sequentially."
+         , "  Something is trying to run a compuation on a gang that is already busy.     "
+         , "  You've probably used a Repa 'computeP', 'foldP' or similar function while   "
+         , "  another instance was already running. This can happen if you've passed a    "
+         , "  parallel worker function to a combinator like 'map', or some parallel       "
+         , "  compuation was suspended via lazy evaluation. Try using `seq` to ensure that"
+         , "  each array is fully evaluated before computing the next one.                "
          , "" ]
 
         mapM_ (\(I# i) -> action i) [0 .. (I# n) - 1]

@@ -18,24 +18,25 @@ import qualified Data.Vector.Mutable                    as VM
 --   computes a fold1 on its chunk of the data, and the seed element is only
 --   applied in the final reduction step.
 --
-foldAll :: (Int# -> a)         -- ^ Function to get an element from the source.
+foldAll :: Gang                -- ^ Gang to run the operation on.
+        -> (Int# -> a)         -- ^ Function to get an element from the source.
         -> (a -> a -> a)       -- ^ Binary associative combining function.
         -> a                   -- ^ Starting value.
         -> Int#                -- ^ Number of elements.
         -> IO a
 
-foldAll f c !r !len
+foldAll !gang f c !r !len
  | len ==# 0#   = return r
  | otherwise   
  = do   mvec    <- VM.unsafeNew (I# chunks)
 
-        gangIO theGang 
+        gangIO gang
          $ \tid -> fill mvec tid (split tid) (split (tid +# 1#))
 
         vec     <- V.unsafeFreeze mvec
         return  $! V.foldl' c r vec
   where
-        !threads    = gangSize theGang
+        !threads    = gangSize gang
         !step       = (len +# threads -# 1#) `quotInt#` threads
         chunks      = ((len +# step -# 1#)   `quotInt#` step) `min#` threads
 
@@ -62,7 +63,8 @@ foldAll f c !r !len
 --   Each output value is computed by a single thread, with the output values
 --   distributed evenly amongst the available threads.
 foldInner 
-        :: (Int# -> a -> IO ()) -- ^ Function to write into the result buffer.
+        :: Gang                 -- ^ Gang to run the operation on.
+        -> (Int# -> a -> IO ()) -- ^ Function to write into the result buffer.
         -> (Int# -> a)          -- ^ Function to get an element from the source.
         -> (a -> a -> a)        -- ^ Binary associative combination operator.
         -> a                    -- ^ Neutral starting value.
@@ -70,11 +72,11 @@ foldInner
         -> Int#                 -- ^ Inner dimension (length to fold over).
         -> IO ()
 
-foldInner write f c !r !len !n
- = gangIO theGang
+foldInner gang write f c !r !len !n
+ = gangIO gang
  $ \tid -> fill (split tid) (split (tid +# 1#))
   where
-        !threads = gangSize theGang
+        !threads = gangSize gang
         !step    = (len +# threads -# 1#) `quotInt#` threads
 
         split !ix 
