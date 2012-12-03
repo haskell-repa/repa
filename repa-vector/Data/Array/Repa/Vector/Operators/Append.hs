@@ -1,16 +1,43 @@
 
 module Data.Array.Repa.Vector.Operators.Append
-        ( appends
+        ( -- * Uniform appends
+          append
+
+          -- * Segmented appends
+        , appends
         , appendsWithResultSegd)
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Segd
 import Data.Array.Repa.Vector.Repr.Flow
+import Data.Array.Repa.Vector.Repr.Delayed
 import Data.Array.Repa.Vector.Operators.Bulk
-import Data.Array.Repa.Vector.Operators.Zip     as R
-import qualified Data.Array.Repa.Vector.Segd    as Segd
-import qualified Data.Array.Repa.Flow.Par       as F
+import Data.Array.Repa.Vector.Operators.Traverse
+import Data.Array.Repa.Vector.Operators.Zip             as R
+import qualified Data.Array.Repa.Vector.Segd            as Segd
+import qualified Data.Array.Repa.Flow.Par               as F
 import GHC.Exts
+
+
+-- | Uniform append.
+append
+        :: (Bulk r1 a, Bulk r2 a, Shape sh)
+        => Array r1 (sh :. Int) a
+        -> Array r2 (sh :. Int) a
+        -> Array D  (sh :. Int) a
+
+append arr1 arr2
+ = traverse2 arr1 arr2 fnExtent fnElem
+ where
+        (_ :. n)        = extent arr1
+
+        fnExtent (sh :. i) (_  :. j)
+                = sh :. (i + j)
+
+        fnElem f1 f2 (sh :. i)
+                | i < n         = f1 (sh :. i)
+                | otherwise     = f2 (sh :. (i - n))
+{-# INLINE [4] append #-}
 
 
 -- | Segmented append.
@@ -29,7 +56,7 @@ appends segdA vecA segdB vecB
                         $ R.zipWith (+) (Segd.lengths segdA)
                                         (Segd.lengths segdB)
 
-        segdResult      = Segd.splitSegd theGang 
+        segdResult      = Segd.splitSegd 
                         $ Segd.fromLengths lensResult
 
    in   appendsWithResultSegd

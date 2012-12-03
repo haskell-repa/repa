@@ -95,6 +95,13 @@ instance U.Unbox a => Folds D a where
  {-# INLINE [4] folds #-}
 
 
+instance (U.Unbox a, Elt a) => Folds U a where
+ type TF U = O FD BN
+ folds f z segd vec
+        = folds f z segd (flow vec)
+ {-# INLINE [4] folds #-}
+
+
 instance U.Unbox a => Folds (O mode BB) a where
  type TF (O mode BB)
         = O mode BN
@@ -104,11 +111,6 @@ instance U.Unbox a => Folds (O mode BB) a where
  {-# INLINE [4] folds #-}
 
 
-instance (U.Unbox a, Elt a) => Folds U a where
- type TF U = O FD BN
- folds f z segd vec
-        = folds f z segd (flow vec)
- {-# INLINE [4] folds #-}
 
 
 -------------------------------------------------------------------------------

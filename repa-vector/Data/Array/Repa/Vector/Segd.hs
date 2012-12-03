@@ -15,7 +15,7 @@ module Data.Array.Repa.Vector.Segd
 where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Unboxed
-import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd, empty, splitSegd)
+import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd, empty)
 import qualified Data.Array.Repa.Flow.Par.Segd  as Segd
 import qualified Data.Vector.Unboxed            as U
 import GHC.Exts
@@ -41,6 +41,13 @@ elements :: Segd -> Int
 elements segd
         = I# (Segd.elements segd)
 {-# INLINE [4] elements #-}
+
+
+-- | O(log segs). Preprocess a `Segd` by splitting it into chunks, trying
+--   to assign the same number of elements to each thread.
+splitSegd   :: Segd -> SplitSegd
+splitSegd segd
+        = Segd.splitSegd theGang segd
 
 
 -- | O(1). Take the original unsplit version from a SplitSegd.

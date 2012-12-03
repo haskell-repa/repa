@@ -52,17 +52,18 @@ Library
         Data.Array.Repa.Vector.Repr.Delayed
         Data.Array.Repa.Vector.Repr.Unboxed
         Data.Array.Repa.Vector.Repr.Flow
-        Data.Array.Repa.Vector.Operators.Bulk
-        Data.Array.Repa.Vector.Operators.Map
-        Data.Array.Repa.Vector.Operators.Zip
-        Data.Array.Repa.Vector.Operators.Unzip
         Data.Array.Repa.Vector.Operators.Append
-        Data.Array.Repa.Vector.Operators.Fold
-        Data.Array.Repa.Vector.Operators.Flatten
-        Data.Array.Repa.Vector.Operators.Project
-        Data.Array.Repa.Vector.Operators.Pack
+        Data.Array.Repa.Vector.Operators.Bulk
         Data.Array.Repa.Vector.Operators.Combine
+        Data.Array.Repa.Vector.Operators.Flatten
+        Data.Array.Repa.Vector.Operators.Fold
+        Data.Array.Repa.Vector.Operators.Map
+        Data.Array.Repa.Vector.Operators.Pack
+        Data.Array.Repa.Vector.Operators.Project
         Data.Array.Repa.Vector.Operators.Replicate
+        Data.Array.Repa.Vector.Operators.Traverse
+        Data.Array.Repa.Vector.Operators.Unzip
+        Data.Array.Repa.Vector.Operators.Zip
 
   Other-modules:
         Data.Array.Repa.Vector.Base
