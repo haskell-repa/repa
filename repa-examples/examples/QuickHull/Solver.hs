@@ -80,19 +80,12 @@ hsplit_l segd points lines
  -- No points to process, we're done already.
  | Segd.elements segd == 0
  = let  !segd'          = Segd.fromLengths
-                        $ fromListUnboxed (Z :. 1) [0]
+                        $ fromListUnboxed (Z :. 0) []
         !points'        = fromListUnboxed (Z :. 0) []
-   in   trace ("stop segd' = " ++ show segd')
-          $ (segd', points')
+   in   (segd', points')
 
  | otherwise
- = trace (unlines
-        [ "-----------------------------------"
-        , "hsplit_l"
-        , "segd   = " ++ show segd
-        , "points = " ++ show points
-        , "lines  = " ++ show lines ])
- $ let  -- The determinate tells us how far from its line each point is.
+ = let  -- The determinate tells us how far from its line each point is.
         dets            :: Vector U Double
         !dets           = R.unflowP
                         $ R.zipWith detFn   points
@@ -107,8 +100,7 @@ hsplit_l segd points lines
 
         -- Select points above the lines.
         above           :: Vector U Point
-        !above          = trace ("dets'  = " ++ show dets' ++ "\n")
-                        $ R.unflowP 
+        !above          = R.unflowP 
                         $ R.pack
                         $ R.zip (R.map (> 0) dets) points
 
@@ -126,10 +118,7 @@ hsplit_l segd points lines
 
 
         -- if-then-else ------------------------------------ THEN
-        !lines_then     = trace ("points = " ++ show points ++ "\n")
-                        $ trace ("thing  = " ++ show thing  ++ "\n")
-                        $ trace ("above  = " ++ show above  ++ "\n")
-                        $ R.unflowP $ R.pack $ R.zip flagsThen lines
+        !lines_then     = R.unflowP $ R.pack $ R.zip flagsThen lines
 
         !hullSegd       = Segd.fromLengths
                         $ computeP $ R.replicate (ix1 (R.length lines_then)) 1
@@ -202,30 +191,17 @@ hsplit_l segd points lines
         -- the if-then-else.
         !flagsThen'     = computeP flagsThen
         !combLengths    = R.combine2 flagsThen'
-                                (Segd.lengths hullSegd)
                                 (Segd.lengths catSegd)
+                                (Segd.lengths hullSegd)
 
         !combSegd       = Segd.fromLengths combLengths
 
         -- Combine the points from both sides of the if-then-else.
-        !combPoints     = trace ("hullPoints = " ++ show hullPoints)
-                        $ trace ("moarPoints = " ++ show moarPoints)
-                        $ R.combines2 flagsThen'
-                                hullSegd hullPoints
+        !combPoints     = R.combines2 flagsThen'
                                 catSegd  moarPoints
+                                hullSegd hullPoints
 
-   in   trace (unlines
-                [ "****"
-                , "flagsThen' = " ++ show flagsThen'
-                , "hullSegd   = " ++ show hullSegd
-                , "hullPoints = " ++ show hullPoints
-                , "catSegd    = " ++ show catSegd
-                , "moarSegd   = " ++ show moarSegd
-                , "moarPoints = " ++ show moarPoints
-                , "combSegd   = " ++ show combSegd
-                , "combPoints = " ++ show combPoints
-                , ""])
-         $ (combSegd, combPoints)
+   in   (combSegd, combPoints)
 
 
 -- Until we implement this.

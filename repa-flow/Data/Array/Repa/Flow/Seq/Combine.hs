@@ -21,9 +21,9 @@ combine2
         -> Flow mode a         -- ^ Elements of @B@ vector.
         -> Flow mode a
 
-combine2 (Flow startF sizeF reportF getF1 _)
-         (Flow startA sizeA reportA getA1 _)
-         (Flow startB sizeB reportB getB1 _)
+combine2 (Flow startF sizeF  reportF getF1 _)
+         (Flow startA _sizeA reportA getA1 _)
+         (Flow startB _sizeB reportB getB1 _)
  = Flow start' size' report' get1' get8'
  where
         start'
@@ -32,7 +32,7 @@ combine2 (Flow startF sizeF reportF getF1 _)
                 stateB  <- startB
                 return  (stateF, stateA, stateB)
 
-        size'   (stateF, stateA, stateB)
+        size'   (stateF, _stateA, _stateB)
          = do   szF     <- sizeF stateF
                 return  szF
 
@@ -49,13 +49,13 @@ combine2 (Flow startF sizeF reportF getF1 _)
                 Yield1 f _
                  -> case f of
                      -- Emit an element from the first stream.
-                     True    -> getA1 stateA $ \mfA
+                     False    -> getA1 stateA $ \mfA
                              -> case mfA of
                                  Yield1 a _     -> out push1 (Just a)
                                  Done           -> out push1 Nothing
 
                      -- Emit an element from the second stream.
-                     False   -> getB1 stateB $ \mfB
+                     True   -> getB1 stateB $ \mfB
                              -> case mfB of
                                  Yield1 b _     -> out push1 (Just b)
                                  Done           -> out push1 Nothing
@@ -89,22 +89,24 @@ combine2 (Flow startF sizeF reportF getF1 _)
 --   elements from the first stream...
 --
 combines2
-        :: Flow mode Bool      -- ^ Flags.
-        -> Flow mode Int       -- ^ Segment lengths of @A@ vector.
-        -> Flow mode a         -- ^ Elements of @A@ vector.
-        -> Flow mode Int       -- ^ Segment lengths of @B@ vector.
-        -> Flow mode a         -- ^ Elements of @B@ vector.
+        :: Int#                 -- ^ Total length of result
+        -> Flow mode Bool       -- ^ Flags.
+        -> Flow mode Int        -- ^ Segment lengths of @A@ vector.
+        -> Flow mode a          -- ^ Elements of @A@ vector.
+        -> Flow mode Int        -- ^ Segment lengths of @B@ vector.
+        -> Flow mode a          -- ^ Elements of @B@ vector.
         -> Flow mode a
 
-combines2 (Flow startF     sizeF     reportF     getF1     _)
-          (Flow startLenA  sizeLenA  reportLenA  getLenA1  _)
-          (Flow startElemA sizeElemA reportElemA getElemA1 _)
-          (Flow startLenB  sizeLenB  reportLenB  getLenB1  _)
-          (Flow startElemB sizeElemB reportElemB getElemB1 _)
+combines2 resultLen
+          (Flow startF     _sizeF     reportF     getF1     _)
+          (Flow startLenA  _sizeLenA  reportLenA  getLenA1  _)
+          (Flow startElemA _sizeElemA reportElemA getElemA1 _)
+          (Flow startLenB  _sizeLenB  reportLenB  getLenB1  _)
+          (Flow startElemB _sizeElemB reportElemB getElemB1 _)
  = Flow start' size' report' get1' get8'
  where
         sSource = 0#    -- Source vector currently being read.
-        sRemain = 0#    -- Number of elements remaining in current segment.
+        sRemain = 1#    -- Number of elements remaining in current segment.
                         -- Setting this to 0 force the first flag to be loaded
                         --  on the first call to get1.
 
@@ -122,15 +124,8 @@ combines2 (Flow startF     sizeF     reportF     getF1     _)
                 return  (state, stateF, stateLenA, stateElemA, stateLenB, stateElemB)
 
 
-        size'   (!_, !stateF, !stateLenA, !stateElemA, !stateLenB, !stateElemB)
-         = do   szF             <- sizeF       stateF
-                szLenA          <- sizeLenA    stateLenA
-                szElemA         <- sizeElemA   stateElemA
-                szLenB          <- sizeLenB    stateLenB
-                szElemB         <- sizeElemB   stateElemB
-                return  $ sizeMin szF (sizeMin (sizeMin szLenA szElemA) 
-                                               (sizeMin szLenB szElemB))
-
+        size'   _
+         =      return  $ Exact resultLen               -- TODO: this doesn't work incrementally.
 
         report' (!_, !stateF, !stateLenA, !stateElemA, !stateLenB, !stateElemB)
          = do   rpF             <- reportF     stateF
@@ -191,7 +186,7 @@ combines2 (Flow startF     sizeF     reportF     getF1     _)
 
                     Just x  
                      -> do  iwrite state sSource source
-                            iwrite state sSource (remain -# 1#)
+                            iwrite state sRemain (remain -# 1#)
                             push1 $ Yield1 x False
 
         get8' _ push1

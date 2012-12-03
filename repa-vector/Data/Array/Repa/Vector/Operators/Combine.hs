@@ -61,9 +61,11 @@ combines2
         -> Vector U a
 
 combines2 fs segdA elemsA segdB elemsB
-        = AUnboxed
+ = let  !(I# resultLen)  = Segd.elements segdA + Segd.elements segdB
+   in   AUnboxed
                 (extent fs)
                 (F.unflow $ F.combines2
+                        resultLen
                         (flowUnboxed fs)
                         (flowUnboxed $ Segd.lengths segdA)
                         (flowUnboxed elemsA)
