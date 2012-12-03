@@ -70,11 +70,11 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
 
         frag' (state1, mvars) n
-         = let  !chunk          = (V.!) (Segd.splitChunk segd) (I# n)
+         = let  !chunk          = vindex (Segd.splitChunk segd) (I# n)
                 !segLens        = Segd.chunkLengths chunk
                 !(I# segsHere)  = U.length segLens
 
-                getSegIxLen seg = (I# seg, (U.!) segLens (I# seg))
+                getSegIxLen seg = (I# seg, uindex segLens (I# seg))
                 fSegIxLens      = Seq.generate segsHere getSegIxLen 
 
                 -- If the first segment is split across a thread boundary

@@ -7,8 +7,6 @@ import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq.Append        as Seq
-import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector                            as V
 import GHC.Exts
 
 
@@ -30,13 +28,13 @@ appends segdr segdA getElemA segdB getElemB
          = return ()
 
         unbox (I# i)    = i
-        getSegLenA i    = unbox ((U.!) (Segd.lengths segdA) (I# i))
-        getSegIxA  i    = unbox ((U.!) (Segd.indices segdA) (I# i))
-        getSegLenB i    = unbox ((U.!) (Segd.lengths segdB) (I# i))
-        getSegIxB  i    = unbox ((U.!) (Segd.indices segdB) (I# i))
+        getSegLenA i    = unbox (uindex (Segd.lengths segdA) (I# i))
+        getSegIxA  i    = unbox (uindex (Segd.indices segdA) (I# i))
+        getSegLenB i    = unbox (uindex (Segd.lengths segdB) (I# i))
+        getSegIxB  i    = unbox (uindex (Segd.indices segdB) (I# i))
 
         frag _state n
-         = let  !chunk   = V.unsafeIndex (Segd.splitChunk segdr) (I# n)
+         = let  !chunk   = vindex (Segd.splitChunk segdr) (I# n)
            in   Seq.appends
                         getSegLenA getSegIxA getElemA
                         getSegLenB getSegIxB getElemB

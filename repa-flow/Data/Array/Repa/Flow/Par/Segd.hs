@@ -13,6 +13,7 @@ module Data.Array.Repa.Flow.Par.Segd
 where
 import Data.Array.Repa.Flow.Par.SegdSplit
 import Data.Array.Repa.Flow.Par.Distro
+import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Bulk.Gang
 import qualified Data.Vector                      as V
 import qualified Data.Vector.Unboxed              as U
@@ -135,13 +136,13 @@ distroOfSplitSegd (SplitSegd _ (Segd _ _ ixs) nElems nChunks chunks)
         , distroBalancedLength     = nElems
 
         , distroBalancedFragLength 
-           = \ix -> chunkElems (V.unsafeIndex chunks (I# ix))
+           = \ix -> chunkElems (vindex chunks (I# ix))
 
         , distroBalancedFragStart  
            = \ix ->
-                let chunk        = V.unsafeIndex chunks (I# ix)
+                let chunk        = vindex chunks (I# ix)
                     seg          = chunkStart chunk
-                    !(I# seg_ix) = ixs `U.unsafeIndex` (I# seg)
+                    !(I# seg_ix) = uindex ixs    (I# seg)
                     offset       = chunkOffset chunk
                 in  offset +# seg_ix }
 {-# INLINE [1] distroOfSplitSegd #-}

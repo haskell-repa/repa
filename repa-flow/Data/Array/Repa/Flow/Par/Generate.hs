@@ -12,8 +12,6 @@ import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq.Generate      as Seq
-import qualified Data.Vector                            as V
-import qualified Data.Vector.Unboxed                    as U
 import GHC.Exts
 import Prelude hiding (replicate)
 
@@ -80,11 +78,10 @@ replicatesSplit segd getSegVal
         start           = return ()
 
         frag _ n  
-         = let  chunk            = V.unsafeIndex (Segd.splitChunk segd) (I# n)
+         = let  chunk            = vindex (Segd.splitChunk segd) (I# n)
                 !elems           = Segd.chunkElems chunk
                 !segStart        = Segd.chunkStart chunk
-                getSegLen'  seg  = let !(I# r) = U.unsafeIndex 
-                                                        (Segd.chunkLengths chunk) 
+                getSegLen'  seg  = let !(I# r) = uindex (Segd.chunkLengths chunk) 
                                                         (I# seg)
                                    in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)

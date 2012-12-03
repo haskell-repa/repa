@@ -11,8 +11,6 @@ import Data.Array.Repa.Bulk.Gang
 import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Base
 import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
-import qualified Data.Vector.Mutable            as VM
 import qualified Data.Vector                    as V
 import qualified Data.Array.Repa.Flow.Seq       as Seq
 import qualified Data.Array.Repa.Flow.Seq.Base  as Seq
@@ -82,7 +80,7 @@ instance Unflow BB where
         let !getStart   = distroBalancedFragStart distro
 
         -- Allocate a mutable vector to hold the final results.
-        !mvec           <- UM.unsafeNew $ I# len
+        !mvec           <- unew $ I# len
 
         -- Start the parallel flow
         !statePar       <- startPar
@@ -97,7 +95,7 @@ instance Unflow BB where
                   -- The 'slurp' function below calls on this to write
                   -- results into the destination vector.
                   let write (I# ix)  val
-                        = UM.write mvec (I# (ixStart +# ix)) val                -- TODO: make unsafe
+                        = uwrite mvec (I# (ixStart +# ix)) val
 
                   case frag statePar tid of
                    Seq.Flow startSeq _size _report get1 get8
@@ -109,7 +107,7 @@ instance Unflow BB where
         -- Run the actions to write results into the target vector.
         gangIO gang action
 
-        U.unsafeFreeze mvec
+        ufreeze mvec
  {-# INLINE [1] unflow #-}
 
 
@@ -123,7 +121,7 @@ instance Unflow BN where
 
         -- Allocate a boxed mutable vector to hold the result from each thread.
         --  Each thread will write its own unboxed vector.
-        !mchunks        <- VM.unsafeNew (I# frags)
+        !mchunks        <- vnew (I# frags)
 
         -- Start the parallel flow
         !state          <- start
@@ -131,7 +129,7 @@ instance Unflow BN where
         -- The action that runs on each thread.
         let action tid
              = do uvec  <- Seq.drain (frag state tid)
-                  VM.write mchunks (I# tid) uvec                          -- TODO: make unsafe
+                  vwrite mchunks (I# tid) uvec
                   return ()
 
         -- Run the actions to compute each chunk.
@@ -142,7 +140,7 @@ instance Unflow BN where
         --       then each thread should copy its results into the final vector
         --       API should take an update function, 
         --       only use unboxed vectors internally.
-        chunks          <- V.unsafeFreeze mchunks
+        chunks          <- vfreeze mchunks
         return  $ U.concat $ V.toList chunks
  {-# INLINE [1] unflow #-}
 

@@ -236,8 +236,8 @@ unflowWith
 unflowWith !len get1 get8
  = do   !mvec    <- unew (I# len)
         !len'    <- slurp 0# Nothing (uwrite mvec) get1 get8
-        !vec     <- U.unsafeFreeze mvec
-        return   $  U.unsafeSlice 0 len' vec
+        !vec     <- ufreeze mvec
+        return   $  uslice 0 len' vec
 {-# INLINE [1] unflowWith #-}
 
 
@@ -258,8 +258,8 @@ take limit (Flow start size report get1 get8)
         !mvec    <- unew (I# limit)
         !len'    <- slurp 0# (Just (I# limit)) (uwrite mvec) 
                         (get1 state) (get8 state)
-        !vec     <- U.unsafeFreeze mvec
-        let !vec' = U.unsafeSlice 0 len' vec        
+        !vec     <- ufreeze mvec
+        let !vec' = uslice 0 len' vec        
 
         return  ( vec'
                 , Flow (return state) size report get1 get8)
