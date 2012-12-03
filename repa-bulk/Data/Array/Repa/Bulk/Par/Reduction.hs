@@ -3,11 +3,11 @@ module Data.Array.Repa.Bulk.Par.Reduction
         ( foldAll
         , foldInner)
 where
+import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Bulk.Gang
 import GHC.Exts
-import qualified Data.Array.Repa.Bulk.Seq.Reduction     as Seq
 import qualified Data.Vector                            as V
-import qualified Data.Vector.Mutable                    as VM
+import qualified Data.Array.Repa.Bulk.Seq.Reduction     as Seq
 
 
 -- | Parallel tree reduction of an array to a single value. Each thread takes an
@@ -28,12 +28,12 @@ foldAll :: Gang                -- ^ Gang to run the operation on.
 foldAll !gang f c !r !len
  | len ==# 0#   = return r
  | otherwise   
- = do   mvec    <- VM.unsafeNew (I# chunks)
+ = do   mvec    <- vnew (I# chunks)
 
         gangIO gang
          $ \tid -> fill mvec tid (split tid) (split (tid +# 1#))
 
-        vec     <- V.unsafeFreeze mvec
+        vec     <- vfreeze mvec
         return  $! V.foldl' c r vec
   where
         !threads    = gangSize gang
@@ -53,7 +53,7 @@ foldAll !gang f c !r !len
          | start >=# end = return ()
          | otherwise    
          = let  !x      = Seq.foldRange f c (f start) (start +# 1#) end
-           in   VM.unsafeWrite mvec (I# tid) x
+           in   vwrite mvec (I# tid) x
         {-# INLINE fill #-}
 
 {-# INLINE [1] foldAll #-}

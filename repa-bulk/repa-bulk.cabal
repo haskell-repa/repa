@@ -31,6 +31,7 @@ Library
         -funbox-strict-fields
 
   extensions:
+        NoMonomorphismRestriction
         BangPatterns
         MagicHash
         UnboxedTuples
@@ -47,6 +48,8 @@ Library
         Data.Array.Repa.Bulk.Par
 
   Other-modules:
+        Data.Array.Repa.Bulk.Base
+
         Data.Array.Repa.Bulk.Seq.Chunked
         Data.Array.Repa.Bulk.Seq.Cursored
         Data.Array.Repa.Bulk.Seq.Reduction

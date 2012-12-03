@@ -1,7 +1,6 @@
 -- | Gang Primitives.
 module Data.Array.Repa.Bulk.Gang
-        ( -- theGang
-          Gang, forkGang, gangSize, gangIO, gangST)     
+        (Gang, forkGang, gangSize, gangIO, gangST)     
 where
 import GHC.IO
 import GHC.ST
