@@ -17,6 +17,8 @@ import Control.Concurrent.MVar
 import Control.Monad
 import Prelude hiding (foldl)
 
+here = "Data.Array.Repa.Flow.Par.Fold"
+
 
 -------------------------------------------------------------------------------
 -- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
@@ -74,7 +76,7 @@ foldsSplit f !z segd (Flow gang distro start frag)
                 !segLens        = Segd.chunkLengths chunk
                 !(I# segsHere)  = U.length segLens
 
-                getSegIxLen seg = (I# seg, uindex segLens (I# seg))
+                getSegIxLen seg = (I# seg, uindex here segLens (I# seg))
                 fSegIxLens      = Seq.generate segsHere getSegIxLen 
 
                 -- If the first segment is split across a thread boundary

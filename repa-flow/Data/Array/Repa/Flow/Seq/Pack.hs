@@ -10,6 +10,7 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, filter)
 import GHC.Exts
 
+here    = "Data.Array.Repa.Flow.Seq.Pack"
 
 -------------------------------------------------------------------------------
 -- | Produce only the elements that have their corresponding flag set to `1`.
@@ -27,11 +28,11 @@ packByTag (Flow start size report get1 get8)
 
                 -- Number of elements in the buffer.
                 refLen  <- unew 1
-                uwrite refLen 0 (0 :: Int)
+                uwrite here refLen 0 (0 :: Int)
 
                 -- Where we're reading elements from.
                 refIx   <- unew 1
-                uwrite refIx 0 (0 :: Int)
+                uwrite here refIx 0 (0 :: Int)
                 return (state, buf, refLen, refIx)
 
 
@@ -61,7 +62,7 @@ packByTag (Flow start size report get1 get8)
                 drains ix
                  = do   -- Update the index
                         let !ix' = ix +# 1#
-                        uwrite refIx 0 (I# ix')
+                        uwrite here refIx 0 (I# ix')
 
                         -- Push the element to the consumer.
                         !x      <- uread buf (I# ix)
@@ -75,33 +76,33 @@ packByTag (Flow start size report get1 get8)
                          -> do  
                                 let ix0  = 0
 
-                                uwrite buf ix0 x0
+                                uwrite here buf ix0 x0
                                 let !ix1 = ix0 + b0
 
-                                uwrite buf ix1 x1
+                                uwrite here buf ix1 x1
                                 let !ix2 = ix1 + b1
 
-                                uwrite buf ix2 x2
+                                uwrite here buf ix2 x2
                                 let !ix3 = ix2 + b2
                                 
-                                uwrite buf ix3 x3
+                                uwrite here buf ix3 x3
                                 let !ix4 = ix3 + b3
                                 
-                                uwrite buf ix4 x4
+                                uwrite here buf ix4 x4
                                 let !ix5 = ix4 + b4
                                 
-                                uwrite buf ix5 x5
+                                uwrite here buf ix5 x5
                                 let !ix6 = ix5 + b5
                                 
-                                uwrite buf ix6 x6
+                                uwrite here buf ix6 x6
                                 let !ix7 = ix6 + b6
                                 
-                                uwrite buf ix7 x7
+                                uwrite here buf ix7 x7
                                 let !(I# len) = ix7 + b7
 
                                 if len ># 0#
                                  then do
-                                        uwrite refLen 0 (I# len)
+                                        uwrite here refLen 0 (I# len)
                                         drains 0#
 
                                  else fill8

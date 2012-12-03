@@ -81,7 +81,8 @@ replicatesSplit segd getSegVal
          = let  chunk            = vindex (Segd.splitChunk segd) (I# n)
                 !elems           = Segd.chunkElems chunk
                 !segStart        = Segd.chunkStart chunk
-                getSegLen'  seg  = let !(I# r) = uindex (Segd.chunkLengths chunk) 
+                getSegLen'  seg  = let !(I# r) = uindex "replicatesSplit"
+                                                        (Segd.chunkLengths chunk) 
                                                         (I# seg)
                                    in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)

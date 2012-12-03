@@ -111,7 +111,7 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
         start'
          = do   stateA  <- startA
                 refIx   <- unew 1
-                uwrite refIx 0 (0 :: Int)
+                iwrite refIx 0# 0#
                 return (stateA, refIx)
 
         size' (!stateA, _)
@@ -127,7 +127,7 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
          -> case r of
                 Yield1 x1 hint
                  -> do  !(I# ix)        <- uread refIx 0
-                        uwrite refIx 0 (I# (ix +# 1#))
+                        iwrite refIx 0# (ix +# 1#)
                         push1 $ Yield1 (x1, getB ix) hint
 
                 Done -> push1 $ Done
@@ -138,7 +138,7 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
          -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
                  -> do  !(I# ix)        <- uread refIx 0
-                        uwrite refIx 0 (I# (ix +# 8#))
+                        iwrite refIx 0# (ix +# 8#)
                         push8 $ Yield8  (x0, getB (ix +# 0#))
                                         (x1, getB (ix +# 1#))
                                         (x2, getB (ix +# 2#))

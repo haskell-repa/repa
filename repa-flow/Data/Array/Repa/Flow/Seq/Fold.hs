@@ -10,6 +10,7 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
 import System.IO.Unsafe
 
+here    = "Data.Array.Repa.Flow.Seq.Fold"
 
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
@@ -18,7 +19,7 @@ foldl f z !(Flow start _ _ get1 get8)
  = unsafePerformIO
  $ do   
         outRef  <- unew 1
-        uwrite outRef 0 z
+        uwrite here outRef 0 z
 
         state  <- start
 
@@ -32,7 +33,7 @@ foldl f z !(Flow start _ _ get1 get8)
                                 else eat1 acc'
 
                 Done
-                 -> uwrite outRef 0 acc
+                 -> uwrite here outRef 0 acc
 
          eat8 !acc 
           =  get8 state $ \r 

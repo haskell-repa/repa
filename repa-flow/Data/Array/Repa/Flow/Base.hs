@@ -15,13 +15,23 @@ import GHC.Exts
 
 vindex  = (V.!)
 vnew    = VM.new
-vwrite  = VM.unsafeWrite
 vfreeze = V.unsafeFreeze
 
-uindex  = (U.!)
-unew    = UM.unsafeNew
-uread   = UM.unsafeRead
-uwrite  = UM.unsafeWrite
+vwrite str vec ix val
+ | ix >= VM.length vec  = error $ "vwrite: " ++ str
+ | otherwise            = VM.write vec ix val
+
+uindex str vec ix
+ | ix >= U.length vec   = error $ "uindex: " ++ str
+ | otherwise            = U.unsafeIndex vec ix
+
+unew    = UM.new
+uread   = UM.read
+
+uwrite str vec ix val
+ | ix >= UM.length vec  = error $ "uwrite: " ++ str
+ | otherwise            = UM.write vec ix val
+
 uslice  = U.unsafeSlice
 ufreeze = U.unsafeFreeze
 

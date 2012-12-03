@@ -17,6 +17,8 @@ import qualified Data.Array.Repa.Flow.Seq.Base  as Seq
 import System.IO.Unsafe
 import GHC.Exts
 
+here = "Data.Array.Repa.Flow.Par.Base"
+
 
 data Flow rep bal a
         = forall state. Flow
@@ -95,7 +97,7 @@ instance Unflow BB where
                   -- The 'slurp' function below calls on this to write
                   -- results into the destination vector.
                   let write (I# ix)  val
-                        = uwrite mvec (I# (ixStart +# ix)) val
+                        = uwrite here mvec (I# (ixStart +# ix)) val
 
                   case frag statePar tid of
                    Seq.Flow startSeq _size _report get1 get8
@@ -129,7 +131,7 @@ instance Unflow BN where
         -- The action that runs on each thread.
         let action tid
              = do uvec  <- Seq.drain (frag state tid)
-                  vwrite mchunks (I# tid) uvec
+                  vwrite here mchunks (I# tid) uvec
                   return ()
 
         -- Run the actions to compute each chunk.

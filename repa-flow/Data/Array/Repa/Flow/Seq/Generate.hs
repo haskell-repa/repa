@@ -10,6 +10,8 @@ import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (replicate)
 
+here = "Data.Array.Repa.Flow.Seq.Generate"
+
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
 generate :: Int# -> (Int# -> a) -> Flow mode a
@@ -18,7 +20,7 @@ generate len f
  where  
         start
          = do   refCount <- unew 1
-                uwrite refCount 0 0
+                uwrite here refCount 0 0
                 return refCount
         {-# INLINE start #-}
 
@@ -40,7 +42,7 @@ generate len f
                 let !remain     = len -# ix
                 if remain ># 0#
                  then do
-                        uwrite refCount 0 (I# (ix +# 1#))
+                        uwrite here refCount 0 (I# (ix +# 1#))
                         push1 $ Yield1  (f ix)
                                         (remain >=# 9#)
                  else   push1 Done
@@ -52,7 +54,7 @@ generate len f
                 let !remain     = len -# ix
                 if remain >=# 8#
                  then do
-                        uwrite refCount 0 (I# (ix +# 8#))
+                        uwrite here refCount 0 (I# (ix +# 8#))
                         push8 $ Yield8  (f (ix +# 0#))
                                         (f (ix +# 1#))
                                         (f (ix +# 2#))
@@ -99,10 +101,10 @@ replicatesDirect resultLen getSegLen getValue
 
         start 
          = do   state        <- unew 4
-                uwrite state sCount  (0  :: Int)
-                uwrite state sSeg    (-1 :: Int)
-                uwrite state sSegLen (0  :: Int)
-                uwrite state sRemain (0  :: Int)
+                uwrite here state sCount  (0  :: Int)
+                uwrite here state sSeg    (-1 :: Int)
+                uwrite here state sSegLen (0  :: Int)
+                uwrite here state sRemain (0  :: Int)
                 return state
 
 
@@ -128,7 +130,7 @@ replicatesDirect resultLen getSegLen getValue
                         if remain ># 0#
                          then do
                                 -- Emit a result from this segment.
-                                uwrite state sRemain (I# (remain -# 1#))
+                                uwrite here state sRemain (I# (remain -# 1#))
                                 push1 $ Yield1 (getValue seg) (remain >=# 9#)
 
                          else result_doneSeg seg
@@ -140,7 +142,7 @@ replicatesDirect resultLen getSegLen getValue
                         !(I# count)     <- uread state sCount
                         !(I# segLen)    <- uread state sSegLen
                         let !count'     = count +# segLen
-                        uwrite state sCount (I# count')
+                        uwrite here state sCount (I# count')
 
                         -- Check if we've finished the whole flow.
                         if count' >=# resultLen
@@ -152,8 +154,8 @@ replicatesDirect resultLen getSegLen getValue
                  = do   let !segLen = getSegLen seg
                         if segLen ># 0#
                          then do
-                                uwrite state sSeg    (I# seg)
-                                uwrite state sSegLen (I# segLen)
+                                uwrite here state sSeg    (I# seg)
+                                uwrite here state sSegLen (I# segLen)
                                 result seg segLen
 
                          else result_nextSeg (seg +# 1#)
@@ -173,7 +175,7 @@ replicatesDirect resultLen getSegLen getValue
                 -- Emit a packet of elements.
                 result_fromSeg remain
                  = do
-                        uwrite state sRemain (I# (remain -# 8#))
+                        uwrite here state sRemain (I# (remain -# 8#))
                         !(I# seg)       <- uread state sSeg
                         let !x  = getValue seg
                         push8 $ Yield8 x x x x x x x x
@@ -193,10 +195,10 @@ enumFromN first len
  where
         start
          = do   refCount <- unew 1
-                uwrite refCount 0 (I# len)
+                uwrite here refCount 0 (I# len)
 
                 refAcc   <- unew 1
-                uwrite refAcc   0 (I# first)
+                uwrite here refAcc   0 (I# first)
 
                 return (refCount, refAcc)
 
@@ -216,10 +218,10 @@ enumFromN first len
          = do   !(I# count)     <- uread refCount 0
                 if count ># 0#
                  then do 
-                        uwrite refCount 0 (I# (count -# 1#))
+                        uwrite here refCount 0 (I# (count -# 1#))
 
                         acc     <- uread refAcc 0
-                        uwrite refAcc   0 (acc + 1)
+                        uwrite here refAcc   0 (acc + 1)
 
                         push1 $ Yield1 acc (count >=# 9#)
 
@@ -229,10 +231,10 @@ enumFromN first len
          = do   !(I# count)     <- uread refCount 0
                 if count >=# 8#
                  then do
-                        uwrite refCount 0 (I# (count -# 8#))
+                        uwrite here refCount 0 (I# (count -# 8#))
 
                         acc     <- uread refAcc 0
-                        uwrite refAcc   0 (acc + 8)
+                        uwrite here refAcc   0 (acc + 8)
 
                         push8 $ Yield8  (acc + 0) (acc + 1) (acc + 2) (acc + 3)
                                         (acc + 4) (acc + 5) (acc + 6) (acc + 7)

@@ -142,7 +142,11 @@ distroOfSplitSegd (SplitSegd _ (Segd _ _ ixs) nElems nChunks chunks)
            = \ix ->
                 let chunk        = vindex chunks (I# ix)
                     seg          = chunkStart chunk
-                    !(I# seg_ix) = uindex ixs    (I# seg)
+
+                    !(I# seg_ix) 
+                        | U.length ixs == 0     = 0
+                        | otherwise             = uindex ("distroOfSplitSegd") ixs (I# seg)
+
                     offset       = chunkOffset chunk
                 in  offset +# seg_ix }
 {-# INLINE [1] distroOfSplitSegd #-}

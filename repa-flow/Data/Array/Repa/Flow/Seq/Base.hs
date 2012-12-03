@@ -25,6 +25,9 @@ import qualified Data.Vector.Unboxed                    as U
 import System.IO.Unsafe
 import Prelude                                          hiding (take)
 
+here = "Data.Array.Repa.Flow.Seq.Base"
+
+
 -- | Phantom type tag to indicate a delayed flow.
 --
 --   A delayed flow is a flow that hasn't started flowing yet.
@@ -235,7 +238,7 @@ unflowWith
 
 unflowWith !len get1 get8
  = do   !mvec    <- unew (I# len)
-        !len'    <- slurp 0# Nothing (uwrite mvec) get1 get8
+        !len'    <- slurp 0# Nothing (uwrite here mvec) get1 get8
         !vec     <- ufreeze mvec
         return   $  uslice 0 len' vec
 {-# INLINE [1] unflowWith #-}
@@ -256,7 +259,7 @@ take limit (Flow start size report get1 get8)
  = do   state    <- start
 
         !mvec    <- unew (I# limit)
-        !len'    <- slurp 0# (Just (I# limit)) (uwrite mvec) 
+        !len'    <- slurp 0# (Just (I# limit)) (uwrite here mvec) 
                         (get1 state) (get8 state)
         !vec     <- ufreeze mvec
         let !vec' = uslice 0 len' vec        
