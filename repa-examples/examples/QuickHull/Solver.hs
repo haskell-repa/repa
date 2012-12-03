@@ -1,99 +1,61 @@
---
--- TODO: When this is working make a version that does each operation
---       individually, with debugging. And try to fuse everything
---       in a separate version.
 
--- TODO: Should be able to compute cross/flags/above/counts in the same
---       computation. Twin streams? Can we produce the packed points and
---       new segment lengths during the same computation?
---
---       unstreamTwin :: Stream (a, Maybe b) -> (Vector a, Vector b)
---       unstreamFold :: (a -> a -> a) -> a -> Stream a -> (Vector a, a)
--- 
--- TODO: Make a combinator that produces both sides of a if-then-else split
---       with the same pass over the source array.
---
---       unstream2 :: Stream (Bool, a, b) -> (Vector a, Vector b)
---
---       If both results need to be consumed more than once then we can 
---       make them both manifest in the same computation. If each result
---       only needs to be consumed once we sholuld fuse the pack into the 
---       consumer.
---
--- TODO: When doing packing etc, should pack point indices
---       instead of packing the physical points, though this would be 
---       a change to the original DPH example.
---
-{-# LANGUAGE BangPatterns, MagicHash #-}
-module Solver
-        (quickHull)
-where
-import Data.Array.Repa                          as R
+module Solver where
+import Data.Array.Repa.Vector.Segd              (Segd)
 import Data.Array.Repa.Vector                   as R
-import Data.Array.Repa.Vector.Segd              (Segd(..))
+import Data.Array.Repa.Vector.Index             as R
+import Data.Array.Repa.Vector.Operators.Zip     as R
+import Data.Array.Repa.Vector.Operators.Unzip   as R
+import Data.Array.Repa.Vector.Operators.Append  as R
+import Data.Array.Repa.Vector.Repr.Unboxed      as R
 import qualified Data.Array.Repa.Vector.Segd    as Segd
-import qualified Data.Array.Repa.Vector.Sel     as Sel2
-import qualified Data.Vector.Unboxed            as U
-import Prelude                                  as P
-import GHC.Exts
-
+import Debug.Trace
 
 -- | A point in the 2D plane.
 type Point      = (Double, Double)
 
 
 -- | Compute the convex hull of a vector of points.
-quickHull :: Vector U Point -> IO (Vector U Point)
+quickHull :: Vector U Point -> Vector U Point
 quickHull points
- = do
-        -- Find the points that are on the extreme left and right.
-        (minx, maxx)    <- minmax points
+ = let  -- Find the points that are on the extreme left and right.
+        (minx, maxx)    = minmax points
 
-        -- Append the points together. 
-        --  We'll find the hull on the top and bottom at the same time.
-        let !n          =  vlength points
-        let !downSegd   =  Segd.fromLengths $ vfromUnboxed $ U.fromList [n, n]
-        !downPoints     <- R.computeUnboxedP $ R.append points points
+        -- Append all the points together.
+        --  We'll find the hull of the top and bottom points at the same time.
+        !n              = R.length points
+        !downSegd       = Segd.fromLengths $ fromListUnboxed (Z :. 2) [n, n]
+        !downPoints     = computeP $ R.append points points
+        !downLines      = fromListUnboxed (Z :. 2) [(minx, maxx), (maxx, minx)]
 
-        putStrLn $ "min max       = " P.++ show (minx, maxx)
-        putStrLn $ "downSegd      = " P.++ show downSegd
-        putStrLn $ "downPoints    = " P.++ show downPoints
-
-        -- Use the min/max points in both directions to get the 
-        -- hull on the top and bottom halves of the plane.
-        let !downLines  = vfromListUnboxed [ (minx, maxx), (maxx, minx) ]
-        putStrLn $ "downLines     = " P.++ show downLines
-
-        -- Compute the hull for the top and bottom.
-        -- The results from both sides are automatically concatenated.
-        (_, results)    <- hsplit_l downSegd downPoints downLines
-
-        return results
+        -- Compute the hull for the top and bottom of the plane.
+        --  The results both sides are automatically concatenated.
+        --  We don't need the final segment descriptor.
+        (_, !hull)      = hsplit_l downSegd downPoints downLines
+   in   hull
 
 
 -- | Find the points on the extreme left and right of the XY plane.
-minmax :: Vector U Point -> IO (Point, Point)
+minmax :: Vector U Point -> (Point, Point)
 minmax vec
- | vlength vec == 0
+ | R.length vec == 0
  = error "no points"
 
  | otherwise
- = do   let p0  = vec `R.unsafeIndex` (R.Z R.:. 0)
+ = let  !p0     = vec `linearIndex` 0
 
-        let fmin p0@(x0, y0) p1@(x1, y1)
+        fmin p0@(x0, y0) p1@(x1, y1)
                 = if x0 < x1   then p0 else p1
 
-        let fmax p0@(x0, y0) p1@(x1, y1)
+        fmax p0@(x0, y0) p1@(x1, y1)
                 = if x0 > x1   then p0 else p1
 
-        !minx   <- R.foldAllP fmin p0 vec 
-        !maxx   <- R.foldAllP fmax p0 vec
-        return (minx, maxx)
+        !minx   = R.fold fmin p0 vec
+        !maxx   = R.fold fmax p0 vec
+   in   (minx, maxx)
 {-# NOINLINE minmax #-}
 
 
 -- hsplit_l -------------------------------------------------------------------
---
 -- | Lifted split.
 --   This is the workhorse of the algorithm.
 --
@@ -108,214 +70,135 @@ minmax vec
 --   >               in  concat [: hsplit packed ends 
 --   >                          | ends <- [:(p1, pm), (pm, p2):] :]
 --
-hsplit_l :: Segd U U                      -- Segd for points array.
-         -> Vector U Point                -- Segments of points.
-         -> Vector U (Point, Point)       -- Splitting lines for each segment.
-         -> IO (Segd U U, Vector U Point) -- Hull points found for each segment.
+hsplit_l 
+        :: Segd
+        -> Vector U Point
+        -> Vector U (Point, Point)
+        -> (Segd, Vector U Point)
 
 hsplit_l segd points lines
  -- No points to process, we're done already.
- | elements segd ==# 0#
- = do   let !segd'      = Segd.fromLengths 
-                        $ vfromUnboxed
-                        $ U.replicate (I# (Segd.elements segd)) 0
-
-        let !points'    = vfromListUnboxed []
-        return (segd', points')
+ | Segd.elements segd == 0
+ = let  !segd'          = Segd.fromLengths
+                        $ fromListUnboxed (Z :. 1) [0]
+        !points'        = fromListUnboxed (Z :. 0) []
+   in   (segd', points')
 
  | otherwise
- = do   putStr  $ unlines
-                [ "--- DIVIDE ---------------------------------------"
-                , "    segd          = " P.++ show segd
-                , "    points        = " P.++ show points
-                , "    lines         = " P.++ show lines 
-                , "" ]
+ = trace ("hsplit_l " ++ show (segd, points, lines))
+ $ let  -- The determinate tells us how far from its line each point is.
+        dets            :: Vector U Double
+        !dets           = R.unflowP
+                        $ R.zipWith detFn   points
+                        $ R.replicates segd lines
 
-        -- The determinate product tells us how far from its line each point is.
-        det     <- hsplit_det segd points lines                                        
-        putStrLn $ "    det           = " P.++ show det
-
-        -- The flags tell us which points are above the lines.
-        -- TODO: recompute flags from crosses both times instead of
-        --       materializing the flags vector.
-        let !flags = vcomputeUnboxedP $ vmap (> 0) det
-        putStrLn $ "    flags         = " P.++ show flags
+        detFn xp@(xo, yo) ((x1, y1), (x2, y2))
+         = (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
+        {-# INLINE detFn #-}
 
         -- Select points above the lines.
-        let !above = vcomputeUnboxedP $ vpack $ vzip flags points
-        putStrLn $ "    above         = " P.++ show above
+        above           :: Vector U Point
+        !above          = R.unflowP 
+                        $ R.pack
+                        $ R.zip (R.map (> 0) dets) points
 
         -- Count how many points ended up in each segment.
-        let !counts     = count_s (Segd.splitSegd segd) flags True
-        putStrLn $ "    counts        = " P.++ show counts
-                 P.++ "\n"
+        counts          :: Vector U Int
+        !counts         = R.unflowP
+                        $ R.counts (> 0) segd dets
 
 
-        -- if-then-else split -------------------
-        -- TODO: recompute flags from counts both time instead of
-        --       materializing the flags vector.
-        let !flagsIf    = vcomputeUnboxedP $ vmap (> 0) counts
-        putStrLn $ "    flagsIf       = " P.++ show flagsIf
+        !flagsThen      = R.map (<= 0) counts
+        !flagsElse      = R.map (> 0)  counts
 
 
-        -- if-then-else ------------------------- THEN
-        let !linesThen  = vcomputeUnboxedP $ vpack $ vzip (vmap not flagsIf) lines
-        putStrLn $ ""
-        putStrLn $ "    linesThen     = " P.++ show linesThen
+        -- if-then-else ------------------------------------ THEN
+        lines_then      = R.unflowP $ R.pack $ R.zip flagsThen lines
 
-        let !hullSegd   = Segd.fromLengths $ vfromUnboxed $ U.replicate (vlength linesThen) 1
-        let !hullPoints = vcomputeUnboxedP $ vmap (\(p1, _) -> p1) linesThen
-        putStrLn $ "    hullSegd      = " P.++ show hullSegd
-        putStrLn $ "    hullPoints    = " P.++ show hullPoints
-        putStrLn $ ""
+        hullSegd        = Segd.fromLengths
+                        $ computeP $ R.replicate (ix1 (R.length lines_then)) 1
 
+        hullPoints      = computeP 
+                        $ R.map fst lines_then
 
-        -- if-then-else ------------------------- ELSE 
-        let !linesElse   = vcomputeUnboxedP $ vpack  $ vzip flagsIf lines
-        let !detElse     = vcomputeUnboxedP $ vpacks flagsIf segd det
+        -- if-then-else ------------------------------------ ELSE
+        -- Zip these together before packing so we don't need
+        -- to pack them separately.
+        --  TODO: need to unflow here because we don't have a folds 
+        --        instance for unbalanced flows.
+        !detsPoints_else
+                        = R.unflowP
+                        $ R.packs flagsElse segd 
+                        $ R.zip dets points
 
-        let !countsElse  = vcomputeUnboxedP $ vpack  $ vzip flagsIf counts
+        !lines_else     = R.unflowP $ R.pack $ R.zip flagsElse lines
+        !counts_else    = R.unflowP $ R.pack $ R.zip flagsElse counts
 
-        let !lengthsElse = vcomputeUnboxedP $ vpack  $ vzip flagsIf (Segd.lengths segd)
-        let !segdElse    = Segd.fromLengths lengthsElse
-        let !pointsElse  = vcomputeUnboxedP $ vpacks flagsIf segd points
+        !segd_else      = Segd.fromLengths 
+                        $ R.unflowP $ R.pack $ R.zip flagsElse (Segd.lengths segd)
 
-        putStrLn $ "    linesElse     = " P.++ show linesElse
-        putStrLn $ "    detElse       = " P.++ show detElse
+        -- Get the points furthest from each line
+        --  The  (0, 0) below is a dummy point that will get replaced
+        --  by the first point in the segment. 
+        far (d0, p0) (d1, p1) 
+         = d1 > d0
 
-        putStrLn $ "    segdElse      = " P.++ show segdElse
-        putStrLn $ "    pointsElse    = " P.++ show pointsElse
-
-
-        -- Get the points furthese from each line
-        ----  The  (0, 0) below is a dummy point that will get replaced
-        ----  by the first point in the segment. 
-        let far (d0, p0) (d1, p1) = d1 > d0
-
-        -- TODO: combine the zip with the pack of both crossElse and pointsElse,
-        --       and fuse into select_s.
-        let !dpoints    = vcomputeUnboxedP $ vzip detElse pointsElse
-
-        let !fars       = vselects far (0, (0, 0)) segdElse dpoints
-        putStrLn $ "    fars          = " P.++ show fars
+        !fars           = R.unflowP 
+                        $ R.selects far (0, (0, 0)) segd_else 
+                        $ detsPoints_else
 
 
         -- Append the points to each other to get the new points array.
-        let !downLens   = vcomputeUnboxedP
-                        $ vflatten2
-                        $ vmap (\c -> (c, c)) countsElse
+        !downSegd2      = Segd.fromLengths 
+                        $ computeP $ R.replicate (ix1 (R.length counts_else)) 2
 
-        let !downSegd2     = Segd.fromLengths (vfromUnboxed $ U.replicate (vlength countsElse) 2)
-        let !downSegd      = Segd.fromLengths downLens
-        let !segdAboveElse = Segd.fromLengths countsElse
+        !downSegd       = Segd.fromLengths
+                        $ computeP 
+                        $ R.flatten2
+                        $ R.map (\c -> (c, c)) counts_else
 
-        let !downPoints = vcomputeUnboxedP 
-                        $ vappends (Segd.splitSegd downSegd)
-                                segdAboveElse above
-                                segdAboveElse above
-        
-        putStrLn $ "    segdAboveElse = " P.++ show segdAboveElse
-        putStrLn $ ""
-        putStrLn $ "    downSegd2     = " P.++ show downSegd2
-        putStrLn $ "    downSegd      = " P.++ show downSegd
-        putStrLn $ "    downPoints    = " P.++ show downPoints
+        !segdAbove      = Segd.fromLengths counts_else
 
+        !downPoints     = R.unflowP 
+                        $ appendsWithResultSegd
+                                (Segd.splitSegd downSegd)
+                                segdAbove above
+                                segdAbove above
 
         -- Use the far points to make new splitting lines for the new segments.
-        let !downLines  = vcomputeUnboxedP 
-                        $ vflatten2 
-                        $ vmap (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
-                        $ vzip linesElse fars
-
-        putStrLn $ "    downLines     = " P.++ show downLines
-        putStrLn $ ""
+        !downLines      = computeP  
+                        $ R.flatten2 
+                        $ R.map (\((p1, p2), (_, pFar)) -> ((p1, pFar), (pFar, p2)))
+                        $ R.zip lines_else fars
 
         -- Recursive call
-        (moarSegd, moarPoints) 
-                <- hsplit_l downSegd downPoints downLines
-
+        !(moarSegd, moarPoints)
+                        = hsplit_l downSegd downPoints downLines
 
         -- Concatenate the segments we get from the recursive call.
         --   In the recursion we pass down two segments for each one that we
         --   had from above.
-        let !catLengths    = sum_s (Segd.splitSegd downSegd2) (Segd.lengths moarSegd)
-        let !catSegd       = Segd.fromLengths catLengths
+        !catSegd        = Segd.fromLengths
+                        $ unflowP
+                        $ sums downSegd2 (Segd.lengths moarSegd)
 
-
-        -- Combine the lengths of the segments we get from both sides of the
-        -- if-then-else.
-        let !combLengths   = vcombine2 flagsIf 
+        -- Combine the lengths of the segments we get from both side of 
+        -- the if-then-else.
+        !flagsThen'     = computeP flagsThen
+        !combLengths    = R.combine2 flagsThen'
                                 (Segd.lengths hullSegd)
                                 (Segd.lengths catSegd)
 
-        let !combSegd      = Segd.fromLengths combLengths
-
+        !combSegd       = Segd.fromLengths combLengths
 
         -- Combine the points from both sides of the if-then-else.
-        let !combPoints    = vcombineSegs2 flagsIf 
-                                (Segd.lengths hullSegd) hullPoints 
-                                (Segd.lengths catSegd)  moarPoints
+        !combPoints     = R.combines2 flagsThen'
+                                hullSegd hullPoints
+                                catSegd  moarPoints
 
-        putStrLn $ unlines
-                 [ "--- RETURN --------------------------------------"
-                 , "    segd          = " P.++ show segd
-                 , ""
-                 , "    flagsIf       = " P.++ show flagsIf
-                 , "    segdElse      = " P.++ show segdElse
-                 , ""
-                 , "    hullPoints    = " P.++ show hullPoints
-                 , "    hullSegd      = " P.++ show hullSegd
-                 , ""
-                 , "    downSegd2     = " P.++ show downSegd2
-                 , "    downSegd      = " P.++ show downSegd
-                 , "    moarPoints    = " P.++ show moarPoints
-                 , "    moarSegd      = " P.++ show moarSegd
-                 , ""
-                 , "    catSegd       = " P.++ show catSegd
-                 , ""
-                 , "    combLengths   = " P.++ show combLengths
-                 , "    combPoints    = " P.++ show combPoints ]
-
-        return (combSegd, combPoints)
-{-# NOINLINE hsplit_l #-}
+   in   (combSegd, combPoints)
 
 
--- Take the determinate between the splitting line and each point
--- to tell us what side of the line they are on.
---
--- BROKEN: the results here are wrong with +RTS -N2
-hsplit_det
-        :: Segd U U                     -- Descriptor for points array.
-        -> Vector U Point               -- Segments of points.
-        -> Vector U (Point, Point)      -- Splitting lines for each segment.
-        -> IO (Vector U Double)         -- Determinates for each point
-
-hsplit_det !segd !points !lines 
-        = return
-        $ vcomputeUnboxedP
-        $ vzipWith
-                det_fn
-                points
-                (vreplicates segd lines)
-
- where  det_fn (xo, yo) ((x1, y1), (x2, y2))
-         = (x1 - xo) * (y2 - yo) 
-         - (y1 - yo) * (x2 - xo)
-        {-# INLINE det_fn #-}
-{-# NOINLINE hsplit_det #-}
-
-
--------------------------------------------------------------------------------
--- Segmented selection.
-vselects :: U.Unbox a
-         => (a -> a -> Bool)
-         -> a
-         -> Segd U U
-         -> Vector U a
-         -> Vector U a
-
-vselects choose z segd vec
- = fold_s f z (Segd.splitSegd segd) vec
- where  f x1 x2
-         = if choose x1 x2 then x2 else x1
+-- Until we implement this.
+computeP arr = unflowP $ flow arr
 
