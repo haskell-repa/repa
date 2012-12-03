@@ -216,29 +216,35 @@ drain   :: (Elt a, U.Unbox a)
         -> IO (U.Vector a)
 drain !ff
  = case ff of
-    Flow fStart fSize _ fGet1 fGet8
+    Flow fStart fSize fReport fGet1 fGet8
      -> do !state   <- fStart
-           !size    <- fSize state 
+           !size    <- fSize   state 
+           !report  <- fReport state
 
            -- In the sequential case we can use the same code to unflow
            -- both Exact and Max, and just slice down the vector to the
            -- final size.
            case size of
-            Exact len       -> unflowWith len (fGet1 state) (fGet8 state)
-            Max   len       -> unflowWith len (fGet1 state) (fGet8 state)
+            Exact len       -> unflowWith report len (fGet1 state) (fGet8 state)
+            Max   len       -> unflowWith report len (fGet1 state) (fGet8 state)
 {-# INLINE [1] drain #-}
 
 
 unflowWith
         :: (Elt a, U.Unbox a) 
-        => Int# 
+        => R.Report
+        -> Int#
         -> ((Step1 a -> IO ()) -> IO ())
         -> ((Step8 a -> IO ()) -> IO ())
         -> IO (U.Vector a)
 
-unflowWith !len get1 get8
+unflowWith !report !len get1 get8
  = do   !mvec    <- unew (I# len)
-        !len'    <- slurp 0# Nothing (uwrite here mvec) get1 get8
+
+        !len'    <- slurp 0# Nothing 
+                        (uwrite (here ++ " " ++ show report) mvec) 
+                        get1 get8
+
         !vec     <- ufreeze mvec
         return   $  uslice 0 len' vec
 {-# INLINE [1] unflowWith #-}

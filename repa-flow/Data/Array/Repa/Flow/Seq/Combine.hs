@@ -32,20 +32,15 @@ combine2 (Flow startF sizeF reportF getF1 _)
                 stateB  <- startB
                 return  (stateF, stateA, stateB)
 
-
         size'   (stateF, stateA, stateB)
          = do   szF     <- sizeF stateF
-                szA     <- sizeA stateA
-                szB     <- sizeB stateB
-                return  $ sizeMin szF (sizeMin szA szB)
-
+                return  szF
 
         report' (stateF, stateA, stateB)
          = do   repF    <- reportF stateF
                 repA    <- reportA stateA
                 repB    <- reportB stateB
                 return  $ Report.Combine repF repA repB
-
 
         get1'   (stateF, stateA, stateB) push1
          -- Get the next flag.
@@ -67,12 +62,10 @@ combine2 (Flow startF sizeF reportF getF1 _)
 
                 Done -> out push1 Nothing
 
-
         out push1 mx
          = case mx of
                 Nothing -> push1 Done
                 Just x  -> push1 $ Yield1 x False
-
 
         get8' _ push1
          = push1 Pull1

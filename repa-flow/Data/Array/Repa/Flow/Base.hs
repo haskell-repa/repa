@@ -29,7 +29,11 @@ unew    = UM.new
 uread   = UM.read
 
 uwrite str vec ix val
- | ix >= UM.length vec  = error $ "uwrite: " ++ str
+ | ix >= UM.length vec  
+ = error $ "uwrite: " 
+         ++ str 
+         ++ " (length = " ++ show (UM.length vec)
+         ++    " index = " ++ show ix ++ ")"
  | otherwise            = UM.write vec ix val
 
 uslice  = U.unsafeSlice
