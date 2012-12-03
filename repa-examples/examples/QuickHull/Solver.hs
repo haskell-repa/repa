@@ -85,7 +85,7 @@ hsplit_l segd points lines
    in   (segd', points')
 
  | otherwise
- = trace ("hsplit_l " ++ show (segd, points, lines))
+ = trace ("hsplit_l " ++ show (segd, points, lines) ++ "\n")
  $ let  -- The determinate tells us how far from its line each point is.
         dets            :: Vector U Double
         !dets           = R.unflowP
@@ -96,10 +96,17 @@ hsplit_l segd points lines
          = (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
         {-# INLINE detFn #-}
 
+        !dets'          = R.unflowP
+                        $ R.replicates segd lines
+
         -- Select points above the lines.
         above           :: Vector U Point
-        !above          = R.unflowP 
+        !above          = trace ("dets'   = " ++ show dets' ++ "\n")
+                        $ R.unflowP 
                         $ R.pack
+                        $ R.zip (R.map (> 0) dets) points
+
+        !thing          = computeP
                         $ R.zip (R.map (> 0) dets) points
 
         -- Count how many points ended up in each segment.
@@ -113,12 +120,15 @@ hsplit_l segd points lines
 
 
         -- if-then-else ------------------------------------ THEN
-        lines_then      = R.unflowP $ R.pack $ R.zip flagsThen lines
+        !lines_then     = trace ("points = " ++ show points ++ "\n")
+                        $ trace ("thing  = " ++ show thing  ++ "\n")
+                        $ trace ("above  = " ++ show above  ++ "\n")
+                        $ R.unflowP $ R.pack $ R.zip flagsThen lines
 
-        hullSegd        = Segd.fromLengths
+        !hullSegd       = Segd.fromLengths
                         $ computeP $ R.replicate (ix1 (R.length lines_then)) 1
 
-        hullPoints      = computeP 
+        !hullPoints     = computeP 
                         $ R.map fst lines_then
 
         -- if-then-else ------------------------------------ ELSE

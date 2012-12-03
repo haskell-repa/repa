@@ -8,8 +8,9 @@ where
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Flow
 import Data.Array.Repa.Vector.Repr.Delayed
-import Data.Array.Repa.Vector.Operators.Bulk    as R
 import Data.Array.Repa.Flow.Par.Segd            (Segd, SplitSegd)
+import Data.Array.Repa.Vector.Operators.Bulk    as R
+import qualified Data.Array.Repa.Vector.Segd    as Segd
 import qualified Data.Array.Repa.Flow.Par       as F
 import GHC.Exts
 import Prelude  hiding (map, replicate)
@@ -39,7 +40,7 @@ replicates
 replicates segd vec
  = let  get ix  = linearIndex vec (I# ix)
    in   fromFlowBB 
-                (Z :. R.length vec)
+                (Z :. Segd.elements segd)
                 (F.replicates theGang segd get)
 {-# INLINE [4] replicates #-}
 
