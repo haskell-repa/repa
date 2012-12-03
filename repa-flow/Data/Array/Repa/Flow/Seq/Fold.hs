@@ -7,20 +7,18 @@ where
 import Data.Array.Repa.Flow.Seq.Base
 import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
-import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (foldl)
 import System.IO.Unsafe
 
 
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: U.Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
+foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
 foldl f z !(Flow start _ _ get1 get8)
  = unsafePerformIO
  $ do   
-        outRef  <- UM.unsafeNew 1
-        UM.unsafeWrite outRef 0 z
+        outRef  <- unew 1
+        uwrite outRef 0 z
 
         state  <- start
 
@@ -34,7 +32,7 @@ foldl f z !(Flow start _ _ get1 get8)
                                 else eat1 acc'
 
                 Done
-                 -> UM.write outRef 0 acc
+                 -> uwrite outRef 0 acc
 
          eat8 !acc 
           =  get8 state $ \r 
@@ -47,14 +45,14 @@ foldl f z !(Flow start _ _ get1 get8)
                   -> eat1 acc
 
         eat8 z
-        UM.read outRef 0
+        uread outRef 0
 {-# INLINE [1] foldl #-}
 
 
 -------------------------------------------------------------------------------
 -- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
 --   and reduces each segment to a value individually.
-folds   :: U.Unbox a 
+folds   :: Unbox a 
         => (a -> b -> a) -> a 
         -> Flow mode Int 
         -> Flow mode b 
@@ -152,7 +150,7 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
 
 -- | Segmented sum. Takes a flow of segment lenghths and a flow of elements,
 --   and sums the elements of each segment individually.
-sums :: (U.Unbox a, Num a) => Flow mode Int -> Flow mode a -> Flow mode a 
+sums :: (Unbox a, Num a) => Flow mode Int -> Flow mode a -> Flow mode a 
 sums ffLens ffElems
         = folds (+) 0 ffLens ffElems
 {-# INLINE [1] sums #-}

@@ -54,7 +54,7 @@ fromLengths lens
    in  Segd
         { elements      = len
         , lengths       = lens
-        , indices       = U.scanl (+) 0 lens }
+        , indices       = U.init $ U.scanl (+) 0 lens }
 {-# INLINE [1] fromLengths #-}
 
 

@@ -82,10 +82,16 @@ hsplit_l segd points lines
  = let  !segd'          = Segd.fromLengths
                         $ fromListUnboxed (Z :. 1) [0]
         !points'        = fromListUnboxed (Z :. 0) []
-   in   (segd', points')
+   in   trace ("stop segd' = " ++ show segd')
+          $ (segd', points')
 
  | otherwise
- = trace ("hsplit_l " ++ show (segd, points, lines) ++ "\n")
+ = trace (unlines
+        [ "-----------------------------------"
+        , "hsplit_l"
+        , "segd   = " ++ show segd
+        , "points = " ++ show points
+        , "lines  = " ++ show lines ])
  $ let  -- The determinate tells us how far from its line each point is.
         dets            :: Vector U Double
         !dets           = R.unflowP
@@ -101,7 +107,7 @@ hsplit_l segd points lines
 
         -- Select points above the lines.
         above           :: Vector U Point
-        !above          = trace ("dets'   = " ++ show dets' ++ "\n")
+        !above          = trace ("dets'  = " ++ show dets' ++ "\n")
                         $ R.unflowP 
                         $ R.pack
                         $ R.zip (R.map (> 0) dets) points
@@ -202,11 +208,24 @@ hsplit_l segd points lines
         !combSegd       = Segd.fromLengths combLengths
 
         -- Combine the points from both sides of the if-then-else.
-        !combPoints     = R.combines2 flagsThen'
+        !combPoints     = trace ("hullPoints = " ++ show hullPoints)
+                        $ trace ("moarPoints = " ++ show moarPoints)
+                        $ R.combines2 flagsThen'
                                 hullSegd hullPoints
                                 catSegd  moarPoints
 
-   in   (combSegd, combPoints)
+   in   trace (unlines
+                [ "****"
+                , "flagsThen' = " ++ show flagsThen'
+                , "hullSegd   = " ++ show hullSegd
+                , "hullPoints = " ++ show hullPoints
+                , "catSegd    = " ++ show catSegd
+                , "moarSegd   = " ++ show moarSegd
+                , "moarPoints = " ++ show moarPoints
+                , "combSegd   = " ++ show combSegd
+                , "combPoints = " ++ show combPoints
+                , ""])
+         $ (combSegd, combPoints)
 
 
 -- Until we implement this.

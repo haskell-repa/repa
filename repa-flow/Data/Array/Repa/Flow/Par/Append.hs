@@ -30,10 +30,10 @@ appends segdr segdA getElemA segdB getElemB
          = return ()
 
         unbox (I# i)    = i
-        getSegLenA i    = unbox (U.unsafeIndex (Segd.lengths segdA) (I# i))
-        getSegIxA  i    = unbox (U.unsafeIndex (Segd.indices segdA) (I# i))
-        getSegLenB i    = unbox (U.unsafeIndex (Segd.lengths segdB) (I# i))
-        getSegIxB  i    = unbox (U.unsafeIndex (Segd.indices segdB) (I# i))
+        getSegLenA i    = unbox ((U.!) (Segd.lengths segdA) (I# i))
+        getSegIxA  i    = unbox ((U.!) (Segd.indices segdA) (I# i))
+        getSegLenB i    = unbox ((U.!) (Segd.lengths segdB) (I# i))
+        getSegIxB  i    = unbox ((U.!) (Segd.indices segdB) (I# i))
 
         frag _state n
          = let  !chunk   = V.unsafeIndex (Segd.splitChunk segdr) (I# n)

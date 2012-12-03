@@ -1,6 +1,7 @@
 
 module Data.Array.Repa.Flow.Par.Base
-        ( Flow   (..)
+        ( module Data.Array.Repa.Flow.Base
+        , Flow   (..)
         , Distro (..)
         , flow
         , Unflow (..))
@@ -8,6 +9,7 @@ where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Bulk.Gang
 import Data.Array.Repa.Flow.Par.Distro
+import Data.Array.Repa.Flow.Base
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import qualified Data.Vector.Mutable            as VM
@@ -95,7 +97,7 @@ instance Unflow BB where
                   -- The 'slurp' function below calls on this to write
                   -- results into the destination vector.
                   let write (I# ix)  val
-                        = UM.unsafeWrite mvec (I# (ixStart +# ix)) val
+                        = UM.write mvec (I# (ixStart +# ix)) val                -- TODO: make unsafe
 
                   case frag statePar tid of
                    Seq.Flow startSeq _size _report get1 get8
@@ -129,7 +131,7 @@ instance Unflow BN where
         -- The action that runs on each thread.
         let action tid
              = do uvec  <- Seq.drain (frag state tid)
-                  VM.unsafeWrite mchunks (I# tid) uvec
+                  VM.write mchunks (I# tid) uvec                          -- TODO: make unsafe
                   return ()
 
         -- Run the actions to compute each chunk.

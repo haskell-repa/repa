@@ -3,7 +3,8 @@
 -- | Flows provide an incremental version of array fusion that allows the
 --   the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow.Seq.Base
-        ( FD, FS
+        ( module Data.Array.Repa.Flow.Base
+        , FD, FS
         , Flow(..)
         , Step1(..)
         , Step8(..)
@@ -13,23 +14,14 @@ module Data.Array.Repa.Flow.Seq.Base
         , unflow
         , take
         , drain
-        , slurp
-
-        -- Shorthands
-        , unew
-        , uread
-        , uwrite
-
-        , inew
-        , iread
-        , iwrite)
+        , slurp)
 where
 import GHC.Exts
 import GHC.Types
 import Data.Array.Repa.Bulk.Elt
+import Data.Array.Repa.Flow.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector.Unboxed.Mutable            as UM
 import System.IO.Unsafe
 import Prelude                                          hiding (take)
 
@@ -242,8 +234,8 @@ unflowWith
         -> IO (U.Vector a)
 
 unflowWith !len get1 get8
- = do   !mvec    <- UM.unsafeNew (I# len)
-        !len'    <- slurp 0# Nothing (UM.unsafeWrite mvec) get1 get8
+ = do   !mvec    <- unew (I# len)
+        !len'    <- slurp 0# Nothing (uwrite mvec) get1 get8
         !vec     <- U.unsafeFreeze mvec
         return   $  U.unsafeSlice 0 len' vec
 {-# INLINE [1] unflowWith #-}
@@ -263,8 +255,8 @@ take    :: (Elt a, U.Unbox a)
 take limit (Flow start size report get1 get8)
  = do   state    <- start
 
-        !mvec    <- UM.unsafeNew (I# limit)
-        !len'    <- slurp 0# (Just (I# limit)) (UM.unsafeWrite mvec) 
+        !mvec    <- unew (I# limit)
+        !len'    <- slurp 0# (Just (I# limit)) (uwrite mvec) 
                         (get1 state) (get8 state)
         !vec     <- U.unsafeFreeze mvec
         let !vec' = U.unsafeSlice 0 len' vec        
@@ -359,31 +351,4 @@ slurp start stop !write get1 get8
 
         slurpSome start
 {-# INLINE [0] slurp #-}
-
-
--- Shorthands -----------------------------------------------------------------
-unew    = UM.unsafeNew
-uread   = UM.unsafeRead
-uwrite  = UM.unsafeWrite
-
-
--- | Allocate a vector of ints.
-inew :: Int -> IO (UM.IOVector Int)
-inew  len = UM.unsafeNew len
-{-# INLINE inew #-}
-
-
--- | Read an unboxed int from a vector.
-iread :: UM.IOVector Int -> Int# -> IO Int
-iread  vec ix
- = do   !x      <- UM.unsafeRead vec (I# ix)
-        return x
-{-# INLINE iread #-}
-
-
--- | Write an unboxed into to a vector.
-iwrite :: UM.IOVector Int -> Int# -> Int# -> IO ()
-iwrite vec ix x 
-        = UM.unsafeWrite vec (I# ix) (I# x)
-{-# INLINE iwrite #-}
 

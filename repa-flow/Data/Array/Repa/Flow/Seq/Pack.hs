@@ -7,8 +7,6 @@ where
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Map
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
-import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude hiding (map, filter)
 import GHC.Exts
 
@@ -17,7 +15,7 @@ import GHC.Exts
 -- | Produce only the elements that have their corresponding flag set to `1`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packByTag :: U.Unbox a => Flow mode (Int, a) -> Flow mode a
+packByTag :: Unbox a => Flow mode (Int, a) -> Flow mode a
 packByTag (Flow start size report get1 get8)
  = Flow start' size' report' get1' get8'
  where
@@ -25,15 +23,15 @@ packByTag (Flow start size report get1 get8)
          = do   state   <- start
 
                 -- Buffer to hold elements that we've read from the source.
-                buf     <- UM.unsafeNew 8
+                buf     <- unew 8
 
                 -- Number of elements in the buffer.
-                refLen  <- UM.unsafeNew 1
-                UM.unsafeWrite refLen 0 (0 :: Int)
+                refLen  <- unew 1
+                uwrite refLen 0 (0 :: Int)
 
                 -- Where we're reading elements from.
-                refIx   <- UM.unsafeNew 1
-                UM.unsafeWrite refIx 0 (0 :: Int)
+                refIx   <- unew 1
+                uwrite refIx 0 (0 :: Int)
                 return (state, buf, refLen, refIx)
 
 
@@ -51,8 +49,8 @@ packByTag (Flow start size report get1 get8)
         get1' (!stateA, !buf, !refLen, !refIx) push1
          = load
          where  load
-                 = do   !(I# ix)  <- UM.unsafeRead refIx  0
-                        !(I# len) <- UM.unsafeRead refLen 0
+                 = do   !(I# ix)  <- uread refIx  0
+                        !(I# len) <- uread refLen 0
         
                         -- If we already have some elements in the buffer
                         -- then we can use those.
@@ -63,10 +61,10 @@ packByTag (Flow start size report get1 get8)
                 drains ix
                  = do   -- Update the index
                         let !ix' = ix +# 1#
-                        UM.unsafeWrite refIx 0 (I# ix')
+                        uwrite refIx 0 (I# ix')
 
                         -- Push the element to the consumer.
-                        !x      <- UM.unsafeRead buf (I# ix)
+                        !x      <- uread buf (I# ix)
                         push1 $ Yield1  x False
 
                 fill8
@@ -77,33 +75,33 @@ packByTag (Flow start size report get1 get8)
                          -> do  
                                 let ix0  = 0
 
-                                UM.unsafeWrite buf ix0 x0
+                                uwrite buf ix0 x0
                                 let !ix1 = ix0 + b0
 
-                                UM.unsafeWrite buf ix1 x1
+                                uwrite buf ix1 x1
                                 let !ix2 = ix1 + b1
 
-                                UM.unsafeWrite buf ix2 x2
+                                uwrite buf ix2 x2
                                 let !ix3 = ix2 + b2
                                 
-                                UM.unsafeWrite buf ix3 x3
+                                uwrite buf ix3 x3
                                 let !ix4 = ix3 + b3
                                 
-                                UM.unsafeWrite buf ix4 x4
+                                uwrite buf ix4 x4
                                 let !ix5 = ix4 + b4
                                 
-                                UM.unsafeWrite buf ix5 x5
+                                uwrite buf ix5 x5
                                 let !ix6 = ix5 + b5
                                 
-                                UM.unsafeWrite buf ix6 x6
+                                uwrite buf ix6 x6
                                 let !ix7 = ix6 + b6
                                 
-                                UM.unsafeWrite buf ix7 x7
+                                uwrite buf ix7 x7
                                 let !(I# len) = ix7 + b7
 
                                 if len ># 0#
                                  then do
-                                        UM.unsafeWrite refLen 0 (I# len)
+                                        uwrite refLen 0 (I# len)
                                         drains 0#
 
                                  else fill8
@@ -129,14 +127,14 @@ packByTag (Flow start size report get1 get8)
 -------------------------------------------------------------------------------
 -- | Produce only those elements that have their corresponding
 --   flag set to `True`
-packByFlag :: U.Unbox a => Flow mode (Bool, a) -> Flow mode a
+packByFlag :: Unbox a => Flow mode (Bool, a) -> Flow mode a
 packByFlag ff
         = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
 {-# INLINE [1] packByFlag #-}
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter :: U.Unbox a => (a -> Bool) -> Flow mode a -> Flow mode a
+filter :: Unbox a => (a -> Bool) -> Flow mode a -> Flow mode a
 filter f ff
         = packByFlag $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}

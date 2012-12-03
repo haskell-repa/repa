@@ -75,6 +75,6 @@ combines2 fs segdA elemsA segdB elemsB
 flowUnboxed arr
  = F.flow get len
  where  !vec      = toUnboxed arr
-        get ix    = U.unsafeIndex vec (I# ix)
+        get ix    = (U.!) vec (I# ix)
         !(I# len) = U.length vec
 {-# INLINE [4] flowUnboxed #-}

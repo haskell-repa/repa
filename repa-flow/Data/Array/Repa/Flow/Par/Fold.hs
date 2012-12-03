@@ -70,11 +70,11 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
 
         frag' (state1, mvars) n
-         = let  !chunk          = V.unsafeIndex (Segd.splitChunk segd) (I# n)
+         = let  !chunk          = (V.!) (Segd.splitChunk segd) (I# n)
                 !segLens        = Segd.chunkLengths chunk
                 !(I# segsHere)  = U.length segLens
 
-                getSegIxLen seg = (I# seg, U.unsafeIndex segLens (I# seg))
+                getSegIxLen seg = (I# seg, (U.!) segLens (I# seg))
                 fSegIxLens      = Seq.generate segsHere getSegIxLen 
 
                 -- If the first segment is split across a thread boundary
@@ -93,10 +93,10 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
 
         getLeftVar mvars n
-                | !chunk  <- V.unsafeIndex (Segd.splitChunk segd) (I# n)
+                | !chunk  <- (V.!) (Segd.splitChunk segd) (I# n)
                 , n ># 0#
                 , Segd.chunkOffset chunk ># 0#
-                = Just (V.unsafeIndex mvars (I# (n -# 1#)))
+                = Just ((V.!) mvars (I# (n -# 1#)))
 
                 | otherwise
                 = Nothing
@@ -106,9 +106,9 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
         getRightVar mvars n
                 | n <# (chunks -# 1#)
-                , chunkRight <- V.unsafeIndex (Segd.splitChunk segd) (I# (n +# 1#))
+                , chunkRight <- (V.!) (Segd.splitChunk segd) (I# (n +# 1#))
                 , Segd.chunkOffset chunkRight ># 0#
-                = Just (V.unsafeIndex mvars (I# n))
+                = Just ((V.!) mvars (I# n))
 
                 | otherwise
                 = Nothing
