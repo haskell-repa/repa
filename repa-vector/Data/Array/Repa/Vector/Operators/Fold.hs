@@ -1,7 +1,16 @@
-
+{-# LANGUAGE UndecidableInstances #-}
 module Data.Array.Repa.Vector.Operators.Fold
-        ( Folds         (..)
+        ( -- * Uniform folds
+          Fold          (..)
+        , sum
+        , prod
+        , count
+        , select
+
+          -- * Segmented folds
+        , Folds         (..)
         , sums
+        , prods
         , counts
         , selects)
 where
@@ -9,11 +18,64 @@ import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Repr.Delayed
 import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Repr.Flow
+import Data.Array.Repa.Vector.Operators.Bulk
+import Data.Array.Repa.Bulk.Par
 import Data.Array.Repa.Flow.Par.Segd                    (Segd)
 import Data.Array.Repa.Vector.Operators.Map             as R
 import qualified Data.Array.Repa.Flow.Par               as F
 import qualified Data.Vector.Unboxed                    as U
-import Prelude                                          hiding (map)
+import System.IO.Unsafe
+import GHC.Exts
+import Prelude  hiding (map, sum)
+
+
+-------------------------------------------------------------------------------
+class Fold r a where
+ -- | Undirected fold of all elements in an array.
+ fold   :: Shape sh
+        => (a -> a -> a) -> a
+        -> Array r sh a
+        -> a
+
+instance Bulk r a => Fold r a where
+ fold f z arr
+  = let  get ix          = linearIndex arr (I# ix)
+         !(I# len)       = size (extent arr)
+    in   unsafePerformIO
+          $ foldAll theGang get f z len
+ {-# INLINE [4] fold #-}
+
+
+-- | Sum up all elements in an array.
+sum     :: (Fold r a, Shape sh, Num a) => Array r sh a -> a
+sum arr = fold (+) 0 arr
+{-# INLINE [4] sum #-}
+
+
+-- | Multiply together all elements in an array.
+prod    :: (Fold r a, Shape sh, Num a) => Array r sh a -> a
+prod arr = fold (*) 1 arr
+{-# INLINE [4] prod #-}
+
+
+-- | Count the number of elements that match the given predicate.
+count   :: (Fold (TM r) a, Map r a, Shape sh, Num a) 
+        => (a -> Bool) -> Array r sh a -> a
+count f arr
+        = sum $ R.map (\x -> if f x then 1 else 0) arr
+{-# INLINE [4] count #-}
+
+
+-- | Right-biased select.
+--   If the predicate returns true then keep the right element over the
+--   left one. 
+select  :: (Fold r a, Shape sh)
+        => (a -> a -> Bool) -> a -> Array r sh a -> a
+select choose z arr
+ = fold f z arr
+ where  f x1 x2
+         = if choose x1 x2 then x2 else x1      
+{-# INLINE [4] select #-}
 
 
 -------------------------------------------------------------------------------
@@ -62,6 +124,18 @@ sums segd vec
 {-# INLINE [4] sums #-}
 
 
+-- | Segmented product.
+--   Reduce each segment individually,
+--   producing a vector of all the rsults.
+prods   :: (Num a, Folds r a) 
+        => Segd 
+        -> Vector r a 
+        -> Vector (TF r) a
+prods segd vec
+        = folds (*) 1 segd vec
+{-# INLINE [4] prods #-}
+
+
 -- | Segmented count. 
 --   Count the number of elements in each segment that match
 --   the given predicate.
@@ -91,4 +165,3 @@ selects choose z segd vec
  where  f x1 x2
          = if choose x1 x2 then x2 else x1
 {-# INLINE [4] selects #-}
-

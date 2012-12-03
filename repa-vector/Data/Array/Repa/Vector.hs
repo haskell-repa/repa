@@ -41,8 +41,15 @@ module Data.Array.Repa.Vector
         , Unzip(..)
 
         -- ** Folds
+        , Fold (..)
+        , sum
+        , prod
+        , count
+        , select
+
         , Folds(..)
         , sums
+        , prods
         , counts
         , selects
 
@@ -89,4 +96,4 @@ import Data.Array.Repa.Vector.Operators.Fold
 import Data.Array.Repa.Vector.Operators.Replicate
 import Data.Array.Repa.Vector.Operators.Flatten
 import Prelude 
-        hiding (length, replicate, zipWith, filter)
+        hiding (length, replicate, zipWith, filter, sum)
