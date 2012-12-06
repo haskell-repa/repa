@@ -11,14 +11,19 @@ import qualified Data.Vector.Mutable            as VM
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import GHC.Exts
+import System.IO
+import System.IO.Unsafe
 
 -------------------------------------------------------------------------------
 checkIx str len ix a
  | ix >= len            
- = error $ unlines
-        [ "repa-flow.checkIx index out of range in '" ++ str ++ "'"
-        , "    length = " ++ show len
-        , "    index  = " ++ show ix ]
+ = unsafePerformIO
+ $ do   hFlush stdout
+        hFlush stderr
+        error $ unlines
+                [ "repa-flow.checkIx index out of range in '" ++ str ++ "'"
+                , "    length = " ++ show len
+                , "    index  = " ++ show ix ]
 
  | otherwise
  = a

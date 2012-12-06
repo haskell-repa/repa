@@ -8,6 +8,7 @@ import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq.Append        as Seq
 import GHC.Exts
+import Debug.Trace
 
 -- | Segmented append.
 appends :: SplitSegd    -- ^ Segment descriptor of the result.
@@ -25,22 +26,30 @@ appends segdr segdA getElemA segdB getElemB
         !distro  = Segd.distroOfSplitSegd segdr
 
         start 
-         = return ()
+         = do   putStrLn $ unlines
+                        [ "appends[Par] start"
+                        , "segdr    = " ++ show segdr
+                        , "segdA    = " ++ show segdA
+                        , "segdB    = " ++ show segdB ]
+                return ()
+
 
         unbox (I# i)    = i
-        getSegLenA i    = unbox (uindex here (Segd.lengths segdA) (I# i))
-        getSegIxA  i    = unbox (uindex here (Segd.indices segdA) (I# i))
-        getSegLenB i    = unbox (uindex here (Segd.lengths segdB) (I# i))
-        getSegIxB  i    = unbox (uindex here (Segd.indices segdB) (I# i))
+        getSegLenA i    = unbox (uindex (here ++ ".getSegLenA") (Segd.lengths segdA) (I# i))
+        getSegIxA  i    = unbox (uindex (here ++ ".getSegIxA")  (Segd.indices segdA) (I# i))
+        getSegLenB i    = unbox (uindex (here ++ ".getSegLenB") (Segd.lengths segdB) (I# i))
+        getSegIxB  i    = unbox (uindex (here ++ ".getSegIxB")  (Segd.indices segdB) (I# i))
 
         frag _state n
-         = let  !chunk   = vindex here (Segd.splitChunk segdr) (I# n)
+         = let  !chunkR  = vindex here (Segd.splitChunks segdr) (I# n)
+                !csegdR  = Segd.chunkSegd chunkR
+
            in   Seq.appends
                         getSegLenA getSegIxA getElemA
                         getSegLenB getSegIxB getElemB
-                        (Segd.chunkElems  chunk)
-                        (Segd.chunkStart  chunk)
-                        (Segd.chunkOffset chunk)
+                        (Segd.elements    csegdR)
+                        (Segd.chunkStart  chunkR)
+                        (Segd.chunkOffset chunkR)
 {-# INLINE [2] appends #-}
 
 

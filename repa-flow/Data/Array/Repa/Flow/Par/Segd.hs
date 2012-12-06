@@ -70,30 +70,23 @@ data SplitSegd
           -- | The original, unsplit segment descriptor.
         , splitOriginal :: !Segd
 
-         -- | Total number of elements described by the Segd.
-        , splitElems    :: Int#
-
-         -- | Number of chunks this Segd is split into.
-        , splitChunks   :: Int#
-
           -- | Vector of Segd chunks.
-        , splitChunk    :: !(V.Vector Chunk) }
+        , splitChunks   :: !(V.Vector Chunk) }
         deriving Show
 
 data Chunk
         = Chunk
-        { -- | Number of elements in this chunk @(sum chunkLengths)@
-          chunkElems    :: Int#
+        { -- | The segment id of the original descriptor
+          --   that this chunk starts in.
+          chunkStart    :: Int#
 
-          -- | Id of first segment in the chunk.
-        , chunkStart    :: Int#
-
-          -- | Starting offset of the first segment, 
-          --   if this chunk starts in the middle of one of the original segments.
+          -- | Starting offset of the first segment relative to the original
+          --   discriptor. This is used when the chunk starts in the middle
+          --   of one of the original segments.
         , chunkOffset   :: Int# 
 
-          -- | Segment lengths in this chunk.
-        , chunkLengths  :: !(U.Vector Int) }
+          -- | Local `Segd` for the chunk.
+        , chunkSegd     :: Segd }
         deriving Show
 
 
@@ -104,15 +97,13 @@ splitSegd !gang segd
  = SplitSegd 
         gang
         segd
-        (elements segd)
-        chunks
         (V.map makeChunk $ V.enumFromN 0 (I# chunks))
  where  
         !chunks
          = gangSize gang
 
         makeChunk ix     
-         = let  !(lens, I# count, I# first, I# offset) 
+         = let  !(lens, _, I# first, I# offset) 
                  = splitSegsOnElems 
                         (lengths segd) 
                         (indices segd) 
@@ -120,24 +111,23 @@ splitSegd !gang segd
                         (I# chunks)
                         ix
            in   Chunk 
-                { chunkElems    = count
-                , chunkStart    = first
+                { chunkStart    = first
                 , chunkOffset   = offset 
-                , chunkLengths  = lens }
+                , chunkSegd     = fromLengths lens }
 {-# INLINE [1] splitSegd #-}
 
 
 -- | Take the `Distro` of a `SplitSegd`.
 --   This tells us how the array elements should be distributed on the gang.
 distroOfSplitSegd :: SplitSegd -> Distro BB
-distroOfSplitSegd (SplitSegd _ (Segd _ _ ixs) nElems nChunks chunks)
+distroOfSplitSegd (SplitSegd gang (Segd nElems _ ixs) chunks)
  = let here = "par.distroOfSplitSegd"
    in  DistroBalanced 
-        { distroBalancedFrags      = nChunks
+        { distroBalancedFrags      = gangSize gang
         , distroBalancedLength     = nElems
 
         , distroBalancedFragLength 
-           = \ix -> chunkElems (vindex here chunks (I# ix))
+           = \ix -> elements (chunkSegd (vindex here chunks (I# ix)))
 
         , distroBalancedFragStart  
            = \ix ->

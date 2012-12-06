@@ -205,7 +205,8 @@ flow !load !len
 --
 unflow :: (Elt a, U.Unbox a) 
         => Flow FD a -> U.Vector a
-unflow ff = unsafePerformIO $ drain ff
+unflow ff 
+ = unsafePerformIO $ drain ff
 {-# INLINE [1] unflow #-}
 
 
@@ -302,7 +303,7 @@ slurp start stop !write get1 get8
           = do  slurp8 ix
                 I# ix'     <- iread here refCount 0# 
 
-                slurp1 ix' 
+                slurp1 ix'
                 I# ix''    <- iread here refCount 0#
 
                 case stop of

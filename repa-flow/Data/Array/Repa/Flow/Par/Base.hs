@@ -88,22 +88,28 @@ instance Unflow BB where
 
         -- The action that runs on each thread.
         let action tid
-             = do 
-                  -- The starting point for this threads results into 
-                  -- the final vector.
-                  let !ixStart    = getStart tid
+             = case frag statePar tid of
+                Seq.Flow startSeq _size flowReport get1 get8
+                 -> do  -- The starting point for this threads results into 
+                        -- the final vector.
+                        let !ixStart    = getStart tid
 
-                  -- The 'slurp' function below calls on this to write
-                  -- results into the destination vector.
-                  let write (I# ix)  val
-                        = uwrite here mvec (I# (ixStart +# ix)) val
+                        -- The 'slurp' function below calls on this to write
+                        -- results into the destination vector.
+                        let write (I# ix)  val
+                                = uwrite here mvec (I# (ixStart +# ix)) val
 
-                  case frag statePar tid of
-                   Seq.Flow startSeq _size _report get1 get8
-                    -> do stateSeq <- startSeq
-                          _        <- Seq.slurp 0# Nothing write
+                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: start"
+                        stateSeq  <- startSeq
+                        reportSeq <- flowReport stateSeq
+
+                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: "
+                                 ++ show reportSeq
+
+                        _         <- Seq.slurp 0# Nothing write
                                         (get1 stateSeq) (get8 stateSeq)
-                          return ()
+                        return ()
+
 
         -- Run the actions to write results into the target vector.
         gangIO gang action
@@ -126,13 +132,22 @@ instance Unflow BN where
         !mchunks        <- vnew (I# frags)
 
         -- Start the parallel flow
-        !state          <- start
+        !statePar       <- start
 
         -- The action that runs on each thread.
         let action tid
-             = do uvec  <- Seq.drain (frag state tid)
-                  vwrite here mchunks (I# tid) uvec
-                  return ()
+             = case frag statePar tid of
+                flowSeq@(Seq.Flow startFlow _ reportFlow _ _)
+                 -> do  
+                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: start"
+                        stateSeq   <- startFlow
+                        reportSeq  <- reportFlow stateSeq
+                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: "
+                                 ++ show reportSeq
+
+                        uvec  <- Seq.drain flowSeq
+                        vwrite here mchunks (I# tid) uvec
+                        return ()
 
         -- Run the actions to compute each chunk.
         gangIO gang action

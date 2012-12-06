@@ -79,11 +79,12 @@ replicatesSplit segd getSegVal
         start           = return ()
 
         frag _ n  
-         = let  chunk            = vindex here (Segd.splitChunk segd) (I# n)
-                !elems           = Segd.chunkElems chunk
+         = let  chunk            = vindex here (Segd.splitChunks segd) (I# n)
+                !csegd           = Segd.chunkSegd chunk
+                !elems           = Segd.elements csegd
                 !segStart        = Segd.chunkStart chunk
                 getSegLen'  seg  = let !(I# r) = uindex here
-                                                        (Segd.chunkLengths chunk) 
+                                                        (Segd.lengths csegd) 
                                                         (I# seg)
                                    in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)

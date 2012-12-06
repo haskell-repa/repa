@@ -59,7 +59,7 @@ foldsSplit f !z segd (Flow gang distro start frag)
         --  Want a third sort of 'Distro' for this.
         distro'         = unbalanced frags
         
-        !chunks         = Segd.splitChunks segd
+        !(I# chunks)    = V.length $ Segd.splitChunks segd
 
         start'
          = do   -- Initialise the source state.
@@ -71,8 +71,9 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
 
         frag' (state1, mvars) n
-         = let  !chunk          = vindex here (Segd.splitChunk segd) (I# n)
-                !segLens        = Segd.chunkLengths chunk
+         = let  !chunk          = vindex here (Segd.splitChunks segd) (I# n)
+                !csegd          = Segd.chunkSegd chunk
+                !segLens        = Segd.lengths csegd
                 !(I# segsHere)  = U.length segLens
 
                 getSegIxLen seg = (I# seg, uindex here segLens (I# seg))
@@ -94,10 +95,10 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
 
         getLeftVar mvars n
-                | !chunk  <- (V.!) (Segd.splitChunk segd) (I# n)
+                | !chunk  <- vindex here (Segd.splitChunks segd) (I# n)
                 , n ># 0#
                 , Segd.chunkOffset chunk ># 0#
-                = Just ((V.!) mvars (I# (n -# 1#)))
+                = Just (vindex here mvars (I# (n -# 1#)))
 
                 | otherwise
                 = Nothing
@@ -107,7 +108,7 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
         getRightVar mvars n
                 | n <# (chunks -# 1#)
-                , chunkRight <- (V.!) (Segd.splitChunk segd) (I# (n +# 1#))
+                , chunkRight <- vindex here (Segd.splitChunks segd) (I# (n +# 1#))
                 , Segd.chunkOffset chunkRight ># 0#
                 = Just ((V.!) mvars (I# n))
 
