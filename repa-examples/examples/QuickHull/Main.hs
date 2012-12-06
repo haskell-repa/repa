@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-import Solver
+import SolverChunks
 import SVG
 import Points
 import Data.Array.Repa.Vector                   as R
@@ -8,7 +8,7 @@ import Data.Array.Repa.IO.Timing
 
 main
  = do
-        let pointCount  = 10000
+        let pointCount  = 100000
         let uPoints     = genPointsDisc pointCount (400, 400) 350 
         let vPoints     = R.fromUnboxed (Z :. pointCount) uPoints
         let mFileSVG    = Nothing -- Just "out.svg"

@@ -32,7 +32,7 @@ deriving instance (U.Unbox a, Read sh, Read a) => Read (Array U sh a)
 
 instance (Elt a, U.Unbox a) => Bulk U a where
  linearIndex (AUnboxed _ vec) ix
-        = (U.!) vec ix                        -- TODO: make unsafe
+        = U.unsafeIndex vec ix
  {-# INLINE [4] linearIndex #-}
 
  extent (AUnboxed sh _)

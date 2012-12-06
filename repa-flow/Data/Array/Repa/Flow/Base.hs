@@ -15,8 +15,17 @@ import System.IO
 import System.IO.Unsafe
 
 -------------------------------------------------------------------------------
-checkIx str len ix a
- | ix >= len            
+debug   = False
+{-# INLINE debug #-}
+
+checkIx :: String -> Int -> Int -> a -> a
+checkIx  str len ix a
+ | debug        = checkIx' str len ix a
+ | otherwise    = a
+{-# INLINE checkIx #-}
+
+checkIx' str len ix a
+ | ix >= len
  = unsafePerformIO
  $ do   hFlush stdout
         hFlush stderr
@@ -27,6 +36,7 @@ checkIx str len ix a
 
  | otherwise
  = a
+{-# NOINLINE checkIx' #-}
 
 
 -- Boxed ----------------------------------------------------------------------
@@ -66,12 +76,12 @@ uindex  str vec ix
 
 uread str vec ix
  = checkIx str (UM.length vec) ix
- $ UM.read vec ix
+ $ UM.unsafeRead vec ix
 {-# INLINE uread #-}
 
 uwrite str vec ix val  
  = checkIx str (UM.length vec) ix
- $ UM.write vec ix val
+ $ UM.unsafeWrite vec ix val
 {-# INLINE uwrite #-}
 
 uslice  = U.unsafeSlice
@@ -86,13 +96,13 @@ inew  len
 iread :: String -> UM.IOVector Int -> Int# -> IO Int
 iread str vec ix
  = checkIx str (UM.length vec) (I# ix)
- $ do   !x      <- UM.read vec (I# ix)
+ $ do   !x      <- UM.unsafeRead vec (I# ix)
         return x
 {-# INLINE iread #-}
 
 iwrite :: String -> UM.IOVector Int -> Int# -> Int# -> IO ()
 iwrite str vec ix x 
  = checkIx str (UM.length vec) (I# ix)
- $ UM.write vec (I# ix) (I# x)
+ $ UM.unsafeWrite vec (I# ix) (I# x)
 {-# INLINE iwrite #-}
 
