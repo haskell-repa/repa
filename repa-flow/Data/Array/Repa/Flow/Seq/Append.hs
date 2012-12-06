@@ -42,8 +42,7 @@ appends segLenA segIdxA elemA
         start
          -- The result vector has no elements, so we're already done.
          | n ==# 0#
-         = do   putStrLn "appends: done already"
-                state <- unew 6
+         = do   state <- unew 6
                 iwrite here state sTakeFrom   0#
                 iwrite here state sSegOff     0#
                 iwrite here state sIndexA     0#
@@ -54,34 +53,24 @@ appends segLenA segIdxA elemA
 
          -- Start reading elements from the A vector.
          | el_off <# segLenA seg_off
-         = do   putStrLn "appends: start from A"
-                state   <- unew 6
+         = do   state   <- unew 6
                 iwrite here state sTakeFrom  0#
                 iwrite here state sSegOff    seg_off
                 iwrite here state sIndexA    (segIdxA seg_off +# el_off)
                 iwrite here state sIndexB    (segIdxB seg_off)
-
-                putStrLn $ "getting from " ++ show (I# seg_off)
-                let !x  = segLenA seg_off
-                iwrite here state sNextSwap  (x -# el_off)
-
+                iwrite here state sNextSwap  (segLenA seg_off -# el_off)
                 iwrite here state sRemain    n
                 return state
 
         -- Start reading elements from the B vector.
          | otherwise
-         = do   putStrLn "appends: start from B"
-                state   <- unew 6
+         = do   state   <- unew 6
                 -- Get the starting element offset relative to the first segment 
                 -- of the Y array.
                 let !el_off'  = el_off -# segLenA seg_off
                 iwrite here state sTakeFrom  1#
                 iwrite here state sSegOff    seg_off
-
-                putStrLn $ "getting from " ++ show (I# seg_off)
-                let !x  = segLenA seg_off
-
-                iwrite here state sIndexA    (segIdxA seg_off +# x)
+                iwrite here state sIndexA    (segIdxA seg_off +# segLenA seg_off)
                 iwrite here state sIndexB    (segIdxB seg_off +# el_off')
                 iwrite here state sNextSwap  (segLenB seg_off -# el_off')
                 iwrite here state sRemain    n
@@ -117,9 +106,6 @@ appends segLenA segIdxA elemA
                 if nextSwap ==# 0#
                  -- Done reading the A vector for now, so switch to B       
                  then do
-                        putStrLn "switch to B"
-                        hFlush stdout
-
                         !(I# segOff)    <- iread here state sSegOff
                         iwrite here state sTakeFrom 1#
                         iwrite here state sNextSwap (segLenB segOff)
@@ -128,16 +114,11 @@ appends segLenA segIdxA elemA
 
                  -- Emit a value from the A vector.
                  else do
-                        putStrLn "emit from A"
-                        hFlush stdout
-
                         !(I# indexA)    <- iread here state sIndexA
                         !(I# remain)    <- iread here state sRemain
                         iwrite here state sIndexA   (indexA   +# 1#)
                         iwrite here state sNextSwap (nextSwap -# 1#)
                         iwrite here state sRemain   (remain   -# 1#)
-
-                        putStrLn "push"
                         send1 push1 (elemA indexA)
 
         get1_fromB state push1
@@ -146,34 +127,21 @@ appends segLenA segIdxA elemA
                 if nextSwap ==# 0#
                  -- Done reading the B vector for now, so switch to A
                  then do
-                        putStrLn "switch to A"
-                        hFlush stdout
-
                         !(I# segOff)    <- iread here state sSegOff
                         let !segOff'    = segOff +# 1#
                         iwrite here state sTakeFrom 0#
-
-                        putStrLn $ "getting from " ++ show (I# segOff')
-                        let !x          = segLenA segOff'
-                        touch (I# x)
-
-                        iwrite here state sNextSwap x
+                        iwrite here state sNextSwap (segLenA segOff')
                         iwrite here state sSegOff   segOff'
 
                         get1_fromA state push1
 
                  -- Emit a value from the B vector.
                  else do
-                        putStrLn "emit from B"
-                        hFlush stdout
-
                         !(I# indexB)    <- iread here state sIndexB
                         !(I# remain)    <- iread here state sRemain
                         iwrite here state sIndexB   (indexB   +# 1#)
                         iwrite here state sNextSwap (nextSwap -# 1#)
                         iwrite here state sRemain   (remain   -# 1#)
-
-                        putStrLn "push"
                         send1 push1 (elemB indexB)
 
         send1 push1 x

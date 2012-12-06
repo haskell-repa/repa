@@ -89,7 +89,7 @@ instance Unflow BB where
         -- The action that runs on each thread.
         let action tid
              = case frag statePar tid of
-                Seq.Flow startSeq _size flowReport get1 get8
+                Seq.Flow startSeq _size _flowReport get1 get8
                  -> do  -- The starting point for this threads results into 
                         -- the final vector.
                         let !ixStart    = getStart tid
@@ -99,12 +99,11 @@ instance Unflow BB where
                         let write (I# ix)  val
                                 = uwrite here mvec (I# (ixStart +# ix)) val
 
-                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: start"
+--                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: start"
                         stateSeq  <- startSeq
-                        reportSeq <- flowReport stateSeq
+--                        reportSeq <- flowReport stateSeq
 
-                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: "
-                                 ++ show reportSeq
+--                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: " ++ show reportSeq
 
                         _         <- Seq.slurp 0# Nothing write
                                         (get1 stateSeq) (get8 stateSeq)
@@ -137,13 +136,12 @@ instance Unflow BN where
         -- The action that runs on each thread.
         let action tid
              = case frag statePar tid of
-                flowSeq@(Seq.Flow startFlow _ reportFlow _ _)
+                flowSeq@(Seq.Flow _startFlow _ _reportFlow _ _)
                  -> do  
-                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: start"
-                        stateSeq   <- startFlow
-                        reportSeq  <- reportFlow stateSeq
-                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: "
-                                 ++ show reportSeq
+--                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: start"
+--                        stateSeq   <- startFlow
+--                        reportSeq  <- reportFlow stateSeq
+--                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: " ++ show reportSeq
 
                         uvec  <- Seq.drain flowSeq
                         vwrite here mchunks (I# tid) uvec
