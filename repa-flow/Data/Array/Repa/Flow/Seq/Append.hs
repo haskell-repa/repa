@@ -2,12 +2,9 @@
 module Data.Array.Repa.Flow.Seq.Append
         (appends)
 where
-import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as Report
 import GHC.Exts
-import Debug.Trace
-import System.IO
 
 -- | Segmented append.
 appends
