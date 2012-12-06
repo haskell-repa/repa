@@ -28,7 +28,7 @@ appends segLenA segIdxA elemA
         n seg_off el_off
  = Flow start size report get1 get8
  where
-        here            = "repa-flow.appends"
+        here            = "seq.appends"
 
         sTakeFrom       = 0#
         sSegOff         = 1#

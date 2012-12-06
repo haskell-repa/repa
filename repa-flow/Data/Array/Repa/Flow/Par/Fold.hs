@@ -49,7 +49,7 @@ foldsSplit
 foldsSplit f !z segd (Flow gang distro start frag)
  = Flow gang distro' start' frag'
  where
-        here            = "repa-flow.foldsSplit"
+        here            = "par.foldsSplit"
         !frags          = distroBalancedFrags distro
 
         -- TODO: When we produce the distribution of the result we know 

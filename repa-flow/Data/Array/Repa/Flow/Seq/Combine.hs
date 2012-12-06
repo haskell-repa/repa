@@ -106,7 +106,7 @@ combines2 resultLen
           (Flow startElemB _sizeElemB reportElemB getElemB1 _)
  = Flow start' size' report' get1' get8'
  where
-        here    = "repa-flow.combines2"
+        here    = "seq.combines2"
 
         sSource = 0#    -- Source vector currently being read.
         sRemain = 1#    -- Number of elements remaining in current segment.

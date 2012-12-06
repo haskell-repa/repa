@@ -108,7 +108,7 @@ zipLeft :: Flow mode a
 zipLeft (Flow startA sizeA reportA getA1 getA8) getB
  = Flow start' size' report' get1' get8'
  where  
-        here    = "repa-flow.zipLeft"
+        here    = "seq.zipLeft"
 
         start'
          = do   stateA  <- startA

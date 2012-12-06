@@ -131,7 +131,7 @@ splitSegd !gang segd
 --   This tells us how the array elements should be distributed on the gang.
 distroOfSplitSegd :: SplitSegd -> Distro BB
 distroOfSplitSegd (SplitSegd _ (Segd _ _ ixs) nElems nChunks chunks)
- = let here = "repa-flow.distroOfSplitSegd"
+ = let here = "par.distroOfSplitSegd"
    in  DistroBalanced 
         { distroBalancedFrags      = nChunks
         , distroBalancedLength     = nElems

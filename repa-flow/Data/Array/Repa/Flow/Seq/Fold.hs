@@ -16,7 +16,7 @@ foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
 foldl f z !(Flow start _ _ get1 get8)
  = unsafePerformIO
  $ do   
-        let here = "repa-flow.foldl"
+        let here = "seq.foldl"
 
         outRef  <- unew 1
         uwrite here outRef 0 z

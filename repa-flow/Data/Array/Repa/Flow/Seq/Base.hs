@@ -130,7 +130,7 @@ flow    :: Elt a
 flow !load !len
  = Flow start size report get1 get8
  where  
-        here    = "repa-flow.flow"
+        here    = "seq.flow"
 
         start
          = do   refIx   <- inew 1
@@ -239,7 +239,7 @@ unflowWith
         -> IO (U.Vector a)
 
 unflowWith !report !len get1 get8
- = do   let here = "repa-flow.unflowWith"
+ = do   let here = "seq.unflowWith"
 
         !mvec    <- unew (I# len)
 
@@ -264,7 +264,7 @@ take    :: (Elt a, U.Unbox a)
         => Int# -> Flow mode a -> IO (U.Vector a, Flow FS a)
 
 take limit (Flow start size report get1 get8)
- = do   let here = "repa-flow.take"
+ = do   let here = "seq.take"
 
         state    <- start
 
@@ -292,7 +292,7 @@ slurp   :: Elt a
         -> IO Int
 
 slurp start stop !write get1 get8
- = do   let here = "repa-flow.slurp"
+ = do   let here = "seq.slurp"
 
         refCount <- inew 1
         iwrite here refCount 0# (-1#)

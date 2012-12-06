@@ -17,8 +17,6 @@ import qualified Data.Array.Repa.Flow.Seq.Base  as Seq
 import System.IO.Unsafe
 import GHC.Exts
 
-here = "Data.Array.Repa.Flow.Par.Base"
-
 
 data Flow rep bal a
         = forall state. Flow
@@ -78,6 +76,7 @@ instance Unflow BB where
  unflow !(Flow gang distro startPar frag)
   = unsafePerformIO
   $ do  
+        let here        = "par.unflow"
         let !len        = distroBalancedLength distro
         let !getStart   = distroBalancedFragStart distro
 
@@ -119,6 +118,7 @@ instance Unflow BN where
  unflow !(Flow gang distro start frag)
   = unsafePerformIO
   $ do  
+        let here        = "par.unflow"
         let !frags      = distroUnbalancedFrags distro
 
         -- Allocate a boxed mutable vector to hold the result from each thread.

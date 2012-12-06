@@ -19,7 +19,7 @@ packByTag :: Unbox a => Flow mode (Int, a) -> Flow mode a
 packByTag (Flow start size report get1 get8)
  = Flow start' size' report' get1' get8'
  where
-        here    = "repa-flow.packByTag"
+        here    = "seq.packByTag"
 
         start'
          = do   state   <- start
@@ -126,6 +126,7 @@ packByTag (Flow start size report get1 get8)
 
 {-# INLINE [1] packByTag #-}
 
+
 -------------------------------------------------------------------------------
 -- | Produce only those elements that have their corresponding
 --   flag set to `True`
@@ -134,9 +135,11 @@ packByFlag ff
         = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
 {-# INLINE [1] packByFlag #-}
 
+
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
 filter :: Unbox a => (a -> Bool) -> Flow mode a -> Flow mode a
 filter f ff
         = packByFlag $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}
+

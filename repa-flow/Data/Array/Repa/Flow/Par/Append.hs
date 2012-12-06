@@ -20,7 +20,7 @@ appends :: SplitSegd    -- ^ Segment descriptor of the result.
 appends segdr segdA getElemA segdB getElemB 
  = Flow gang distro start frag
  where
-        here     = "repa-flow.appends"
+        here     = "par.appends"
         !gang    = Segd.splitGang segdr
         !distro  = Segd.distroOfSplitSegd segdr
 

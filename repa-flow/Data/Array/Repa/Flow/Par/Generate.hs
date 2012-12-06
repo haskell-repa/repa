@@ -72,7 +72,7 @@ replicatesSplit
 replicatesSplit segd getSegVal
  = Flow gang distro start frag
  where
-        here            = "repa-flow.replicatesSplit"
+        here            = "par.replicatesSplit"
         !gang           = Segd.splitGang segd
         !distro         = Segd.distroOfSplitSegd segd
 

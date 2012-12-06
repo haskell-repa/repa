@@ -14,8 +14,14 @@ import GHC.Exts
 
 -------------------------------------------------------------------------------
 checkIx str len ix a
- | ix >= len            = error $ "checkIx failed: " ++ str
- | otherwise            = a
+ | ix >= len            
+ = error $ unlines
+        [ "repa-flow.checkIx index out of range in '" ++ str ++ "'"
+        , "    length = " ++ show len
+        , "    index  = " ++ show ix ]
+
+ | otherwise
+ = a
 
 
 -- Boxed ----------------------------------------------------------------------

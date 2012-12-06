@@ -17,7 +17,7 @@ generate :: Int# -> (Int# -> a) -> Flow mode a
 generate len f
  = Flow start size report get1 get8
  where  
-        here    = "repa-flow.generate"
+        here    = "seq.generate"
 
         start
          = do   refCount <- unew 1
@@ -95,7 +95,7 @@ replicatesDirect
 replicatesDirect resultLen getSegLen getValue
  = Flow start size report get1 get8
  where
-        here    = "repa-flow.replicatesDirect"
+        here    = "seq.replicatesDirect"
 
         !sCount         = 0     -- How many elements we've emitted so far.
         !sSeg           = 1     -- Id of current segment.
@@ -196,7 +196,7 @@ enumFromN
 enumFromN first len
  = Flow start size report get1 get8
  where
-        here    = "repa-flow.enumFromN"
+        here    = "seq.enumFromN"
 
         start
          = do   refCount <- inew 1
