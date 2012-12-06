@@ -165,8 +165,7 @@ hsplit_l segd points lines
         !segdAbove      = Segd.fromLengths counts_else
 
         !downPoints     = R.unflowP 
-                        $ appendsWithResultSegd
-                                (Segd.splitSegd downSegd)
+                        $ appends
                                 segdAbove above
                                 segdAbove above
 
