@@ -10,7 +10,6 @@ import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (replicate)
 
-here = "Data.Array.Repa.Flow.Seq.Generate"
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
@@ -18,6 +17,8 @@ generate :: Int# -> (Int# -> a) -> Flow mode a
 generate len f
  = Flow start size report get1 get8
  where  
+        here    = "repa-flow.generate"
+
         start
          = do   refCount <- unew 1
                 uwrite here refCount 0 0
@@ -26,19 +27,19 @@ generate len f
 
 
         size refCount
-         = do   !(I# ix) <- uread refCount 0
+         = do   !(I# ix) <- uread here refCount 0
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
 
 
         report refCount
-         = do   ix      <- uread refCount 0
+         = do   ix      <- uread here refCount 0
                 return  $ R.Generate (I# len) ix
         {-# NOINLINE report #-}
 
 
         get1 refCount push1
-          = do  !(I# ix)        <- uread refCount 0
+          = do  !(I# ix)        <- uread here refCount 0
                 let !remain     = len -# ix
                 if remain ># 0#
                  then do
@@ -50,7 +51,7 @@ generate len f
 
 
         get8 refCount push8
-          = do  !(I# ix) <- uread refCount 0
+          = do  !(I# ix) <- uread here refCount 0
                 let !remain     = len -# ix
                 if remain >=# 8#
                  then do
@@ -94,6 +95,8 @@ replicatesDirect
 replicatesDirect resultLen getSegLen getValue
  = Flow start size report get1 get8
  where
+        here    = "repa-flow.replicatesDirect"
+
         !sCount         = 0     -- How many elements we've emitted so far.
         !sSeg           = 1     -- Id of current segment.
         !sSegLen        = 2     -- Length of current segment.
@@ -109,8 +112,8 @@ replicatesDirect resultLen getSegLen getValue
 
 
         size state
-         = do   !(I# count)     <- uread state sCount
-                !(I# remain)    <- uread state sRemain
+         = do   !(I# count)     <- uread here state sCount
+                !(I# remain)    <- uread here state sRemain
                 return  $ Exact ((resultLen -# count) -# remain)
 
 
@@ -120,8 +123,8 @@ replicatesDirect resultLen getSegLen getValue
 
 
         get1 !state push1
-         = do   !(I# seg)       <- uread state sSeg
-                !(I# remain)    <- uread state sRemain
+         = do   !(I# seg)       <- uread here state sSeg
+                !(I# remain)    <- uread here state sRemain
                 result seg remain
           where 
                 result seg remain
@@ -139,8 +142,8 @@ replicatesDirect resultLen getSegLen getValue
                 result_doneSeg seg
                  = do   
                         -- Add the completed segment to the total count.
-                        !(I# count)     <- uread state sCount
-                        !(I# segLen)    <- uread state sSegLen
+                        !(I# count)     <- uread here state sCount
+                        !(I# segLen)    <- uread here state sSegLen
                         let !count'     = count +# segLen
                         uwrite here state sCount (I# count')
 
@@ -167,7 +170,7 @@ replicatesDirect resultLen getSegLen getValue
                 -- a packet of elements, otherwise tell the consumer
                 -- they need to pull a single element at a time.
                 result
-                 = do   !(I# remain)    <- uread state sRemain
+                 = do   !(I# remain)    <- uread here state sRemain
                         if remain >=# 8#
                          then   result_fromSeg remain
                          else   push8 Pull1
@@ -176,7 +179,7 @@ replicatesDirect resultLen getSegLen getValue
                 result_fromSeg remain
                  = do
                         uwrite here state sRemain (I# (remain -# 8#))
-                        !(I# seg)       <- uread state sSeg
+                        !(I# seg)       <- uread here state sSeg
                         let !x  = getValue seg
                         push8 $ Yield8 x x x x x x x x
 
@@ -193,47 +196,49 @@ enumFromN
 enumFromN first len
  = Flow start size report get1 get8
  where
-        start
-         = do   refCount <- unew 1
-                uwrite here refCount 0 (I# len)
+        here    = "repa-flow.enumFromN"
 
-                refAcc   <- unew 1
-                uwrite here refAcc   0 (I# first)
+        start
+         = do   refCount <- inew 1
+                iwrite here refCount 0# len
+
+                refAcc   <- inew 1
+                iwrite here refAcc   0# first
 
                 return (refCount, refAcc)
 
 
         size (refCount, _)
-         = do   !(I# count)     <- uread refCount 0
+         = do   !(I# count)  <- uread here refCount 0
                 return  $ Exact count
 
 
         report (refCount, _)
-         = do   count           <- uread refCount 0
+         = do   !count  <- uread here refCount 0
                 return  $ R.EnumFromN (I# len) count
         {-# NOINLINE report #-}
 
 
         get1 (refCount, refAcc) push1
-         = do   !(I# count)     <- uread refCount 0
+         = do   !(I# count)  <- iread here refCount 0#
                 if count ># 0#
                  then do 
-                        uwrite here refCount 0 (I# (count -# 1#))
+                        iwrite here refCount 0# (count -# 1#)
 
-                        acc     <- uread refAcc 0
-                        uwrite here refAcc   0 (acc + 1)
+                        acc     <- iread here refAcc 0#
+                        uwrite here refAcc   0  (acc + 1)
 
                         push1 $ Yield1 acc (count >=# 9#)
 
                  else   push1 Done
 
         get8 (refCount, refAcc) push8
-         = do   !(I# count)     <- uread refCount 0
+         = do   !(I# count)  <- iread here refCount 0#
                 if count >=# 8#
                  then do
-                        uwrite here refCount 0 (I# (count -# 8#))
+                        iwrite here refCount 0# (count -# 8#)
 
-                        acc     <- uread refAcc 0
+                        !acc     <- iread here refAcc 0#
                         uwrite here refAcc   0 (acc + 8)
 
                         push8 $ Yield8  (acc + 0) (acc + 1) (acc + 2) (acc + 3)

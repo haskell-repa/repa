@@ -7,6 +7,7 @@ import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as Report
 import GHC.Exts
 
+
 -- | Combine two flows, using a tag stream to tell us which of the data
 --   streams to take the next element from.
 --  
@@ -105,6 +106,8 @@ combines2 resultLen
           (Flow startElemB _sizeElemB reportElemB getElemB1 _)
  = Flow start' size' report' get1' get8'
  where
+        here    = "repa-flow.combines2"
+
         sSource = 0#    -- Source vector currently being read.
         sRemain = 1#    -- Number of elements remaining in current segment.
                         -- Setting this to 0 force the first flag to be loaded
@@ -118,8 +121,8 @@ combines2 resultLen
                 stateElemB      <- startElemB
 
                 state           <- inew 2
-                iwrite state sSource 0#
-                iwrite state sRemain 0#
+                iwrite here state sSource 0#
+                iwrite here state sRemain 0#
 
                 return  (state, stateF, stateLenA, stateElemA, stateLenB, stateElemB)
 
@@ -139,8 +142,8 @@ combines2 resultLen
         get1'   (!state, !stateF
                        , !stateLenA, !stateElemA
                        , !stateLenB, !stateElemB) push1
-         = do   !(I# source)    <- iread state sSource 
-                !(I# remain)    <- iread state sRemain
+         = do   !(I# source)    <- iread here state sSource 
+                !(I# remain)    <- iread here state sRemain
                 next source remain
 
          where  next source remain
@@ -185,8 +188,8 @@ combines2 resultLen
                      ->     push1 Done
 
                     Just x  
-                     -> do  iwrite state sSource source
-                            iwrite state sRemain (remain -# 1#)
+                     -> do  iwrite here state sSource source
+                            iwrite here state sRemain (remain -# 1#)
                             push1 $ Yield1 x False
 
         get8' _ push1

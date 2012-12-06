@@ -131,21 +131,22 @@ splitSegd !gang segd
 --   This tells us how the array elements should be distributed on the gang.
 distroOfSplitSegd :: SplitSegd -> Distro BB
 distroOfSplitSegd (SplitSegd _ (Segd _ _ ixs) nElems nChunks chunks)
-        = DistroBalanced 
+ = let here = "repa-flow.distroOfSplitSegd"
+   in  DistroBalanced 
         { distroBalancedFrags      = nChunks
         , distroBalancedLength     = nElems
 
         , distroBalancedFragLength 
-           = \ix -> chunkElems (vindex chunks (I# ix))
+           = \ix -> chunkElems (vindex here chunks (I# ix))
 
         , distroBalancedFragStart  
            = \ix ->
-                let chunk        = vindex chunks (I# ix)
+                let chunk        = vindex here chunks (I# ix)
                     seg          = chunkStart chunk
 
                     !(I# seg_ix) 
                         | U.length ixs == 0     = 0
-                        | otherwise             = uindex ("distroOfSplitSegd") ixs (I# seg)
+                        | otherwise             = uindex here ixs (I# seg)
 
                     offset       = chunkOffset chunk
                 in  offset +# seg_ix }

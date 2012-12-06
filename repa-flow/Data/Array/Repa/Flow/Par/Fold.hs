@@ -17,8 +17,6 @@ import Control.Concurrent.MVar
 import Control.Monad
 import Prelude hiding (foldl)
 
-here = "Data.Array.Repa.Flow.Par.Fold"
-
 
 -------------------------------------------------------------------------------
 -- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
@@ -51,6 +49,7 @@ foldsSplit
 foldsSplit f !z segd (Flow gang distro start frag)
  = Flow gang distro' start' frag'
  where
+        here            = "repa-flow.foldsSplit"
         !frags          = distroBalancedFrags distro
 
         -- TODO: When we produce the distribution of the result we know 
@@ -72,7 +71,7 @@ foldsSplit f !z segd (Flow gang distro start frag)
 
 
         frag' (state1, mvars) n
-         = let  !chunk          = vindex (Segd.splitChunk segd) (I# n)
+         = let  !chunk          = vindex here (Segd.splitChunk segd) (I# n)
                 !segLens        = Segd.chunkLengths chunk
                 !(I# segsHere)  = U.length segLens
 

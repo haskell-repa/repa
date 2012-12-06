@@ -108,10 +108,12 @@ zipLeft :: Flow mode a
 zipLeft (Flow startA sizeA reportA getA1 getA8) getB
  = Flow start' size' report' get1' get8'
  where  
+        here    = "repa-flow.zipLeft"
+
         start'
          = do   stateA  <- startA
                 refIx   <- unew 1
-                iwrite refIx 0# 0#
+                iwrite here refIx 0# 0#
                 return (stateA, refIx)
 
         size' (!stateA, _)
@@ -126,8 +128,8 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
          =  getA1 stateA $ \r 
          -> case r of
                 Yield1 x1 hint
-                 -> do  !(I# ix)        <- uread refIx 0
-                        iwrite refIx 0# (ix +# 1#)
+                 -> do  !(I# ix)        <- uread here refIx 0
+                        iwrite here refIx 0# (ix +# 1#)
                         push1 $ Yield1 (x1, getB ix) hint
 
                 Done -> push1 $ Done
@@ -137,8 +139,8 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
          = getA8 stateA $ \r
          -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
-                 -> do  !(I# ix)        <- uread refIx 0
-                        iwrite refIx 0# (ix +# 8#)
+                 -> do  !(I# ix)        <- uread here refIx 0
+                        iwrite here refIx 0# (ix +# 8#)
                         push8 $ Yield8  (x0, getB (ix +# 0#))
                                         (x1, getB (ix +# 1#))
                                         (x2, getB (ix +# 2#))

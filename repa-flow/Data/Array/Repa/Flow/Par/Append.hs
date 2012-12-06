@@ -9,8 +9,6 @@ import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq.Append        as Seq
 import GHC.Exts
 
-here    = "Data.Array.Repa.Flow.Par.Append"
-
 -- | Segmented append.
 appends :: SplitSegd    -- ^ Segment descriptor of the result.
         -> Segd         -- ^ Segment descriptor of the A array.
@@ -22,7 +20,7 @@ appends :: SplitSegd    -- ^ Segment descriptor of the result.
 appends segdr segdA getElemA segdB getElemB 
  = Flow gang distro start frag
  where
-
+        here     = "repa-flow.appends"
         !gang    = Segd.splitGang segdr
         !distro  = Segd.distroOfSplitSegd segdr
 
@@ -36,7 +34,7 @@ appends segdr segdA getElemA segdB getElemB
         getSegIxB  i    = unbox (uindex here (Segd.indices segdB) (I# i))
 
         frag _state n
-         = let  !chunk   = vindex (Segd.splitChunk segdr) (I# n)
+         = let  !chunk   = vindex here (Segd.splitChunk segdr) (I# n)
            in   Seq.appends
                         getSegLenA getSegIxA getElemA
                         getSegLenB getSegIxB getElemB

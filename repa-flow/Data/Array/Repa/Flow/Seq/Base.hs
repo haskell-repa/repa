@@ -25,8 +25,6 @@ import qualified Data.Vector.Unboxed                    as U
 import System.IO.Unsafe
 import Prelude                                          hiding (take)
 
-here = "Data.Array.Repa.Flow.Seq.Base"
-
 
 -- | Phantom type tag to indicate a delayed flow.
 --
@@ -132,31 +130,33 @@ flow    :: Elt a
 flow !load !len
  = Flow start size report get1 get8
  where  
+        here    = "repa-flow.flow"
+
         start
          = do   refIx   <- inew 1
-                iwrite refIx 0# 0#
+                iwrite here refIx 0# 0#
                 return refIx
         {-# INLINE start #-}
 
 
         size refIx
-         = do   !(I# ix)        <- iread refIx 0#
+         = do   !(I# ix)        <- iread here refIx 0#
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
 
 
         report refIx
-         = do   !ix             <- iread refIx 0#
+         = do   !ix             <- iread here refIx 0#
                 return  $ R.Flow (I# len) ix
         {-# NOINLINE report #-}
 
 
         get1 refIx push1
-         = do   !(I# ix)        <- iread refIx 0#
+         = do   !(I# ix)        <- iread here refIx 0#
                 let !remain     =  len -# ix
                 if remain ># 0#
                  then do
-                        iwrite refIx 0# (ix +# 1#)
+                        iwrite here refIx 0# (ix +# 1#)
                         let !x  = load ix
 
                         -- Touch because we want to be sure its unboxed as
@@ -173,11 +173,11 @@ flow !load !len
 
 
         get8 refIx push8
-         = do   !(I# ix)        <- iread refIx 0#
+         = do   !(I# ix)        <- iread here refIx 0#
                 let !remain     = len -# ix
                 if remain >=# 8#
                  then do
-                        iwrite refIx 0# (ix +# 8#)
+                        iwrite here refIx 0# (ix +# 8#)
 
                         -- TODO: not sure whether we should force these here
                         let here' = return
@@ -239,7 +239,9 @@ unflowWith
         -> IO (U.Vector a)
 
 unflowWith !report !len get1 get8
- = do   !mvec    <- unew (I# len)
+ = do   let here = "repa-flow.unflowWith"
+
+        !mvec    <- unew (I# len)
 
         !len'    <- slurp 0# Nothing 
                         (uwrite (here ++ " " ++ show report) mvec) 
@@ -262,7 +264,9 @@ take    :: (Elt a, U.Unbox a)
         => Int# -> Flow mode a -> IO (U.Vector a, Flow FS a)
 
 take limit (Flow start size report get1 get8)
- = do   state    <- start
+ = do   let here = "repa-flow.take"
+
+        state    <- start
 
         !mvec    <- unew (I# limit)
         !len'    <- slurp 0# (Just (I# limit)) (uwrite here mvec) 
@@ -288,16 +292,18 @@ slurp   :: Elt a
         -> IO Int
 
 slurp start stop !write get1 get8
- = do   refCount <- inew 1
-        iwrite refCount 0# (-1#)
+ = do   let here = "repa-flow.slurp"
+
+        refCount <- inew 1
+        iwrite here refCount 0# (-1#)
 
         let
          slurpSome ix
           = do  slurp8 ix
-                I# ix'     <- iread refCount 0# 
+                I# ix'     <- iread here refCount 0# 
 
                 slurp1 ix' 
-                I# ix''    <- iread refCount 0#
+                I# ix''    <- iread here refCount 0#
 
                 case stop of
                  Just (I# limit)
@@ -314,7 +320,7 @@ slurp start stop !write get1 get8
          slurp1 ix 
           | Just (I# limit) <- stop
           , ix >=# limit
-          =     iwrite refCount 0# ix
+          =     iwrite here refCount 0# ix
 
           |  otherwise
           =  get1 $ \r
@@ -329,17 +335,17 @@ slurp start stop !write get1 get8
                         touch x
 
                         if switch 
-                         then iwrite refCount 0# (ix +# 1#)
+                         then iwrite here refCount 0# (ix +# 1#)
                          else slurp1 (ix +# 1#)
 
                 Done
-                 ->     iwrite refCount 0# ix
+                 ->     iwrite here refCount 0# ix
                         
 
          slurp8 ix
           | Just (I# limit)     <- stop
           , ix +# 8# ># limit
-          =     iwrite refCount 0# ix
+          =     iwrite here refCount 0# ix
 
           | otherwise
           =  get8 $ \r
@@ -356,7 +362,7 @@ slurp start stop !write get1 get8
                         slurp8 (ix +# 8#)
 
                 Pull1   
-                 ->     iwrite refCount 0# ix
+                 ->     iwrite here refCount 0# ix
 
         slurpSome start
 {-# INLINE [0] slurp #-}

@@ -10,14 +10,14 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
 import System.IO.Unsafe
 
-here    = "Data.Array.Repa.Flow.Seq.Fold"
-
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
 foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
 foldl f z !(Flow start _ _ get1 get8)
  = unsafePerformIO
  $ do   
+        let here = "repa-flow.foldl"
+
         outRef  <- unew 1
         uwrite here outRef 0 z
 
@@ -46,7 +46,7 @@ foldl f z !(Flow start _ _ get1 get8)
                   -> eat1 acc
 
         eat8 z
-        uread outRef 0
+        uread here outRef 0
 {-# INLINE [1] foldl #-}
 
 

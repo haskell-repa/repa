@@ -10,7 +10,6 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, filter)
 import GHC.Exts
 
-here    = "Data.Array.Repa.Flow.Seq.Pack"
 
 -------------------------------------------------------------------------------
 -- | Produce only the elements that have their corresponding flag set to `1`.
@@ -20,6 +19,8 @@ packByTag :: Unbox a => Flow mode (Int, a) -> Flow mode a
 packByTag (Flow start size report get1 get8)
  = Flow start' size' report' get1' get8'
  where
+        here    = "repa-flow.packByTag"
+
         start'
          = do   state   <- start
 
@@ -50,8 +51,8 @@ packByTag (Flow start size report get1 get8)
         get1' (!stateA, !buf, !refLen, !refIx) push1
          = load
          where  load
-                 = do   !(I# ix)  <- uread refIx  0
-                        !(I# len) <- uread refLen 0
+                 = do   !(I# ix)  <- uread here refIx  0
+                        !(I# len) <- uread here refLen 0
         
                         -- If we already have some elements in the buffer
                         -- then we can use those.
@@ -65,7 +66,7 @@ packByTag (Flow start size report get1 get8)
                         uwrite here refIx 0 (I# ix')
 
                         -- Push the element to the consumer.
-                        !x      <- uread buf (I# ix)
+                        !x      <- uread here buf (I# ix)
                         push1 $ Yield1  x False
 
                 fill8

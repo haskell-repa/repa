@@ -1,8 +1,8 @@
 
 module Data.Array.Repa.Flow.Base
         ( Unbox
-        , vnew, vfreeze, vindex, vwrite
-        , unew, uread, uwrite, uslice, ufreeze, uindex
+        , vindex, vfreeze, vnew, vread, vwrite
+        , uindex, ufreeze, unew, uread, uwrite, uslice
         , inew, iread, iwrite)
 where
 import Data.Vector.Unboxed                      (Unbox)
@@ -12,52 +12,76 @@ import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import GHC.Exts
 
+-------------------------------------------------------------------------------
+checkIx str len ix a
+ | ix >= len            = error $ "checkIx failed: " ++ str
+ | otherwise            = a
 
-vindex  = (V.!)
+
+-- Boxed ----------------------------------------------------------------------
 vnew    = VM.new
+{-# INLINE vnew #-}
+
 vfreeze = V.unsafeFreeze
+{-# INLINE vfreeze #-}
 
-vwrite str vec ix val
- | ix >= VM.length vec  = error $ "vwrite: " ++ str
- | otherwise            = VM.write vec ix val
+vindex str vec ix
+ = checkIx str (V.length vec) ix
+ $ V.unsafeIndex vec ix
+{-# INLINE vindex #-}
 
-uindex str vec ix
- | ix >= U.length vec   = error $ "uindex: " ++ str
- | otherwise            = U.unsafeIndex vec ix
+vread str vec ix
+ = checkIx str (VM.length vec) ix
+ $ VM.unsafeRead vec ix
+{-# INLINE vread #-}
 
+vwrite  str vec ix val  
+ = checkIx str (VM.length vec) ix 
+ $ VM.unsafeWrite vec ix val
+{-# INLINE vwrite #-}
+
+
+-- Unboxed --------------------------------------------------------------------
 unew    = UM.new
-uread   = UM.read
+{-# INLINE unew #-}
 
-uwrite str vec ix val
- | ix >= UM.length vec  
- = error $ "uwrite: " 
-         ++ str 
-         ++ " (length = " ++ show (UM.length vec)
-         ++    " index = " ++ show ix ++ ")"
- | otherwise            = UM.write vec ix val
+ufreeze = U.unsafeFreeze
+{-# INLINE ufreeze #-}
+
+uindex  str vec ix
+ = checkIx str (U.length vec) ix
+ $ U.unsafeIndex vec ix
+{-# INLINE uindex #-}
+
+uread str vec ix
+ = checkIx str (UM.length vec) ix
+ $ UM.read vec ix
+{-# INLINE uread #-}
+
+uwrite str vec ix val  
+ = checkIx str (UM.length vec) ix
+ $ UM.write vec ix val
+{-# INLINE uwrite #-}
 
 uslice  = U.unsafeSlice
-ufreeze = U.unsafeFreeze
+{-# INLINE uslice #-}
 
 
--- | Allocate a vector of ints.
-inew :: Int -> IO (UM.IOVector Int)
+-- Unboxed Integer ------------------------------------------------------------
 inew  len 
         = UM.new len
 {-# INLINE inew #-}
 
-
--- | Read an unboxed int from a vector.
-iread :: UM.IOVector Int -> Int# -> IO Int
-iread  vec ix
- = do   !x      <- UM.read vec (I# ix)
+iread :: String -> UM.IOVector Int -> Int# -> IO Int
+iread str vec ix
+ = checkIx str (UM.length vec) (I# ix)
+ $ do   !x      <- UM.read vec (I# ix)
         return x
 {-# INLINE iread #-}
 
-
--- | Write an unboxed into to a vector.
-iwrite :: UM.IOVector Int -> Int# -> Int# -> IO ()
-iwrite vec ix x 
-        = UM.write vec (I# ix) (I# x)
+iwrite :: String -> UM.IOVector Int -> Int# -> Int# -> IO ()
+iwrite str vec ix x 
+ = checkIx str (UM.length vec) (I# ix)
+ $ UM.write vec (I# ix) (I# x)
 {-# INLINE iwrite #-}
 

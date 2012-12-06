@@ -72,16 +72,17 @@ replicatesSplit
 replicatesSplit segd getSegVal
  = Flow gang distro start frag
  where
+        here            = "repa-flow.replicatesSplit"
         !gang           = Segd.splitGang segd
         !distro         = Segd.distroOfSplitSegd segd
 
         start           = return ()
 
         frag _ n  
-         = let  chunk            = vindex (Segd.splitChunk segd) (I# n)
+         = let  chunk            = vindex here (Segd.splitChunk segd) (I# n)
                 !elems           = Segd.chunkElems chunk
                 !segStart        = Segd.chunkStart chunk
-                getSegLen'  seg  = let !(I# r) = uindex "replicatesSplit"
+                getSegLen'  seg  = let !(I# r) = uindex here
                                                         (Segd.chunkLengths chunk) 
                                                         (I# seg)
                                    in r
