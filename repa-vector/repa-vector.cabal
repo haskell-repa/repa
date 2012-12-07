@@ -49,9 +49,7 @@ Library
         Data.Array.Repa.Vector.Shape
         Data.Array.Repa.Vector.Index
         Data.Array.Repa.Vector.Segd
-        Data.Array.Repa.Vector.Repr.Delayed
-        Data.Array.Repa.Vector.Repr.Unboxed
-        Data.Array.Repa.Vector.Repr.Flow
+        Data.Array.Repa.Vector.Compute
         Data.Array.Repa.Vector.Operators.Append
         Data.Array.Repa.Vector.Operators.Bulk
         Data.Array.Repa.Vector.Operators.Combine
@@ -64,9 +62,14 @@ Library
         Data.Array.Repa.Vector.Operators.Traverse
         Data.Array.Repa.Vector.Operators.Unzip
         Data.Array.Repa.Vector.Operators.Zip
+        Data.Array.Repa.Vector.Repr.Delayed
+        Data.Array.Repa.Vector.Repr.Unboxed
+        Data.Array.Repa.Vector.Repr.Flow
 
   Other-modules:
         Data.Array.Repa.Vector.Base
+        Data.Array.Repa.Vector.Compute.Target
+        Data.Array.Repa.Vector.Compute.Load
         
 
 
