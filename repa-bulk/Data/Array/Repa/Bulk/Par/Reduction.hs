@@ -3,11 +3,10 @@ module Data.Array.Repa.Bulk.Par.Reduction
         ( foldAll
         , foldInner)
 where
-import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Bulk.Gang
 import GHC.Exts
-import qualified Data.Vector                            as V
 import qualified Data.Array.Repa.Bulk.Seq.Reduction     as Seq
+import Data.IORef
 
 
 -- | Parallel tree reduction of an array to a single value. Each thread takes an
@@ -25,35 +24,33 @@ foldAll :: Gang                -- ^ Gang to run the operation on.
         -> Int#                -- ^ Number of elements.
         -> IO a
 
-foldAll !gang f c !r !len
- | len ==# 0#   = return r
+foldAll !gang f c !z !len
+ | len ==# 0#   = return z
  | otherwise   
- = do   mvec    <- vnew (I# chunks)
+ = do   result  <- newIORef z
 
         gangIO gang
-         $ \tid -> fill mvec tid (split tid) (split (tid +# 1#))
+         $ \tid -> fill result (split tid) (split (tid +# 1#))
 
-        vec     <- vfreeze mvec
-        return  $! V.foldl' c r vec
+        readIORef result
   where
         !threads    = gangSize gang
         !step       = (len +# threads -# 1#) `quotInt#` threads
-        chunks      = ((len +# step -# 1#)   `quotInt#` step) `min#` threads
 
         split !ix   = len `min#` (ix *# step)
-        {-# INLINE split #-}
+        {-# NOINLINE split #-}
 
         min# x y
          = if x <=# y 
                 then x
                 else y
-        {-# INLINE min# #-}
+        {-# NOINLINE min# #-}
 
-        fill !mvec !tid !start !end
+        fill !result !start !end
          | start >=# end = return ()
          | otherwise    
          = let  !x      = Seq.foldRange f c (f start) (start +# 1#) end
-           in   vwrite mvec (I# tid) x
+           in   atomicModifyIORef result (\x' -> (c x x', ()))
         {-# INLINE fill #-}
 
 {-# INLINE [1] foldAll #-}

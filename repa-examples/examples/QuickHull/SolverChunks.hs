@@ -1,6 +1,7 @@
 
 module SolverChunks 
         ( quickHull
+        , quickHull_minmax
         , quickHull_append)
 where
 import Data.Array.Repa.Vector.Segd              (Segd)
@@ -41,6 +42,7 @@ quickHull points
 --        (_, !hull)      = hsplit_l downSegd downPoints downLines
    in   hull
 
+-}
 
 -- | Find the points on the extreme left and right of the XY plane.
 quickHull_minmax :: Vector U Point -> (Point, Point)
@@ -51,17 +53,17 @@ quickHull_minmax vec
  | otherwise
  = let  !p0     = vec `linearIndex` 0
 
-        fmin p0@(x0, y0) p1@(x1, y1)
+        fmin p0@(!x0, !y0) p1@(!x1, !y1)
                 = if x0 < x1   then p0 else p1
 
-        fmax p0@(x0, y0) p1@(x1, y1)
+        fmax p0@(!x0, !y0) p1@(!x1, !y1)
                 = if x0 > x1   then p0 else p1
 
         !minx   = R.fold fmin p0 vec
         !maxx   = R.fold fmax p0 vec
    in   (minx, maxx)
 {-# NOINLINE quickHull_minmax #-}
--}
+
 
 -- this produces bad code because of unflowP interacting with 
 -- the bulk append code. Need to add the proper version of computeP

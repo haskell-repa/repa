@@ -19,8 +19,7 @@ Synopsis:
 Library
   Build-Depends: 
         base            == 4.6.*,
-        ghc-prim        == 0.3.*,
-        vector          == 0.10.*
+        ghc-prim        == 0.3.*
 
   ghc-options:
         -Wall 
@@ -48,8 +47,6 @@ Library
         Data.Array.Repa.Bulk.Par
 
   Other-modules:
-        Data.Array.Repa.Bulk.Base
-
         Data.Array.Repa.Bulk.Seq.Chunked
         Data.Array.Repa.Bulk.Seq.Cursored
         Data.Array.Repa.Bulk.Seq.Reduction
