@@ -206,51 +206,17 @@ flow !load !len
 unflow :: (Elt a, U.Unbox a) 
         => Flow FD a -> U.Vector a
 unflow ff 
- = unsafePerformIO $ drain ff
+ = unsafePerformIO 
+ $ do   let here = "seq.unflow"
+
+        let new ix        = unew (I# ix)
+        let write mvec ix = uwrite here mvec (I# ix)
+        (mvec, len)       <- drain new write ff
+
+        !vec              <- U.unsafeFreeze mvec
+        return  $ uslice 0 len vec
+
 {-# INLINE [1] unflow #-}
-
-
--- | Fully evaluate a possibly stateful flow,
---   pulling all the remaining elements.
-drain   :: (Elt a, U.Unbox a) 
-        => Flow mode a 
-        -> IO (U.Vector a)
-drain !ff
- = case ff of
-    Flow fStart fSize fReport fGet1 fGet8
-     -> do !state   <- fStart
-           !size    <- fSize   state 
-           !report  <- fReport state
-
-           -- In the sequential case we can use the same code to unflow
-           -- both Exact and Max, and just slice down the vector to the
-           -- final size.
-           case size of
-            Exact len       -> unflowWith report len (fGet1 state) (fGet8 state)
-            Max   len       -> unflowWith report len (fGet1 state) (fGet8 state)
-{-# INLINE [1] drain #-}
-
-
-unflowWith
-        :: (Elt a, U.Unbox a) 
-        => R.Report
-        -> Int#
-        -> ((Step1 a -> IO ()) -> IO ())
-        -> ((Step8 a -> IO ()) -> IO ())
-        -> IO (U.Vector a)
-
-unflowWith !report !len get1 get8
- = do   let here = "seq.unflowWith"
-
-        !mvec    <- unew (I# len)
-
-        !len'    <- slurp 0# Nothing 
-                        (uwrite (here ++ " " ++ show report) mvec) 
-                        get1 get8
-
-        !vec     <- ufreeze mvec
-        return   $  uslice 0 len' vec
-{-# INLINE [1] unflowWith #-}
 
 
 -------------------------------------------------------------------------------
@@ -270,8 +236,11 @@ take limit (Flow start size report get1 get8)
         state    <- start
 
         !mvec    <- unew (I# limit)
-        !len'    <- slurp 0# (Just (I# limit)) (uwrite here mvec) 
+        let write ix x = uwrite here mvec (I# ix) x
+
+        !len'    <- slurp 0# (Just (I# limit)) write
                         (get1 state) (get8 state)
+
         !vec     <- ufreeze mvec
         let !vec' = uslice 0 len' vec        
 
@@ -282,12 +251,51 @@ take limit (Flow start size report get1 get8)
 
 
 -------------------------------------------------------------------------------
+-- | Fully evaluate a possibly stateful flow,
+--   pulling all the remaining elements.
+drain   :: (Elt a, U.Unbox a) 
+        => (Int#  -> IO (vec a))          -- Allocate a new vector.
+        -> (vec a -> Int# -> a -> IO ())  -- Write into the vector.
+        -> Flow mode a 
+        -> IO (vec a, Int)                -- Total number of elements written.
+
+drain new write !ff
+ = case ff of
+    Flow fStart fSize _fReport fGet1 fGet8
+     -> do !state   <- fStart
+           !size    <- fSize   state 
+
+
+           -- In the sequential case we can use the same code to unflow
+           -- both Exact and Max, and just slice down the vector to the
+           -- final size.
+           case size of
+            Exact len       
+             -> do !mvec <- new len
+
+                   let write' = write mvec
+                   len'  <- slurp 0# Nothing write' (fGet1 state) (fGet8 state)
+
+                   return (mvec, len')
+
+            Max   len   
+             -> do !mvec <- new len
+
+                   let write' = write mvec
+                   len'  <- slurp 0# Nothing write' (fGet1 state) (fGet8 state)
+
+                   return (mvec, len')
+
+{-# INLINE [1] drain #-}
+
+
+-------------------------------------------------------------------------------
 -- | Slurp out all the elements from a flow,
 --   passing them to the provided consumption function.
 slurp   :: Elt a
         => Int#
         -> Maybe Int
-        -> (Int -> a -> IO ())
+        -> (Int# -> a -> IO ())
         -> ((Step1 a  -> IO ()) -> IO ())
         -> ((Step8 a  -> IO ()) -> IO ())
         -> IO Int
@@ -328,7 +336,7 @@ slurp start stop !write get1 get8
           -> case r of
                 Yield1 x switch
                  -> do  
-                        write (I# ix) x
+                        write ix x
 
                         -- Touch 'x' here beacuse we don't want the code
                         -- that computes it to be floated into the switch
@@ -352,14 +360,14 @@ slurp start stop !write get1 get8
           =  get8 $ \r
           -> case r of
                 Yield8 x0 x1 x2 x3 x4 x5 x6 x7
-                 -> do  write (I# (ix +# 0#)) x0
-                        write (I# (ix +# 1#)) x1
-                        write (I# (ix +# 2#)) x2
-                        write (I# (ix +# 3#)) x3
-                        write (I# (ix +# 4#)) x4
-                        write (I# (ix +# 5#)) x5
-                        write (I# (ix +# 6#)) x6
-                        write (I# (ix +# 7#)) x7
+                 -> do  write (ix +# 0#) x0
+                        write (ix +# 1#) x1
+                        write (ix +# 2#) x2
+                        write (ix +# 3#) x3
+                        write (ix +# 4#) x4
+                        write (ix +# 5#) x5
+                        write (ix +# 6#) x6
+                        write (ix +# 7#) x7
                         slurp8 (ix +# 8#)
 
                 Pull1   

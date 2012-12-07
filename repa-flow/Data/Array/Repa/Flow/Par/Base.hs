@@ -94,19 +94,23 @@ instance Unflow BB where
                         -- the final vector.
                         let !ixStart    = getStart tid
 
-                        -- The 'slurp' function below calls on this to write
-                        -- results into the destination vector.
-                        let write (I# ix)  val
-                                = uwrite here mvec (I# (ixStart +# ix)) val
-
 --                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: start"
                         stateSeq  <- startSeq
 --                        reportSeq <- flowReport stateSeq
 
 --                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: " ++ show reportSeq
 
-                        _         <- Seq.slurp 0# Nothing write
-                                        (get1 stateSeq) (get8 stateSeq)
+                        -- The 'slurp' function below calls on this to write
+                        -- results into the destination vector.
+                        let write ix val
+                                = uwrite here mvec (I# (ixStart +# ix)) val
+
+                        _         <- Seq.slurp 
+                                        0# 
+                                        Nothing 
+                                        write
+                                        (get1 stateSeq)
+                                        (get8 stateSeq)
                         return ()
 
 
@@ -142,9 +146,14 @@ instance Unflow BN where
 --                        stateSeq   <- startFlow
 --                        reportSeq  <- reportFlow stateSeq
 --                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: " ++ show reportSeq
+                        
+                        let new ix        = unew (I# ix)
+                        let write mvec ix = uwrite here mvec (I# ix)
+                        (mvec, len)       <- Seq.drain new write flowSeq
+                        !vec              <- ufreeze mvec
+                        let !vec'         =  uslice 0 len vec
 
-                        uvec  <- Seq.drain flowSeq
-                        vwrite here mchunks (I# tid) uvec
+                        vwrite here mchunks (I# tid) vec'
                         return ()
 
         -- Run the actions to compute each chunk.

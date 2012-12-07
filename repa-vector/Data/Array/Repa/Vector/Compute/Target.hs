@@ -26,7 +26,7 @@ class Target r a where
  --   You promise not to update the source vector any further.
  unsafeFreezeMVec :: sh  -> MVec r a -> IO (Array r sh a)
 
- -- | Thaw a Repa array into a mutable one.
+ -- | Thaw an immutable Repa array into a mutable one.
  --
  --   You promise not to read the source array again.
  unsafeThawArray  :: Array r sh a -> IO (MVec r a)

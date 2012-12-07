@@ -12,10 +12,7 @@ import Data.Array.Repa.Vector.Base
 -- | Compute all elements defined by an array and write them to a manifest
 --   target representation.
 --  
---   Note that instances require that the source array to have a delayed
---   representation such as `D` or `C`. If you want to use a pre-existing
---   manifest array as the source then `delay` it first.
-class (Shape sh) => Load r1 sh e where
+class Shape sh => Load r1 sh e where
 
  -- | Fill an entire array sequentially.
  loadS          :: Target r2 e => Array r1 sh e -> MVec r2 e -> IO ()
@@ -27,7 +24,8 @@ class (Shape sh) => Load r1 sh e where
 -- FillRange ------------------------------------------------------------------
 -- | Compute a range of elements defined by an array and write them to a fillable
 --   representation.
-class (Shape sh) => LoadRange r1 sh e where
+--
+class Shape sh => LoadRange r1 sh e where
 
  -- | Fill a range of an array sequentially.
  loadRangeS     :: Target r2 e => Array r1 sh e -> MVec r2 e -> sh -> sh -> IO ()

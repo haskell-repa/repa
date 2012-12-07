@@ -74,6 +74,11 @@ class Unflow dist sh where
          => Array (O FD dist) sh a -> Array U sh a
 
 
+-- instance Shape sh => Compute (O FD dist) sh a where
+-- computeIOP (AFlow (DistBB sh) ff)
+--  = let 
+
+
 instance Shape sh => Unflow BB sh where
  -- | Compute a balanced, delayed flow in parallel, producing an unboxed vector.
  unflowP (AFlow (DistBB sh) ff)
