@@ -49,7 +49,7 @@ instance U.Unbox e => Target U e where
   = UMVec (UM.IOVector e)
 
  newMVec n
-  = liftM UMVec (UM.new n)
+  = liftM UMVec (UM.unsafeNew n)
  {-# INLINE newMVec #-}
 
  unsafeWriteMVec (UMVec v) ix

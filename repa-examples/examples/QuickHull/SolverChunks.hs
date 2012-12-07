@@ -1,6 +1,7 @@
 
 module SolverChunks 
-        (quickHull)
+        ( quickHull
+        , quickHull_append)
 where
 import Data.Array.Repa.Vector.Segd              (Segd)
 import Data.Array.Repa.Vector                   as R
@@ -19,6 +20,8 @@ type Point      = (Double, Double)
 -- | Compute the convex hull of a vector of points.
 quickHull :: Vector U Point -> Vector U Point
 quickHull points
+ = error "fark"
+{-
  = let  -- Find the points that are on the extreme left and right.
         (minx, maxx)    = quickHull_minmax points
 
@@ -58,6 +61,7 @@ quickHull_minmax vec
         !maxx   = R.fold fmax p0 vec
    in   (minx, maxx)
 {-# NOINLINE quickHull_minmax #-}
+-}
 
 -- this produces bad code because of unflowP interacting with 
 -- the bulk append code. Need to add the proper version of computeP
@@ -67,7 +71,3 @@ quickHull_append points
  = computeP $ R.append points points
 {-# NOINLINE quickHull_append #-}
 
-
--- Until we implement this.
-computeP arr = unflowP $ flow arr
-{-# INLINE computeP #-}

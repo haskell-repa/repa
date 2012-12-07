@@ -6,6 +6,11 @@ module Data.Array.Repa.Vector
         , Array
         , Vector
 
+        -- * Computation
+        , Compute (..)
+        , computeP
+        , computeS
+
         -- * Delayed Representations
         -- ** Bulk Delayed arrays
         , D
@@ -85,6 +90,7 @@ where
 import Data.Array.Repa.Vector.Shape
 import Data.Array.Repa.Vector.Index
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Compute
 import Data.Array.Repa.Vector.Repr.Delayed
 import Data.Array.Repa.Vector.Repr.Unboxed
 import Data.Array.Repa.Vector.Repr.Flow

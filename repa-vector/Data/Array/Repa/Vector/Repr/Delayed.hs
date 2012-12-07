@@ -19,7 +19,6 @@ import Data.Array.Repa.Vector.Compute.Target
 import Data.Array.Repa.Vector.Compute
 import Data.Array.Repa.Vector.Operators.Bulk
 import GHC.Exts
-import Debug.Trace
 
 
 -- | Delayed arrays are represented as functions from the index to element value.
@@ -53,7 +52,7 @@ instance Bulk D a where
 instance Shape sh => Load D sh e where
  loadP (ADelayed sh getElem) mvec
   = mvec `deepSeqMVec` 
-    do  traceEventIO "Repa.loadP[Delayed]: start"
+    do  debugEventIO "Repa.loadP[Delayed]: start"
 
         let get   ix  = getElem $ fromIndex sh (I# ix)
         let write ix  = unsafeWriteMVec mvec (I# ix)
@@ -63,13 +62,13 @@ instance Shape sh => Load D sh e where
         -- The result vector must be live until the computation completes.
         touchMVec mvec
 
-        traceEventIO "Repa.loadP[Delayed]: end"
+        debugEventIO "Repa.loadP[Delayed]: end"
  {-# INLINE [4] loadP #-}
 
 
  loadS (ADelayed sh getElem) mvec
   = mvec `deepSeqMVec` 
-    do  traceEventIO "Repa.loadS[Delayed]: start"
+    do  debugEventIO "Repa.loadS[Delayed]: start"
 
         let get   ix  = getElem $ fromIndex sh (I# ix)
         let write ix  = unsafeWriteMVec mvec (I# ix)
@@ -80,7 +79,7 @@ instance Shape sh => Load D sh e where
         -- The result vector must be live until the computation completes.
         touchMVec mvec
 
-        traceEventIO "Repa.loadS[Delayed]: end"
+        debugEventIO "Repa.loadS[Delayed]: end"
  {-# INLINE [4] loadS #-}
 
 
@@ -89,7 +88,7 @@ instance Elt e => LoadRange D DIM2 e where
  loadRangeP  (ADelayed (Z :. _h :. (I# w)) getElem) mvec
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
   = mvec `deepSeqMVec` 
-    do  traceEventIO "Repa.loadRangeP[Delayed]: start"
+    do  debugEventIO "Repa.loadRangeP[Delayed]: start"
 
         let get   y x   = getElem (Z :. (I# y) :. (I# x))
         let write ix    = unsafeWriteMVec mvec (I# ix)
@@ -100,14 +99,14 @@ instance Elt e => LoadRange D DIM2 e where
         -- The result vector must be live until the computation completes.
         touchMVec mvec
 
-        traceEventIO "Repa.loadRangeP[Delayed]: end"
+        debugEventIO "Repa.loadRangeP[Delayed]: end"
  {-# INLINE [1] loadRangeP #-}
 
 
  loadRangeS  (ADelayed (Z :. _h :. (I# w)) getElem) mvec
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
   = mvec `deepSeqMVec`
-    do  traceEventIO "Repa.loadRangeS[Delayed]: start"
+    do  debugEventIO "Repa.loadRangeS[Delayed]: start"
 
         let get y x     = getElem (Z :. (I# y) :. (I# x))
         let write ix    = unsafeWriteMVec mvec (I# ix)
@@ -118,7 +117,7 @@ instance Elt e => LoadRange D DIM2 e where
         -- The result vector must be live until the computation completes.
         touchMVec mvec
 
-        traceEventIO "Repa.loadRangeS[Delayed]: end"
+        debugEventIO "Repa.loadRangeS[Delayed]: end"
  {-# INLINE [1] loadRangeS #-}
 
 

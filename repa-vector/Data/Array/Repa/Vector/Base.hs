@@ -4,6 +4,7 @@ module Data.Array.Repa.Vector.Base
         , Vector
         , theGang
         , Elt(..)
+        , debugEventIO
         , module Data.Array.Repa.Vector.Index
         , module Data.Array.Repa.Vector.Shape)
 where
@@ -14,6 +15,7 @@ import Data.Array.Repa.Vector.Shape
 import Control.Concurrent
 import System.IO.Unsafe
 import GHC.Exts
+import Debug.Trace
 
 
 -- | Arrays with a representation type, shape and element type.
@@ -46,3 +48,9 @@ theGang
  $ do   (I# caps)    <- getNumCapabilities
         forkGang caps
 {-# NOINLINE theGang #-}
+
+
+debugEventIO :: String -> IO ()
+debugEventIO str
+        = traceEventIO str
+{-# NOINLINE debugEventIO #-}
