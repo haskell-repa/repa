@@ -53,8 +53,7 @@ class Compute r1 sh a where
 --    @
 --
 computeP 
-        :: Compute r1 sh a
-        => Target r2 a
+        :: (Compute r1 sh a, Target r2 a)
         => Array r1 sh a -> Array r2 sh a
 
 computeP !arr
@@ -64,8 +63,7 @@ computeP !arr
 
 -- | Pure sequential computation of array elements.
 computeS
-        :: Compute r1 sh a
-        => Target r2 a
+        :: (Compute r1 sh a, Target r2 a)
         => Array r1 sh a -> Array r2 sh a
 
 computeS !arr

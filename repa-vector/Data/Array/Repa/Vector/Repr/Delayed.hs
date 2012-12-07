@@ -16,6 +16,7 @@ import Data.Array.Repa.Bulk.Seq         as Seq
 import Data.Array.Repa.Vector.Base
 import Data.Array.Repa.Vector.Compute.Load
 import Data.Array.Repa.Vector.Compute.Target
+import Data.Array.Repa.Vector.Compute
 import Data.Array.Repa.Vector.Operators.Bulk
 import GHC.Exts
 import Debug.Trace
@@ -119,6 +120,23 @@ instance Elt e => LoadRange D DIM2 e where
 
         traceEventIO "Repa.loadRangeS[Delayed]: end"
  {-# INLINE [1] loadRangeS #-}
+
+
+-- | Compute a delayed array.
+instance Shape sh => Compute D sh a where
+ computeIOP arr
+  = do  let len = size $ extent arr
+        mvec    <- newMVec len
+        loadP arr mvec
+        unsafeFreezeMVec (extent arr) mvec
+ {-# INLINE [4] computeIOP #-}
+
+ computeIOS arr
+  = do  let len = size $ extent arr
+        mvec    <- newMVec len
+        loadP arr mvec
+        unsafeFreezeMVec (extent arr) mvec
+ {-# INLINE [4] computeIOS #-}
 
 
 -- Conversions ----------------------------------------------------------------
