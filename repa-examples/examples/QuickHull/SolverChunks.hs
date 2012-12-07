@@ -2,7 +2,8 @@
 module SolverChunks 
         ( quickHull
         , quickHull_minmax
-        , quickHull_append)
+        , quickHull_append
+        , quickHull_dets)
 where
 import Data.Array.Repa.Vector.Segd              (Segd)
 import Data.Array.Repa.Vector                   as R
@@ -11,6 +12,7 @@ import Data.Array.Repa.Vector.Operators.Zip     as R
 import Data.Array.Repa.Vector.Operators.Unzip   as R
 import Data.Array.Repa.Vector.Operators.Append  as R
 import Data.Array.Repa.Vector.Repr.Unboxed      as R
+import Data.Array.Repa.Vector.Repr.Flow         as R
 import qualified Data.Array.Repa.Vector.Segd    as Segd
 
 
@@ -65,11 +67,26 @@ quickHull_minmax vec
 {-# NOINLINE quickHull_minmax #-}
 
 
--- this produces bad code because of unflowP interacting with 
--- the bulk append code. Need to add the proper version of computeP
--- for bulk arrays. Also use partitioned arrays in def of append.
+-- | Append points together from the top and bottom part of the hull.
 quickHull_append :: Vector U Point -> Vector U Point
-quickHull_append points
+quickHull_append !points
  = computeP $ R.append points points
 {-# NOINLINE quickHull_append #-}
+
+
+-- | Compute determinates between points and lines.
+quickHull_dets 
+        :: Segd
+        -> Vector U Point
+        -> Vector U (Point, Point)
+        -> Vector U Double
+
+quickHull_dets !segd !points !lines
+ = R.unflowP
+ $ R.zipWith detFn points
+ $ (R.replicates segd lines :: Vector (O R.FD R.BB) (Point, Point))
+
+ where  detFn xp@(!xo, !yo) ((!x1, !y1), (!x2, !y2))
+         = (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
+        {-# INLINE detFn #-}
 

@@ -307,6 +307,7 @@ slurp start stop !write get1 get8
         iwrite here refCount 0# (-1#)
 
         let
+         {-# INLINE slurpSome #-}
          slurpSome ix
           = do  slurp8 ix
                 I# ix'     <- iread here refCount 0# 
@@ -325,7 +326,7 @@ slurp start stop !write get1 get8
                         then return (I# ix'')
                         else slurpSome ix''
 
-
+         {-# INLINE slurp1 #-}
          slurp1 ix 
           | Just (I# limit) <- stop
           , ix >=# limit
@@ -350,7 +351,7 @@ slurp start stop !write get1 get8
                 Done
                  ->     iwrite here refCount 0# ix
                         
-
+         {-# INLINE slurp8 #-}
          slurp8 ix
           | Just (I# limit)     <- stop
           , ix +# 8# ># limit

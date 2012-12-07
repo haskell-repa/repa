@@ -70,7 +70,7 @@ replicatesSplit
         -> Flow mode BB a
 
 replicatesSplit segd getSegVal
- = Flow gang distro start frag
+ = Flow gang distro start replicatesSplit_frag
  where
         here            = "par.replicatesSplit"
         !gang           = Segd.splitGang segd
@@ -78,7 +78,7 @@ replicatesSplit segd getSegVal
 
         start           = return ()
 
-        frag _ n  
+        replicatesSplit_frag _ n  
          = let  chunk            = vindex here (Segd.splitChunks segd) (I# n)
                 !csegd           = Segd.chunkSegd chunk
                 !elems           = Segd.elements csegd
@@ -89,6 +89,8 @@ replicatesSplit segd getSegVal
                                    in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)
            in   Seq.replicatesDirect elems getSegLen' getSegVal'
+        {-# INLINE replicatesSplit_frag #-}
+
 {-# INLINE [2] replicatesSplit #-}
 
 

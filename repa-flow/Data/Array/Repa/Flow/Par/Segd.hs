@@ -56,7 +56,8 @@ fromLengths lens
         { elements      = len
         , lengths       = lens
         , indices       = U.init $ U.scanl (+) 0 lens }
-{-# INLINE [1] fromLengths #-}
+{-# NOINLINE fromLengths #-}
+--  NOINLINE because it probably won't fuse with anything.
 
 
 -- Split Segds ----------------------------------------------------------------
@@ -73,6 +74,7 @@ data SplitSegd
           -- | Vector of Segd chunks.
         , splitChunks   :: !(V.Vector Chunk) }
         deriving Show
+
 
 data Chunk
         = Chunk
@@ -114,7 +116,8 @@ splitSegd !gang segd
                 { chunkStart    = first
                 , chunkOffset   = offset 
                 , chunkSegd     = fromLengths lens }
-{-# INLINE [1] splitSegd #-}
+{-# NOINLINE splitSegd #-}
+--  NOINLINE because it won't fuse with anything.
 
 
 -- | Take the `Distro` of a `SplitSegd`.
@@ -140,6 +143,8 @@ distroOfSplitSegd (SplitSegd gang (Segd nElems _ ixs) chunks)
 
                     offset       = chunkOffset chunk
                 in  offset +# seg_ix }
-{-# INLINE [1] distroOfSplitSegd #-}
-
+{-# NOINLINE distroOfSplitSegd #-}
+--  NOINLINE because it won't fuse with anything.
+--  and we want to hide the branch on the length of the indices 
+--  from the simplifier.
 

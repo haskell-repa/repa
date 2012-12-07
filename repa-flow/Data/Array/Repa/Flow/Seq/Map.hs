@@ -18,6 +18,7 @@ map f (Flow start size report get1 get8)
         report' state
          = do   r       <- report state
                 return  $ R.Map r
+        {-# NOINLINE report' #-}
 
         get1' state push1
          =  get1 state $ \r 
@@ -53,17 +54,20 @@ zip    (Flow !startA !sizeA reportA getA1 _)
                 return  (stateA, stateB)
         {-# INLINE start' #-}
 
+
         size' (stateA, stateB)
          = do   szA     <- sizeA stateA
                 szB     <- sizeB stateB
                 return  $  sizeMin szA szB
         {-# INLINE size' #-}
 
+
         report' (stateA, stateB)
          = do   rA      <- reportA stateA
                 rB      <- reportB stateB
                 return  $ R.Zip rA rB
         {-# NOINLINE report' #-}
+
 
         get1' (stateA, stateB) push1
          =  getA1 stateA $ \mxA 
@@ -73,6 +77,7 @@ zip    (Flow !startA !sizeA reportA getA1 _)
                   -> push1 $ Yield1 (xA, xB) (hintA && hintB)
                 _ -> push1 $ Done
         {-# INLINE get1' #-}
+
 
         -- We can't provide an 8-way zip because one of the flows
         -- might want to dynamically give us only 1 element at a time.
@@ -115,14 +120,19 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
                 refIx   <- unew 1
                 iwrite here refIx 0# 0#
                 return (stateA, refIx)
+        {-# INLINE start' #-}
+
 
         size' (!stateA, _)
          =      sizeA stateA
+        {-# INLINE size' #-}
+
 
         report' (stateA, _)
          = do   r       <- reportA stateA
                 return  $ R.ZipLeft r
         {-# NOINLINE report' #-}
+
         
         get1' (!stateA, !refIx) push1
          =  getA1 stateA $ \r 
@@ -133,6 +143,7 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
                         push1 $ Yield1 (x1, getB ix) hint
 
                 Done -> push1 $ Done
+        {-# INLINE get1' #-}
 
 
         get8' (!stateA, !refIx) push8
@@ -151,6 +162,7 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
                                         (x7, getB (ix +# 7#))
 
                 Pull1 -> push8 Pull1
+        {-# INLINE get8' #-}
 
 {-# INLINE [1] zipLeft #-}
 

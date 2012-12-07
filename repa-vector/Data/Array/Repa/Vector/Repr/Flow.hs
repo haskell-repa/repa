@@ -141,7 +141,8 @@ instance (Shape sh, Elt a) => Compute (O FD BB) sh a where
         !statePar <- startPar
 
         -- The action that runs on each thread.
-        let action (I# tid)
+        let {-# INLINE action #-}
+            action tid
              = case frag statePar tid of
                 FS.Flow startSeq _size _reportSeq get1 get8
                  -> do  
@@ -164,8 +165,15 @@ instance (Shape sh, Elt a) => Compute (O FD BB) sh a where
 
                         return ()
 
-        -- Run the actions that evaluate each fragment in the main thread.
-        mapM_ action [0 .. (I# (gangSize gang)) - 1]
+        let runActions tid
+             | tid >=# gangSize gang 
+             = return ()
+
+             | otherwise            
+             = do action tid
+                  runActions (tid +# 1#)
+
+        runActions 0#
 
         -- Freeze the mutable vector into a Repa array.
         unsafeFreezeMVec sh mvec 

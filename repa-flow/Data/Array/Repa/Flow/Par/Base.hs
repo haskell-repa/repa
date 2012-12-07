@@ -87,7 +87,8 @@ instance Unflow BB where
         !statePar       <- startPar
 
         -- The action that runs on each thread.
-        let action tid
+        let {-# INLINE action #-}
+            action tid
              = case frag statePar tid of
                 Seq.Flow startSeq _size _flowReport get1 get8
                  -> do  -- The starting point for this threads results into 
@@ -138,7 +139,8 @@ instance Unflow BN where
         !statePar       <- start
 
         -- The action that runs on each thread.
-        let action tid
+        let {-# INLINE action #-}
+            action tid
              = case frag statePar tid of
                 flowSeq@(Seq.Flow _startFlow _ _reportFlow _ _)
                  -> do  
@@ -156,6 +158,7 @@ instance Unflow BN where
                         vwrite here mchunks (I# tid) vec'
                         return ()
 
+
         -- Run the actions to compute each chunk.
         gangIO gang action
 
@@ -164,7 +167,12 @@ instance Unflow BN where
         --       then each thread should copy its results into the final vector
         --       API should take an update function, 
         --       only use unboxed vectors internally.
-        chunks          <- vfreeze mchunks
-        return  $ U.concat $ V.toList chunks
+        let {-# NOINLINE unflow_concat #-}
+            unflow_concat mchunks'
+             = do chunks          <- vfreeze mchunks
+                  return  $ U.concat $ V.toList chunks
+
+        unflow_concat mchunks
+
  {-# INLINE [1] unflow #-}
 

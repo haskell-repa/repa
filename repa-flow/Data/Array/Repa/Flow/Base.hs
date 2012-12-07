@@ -40,7 +40,7 @@ checkIx' str len ix a
 
 
 -- Boxed ----------------------------------------------------------------------
-vnew    = VM.new
+vnew    = VM.unsafeNew
 {-# INLINE vnew #-}
 
 vfreeze = V.unsafeFreeze
@@ -63,7 +63,7 @@ vwrite  str vec ix val
 
 
 -- Unboxed --------------------------------------------------------------------
-unew    = UM.new
+unew    = UM.unsafeNew
 {-# INLINE unew #-}
 
 ufreeze = U.unsafeFreeze
@@ -90,7 +90,7 @@ uslice  = U.unsafeSlice
 
 -- Unboxed Integer ------------------------------------------------------------
 inew  len 
-        = UM.new len
+        = UM.unsafeNew len
 {-# INLINE inew #-}
 
 iread :: String -> UM.IOVector Int -> Int# -> IO Int

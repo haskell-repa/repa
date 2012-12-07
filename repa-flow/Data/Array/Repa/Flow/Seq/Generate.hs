@@ -109,13 +109,14 @@ replicatesDirect resultLen getSegLen getValue
                 uwrite here state sSegLen (0  :: Int)
                 uwrite here state sRemain (0  :: Int)
                 return state
+        {-# INLINE start #-}
 
 
         size state
          = do   !(I# count)     <- uread here state sCount
                 !(I# remain)    <- uread here state sRemain
                 return  $ Exact ((resultLen -# count) -# remain)
-
+        {-# INLINE size #-}
 
         report _
          = do   return  $ R.Replicates (I# resultLen)
@@ -137,6 +138,7 @@ replicatesDirect resultLen getSegLen getValue
                                 push1 $ Yield1 (getValue seg) (remain >=# 9#)
 
                          else result_doneSeg seg
+                {-# INLINE result #-}
 
                 -- Advance to the next segment.
                 result_doneSeg seg
@@ -151,6 +153,8 @@ replicatesDirect resultLen getSegLen getValue
                         if count' >=# resultLen
                          then push1 Done
                          else result_nextSeg (seg +# 1#)
+                {-# INLINE result_doneSeg #-}
+
 
                 -- Find the next segment with a non-zero length.
                 result_nextSeg seg 
@@ -162,6 +166,8 @@ replicatesDirect resultLen getSegLen getValue
                                 result seg segLen
 
                          else result_nextSeg (seg +# 1#)
+                {-# INLINE result_nextSeg #-}
+        {-# INLINE get1 #-}
         
 
         get8 !state push8
@@ -174,6 +180,7 @@ replicatesDirect resultLen getSegLen getValue
                         if remain >=# 8#
                          then   result_fromSeg remain
                          else   push8 Pull1
+                {-# INLINE result #-}
 
                 -- Emit a packet of elements.
                 result_fromSeg remain
@@ -182,6 +189,8 @@ replicatesDirect resultLen getSegLen getValue
                         !(I# seg)       <- uread here state sSeg
                         let !x  = getValue seg
                         push8 $ Yield8 x x x x x x x x
+                {-# INLINE result_fromSeg #-}
+        {-# INLINE get8 #-}
 
 {-# INLINE [1] replicatesDirect #-}
 
