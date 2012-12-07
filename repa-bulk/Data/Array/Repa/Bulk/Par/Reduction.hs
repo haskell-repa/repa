@@ -37,20 +37,26 @@ foldAll !gang f c !z !len
         !threads    = gangSize gang
         !step       = (len +# threads -# 1#) `quotInt#` threads
 
-        split !ix   = len `min#` (ix *# step)
-        {-# NOINLINE split #-}
+        split !ix   = len `foldAll_min` (ix *# step)
 
-        min# x y
-         = if x <=# y 
-                then x
-                else y
-        {-# NOINLINE min# #-}
+        foldAll_min x y
+         = if x <=# y then x else y
+        {-# NOINLINE foldAll_min #-}
+        --  NOINLINE to hide the branch from the simplifier.
+
+        foldAll_combine result x 
+         = atomicModifyIORef result (\x' -> (c x x', ()))
+        {-# NOINLINE foldAll_combine #-}
+        --  NOINLINE because we want to keep the final use of the combining 
+        --  function separate from the main use in 'fill'. If the combining
+        --  function contains a branch then the combination of two instances
+        --  can cause code explosion.
 
         fill !result !start !end
          | start >=# end = return ()
          | otherwise    
          = let  !x      = Seq.foldRange f c (f start) (start +# 1#) end
-           in   atomicModifyIORef result (\x' -> (c x x', ()))
+           in   foldAll_combine result x
         {-# INLINE fill #-}
 
 {-# INLINE [1] foldAll #-}
