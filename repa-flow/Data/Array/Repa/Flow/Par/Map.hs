@@ -41,6 +41,7 @@ zip (Flow gang1 distro1 start1 frag1) (Flow _ _ start2 frag2)
         frag' (state1, state2) ix 
          = Seq.zip (frag1 state1 ix) (frag2 state2 ix)
         {-# INLINE frag' #-}
+
 {-# INLINE [2] zip #-}
 
 
@@ -67,6 +68,7 @@ zipLeft (Flow gang distro start frag) getB
                 getB' ix = getB (ix +# start')
            in   Seq.zipLeft (frag state n) getB'
         {-# INLINE frag' #-}
+
 {-# INLINE [2] zipLeft #-}
 
 

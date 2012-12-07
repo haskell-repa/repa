@@ -22,7 +22,9 @@ packByTag (Flow gang _ start frag)
  = Flow gang distro' start frag'
  where  !threads        = gangSize gang
         distro'         = unbalanced threads
+
         frag' state n   = Seq.packByTag (frag state n)
+        {-# INLINE frag' #-}
 {-# INLINE [2] packByTag #-}
 
 
@@ -34,8 +36,14 @@ packByFlag
         => Flow mode dist (Bool, a) -> Flow mode BN a
 packByFlag ff 
         = packByTag
-        $ map (\(b, x) -> (if b then 1 else 0, x)) ff
+        $ map (\(b, x) -> (I# (tagOfFlag b), x)) ff
 {-# INLINE [2] packByFlag #-}
+
+
+tagOfFlag :: Bool -> Int#
+tagOfFlag b
+ = if b then 1# else 0#
+{-# NOINLINE tagOfFlag #-}
 
 
 -------------------------------------------------------------------------------

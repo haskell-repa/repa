@@ -1,9 +1,10 @@
-
+{-# LANGUAGE BangPatterns, MagicHash #-}
 module SolverChunks 
         ( quickHull
         , quickHull_minmax
         , quickHull_append
-        , quickHull_dets)
+        , quickHull_dets
+        , quickHull_above)
 where
 import Data.Array.Repa.Vector.Segd              (Segd)
 import Data.Array.Repa.Vector                   as R
@@ -14,6 +15,7 @@ import Data.Array.Repa.Vector.Operators.Append  as R
 import Data.Array.Repa.Vector.Repr.Unboxed      as R
 import Data.Array.Repa.Vector.Repr.Flow         as R
 import qualified Data.Array.Repa.Vector.Segd    as Segd
+import GHC.Exts
 
 
 -- | A point in the 2D plane.
@@ -79,7 +81,7 @@ quickHull_dets
         :: Segd
         -> Vector U Point
         -> Vector U (Point, Point)
-        -> Vector U Double
+        -> Vector U (Double, Point)
 
 quickHull_dets !segd !points !lines
  = R.unflowP
@@ -87,6 +89,22 @@ quickHull_dets !segd !points !lines
  $ (R.replicates segd lines :: Vector (O R.FD R.BB) (Point, Point))
 
  where  detFn xp@(!xo, !yo) ((!x1, !y1), (!x2, !y2))
-         = (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
+         = ( (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
+           , xp)
         {-# INLINE detFn #-}
+{-# NOINLINE quickHull_dets #-}
+
+
+-- | Select the points above the lines.
+quickHull_above
+        :: Vector U (Double, Point)
+        -> Vector U Point
+
+quickHull_above detsPoints
+        = R.unflowP 
+        $ R.pack
+        $ R.map (\((D# d), p) -> (comp d , p)) detsPoints
+        where   comp d = d >## 0.0##
+                {-# NOINLINE comp #-}
+{-# NOINLINE quickHull_above #-}
 

@@ -4,6 +4,7 @@ module Data.Array.Repa.Flow.Seq.Pack
         , packByFlag
         , filter)
 where
+import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Map
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
@@ -35,13 +36,14 @@ packByTag (Flow start size report get1 get8)
                 refIx   <- unew 1
                 uwrite here refIx 0 (0 :: Int)
                 return (state, buf, refLen, refIx)
-
+        {-# INLINE start' #-}
 
         size' (stateA, _, _, _)
          = do   sz      <- size stateA
                 return  $ case sz of
                            Exact len       -> Max len
                            Max   len       -> Max len
+        {-# INLINE size' #-}
 
         report' (stateA, _, _, _)
          = do   r       <- report stateA
@@ -59,19 +61,25 @@ packByTag (Flow start size report get1 get8)
                         if ix <# len
                          then drains ix
                          else fill8
+                {-# INLINE load #-}
 
-                drains ix
-                 = do   -- Update the index
-                        let !ix' = ix +# 1#
-                        uwrite here refIx 0 (I# ix')
 
-                        -- Push the element to the consumer.
-                        !x      <- uread here buf (I# ix)
-                        push1 $ Yield1  x False
+                -- Fill the buffer eight elements at a time.
+                fill8 
+                 = get8 stateA $ \xx
+                 -> do  !r       <- eat8 xx
+                        touch r
+                        case r of
+                         0              -> fill1
 
-                fill8
-                 =  get8 stateA $ \r
-                 -> case r of
+                         _ 
+                          -> do !(I# len)   <- uread here refLen 0
+                                if len ># 0# 
+                                    then drains 0#
+                                    else fill8
+
+                eat8 xx
+                 =  case xx of
                         Yield8  (b0, x0) (b1, x1) (b2, x2) (b3, x3)
                                 (b4, x4) (b5, x5) (b6, x6) (b7, x7)
                          -> do  
@@ -101,28 +109,60 @@ packByTag (Flow start size report get1 get8)
                                 uwrite here buf ix7 x7
                                 let !(I# len) = ix7 + b7
 
-                                if len ># 0#
-                                 then do
-                                        uwrite here refLen 0 (I# len)
-                                        drains 0#
+                                -- update the buffer length
+                                uwrite here refLen 0 (I# len)
 
-                                 else fill8
+                                -- tell fill8 that we might have some elements in the buffer now.
+                                return (1 :: Int)
 
-                        Pull1 -> pull1
+                        Pull1 
+                         -> do  -- tell fill8 that we need to pull one at a time.
+                                return (0 :: Int)
+                {-# INLINE eat8 #-}
 
-                pull1
-                 =  get1 stateA $ \r
-                 -> case r of
-                        Yield1 (0, _) _ -> pull1
-                        Yield1 (1, x) _ -> push1 (Yield1 x False)
-                        Yield1 (_, _) _ -> error "Data.Array.Repa.Flow.Filter: tag out of range"
-                        Done            -> push1 Done
+
+                -- Fill the buffer one element at a time.
+                fill1
+                 = get1 stateA $ \xx
+                 -> do  r       <- eat1 xx
+                        touch r
+                        case r of
+                         0              -> push1 Done
+                         1              -> drains 0#
+                         _              -> fill1
+
+                eat1 xx
+                 = case xx of
+                        Yield1 (0, _) _ 
+                         ->     return 2
+
+                        Yield1 (_, x) _ 
+                         -> do  uwrite here buf 0 x
+                                return 1
+
+                        Done
+                         -> return (0 :: Int)
+                {-# INLINE eat1 #-}
+
+                drains ix
+                 = do   -- Update the index
+                        let !ix' = ix +# 1#
+                        uwrite here refIx 0 (I# ix')
+
+                        -- Push the element to the consumer.
+                        !x      <- uread here buf (I# ix)
+                        push1 $ Yield1  x False
+                {-# INLINE drains #-}
+
+        {-# INLINE get1' #-}
+
 
          -- We can't deliver 8 elements at a time because there might not
          -- be that many in the source flow that match the predicate.
          --  TODO: maybe the get8 function should take both push8 and push1
         get8' _ push8
          = push8 $ Pull1
+        {-# INLINE get8' #-}
 
 {-# INLINE [1] packByTag #-}
 
@@ -132,9 +172,14 @@ packByTag (Flow start size report get1 get8)
 --   flag set to `True`
 packByFlag :: Unbox a => Flow mode (Bool, a) -> Flow mode a
 packByFlag ff
-        = packByTag $ map (\(b, x) -> (if b then 1 else 0, x)) ff
+        = packByTag $ map (\(b, x) -> (I# (tagOfFlag b), x)) ff
 {-# INLINE [1] packByFlag #-}
 
+
+tagOfFlag :: Bool -> Int#
+tagOfFlag b
+ = if b then 1# else 0#
+{-# NOINLINE tagOfFlag #-}
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.

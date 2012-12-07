@@ -44,5 +44,6 @@ appends segdr segdA getElemA segdB getElemB
                         (Segd.elements    csegdR)
                         (Segd.chunkStart  chunkR)
                         (Segd.chunkOffset chunkR)
+        {-# INLINE frag #-}
 {-# INLINE [2] appends #-}
 

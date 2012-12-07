@@ -115,5 +115,6 @@ enumFromN gang first len
          = let  !len'   = distroBalancedFragLength distro n
                 !start' = distroBalancedFragStart  distro n +# first
            in   Seq.enumFromN start' len'
+        {-# INLINE frag #-}
 {-# INLINE [2] enumFromN #-}
 
