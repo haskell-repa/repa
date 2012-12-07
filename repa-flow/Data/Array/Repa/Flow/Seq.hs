@@ -12,6 +12,7 @@ module Data.Array.Repa.Flow.Seq
         , unflow
         , take
         , drain
+        , slurp
 
         -- * Construction
         , generate

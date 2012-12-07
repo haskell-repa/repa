@@ -6,11 +6,15 @@ where
 import Data.Array.Repa.Vector.Compute.Target
 import Data.Array.Repa.Vector.Shape
 import Data.Array.Repa.Vector.Base
+import Data.Array.Repa.Vector.Operators.Bulk    ()
 
 
 -- Load -----------------------------------------------------------------------
 -- | Compute all elements defined by an array and write them to a manifest
 --   target representation.
+--
+--   In general this class only has instances for source array representations
+--   that support random access indexing (ie `Bulk` representations)
 --  
 class Shape sh => Load r1 sh e where
 
@@ -24,6 +28,9 @@ class Shape sh => Load r1 sh e where
 -- FillRange ------------------------------------------------------------------
 -- | Compute a range of elements defined by an array and write them to a fillable
 --   representation.
+--
+--   In general this class only has instances for source array representations
+--   that support random access indexing (ie `Bulk` representations)
 --
 class Shape sh => LoadRange r1 sh e where
 

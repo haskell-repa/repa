@@ -253,11 +253,11 @@ take limit (Flow start size report get1 get8)
 -------------------------------------------------------------------------------
 -- | Fully evaluate a possibly stateful flow,
 --   pulling all the remaining elements.
-drain   :: (Elt a, U.Unbox a) 
-        => (Int#  -> IO (vec a))          -- Allocate a new vector.
-        -> (vec a -> Int# -> a -> IO ())  -- Write into the vector.
-        -> Flow mode a 
-        -> IO (vec a, Int)                -- Total number of elements written.
+drain   :: Elt a 
+        => (Int#  -> IO (vec a))          -- ^ Allocate a new vector.
+        -> (vec a -> Int# -> a -> IO ())  -- ^ Write into the vector.
+        -> Flow mode a          -- ^ Flow to evaluate.
+        -> IO (vec a, Int)      -- ^ Result vector, and number of elements written.
 
 drain new write !ff
  = case ff of
@@ -293,12 +293,12 @@ drain new write !ff
 -- | Slurp out all the elements from a flow,
 --   passing them to the provided consumption function.
 slurp   :: Elt a
-        => Int#
-        -> Maybe Int
-        -> (Int# -> a -> IO ())
-        -> ((Step1 a  -> IO ()) -> IO ())
-        -> ((Step8 a  -> IO ()) -> IO ())
-        -> IO Int
+        => Int#                           -- ^ Starting index in result.
+        -> Maybe Int                      -- ^ Stopping index.
+        -> (Int# -> a -> IO ())           -- ^ Write an element into the result.
+        -> ((Step1 a  -> IO ()) -> IO ()) -- ^ Get one element from the flow.
+        -> ((Step8 a  -> IO ()) -> IO ()) -- ^ Get eight elements from the flow.
+        -> IO Int                         -- ^ Total number of elements written.
 
 slurp start stop !write get1 get8
  = do   let here = "seq.slurp"

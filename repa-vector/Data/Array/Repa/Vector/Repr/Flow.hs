@@ -19,13 +19,17 @@ module Data.Array.Repa.Vector.Repr.Flow
         , Unflow (..))
 where
 import Data.Array.Repa.Bulk.Elt
-import Data.Array.Repa.Vector.Base              as R
-import Data.Array.Repa.Vector.Repr.Unboxed      as R
-import Data.Array.Repa.Vector.Operators.Bulk    as R
-import Data.Array.Repa.Flow.Par.Distro          (BB, BN)
-import Data.Array.Repa.Flow.Seq                 (FD, FS)
-import qualified Data.Array.Repa.Flow.Par       as F
-import qualified Data.Vector.Unboxed            as U
+import Data.Array.Repa.Bulk.Gang
+import Data.Array.Repa.Vector.Base                      as R
+import Data.Array.Repa.Vector.Compute                   as R
+import Data.Array.Repa.Vector.Repr.Unboxed              as R
+import Data.Array.Repa.Vector.Operators.Bulk            as R
+import Data.Array.Repa.Flow.Par.Distro                  (BB, BN)
+import Data.Array.Repa.Flow.Seq                         (FD, FS)
+import qualified Data.Array.Repa.Flow.Par.Distro        as FP
+import qualified Data.Array.Repa.Flow.Par               as FP
+import qualified Data.Array.Repa.Flow.Seq               as FS
+import qualified Data.Vector.Unboxed                    as U
 import GHC.Exts
 
 
@@ -33,7 +37,7 @@ import GHC.Exts
 data O mode dist
 
 data instance Array (O mode dist) sh a
-        = AFlow (DistShape dist sh) (F.Flow mode dist a)
+        = AFlow (DistShape dist sh) (FP.Flow mode dist a)
 
 data family DistShape dist sh
 data instance DistShape BB sh   = DistBB sh
@@ -45,20 +49,20 @@ data instance DistShape BN sh   = DistBN
 flow    :: (Shape sh, Bulk r a)
         => Array r sh a -> Array (O FD BB) sh a
 flow vec
- = AFlow (DistBB $ extent vec) (F.generate theGang len get)
+ = AFlow (DistBB $ extent vec) (FP.generate theGang len get)
  where  !(I# len)       = R.size $ R.extent vec
         get ix          = linearIndex vec (I# ix)
 {-# INLINE [4] flow #-}
 
 -------------------------------------------------------------------------------
 -- | Unpack a vector to a raw flow.
-toFlow  :: Vector (O mode dist) a -> F.Flow mode dist a
+toFlow  :: Vector (O mode dist) a -> FP.Flow mode dist a
 toFlow (AFlow _ ff) = ff
 {-# INLINE [4] toFlow #-}
 
 
 -- | Pack a raw flow into a vector.
-fromFlowBB :: sh -> F.Flow mode BB a -> Array (O mode BB) sh a
+fromFlowBB :: sh -> FP.Flow mode BB a -> Array (O mode BB) sh a
 fromFlowBB sh ff       = AFlow (DistBB sh) ff
 {-# INLINE [4] fromFlowBB #-}
 
@@ -74,21 +78,112 @@ class Unflow dist sh where
          => Array (O FD dist) sh a -> Array U sh a
 
 
--- instance Shape sh => Compute (O FD dist) sh a where
--- computeIOP (AFlow (DistBB sh) ff)
---  = let 
+-- | Compute a delayed, balanced flow.
+instance (Shape sh, Elt a) => Compute (O FD BB) sh a where
+
+ -- Parallel version.
+ computeIOP (AFlow (DistBB sh) 
+                   (FP.Flow gang distro startPar frag))
+  = do
+        let !len          = FP.distroBalancedLength    distro
+        let !getFragStart = FP.distroBalancedFragStart distro
+
+        -- Allocate a mutable vector to hold the result.
+        !mvec     <- newMVec (I# len)
+
+        -- Start the parallel flow.
+        !statePar <- startPar
+
+        -- The action that runs on each thread.
+        let action tid
+             = case frag statePar tid of
+                FS.Flow startSeq _size _reportSeq get1 get8
+                 -> do  
+                        -- The starting point for this thread's result
+                        -- in the final vector.
+                        let !ixStart    = getFragStart tid
+
+                        -- Start this sequential flow fragment.
+                        !stateSeq       <- startSeq
+
+                        -- Slurp element from the flow fragment into
+                        -- the result vector.
+                        let write ix val
+                                = unsafeWriteMVec mvec (I# (ixStart +# ix)) val
+
+                        _     <- FS.slurp 
+                                        0# Nothing
+                                        write
+                                        (get1 stateSeq) (get8 stateSeq)
+
+                        return ()
+
+        -- Run the actions that evaluate each fragment in parallel.
+        gangIO gang action
+
+        -- Freeze the mutable vector into a Repa array.
+        unsafeFreezeMVec sh mvec 
+
+
+ -- Sequential version.
+ -- This is the same as the parallel version, 
+ -- except that we evaluate each flow fragment in the main thread.
+ computeIOS (AFlow (DistBB sh) 
+                   (FP.Flow gang distro startPar frag))
+  = do
+        let !len          = FP.distroBalancedLength    distro
+        let !getFragStart = FP.distroBalancedFragStart distro
+
+        -- Allocate a mutable vector to hold the result.
+        !mvec     <- newMVec (I# len)
+
+        -- Start the parallel flow.
+        !statePar <- startPar
+
+        -- The action that runs on each thread.
+        let action (I# tid)
+             = case frag statePar tid of
+                FS.Flow startSeq _size _reportSeq get1 get8
+                 -> do  
+                        -- The starting point for this thread's result
+                        -- in the final vector.
+                        let !ixStart    = getFragStart tid
+
+                        -- Start this sequential flow fragment.
+                        !stateSeq       <- startSeq
+
+                        -- Slurp element from the flow fragment into
+                        -- the result vector.
+                        let write ix val
+                                = unsafeWriteMVec mvec (I# (ixStart +# ix)) val
+
+                        _     <- FS.slurp 
+                                        0# Nothing
+                                        write
+                                        (get1 stateSeq) (get8 stateSeq)
+
+                        return ()
+
+        -- Run the actions that evaluate each fragment in the main thread.
+        mapM_ action [0 .. (I# (gangSize gang)) - 1]
+
+        -- Freeze the mutable vector into a Repa array.
+        unsafeFreezeMVec sh mvec 
+
+
+ {-# INLINE [4] computeIOP #-}
 
 
 instance Shape sh => Unflow BB sh where
  -- | Compute a balanced, delayed flow in parallel, producing an unboxed vector.
  unflowP (AFlow (DistBB sh) ff)
-  = let  !vec    = F.unflow ff
+  = let  !vec    = FP.unflow ff
     in   fromUnboxed sh vec
  {-# INLINE [4] unflowP #-}
 
 
 instance Unflow BN DIM1 where
  unflowP (AFlow _ ff)
-  = let  !vec    = F.unflow ff
+  = let  !vec    = FP.unflow ff
     in   fromUnboxed (Z :. U.length vec) vec
  {-# INLINE [4] unflowP #-}
