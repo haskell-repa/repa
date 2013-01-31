@@ -26,6 +26,9 @@ module Data.Array.Repa.Flow.Seq
         , zip,          zipLeft
         , zipWith,      zipLeftWith
 
+        -- * Unzip
+        , unzip
+
         -- * Projection
         , gather
 
@@ -48,9 +51,10 @@ import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Generate
 import Data.Array.Repa.Flow.Seq.Append
 import Data.Array.Repa.Flow.Seq.Map
+import Data.Array.Repa.Flow.Seq.Unzip
 import Data.Array.Repa.Flow.Seq.Pack
 import Data.Array.Repa.Flow.Seq.Combine
 import Data.Array.Repa.Flow.Seq.Project
 import Data.Array.Repa.Flow.Seq.Fold
-import Prelude  hiding (map, zip, zipWith, foldl, filter, replicate, take)
+import Prelude  hiding (map, zip, zipWith, unzip, foldl, filter, replicate, take)
 

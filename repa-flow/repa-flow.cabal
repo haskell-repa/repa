@@ -60,6 +60,7 @@ Library
         Data.Array.Repa.Flow.Seq.Append
         Data.Array.Repa.Flow.Seq.Combine
         Data.Array.Repa.Flow.Seq.Map
+        Data.Array.Repa.Flow.Seq.Unzip
         Data.Array.Repa.Flow.Seq.Pack
         Data.Array.Repa.Flow.Seq.Project
         Data.Array.Repa.Flow.Seq.Fold

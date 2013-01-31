@@ -47,6 +47,9 @@ data Report
                 { zipWithSource1        :: Report 
                 , zipWithSource2        :: Report }
 
+        | Unzip
+                { unzipSource           :: Report }
+
         | Pack
                 { packSource            :: Report }
 

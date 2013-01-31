@@ -12,10 +12,9 @@ import System.IO.Unsafe
 
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> a
+foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> IO a
 foldl f z !(Flow start _ _ get1 get8)
- = unsafePerformIO
- $ do   
+ = do   
         let here = "seq.foldl"
 
         outRef  <- unew 1
