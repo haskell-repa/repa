@@ -197,6 +197,9 @@ foldsTradeSeq
                         Seq.Yield1 (I# segIx, I# segLen) _
                          -> go8 segIx segLen z
  
+                        Seq.Stall
+                         -> error "flow.par.foldsTradeSeq: stall not handled yet"
+
                         Seq.Done 
                          -> push1 Seq.Done
 
@@ -251,6 +254,9 @@ foldsTradeSeq
                         Seq.Yield1 x1 _
                          -> let !acc' = acc `f` x1
                             in   go1 segIx (remaining -# 1#) acc'
+
+                        Seq.Stall
+                         -> error "flow.par.foldsTradeSeq: stall not handled yet"
 
                         Seq.Done
                          -> go1 segIx 0# acc 

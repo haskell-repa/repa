@@ -32,8 +32,8 @@ foldl f z !(Flow start _ _ get1 get8)
                     in  if hint then eat8 acc'
                                 else eat1 acc'
 
-                Done
-                 -> uwrite here outRef 0 acc
+                Stall -> error "flow.seq.foldl: stall not handled yet"
+                Done  -> uwrite here outRef 0 acc
 
          eat8 !acc 
           =  get8 state $ \r 
@@ -82,6 +82,7 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
          =  getLen1 stateA $ \r
          -> case r of 
                 Yield1 (I# len) _ -> foldSeg stateB push1 len
+                Stall             -> push1 Stall
                 Done              -> push1 Done
         {-# INLINE get1' #-}
 
@@ -137,6 +138,12 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
                         Yield1 x1 _
                          -> let !acc' = acc `f` x1
                             in   go1 (n -# 1#) acc'
+
+                        -- TODO: to stall the elements stream we need to stash the 
+                        -- segment length that we've already pulled from the 
+                        -- length stream.
+                        Stall 
+                         -> error "flow.seq.folds: stall not handled"
 
                         Done
                          -> go1 0# acc 

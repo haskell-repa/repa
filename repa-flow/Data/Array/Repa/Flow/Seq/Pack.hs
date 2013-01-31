@@ -128,17 +128,21 @@ packByTag (Flow start size report get1 get8)
                         touch r
                         case r of
                          0              -> push1 Done
-                         1              -> drains 0#
+                         1              -> push1 Stall
+                         2              -> drains 0#
                          _              -> fill1
 
                 eat1 xx
                  = case xx of
                         Yield1 (0, _) _ 
-                         ->     return 2
+                         ->     return 3
 
                         Yield1 (_, x) _ 
                          -> do  uwrite here buf 0 x
-                                return 1
+                                return 2
+
+                        Stall 
+                         -> return (1 :: Int)
 
                         Done
                          -> return (0 :: Int)

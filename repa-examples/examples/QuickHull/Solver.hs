@@ -95,23 +95,16 @@ hsplit_l segd points lines
          = (x1 - xo) * (y2 - yo) - (y1 - yo) * (x2 - xo)
         {-# INLINE detFn #-}
 
-        !dets'          = R.unflowP
-                        $ R.replicates segd lines
-
         -- Select points above the lines.
         above           :: Vector U Point
         !above          = R.unflowP 
                         $ R.pack
                         $ R.zip (R.map (> 0) dets) points
 
-        !thing          = computeP
-                        $ R.zip (R.map (> 0) dets) points
-
         -- Count how many points ended up in each segment.
         counts          :: Vector U Int
         !counts         = R.unflowP
                         $ R.counts (> 0) segd dets
-
 
         !flagsThen      = R.map (<= 0) counts
         !flagsElse      = R.map (> 0)  counts

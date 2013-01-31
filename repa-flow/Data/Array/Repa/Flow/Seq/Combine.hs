@@ -53,15 +53,18 @@ combine2 (Flow startF sizeF  reportF getF1 _)
                      False    -> getA1 stateA $ \mfA
                              -> case mfA of
                                  Yield1 a _     -> out push1 (Just a)
+                                 Stall          -> error "flow.seq.combine2: stall not handled"
                                  Done           -> out push1 Nothing
 
                      -- Emit an element from the second stream.
                      True   -> getB1 stateB $ \mfB
                              -> case mfB of
                                  Yield1 b _     -> out push1 (Just b)
+                                 Stall          -> error "flow.seq.combine2: stall not handled"
                                  Done           -> out push1 Nothing
 
-                Done -> out push1 Nothing
+                Stall -> error "flow.seq.combine2: stall not handled"
+                Done  -> out push1 Nothing
 
         out push1 mx
          = case mx of
@@ -160,14 +163,17 @@ combines2 resultLen
                           False -> getLenA1 stateLenA $ \mLenA
                                 -> case mLenA of
                                     Yield1 (I# lenA) _   -> next 0# lenA
-                                    Done                 -> out source remain Nothing
+                                    Stall          -> error "flow.seq.combine2: stall not handled"
+                                    Done           -> out source remain Nothing
 
                           True  -> getLenB1 stateLenB $ \mLenB
                                 -> case mLenB of
                                     Yield1 (I# lenB) _   -> next 1# lenB
+                                    Stall          -> error "flow.seq.combine2: stall not handled"
                                     Done                 -> out source remain Nothing
 
-                     Done -> out source remain Nothing
+                     Stall -> error "flow.seq.combine2: stall not handled"
+                     Done  -> out source remain Nothing
 
                 -- Emit an element from the given segment.
                 fromSeg source remain
@@ -175,11 +181,13 @@ combines2 resultLen
                     0#  -> getElemA1 stateElemA $ \mElemA
                         -> case mElemA of
                             Yield1 elemA _  -> out source remain (Just elemA)
+                            Stall           -> error "flow.seq.combine2: stall not handled"
                             Done            -> out source remain Nothing
 
                     _   -> getElemB1 stateElemB $ \mElemB
                         -> case mElemB of
                             Yield1 elemB _  -> out source remain (Just elemB)
+                            Stall           -> error "flow.seq.combine2: stall not handled"
                             Done            -> out source remain Nothing
 
                 out source remain mx

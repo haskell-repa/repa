@@ -13,7 +13,6 @@ import Data.Array.Repa.Flow.Base
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector                    as V
 import qualified Data.Array.Repa.Flow.Seq       as Seq
-import qualified Data.Array.Repa.Flow.Seq.Base  as Seq
 import System.IO.Unsafe
 import GHC.Exts
 
@@ -169,7 +168,7 @@ instance Unflow BN where
         --       only use unboxed vectors internally.
         let {-# NOINLINE unflow_concat #-}
             unflow_concat mchunks'
-             = do chunks          <- vfreeze mchunks
+             = do chunks          <- vfreeze mchunks'
                   return  $ U.concat $ V.toList chunks
 
         unflow_concat mchunks

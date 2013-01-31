@@ -36,14 +36,8 @@ packByFlag
         => Flow mode dist (Bool, a) -> Flow mode BN a
 packByFlag ff 
         = packByTag
-        $ map (\(b, x) -> (I# (tagOfFlag b), x)) ff
+        $ map (\(b, x) -> (I# (dataToTag# b), x)) ff
 {-# INLINE [2] packByFlag #-}
-
-
-tagOfFlag :: Bool -> Int#
-tagOfFlag b
- = if b then 1# else 0#
-{-# NOINLINE tagOfFlag #-}
 
 
 -------------------------------------------------------------------------------

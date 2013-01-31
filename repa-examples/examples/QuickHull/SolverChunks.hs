@@ -103,8 +103,6 @@ quickHull_above
 quickHull_above detsPoints
         = R.unflowP 
         $ R.pack
-        $ R.map (\((D# d), p) -> (comp d , p)) detsPoints
-        where   comp d = d >## 0.0##
-                {-# NOINLINE comp #-}
+        $ R.map (\((D# d), p) -> (d >## 0.0## , p)) detsPoints
 {-# NOINLINE quickHull_above #-}
 

@@ -130,7 +130,7 @@ instance (Elt b, U.Unbox b)
 -- NOTE: The first vector / second vector comments are there so Haddock
 --       formats the type signatures in a semi-readable way.
 -- 
-zip3   :: ( Zip r1 (TZ r2 r3) a (b, c)
+zip3   :: (  Zip r1 (TZ r2 r3) a (b, c)
            , Zip r2 r3         b c
            , Map (TZ r1 (TZ r2 r3)) (a, (b, c)))
         => Vector r1 a                  -- ^ first vector
