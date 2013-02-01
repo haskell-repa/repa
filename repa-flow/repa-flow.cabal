@@ -43,10 +43,12 @@ Library
         EmptyDataDecls
         StandaloneDeriving
         FlexibleInstances
+        MultiParamTypeClasses
 
   Exposed-modules:
         Data.Array.Repa.Flow.Seq
         Data.Array.Repa.Flow.Seq.Report    
+        Data.Array.Repa.Flow.Seq.Buildable
 
         Data.Array.Repa.Flow.Par
         Data.Array.Repa.Flow.Par.Distro

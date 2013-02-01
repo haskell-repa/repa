@@ -1,10 +1,10 @@
 {-# LANGUAGE MagicHash #-}
 -- | Data.Vector.Unboxed harness for testing.
 module Unboxed 
-        ( uflow
-        , szip
-        , example1
-        , module Data.Array.Repa.Flow.Seq)
+        ( -- uflow
+          -- szip
+          --  example1
+          example2)
 where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Seq
@@ -22,8 +22,10 @@ uflow vec
    in   S.flow get len
 {-# INLINE uflow #-}
 
+{-
+example1 :: Vector (Int, Int) 
+         -> IO (Partial Int, Partial Int)
 
-example1 :: Vector (Int, Int) -> IO (Int, Int)
 example1 vec
  = do   (xs, ys)        <- S.unzip $ uflow vec
         
@@ -32,4 +34,19 @@ example1 vec
 
         !x      <- S.foldl (+) 0 xs'
         !y      <- S.foldl (+) 0 ys'
+        return (x, y)
+-}
+
+example2 :: Vector (Int, Int) 
+         -> IO (Int, Int)
+
+example2 vec
+ = do   (xs, ys) <- S.unzip $ uflow vec
+
+        let xs' = S.map (+ 1234) xs
+        let ys' = S.map (+ 2345) ys
+
+        (x, y)   <- build2 buildSumInt xs'
+                           buildSumInt ys'
+
         return (x, y)

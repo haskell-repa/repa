@@ -1,6 +1,7 @@
 
 module Data.Array.Repa.Flow.Seq.Fold
-        ( foldl
+        ( Partial (..)
+        , foldl
         , folds
         , sums)
 where
@@ -10,17 +11,30 @@ import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
 import System.IO.Unsafe
 
+
+data Partial a
+        = Complete a
+        | Partial  a
+        deriving Show
+
+
 -------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> IO a
+foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> IO (Partial a)
 foldl f z !(Flow start _ _ get1 get8)
  = do   
         let here = "seq.foldl"
 
-        outRef  <- unew 1
-        uwrite here outRef 0 z
+        -- Buffer to hold result value.
+        bufOut      <- unew 1
+        uwrite here bufOut 0 z
 
-        state  <- start
+        -- Flag to indicate whether the result is a
+        -- (0) complete or (1) partial fold.
+        refComplete <- inew 1
+
+        -- Start the in-stream.
+        state       <- start
 
         let 
          eat1 !acc
@@ -30,9 +44,12 @@ foldl f z !(Flow start _ _ get1 get8)
                  -> let !acc' = (acc `f` x1)
                     in  if hint then eat8 acc'
                                 else eat1 acc'
-
-                Stall -> error "flow.seq.foldl: stall not handled yet"
-                Done  -> uwrite here outRef 0 acc
+                Stall 
+                 -> do  iwrite here refComplete 0# 1#
+                        uwrite here bufOut      0 acc
+                Done  
+                 -> do  iwrite here refComplete 0# 0#
+                        uwrite here bufOut      0 acc
 
          eat8 !acc 
           =  get8 state $ \r 
@@ -45,7 +62,11 @@ foldl f z !(Flow start _ _ get1 get8)
                   -> eat1 acc
 
         eat8 z
-        uread here outRef 0
+        result   <- uread here bufOut 0
+        complete <- iread here refComplete 0#
+        case complete of
+         0     -> return $ Complete result
+         1     -> return $ Partial  result
 {-# INLINE [1] foldl #-}
 
 

@@ -42,12 +42,19 @@ module Data.Array.Repa.Flow.Seq
         , combines2
 
         -- * Reduction
+        , Partial (..)
         , foldl
         , folds
-        , sums)
+        , sums
+
+        -- * Builders
+        , buildSumInt
+        , build1
+        , build2)
 
 where
 import Data.Array.Repa.Flow.Seq.Base
+import Data.Array.Repa.Flow.Seq.Buildable
 import Data.Array.Repa.Flow.Seq.Generate
 import Data.Array.Repa.Flow.Seq.Append
 import Data.Array.Repa.Flow.Seq.Map

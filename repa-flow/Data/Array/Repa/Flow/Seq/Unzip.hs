@@ -29,13 +29,13 @@ unzip (Flow startIn sizeIn reportIn get1 _get8)
         state           <- inew 1
         iwrite here state sMode 0#
 
-
         bufLeft         <- unew 1
         bufRight        <- unew 1
 
         let 
          -- We only need to initialise the state of the in-flow once, 
          -- not once per out-flow.
+         {-# NOINLINE start' #-}
          start' 
           = do  mStateIn        <- readIORef refStateIn
                 case mStateIn of
@@ -59,8 +59,8 @@ unzip (Flow startIn sizeIn reportIn get1 _get8)
                     0# -> get1 stateIn $ \r
                        -> case r of
                            Yield1 (x, y) _    
-                            -> do uwrite here bufRight 0  y
-                                  iwrite here state    0# 2#
+                            -> do uwrite here bufRight 0     y
+                                  iwrite here state    sMode 2#
                                   emitYield1 x
 
                            Stall -> emitStall
@@ -69,7 +69,7 @@ unzip (Flow startIn sizeIn reportIn get1 _get8)
                     -- Use element from the left buffer.
                     1# -> do     
                          x       <- uread here bufLeft 0 
-                         iwrite here state 0# 0#
+                         iwrite here state sMode 0#
                          emitYield1 x
 
                     -- We're still stalled waiting for the right flow.
@@ -96,17 +96,17 @@ unzip (Flow startIn sizeIn reportIn get1 _get8)
                     0# -> get1 stateIn $ \r
                        -> case r of
                            Yield1 (x, y) _    
-                            -> do uwrite here bufLeft 0  x
-                                  iwrite here state   0# 1#
+                            -> do uwrite here bufLeft 0     x
+                                  iwrite here state   sMode 1#
                                   emitYield1 y
 
                            Stall -> emitStall
                            Done  -> push1 Done
 
                     -- Use element from the right buffer.
-                    1# -> do     
+                    2# -> do     
                         y       <- uread here bufRight 0
-                        iwrite here state 0# 0#
+                        iwrite here state sMode 0#
                         emitYield1 y
 
                     -- We're still stalled waiting for the left flow.
