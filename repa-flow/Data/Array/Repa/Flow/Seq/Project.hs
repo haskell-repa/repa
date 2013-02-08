@@ -24,8 +24,7 @@ gather !get (Flow start size report get1 get8)
                 Yield1 (I# ix) hint
                  -> push1 $ Yield1 (get ix) hint
 
-                Stall -> push1 Stall
-                Done  -> push1 Stall
+                Done  -> push1 Done
         {-# INLINE get1' #-}
 
         get8' state push8

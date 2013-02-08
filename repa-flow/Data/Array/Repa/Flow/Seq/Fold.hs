@@ -1,7 +1,6 @@
 
 module Data.Array.Repa.Flow.Seq.Fold
-        ( Partial (..)
-        , foldl
+        ( foldl
         , folds
         , sums)
 where
@@ -9,18 +8,10 @@ import Data.Array.Repa.Flow.Seq.Base
 import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
-import System.IO.Unsafe
 
 
-data Partial a
-        = Complete a
-        | Partial  a
-        deriving Show
-
-
--------------------------------------------------------------------------------
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> IO (Partial a)
+foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> IO a
 foldl f z !(Flow start _ _ get1 get8)
  = do   
         let here = "seq.foldl"
@@ -28,10 +19,6 @@ foldl f z !(Flow start _ _ get1 get8)
         -- Buffer to hold result value.
         bufOut      <- unew 1
         uwrite here bufOut 0 z
-
-        -- Flag to indicate whether the result is a
-        -- (0) complete or (1) partial fold.
-        refComplete <- inew 1
 
         -- Start the in-stream.
         state       <- start
@@ -44,12 +31,8 @@ foldl f z !(Flow start _ _ get1 get8)
                  -> let !acc' = (acc `f` x1)
                     in  if hint then eat8 acc'
                                 else eat1 acc'
-                Stall 
-                 -> do  iwrite here refComplete 0# 1#
-                        uwrite here bufOut      0 acc
                 Done  
-                 -> do  iwrite here refComplete 0# 0#
-                        uwrite here bufOut      0 acc
+                 ->     uwrite here bufOut      0 acc
 
          eat8 !acc 
           =  get8 state $ \r 
@@ -62,11 +45,7 @@ foldl f z !(Flow start _ _ get1 get8)
                   -> eat1 acc
 
         eat8 z
-        result   <- uread here bufOut 0
-        complete <- iread here refComplete 0#
-        case complete of
-         0     -> return $ Complete result
-         1     -> return $ Partial  result
+        uread here bufOut 0
 {-# INLINE [1] foldl #-}
 
 
@@ -102,7 +81,6 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
          =  getLen1 stateA $ \r
          -> case r of 
                 Yield1 (I# len) _ -> foldSeg stateB push1 len
-                Stall             -> push1 Stall
                 Done              -> push1 Done
         {-# INLINE get1' #-}
 
@@ -158,12 +136,6 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
                         Yield1 x1 _
                          -> let !acc' = acc `f` x1
                             in   go1 (n -# 1#) acc'
-
-                        -- TODO: to stall the elements stream we need to stash the 
-                        -- segment length that we've already pulled from the 
-                        -- length stream.
-                        Stall 
-                         -> error "flow.seq.folds: stall not handled"
 
                         Done
                          -> go1 0# acc 

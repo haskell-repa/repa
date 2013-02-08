@@ -24,7 +24,6 @@ map f (Flow start size report get1 get8)
          =  get1 state $ \r 
          -> case r of
                 Yield1 x hint   -> push1 $ Yield1 (f x) hint
-                Stall           -> push1 $ Stall
                 Done            -> push1 $ Done
         {-# INLINE get1' #-}
 
@@ -142,7 +141,6 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
                         iwrite here refIx 0# (ix +# 1#)
                         push1 $ Yield1 (x1, getB ix) hint
 
-                Stall -> push1 Stall
                 Done  -> push1 Done
         {-# INLINE get1' #-}
 

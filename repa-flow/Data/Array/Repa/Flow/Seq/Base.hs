@@ -83,11 +83,6 @@ data Step1 a
         --   become too complicated.
         = Yield1 a Bool
 
-        -- | The flow is stalled, no more elements are available right now, 
-        --   but if you pull some from others in the bundle then more will
-        --   become available later.
-        | Stall
-
         -- | The flow is finished, no more elements will ever be available.
         | Done
 
@@ -354,7 +349,6 @@ slurp start stop !write get1 get8
                          then iwrite here refCount 0# (ix +# 1#)
                          else slurp1 (ix +# 1#)
 
-                Stall -> iwrite here refCount 0# ix
                 Done  -> iwrite here refCount 0# ix
                         
          {-# INLINE slurp8 #-}
