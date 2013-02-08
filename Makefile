@@ -13,9 +13,13 @@ all :
 clean :
 	@echo "-- Cleaning up -------------------------------------------------"
 	rm -Rf repa/dist
-	rm -Rf repa-io/dist
 	rm -Rf repa-algorithms/dist
+	rm -Rf repa-bulk/dist
 	rm -Rf repa-examples/dist
+	rm -Rf repa-flow/dist
+	rm -Rf repa-io/dist
+	rm -Rf repa-stream/dist
+	rm -Rf repa-vector/dist
 	@echo
 
 
