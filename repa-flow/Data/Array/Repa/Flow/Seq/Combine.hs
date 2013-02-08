@@ -126,9 +126,9 @@ combines2 resultLen
 
                 return  (state, stateF, stateLenA, stateElemA, stateLenB, stateElemB)
 
-
+        -- TODO: this doesn't work incrementally.
         size'   _
-         =      return  $ Exact resultLen               -- TODO: this doesn't work incrementally.
+         =      return  $ Exact resultLen
 
         report' (!_, !stateF, !stateLenA, !stateElemA, !stateLenB, !stateElemB)
          = do   rpF             <- reportF     stateF

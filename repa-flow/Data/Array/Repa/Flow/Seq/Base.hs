@@ -38,7 +38,7 @@ data FD
 -- | Phantom type tag to indicate a stateful flow.
 --      
 --   A stateful flow is a flow that has already started flowing.
---   It has attached state, and we can evaluated prefixes of it
+--   It has attached state, and we can evaluate prefixes of it
 --   incrementally. Evaluating the whole flow uses it up, 
 --   so we can't evaluate it again.
 --
@@ -92,7 +92,8 @@ data Step8 a
         = Yield8 a a a a a a a a
 
         -- | Indicates that the flow cannot yield a full 8 elements right now.
-        --   You should use `flowGet1` to get the next element and try `flowGet8` again later.
+        --   You should use `flowGet1` to get the next element and try
+        --  `flowGet8` again later.
         | Pull1
 
 
@@ -202,7 +203,7 @@ flow !load !len
 
 -------------------------------------------------------------------------------
 -- | Fully evaluate a delayed flow, producing an unboxed vector.
---
+--   TODO: make this generic in the returned vector type.
 unflow :: (Elt a, U.Unbox a) 
         => Flow FD a -> U.Vector a
 unflow ff 
@@ -220,12 +221,14 @@ unflow ff
 
 
 -------------------------------------------------------------------------------
--- | Take the given number of elements from the front of a flow,
+-- | Take at most the given number of elements from the front of a flow,
 --   returning those elements and the rest of the flow.
 --   
 --   Calling 'take' allocates buffers and other state information, 
 --   and this state will be reused when the remaining elements of
 --   the flow are evaluated.
+--
+--   TODO: make this generic in the returned vector type.
 --
 take    :: (Elt a, U.Unbox a) 
         => Int# -> Flow mode a -> IO (U.Vector a, Flow FS a)
@@ -233,11 +236,14 @@ take    :: (Elt a, U.Unbox a)
 take limit (Flow start size report get1 get8)
  = do   let here = "seq.take"
 
+        -- Start the flow, if it isn't already.
         state    <- start
 
+        -- Allocate the buffer for the result.
         !mvec    <- unew (I# limit)
-        let write ix x = uwrite here mvec (I# ix) x
 
+        -- Slurp elemenst into the result buffer.
+        let write ix x = uwrite here mvec (I# ix) x
         !len'    <- slurp 0# (Just (I# limit)) write
                         (get1 state) (get8 state)
 
@@ -246,7 +252,6 @@ take limit (Flow start size report get1 get8)
 
         return  ( vec'
                 , Flow (return state) size report get1 get8)
-
 {-# INLINE [1] take #-}
 
 
@@ -340,7 +345,7 @@ slurp start stop !write get1 get8
                  -> do  
                         write ix x
 
-                        -- Touch 'x' here beacuse we don't want the code
+                        -- Touch 'x' here because we don't want the code
                         -- that computes it to be floated into the switch
                         -- and then copied.
                         touch x

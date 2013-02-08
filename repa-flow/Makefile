@@ -5,7 +5,7 @@ test-seq :
 	@echo "-- Sequential ----------------------------------------------------"
 	ghc -fforce-recomp -fobject-code -O2 test/props/TestSeq.hs -e main \
  	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
- 	    -XExistentialQuantification
+ 	    -XExistentialQuantification -XNoMonomorphismRestriction
 	@echo
 
 
@@ -14,7 +14,8 @@ test-par :
 	@echo "-- Parallel ------------------------------------------------------"
 	ghc -fforce-recomp -fobject-code -O2 test/props/TestPar.hs -e main \
 	    -XScopedTypeVariables -XMagicHash -XBangPatterns -XUnboxedTuples \
-	    -XExistentialQuantification -XTypeFamilies +RTS -N3
+	    -XExistentialQuantification -XNoMonomorphismRestriction
+	    -XTypeFamilies +RTS -N3
 	@echo
 
 .PHONY : test
