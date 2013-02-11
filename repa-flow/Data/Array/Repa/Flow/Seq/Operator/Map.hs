@@ -1,8 +1,10 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Map
-        (map)
+        ( map
+        , comap)
 where
 import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.CoFlow
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, zip, zipWith)
 
@@ -38,3 +40,15 @@ map f (Flow start size report get1 get8)
 {-# INLINE [1] map #-}
 
 
+-------------------------------------------------------------------------------
+-- | Apply a function to every element of a coflow.
+comap :: (a -> b) -> CoFlow b -> CoFlow a
+comap f (CoFlow start eject feed1 feed8)
+ = CoFlow start eject feed1' feed8'
+ where
+        feed1' state (Snack1 x)
+         = feed1 state (Snack1 (f x))
+
+        feed8' state (Snack8 x0 x1 x2 x3 x4 x5 x6 x7)
+         = feed8 state (Snack8  (f x0) (f x1) (f x2) (f x3)
+                                (f x4) (f x5) (f x6) (f x7))

@@ -29,9 +29,13 @@ module Data.Array.Repa.Flow.Seq
         , appends
 
         -- * Map
-        , map
-        , zip,          zipLeft
-        , zipWith,      zipLeftWith
+        , map,          comap
+
+        -- * Zip
+        , zip
+        , zipLeft
+        , zipWith
+        , zipLeftWith
 
         -- * Projection
         , gather
