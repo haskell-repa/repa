@@ -62,6 +62,7 @@ Library
         Data.Array.Repa.Flow.Seq.Operator.Append
         Data.Array.Repa.Flow.Seq.Operator.Combine
         Data.Array.Repa.Flow.Seq.Operator.Map
+        Data.Array.Repa.Flow.Seq.Operator.Dup
         Data.Array.Repa.Flow.Seq.Operator.Zip
         Data.Array.Repa.Flow.Seq.Operator.Pack
         Data.Array.Repa.Flow.Seq.Operator.Project

@@ -7,8 +7,10 @@ where
 import Data.Array.Repa.Flow.Seq.Base
 
 
--- | A 'CoFlow' is an abstract data sink for a given element type.
---   Once the flow is started, we feed elements into it and then call
+-- | A 'CoFlow' is an abstract element consumer. We can push elements into
+--   a coflow without knowing where they go.
+--
+--   Once the coflow is started, we feed elements into it and then call
 --   the eject function that writes the result into the environment somewhere.
 data CoFlow a
         = forall state. CoFlow
@@ -17,23 +19,25 @@ data CoFlow a
           --   needs to be passed to the other functions.
           -- 
           --   * Calling this more than once on a given coflow is undefined.
+          --
+          --   * Calling the other functions before doing this is undefined.
           coflowStart   :: Size -> IO state
 
           -- | Signal that we've fed the coflow all available elements.
           -- 
+          --   This is done separately as from the feed functions so that they 
+          --   don't need to check for end-of-input conditions on every iteration.
           --
           --   * Calling this more than once on a given coflow is undefined.
           --
           --   * Calling the feed functions after doing this is undefined.
         , coflowEject   :: state -> IO ()
 
-          -- | Try to feed a single element to the coflow.
-          --   Returns a flag saying whether it accepted the element.
-        , coflowFeed1   :: state -> Snack1 a -> IO Bool
+          -- | Feed a single element to the coflow.
+        , coflowFeed1   :: state -> Snack1 a -> IO ()
 
-          -- | Try to feed eight elements to the coflow.
-          --   Returns a flag saying whether it accepted the elements.
-        , coflowFeed8   :: state -> Snack8 a -> IO Bool }
+          -- | Feed eight elements to the coflow.
+        , coflowFeed8   :: state -> Snack8 a -> IO () }
 
 
 -- | Wraps an element to feed to a CoFlow.

@@ -21,6 +21,18 @@ module Data.Array.Repa.Flow.Seq
         , drain
         , slurp
 
+        -- * Map
+        , map,          comap
+
+        -- * Dup
+        , dup2
+
+        -- * Zip
+        , zip
+        , zipLeft
+        , zipWith
+        , zipLeftWith
+
         -- * Construction
         , generate
         , replicate
@@ -28,14 +40,6 @@ module Data.Array.Repa.Flow.Seq
         , enumFromN
         , appends
 
-        -- * Map
-        , map,          comap
-
-        -- * Zip
-        , zip
-        , zipLeft
-        , zipWith
-        , zipLeftWith
 
         -- * Projection
         , gather
@@ -57,10 +61,11 @@ where
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
 import Data.Array.Repa.Flow.Seq.CoFlow
-import Data.Array.Repa.Flow.Seq.Operator.Generate
-import Data.Array.Repa.Flow.Seq.Operator.Append
+import Data.Array.Repa.Flow.Seq.Operator.Dup
 import Data.Array.Repa.Flow.Seq.Operator.Map
 import Data.Array.Repa.Flow.Seq.Operator.Zip
+import Data.Array.Repa.Flow.Seq.Operator.Generate
+import Data.Array.Repa.Flow.Seq.Operator.Append
 import Data.Array.Repa.Flow.Seq.Operator.Pack
 import Data.Array.Repa.Flow.Seq.Operator.Combine
 import Data.Array.Repa.Flow.Seq.Operator.Project

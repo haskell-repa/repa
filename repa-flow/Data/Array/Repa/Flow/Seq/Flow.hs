@@ -23,20 +23,26 @@ import Prelude                                          hiding (take)
 import GHC.Exts
 
 
--- | Flows provide an incremental version of array fusion that allows the
---   the computation to be suspended and resumed at a later time.
+-- | A `Flow` is an incremental element producer. We can pull elements from 
+--   a flow without knowing where they come from.
+--
+--   Elements can be produced once at a time, or eight at a time as an
+--   optional optimisation.
 -- 
---   Using the `flowGet8` interface, eight elements of a flow can be 
---   computed for each loop iteration, producing efficient object code.
 data Flow r a
         = forall state. Flow
         { 
           -- | Start the flow. 
           --   This returns a state value that needs to be passed to
           --   the get functions.
+          --
+          --   * Calling this more than once on a given flow is undefined.
+          -- 
+          --   * Calling the other functions before doing this is undefined.
+
           flowStart     :: IO state
 
-          -- | How many elements are available in this flow.
+          -- | How many elements are still available.
         , flowSize      :: state -> IO Size
 
           -- | Report the current state of this flow.
@@ -65,11 +71,14 @@ data Step1 a
         | Done
 
 
+-- | Provide eight elements in one go, or says try to pull the full eight
+--   later. The two cases are split like this to force loop unrolling in
+--   the intermediate code.
 data Step8 a
         -- | Eight successive elements of the flow.
         = Yield8 a a a a a a a a
 
-        -- | Indicates that the flow cannot yield a full 8 elements right now.
+        -- | The flow cannot yield a full 8 elements right now.
         --   You should use `flowGet1` to get the next element and try
         --  `flowGet8` again later.
         | Pull1
