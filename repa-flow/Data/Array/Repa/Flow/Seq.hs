@@ -56,6 +56,7 @@ import Data.Array.Repa.Flow.Seq.CoFlow
 import Data.Array.Repa.Flow.Seq.Operator.Generate
 import Data.Array.Repa.Flow.Seq.Operator.Append
 import Data.Array.Repa.Flow.Seq.Operator.Map
+import Data.Array.Repa.Flow.Seq.Operator.Zip
 import Data.Array.Repa.Flow.Seq.Operator.Pack
 import Data.Array.Repa.Flow.Seq.Operator.Combine
 import Data.Array.Repa.Flow.Seq.Operator.Project
