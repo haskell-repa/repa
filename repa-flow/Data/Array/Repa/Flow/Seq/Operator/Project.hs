@@ -1,8 +1,8 @@
 
-module Data.Array.Repa.Flow.Seq.Project
+module Data.Array.Repa.Flow.Seq.Operator.Project
         (gather)
 where
-import Data.Array.Repa.Flow.Seq.Base
+import Data.Array.Repa.Flow.Seq.Flow
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import GHC.Exts
 

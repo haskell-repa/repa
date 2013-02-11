@@ -1,12 +1,12 @@
 
-module Data.Array.Repa.Flow.Par.Map
+module Data.Array.Repa.Flow.Par.Operator.Map
         ( map
         , zip
         , zipWith
         , zipLeft
         , zipLeftWith)
 where
-import Data.Array.Repa.Flow.Par.Base
+import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
 import qualified Data.Array.Repa.Flow.Seq       as Seq
 import Prelude hiding (map, zip, zipWith)

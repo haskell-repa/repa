@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Flow.Seq.Generate
+module Data.Array.Repa.Flow.Seq.Operator.Generate
         ( generate
         , replicate
         , replicatesDirect
         , enumFromN)
 where
-import Data.Array.Repa.Flow.Seq.Base
+import Data.Array.Repa.Flow.Seq.Flow
 import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (replicate)

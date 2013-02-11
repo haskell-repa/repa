@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Flow.Par.Generate
+module Data.Array.Repa.Flow.Par.Operator.Generate
         ( generate
         , replicate
         , replicates
@@ -7,11 +7,11 @@ module Data.Array.Repa.Flow.Par.Generate
         , enumFromN)
 where
 import Data.Array.Repa.Bulk.Gang
-import Data.Array.Repa.Flow.Par.Base
+import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
-import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
-import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
-import qualified Data.Array.Repa.Flow.Seq.Generate      as Seq
+import Data.Array.Repa.Flow.Par.Segd                        (Segd, SplitSegd)
+import qualified Data.Array.Repa.Flow.Par.Segd              as Segd
+import qualified Data.Array.Repa.Flow.Seq.Operator.Generate as Seq
 import GHC.Exts
 import Prelude hiding (replicate)
 

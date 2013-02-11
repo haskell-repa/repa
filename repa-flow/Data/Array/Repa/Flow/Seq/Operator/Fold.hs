@@ -1,13 +1,13 @@
 
-module Data.Array.Repa.Flow.Seq.Fold
+module Data.Array.Repa.Flow.Seq.Operator.Fold
         ( foldl
         , folds
         , sums)
 where
-import Data.Array.Repa.Flow.Seq.Base
-import GHC.Exts
+import Data.Array.Repa.Flow.Seq.Flow
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
+import GHC.Exts
 
 
 -- | Fold Left. Reduce a flow to a single value.

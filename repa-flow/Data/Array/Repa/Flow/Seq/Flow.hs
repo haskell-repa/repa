@@ -2,7 +2,7 @@
 
 -- | Flows provide an incremental version of array fusion that allows the
 --   the computation to be suspended and resumed at a later time.
-module Data.Array.Repa.Flow.Seq.Base
+module Data.Array.Repa.Flow.Seq.Flow
         ( module Data.Array.Repa.Flow.Base
         , FD, FS
         , Flow(..)

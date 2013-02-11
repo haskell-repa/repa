@@ -47,7 +47,7 @@ Library
 
   Exposed-modules:
         Data.Array.Repa.Flow.Seq
-        Data.Array.Repa.Flow.Seq.Report    
+        Data.Array.Repa.Flow.Seq.Report 
 
         Data.Array.Repa.Flow.Par
         Data.Array.Repa.Flow.Par.Distro
@@ -56,21 +56,21 @@ Library
   Other-modules:
         Data.Array.Repa.Flow.Base
 
-        Data.Array.Repa.Flow.Seq.Base
-        Data.Array.Repa.Flow.Seq.Generate
-        Data.Array.Repa.Flow.Seq.Append
-        Data.Array.Repa.Flow.Seq.Combine
-        Data.Array.Repa.Flow.Seq.Map
-        Data.Array.Repa.Flow.Seq.Pack
-        Data.Array.Repa.Flow.Seq.Project
-        Data.Array.Repa.Flow.Seq.Fold
+        Data.Array.Repa.Flow.Seq.Flow
+        Data.Array.Repa.Flow.Seq.Operator.Generate
+        Data.Array.Repa.Flow.Seq.Operator.Append
+        Data.Array.Repa.Flow.Seq.Operator.Combine
+        Data.Array.Repa.Flow.Seq.Operator.Map
+        Data.Array.Repa.Flow.Seq.Operator.Pack
+        Data.Array.Repa.Flow.Seq.Operator.Project
+        Data.Array.Repa.Flow.Seq.Operator.Fold
 
-        Data.Array.Repa.Flow.Par.Base
+        Data.Array.Repa.Flow.Par.Flow
         Data.Array.Repa.Flow.Par.SegdSplit
-        Data.Array.Repa.Flow.Par.Generate
-        Data.Array.Repa.Flow.Par.Append
-        Data.Array.Repa.Flow.Par.Map        
-        Data.Array.Repa.Flow.Par.Pack
-        Data.Array.Repa.Flow.Par.Project
-        Data.Array.Repa.Flow.Par.Fold
+        Data.Array.Repa.Flow.Par.Operator.Generate
+        Data.Array.Repa.Flow.Par.Operator.Append
+        Data.Array.Repa.Flow.Par.Operator.Map        
+        Data.Array.Repa.Flow.Par.Operator.Pack
+        Data.Array.Repa.Flow.Par.Operator.Project
+        Data.Array.Repa.Flow.Par.Operator.Fold
 

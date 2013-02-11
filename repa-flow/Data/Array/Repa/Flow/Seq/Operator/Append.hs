@@ -1,9 +1,9 @@
 
-module Data.Array.Repa.Flow.Seq.Append
+module Data.Array.Repa.Flow.Seq.Operator.Append
         (appends)
 where
-import Data.Array.Repa.Flow.Seq.Base
-import qualified Data.Array.Repa.Flow.Seq.Report        as Report
+import Data.Array.Repa.Flow.Seq.Flow
+import qualified Data.Array.Repa.Flow.Seq.Report as Report
 import GHC.Exts
 
 -- | Segmented append.

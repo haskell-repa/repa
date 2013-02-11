@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Flow.Par.Base
+module Data.Array.Repa.Flow.Par.Flow
         ( module Data.Array.Repa.Flow.Base
         , Flow   (..)
         , Distro (..)
@@ -12,7 +12,7 @@ import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Base
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector                    as V
-import qualified Data.Array.Repa.Flow.Seq       as Seq
+import qualified Data.Array.Repa.Flow.Seq.Flow  as Seq
 import System.IO.Unsafe
 import GHC.Exts
 

@@ -43,13 +43,13 @@ module Data.Array.Repa.Flow.Seq
         , folds
         , sums)
 where
-import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Generate
-import Data.Array.Repa.Flow.Seq.Append
-import Data.Array.Repa.Flow.Seq.Map
-import Data.Array.Repa.Flow.Seq.Pack
-import Data.Array.Repa.Flow.Seq.Combine
-import Data.Array.Repa.Flow.Seq.Project
-import Data.Array.Repa.Flow.Seq.Fold
+import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Operator.Generate
+import Data.Array.Repa.Flow.Seq.Operator.Append
+import Data.Array.Repa.Flow.Seq.Operator.Map
+import Data.Array.Repa.Flow.Seq.Operator.Pack
+import Data.Array.Repa.Flow.Seq.Operator.Combine
+import Data.Array.Repa.Flow.Seq.Operator.Project
+import Data.Array.Repa.Flow.Seq.Operator.Fold
 import Prelude  hiding (map, zip, zipWith, unzip, foldl, filter, replicate, take)
 

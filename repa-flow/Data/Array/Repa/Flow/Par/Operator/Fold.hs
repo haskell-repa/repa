@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Flow.Par.Fold
+module Data.Array.Repa.Flow.Par.Operator.Fold
         ( folds
         , foldsSplit
         , sums)
 where
 import GHC.Exts
-import Data.Array.Repa.Flow.Par.Base
+import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd

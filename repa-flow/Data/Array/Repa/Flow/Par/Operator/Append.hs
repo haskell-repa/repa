@@ -1,12 +1,12 @@
 
-module Data.Array.Repa.Flow.Par.Append
+module Data.Array.Repa.Flow.Par.Operator.Append
         (appends)
 where
-import Data.Array.Repa.Flow.Par.Base
+import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
-import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
-import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
-import qualified Data.Array.Repa.Flow.Seq.Append        as Seq
+import Data.Array.Repa.Flow.Par.Segd                      (Segd, SplitSegd)
+import qualified Data.Array.Repa.Flow.Par.Segd            as Segd
+import qualified Data.Array.Repa.Flow.Seq.Operator.Append as Seq
 import GHC.Exts
 
 

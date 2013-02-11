@@ -1,12 +1,12 @@
 
-module Data.Array.Repa.Flow.Seq.Pack
+module Data.Array.Repa.Flow.Seq.Operator.Pack
         ( packByTag
         , packByFlag
         , filter)
 where
 import Data.Array.Repa.Bulk.Elt
-import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Map
+import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Operator.Map
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, filter)
 import GHC.Exts
