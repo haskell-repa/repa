@@ -3,10 +3,17 @@
 --   allows the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow.Seq
         ( FD, FS
-        , Flow (..)
-        , Step1(..)
-        , Step8(..)
+
+        -- * Flows
+        , Flow   (..)
+        , Step1  (..)
+        , Step8  (..)
         
+        -- * CoFlows
+        , CoFlow (..)
+        , Snack1 (..)
+        , Snack8 (..)
+
         -- * Conversion
         , flow
         , unflow
@@ -43,7 +50,9 @@ module Data.Array.Repa.Flow.Seq
         , folds
         , sums)
 where
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.CoFlow
 import Data.Array.Repa.Flow.Seq.Operator.Generate
 import Data.Array.Repa.Flow.Seq.Operator.Append
 import Data.Array.Repa.Flow.Seq.Operator.Map

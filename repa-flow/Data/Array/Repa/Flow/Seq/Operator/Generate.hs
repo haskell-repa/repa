@@ -5,6 +5,7 @@ module Data.Array.Repa.Flow.Seq.Operator.Generate
         , replicatesDirect
         , enumFromN)
 where
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
 import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R

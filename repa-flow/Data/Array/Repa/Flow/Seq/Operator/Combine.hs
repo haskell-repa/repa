@@ -3,6 +3,7 @@ module Data.Array.Repa.Flow.Seq.Operator.Combine
         ( combine2
         , combines2)
 where
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
 import qualified Data.Array.Repa.Flow.Seq.Report as Report
 import GHC.Exts

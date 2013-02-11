@@ -4,6 +4,7 @@ module Data.Array.Repa.Flow.Seq.Operator.Fold
         , folds
         , sums)
 where
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
