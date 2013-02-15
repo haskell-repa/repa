@@ -25,12 +25,9 @@ data CoFlow mode a
           coflowState   :: CoFlowState mode state
 
           -- | Signal that we've fed the coflow all available elements.
-          --   This is done separately as from the feed functions so that they 
-          --   don't need to check for end-of-input conditions on every iteration.
-          --
-          --  * Calling this more than once on a given coflow is undefined.
-          --
-          --  *  Calling the feed functions after doing this is undefined.
+          --   This is done separately from the feed functions so that the
+          --   generated code doesn't need to check for end-of-input condition
+          --   on every iteration. A coflow can be safely ejected multiple times.
         , coflowEject   :: state -> IO ()
 
           -- | Feed a single element to the coflow.

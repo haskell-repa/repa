@@ -1,6 +1,16 @@
 
 -- | Sequential flows provide an incremental version of array fusion that
 --   allows the computation to be suspended and resumed at a later time.
+--
+--   The parallel flow operators are defined in terms of these sequential
+--   ones.
+--
+--   The subset of operators provided are guaranteed to use only a constant
+--   amount of space. For example, we don't provide a `dup_ff` operator because
+--   if all input elements were pulled from one output before the other,
+--   then we would need to buffer the entire input flow. Similarly, we don't 
+--   provide a `zip_cc` operator for the dual reason.
+--
 module Data.Array.Repa.Flow.Seq
         ( FD
         , FS
@@ -26,7 +36,7 @@ module Data.Array.Repa.Flow.Seq
 
         -- * Conversion
         , flow
-        , connect
+        , drain
         , slurp
         , unflowIO
 
@@ -36,6 +46,8 @@ module Data.Array.Repa.Flow.Seq
 
         -- * Dup
         , dup_cc
+        , dup_fc
+        , dup_cf
 
         -- * Zip
         , zip_ff

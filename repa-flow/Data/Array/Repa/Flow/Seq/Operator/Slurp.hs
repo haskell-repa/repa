@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Slurp
-        (connect, slurp)
+        (drain, slurp)
 where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Base
@@ -13,12 +13,12 @@ import GHC.Exts
 
 -- | Fully evaluate a `Flow`\/`CoFlow` pair,
 --   returning how many elements we got.
-connect :: Elt a
+drain :: Elt a
         => Flow   FD a  -- ^ Pull elements from this flow.
         -> CoFlow FD a  -- ^ Push elements into this coflow.
         -> IO Int
 
-connect fflow coflow
+drain fflow coflow
  = do   
         -- Start the flow and get the maximum expected size.
         flow'  @(Flow fstate' getSize' _ _ _)   
