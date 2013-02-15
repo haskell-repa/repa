@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Slurp
-        (slurp)
+        (connect, slurp)
 where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Base
@@ -11,13 +11,41 @@ import Prelude                                          hiding (take)
 import GHC.Exts
 
 
+-- | Fully evaluate a `Flow`\/`CoFlow` pair,
+--   returning how many elements we got.
+connect :: Elt a
+        => Flow   FD a  -- ^ Pull elements from this flow.
+        -> CoFlow FD a  -- ^ Push elements into this coflow.
+        -> IO Int
+
+connect fflow coflow
+ = do   
+        -- Start the flow and get the maximum expected size.
+        flow'  @(Flow fstate' getSize' _ _ _)   
+                <- startFlow fflow
+        state   <- getFlowState fstate'
+        size    <- getSize' state
+
+        -- Start the coflow, giving it the maximum expected size.
+        coflow'@(CoFlow (CoFlowStateActive cstate') eject' _ _)    
+                <- startCoFlow size coflow
+
+        -- Pull all elements from the flow and push them into the coflow.
+        count   <- slurp Nothing flow' coflow'
+
+        -- Signal to the coflow that we've pushed all the elements.
+        eject' cstate'
+
+        return  count
+
+
 -- | Pull elements from a `Flow` and push them into a `CoFlow`.
 --
 --   Both flow and coflow must have already been started.
 slurp   :: Elt a
         => Maybe Int    -- ^ Maximum number of elements to slurp.
         -> Flow   FS a  -- ^ Pull elements from this flow.
-        -> CoFlow FS a  -- ^ Push elements into this flow.
+        -> CoFlow FS a  -- ^ Push elements into this coflow.
         -> IO Int       -- ^ Total number of elements slurped.
 
 slurp stop 

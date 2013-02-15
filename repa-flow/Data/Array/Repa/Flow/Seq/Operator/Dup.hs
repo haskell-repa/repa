@@ -1,13 +1,13 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Dup
-        (codup2)
+        (dup_cc)
 where
 import Data.Array.Repa.Flow.Seq.CoFlow
 
 
 -- | Create a coflow that pushes elements into two others.
-codup2 :: CoFlow mode a -> CoFlow mode a -> CoFlow mode a
-codup2    (CoFlow cfstateA ejectA feed1A feed8A)
+dup_cc :: CoFlow mode a -> CoFlow mode a -> CoFlow mode a
+dup_cc    (CoFlow cfstateA ejectA feed1A feed8A)
         (CoFlow cfstateB ejectB feed1B feed8B)
  =       CoFlow cfstateZ ejectZ feed1Z feed8Z
  where  
@@ -25,5 +25,5 @@ codup2    (CoFlow cfstateA ejectA feed1A feed8A)
         feed8Z  (stateA, stateB) snack8
          = do   feed8A stateA snack8
                 feed8B stateB snack8
-
+{-# INLINE [1] dup_cc #-}
 

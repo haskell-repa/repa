@@ -26,19 +26,22 @@ module Data.Array.Repa.Flow.Seq
 
         -- * Conversion
         , flow
+        , connect
         , slurp
+        , unflowIO
 
         -- * Map
-        , map,          comap
+        , map_f
+        , map_c
 
         -- * Dup
-        , codup2
+        , dup_cc
 
         -- * Zip
-        , zip
-        , zipWith
-        , zipLeft
-        , zipLeftWith
+        , zip_ff
+        , zipWith_ff
+        , zipLeft_f
+        , zipLeftWith_f
 
         -- * Construction
         , generate

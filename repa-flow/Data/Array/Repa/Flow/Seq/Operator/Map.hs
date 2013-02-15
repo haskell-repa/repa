@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Map
-        ( map
-        , comap)
+        ( map_f
+        , map_c)
 where
 import Data.Array.Repa.Flow.Seq.Flow
 import Data.Array.Repa.Flow.Seq.CoFlow
@@ -11,8 +11,8 @@ import Prelude hiding (map, zip, zipWith)
 
 ------------------------------------------------------------------------------
 -- | Apply a function to every element of a flow.
-map :: (a -> b) -> Flow mode a -> Flow mode b
-map f (Flow start size report get1 get8)
+map_f :: (a -> b) -> Flow mode a -> Flow mode b
+map_f f (Flow start size report get1 get8)
  = Flow start size report' get1' get8'
  where  
         report' state
@@ -36,14 +36,13 @@ map f (Flow start size report get1 get8)
 
                 Pull1           -> push8 $ Pull1
         {-# INLINE get8' #-}
-
-{-# INLINE [1] map #-}
+{-# INLINE [1] map_f #-}
 
 
 -------------------------------------------------------------------------------
 -- | Apply a function to every element of a coflow.
-comap :: (a -> b) -> CoFlow mode b -> CoFlow mode a
-comap f (CoFlow cfstate eject feed1 feed8)
+map_c :: (a -> b) -> CoFlow mode b -> CoFlow mode a
+map_c f (CoFlow cfstate eject feed1 feed8)
  = CoFlow cfstate eject feed1' feed8'
  where
         feed1' state (Snack1 x)
@@ -52,3 +51,4 @@ comap f (CoFlow cfstate eject feed1 feed8)
         feed8' state (Snack8 x0 x1 x2 x3 x4 x5 x6 x7)
          = feed8 state (Snack8  (f x0) (f x1) (f x2) (f x3)
                                 (f x4) (f x5) (f x6) (f x7))
+{-# INLINE [1] map_c #-}

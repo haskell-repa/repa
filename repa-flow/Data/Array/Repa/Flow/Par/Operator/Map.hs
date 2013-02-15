@@ -21,7 +21,7 @@ map     :: (a -> b)
 map f (Flow gang distro start frag)
  = Flow gang distro start frag'
  where  frag' state ix 
-         = Seq.map f (frag state ix)
+         = Seq.map_f f (frag state ix)
         {-# INLINE frag' #-}
 {-# INLINE [2] map #-}
 
@@ -40,7 +40,7 @@ zip (Flow gang1 distro1 start1 frag1) (Flow _ _ start2 frag2)
         {-# INLINE start' #-}
 
         frag' (state1, state2) ix 
-         = Seq.zip (frag1 state1 ix) (frag2 state2 ix)
+         = Seq.zip_ff (frag1 state1 ix) (frag2 state2 ix)
         {-# INLINE frag' #-}
 
 {-# INLINE [2] zip #-}
@@ -68,7 +68,7 @@ zipLeft (Flow gang distro start frag) getB
         frag' state n
          = let  !start'  = distroBalancedFragStart distro n
                 getB' ix = getB (ix +# start')
-           in   Seq.zipLeft (frag state n) getB'
+           in   Seq.zipLeft_f (frag state n) getB'
         {-# INLINE frag' #-}
 
 {-# INLINE [2] zipLeft #-}

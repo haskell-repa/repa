@@ -178,7 +178,7 @@ packByTag (Flow fstateA size report get1 get8)
 --   flag set to `True`
 packByFlag :: Unbox a => Flow FD (Bool, a) -> Flow FD a
 packByFlag ff
-        = packByTag $ map (\(b, x) -> (I# (tagOfFlag b), x)) ff
+        = packByTag $ map_f (\(b, x) -> (I# (tagOfFlag b), x)) ff
 {-# INLINE [1] packByFlag #-}
 
 
@@ -191,6 +191,6 @@ tagOfFlag b
 -- | Produce only those elements that match the given predicate.
 filter :: Unbox a => (a -> Bool) -> Flow FD a -> Flow FD a
 filter f ff
-        = packByFlag $ map (\x -> (f x, x)) ff
+        = packByFlag $ map_f (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}
 
