@@ -80,7 +80,8 @@ dup_fc  (Flow   mkStateA  getSizeA  reportA get1  _get8)
 
 -- | As above, but with the parameters flipped.
 dup_cf :: CoFlow mode a -> Flow mode a -> Flow mode a
-dup_cf coflow flow
-        = dup_fc flow coflow
+dup_cf cf ff
+        = dup_fc ff cf
 {-# INLINE [1] dup_cf #-}
+
 
