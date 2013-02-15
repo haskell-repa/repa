@@ -1,29 +1,30 @@
 
 module Data.Array.Repa.Flow.Seq.Base
         ( FD, FS
-        , Size(..)
+        , Size          (..)
         , sizeMin)
 where
 import GHC.Exts
 
 
 -------------------------------------------------------------------------------
--- | Phantom type tag to indicate a delayed flow.
+-- | Type index to indicate a delayed flow or co-flow. 
+--   Being delayed means the (co)flow does not yet have any attached state.
 --
---   A delayed flow is a flow that hasn't started flowing yet.
---   It does not have any attached state, and we can evaluate it multiple
---   times to get the same result.
+--   A delayed flow may be attached to manifest source vectors, but it
+--   it does not yet have indices into the source. We can evaluate a delayed
+--   flow multiple times and get the same result.
+--
+--   A delayed coflow has not yet initialised its output buffer.
+--   We can multiple flows into a coflow and construct the same output.
 --
 data FD
 
 
--- | Phantom type tag to indicate a stateful flow.
---      
---   A stateful flow is a flow that has already started flowing.
---   It has attached state, and we can evaluate prefixes of it
---   incrementally. Evaluating the whole flow uses it up, 
---   so we can't evaluate it again.
---
+-- | Type index to indicate a stateful flow or co-flow.
+--   
+--   Pulling from a stateful flow, or pushing into a stateful co-flow modifies
+--   the internal state.
 data FS
 
 

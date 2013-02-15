@@ -14,16 +14,13 @@ import GHC.Exts
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
 zip :: Flow mode a -> Flow mode b -> Flow mode (a, b)
-zip    (Flow !startA !sizeA reportA getA1 _)
-       (Flow !startB !sizeB reportB getB1 _)
- = Flow start' size' report' get1' get8'
+zip    (Flow !fstateA !sizeA reportA getA1 _)
+       (Flow !fstateB !sizeB reportB getB1 _)
+ = Flow fstate' size' report' get1' get8'
  where
-        start'
-         = do   stateA  <- startA
-                stateB  <- startB
-                return  (stateA, stateB)
-        {-# INLINE start' #-}
-
+        fstate'
+         = joinFlowStates fstateA fstateB
+        {-# INLINE fstate' #-}
 
         size' (stateA, stateB)
          = do   szA     <- sizeA stateA
@@ -76,21 +73,24 @@ zipWith f flowA flowB
 --   an arbitary number of elements per step means we can pull up to 
 --   8 elements at a time from the resulting flow.
 --
-zipLeft :: Flow mode a 
+zipLeft :: Flow FD a 
         -> (Int# -> b) 
-        -> Flow mode (a, b)
+        -> Flow FD (a, b)
 
-zipLeft (Flow startA sizeA reportA getA1 getA8) getB
- = Flow start' size' report' get1' get8'
+zipLeft (Flow fstateA sizeA reportA getA1 getA8) getB
+ = Flow fstate' size' report' get1' get8'
  where  
         here    = "seq.zipLeft"
 
-        start'
-         = do   stateA  <- startA
-                refIx   <- unew 1
-                iwrite here refIx 0# 0#
-                return (stateA, refIx)
-        {-# INLINE start' #-}
+        fstate'
+         = case fstateA of
+                FlowStateDelayed startA
+                 -> FlowStateDelayed
+                 $  do  stateA  <- startA
+                        refIx   <- unew 1
+                        iwrite here refIx 0# 0#
+                        return (stateA, refIx)
+        {-# INLINE fstate' #-}
 
 
         size' (!stateA, _)
@@ -141,9 +141,9 @@ zipLeft (Flow startA sizeA reportA getA1 getA8) getB
 -- | Combine a flow and elements gained from some function.
 zipLeftWith 
         :: (a -> b -> c) 
-        -> Flow mode a 
+        -> Flow FD a 
         -> (Int# -> b) 
-        -> Flow mode c
+        -> Flow FD c
 
 zipLeftWith f flowA getB
         = map (uncurry f) $ zipLeft flowA getB

@@ -4,21 +4,19 @@
 --   the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow.Seq.Flow
         ( module Data.Array.Repa.Flow.Base
-        , Flow(..)
-        , Step1(..)
-        , Step8(..)
-        , flow
-        , unflow
-        , take
-        , drain
-        , slurp)
+        , Flow          (..)
+        , Step1         (..)
+        , Step8         (..)
+        , FlowState     (..)
+        , startFlow
+        , joinFlowStates
+        , getFlowState
+        , flow)
 where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
-import qualified Data.Vector.Unboxed                    as U
-import System.IO.Unsafe
 import Prelude                                          hiding (take)
 import GHC.Exts
 
@@ -29,18 +27,12 @@ import GHC.Exts
 --   Elements can be produced once at a time, or eight at a time as an
 --   optional optimisation.
 -- 
-data Flow r a
+data Flow mode a
         = forall state. Flow
         { 
-          -- | Start the flow. 
-          --   This returns a state value that needs to be passed to
-          --   the get functions.
-          --
-          --   * Calling this more than once on a given flow is undefined.
-          -- 
-          --   * Calling the other functions before doing this is undefined.
-
-          flowStart     :: IO state
+          -- | Representation of the flow state depends on whether the flow
+          --   has already been started.
+          flowState     :: FlowState mode state
 
           -- | How many elements are still available.
         , flowSize      :: state -> IO Size
@@ -84,26 +76,88 @@ data Step8 a
         | Pull1
 
 
+-- | Holds an action to start the flow, or the current state if it has
+--   already been started.
+data FlowState mode state where
+        FlowStateDelayed 
+         :: IO state 
+         -> FlowState FD state
+
+        FlowStateActive
+         :: state
+         -> FlowState FS state
+
+
+-- | Start a flow, making it active.
+startFlow :: Flow FD a -> IO (Flow FS a)
+startFlow (Flow fstate size report get1 get8)
+ = do   state   <- getFlowState fstate
+        return  $ Flow (FlowStateActive state) size report get1 get8
+
+
+-- | Join two flow states of the same mode.
+--
+--   If both flow states are delayed it the resulting action starts both.
+--
+--   If both flow states are already active the result returns both.
+--
+joinFlowStates 
+        :: FlowState mode stateA
+        -> FlowState mode stateB
+        -> FlowState mode (stateA, stateB)
+
+joinFlowStates 
+        (FlowStateDelayed startA)
+        (FlowStateDelayed startB)
+ = FlowStateDelayed
+ $ do   stateA  <- startA
+        stateB  <- startB
+        return  $ (stateA, stateB)
+
+joinFlowStates
+        (FlowStateActive stateA)
+        (FlowStateActive stateB)
+ = FlowStateActive (stateA, stateB)
+
+joinFlowStates _ _
+ = error "joinFlowStates: bogus warning suppression"
+{-# INLINE joinFlowStates #-}
+
+
+-- | Start a flow state, 
+--   or return the exising state if it has already been started.
+getFlowState :: FlowState mode state -> IO state
+getFlowState fstate
+ = case fstate of
+        FlowStateDelayed makeFlowState
+         -> makeFlowState
+
+        FlowStateActive state
+         -> return state
+{-# INLINE getFlowState #-}
+
+
 -------------------------------------------------------------------------------
--- | Create a delayed flow.
+-- | Create a delayed flow that will read elements from some randomly
+--   accessible vector.
 flow    :: Elt a 
-        => (Int# -> a)  -- ^ Function to get the element at the given index.
-        -> Int#         -- ^ Total number of elements.
-        -> Flow mode a
+        => Int#         -- ^ Total number of elements.
+        -> (Int# -> a)  -- ^ Function to get the element at the given index.
+        -> Flow FD a
 
-flow !load !len
- = Flow start size report get1 get8
+flow !len !load 
+ = Flow state size report get1 get8
  where  
-        here    = "seq.flow"
+        here    = "repa-flow.seq.flow"
 
-        start
-         = do   refIx   <- inew 1
-                iwrite here refIx 0# 0#
-                return refIx
-        {-# INLINE start #-}
-
+        state   = FlowStateDelayed
+                $ do    refIx   <- inew 1
+                        iwrite here refIx 0# 0#
+                        return refIx
+        {-# INLINE state #-}
 
         size refIx
+
          = do   !(I# ix)        <- iread here refIx 0#
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
@@ -162,186 +216,4 @@ flow !load !len
         {-# INLINE get8 #-}
 
 {-# INLINE [1] flow #-}
-
-
--------------------------------------------------------------------------------
--- | Fully evaluate a delayed flow, producing an unboxed vector.
---   TODO: make this generic in the returned vector type.
-unflow :: (Elt a, U.Unbox a) 
-        => Flow FD a -> U.Vector a
-unflow ff 
- = unsafePerformIO 
- $ do   let here = "seq.unflow"
-
-        let new ix        = unew (I# ix)
-        let write mvec ix = uwrite here mvec (I# ix)
-        (mvec, len)       <- drain new write ff
-
-        !vec              <- U.unsafeFreeze mvec
-        return  $ uslice 0 len vec
-
-{-# INLINE [1] unflow #-}
-
-
--------------------------------------------------------------------------------
--- | Take at most the given number of elements from the front of a flow,
---   returning those elements and the rest of the flow.
---   
---   Calling 'take' allocates buffers and other state information, 
---   and this state will be reused when the remaining elements of
---   the flow are evaluated.
---
---   TODO: make this generic in the returned vector type.
---
-take    :: (Elt a, U.Unbox a) 
-        => Int# -> Flow mode a -> IO (U.Vector a, Flow FS a)
-
-take limit (Flow start size report get1 get8)
- = do   let here = "seq.take"
-
-        -- Start the flow, if it isn't already.
-        state    <- start
-
-        -- Allocate the buffer for the result.
-        !mvec    <- unew (I# limit)
-
-        -- Slurp elemenst into the result buffer.
-        let write ix x = uwrite here mvec (I# ix) x
-        !len'    <- slurp 0# (Just (I# limit)) write
-                        (get1 state) (get8 state)
-
-        !vec     <- ufreeze mvec
-        let !vec' = uslice 0 len' vec        
-
-        return  ( vec'
-                , Flow (return state) size report get1 get8)
-{-# INLINE [1] take #-}
-
-
--------------------------------------------------------------------------------
--- | Fully evaluate a possibly stateful flow,
---   pulling all the remaining elements.
-drain   :: Elt a 
-        => (Int#  -> IO (vec a))          -- ^ Allocate a new vector.
-        -> (vec a -> Int# -> a -> IO ())  -- ^ Write into the vector.
-        -> Flow mode a          -- ^ Flow to evaluate.
-        -> IO (vec a, Int)      -- ^ Result vector, and number of elements written.
-
-drain new write !ff
- = case ff of
-    Flow fStart fSize _fReport fGet1 fGet8
-     -> do !state   <- fStart
-           !size    <- fSize   state 
-
-
-           -- In the sequential case we can use the same code to unflow
-           -- both Exact and Max, and just slice down the vector to the
-           -- final size.
-           case size of
-            Exact len       
-             -> do !mvec <- new len
-
-                   let write' = write mvec
-                   len'  <- slurp 0# Nothing write' (fGet1 state) (fGet8 state)
-
-                   return (mvec, len')
-
-            Max   len   
-             -> do !mvec <- new len
-
-                   let write' = write mvec
-                   len'  <- slurp 0# Nothing write' (fGet1 state) (fGet8 state)
-
-                   return (mvec, len')
-
-{-# INLINE [1] drain #-}
-
-
--------------------------------------------------------------------------------
--- | Slurp out all the available elements from a flow, passing them to the
---   provided consumption function. If the flow stalls then only the currently
---   available elements are produced.
-slurp   :: Elt a
-        => Int#                           -- ^ Starting index in result.
-        -> Maybe Int                      -- ^ Stopping index.
-        -> (Int# -> a -> IO ())           -- ^ Write an element into the result.
-        -> ((Step1 a  -> IO ()) -> IO ()) -- ^ Get one element from the flow.
-        -> ((Step8 a  -> IO ()) -> IO ()) -- ^ Get eight elements from the flow.
-        -> IO Int                         -- ^ Total number of elements written.
-
-slurp start stop !write get1 get8
- = do   let here = "seq.slurp"
-
-        refCount <- inew 1
-        iwrite here refCount 0# (-1#)
-
-        let
-         {-# INLINE slurpSome #-}
-         slurpSome ix
-          = do  slurp8 ix
-                I# ix'     <- iread here refCount 0# 
-
-                slurp1 ix'
-                I# ix''    <- iread here refCount 0#
-
-                case stop of
-                 Just (I# limit)
-                  -> if ix'' ==# ix || ix'' >=# limit
-                        then return (I# ix'')
-                        else slurpSome ix''
-
-                 Nothing
-                  -> if ix'' ==# ix
-                        then return (I# ix'')
-                        else slurpSome ix''
-
-         {-# INLINE slurp1 #-}
-         slurp1 ix 
-          | Just (I# limit) <- stop
-          , ix >=# limit
-          =     iwrite here refCount 0# ix
-
-          |  otherwise
-          =  get1 $ \r
-          -> case r of
-                Yield1 x switch
-                 -> do  
-                        write ix x
-
-                        -- Touch 'x' here because we don't want the code
-                        -- that computes it to be floated into the switch
-                        -- and then copied.
-                        touch x
-
-                        if switch 
-                         then iwrite here refCount 0# (ix +# 1#)
-                         else slurp1 (ix +# 1#)
-
-                Done  -> iwrite here refCount 0# ix
-                        
-         {-# INLINE slurp8 #-}
-         slurp8 ix
-          | Just (I# limit)     <- stop
-          , ix +# 8# ># limit
-          =     iwrite here refCount 0# ix
-
-          | otherwise
-          =  get8 $ \r
-          -> case r of
-                Yield8 x0 x1 x2 x3 x4 x5 x6 x7
-                 -> do  write (ix +# 0#) x0
-                        write (ix +# 1#) x1
-                        write (ix +# 2#) x2
-                        write (ix +# 3#) x3
-                        write (ix +# 4#) x4
-                        write (ix +# 5#) x5
-                        write (ix +# 6#) x6
-                        write (ix +# 7#) x7
-                        slurp8 (ix +# 8#)
-
-                Pull1   
-                 ->     iwrite here refCount 0# ix
-
-        slurpSome start
-{-# INLINE [0] slurp #-}
 

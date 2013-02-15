@@ -4,7 +4,6 @@ module Data.Array.Repa.Flow.Seq.Operator.Fold
         , folds
         , sums)
 where
-import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
@@ -12,8 +11,8 @@ import GHC.Exts
 
 
 -- | Fold Left. Reduce a flow to a single value.
-foldl :: Unbox a => (a -> b -> a) -> a -> Flow FD b -> IO a
-foldl f z !(Flow start _ _ get1 get8)
+foldl :: Unbox a => (a -> b -> a) -> a -> Flow mode b -> IO a
+foldl f z !(Flow fstate _ _ get1 get8)
  = do   
         let here = "seq.foldl"
 
@@ -21,8 +20,8 @@ foldl f z !(Flow start _ _ get1 get8)
         bufOut      <- unew 1
         uwrite here bufOut 0 z
 
-        -- Start the in-stream.
-        state       <- start
+        -- Start the in-flow.
+        state       <- getFlowState fstate
 
         let 
          eat1 !acc
@@ -52,21 +51,19 @@ foldl f z !(Flow start _ _ get1 get8)
 
 -------------------------------------------------------------------------------
 -- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
---   and reduces each segment to a value individually.
+--   and reduce each segment to a value individually.
 folds   :: Unbox a 
         => (a -> b -> a) -> a 
         -> Flow mode Int 
         -> Flow mode b 
         -> Flow mode a                     
 
-folds f !z (Flow startA  sizeA reportA getLen1  _) 
-           (Flow startB _sizeB reportB getElem1 getElem8)
- = Flow start' size' report' get1' get8'
+folds f !z (Flow fstateA  sizeA reportA getLen1  _) 
+           (Flow fstateB _sizeB reportB getElem1 getElem8)
+ = Flow fstate' size' report' get1' get8'
  where
-        start'
-         = do   stateA  <- startA
-                stateB  <- startB
-                return  (stateA, stateB)
+        fstate'
+         = joinFlowStates fstateA fstateB
 
         size' (stateA, _stateB)
          =      sizeA stateA
@@ -150,7 +147,7 @@ folds f !z (Flow startA  sizeA reportA getLen1  _)
 
 
 -- | Segmented sum. Takes a flow of segment lenghths and a flow of elements,
---   and sums the elements of each segment individually.
+--   and sum the elements of each segment individually.
 sums :: (Unbox a, Num a) => Flow mode Int -> Flow mode a -> Flow mode a 
 sums ffLens ffElems
         = folds (+) 0 ffLens ffElems

@@ -7,6 +7,7 @@ module Data.Array.Repa.Flow.Par.Operator.Generate
         , enumFromN)
 where
 import Data.Array.Repa.Bulk.Gang
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                        (Segd, SplitSegd)
@@ -18,7 +19,7 @@ import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Gang -> Int# -> (Int# -> a) -> Flow mode BB a
+generate :: Gang -> Int# -> (Int# -> a) -> Flow FD BB a
 generate gang len get
  = Flow gang distro start frag
  where
@@ -40,7 +41,7 @@ generate gang len get
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: Gang -> Int# -> a -> Flow mode BB a
+replicate :: Gang -> Int# -> a -> Flow FD BB a
 replicate gang n x
         = generate gang n (\_ -> x)
 {-# INLINE [2] replicate #-}
@@ -53,7 +54,7 @@ replicates
         :: Gang
         -> Segd
         -> (Int# -> a)
-        -> Flow mode BB a
+        -> Flow FD BB a
 
 replicates gang segd getSegVal
  = replicatesSplit (Segd.splitSegd gang segd) getSegVal
@@ -67,7 +68,7 @@ replicates gang segd getSegVal
 replicatesSplit
         :: SplitSegd
         -> (Int# -> a)
-        -> Flow mode BB a
+        -> Flow FD BB a
 
 replicatesSplit segd getSegVal
  = Flow gang distro start replicatesSplit_frag
@@ -100,7 +101,7 @@ enumFromN
         :: Gang
         -> Int#                 -- ^ Starting value.
         -> Int#                 -- ^ Length of result.
-        -> Flow mode BB Int
+        -> Flow FD BB Int
 
 enumFromN gang first len
  = Flow gang distro start frag

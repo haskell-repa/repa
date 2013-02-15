@@ -2,35 +2,42 @@
 -- | Sequential flows provide an incremental version of array fusion that
 --   allows the computation to be suspended and resumed at a later time.
 module Data.Array.Repa.Flow.Seq
-        ( FD, FS
+        ( FD
+        , FS
+        , Size          (..)
 
         -- * Flows
-        , Flow   (..)
-        , Step1  (..)
-        , Step8  (..)
+        , Flow          (..)
+        , FlowState     (..)
+        , joinFlowStates
+        , getFlowState
+        , startFlow
+        , Step1         (..)
+        , Step8         (..)
         
         -- * CoFlows
-        , CoFlow (..)
-        , Snack1 (..)
-        , Snack8 (..)
+        , CoFlow        (..)
+        , CoFlowState   (..)
+        , joinCoFlowStates
+        , getCoFlowState
+        , startCoFlow
+        , Snack1        (..)
+        , Snack8        (..)
 
         -- * Conversion
         , flow
-        , unflow
-        , take
-        , drain
         , slurp
 
         -- * Map
         , map,          comap
 
         -- * Dup
-        , dup2
+        , codup2
 
         -- * Zip
         , zip
-        , zipLeft
         , zipWith
+        , zipLeft
         , zipLeftWith
 
         -- * Construction
@@ -61,6 +68,7 @@ where
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
 import Data.Array.Repa.Flow.Seq.CoFlow
+import Data.Array.Repa.Flow.Seq.Operator.Slurp
 import Data.Array.Repa.Flow.Seq.Operator.Dup
 import Data.Array.Repa.Flow.Seq.Operator.Map
 import Data.Array.Repa.Flow.Seq.Operator.Zip

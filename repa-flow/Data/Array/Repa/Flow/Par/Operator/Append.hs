@@ -2,6 +2,7 @@
 module Data.Array.Repa.Flow.Par.Operator.Append
         (appends)
 where
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                      (Segd, SplitSegd)
@@ -16,7 +17,7 @@ appends :: SplitSegd    -- ^ Segment descriptor of the result.
         -> (Int# -> a)  -- ^ Get data from the A array.
         -> Segd         -- ^ Segment descriptor of the B array.
         -> (Int# -> a)  -- ^ Get data from the B array.
-        -> Flow mode BB a
+        -> Flow FD BB a
 
 appends segdr segdA getElemA segdB getElemB 
  = Flow gang distro start frag

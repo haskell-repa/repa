@@ -23,28 +23,26 @@ combine2
         -> Flow mode a         -- ^ Elements of @B@ vector.
         -> Flow mode a
 
-combine2 (Flow startF sizeF  reportF getF1 _)
-         (Flow startA _sizeA reportA getA1 _)
-         (Flow startB _sizeB reportB getB1 _)
- = Flow start' size' report' get1' get8'
+combine2 (Flow fstateF sizeF  reportF getF1 _)
+         (Flow fstateA _sizeA reportA getA1 _)
+         (Flow fstateB _sizeB reportB getB1 _)
+ = Flow cfstate' size' report' get1' get8'
  where
-        start'
-         = do   stateF  <- startF
-                stateA  <- startA
-                stateB  <- startB
-                return  (stateF, stateA, stateB)
+        cfstate'
+         = joinFlowStates fstateF 
+         $ joinFlowStates fstateA fstateB
 
-        size'   (stateF, _stateA, _stateB)
+        size'   (stateF, (_stateA, _stateB))
          = do   szF     <- sizeF stateF
                 return  szF
 
-        report' (stateF, stateA, stateB)
+        report' (stateF, (stateA, stateB))
          = do   repF    <- reportF stateF
                 repA    <- reportA stateA
                 repB    <- reportB stateB
                 return  $ Report.Combine repF repA repB
 
-        get1'   (stateF, stateA, stateB) push1
+        get1'   (stateF, (stateA, stateB)) push1
          -- Get the next flag.
          =  getF1 stateF $ \mxF
          -> case mxF of
@@ -92,20 +90,20 @@ combine2 (Flow startF sizeF  reportF getF1 _)
 --
 combines2
         :: Int#                 -- ^ Total length of result
-        -> Flow mode Bool       -- ^ Flags.
-        -> Flow mode Int        -- ^ Segment lengths of @A@ vector.
-        -> Flow mode a          -- ^ Elements of @A@ vector.
-        -> Flow mode Int        -- ^ Segment lengths of @B@ vector.
-        -> Flow mode a          -- ^ Elements of @B@ vector.
-        -> Flow mode a
+        -> Flow FD Bool         -- ^ Flags.
+        -> Flow FD Int          -- ^ Segment lengths of @A@ vector.
+        -> Flow FD a            -- ^ Elements of @A@ vector.
+        -> Flow FD Int          -- ^ Segment lengths of @B@ vector.
+        -> Flow FD a            -- ^ Elements of @B@ vector.
+        -> Flow FD a
 
 combines2 resultLen
-          (Flow startF     _sizeF     reportF     getF1     _)
-          (Flow startLenA  _sizeLenA  reportLenA  getLenA1  _)
-          (Flow startElemA _sizeElemA reportElemA getElemA1 _)
-          (Flow startLenB  _sizeLenB  reportLenB  getLenB1  _)
-          (Flow startElemB _sizeElemB reportElemB getElemB1 _)
- = Flow start' size' report' get1' get8'
+          (Flow fstateF     _sizeF     reportF     getF1     _)
+          (Flow fstateLenA  _sizeLenA  reportLenA  getLenA1  _)
+          (Flow fstateElemA _sizeElemA reportElemA getElemA1 _)
+          (Flow fstateLenB  _sizeLenB  reportLenB  getLenB1  _)
+          (Flow fstateElemB _sizeElemB reportElemB getElemB1 _)
+ = Flow fstate' size' report' get1' get8'
  where
         here    = "seq.combines2"
 
@@ -114,8 +112,14 @@ combines2 resultLen
                         -- Setting this to 0 force the first flag to be loaded
                         --  on the first call to get1.
 
-        start'
-         = do   stateF          <- startF
+        fstate'
+         | FlowStateDelayed startF      <- fstateF
+         , FlowStateDelayed startLenA   <- fstateLenA
+         , FlowStateDelayed startElemA  <- fstateElemA
+         , FlowStateDelayed startLenB   <- fstateLenB
+         , FlowStateDelayed startElemB  <- fstateElemB
+         = FlowStateDelayed
+         $ do   stateF          <- startF
                 stateLenA       <- startLenA
                 stateElemA      <- startElemA
                 stateLenB       <- startLenB
@@ -124,8 +128,11 @@ combines2 resultLen
                 state           <- inew 2
                 iwrite here state sSource 0#
                 iwrite here state sRemain 0#
-
                 return  (state, stateF, stateLenA, stateElemA, stateLenB, stateElemB)
+
+         | otherwise
+         = error "combines2: bogus warning suppression"
+
 
         -- TODO: this doesn't work incrementally.
         size'   _

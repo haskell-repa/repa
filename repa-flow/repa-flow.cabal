@@ -44,6 +44,7 @@ Library
         StandaloneDeriving
         FlexibleInstances
         MultiParamTypeClasses
+        GADTs
 
   Exposed-modules:
         Data.Array.Repa.Flow.Seq
@@ -58,6 +59,7 @@ Library
 
         Data.Array.Repa.Flow.Seq.Base
         Data.Array.Repa.Flow.Seq.Flow
+        Data.Array.Repa.Flow.Seq.CoFlow
         Data.Array.Repa.Flow.Seq.Operator.Generate
         Data.Array.Repa.Flow.Seq.Operator.Append
         Data.Array.Repa.Flow.Seq.Operator.Combine
@@ -67,6 +69,7 @@ Library
         Data.Array.Repa.Flow.Seq.Operator.Pack
         Data.Array.Repa.Flow.Seq.Operator.Project
         Data.Array.Repa.Flow.Seq.Operator.Fold
+        Data.Array.Repa.Flow.Seq.Operator.Slurp
 
         Data.Array.Repa.Flow.Par.Flow
         Data.Array.Repa.Flow.Par.SegdSplit

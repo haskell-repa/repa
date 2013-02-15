@@ -42,9 +42,9 @@ map f (Flow start size report get1 get8)
 
 -------------------------------------------------------------------------------
 -- | Apply a function to every element of a coflow.
-comap :: (a -> b) -> CoFlow b -> CoFlow a
-comap f (CoFlow start eject feed1 feed8)
- = CoFlow start eject feed1' feed8'
+comap :: (a -> b) -> CoFlow mode b -> CoFlow mode a
+comap f (CoFlow cfstate eject feed1 feed8)
+ = CoFlow cfstate eject feed1' feed8'
  where
         feed1' state (Snack1 x)
          = feed1 state (Snack1 (f x))

@@ -5,11 +5,13 @@ module Data.Array.Repa.Flow.Par.Operator.Fold
         , sums)
 where
 import GHC.Exts
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq               as Seq
+import qualified Data.Array.Repa.Flow.Seq.Flow          as Seq
 import qualified Data.Array.Repa.Flow.Seq.Report        as SeqReport
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector                            as V
@@ -28,8 +30,8 @@ import Prelude hiding (foldl)
 folds   :: U.Unbox a
         => (a -> a -> a) -> a
         -> Segd
-        -> Flow mode BB a
-        -> Flow mode BN a
+        -> Flow FD BB a
+        -> Flow FD BN a
 
 folds f z segd ff
         = foldsSplit f z (Segd.splitSegd (flowGang ff) segd) ff
@@ -43,8 +45,8 @@ foldsSplit
         :: U.Unbox a
         => (a -> a -> a) -> a
         -> SplitSegd
-        -> Flow mode BB a
-        -> Flow mode BN a
+        -> Flow FD BB a
+        -> Flow FD BN a
 
 foldsSplit f !z segd (Flow gang distro start frag)
  = Flow gang distro' start' frag'
@@ -144,8 +146,8 @@ foldsTradeSeq
 foldsTradeSeq 
         f !z 
         !segsTotal
-        (Seq.Flow startA  sizeA reportA getLen1  _) 
-        (Seq.Flow startB _sizeB reportB getElem1 getElem8)
+        (Seq.Flow fstateA  sizeA reportA getLen1  _) 
+        (Seq.Flow fstateB _sizeB reportB getElem1 getElem8)
         !mLeftVar
         !mRightVar
  = Seq.Flow start' size' report' get1' get8'
@@ -154,11 +156,7 @@ foldsTradeSeq
         !segIxMax       = segsTotal -# 1#
 
         -- Get the starting state.
-        start'
-         = do   stateA  <- startA
-                stateB  <- startB
-                return  (stateA, stateB)
-
+        start'          = Seq.joinFlowStates fstateA fstateB
 
         -- Report the number of elements that will be produced.
         size' (stateA, _stateB)
@@ -293,8 +291,8 @@ foldsTradeSeq
 --   and sums the elements of each segment individually.
 sums    :: (U.Unbox a, Num a) 
         => Segd 
-        -> Flow mode BB a 
-        -> Flow mode BN a
+        -> Flow FD BB a 
+        -> Flow FD BN a
 
 sums segd ffElems
         = folds (+) 0 segd ffElems

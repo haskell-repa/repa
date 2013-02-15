@@ -14,17 +14,18 @@ import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Int# -> (Int# -> a) -> Flow mode a
+generate :: Int# -> (Int# -> a) -> Flow FD a
 generate len f
- = Flow start size report get1 get8
+ = Flow fstate size report get1 get8
  where  
         here    = "seq.generate"
 
-        start
-         = do   refCount <- unew 1
+        fstate
+         = FlowStateDelayed
+         $ do   refCount <- unew 1
                 uwrite here refCount 0 0
                 return refCount
-        {-# INLINE start #-}
+        {-# INLINE fstate #-}
 
 
         size refCount
@@ -73,7 +74,7 @@ generate len f
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: Int# -> a -> Flow mode a
+replicate :: Int# -> a -> Flow FD a
 replicate n x
         = generate n (\_ -> x)
 {-# INLINE [1] replicate #-}
@@ -91,10 +92,10 @@ replicatesDirect
         :: Int#                 -- Total length of result.
         -> (Int# -> Int#)       -- SegmentId -> Segment Length.
         -> (Int# -> a)          -- SegmentId -> Value to emit for this segment.
-        -> Flow mode a
+        -> Flow FD a
 
 replicatesDirect resultLen getSegLen getValue
- = Flow start size report get1 get8
+ = Flow fstate size report get1 get8
  where
         here    = "seq.replicatesDirect"
 
@@ -103,14 +104,15 @@ replicatesDirect resultLen getSegLen getValue
         !sSegLen        = 2     -- Length of current segment.
         !sRemain        = 3     -- Elements remaining to emit in this segment.
 
-        start 
-         = do   state        <- unew 4
+        fstate
+         = FlowStateDelayed
+         $ do   state        <- unew 4
                 uwrite here state sCount  (0  :: Int)
                 uwrite here state sSeg    (-1 :: Int)
                 uwrite here state sSegLen (0  :: Int)
                 uwrite here state sRemain (0  :: Int)
                 return state
-        {-# INLINE start #-}
+        {-# INLINE fstate #-}
 
 
         size state
@@ -118,6 +120,7 @@ replicatesDirect resultLen getSegLen getValue
                 !(I# remain)    <- uread here state sRemain
                 return  $ Exact ((resultLen -# count) -# remain)
         {-# INLINE size #-}
+
 
         report _
          = do   return  $ R.Replicates (I# resultLen)
@@ -201,15 +204,16 @@ replicatesDirect resultLen getSegLen getValue
 enumFromN 
         :: Int#         -- ^ Starting value.
         -> Int#         -- ^ Result length.
-        -> Flow mode Int
+        -> Flow FD Int
 
 enumFromN first len
- = Flow start size report get1 get8
+ = Flow fstate size report get1 get8
  where
         here    = "seq.enumFromN"
 
-        start
-         = do   refCount <- inew 1
+        fstate
+         = FlowStateDelayed
+         $ do   refCount <- inew 1
                 iwrite here refCount 0# len
 
                 refAcc   <- inew 1

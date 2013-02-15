@@ -53,7 +53,7 @@ flow !gang !load !len
         frag _ tid
          = let  load' ix = load (ix +# fragStart tid)
                 len'     = fragLength tid
-           in   Seq.flow load' len'
+           in   error "Par.flow: not finished" -- Seq.flow load' len'
         {-# INLINE frag #-}
 
    in   Flow    { flowGang      = gang
@@ -95,22 +95,24 @@ instance Unflow BB where
                         let !ixStart    = getStart tid
 
 --                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: start"
-                        stateSeq  <- startSeq
+                        stateSeq  <- error "Par.unflow: not finished" -- startSeq
 --                        reportSeq <- flowReport stateSeq
 
 --                        putStrLn $ "unflow[BB][tid = " ++ show (I# tid) ++ "]: " ++ show reportSeq
 
                         -- The 'slurp' function below calls on this to write
                         -- results into the destination vector.
-                        let write ix val
-                                = uwrite here mvec (I# (ixStart +# ix)) val
+--                        let write ix val
+--                                = uwrite here mvec (I# (ixStart +# ix)) val
 
-                        _         <- Seq.slurp 
+                        _         <- error "Par.unflow: not finished"
+{-                                        Seq.slurp 
                                         0# 
                                         Nothing 
                                         write
                                         (get1 stateSeq)
                                         (get8 stateSeq)
+-}
                         return ()
 
 
@@ -150,7 +152,8 @@ instance Unflow BN where
                         
                         let new ix        = unew (I# ix)
                         let write mvec ix = uwrite here mvec (I# ix)
-                        (mvec, len)       <- Seq.drain new write flowSeq
+                        (mvec, len)       <- error "Par.unflow: not finished"
+                                                        -- Seq.drain new write flowSeq
                         !vec              <- ufreeze mvec
                         let !vec'         =  uslice 0 len vec
 

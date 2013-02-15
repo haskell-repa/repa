@@ -6,6 +6,7 @@ module Data.Array.Repa.Flow.Par.Operator.Map
         , zipLeft
         , zipLeftWith)
 where
+import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
 import qualified Data.Array.Repa.Flow.Seq       as Seq
@@ -55,10 +56,11 @@ zipWith f flowA flowB
 {-# INLINE [2] zipWith #-}
 
 
+-------------------------------------------------------------------------------
 -- | Pair elements of a flow with elements gained from some function.
-zipLeft :: Flow mode BB a 
+zipLeft :: Flow FD BB a 
         -> (Int# -> b) 
-        -> Flow mode BB (a, b)
+        -> Flow FD BB (a, b)
 
 zipLeft (Flow gang distro start frag) getB
  = Flow gang distro start frag'
@@ -72,11 +74,12 @@ zipLeft (Flow gang distro start frag) getB
 {-# INLINE [2] zipLeft #-}
 
 
+-------------------------------------------------------------------------------
 -- | Combine a flow with elements gained from some function.
 zipLeftWith 
         :: (a -> b -> c) 
-        -> Flow mode BB a -> (Int# -> b)
-        -> Flow mode BB c
+        -> Flow FD BB a -> (Int# -> b)
+        -> Flow FD BB c
 
 zipLeftWith f flowA getB
         = map (uncurry f) $ zipLeft flowA getB

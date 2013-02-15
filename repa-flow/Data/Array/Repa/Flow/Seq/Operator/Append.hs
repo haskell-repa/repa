@@ -21,12 +21,12 @@ appends
         -> Int#             -- ^ Starting segment id.
         -> Int#             -- ^ Starting element index within the starting segment.
                             --   This is the element index relative to the result array.
-        -> Flow mode a
+        -> Flow FD a
 
 appends segLenA segIdxA elemA
         segLenB segIdxB elemB
         n seg_off el_off
- = Flow start size report get1 get8
+ = Flow fstate size report get1 get8
  where
         here            = "seq.appends"
 
@@ -37,7 +37,10 @@ appends segLenA segIdxA elemA
         sNextSwap       = 4#
         sRemain         = 5#
 
-        start
+        fstate
+         = FlowStateDelayed fstate'
+
+        fstate'
          -- The result vector has no elements, so we're already done.
          | n ==# 0#
          = do   state <- unew 6

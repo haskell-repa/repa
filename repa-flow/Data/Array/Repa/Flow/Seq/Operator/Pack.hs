@@ -17,14 +17,19 @@ import GHC.Exts
 -- | Produce only the elements that have their corresponding flag set to `1`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packByTag :: Unbox a => Flow mode (Int, a) -> Flow mode a
-packByTag (Flow start size report get1 get8)
- = Flow start' size' report' get1' get8'
+packByTag :: Unbox a => Flow FD (Int, a) -> Flow FD a
+packByTag (Flow fstateA size report get1 get8)
+ = Flow fstate' size' report' get1' get8'
  where
         here    = "seq.packByTag"
 
-        start'
-         = do   state   <- start
+        fstate'
+         = case fstateA of
+            FlowStateDelayed getStateA
+             -> FlowStateDelayed (getStateB getStateA)
+
+        getStateB getStateA
+         = do   stateA  <- getStateA
 
                 -- Buffer to hold elements that we've read from the source.
                 buf     <- unew 8
@@ -36,8 +41,8 @@ packByTag (Flow start size report get1 get8)
                 -- Where we're reading elements from.
                 refIx   <- unew 1
                 uwrite here refIx 0 (0 :: Int)
-                return (state, buf, refLen, refIx)
-        {-# INLINE start' #-}
+                return (stateA, buf, refLen, refIx)
+        {-# INLINE getStateB #-}
 
         size' (stateA, _, _, _)
          = do   sz      <- size stateA
@@ -171,7 +176,7 @@ packByTag (Flow start size report get1 get8)
 -------------------------------------------------------------------------------
 -- | Produce only those elements that have their corresponding
 --   flag set to `True`
-packByFlag :: Unbox a => Flow mode (Bool, a) -> Flow mode a
+packByFlag :: Unbox a => Flow FD (Bool, a) -> Flow FD a
 packByFlag ff
         = packByTag $ map (\(b, x) -> (I# (tagOfFlag b), x)) ff
 {-# INLINE [1] packByFlag #-}
@@ -184,7 +189,7 @@ tagOfFlag b
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter :: Unbox a => (a -> Bool) -> Flow mode a -> Flow mode a
+filter :: Unbox a => (a -> Bool) -> Flow FD a -> Flow FD a
 filter f ff
         = packByFlag $ map (\x -> (f x, x)) ff
 {-# INLINE [1] filter #-}
