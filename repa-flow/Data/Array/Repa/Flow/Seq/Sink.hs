@@ -94,7 +94,7 @@ joinSinkStates _ _
  = error "joinSinkStates: bogus warning suppression"
 
 
--- | Start a co-flow, or return the existing state if it has already
+-- | Start a sink, or return the existing state if it has already
 --   been started.
 getSinkState :: Size -> SinkState mode state -> IO state
 getSinkState size ostate
@@ -114,7 +114,7 @@ unflowIO
                                          --    and number of elements written.
 unflowIO new write load
  = do   
-        let here        = "repa-flow.seq.unflowIO"
+        let here        = "seq.unflowIO"
         let sIndex      = 0#
 
         refOut          <- newIORef Nothing

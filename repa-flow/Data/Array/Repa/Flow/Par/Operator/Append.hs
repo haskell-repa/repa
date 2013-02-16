@@ -39,7 +39,7 @@ appends segdr segdA getElemA segdB getElemB
          = let  !chunkR  = vindex here (Segd.splitChunks segdr) (I# n)
                 !csegdR  = Segd.chunkSegd chunkR
 
-           in   Seq.appends
+           in   Seq.appends_bb
                         getSegLenA getSegIxA getElemA
                         getSegLenB getSegIxB getElemB
                         (Segd.elements    csegdR)

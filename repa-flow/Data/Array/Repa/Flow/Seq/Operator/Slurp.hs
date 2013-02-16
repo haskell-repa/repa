@@ -5,52 +5,58 @@ where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Sink
 import Prelude                                          hiding (take)
 import GHC.Exts
 
 
--- | Fully evaluate a `Flow`\/`Sink` pair,
---   returning how many elements we got.
+-- | Pull all elements from a source `Source` and push them into 
+--   a `Sink`, returning the total number of elements. 
+--
+--   * This calls the `sinkEject` method on the sink afterwards.
 drain :: Elt a
-        => Flow   FD a  -- ^ Pull elements from this flow.
-        -> Sink   FD a  -- ^ Push elements into this sink
-        -> IO Int
+        => Source FD a  -- ^ Pull elements from this source.
+        -> Sink   FD a  -- ^ Push elements into this sink.
+        -> IO Int       -- ^ Total number of elements drained.
 
-drain fflow sink
+drain source sink
  = do   
-        -- Start the flow and get the maximum expected size.
-        flow'  @(Flow fstate' getSize' _ _ _)   
-                <- startFlow fflow
-        state   <- getFlowState fstate'
+        -- Start the source and get the maximum expected size.
+        source'@(Source istate' getSize' _ _ _)   
+                <- startSource source
+        state   <- getSourceState istate'
         size    <- getSize' state
 
         -- Start the sink, giving it the maximum expected size.
-        sink'@ (Sink (SinkStateActive cstate') eject' _ _)    
+        sink'  @(Sink (SinkStateActive cstate') eject' _ _)    
                 <- startSink size sink
 
         -- Pull all elements from the flow and push them into the coflow.
-        count   <- slurp Nothing flow' sink'
+        count   <- slurp Nothing source' sink'
 
-        -- Signal to the coflow that we've pushed all the elements.
+        -- Signal to the sink that we've pushed all the elements.
         eject' cstate'
 
         return  count
 
 
--- | Pull elements from a `Flow` and push them into a `CoFlow`.
+-- | Pull elements from a `Source` and push them into a `Sink`, 
 --
---   Both flow and coflow must have already been started.
+--   * Both source and sink must have already been started.
+--   
+--   * This does NOT call the `sinkEject` method afterwards.
+--
 slurp   :: Elt a
-        => Maybe Int    -- ^ Maximum number of elements to slurp.
-        -> Flow   FS a  -- ^ Pull elements from this flow.
+        => Maybe Int    -- ^ Maximum number of elements to slurp,
+                        --   or `Nothing` to slurp all available.
+        -> Source FS a  -- ^ Pull elements from this source.
         -> Sink   FS a  -- ^ Push elements into this sink.
         -> IO Int       -- ^ Total number of elements slurped.
 
 slurp stop 
-        (Flow (FlowStateActive stateA) _ _ get1  get8)
-        (Sink (SinkStateActive stateB) _   feed1 feed8)
+        (Source (SourceStateActive stateA) _ _ get1  get8)
+        (Sink   (SinkStateActive   stateB) _   feed1 feed8)
 
  = do   let here = "seq.slurp"
 

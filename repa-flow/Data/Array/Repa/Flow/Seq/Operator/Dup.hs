@@ -1,10 +1,16 @@
 
+-- | Constant space flow duplication.
+--
+--   We cannot supply a @dup_ii@ function. To handle the case where the
+--   entire flow was pulled from one out-flow before the other, we would need
+--   to buffer the entire flow.
+--
 module Data.Array.Repa.Flow.Seq.Operator.Dup
         ( dup_oo
         , dup_io
         , dup_oi)
 where
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Sink
 
 
@@ -12,48 +18,48 @@ import Data.Array.Repa.Flow.Seq.Sink
 dup_oo :: Sink mode a -> Sink mode a -> Sink mode a
 dup_oo  (Sink ostateA ejectA feed1A feed8A)
         (Sink ostateB ejectB feed1B feed8B)
- =       Sink ostateZ ejectZ feed1Z feed8Z
+ =       Sink ostate' eject' feed1' feed8'
  where  
-        ostateZ
+        ostate'
          = joinSinkStates ostateA ostateB
 
-        ejectZ (stateA, stateB)
+        eject' (stateA, stateB)
          = do   ejectA stateA
                 ejectB stateB
 
-        feed1Z  (stateA, stateB) snack1
+        feed1'  (stateA, stateB) snack1
          = do   feed1A stateA snack1
                 feed1B stateB snack1
 
-        feed8Z  (stateA, stateB) snack8
+        feed8'  (stateA, stateB) snack8
          = do   feed8A stateA snack8
                 feed8B stateB snack8
 {-# INLINE [1] dup_oo #-}
 
 
--- | Create a flow that pushes elements into another coflow before
---   returning them.
-dup_io :: Flow mode a -> Sink mode a -> Flow mode a
-dup_io  (Flow  mkStateA  getSizeA  reportA get1  _get8)
-        (Sink  mkStateB  ejectB            feed1 _feed8)
- =       Flow  mkState'  getSize'  report' get1' get8'
+-- | Duplicate a flow by pushing all elements pulled from a source
+--   to a separate sink.
+dup_io :: Source mode a -> Sink mode a -> Source mode a
+dup_io  (Source mkStateA  getSizeA  reportA get1  _get8)
+        (Sink   mkStateB  ejectB            feed1 _feed8)
+ =       Source mkState'  getSize'  report' get1' get8'
  where  
         mkState'
-         | FlowStateDelayed startA      <- mkStateA
-         , SinkStateDelayed startB      <- mkStateB
-         = FlowStateDelayed
+         | SourceStateDelayed startA      <- mkStateA
+         , SinkStateDelayed   startB      <- mkStateB
+         = SourceStateDelayed
          $ do   stateA  <- startA
                 sizeA   <- getSizeA stateA
                 stateB  <- startB   sizeA
                 return  (stateA, stateB)
 
-         | FlowStateActive   stateA     <- mkStateA
-         , SinkStateActive stateB       <- mkStateB
-         = FlowStateActive
+         | SourceStateActive  stateA      <- mkStateA
+         , SinkStateActive    stateB      <- mkStateB
+         = SourceStateActive
                 (stateA, stateB)
 
          | otherwise
-         = error "repa-flow.seq.dup_io: bogus warning suppression"
+         = error "seq.dup_io: bogus warning suppression"
 
         getSize' (stateA, _)
          = getSizeA stateA
@@ -74,12 +80,11 @@ dup_io  (Flow  mkStateA  getSizeA  reportA get1  _get8)
 
         get8' _ push8
          = push8 $ Pull1
-
 {-# INLINE [1] dup_io #-}
 
 
 -- | As above, but with the parameters flipped.
-dup_oi :: Sink mode a -> Flow mode a -> Flow mode a
+dup_oi :: Sink mode a -> Source mode a -> Source mode a
 dup_oi oo ii
         = dup_io ii oo
 {-# INLINE [1] dup_oi #-}

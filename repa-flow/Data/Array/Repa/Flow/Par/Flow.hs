@@ -32,7 +32,7 @@ data Flow rep bal a
         , flowStart     :: IO state
 
           -- | Get the sequential flow fragment that runs on the given thread.
-        , flowFrag      :: state -> Int# -> Seq.Flow rep a }
+        , flowFrag      :: state -> Int# -> Seq.Source rep a }
 
 
 -------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ instance Unflow BB where
         let {-# INLINE action #-}
             action tid
              = case frag statePar tid of
-                Seq.Flow startSeq _size _flowReport get1 get8
+                Seq.Source startSeq _size _flowReport get1 get8
                  -> do  -- The starting point for this threads results into 
                         -- the final vector.
                         let !ixStart    = getStart tid
@@ -143,7 +143,7 @@ instance Unflow BN where
         let {-# INLINE action #-}
             action tid
              = case frag statePar tid of
-                flowSeq@(Seq.Flow _startFlow _ _reportFlow _ _)
+                flowSeq@(Seq.Source _startFlow _ _reportFlow _ _)
                  -> do  
 --                        putStrLn $ "unflow[BN][tid = " ++ show (I# tid) ++ "]: start"
 --                        stateSeq   <- startFlow

@@ -1,52 +1,50 @@
 
-
--- | Flows provide an incremental version of array fusion that allows the
---   the computation to be suspended and resumed at a later time.
-module Data.Array.Repa.Flow.Seq.Flow
+module Data.Array.Repa.Flow.Seq.Source
         ( module Data.Array.Repa.Flow.Base
-        , Flow          (..)
+        , Source        (..)
         , Step1         (..)
         , Step8         (..)
-        , FlowState     (..)
-        , startFlow
-        , joinFlowStates
-        , getFlowState
-        , flow)
+        , SourceState   (..)
+        , startSource
+        , joinSourceStates
+        , getSourceState
+        , flow
+        , flowGuts)
 where
 import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import Prelude                                          hiding (take)
 import GHC.Exts
 
 
--- | A `Flow` is an incremental element producer. We can pull elements from 
---   a flow without knowing where they come from.
+-- | A `Source` is an incremental element producer. 
+--   We can pull elements from a source without knowing where they come from.
 --
 --   Elements can be produced once at a time, or eight at a time as an
 --   optional optimisation.
 -- 
-data Flow mode a
-        = forall state. Flow
-        { 
-          -- | Representation of the flow state depends on whether the flow
-          --   has already been started.
-          flowState     :: FlowState mode state
+data Source mode a
+        = forall state. Source
+        { -- | Representation of the source state depends on whether the
+          --   source has already been started.
+          sourceState   :: SourceState mode state
 
           -- | How many elements are still available.
-        , flowSize      :: state -> IO Size
+        , sourceSize    :: state -> IO Size
 
           -- | Report the current state of this flow.
-        , flowReport    :: state -> IO R.Report
+        , sourceReport  :: state -> IO R.Report
 
           -- | Takes a continuation and calls it with
           --   a `Step1` containing some data.
-        , flowGet1      :: state -> (Step1 a -> IO ()) -> IO ()
+        , sourceGet1    :: state -> (Step1 a -> IO ()) -> IO ()
 
           -- | Takes a continuation and calls it with 
           --  a `Step8` containing some data.
-        , flowGet8      :: state -> (Step8 a -> IO ()) -> IO ()
+        , sourceGet8    :: state -> (Step8 a -> IO ()) -> IO ()
         }
 
 
@@ -59,7 +57,7 @@ data Step1 a
         --   become too complicated.
         = Yield1 a Bool
 
-        -- | The flow is finished, no more elements will ever be available.
+        -- | The source is finished, no more elements will ever be available.
         | Done
 
 
@@ -70,94 +68,110 @@ data Step8 a
         -- | Eight successive elements of the flow.
         = Yield8 a a a a a a a a
 
-        -- | The flow cannot yield a full 8 elements right now.
-        --   You should use `flowGet1` to get the next element and try
-        --  `flowGet8` again later.
+        -- | The source cannot yield a full 8 elements right now.
+        --   You should use `sourceGet1` to get the next element and try
+        --  `sourceGet8` again later.
         | Pull1
 
 
--- | Holds an action to start the flow, or the current state if it has
---   already been started.
-data FlowState mode state where
-        FlowStateDelayed 
+-------------------------------------------------------------------------------
+-- | Holds an action to start the source, 
+--   or the current state if it has already been started.
+data SourceState mode state where
+        SourceStateDelayed 
          :: IO state 
-         -> FlowState FD state
+         -> SourceState FD state
 
-        FlowStateActive
+        SourceStateActive
          :: state
-         -> FlowState FS state
+         -> SourceState FS state
 
 
--- | Start a flow, making it active.
-startFlow :: Flow FD a -> IO (Flow FS a)
-startFlow (Flow fstate size report get1 get8)
- = do   state   <- getFlowState fstate
-        return  $ Flow (FlowStateActive state) size report get1 get8
+-- | Start a source, making it active.
+startSource :: Source FD a -> IO (Source FS a)
+startSource (Source istate size report get1 get8)
+ = do   state   <- getSourceState istate
+        return  $ Source (SourceStateActive state) size report get1 get8
 
 
--- | Join two flow states of the same mode.
+-- | Join two source states of the same mode.
 --
---   If both flow states are delayed it the resulting action starts both.
+--   * If both states are delayed it the resulting action starts both.
 --
---   If both flow states are already active the result returns both.
+--   * If both states are already active the result returns both.
 --
-joinFlowStates 
-        :: FlowState mode stateA
-        -> FlowState mode stateB
-        -> FlowState mode (stateA, stateB)
+joinSourceStates 
+        :: SourceState mode stateA
+        -> SourceState mode stateB
+        -> SourceState mode (stateA, stateB)
 
-joinFlowStates 
-        (FlowStateDelayed startA)
-        (FlowStateDelayed startB)
- = FlowStateDelayed
+joinSourceStates 
+        (SourceStateDelayed startA)
+        (SourceStateDelayed startB)
+ = SourceStateDelayed
  $ do   stateA  <- startA
         stateB  <- startB
         return  $ (stateA, stateB)
 
-joinFlowStates
-        (FlowStateActive stateA)
-        (FlowStateActive stateB)
- = FlowStateActive (stateA, stateB)
+joinSourceStates
+        (SourceStateActive stateA)
+        (SourceStateActive stateB)
+ = SourceStateActive (stateA, stateB)
 
-joinFlowStates _ _
- = error "joinFlowStates: bogus warning suppression"
-{-# INLINE joinFlowStates #-}
+joinSourceStates _ _
+ = error "joinSourceStates: bogus warning suppression"
+{-# INLINE joinSourceStates #-}
 
 
--- | Start a flow state, 
+-- | Start a source state, 
 --   or return the exising state if it has already been started.
-getFlowState :: FlowState mode state -> IO state
-getFlowState fstate
+getSourceState :: SourceState mode state -> IO state
+getSourceState fstate
  = case fstate of
-        FlowStateDelayed makeFlowState
-         -> makeFlowState
-
-        FlowStateActive state
-         -> return state
-{-# INLINE getFlowState #-}
+        SourceStateDelayed mkState      -> mkState
+        SourceStateActive state         -> return state
+{-# INLINE getSourceState #-}
 
 
 -------------------------------------------------------------------------------
--- | Create a delayed flow that will read elements from some randomly
---   accessible vector.
+-- | Create a delayed source based on the element index of the flow.
+--
+--   This is typically used to read elements from some randomly accessible vector.
+--
 flow    :: Elt a 
         => Int#         -- ^ Total number of elements.
         -> (Int# -> a)  -- ^ Function to get the element at the given index.
-        -> Flow FD a
+        -> Source FD a
 
 flow !len !load 
- = Flow state size report get1 get8
- where  
-        here    = "repa-flow.seq.flow"
+ | (istate, size, report, get1, get8) <- flowGuts len load
+ = Source istate size report get1 get8
+{-# INLINE [1] flow #-}
 
-        state   = FlowStateDelayed
+
+flowGuts
+        :: Elt a
+        => Int#
+        -> (Int# -> a)
+        -> ( SourceState FD (UM.IOVector Int)
+           , UM.IOVector Int -> IO Size
+           , UM.IOVector Int -> IO R.Report
+           , UM.IOVector Int -> (Step1 a -> IO ()) -> IO ()
+           , UM.IOVector Int -> (Step8 a -> IO ()) -> IO ())
+
+flowGuts !len load
+ = (istate, size, report, get1, get8)
+ where  
+        here    = "seq.flow"
+
+        istate  = SourceStateDelayed
                 $ do    refIx   <- inew 1
                         iwrite here refIx 0# 0#
                         return refIx
-        {-# INLINE state #-}
+        {-# INLINE istate #-}
+
 
         size refIx
-
          = do   !(I# ix)        <- iread here refIx 0#
                 return  $ Exact (len -# ix)
         {-# INLINE size #-}
@@ -214,6 +228,5 @@ flow !len !load
                  else do
                         push8 Pull1
         {-# INLINE get8 #-}
-
-{-# INLINE [1] flow #-}
+{-# INLINE [1] flowGuts #-}
 

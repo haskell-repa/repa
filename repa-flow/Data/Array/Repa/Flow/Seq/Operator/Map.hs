@@ -3,17 +3,17 @@ module Data.Array.Repa.Flow.Seq.Operator.Map
         ( map_i
         , map_o)
 where
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Sink
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, zip, zipWith)
 
 
 ------------------------------------------------------------------------------
--- | Apply a function to every element of a flow.
-map_i :: (a -> b) -> Flow mode a -> Flow mode b
-map_i f (Flow start size report get1 get8)
- = Flow start size report' get1' get8'
+-- | Apply a function to every element of a source.
+map_i :: (a -> b) -> Source mode a -> Source mode b
+map_i f (Source start size report get1 get8)
+ = Source start size report' get1' get8'
  where  
         report' state
          = do   r       <- report state

@@ -2,26 +2,26 @@
 -- | Sequential flows provide an incremental version of array fusion that
 --   allows the computation to be suspended and resumed at a later time.
 --
+--   The operators provided are guaranteed to use only a constant amount of space.
+--   For example, we provide a `dup_oo` operator but no `dup_ii` because if all
+--   input elements were pulled from one of the out-flows before the other, then
+--   we would need to buffer the entire input flow. Similarly, we don't provide a
+--   `zip_oo` operator for the dual reason.
+--
 --   The parallel flow operators are defined in terms of these sequential
 --   ones.
---
---   The subset of operators provided are guaranteed to use only a constant
---   amount of space. For example, we don't provide a `dup_ff` operator because
---   if all input elements were pulled from one output before the other,
---   then we would need to buffer the entire input flow. Similarly, we don't 
---   provide a `zip_cc` operator for the dual reason.
 --
 module Data.Array.Repa.Flow.Seq
         ( FD
         , FS
         , Size          (..)
 
-        -- * Flows
-        , Flow          (..)
-        , FlowState     (..)
-        , joinFlowStates
-        , getFlowState
-        , startFlow
+        -- * Sources
+        , Source          (..)
+        , SourceState     (..)
+        , joinSourceStates
+        , getSourceState
+        , startSource
         , Step1         (..)
         , Step8         (..)
         
@@ -56,32 +56,31 @@ module Data.Array.Repa.Flow.Seq
         , zipLeftWith_i
 
         -- * Construction
-        , generate
-        , replicate
-        , replicatesDirect
-        , enumFromN
-        , appends
-
+        , generate_i
+        , replicate_i
+        , replicates_bi
+        , enumFromN_i
+        , appends_bb
 
         -- * Projection
-        , gather
+        , gather_bi
 
         -- * Pack
-        , packByTag
-        , packByFlag
-        , filter
+        , packByTag_i
+        , packByFlag_i
+        , filter_i
 
         -- * Combine
-        , combine2
-        , combines2
+        , combine2_iii
+        , combines2_iii
 
         -- * Reduction
-        , foldl
-        , folds
-        , sums)
+        , foldl_i
+        , folds_ii
+        , sums_ii)
 where
 import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Sink
 import Data.Array.Repa.Flow.Seq.Operator.Slurp
 import Data.Array.Repa.Flow.Seq.Operator.Dup

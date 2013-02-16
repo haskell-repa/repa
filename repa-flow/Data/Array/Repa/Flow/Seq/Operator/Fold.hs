@@ -1,18 +1,20 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Fold
-        ( foldl
-        , folds
-        , sums)
+        ( foldl_i
+
+        , folds_ii
+        , sums_ii)
 where
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (foldl)
 import GHC.Exts
 
 
--- | Fold Left. Reduce a flow to a single value.
-foldl :: Unbox a => (a -> b -> a) -> a -> Flow mode b -> IO a
-foldl f z !(Flow fstate _ _ get1 get8)
+-- | Fold Left. 
+--   Reduce the elements of a source to a single value.
+foldl_i :: Unbox a => (a -> b -> a) -> a -> Source mode b -> IO a
+foldl_i f z !(Source istate _ _ get1 get8)
  = do   
         let here = "seq.foldl"
 
@@ -21,7 +23,7 @@ foldl f z !(Flow fstate _ _ get1 get8)
         uwrite here bufOut 0 z
 
         -- Start the in-flow.
-        state       <- getFlowState fstate
+        state       <- getSourceState istate
 
         let 
          eat1 !acc
@@ -46,33 +48,38 @@ foldl f z !(Flow fstate _ _ get1 get8)
 
         eat8 z
         uread here bufOut 0
-{-# INLINE [1] foldl #-}
+{-# INLINE [1] foldl_i #-}
 
 
 -------------------------------------------------------------------------------
--- | Segmented fold. Takes a flow of segment lengths and a flow of elements,
+-- | Segmented fold. 
+--   Takes a source of segment lengths and a source of elements, 
 --   and reduce each segment to a value individually.
-folds   :: Unbox a 
-        => (a -> b -> a) -> a 
-        -> Flow mode Int 
-        -> Flow mode b 
-        -> Flow mode a                     
+folds_ii :: Unbox a 
+         => (a -> b -> a) -> a 
+         -> Source mode Int 
+         -> Source mode b 
+         -> Source mode a                     
 
-folds f !z (Flow fstateA  sizeA reportA getLen1  _) 
-           (Flow fstateB _sizeB reportB getElem1 getElem8)
- = Flow fstate' size' report' get1' get8'
+folds_ii f !z 
+        (Source istateA  sizeA reportA getLen1  _) 
+        (Source istateB _sizeB reportB getElem1 getElem8)
+ = Source istate' size' report' get1' get8'
  where
-        fstate'
-         = joinFlowStates fstateA fstateB
+        istate'
+         = joinSourceStates istateA istateB
+
 
         size' (stateA, _stateB)
          =      sizeA stateA
+
 
         report' (stateA, stateB)
          = do   rA      <- reportA stateA
                 rB      <- reportB stateB
                 return  $ R.Folds rA rB
         {-# NOINLINE report' #-}
+
 
         -- Pull the length of the first segment.
         get1' (!stateA, !stateB) push1
@@ -82,12 +89,14 @@ folds f !z (Flow fstateA  sizeA reportA getLen1  _)
                 Done              -> push1 Done
         {-# INLINE get1' #-}
 
+
         -- Producing eight copies of the loop that folds a segment won't make
         -- anything faster, so tell the consumer they can only pull one result
         -- at a time.
         get8' _ push8
          = push8 $ Pull1
         {-# INLINE get8' #-}
+
 
         -- Fold a single segment
         --  Start out pulling four elements at a time, then switch to
@@ -143,12 +152,17 @@ folds f !z (Flow fstateA  sizeA reportA getLen1  _)
                          --  current acc to avoid producing code for the error.
                          --  (yeah, you heard me)
         {-# INLINE foldSeg #-}
-{-# INLINE [1] folds #-}
+{-# INLINE [1] folds_ii #-}
 
 
--- | Segmented sum. Takes a flow of segment lenghths and a flow of elements,
+-- | Segmented sum. 
+--   Takes a flow of segment lenghths and a flow of elements,
 --   and sum the elements of each segment individually.
-sums :: (Unbox a, Num a) => Flow mode Int -> Flow mode a -> Flow mode a 
-sums ffLens ffElems
-        = folds (+) 0 ffLens ffElems
-{-# INLINE [1] sums #-}
+sums_ii :: (Unbox a, Num a) 
+        => Source mode Int -> Source mode a -> Source mode a 
+
+sums_ii iLens iElems
+        = folds_ii (+) 0 iLens iElems
+{-# INLINE [1] sums_ii #-}
+
+

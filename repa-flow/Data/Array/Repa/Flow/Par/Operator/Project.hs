@@ -17,8 +17,7 @@ gather !get (Flow gang distro start frag)
  = Flow gang distro start frag'
  where  
         frag' state n 
-         = Seq.gather get (frag state n)
+         = Seq.gather_bi get (frag state n)
         {-# INLINE frag' #-}
-
 {-# INLINE [2] gather #-}
 

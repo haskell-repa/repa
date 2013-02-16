@@ -1,14 +1,15 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Append
-        (appends)
+        (appends_bb)
 where
 import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import qualified Data.Array.Repa.Flow.Seq.Report as Report
 import GHC.Exts
 
+
 -- | Segmented append.
-appends
+appends_bb
         :: (Int# -> Int#)   -- ^ Get segment lengths for 'xs' array.
         -> (Int# -> Int#)   -- ^ Get segment indices for 'xs' array.
         -> (Int# -> a)      -- ^ Get data from the 'xs' array.
@@ -21,12 +22,13 @@ appends
         -> Int#             -- ^ Starting segment id.
         -> Int#             -- ^ Starting element index within the starting segment.
                             --   This is the element index relative to the result array.
-        -> Flow FD a
+        -> Source FD a
 
-appends segLenA segIdxA elemA
+appends_bb
+        segLenA segIdxA elemA
         segLenB segIdxB elemB
         n seg_off el_off
- = Flow fstate size report get1 get8
+ = Source istate size report get1 get8
  where
         here            = "seq.appends"
 
@@ -37,13 +39,11 @@ appends segLenA segIdxA elemA
         sNextSwap       = 4#
         sRemain         = 5#
 
-        fstate
-         = FlowStateDelayed fstate'
-
-        fstate'
+        istate
          -- The result vector has no elements, so we're already done.
          | n ==# 0#
-         = do   state <- unew 6
+         = SourceStateDelayed
+         $ do   state <- unew 6
                 iwrite here state sTakeFrom   0#
                 iwrite here state sSegOff     0#
                 iwrite here state sIndexA     0#
@@ -54,7 +54,8 @@ appends segLenA segIdxA elemA
 
          -- Start reading elements from the A vector.
          | el_off <# segLenA seg_off
-         = do   state   <- unew 6
+         = SourceStateDelayed
+         $ do   state   <- unew 6
                 iwrite here state sTakeFrom  0#
                 iwrite here state sSegOff    seg_off
                 iwrite here state sIndexA    (segIdxA seg_off +# el_off)
@@ -65,7 +66,8 @@ appends segLenA segIdxA elemA
 
         -- Start reading elements from the B vector.
          | otherwise
-         = do   state   <- unew 6
+         = SourceStateDelayed
+         $ do   state   <- unew 6
                 -- Get the starting element offset relative to the first segment 
                 -- of the Y array.
                 let !el_off'  = el_off -# segLenA seg_off
@@ -153,3 +155,4 @@ appends segLenA segIdxA elemA
         get8 _ push8
          = push8 $ Pull1
 
+{-# INLINE [1] appends_bb #-}

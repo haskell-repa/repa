@@ -11,10 +11,10 @@ Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
 Description:    
-        Low-level parallel operators on incremental flows and co-flows.
+        Low-level parallel operators on incremental flows.
 
 Synopsis:
-        Low-level parallel operators on incremental flows and co-flows.
+        Low-level parallel operators on incremental flows.
 
 Library
   Build-Depends: 
@@ -58,7 +58,7 @@ Library
         Data.Array.Repa.Flow.Base
 
         Data.Array.Repa.Flow.Seq.Base
-        Data.Array.Repa.Flow.Seq.Flow
+        Data.Array.Repa.Flow.Seq.Source
         Data.Array.Repa.Flow.Seq.Sink
         Data.Array.Repa.Flow.Seq.Operator.Generate
         Data.Array.Repa.Flow.Seq.Operator.Append

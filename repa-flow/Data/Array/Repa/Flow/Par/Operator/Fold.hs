@@ -78,7 +78,7 @@ foldsSplit f !z segd (Flow gang distro start frag)
                 !(I# segsHere)  = U.length segLens
 
                 getSegIxLen seg = (I# seg, uindex here segLens (I# seg))
-                fSegIxLens      = Seq.generate segsHere getSegIxLen 
+                fSegIxLens      = Seq.generate_i segsHere getSegIxLen 
 
                 -- If the first segment is split across a thread boundary
                 -- then we need to send the partial result to our
@@ -134,28 +134,28 @@ foldsSplit f !z segd (Flow gang distro start frag)
 foldsTradeSeq   
         :: U.Unbox a
         => (a -> a -> a) -> a 
-        -> Int#                     -- ^ Total number of segments to fold here.
-                                    --   This is one more than the maxium segment index.
-        -> Seq.Flow mode (Int, Int) -- ^ Flow of segment indices and their lengths.
-        -> Seq.Flow mode a          -- ^ Flow of input data.
-        -> Maybe (MVar a)           -- ^ Write result of first segment to this MVar.
-        -> Maybe (MVar a)           -- ^ Combine result of last segment with this MVar.
-        -> Seq.Flow mode a          -- ^ Flow of fold results.
+        -> Int#                       -- ^ Total number of segments to fold here.
+                                      --   This is one more than the maxium segment index.
+        -> Seq.Source mode (Int, Int) -- ^ Flow of segment indices and their lengths.
+        -> Seq.Source mode a          -- ^ Flow of input data.
+        -> Maybe (MVar a)             -- ^ Write result of first segment to this MVar.
+        -> Maybe (MVar a)             -- ^ Combine result of last segment with this MVar.
+        -> Seq.Source mode a          -- ^ Flow of fold results.
 
 foldsTradeSeq 
         f !z 
         !segsTotal
-        (Seq.Flow fstateA  sizeA reportA getLen1  _) 
-        (Seq.Flow fstateB _sizeB reportB getElem1 getElem8)
+        (Seq.Source fstateA  sizeA reportA getLen1  _) 
+        (Seq.Source fstateB _sizeB reportB getElem1 getElem8)
         !mLeftVar
         !mRightVar
- = Seq.Flow start' size' report' get1' get8'
+ = Seq.Source start' size' report' get1' get8'
  where
         -- The index of the maximum segment that we'll process.
         !segIxMax       = segsTotal -# 1#
 
         -- Get the starting state.
-        start'          = Seq.joinFlowStates fstateA fstateB
+        start'          = Seq.joinSourceStates fstateA fstateB
 
         -- Report the number of elements that will be produced.
         size' (stateA, _stateB)

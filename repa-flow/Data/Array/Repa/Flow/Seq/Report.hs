@@ -21,15 +21,17 @@ data Report
                 { generateLength        :: Int
                 , generatePosition      :: Int  }
 
+        | EnumFromN
+                { enumFromNLength       :: Int
+                , enumFromNPosition     :: Int }
+
         | Replicate
-                { replicateLength       :: Int  }
+                { replicateLength       :: Int
+                , replicatePosition     :: Int }
 
         | Replicates    
                 { replicatesLength      :: Int  }
 
-        | EnumFromN
-                { enumFromNLength       :: Int
-                , enumFromNPosition     :: Int }
 
         | Appends
                 { appendsResultLen      :: Int }

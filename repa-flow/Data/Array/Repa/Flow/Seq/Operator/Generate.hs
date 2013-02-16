@@ -1,118 +1,96 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Generate
-        ( generate
-        , replicate
-        , replicatesDirect
-        , enumFromN)
+        ( generate_i
+        , enumFromN_i
+        , replicate_i
+        , replicates_bi)
 where
+import Data.Array.Repa.Bulk.Elt
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
-import GHC.Exts
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (replicate)
+import GHC.Exts
 
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Int# -> (Int# -> a) -> Flow FD a
-generate len f
- = Flow fstate size report get1 get8
- where  
-        here    = "seq.generate"
-
-        fstate
-         = FlowStateDelayed
-         $ do   refCount <- unew 1
-                uwrite here refCount 0 0
-                return refCount
-        {-# INLINE fstate #-}
-
-
-        size refCount
-         = do   !(I# ix) <- uread here refCount 0
-                return  $ Exact (len -# ix)
-        {-# INLINE size #-}
+--
+--   Like `flow`, but with a different `Report`.
+generate_i :: Elt a => Int# -> (Int# -> a) -> Source FD a
+generate_i len load
+ | (istate, size, _report, get1, get8)  <- flowGuts len load
+ = let  here    = "seq.generate_i"
+        report' refIx 
+         = do   I# ix   <- iread here refIx 0#
+                return  $  R.Generate (I# len) (I# ix)
+   in   Source istate size report' get1 get8
+{-# INLINE [1] generate_i #-}
 
 
-        report refCount
-         = do   ix      <- uread here refCount 0
-                return  $ R.Generate (I# len) ix
-        {-# NOINLINE report #-}
+-------------------------------------------------------------------------------
+-- | Yield a vector containing values @x@, @x+1@ etc.
+enumFromN_i
+        :: Int#         -- ^ Starting value.
+        -> Int#         -- ^ Result length.
+        -> Source FD Int
 
-
-        get1 refCount push1
-          = do  !(I# ix)        <- uread here refCount 0
-                let !remain     = len -# ix
-                if remain ># 0#
-                 then do
-                        uwrite here refCount 0 (I# (ix +# 1#))
-                        push1 $ Yield1  (f ix)
-                                        (remain >=# 9#)
-                 else   push1 Done
-        {-# INLINE get1 #-}
-
-
-        get8 refCount push8
-          = do  !(I# ix) <- uread here refCount 0
-                let !remain     = len -# ix
-                if remain >=# 8#
-                 then do
-                        uwrite here refCount 0 (I# (ix +# 8#))
-                        push8 $ Yield8  (f (ix +# 0#))
-                                        (f (ix +# 1#))
-                                        (f (ix +# 2#))
-                                        (f (ix +# 3#))
-                                        (f (ix +# 4#))
-                                        (f (ix +# 5#))
-                                        (f (ix +# 6#))
-                                        (f (ix +# 7#))
-                 else   push8 Pull1
-        {-# INLINE get8 #-}
-
-{-# INLINE [1] generate #-}
+enumFromN_i start len
+ | (istate, size, _report, get1, get8) <- flowGuts len (\ix -> I# (start +# ix))
+ = let  here    = "seq.enumFromN_i"
+        report' refIx
+         = do   I# ix   <- iread here refIx 0#
+                return  $  R.EnumFromN (I# len) (I# ix)
+   in   Source istate size report' get1 get8
+{-# INLINE [1] enumFromN_i #-}
 
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: Int# -> a -> Flow FD a
-replicate n x
-        = generate n (\_ -> x)
-{-# INLINE [1] replicate #-}
+replicate_i :: Elt a => Int# -> a -> Source FD a
+replicate_i len x
+ | (istate, size, _report, get1, get8) <- flowGuts len (\_ -> x)
+ = let  here    = "seq.replicate_i"
+        report' refIx
+         = do   ix      <- uread here refIx 0
+                return  $  R.Replicate (I# len) ix
+   in   Source istate size report' get1 get8
+{-# INLINE [1] replicate_i #-}
 
 
 -------------------------------------------------------------------------------
 -- | Segmented replicate,
---   where we have functions that produce segment lengths and elements
---   directly.
+--   where we have functions that produce segment lengths and elements from 
+--   a bulk vector.
 ---
 --   TODO: only check for flow end when the current segment is finished.
 --   TODO: pulling a single element should also hint how many we can pull next time.
 --   TODO: could update total count only when we finish a segment.
-replicatesDirect 
-        :: Int#                 -- Total length of result.
-        -> (Int# -> Int#)       -- SegmentId -> Segment Length.
-        -> (Int# -> a)          -- SegmentId -> Value to emit for this segment.
-        -> Flow FD a
+replicates_bi
+        :: Int#                 -- ^ Total length of result.
+        -> (Int# -> Int#)       -- ^ SegmentId -> Segment Length.
+        -> (Int# -> a)          -- ^ SegmentId -> Value to emit for this segment.
+        -> Source FD a
 
-replicatesDirect resultLen getSegLen getValue
- = Flow fstate size report get1 get8
+replicates_bi resultLen getSegLen getValue
+ = Source istate size report get1 get8
  where
-        here    = "seq.replicatesDirect"
+        here    = "seq.replicates_bi"
 
         !sCount         = 0     -- How many elements we've emitted so far.
         !sSeg           = 1     -- Id of current segment.
         !sSegLen        = 2     -- Length of current segment.
         !sRemain        = 3     -- Elements remaining to emit in this segment.
 
-        fstate
-         = FlowStateDelayed
+        istate
+         = SourceStateDelayed
          $ do   state        <- unew 4
                 uwrite here state sCount  (0  :: Int)
                 uwrite here state sSeg    (-1 :: Int)
                 uwrite here state sSegLen (0  :: Int)
                 uwrite here state sRemain (0  :: Int)
                 return state
-        {-# INLINE fstate #-}
+        {-# INLINE istate #-}
 
 
         size state
@@ -196,69 +174,5 @@ replicatesDirect resultLen getSegLen getValue
                 {-# INLINE result_fromSeg #-}
         {-# INLINE get8 #-}
 
-{-# INLINE [1] replicatesDirect #-}
-
-
--------------------------------------------------------------------------------
--- | Yield a vector containing values @x@, @x+1@ etc.
-enumFromN 
-        :: Int#         -- ^ Starting value.
-        -> Int#         -- ^ Result length.
-        -> Flow FD Int
-
-enumFromN first len
- = Flow fstate size report get1 get8
- where
-        here    = "seq.enumFromN"
-
-        fstate
-         = FlowStateDelayed
-         $ do   refCount <- inew 1
-                iwrite here refCount 0# len
-
-                refAcc   <- inew 1
-                iwrite here refAcc   0# first
-
-                return (refCount, refAcc)
-
-
-        size (refCount, _)
-         = do   !(I# count)  <- uread here refCount 0
-                return  $ Exact count
-
-
-        report (refCount, _)
-         = do   !count  <- uread here refCount 0
-                return  $ R.EnumFromN (I# len) count
-        {-# NOINLINE report #-}
-
-
-        get1 (refCount, refAcc) push1
-         = do   !(I# count)  <- iread here refCount 0#
-                if count ># 0#
-                 then do 
-                        iwrite here refCount 0# (count -# 1#)
-
-                        acc     <- iread here refAcc 0#
-                        uwrite here refAcc   0  (acc + 1)
-
-                        push1 $ Yield1 acc (count >=# 9#)
-
-                 else   push1 Done
-
-        get8 (refCount, refAcc) push8
-         = do   !(I# count)  <- iread here refCount 0#
-                if count >=# 8#
-                 then do
-                        iwrite here refCount 0# (count -# 8#)
-
-                        !acc     <- iread here refAcc 0#
-                        uwrite here refAcc   0 (acc + 8)
-
-                        push8 $ Yield8  (acc + 0) (acc + 1) (acc + 2) (acc + 3)
-                                        (acc + 4) (acc + 5) (acc + 6) (acc + 7)
-                 else   push8 Pull1
-
-{-# INLINE [1] enumFromN #-}
-
+{-# INLINE [1] replicates_bi #-}
 

@@ -1,17 +1,17 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Project
-        (gather)
+        (gather_bi)
 where
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import GHC.Exts
 
 
--- | Takes a function to get elements and a flow of indices, 
---   and produces a flow of elements corresponding to each index.
-gather :: (Int# -> a) -> Flow mode Int -> Flow mode a
-gather !get (Flow start size report get1 get8)
- = Flow start size report' get1' get8'
+-- | Takes a function to get elements and a source of indices, 
+--   and produces a source of elements corresponding to each index.
+gather_bi  :: (Int# -> a) -> Source mode Int -> Source mode a
+gather_bi !get (Source istate size report get1 get8)
+ = Source istate size report' get1' get8'
  where
         report' state
          = do   r       <- report state
@@ -38,4 +38,4 @@ gather !get (Flow start size report get1 get8)
                  -> push8 $ Pull1
         {-# INLINE get8' #-}
 
-{-# INLINE [1] gather #-}
+{-# INLINE [1] gather_bi #-}

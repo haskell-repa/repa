@@ -6,7 +6,7 @@ module Data.Array.Repa.Flow.Seq.Operator.Zip
         , zipLeftWith_i)
 where
 import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Operator.Map
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, zip, zipWith)
@@ -15,14 +15,14 @@ import GHC.Exts
 
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
-zip_ii :: Flow mode a -> Flow mode b -> Flow mode (a, b)
-zip_ii (Flow !fstateA !sizeA reportA getA1 _)
-       (Flow !fstateB !sizeB reportB getB1 _)
- = Flow fstate' size' report' get1' get8'
+zip_ii :: Source mode a -> Source mode b -> Source mode (a, b)
+zip_ii (Source !istateA !sizeA reportA getA1 _)
+       (Source !istateB !sizeB reportB getB1 _)
+ = Source istate' size' report' get1' get8'
  where
-        fstate'
-         = joinFlowStates fstateA fstateB
-        {-# INLINE fstate' #-}
+        istate'
+         = joinSourceStates istateA istateB
+        {-# INLINE istate' #-}
 
         size' (stateA, stateB)
          = do   szA     <- sizeA stateA
@@ -60,8 +60,8 @@ zip_ii (Flow !fstateA !sizeA reportA getA1 _)
 -- | Combine two flows with a function, pulling one element at a time.
 zipWith_ii
         :: (a -> b -> c) 
-        -> Flow mode a -> Flow mode b 
-        -> Flow mode c
+        -> Source mode a -> Source mode b 
+        -> Source mode c
 
 zipWith_ii f flowA flowB
         = map_i (uncurry f) $ zip_ii flowA flowB
@@ -76,24 +76,24 @@ zipWith_ii f flowA flowB
 --   8 elements at a time from the resulting flow.
 --
 zipLeft_i
-        :: Flow FD a 
+        :: Source FD a 
         -> (Int# -> b) 
-        -> Flow FD (a, b)
+        -> Source FD (a, b)
 
-zipLeft_i (Flow fstateA sizeA reportA getA1 getA8) getB
- = Flow fstate' size' report' get1' get8'
+zipLeft_i (Source istateA sizeA reportA getA1 getA8) getB
+ = Source istate' size' report' get1' get8'
  where  
         here    = "seq.zipLeft"
 
-        fstate'
-         = case fstateA of
-                FlowStateDelayed startA
-                 -> FlowStateDelayed
+        istate'
+         = case istateA of
+                SourceStateDelayed startA
+                 -> SourceStateDelayed
                  $  do  stateA  <- startA
                         refIx   <- unew 1
                         iwrite here refIx 0# 0#
                         return (stateA, refIx)
-        {-# INLINE fstate' #-}
+        {-# INLINE istate' #-}
 
 
         size' (!stateA, _)
@@ -143,11 +143,11 @@ zipLeft_i (Flow fstateA sizeA reportA getA1 getA8) getB
 -- | Combine a flow and elements gained from some function.
 zipLeftWith_i
         :: (a -> b -> c) 
-        -> Flow FD a 
+        -> Source FD a 
         -> (Int# -> b) 
-        -> Flow FD c
+        -> Source FD c
 
-zipLeftWith_i f flowA getB
-        = map_i (uncurry f) $ zipLeft_i flowA getB
+zipLeftWith_i f sourceA getB
+        = map_i (uncurry f) $ zipLeft_i sourceA getB
 {-# INLINE [1] zipLeftWith_i #-}
 

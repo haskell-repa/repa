@@ -7,6 +7,7 @@ module Data.Array.Repa.Flow.Par.Operator.Generate
         , enumFromN)
 where
 import Data.Array.Repa.Bulk.Gang
+import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Par.Flow
 import Data.Array.Repa.Flow.Par.Distro
@@ -19,7 +20,7 @@ import Prelude hiding (replicate)
 
 -------------------------------------------------------------------------------
 -- | Construct a flow of the given length by applying a function to each index.
-generate :: Gang -> Int# -> (Int# -> a) -> Flow FD BB a
+generate :: Elt a => Gang -> Int# -> (Int# -> a) -> Flow FD BB a
 generate gang len get
  = Flow gang distro start frag
  where
@@ -34,14 +35,14 @@ generate gang len get
                 !start'  = distroBalancedFragStart  distro n
 
                 get' ix  = get (start' +# ix)
-           in   Seq.generate len' get'
+           in   Seq.generate_i len' get'
         {-# INLINE frag #-}
 {-# INLINE [2] generate #-}
 
 
 -------------------------------------------------------------------------------
 -- | Produce an flow of the given length with the same value in each position.
-replicate :: Gang -> Int# -> a -> Flow FD BB a
+replicate :: Elt a => Gang -> Int# -> a -> Flow FD BB a
 replicate gang n x
         = generate gang n (\_ -> x)
 {-# INLINE [2] replicate #-}
@@ -89,7 +90,7 @@ replicatesSplit segd getSegVal
                                                         (I# seg)
                                    in r
                 getSegVal'  seg  = getSegVal (seg +# segStart)
-           in   Seq.replicatesDirect elems getSegLen' getSegVal'
+           in   Seq.replicates_bi elems getSegLen' getSegVal'
         {-# INLINE replicatesSplit_frag #-}
 
 {-# INLINE [2] replicatesSplit #-}
@@ -115,7 +116,7 @@ enumFromN gang first len
         frag _ n
          = let  !len'   = distroBalancedFragLength distro n
                 !start' = distroBalancedFragStart  distro n +# first
-           in   Seq.enumFromN start' len'
+           in   Seq.enumFromN_i start' len'
         {-# INLINE frag #-}
 {-# INLINE [2] enumFromN #-}
 

@@ -1,13 +1,13 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Pack
-        ( packByTag
-        , packByFlag
-        , filter)
+        ( packByTag_i
+        , packByFlag_i
+        , filter_i)
 where
 import Data.Array.Repa.Bulk.Elt
-import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
+import Data.Array.Repa.Flow.Seq.Source
 import Data.Array.Repa.Flow.Seq.Operator.Map
+import Data.Array.Repa.Flow.Seq.Base
 import qualified Data.Array.Repa.Flow.Seq.Report        as R
 import Prelude hiding (map, filter)
 import GHC.Exts
@@ -17,16 +17,16 @@ import GHC.Exts
 -- | Produce only the elements that have their corresponding flag set to `1`.
 ---  TODO: This can only produce elements one at a time.
 --   Use a buffer instead to collect elements from the source.
-packByTag :: Unbox a => Flow FD (Int, a) -> Flow FD a
-packByTag (Flow fstateA size report get1 get8)
- = Flow fstate' size' report' get1' get8'
+packByTag_i :: Unbox a => Source FD (Int, a) -> Source FD a
+packByTag_i (Source istateA size report get1 get8)
+ = Source istate' size' report' get1' get8'
  where
-        here    = "seq.packByTag"
+        here    = "seq.packByTag_i"
 
-        fstate'
-         = case fstateA of
-            FlowStateDelayed getStateA
-             -> FlowStateDelayed (getStateB getStateA)
+        istate'
+         = case istateA of
+            SourceStateDelayed getStateA
+             -> SourceStateDelayed (getStateB getStateA)
 
         getStateB getStateA
          = do   stateA  <- getStateA
@@ -44,6 +44,7 @@ packByTag (Flow fstateA size report get1 get8)
                 return (stateA, buf, refLen, refIx)
         {-# INLINE getStateB #-}
 
+
         size' (stateA, _, _, _)
          = do   sz      <- size stateA
                 return  $ case sz of
@@ -51,10 +52,12 @@ packByTag (Flow fstateA size report get1 get8)
                            Max   len       -> Max len
         {-# INLINE size' #-}
 
+
         report' (stateA, _, _, _)
          = do   r       <- report stateA
                 return  $ R.PackByTag r
         {-# NOINLINE report' #-}
+
 
         get1' (!stateA, !buf, !refLen, !refIx) push1
          = load
@@ -118,7 +121,8 @@ packByTag (Flow fstateA size report get1 get8)
                                 -- update the buffer length
                                 uwrite here refLen 0 (I# len)
 
-                                -- tell fill8 that we might have some elements in the buffer now.
+                                -- tell fill8 that we might have some elements
+                                -- in the buffer now.
                                 return (1 :: Int)
 
                         Pull1 
@@ -170,16 +174,17 @@ packByTag (Flow fstateA size report get1 get8)
          = push8 $ Pull1
         {-# INLINE get8' #-}
 
-{-# INLINE [1] packByTag #-}
+{-# INLINE [1] packByTag_i #-}
 
 
 -------------------------------------------------------------------------------
 -- | Produce only those elements that have their corresponding
 --   flag set to `True`
-packByFlag :: Unbox a => Flow FD (Bool, a) -> Flow FD a
-packByFlag ff
-        = packByTag $ map_i (\(b, x) -> (I# (tagOfFlag b), x)) ff
-{-# INLINE [1] packByFlag #-}
+packByFlag_i :: Unbox a => Source FD (Bool, a) -> Source FD a
+packByFlag_i ff
+        = packByTag_i $ map_i (\(b, x) -> (I# (tagOfFlag b), x)) ff
+
+{-# INLINE [1] packByFlag_i #-}
 
 
 tagOfFlag :: Bool -> Int#
@@ -187,10 +192,11 @@ tagOfFlag b
  = if b then 1# else 0#
 {-# NOINLINE tagOfFlag #-}
 
+
 -------------------------------------------------------------------------------
 -- | Produce only those elements that match the given predicate.
-filter :: Unbox a => (a -> Bool) -> Flow FD a -> Flow FD a
-filter f ff
-        = packByFlag $ map_i (\x -> (f x, x)) ff
-{-# INLINE [1] filter #-}
+filter_i :: Unbox a => (a -> Bool) -> Source FD a -> Source FD a
+filter_i f ff
+        = packByFlag_i $ map_i (\x -> (f x, x)) ff
+{-# INLINE [1] filter_i #-}
 

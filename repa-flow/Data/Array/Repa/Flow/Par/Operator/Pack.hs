@@ -25,7 +25,7 @@ packByTag (Flow gang _ start frag)
  where  !threads        = gangSize gang
         distro'         = unbalanced threads
 
-        frag' state n   = Seq.packByTag (frag state n)
+        frag' state n   = Seq.packByTag_i (frag state n)
         {-# INLINE frag' #-}
 {-# INLINE [2] packByTag #-}
 

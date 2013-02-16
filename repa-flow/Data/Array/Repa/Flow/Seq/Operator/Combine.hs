@@ -1,11 +1,11 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Combine
-        ( combine2
-        , combines2)
+        ( combine2_iii
+        , combines2_iii)
 where
 import Data.Array.Repa.Flow.Seq.Base
-import Data.Array.Repa.Flow.Seq.Flow
-import qualified Data.Array.Repa.Flow.Seq.Report as Report
+import Data.Array.Repa.Flow.Seq.Source
+import qualified Data.Array.Repa.Flow.Seq.Report as R
 import GHC.Exts
 
 
@@ -17,20 +17,21 @@ import GHC.Exts
 --  = [1 4 5 2 3 6]
 -- @
 --
-combine2 
-        :: Flow mode Bool      -- ^ Flags vector.
-        -> Flow mode a         -- ^ Elements of @A@ vector.
-        -> Flow mode a         -- ^ Elements of @B@ vector.
-        -> Flow mode a
+combine2_iii
+        :: Source mode Bool      -- ^ Flags vector.
+        -> Source mode a         -- ^ Elements of @A@ vector.
+        -> Source mode a         -- ^ Elements of @B@ vector.
+        -> Source mode a
 
-combine2 (Flow fstateF sizeF  reportF getF1 _)
-         (Flow fstateA _sizeA reportA getA1 _)
-         (Flow fstateB _sizeB reportB getB1 _)
- = Flow cfstate' size' report' get1' get8'
+combine2_iii 
+        (Source istateF sizeF  reportF getF1 _)
+        (Source istateA _sizeA reportA getA1 _)
+        (Source istateB _sizeB reportB getB1 _)
+ = Source istate' size' report' get1' get8'
  where
-        cfstate'
-         = joinFlowStates fstateF 
-         $ joinFlowStates fstateA fstateB
+        istate'
+         = joinSourceStates istateF 
+         $ joinSourceStates istateA istateB
 
         size'   (stateF, (_stateA, _stateB))
          = do   szF     <- sizeF stateF
@@ -40,7 +41,7 @@ combine2 (Flow fstateF sizeF  reportF getF1 _)
          = do   repF    <- reportF stateF
                 repA    <- reportA stateA
                 repB    <- reportB stateB
-                return  $ Report.Combine repF repA repB
+                return  $ R.Combine repF repA repB
 
         get1'   (stateF, (stateA, stateB)) push1
          -- Get the next flag.
@@ -69,7 +70,7 @@ combine2 (Flow fstateF sizeF  reportF getF1 _)
 
         get8' _ push1
          = push1 Pull1
-{-# INLINE [4] combine2 #-}
+{-# INLINE [4] combine2_iii #-}
 
 
 -- | Segmented Stream combine. Like `combine2`, except that the flags select
@@ -77,7 +78,7 @@ combine2 (Flow fstateF sizeF  reportF getF1 _)
 --   at a time.
 --
 -- @
--- combines2 
+-- combines2_iii
 --      [F, F, T, F, T, T]
 --      [2,1,3] [10,20,30,40,50,60]
 --      [1,2,3] [11,22,33,44,55,66]
@@ -88,37 +89,37 @@ combine2 (Flow fstateF sizeF  reportF getF1 _)
 --   from the first stream, then one element from the second stream, then three
 --   elements from the first stream...
 --
-combines2
+combines2_iii
         :: Int#                 -- ^ Total length of result
-        -> Flow FD Bool         -- ^ Flags.
-        -> Flow FD Int          -- ^ Segment lengths of @A@ vector.
-        -> Flow FD a            -- ^ Elements of @A@ vector.
-        -> Flow FD Int          -- ^ Segment lengths of @B@ vector.
-        -> Flow FD a            -- ^ Elements of @B@ vector.
-        -> Flow FD a
+        -> Source FD Bool         -- ^ Flags.
+        -> Source FD Int          -- ^ Segment lengths of @A@ vector.
+        -> Source FD a            -- ^ Elements of @A@ vector.
+        -> Source FD Int          -- ^ Segment lengths of @B@ vector.
+        -> Source FD a            -- ^ Elements of @B@ vector.
+        -> Source FD a
 
-combines2 resultLen
-          (Flow fstateF     _sizeF     reportF     getF1     _)
-          (Flow fstateLenA  _sizeLenA  reportLenA  getLenA1  _)
-          (Flow fstateElemA _sizeElemA reportElemA getElemA1 _)
-          (Flow fstateLenB  _sizeLenB  reportLenB  getLenB1  _)
-          (Flow fstateElemB _sizeElemB reportElemB getElemB1 _)
- = Flow fstate' size' report' get1' get8'
+combines2_iii resultLen
+          (Source istateF     _sizeF     reportF     getF1     _)
+          (Source istateLenA  _sizeLenA  reportLenA  getLenA1  _)
+          (Source istateElemA _sizeElemA reportElemA getElemA1 _)
+          (Source istateLenB  _sizeLenB  reportLenB  getLenB1  _)
+          (Source istateElemB _sizeElemB reportElemB getElemB1 _)
+ = Source istate' size' report' get1' get8'
  where
-        here    = "seq.combines2"
+        here    = "seq.combines2_iii"
 
         sSource = 0#    -- Source vector currently being read.
         sRemain = 1#    -- Number of elements remaining in current segment.
                         -- Setting this to 0 force the first flag to be loaded
                         --  on the first call to get1.
 
-        fstate'
-         | FlowStateDelayed startF      <- fstateF
-         , FlowStateDelayed startLenA   <- fstateLenA
-         , FlowStateDelayed startElemA  <- fstateElemA
-         , FlowStateDelayed startLenB   <- fstateLenB
-         , FlowStateDelayed startElemB  <- fstateElemB
-         = FlowStateDelayed
+        istate'
+         | SourceStateDelayed startF      <- istateF
+         , SourceStateDelayed startLenA   <- istateLenA
+         , SourceStateDelayed startElemA  <- istateElemA
+         , SourceStateDelayed startLenB   <- istateLenB
+         , SourceStateDelayed startElemB  <- istateElemB
+         = SourceStateDelayed
          $ do   stateF          <- startF
                 stateLenA       <- startLenA
                 stateElemA      <- startElemA
@@ -138,13 +139,14 @@ combines2 resultLen
         size'   _
          =      return  $ Exact resultLen
 
+
         report' (!_, !stateF, !stateLenA, !stateElemA, !stateLenB, !stateElemB)
          = do   rpF             <- reportF     stateF
                 rpLenA          <- reportLenA  stateLenA
                 rpElemA         <- reportElemA stateElemA
                 rpLenB          <- reportLenB  stateLenB
                 rpElemB         <- reportElemB stateElemB
-                return  $ Report.Combines rpF rpLenA rpElemA rpLenB rpElemB
+                return  $ R.Combines rpF rpLenA rpElemA rpLenB rpElemB
 
 
         get1'   (!state, !stateF
@@ -202,3 +204,4 @@ combines2 resultLen
 
         get8' _ push1
          = push1 Pull1
+{-# INLINE [1] combines2_iii #-}

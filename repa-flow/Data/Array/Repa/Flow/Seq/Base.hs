@@ -8,22 +8,22 @@ import GHC.Exts
 
 
 -------------------------------------------------------------------------------
--- | Type index to indicate a delayed flow or co-flow. 
---   Being delayed means the (co)flow does not yet have any attached state.
+-- | Type index to indicate a delayed source or sink.
+--   Being delayed means the source\/sink does not yet have any attached state.
 --
---   A delayed flow may be attached to manifest source vectors, but it
---   it does not yet have indices into the source. We can evaluate a delayed
---   flow multiple times and get the same result.
+--   A delayed source may be attached to manifest vectors, but it it does not
+--   yet have indices into these vectors. We can evaluate a delayed source
+--   multiple times and get the same result.
 --
---   A delayed coflow has not yet initialised its output buffer.
---   We can multiple flows into a coflow and construct the same output.
+--   A delayed sink has not yet initialised its accumulators.
+--   We can push multiple flows into a sink to construct the same output.
 --
 data FD
 
 
--- | Type index to indicate a stateful flow or co-flow.
+-- | Type index to indicate a stateful (active) source or sink.
 --   
---   Pulling from a stateful flow, or pushing into a stateful co-flow modifies
+--   Pulling from a stateful source, or pushing into a stateful sink modifies
 --   the internal state.
 data FS
 
