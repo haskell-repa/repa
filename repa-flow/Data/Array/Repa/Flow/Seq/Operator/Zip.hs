@@ -1,9 +1,9 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Zip
-        ( zip_ff
-        , zipWith_ff
-        , zipLeft_f
-        , zipLeftWith_f)
+        ( zip_ii
+        , zipWith_ii
+        , zipLeft_i
+        , zipLeftWith_i)
 where
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
@@ -15,8 +15,8 @@ import GHC.Exts
 
 -------------------------------------------------------------------------------
 -- | Combine two flows into a flow of tuples, pulling one element at a time.
-zip_ff :: Flow mode a -> Flow mode b -> Flow mode (a, b)
-zip_ff (Flow !fstateA !sizeA reportA getA1 _)
+zip_ii :: Flow mode a -> Flow mode b -> Flow mode (a, b)
+zip_ii (Flow !fstateA !sizeA reportA getA1 _)
        (Flow !fstateB !sizeB reportB getB1 _)
  = Flow fstate' size' report' get1' get8'
  where
@@ -53,19 +53,19 @@ zip_ff (Flow !fstateA !sizeA reportA getA1 _)
         get8' _ push8
          = push8 Pull1
         {-# INLINE get8' #-}
-{-# INLINE [1] zip_ff #-}
+{-# INLINE [1] zip_ii #-}
 
 
 -------------------------------------------------------------------------------
 -- | Combine two flows with a function, pulling one element at a time.
-zipWith_ff 
+zipWith_ii
         :: (a -> b -> c) 
         -> Flow mode a -> Flow mode b 
         -> Flow mode c
 
-zipWith_ff f flowA flowB
-        = map_f (uncurry f) $ zip_ff flowA flowB
-{-# INLINE [1] zipWith_ff #-}
+zipWith_ii f flowA flowB
+        = map_i (uncurry f) $ zip_ii flowA flowB
+{-# INLINE [1] zipWith_ii #-}
 
 
 --------------------------------------------------------------------------------
@@ -75,12 +75,12 @@ zipWith_ff f flowA flowB
 --   an arbitary number of elements per step means we can pull up to 
 --   8 elements at a time from the resulting flow.
 --
-zipLeft_f 
+zipLeft_i
         :: Flow FD a 
         -> (Int# -> b) 
         -> Flow FD (a, b)
 
-zipLeft_f (Flow fstateA sizeA reportA getA1 getA8) getB
+zipLeft_i (Flow fstateA sizeA reportA getA1 getA8) getB
  = Flow fstate' size' report' get1' get8'
  where  
         here    = "seq.zipLeft"
@@ -136,18 +136,18 @@ zipLeft_f (Flow fstateA sizeA reportA getA1 getA8) getB
 
                 Pull1 -> push8 Pull1
         {-# INLINE get8' #-}
-{-# INLINE [1] zipLeft_f #-}
+{-# INLINE [1] zipLeft_i #-}
 
 
 -------------------------------------------------------------------------------
 -- | Combine a flow and elements gained from some function.
-zipLeftWith_f
+zipLeftWith_i
         :: (a -> b -> c) 
         -> Flow FD a 
         -> (Int# -> b) 
         -> Flow FD c
 
-zipLeftWith_f f flowA getB
-        = map_f (uncurry f) $ zipLeft_f flowA getB
-{-# INLINE [1] zipLeftWith_f #-}
+zipLeftWith_i f flowA getB
+        = map_i (uncurry f) $ zipLeft_i flowA getB
+{-# INLINE [1] zipLeftWith_i #-}
 

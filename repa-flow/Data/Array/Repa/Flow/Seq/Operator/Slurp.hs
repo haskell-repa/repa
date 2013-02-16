@@ -6,19 +6,19 @@ import Data.Array.Repa.Bulk.Elt
 import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
-import Data.Array.Repa.Flow.Seq.CoFlow
+import Data.Array.Repa.Flow.Seq.Sink
 import Prelude                                          hiding (take)
 import GHC.Exts
 
 
--- | Fully evaluate a `Flow`\/`CoFlow` pair,
+-- | Fully evaluate a `Flow`\/`Sink` pair,
 --   returning how many elements we got.
 drain :: Elt a
         => Flow   FD a  -- ^ Pull elements from this flow.
-        -> CoFlow FD a  -- ^ Push elements into this coflow.
+        -> Sink   FD a  -- ^ Push elements into this sink
         -> IO Int
 
-drain fflow coflow
+drain fflow sink
  = do   
         -- Start the flow and get the maximum expected size.
         flow'  @(Flow fstate' getSize' _ _ _)   
@@ -26,12 +26,12 @@ drain fflow coflow
         state   <- getFlowState fstate'
         size    <- getSize' state
 
-        -- Start the coflow, giving it the maximum expected size.
-        coflow'@(CoFlow (CoFlowStateActive cstate') eject' _ _)    
-                <- startCoFlow size coflow
+        -- Start the sink, giving it the maximum expected size.
+        sink'@ (Sink (SinkStateActive cstate') eject' _ _)    
+                <- startSink size sink
 
         -- Pull all elements from the flow and push them into the coflow.
-        count   <- slurp Nothing flow' coflow'
+        count   <- slurp Nothing flow' sink'
 
         -- Signal to the coflow that we've pushed all the elements.
         eject' cstate'
@@ -45,12 +45,12 @@ drain fflow coflow
 slurp   :: Elt a
         => Maybe Int    -- ^ Maximum number of elements to slurp.
         -> Flow   FS a  -- ^ Pull elements from this flow.
-        -> CoFlow FS a  -- ^ Push elements into this coflow.
+        -> Sink   FS a  -- ^ Push elements into this sink.
         -> IO Int       -- ^ Total number of elements slurped.
 
 slurp stop 
-        (Flow   (FlowStateActive   stateA) _ _ get1  get8)
-        (CoFlow (CoFlowStateActive stateB) _   feed1 feed8)
+        (Flow (FlowStateActive stateA) _ _ get1  get8)
+        (Sink (SinkStateActive stateB) _   feed1 feed8)
 
  = do   let here = "seq.slurp"
 

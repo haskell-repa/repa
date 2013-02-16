@@ -59,7 +59,7 @@ Library
 
         Data.Array.Repa.Flow.Seq.Base
         Data.Array.Repa.Flow.Seq.Flow
-        Data.Array.Repa.Flow.Seq.CoFlow
+        Data.Array.Repa.Flow.Seq.Sink
         Data.Array.Repa.Flow.Seq.Operator.Generate
         Data.Array.Repa.Flow.Seq.Operator.Append
         Data.Array.Repa.Flow.Seq.Operator.Combine

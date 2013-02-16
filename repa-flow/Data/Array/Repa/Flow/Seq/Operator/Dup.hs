@@ -1,21 +1,21 @@
 
 module Data.Array.Repa.Flow.Seq.Operator.Dup
-        ( dup_cc
-        , dup_fc
-        , dup_cf)
+        ( dup_oo
+        , dup_io
+        , dup_oi)
 where
 import Data.Array.Repa.Flow.Seq.Flow
-import Data.Array.Repa.Flow.Seq.CoFlow
+import Data.Array.Repa.Flow.Seq.Sink
 
 
 -- | Create a coflow that pushes elements into two others.
-dup_cc :: CoFlow mode a -> CoFlow mode a -> CoFlow mode a
-dup_cc  (CoFlow cfstateA ejectA feed1A feed8A)
-        (CoFlow cfstateB ejectB feed1B feed8B)
- =       CoFlow cfstateZ ejectZ feed1Z feed8Z
+dup_oo :: Sink mode a -> Sink mode a -> Sink mode a
+dup_oo  (Sink ostateA ejectA feed1A feed8A)
+        (Sink ostateB ejectB feed1B feed8B)
+ =       Sink ostateZ ejectZ feed1Z feed8Z
  where  
-        cfstateZ
-         = joinCoFlowStates cfstateA cfstateB
+        ostateZ
+         = joinSinkStates ostateA ostateB
 
         ejectZ (stateA, stateB)
          = do   ejectA stateA
@@ -28,19 +28,19 @@ dup_cc  (CoFlow cfstateA ejectA feed1A feed8A)
         feed8Z  (stateA, stateB) snack8
          = do   feed8A stateA snack8
                 feed8B stateB snack8
-{-# INLINE [1] dup_cc #-}
+{-# INLINE [1] dup_oo #-}
 
 
 -- | Create a flow that pushes elements into another coflow before
 --   returning them.
-dup_fc :: Flow mode a -> CoFlow mode a -> Flow mode a
-dup_fc  (Flow   mkStateA  getSizeA  reportA get1  _get8)
-        (CoFlow mkStateB  ejectB            feed1 _feed8)
- =       Flow   mkState'  getSize'  report' get1' get8'
+dup_io :: Flow mode a -> Sink mode a -> Flow mode a
+dup_io  (Flow  mkStateA  getSizeA  reportA get1  _get8)
+        (Sink  mkStateB  ejectB            feed1 _feed8)
+ =       Flow  mkState'  getSize'  report' get1' get8'
  where  
         mkState'
-         | FlowStateDelayed   startA    <- mkStateA
-         , CoFlowStateDelayed startB    <- mkStateB
+         | FlowStateDelayed startA      <- mkStateA
+         , SinkStateDelayed startB      <- mkStateB
          = FlowStateDelayed
          $ do   stateA  <- startA
                 sizeA   <- getSizeA stateA
@@ -48,12 +48,12 @@ dup_fc  (Flow   mkStateA  getSizeA  reportA get1  _get8)
                 return  (stateA, stateB)
 
          | FlowStateActive   stateA     <- mkStateA
-         , CoFlowStateActive stateB     <- mkStateB
+         , SinkStateActive stateB       <- mkStateB
          = FlowStateActive
                 (stateA, stateB)
 
          | otherwise
-         = error "repa-flow.seq.dup_fc: bogus warning suppression"
+         = error "repa-flow.seq.dup_io: bogus warning suppression"
 
         getSize' (stateA, _)
          = getSizeA stateA
@@ -75,13 +75,12 @@ dup_fc  (Flow   mkStateA  getSizeA  reportA get1  _get8)
         get8' _ push8
          = push8 $ Pull1
 
-{-# INLINE [1] dup_fc #-}
+{-# INLINE [1] dup_io #-}
 
 
 -- | As above, but with the parameters flipped.
-dup_cf :: CoFlow mode a -> Flow mode a -> Flow mode a
-dup_cf cf ff
-        = dup_fc ff cf
-{-# INLINE [1] dup_cf #-}
-
+dup_oi :: Sink mode a -> Flow mode a -> Flow mode a
+dup_oi oo ii
+        = dup_io ii oo
+{-# INLINE [1] dup_oi #-}
 

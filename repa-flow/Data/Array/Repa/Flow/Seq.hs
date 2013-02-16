@@ -25,12 +25,12 @@ module Data.Array.Repa.Flow.Seq
         , Step1         (..)
         , Step8         (..)
         
-        -- * CoFlows
-        , CoFlow        (..)
-        , CoFlowState   (..)
-        , joinCoFlowStates
-        , getCoFlowState
-        , startCoFlow
+        -- * Sinks
+        , Sink        (..)
+        , SinkState   (..)
+        , joinSinkStates
+        , getSinkState
+        , startSink
         , Snack1        (..)
         , Snack8        (..)
 
@@ -41,19 +41,19 @@ module Data.Array.Repa.Flow.Seq
         , unflowIO
 
         -- * Map
-        , map_f
-        , map_c
+        , map_i
+        , map_o
 
         -- * Dup
-        , dup_cc
-        , dup_fc
-        , dup_cf
+        , dup_oo
+        , dup_io
+        , dup_oi
 
         -- * Zip
-        , zip_ff
-        , zipWith_ff
-        , zipLeft_f
-        , zipLeftWith_f
+        , zip_ii
+        , zipWith_ii
+        , zipLeft_i
+        , zipLeftWith_i
 
         -- * Construction
         , generate
@@ -82,7 +82,7 @@ module Data.Array.Repa.Flow.Seq
 where
 import Data.Array.Repa.Flow.Seq.Base
 import Data.Array.Repa.Flow.Seq.Flow
-import Data.Array.Repa.Flow.Seq.CoFlow
+import Data.Array.Repa.Flow.Seq.Sink
 import Data.Array.Repa.Flow.Seq.Operator.Slurp
 import Data.Array.Repa.Flow.Seq.Operator.Dup
 import Data.Array.Repa.Flow.Seq.Operator.Map

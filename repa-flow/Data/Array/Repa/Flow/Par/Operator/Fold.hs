@@ -11,7 +11,6 @@ import Data.Array.Repa.Flow.Par.Distro
 import Data.Array.Repa.Flow.Par.Segd                    (Segd, SplitSegd)
 import qualified Data.Array.Repa.Flow.Par.Segd          as Segd
 import qualified Data.Array.Repa.Flow.Seq               as Seq
-import qualified Data.Array.Repa.Flow.Seq.Flow          as Seq
 import qualified Data.Array.Repa.Flow.Seq.Report        as SeqReport
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector                            as V
