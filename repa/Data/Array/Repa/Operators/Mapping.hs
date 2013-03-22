@@ -53,6 +53,8 @@ zipWith f arr1 arr2
                 get
 {-# INLINE [2] zipWith #-}
 
+infixl 7  *^, /^
+infixl 6  +^, -^
 
 (+^)	= zipWith (+)
 {-# INLINE (+^) #-}
