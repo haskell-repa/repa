@@ -1,0 +1,28 @@
+Name:           repa-plugin
+Version:        4.0.0.0
+License:        BSD3
+License-File:   LICENSE
+Synopsis:       Repa vectorisation plugin
+Cabal-Version:  >= 1.10
+Build-Type:     Simple
+Author:         The DPH Team
+
+Library
+  Exposed-Modules:
+        Data.Array.Repa.Plugin
+
+  Other-Modules:
+        Data.Array.Repa.Plugin.Pipeline
+        Data.Array.Repa.Plugin.Pass.Dump
+        Data.Array.Repa.Plugin.GHC.Pretty
+
+  Build-Depends:
+        base       == 4.6.*,
+        ghc        >= 7.5,
+        ddc-base   == 0.3.*
+
+  Default-Language:
+        Haskell2010
+
+  Default-Extensions:
+        TypeSynonymInstances
