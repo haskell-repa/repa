@@ -3,7 +3,7 @@ module Data.Array.Repa.Series
         ( Stream )
 where
 import qualified Data.Vector.Unboxed    as U
-import Data.Vector.Unboxed              (Vector)
+import Data.Vector.Unboxed              (Vector, Unbox)
 
 
 data Stream a
@@ -16,24 +16,24 @@ data Sink a
         { sinkPush      :: a -> IO () }
 
 
-sourceVector :: Unbox a => Vector a -> Source a
-sourceVector vec
- = Source
- { sourceLength = U.length vec
- , sourcePull   = \ix -> U.unsafeIndex vec ix }
-{-# NOINLINE sourceVector #-}
+streamUnboxed :: Unbox a => Vector a -> Stream a
+streamUnboxed vec
+ = Stream
+ { streamLength = U.length vec
+ , streamNext   = \ix -> return $ U.unsafeIndex vec ix }
+{-# NOINLINE streamUnboxed #-}
 
 
-fold :: (a -> b -> a) -> b -> Source a -> IO b
+fold :: (a -> b -> a) -> a -> Stream b -> IO a
 fold f z source
  = go 0 z
  where  go !ix !acc
-         | ix >= sourceLength source 
+         | ix >= streamLength source
          = return acc
 
          | otherwise
-         = do   x       <- sourceNext source ix
-                go (ix + 1) (f x acc)
+         = do   x       <- streamNext source ix
+                go (ix + 1) (f acc x)
 {-# NOINLINE fold #-}
 
 
