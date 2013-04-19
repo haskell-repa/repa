@@ -1,8 +1,12 @@
 
-module Data.Array.Repa.Plugin.GHC.ToDDC
+module Data.Array.Repa.Plugin.Convert.ToDDC
         (convertModGuts)
 where
+import Data.Array.Repa.Plugin.Convert.FatName
 import DDC.Base.Pretty
+import Data.Maybe
+import Data.List
+import Data.Char
 
 import qualified HscTypes               as G
 import qualified Avail                  as G
@@ -29,29 +33,6 @@ import qualified DDC.Core.Flow.Name      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map               as Map
-import Data.Maybe
-import Data.List
-
--------------------------------------------------------------------------------
-data GhcName
-        = GhcNameVar     G.Var
-        | GhcNameTyCon   G.TyCon
-        | GhcNameTyLit   G.TyLit
-        | GhcNameLiteral G.Literal
-
-        | GhcNameIntU   
-        deriving Eq
-
-
-data FatName
-        = FatName
-        { fatNameGHC    :: GhcName
-        , fatNameDDC    :: D.Name }
-        deriving Eq
-
-instance Pretty FatName where
- ppr (FatName _ name)   = ppr name
-
 
 -------------------------------------------------------------------------------
 -- | Convert the a GHC module to Disciple Core Flow.
@@ -99,9 +80,13 @@ convertName name
                  $ Name.nameOccName name
 
         unique   = show $ Name.nameUnique name
+        str      = renderPlain (text baseName <> text "_" <> text unique)
 
-   in   D.NameVar
-           $ renderPlain (text baseName <> text "_" <> text unique)
+   in   case baseName of
+         []         -> error "repa-plugin.convertName: base name is empty"
+         c : cs 
+          | isUpper c   -> D.NameCon str
+          | otherwise   -> D.NameVar str
 
 
 -- Variables ------------------------------------------------------------------

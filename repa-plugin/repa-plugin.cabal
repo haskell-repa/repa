@@ -12,22 +12,30 @@ Library
         Data.Array.Repa.Plugin
 
   Other-Modules:
-        Data.Array.Repa.Plugin.Pipeline
+        Data.Array.Repa.Plugin.Convert.FatName
+        Data.Array.Repa.Plugin.Convert.ToDDC
+        Data.Array.Repa.Plugin.Convert.Detect
+
+        Data.Array.Repa.Plugin.GHC.Pretty
+
         Data.Array.Repa.Plugin.Pass.Dump
         Data.Array.Repa.Plugin.Pass.Lower
-        Data.Array.Repa.Plugin.GHC.Pretty
-        Data.Array.Repa.Plugin.GHC.ToDDC
+
+        Data.Array.Repa.Plugin.Pipeline
 
   Build-Depends:
         base            == 4.6.*,
         containers      == 0.5.*,
+        mtl             == 2.1.*,
         ghc             >= 7.5,
         ddc-base        == 0.3.*,
         ddc-core        == 0.3.*,
         ddc-core-flow   == 0.3.*
+
 
   Default-Language:
         Haskell2010
 
   Default-Extensions:
         TypeSynonymInstances
+        KindSignatures
