@@ -14,12 +14,17 @@ Library
   Other-Modules:
         Data.Array.Repa.Plugin.Pipeline
         Data.Array.Repa.Plugin.Pass.Dump
+        Data.Array.Repa.Plugin.Pass.Lower
         Data.Array.Repa.Plugin.GHC.Pretty
+        Data.Array.Repa.Plugin.GHC.ToDDC
 
   Build-Depends:
-        base       == 4.6.*,
-        ghc        >= 7.5,
-        ddc-base   == 0.3.*
+        base            == 4.6.*,
+        containers      == 0.5.*,
+        ghc             >= 7.5,
+        ddc-base        == 0.3.*,
+        ddc-core        == 0.3.*,
+        ddc-core-flow   == 0.3.*
 
   Default-Language:
         Haskell2010

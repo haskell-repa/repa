@@ -3,6 +3,7 @@ module Data.Array.Repa.Plugin.Pipeline
         (vectoriserPipeline)
 where
 import Data.Array.Repa.Plugin.Pass.Dump
+import Data.Array.Repa.Plugin.Pass.Lower
 import GhcPlugins
 
 
@@ -36,6 +37,9 @@ vectoriserPipeline
         -- Dump the simplified code
    ,    CoreDoPluginPass "Dump" (passDump "1-dump")
 
+        ---------------------
+        -- Lower the series expressions in the code.
+   ,    CoreDoPluginPass "Lower" (passLower "2-lower")
 
         ---------------------
         -- From this point onwards we've got the code expressed as

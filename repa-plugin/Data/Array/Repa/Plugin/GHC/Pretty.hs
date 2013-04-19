@@ -85,8 +85,8 @@ instance Pretty a => Pretty (Expr a) where
          -> pprBound ident 
 
         -- Discard types and coersions
-        Type _          -> empty 
-        Coercion _      -> empty
+        Type _          -> text "<T>"
+        Coercion _      -> text "<C>"
 
         -- Literals.
         Lit ll          -> ppr ll
@@ -121,7 +121,7 @@ instance Pretty a => Pretty (Expr a) where
          -> pprParen' (d > 2)
          $  text "let" 
                 <+> (fill 12 (ppr con <+> hsep (map ppr binds)))
---                <>  breakWhen (not $ isSimpleX x1)
+                <>  breakWhen (not $ isSimpleX x1)
                         <+>  text "<-"
                         <+> ppr x1
                         <+> text "in"

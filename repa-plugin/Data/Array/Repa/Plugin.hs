@@ -31,16 +31,8 @@ install _ todos
         -- Flatten out the tree of passes into a list to make it easier to handle.
         let todos' = normalizeCoreDoPasses todos
 
-        -- Check if this module is being vectorised.
-        let hasVectorisation
-                   = any isCoreDoVectorisation todos'
-
-        -- If the vectoriser is enabled then replace the standard GHC pipeline
-        -- with our own.
-        if hasVectorisation
-           then return vectoriserPipeline
-           else return todos'
-
+        -- Replace the standard GHC pipeline with our one.
+        return vectoriserPipeline
 
 
 -- CoreToDo -------------------------------------------------------------------
