@@ -21,7 +21,7 @@ passLower name guts
         writeFile ("dump." ++ name ++ ".1-input-ghc.hs")
          $ D.render D.RenderIndent (pprModGuts guts)
 
-        let ddcModule   = slurpModGuts guts
+        let ddcModule   = convertModGuts guts
 
         writeFile ("dump." ++ name ++ ".2.input-ddc.dcf")
          $ D.render D.RenderIndent (D.ppr ddcModule)

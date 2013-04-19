@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Plugin.GHC.ToDDC
-        (slurpModGuts)
+        (convertModGuts)
 where
 import DDC.Base.Pretty
 
@@ -25,6 +25,7 @@ import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Module         as D
 import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
+import qualified DDC.Core.Flow.Name      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map               as Map
@@ -53,13 +54,17 @@ instance Pretty FatName where
 
 
 -------------------------------------------------------------------------------
--- | Slurp out interesting parts of a GHC module.
+-- | Convert the a GHC module to Disciple Core Flow.
 --
---   Not every top-level binding is considered "interesting", and expressions
---   involving type casts cannot be converted.
+--   Top-level bindings containing type casts cannot be converted because 
+--   Disciple Core has no way to represent them. 
+--   TODO: give a warning for unconverted bindings.
 --
-slurpModGuts :: G.ModGuts -> D.Module () FatName
-slurpModGuts guts
+--   This is a direct conversion of the AST. The primitive flow operators
+--   still need to be detected before we can run the lowering pass.
+--
+convertModGuts :: G.ModGuts -> D.Module () FatName
+convertModGuts guts
         = D.ModuleCore
         { D.moduleName          = D.ModuleName ["Foo"]
         , D.moduleExportKinds   = Map.empty
@@ -69,76 +74,74 @@ slurpModGuts guts
 
         , D.moduleBody          
                 = D.xLets () 
-                          (slurpTopBinds $ G.mg_binds guts) 
+                          (convertTopBinds $ G.mg_binds guts) 
                           (D.xUnit ()) 
         }
 
 
 -- Names ----------------------------------------------------------------------
--- | Slurp a FatName from a GHC variable.
-slurpFatName :: G.Var -> FatName
-slurpFatName var
-        = FatName (GhcNameVar var) (slurpVarName var)
+-- | Convert a FatName from a GHC variable.
+convertFatName :: G.Var -> FatName
+convertFatName var
+        = FatName (GhcNameVar var) (convertVarName var)
 
 
--- | Slurp a printable DDC name from a GHC variable.
-slurpVarName :: G.Var -> D.Name
-slurpVarName var
-        = slurpName (G.varName var)
+-- | Convert a printable DDC name from a GHC variable.
+convertVarName :: G.Var -> D.Name
+convertVarName var
+        = convertName (G.varName var)
 
 
--- | Slurp a DDC name from a GHC name.
-slurpName :: Name.Name -> D.Name
-slurpName name
- = let  baseName = text
-                 $ OccName.occNameString
+-- | Convert a DDC name from a GHC name.
+convertName :: Name.Name -> D.Name
+convertName name
+ = let  baseName = OccName.occNameString
                  $ Name.nameOccName name
 
-        unique   = text
-                 $ show $ Name.nameUnique name
+        unique   = show $ Name.nameUnique name
 
    in   D.NameVar
-         $ renderPlain (baseName <> text "_" <> unique)
+           $ renderPlain (text baseName <> text "_" <> text unique)
 
 
 -- Variables ------------------------------------------------------------------
--- | Slurp a type from a GHC variable.
-slurpVarType :: G.Var -> D.Type FatName
-slurpVarType v
-        = slurpType $ G.varType v
+-- | Convert a type from a GHC variable.
+convertVarType :: G.Var -> D.Type FatName
+convertVarType v
+        = convertType $ G.varType v
 
 
 -- Bindings -------------------------------------------------------------------
--- | Slurp top-level bindings.
-slurpTopBinds :: [G.CoreBind] -> [D.Lets () FatName]
-slurpTopBinds bnds
-        = mapMaybe slurpTopBind bnds
+-- | Convert top-level bindings.
+convertTopBinds :: [G.CoreBind] -> [D.Lets () FatName]
+convertTopBinds bnds
+        = mapMaybe convertTopBind bnds
 
 
--- | Slurp a possibly recursive top-level binding.
-slurpTopBind :: G.CoreBind -> Maybe (D.Lets () FatName)
-slurpTopBind bnd
+-- | Convert a possibly recursive top-level binding.
+convertTopBind :: G.CoreBind -> Maybe (D.Lets () FatName)
+convertTopBind bnd
  = case bnd of
         G.NonRec b x      
-         -> do  (b', x') <- slurpBinding (b, x)
+         -> do  (b', x') <- convertBinding (b, x)
                 return   $  D.LLet D.LetStrict b' x'
 
         G.Rec bxs
-         -> do  bxs'     <- mapM slurpBinding bxs
+         -> do  bxs'     <- mapM convertBinding bxs
                 return   $  D.LRec bxs'
 
 
--- | Slurp a single binding.
-slurpBinding 
+-- | Convert a single binding.
+convertBinding 
         :: (G.CoreBndr,     G.CoreExpr)
         -> Maybe (D.Bind FatName, D.Exp () FatName)
 
-slurpBinding (b, x)
- | D.NameVar str  <- slurpVarName b
+convertBinding (b, x)
+ | D.NameVar str  <- convertVarName b
  , isPrefixOf "repa" str                -- TODO: select the bindings we care about
                                         --       more generally.
- = do   x'      <- slurpExpr x
-        return  ( D.BName (slurpFatName b) (slurpVarType b)
+ = do   x'      <- convertExpr x
+        return  ( D.BName (convertFatName b) (convertVarType b)
                 , x')
 
  | otherwise
@@ -146,25 +149,25 @@ slurpBinding (b, x)
 
 
 -- Type -----------------------------------------------------------------------
--- | Slurp a type.
-slurpType :: G.Type -> D.Type FatName
-slurpType tt
+-- | Convert a type.
+convertType :: G.Type -> D.Type FatName
+convertType tt
  = case tt of
         G.TyVarTy v
-         -> D.TVar    (D.UName (slurpFatName v)) 
+         -> D.TVar    (D.UName (convertFatName v)) 
 
         G.AppTy t1 t2
-         -> D.TApp    (slurpType t1) (slurpType t2)
+         -> D.TApp    (convertType t1) (convertType t2)
 
         G.TyConApp tc ts
-         -> D.tApps   (D.TCon (slurpTyCon tc)) (map slurpType ts)
+         -> D.tApps   (D.TCon (convertTyCon tc)) (map convertType ts)
 
         G.FunTy t1 t2
-         -> D.tFunPE  (slurpType t1) (slurpType t2)
+         -> D.tFunPE  (convertType t1) (convertType t2)
 
         G.ForAllTy v t
-         -> D.TForall (D.BName (slurpFatName v) D.kData)
-                      (slurpType t)
+         -> D.TForall (D.BName (convertFatName v) D.kData)
+                      (convertType t)
 
         G.LitTy (G.NumTyLit _) 
          -> error "repa-plugin.slurpType: numeric type literals not handled."
@@ -174,46 +177,46 @@ slurpType tt
                                       (D.NameCon (G.unpackFS fs))))
 
 
--- | Slurp a tycon
-slurpTyCon :: G.TyCon -> D.TyCon FatName
-slurpTyCon tc
+-- | Convert a tycon.
+convertTyCon :: G.TyCon -> D.TyCon FatName
+convertTyCon tc
         | G.isFunTyCon tc
         = D.TyConSpec D.TcConFun
 
         | otherwise
         = D.TyConBound
                 (D.UName (FatName (GhcNameTyCon tc)
-                         (slurpName $ G.tyConName tc)))
+                         (convertName $ G.tyConName tc)))
                 (D.kData)                               -- TODO: WRONG
 
 
 -- Expr -----------------------------------------------------------------------
 -- | Slurp an expression.
 --   TODO: Give warnings if we can't convert an expression.
-slurpExpr :: G.CoreExpr 
+convertExpr :: G.CoreExpr 
           -> Maybe (D.Exp () FatName)
-slurpExpr xx
+convertExpr xx
  = case xx of
         G.Var v
-         ->     return $ D.XVar () (D.UName (slurpFatName v))
+         ->     return $ D.XVar () (D.UName (convertFatName v))
 
         G.Lit l
-         ->     return $ D.XCon () (slurpLiteral l)
+         ->     return $ D.XCon () (convertLiteral l)
 
         G.App x1 x2
-         -> do  x1'     <- slurpExpr x1
-                x2'     <- slurpExpr x2
+         -> do  x1'     <- convertExpr x1
+                x2'     <- convertExpr x2
                 return  $ D.XApp () x1' x2'
 
         G.Lam b x
-         -> do  x'      <- slurpExpr x
-                let b'   = D.BName  (slurpFatName b) (slurpVarType b)
+         -> do  x'      <- convertExpr x
+                let b'   = D.BName  (convertFatName b) (convertVarType b)
                 return  $  D.XLam () b' x'
 
         G.Let (G.NonRec b x1) x2
-         -> do  let b'  = D.BName (slurpFatName b) (slurpVarType b)
-                x1'     <- slurpExpr x1
-                x2'     <- slurpExpr x2
+         -> do  let b'  = D.BName (convertFatName b) (convertVarType b)
+                x1'     <- convertExpr x1
+                x2'     <- convertExpr x2
                 return  $  D.XLet () (D.LLet D.LetStrict b' x1') x2'
 
         G.Case{}
@@ -224,11 +227,11 @@ slurpExpr xx
 
         -- Just ditch tick nodes, we probably don't need them.
         G.Tick _ x
-         -> slurpExpr x
+         -> convertExpr x
 
         -- Type arguments.
         G.Type t
-         -> return $ D.XType (slurpType t)
+         -> return $ D.XType (convertType t)
 
         -- We don't handle coersions.
         G.Coercion{}    -> Nothing
@@ -236,8 +239,8 @@ slurpExpr xx
 
 -- Literals -------------------------------------------------------------------
 -- | Slurp a literal.
-slurpLiteral :: G.Literal -> D.DaCon FatName
-slurpLiteral lit
+convertLiteral :: G.Literal -> D.DaCon FatName
+convertLiteral lit
  = case lit of
         G.MachInt i 
           -> D.mkDaConAlg (FatName (GhcNameLiteral lit) (D.NameLitInt i)) 
