@@ -39,3 +39,4 @@ Library
   Default-Extensions:
         TypeSynonymInstances
         KindSignatures
+        BangPatterns
