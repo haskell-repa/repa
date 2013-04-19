@@ -34,15 +34,18 @@ import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map               as Map
 
+
 -------------------------------------------------------------------------------
--- | Convert the a GHC module to Disciple Core Flow.
+-- | Convert a GHC module to Disciple Core Flow.
+--
+--   This is a raw conversion of the AST. We still need to detect the primitive
+--   flow operators before we can run the lowering pass.
 --
 --   Top-level bindings containing type casts cannot be converted because 
---   Disciple Core has no way to represent them. 
---   TODO: give a warning for unconverted bindings.
+--   Disciple Core has no way to represent them. We shouldn't run across any
+--   of these in the code we want to lower.
 --
---   This is a direct conversion of the AST. The primitive flow operators
---   still need to be detected before we can run the lowering pass.
+--    TODO: give a warning for unconverted bindings.
 --
 convertModGuts :: G.ModGuts -> D.Module () FatName
 convertModGuts guts
@@ -123,8 +126,8 @@ convertBinding
 
 convertBinding (b, x)
  | D.NameVar str  <- convertVarName b
- , isPrefixOf "repa" str                -- TODO: select the bindings we care about
-                                        --       more generally.
+ , isPrefixOf "repa" str                                -- TODO: select the bindings we care about
+                                                        --       more generally.
  = do   x'      <- convertExpr x
         return  ( D.BName (convertFatName b) (convertVarType b)
                 , x')
@@ -172,7 +175,7 @@ convertTyCon tc
         = D.TyConBound
                 (D.UName (FatName (GhcNameTyCon tc)
                          (convertName $ G.tyConName tc)))
-                (D.kData)                               -- TODO: WRONG
+                (D.kData)                                                       -- TODO: WRONG
 
 
 -- Expr -----------------------------------------------------------------------
@@ -204,6 +207,7 @@ convertExpr xx
                 x2'     <- convertExpr x2
                 return  $  D.XLet () (D.LLet D.LetStrict b' x1') x2'
 
+        -- TODO: convert cases.
         G.Case{}
          -> error "repa-plugin.slurpExpr: case not handled yet"
 
@@ -211,14 +215,12 @@ convertExpr xx
         G.Cast{}        -> Nothing
 
         -- Just ditch tick nodes, we probably don't need them.
-        G.Tick _ x
-         -> convertExpr x
+        G.Tick _ x      -> convertExpr x
 
         -- Type arguments.
-        G.Type t
-         -> return $ D.XType (convertType t)
+        G.Type t        -> return $ D.XType (convertType t)
 
-        -- We don't handle coersions.
+        -- We can't convert coercions.
         G.Coercion{}    -> Nothing
 
 
@@ -231,6 +233,7 @@ convertLiteral lit
           -> D.mkDaConAlg (FatName (GhcNameLiteral lit) (D.NameLitInt i)) 
                           tIntU'
 
+        -- TODO: convert the rest of the literals.
         _ -> error "repa-plugin.slurpLiteral: can't convert literal"
 
 
