@@ -30,7 +30,9 @@ Library
         ghc             >= 7.5,
         ddc-base        == 0.3.*,
         ddc-core        == 0.3.*,
-        ddc-core-flow   == 0.3.*
+        ddc-core-flow   == 0.3.*,
+        ddc-core-simpl  == 0.3.*,
+        ddc-build       == 0.3.*
 
 
   Default-Language:

@@ -236,13 +236,14 @@ instance Detect (Exp a) where
 
 
   -- Detect folds.
-  | XApp a _ _                            <- xx
-  , Just (XVar _ uFold, [xTK, xTA, xTB, xF, xZ, xS])
-                                          <- takeXApps xx
-  , UName (FatName nG nD@(NameVar vFold)) <- uFold
+  | XApp a _ _                                          <- xx
+  , Just (XVar _ uFold, [xTK, xTA, xTB, xF, xZ, xS])    <- takeXApps xx
+  , UName (FatName nG nD@(NameVar vFold))               <- uFold
   , isPrefixOf "fold_" vFold
-  = detect  $ xApps a (XVar a (UName (FatName nG (NameFlowOp FlowOpFold))))
-                      [xTK, xTA, xTB, xF, xZ, xS]
+  = do  args'  <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
+        return  $  xApps a (XVar a (UPrim (NameFlowOp FlowOpFold) 
+                                          (typeOfFlowOp FlowOpFold)))
+                           args'
 
 
   -- Inject required type arguments for arithmetic ops
