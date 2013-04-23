@@ -1,4 +1,6 @@
 
+-- TODO: Turn the generic conversion stuff into a separate module.
+--       Make it easier to convert between GHC and DDC.
 module Data.Array.Repa.Plugin.Convert.ToDDC
         (convertModGuts)
 where
@@ -29,7 +31,7 @@ import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Module         as D
 import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
-import qualified DDC.Core.Flow.Name      as D
+import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map               as Map

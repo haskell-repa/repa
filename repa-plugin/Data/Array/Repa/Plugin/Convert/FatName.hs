@@ -3,17 +3,18 @@ module Data.Array.Repa.Plugin.Convert.FatName
         ( GhcName (..)
         , FatName (..))
 where
+import Data.Array.Repa.Plugin.GHC.Pretty
 import DDC.Base.Pretty
+
 import qualified Var                    as G
 import qualified Literal                as G
 import qualified TyCon                  as G
 import qualified TypeRep                as G
 
 import qualified DDC.Core.Exp           as D
-import qualified DDC.Core.Flow.Name     as D
+import qualified DDC.Core.Flow.Prim     as D
 
 
--------------------------------------------------------------------------------
 data GhcName
         = GhcNameVar     G.Var
         | GhcNameTyCon   G.TyCon
@@ -21,6 +22,15 @@ data GhcName
         | GhcNameLiteral G.Literal
         | GhcNameIntU   
         deriving (Eq, Ord)
+
+instance Pretty GhcName where
+ ppr nn
+  = case nn of
+        GhcNameVar     v        -> text "VAR   " <> ppr v
+        GhcNameTyCon   tc       -> text "TYCON " <> ppr tc
+        GhcNameTyLit   tylit    -> text "TYLIT " <> ppr tylit
+        GhcNameLiteral lit      -> text "LIT   " <> ppr lit
+        GhcNameIntU             -> text "Int#"
 
 
 data FatName

@@ -6,7 +6,7 @@ import DDC.Core.Module
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Flow
-import DDC.Core.Flow.Name
+import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Env
 import Data.Array.Repa.Plugin.Convert.FatName
@@ -20,15 +20,22 @@ import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 
 
-detectModule :: Module a FatName -> Module a Name
+detectModule 
+        :: Module a FatName 
+        -> (Module a Name, Map Name GhcName)
+
 detectModule mm
-        = evalState (detect mm) $ zeroState
+ = let  (mm', state)    = runState (detect mm) $ zeroState
+   in   (mm', stateNames state)
 
 
+-- Detect ---------------------------------------------------------------------
 -- | Detect flow operators in code converted from GHC Core, rewriting the raw
---   AST converted from GHC to be a well formed Disciple Core program. 
+--   AST converted from GHC to be a well formed Disciple Core program. At the 
+--   same time, remember the mapping from Disciple to GHC core names so we can
+--   convert the transformed Disciple program back to GHC core.
+
 --   After this pass the code should type check.
---
 class Detect (c :: * -> *) where
  detect :: c FatName -> State DetectS (c Name)
 
@@ -93,7 +100,7 @@ instance Detect Bound where
                        kData
 
          | Just g       <- matchPrim "Stream_" n
-         -> makePrim g (NameDataTyCon   DataTyConStream) 
+         -> makePrim g (NameTyConFlow   TyConFlowStream) 
                        (kData `kFun` kData `kFun` kData)
 
          | otherwise
@@ -120,7 +127,6 @@ matchPrim str n
 makePrim g d t
  = do   collect d g
         return  $ UPrim d t
-
 
 
 -- DaCon ----------------------------------------------------------------------
@@ -210,10 +216,10 @@ instance Detect (Module a) where
 matchPrimArith :: String -> Maybe (Name, Type Name, Type Name)
 matchPrimArith str
  | isPrefixOf "$fNumInt_$c+_" str       
- = Just (NamePrimArith PrimArithAdd, tIntU, typeOfPrimArith PrimArithAdd)
+ = Just (NamePrimArith PrimArithAdd, tInt, typePrimArith PrimArithAdd)
 
  | isPrefixOf "$fNumInt_$c*_" str
- = Just (NamePrimArith PrimArithMul, tIntU, typeOfPrimArith PrimArithMul)
+ = Just (NamePrimArith PrimArithMul, tInt, typePrimArith PrimArithMul)
 
  | otherwise
  = Nothing
@@ -241,8 +247,8 @@ instance Detect (Exp a) where
   , UName (FatName nG nD@(NameVar vFold))               <- uFold
   , isPrefixOf "fold_" vFold
   = do  args'  <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $  xApps a (XVar a (UPrim (NameFlowOp FlowOpFold) 
-                                          (typeOfFlowOp FlowOpFold)))
+        return  $  xApps a (XVar a (UPrim (NameOpFlow OpFlowFold) 
+                                          (typeOpFlow OpFlowFold)))
                            args'
 
 

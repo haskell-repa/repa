@@ -4,18 +4,25 @@ module Data.Array.Repa.Plugin.GHC.Pretty
         , pprTopBinds)
 where
 import DDC.Base.Pretty
+
 import HscTypes
 import Avail
-import CoreSyn
+
 import Type
+import TypeRep
+import TyCon
+
+import CoreSyn
 import Coercion
-import Var
+
 import Name
 import OccName
 import DataCon
 import Literal
+import Var
 import Id
 import Unique
+
 import qualified UniqFM as UFM
 
 -- Guts -----------------------------------------------------------------------
@@ -192,8 +199,14 @@ instance Pretty Literal where
 
 
 -- Type -----------------------------------------------------------------------
+instance Pretty TyCon where
+ ppr _  = text "<TYCON>"
+
+instance Pretty TyLit where
+ ppr _  = text "<TYLIT>"
+
 instance Pretty Type where
- ppr _  = empty
+ ppr _  = text "<TYPE>"
 
 
 -- Coercion -------------------------------------------------------------------
