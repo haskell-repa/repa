@@ -42,15 +42,18 @@ import qualified DDC.Core.Flow.Compounds as D
 import qualified Data.Map                as Map
 
 
--- | Splice top-level DDC module into a GHC core program.
+-- | Splice bindings from a DDC module into a GHC core program.
 spliceModGuts
-        :: Map D.Name GhcName
-        -> D.Module () D.Name
-        -> G.ModGuts 
+        :: Map D.Name GhcName   -- ^ Maps DDC names to GHC names.
+        -> D.Module () D.Name   -- ^ DDC module.
+        -> G.ModGuts            -- ^ GHC module guts.
         -> G.UniqSM G.ModGuts
 
-spliceModGuts names mm guts
- = do   -- Invert the map so it maps GHC names to DDC names.
+spliceModGuts namesSource mm guts
+ = do   -- Add the builtin names to the map we got from the source program.
+        let names       = Map.union namesBuiltin namesSource
+
+        -- Invert the map so it maps GHC names to DDC names.
         let names'      = Map.fromList 
                         $ map (\(x, y) -> (y, x)) 
                         $ Map.toList names
@@ -59,6 +62,15 @@ spliceModGuts names mm guts
                 $  G.mg_binds guts
 
         return  $ guts { G.mg_binds = binds' }
+
+
+namesBuiltin :: Map D.Name GhcName
+namesBuiltin 
+ = Map.fromList
+ $ [ (D.NameTyConFlow D.TyConFlowWorld,     GhcNameTyCon G.realWorldTyCon)
+   , (D.NameTyConFlow (D.TyConFlowTuple 2), GhcNameTyCon G.unboxedPairTyCon)
+   , (D.NameTyConFlow D.TyConFlowArray,     GhcNameTyCon G.byteArrayPrimTyCon)
+   , (D.NamePrimTyCon D.PrimTyConInt,       GhcNameTyCon G.intPrimTyCon) ]
 
 
 -- Splice ---------------------------------------------------------------------
@@ -71,13 +83,14 @@ spliceBind
         -> G.CoreBind
         -> G.UniqSM G.CoreBind
 
+-- If there is a matching binding in the Disciple module then use that.
 spliceBind names names' mm (G.NonRec b _)
- -- If there is a matching binding in the Disciple module then use that.
- | Just dn      <- Map.lookup (GhcNameVar b) names'
- , Just dx      <- lookupModuleBindOfName mm dn
- = do   x'      <- convertTop names dx
+ | Just dn        <- Map.lookup (GhcNameVar b) names'
+ , Just (_db, dx) <- lookupModuleBindOfName mm dn
+ = do   (x', _)   <- convertExp names dx
         return  $ G.NonRec b x'
 
+-- Otherwise leave the original GHC binding as it is.
 spliceBind names _ _ b
  = return b
 
@@ -88,95 +101,236 @@ spliceBind names _ _ b
 lookupModuleBindOfName
         :: D.Module () D.Name 
         -> D.Name 
-        -> Maybe (D.Exp () D.Name)
+        -> Maybe ( D.Bind D.Name
+                 , D.Exp () D.Name)
 
 lookupModuleBindOfName mm n
  | D.XLet _ (D.LRec bxs) _   <- D.moduleBody mm
- = liftM snd $ find (\(b, _) -> D.takeNameOfBind b == Just n) bxs
+ = find (\(b, _) -> D.takeNameOfBind b == Just n) bxs
 
  | otherwise
  = Nothing
 
 
+
 -- Type ----------------------------------------------------------------------
-convertType :: D.Type D.Name -> G.Type
-convertType tt
- = error "blerk convertType"
+convertType 
+        :: Map D.Name GhcName
+        -> D.Type D.Name -> G.Type
+
+convertType names tt
+ = case tt of
+        -- DDC[World#]   => GHC[State# RealWorld#]
+        D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
+         -> G.TyConApp G.statePrimTyCon [G.realWorldTy]
+
+        -- DDC[Array# _] => GHC[MutableByteArray#]
+        D.TApp{}
+         | Just (D.NameTyConFlow D.TyConFlowArray, [_tA])
+                <- D.takePrimTyConApps tt
+         -> G.mkMutableByteArrayPrimTy G.realWorldTy
+
+        -- Generic Conversion -------------------
+        D.TVar (D.UName n)
+         | Just (GhcNameVar gv)   <- Map.lookup n names
+         -> G.TyVarTy gv
+
+        D.TCon tc
+         -> convertTyConApp names tc []
+
+        D.TForall (D.BName n _) t
+         | Just (GhcNameVar gv)   <- Map.lookup n names
+         -> G.ForAllTy gv (convertType names t)
+
+        D.TApp{}
+         | Just (tc, tsArgs)      <- D.takeTyConApps tt
+         -> let tsArgs' = map (convertType names) tsArgs
+            in  convertTyConApp names tc tsArgs'
+
+        _ -> error $ "repa-plugin.convertType: no match for " ++ show tt
+
+
+convertTyConApp 
+        :: Map D.Name GhcName
+        -> D.TyCon D.Name -> [G.Type] -> G.Type
+
+convertTyConApp names tc tsArgs'
+ = case tc of
+        D.TyConBound (D.UName n) _
+         | Just (GhcNameTyCon tc) <- Map.lookup n names
+         -> G.TyConApp tc tsArgs'
+
+        D.TyConBound (D.UPrim n _) _
+         | Just (GhcNameTyCon tc) <- Map.lookup n names
+         -> G.TyConApp tc tsArgs'
+
+        D.TyConBound (D.UName (D.NameCon str)) _
+         -> G.LitTy (G.StrTyLit $ G.fsLit str)
+
+        D.TyConSpec D.TcConFun
+         |  [t1, t2]     <- tsArgs'
+         -> G.FunTy t1 t2
+
+        _ -> error $ "repa-plugin.convertTyConApp: no match for " 
+                   ++ show tc -- ++ " " ++ show (Map.keys names)
 
 
 -- Top -----------------------------------------------------------------------
--- Convert outermost lambdas then inject a variable to bind RealWord#
-convertTop
+convertExp
         :: Map D.Name GhcName
         -> D.Exp () D.Name
-        -> G.UniqSM G.CoreExpr 
-
-convertTop names xx
- = case xx of
-        -- Type abstractions.
-        D.XLAM _ (D.BName dn _) x
-         |  Just (GhcNameVar gv)    <- Map.lookup dn names
-         -> do  x'      <- convertTop names x
-                return  $  G.Lam gv x'
-
-        -- Function abstractions.
-        D.XLam _ (D.BName dn _) x
-         |  Just (GhcNameVar gv)    <- Map.lookup dn names
-         -> do  x'      <- convertTop names x
-                return  $  G.Lam gv x'
-
-        -- Enter into body of function.
-        _ -> do
-                vWorld  <- newWorldVar
-                (x', _) <- convertStmt names vWorld xx
-                return  $  G.Lam vWorld x'
-
-
--- Stmt -----------------------------------------------------------------------
-convertStmt
-        :: Map D.Name GhcName 
-        -> G.Var
-        -> D.Exp () D.Name 
         -> G.UniqSM (G.CoreExpr, G.Type)
 
-convertStmt names vWorld xx
- -- new# [tElem] xZero
- |  D.XLet _ (D.LLet _ (D.BName n t) x1) x2      <- xx
- ,  Just (D.XVar _ uNew, [D.XType tElem, xZero]) <- D.takeXApps x1
- ,  D.UName  (D.NameOpStore D.OpStoreNew)        <- uNew
- = do   
-        let op     = G.NewByteArrayOp_Char
-        vNew       <- getPrimOpVar op
-        let tElem' =  convertType tElem
-        let xZero' =  convertExp  xZero
-        vWorld'    <- newWorldVar
-        (x2', t2') <- convertStmt names vWorld x2
+convertExp names xx
+ = case xx of
+        -----------------------------------------
+        -- Convert Core Flow's polymorphic array primops to monomorphic GHC primops.
+        -- newArray# [tElem] xSize xWorld
+        D.XCase _ xScrut 
+                 [ D.AAlt (D.PData _ [D.BName nWorld tWorld, D.BName nArr tArr]) x1]
+         | Just (  D.NameOpStore D.OpStoreNewArray
+                , [D.XType tA, xNum, xWorld])
+                <- D.takeXPrimApps xScrut
+         -> do  
+                (names1, vWorld') <- getExpBind  names  nWorld tWorld
+                (names', vArr')   <- getExpBind  names1 nArr   tArr
 
-        vScrut     <- newDummyVar tElem'
-        return  $ (G.Case (G.mkApps (G.Var vNew) [G.Var vWorld])
-                          vScrut t2'
-                          [ (G.DataAlt G.unboxedPairDataCon, [], x2')] -- TODO bind data
-                  , t2')
+                vOp               <- getPrimOpVar $ G.NewByteArrayOp_Char
+                (xNum', _)        <- convertExp  names' xNum
+                (xWorld', _)      <- convertExp  names' xWorld
+                (x1', t1')        <- convertExp  names' x1
 
- | otherwise
- = return $ (G.Lit (G.MachChar 'a'), error "blerk type")
+                let tScrut'       =  convertType names' (D.tTuple2 D.tWorld (D.tArray tA))
+                let xScrut'       =  G.mkApps (G.Var vOp) 
+                                        [G.Type G.realWorldTy, xNum', xWorld']
+                vScrut'           <- newDummyVar tScrut'
+
+                return  ( G.Case xScrut' vScrut' tScrut'
+                                 [(G.DataAlt G.unboxedPairDataCon, [vWorld', vArr'], x1')]
+                        , t1')
+
+        -- writeArray# [tElem] xArr xIx xVal xWorld
+        D.XCase _ xScrut 
+                 [ D.AAlt (D.PData _ [D.BName nWorld tWorld, _bVoid]) x1]
+         | Just (  D.NameOpStore D.OpStoreWriteArray
+                , [D.XType tA, xArr, xIx, xVal, xWorld])
+                <- D.takeXPrimApps xScrut
+         -> do  
+                (names', vWorld') <- getExpBind names nWorld tWorld
+
+                let tA'          =  convertType names' tA
+                let Just writeOp =  lookup tA writeByteArrayOps 
+                vOp              <- getPrimOpVar writeOp
+                (xArr',   _)     <- convertExp  names' xArr
+                (xIx',    _)     <- convertExp  names' xIx
+                (xVal',   _)     <- convertExp  names' xVal
+                (xWorld', _)     <- convertExp  names' xWorld
+                (x1', t1')       <- convertExp  names' x1
+
+                let tScrut'      = convertType names' D.tWorld
+                let xScrut'      = G.mkApps (G.Var vOp) 
+                                        [G.Type G.realWorldTy, xArr', xIx', xVal', xWorld']
+
+                return  ( G.Case xScrut' vWorld' tScrut'
+                                [ (G.DEFAULT, [], x1')]
+                        , t1')
+
+        -- Generic Conversion -------------------
+        -- Variables.
+        D.XVar _ (D.UName dn)
+         | Just (GhcNameVar gv) <- Map.lookup dn names
+         -> do  return  ( G.Var gv
+                        , G.varType gv)
+
+        D.XVar _ (D.UPrim dn _)
+         | Just (GhcNameVar gv) <- Map.lookup dn names
+         -> do  return  ( G.Var gv
+                        , G.varType gv)
+
+        -- Constructors.
+        D.XCon _ (D.DaCon dn dt _)
+         -> case dn of
+                D.DaConNamed (D.NameLitInt i)
+                 -> return ( G.Lit (G.MachInt i)
+                           , convertType names D.tInt)
+
+                D.DaConNamed (D.NameLitNat i)
+                 -> return ( G.Lit (G.MachInt i)
+                           , convertType names D.tInt)
+
+                _ -> error $ "repa-plugin.convertExp: no match for " ++ show xx
+
+        -- Type abstractions.
+        D.XLAM _ (D.BName dn _) xBody
+         |  Just (GhcNameVar gv) <- Map.lookup dn names
+         -> do  (xBody', tBody') <- convertExp names xBody
+                return  ( G.Lam gv xBody'
+                        , G.mkFunTy (G.varType gv) tBody')
+
+        -- Function abstractions.
+        D.XLam _ (D.BName dn dt) xBody
+         -> do  (names', gv)     <- getExpBind names dn dt
+                (xBody', tBody') <- convertExp names' xBody
+                return  ( G.Lam gv xBody'
+                        , G.mkFunTy (G.varType gv) tBody')
+
+        -- General applications.
+        D.XApp _ x1 x2
+         -> do  (x1', t1')      <- convertExp names x1
+                (x2', t2')      <- convertExp names x2
+                let G.FunTy _ tResult' = t1'
+                return  ( G.App x1' x2'
+                        , t1')  -- WRONG
+
+        -- Type arguments.
+        D.XType t
+         -> do  let t'          = convertType names t
+                return  ( G.Type t'
+                        , G.wordTy )    -- WRONG
+
+        _ -> convertExp names (D.xNat () 666)
 
 
 -- Exp ------------------------------------------------------------------------
-convertExp = error "blerk convertExp"
+-- | Get the GHC expression var corresponding to some DDC name.
+getExpBind 
+        :: Map D.Name GhcName 
+        -> D.Name -> D.Type D.Name 
+        -> G.UniqSM (Map D.Name GhcName, G.Var)
+
+getExpBind names dn tName
+ -- DDC name was created from a GHC name originally, or is the name of some
+ -- primitive thing, so we can use the known GHC name for it.
+ | Just (GhcNameVar gv) <- Map.lookup dn names
+ = return (names, gv)
+
+ -- DDC name was created during program transformation, so we need to create
+ -- a new GHC name for it.
+ | otherwise
+ = do   let details = G.VanillaId
+        let occName = OccName.mkOccName OccName.varName "x"
+        unique      <- G.getUniqueUs
+        let name    = Name.mkSystemName unique occName
+        let ty      = convertType names tName
+        let info    = G.vanillaIdInfo
+        let gv      = G.mkLocalVar details name ty info
+
+        return  ( Map.insert dn (GhcNameVar gv) names
+                , gv)
+
 
 -- Variable utils -------------------------------------------------------------
-newWorldVar :: G.UniqSM G.Var
-newWorldVar
- = do   let details = G.VanillaId
-        let occName = OccName.mkOccName OccName.varName "w"
+getPrimOpVar :: G.PrimOp -> G.UniqSM G.Var
+getPrimOpVar op
+ = do   let details = G.PrimOpId   op
+        let occName = G.primOpOcc  op
+        let ty      = G.primOpType op
         unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName 
-        let ty      = G.realWorldTy
+        let name    = Name.mkSystemName unique occName
         let info    = G.vanillaIdInfo
-        return  $ G.mkLocalVar details name ty info
+        return  $ G.mkGlobalVar details name ty info
 
-newDummyVar  :: G.Type -> G.UniqSM G.Var
+newDummyVar :: G.Type -> G.UniqSM G.Var
 newDummyVar ty
  = do   let details = G.VanillaId
         let occName = OccName.mkOccName OccName.varName "x"
@@ -185,12 +339,9 @@ newDummyVar ty
         let info    = G.vanillaIdInfo
         return  $ G.mkLocalVar details name ty info
 
-getPrimOpVar :: G.PrimOp -> G.UniqSM G.Var
-getPrimOpVar op
- = do   let details = G.PrimOpId op
-        let occName = G.primOpOcc op
-        let ty      = G.primOpType op
-        unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName
-        let info    = G.vanillaIdInfo
-        return  $ G.mkLocalVar details name ty info
+
+
+writeByteArrayOps 
+ = [ (D.tInt, G.WriteByteArrayOp_Int) ]
+
+

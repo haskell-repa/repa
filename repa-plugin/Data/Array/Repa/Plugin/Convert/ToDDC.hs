@@ -1,4 +1,3 @@
-
 -- TODO: Turn the generic conversion stuff into a separate module.
 --       Make it easier to convert between GHC and DDC.
 module Data.Array.Repa.Plugin.Convert.ToDDC

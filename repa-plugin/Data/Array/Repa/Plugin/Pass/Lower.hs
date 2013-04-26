@@ -15,12 +15,15 @@ import qualified DDC.Core.Flow.Transform.Prep           as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
+import qualified DDC.Core.Flow.Transform.Storage        as Flow
+import qualified DDC.Core.Flow.PrimState.Thread         as Flow
 
 import qualified DDC.Core.Simplifier                    as Core
 import qualified DDC.Core.Transform.Namify              as Core
 import qualified DDC.Core.Transform.Snip                as Core
 import qualified DDC.Core.Transform.Flatten             as Core
 import qualified DDC.Core.Transform.Forward             as Core
+import qualified DDC.Core.Transform.Thread              as Core
 import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
@@ -61,6 +64,7 @@ passLower name guts
 
         writeFile ("dump." ++ name ++ ".3-dc-detect.names")
          $ D.renderIndent (D.vcat $ map D.ppr $ Map.toList names)
+
 
         -- Prep -------------------------------------------
         -- Prep module for lowering.
@@ -124,18 +128,37 @@ passLower name guts
         let procs       = map Flow.scheduleProcess processes
 
         -- Extract concrete code from the abstract loops.
-        let mm_lowered  = Flow.extractModule mm_prep procs
+        let mm_lowered' = Flow.extractModule mm_prep procs
+        let mm_lowered  = evalState (Core.namify namifierT namifierX mm_lowered') 0
 
         writeFile ("dump." ++ name ++ ".5-dc-lowered.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_lowered)
+         $ D.renderIndent $ D.ppr mm_lowered
+
+
+        -- Storage ---------------------------------------
+        -- Assign mutable variables to array storage.
+        let mm_storage  = Flow.storageModule mm_lowered
+
+        writeFile ("dump." ++ name ++ ".6-dc-storage.dcf")
+         $ D.renderIndent $ D.ppr mm_storage
+
+
+        -- Thread -----------------------------------------
+        -- Thread the World# token through stateful functions in preparation
+        -- for conversion back to GHC core.
+        let mm_thread'  = Core.thread Flow.threadConfig mm_storage
+        let mm_thread   = evalState (Core.namify namifierT namifierX mm_thread') 0
+
+        writeFile ("dump." ++ name ++ ".7-dc-threaded.dcf")
+         $ D.renderIndent $ D.ppr mm_thread
 
 
         -- Splice -----------------------------------------
         -- Splice the lowered functions back into the GHC core program.
         us              <- G.mkSplitUniqSupply 's'              -- Here's hoping this is unique...
-        let guts'       = G.initUs_ us (spliceModGuts names mm_lowered guts)
+        let guts'       = G.initUs_ us (spliceModGuts names mm_thread guts)
 
-        writeFile ("dump." ++ name ++ ".6-ghc-spliced.dcf")
+        writeFile ("dump." ++ name ++ ".8-ghc-spliced.dcf")
          $ D.render D.RenderIndent (pprModGuts guts')
 
         return (return guts')
