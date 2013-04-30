@@ -2,7 +2,6 @@
 module Data.Array.Repa.Plugin.Pass.Lower
         (passLower)
 where
-import Data.Array.Repa.Plugin.Convert.FatName
 import Data.Array.Repa.Plugin.Convert.ToDDC
 import Data.Array.Repa.Plugin.Convert.ToGHC
 import Data.Array.Repa.Plugin.Convert.Detect
@@ -28,7 +27,6 @@ import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
 import qualified CoreMonad                              as G
-import qualified Unique                                 as G
 import qualified UniqSupply                             as G
 import qualified DDC.Base.Pretty                        as D
 import qualified Data.Map                               as Map
@@ -110,8 +108,6 @@ passLower name guts
 
         --  4. Create fresh names for anonymous binders.
         --     The lowering pass needs them all to have real names.
-        let namifierT   = Core.makeNamifier Flow.freshT Env.empty
-        let namifierX   = Core.makeNamifier Flow.freshX Env.empty
         let mm_namify   = evalState (Core.namify namifierT namifierX mm_forward) 0
 
         writeFile ("dump." ++ name ++ ".4-dc-prep.4-namify.dcf")

@@ -8,7 +8,6 @@ import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
-import DDC.Core.Flow.Env
 import Data.Array.Repa.Plugin.Convert.FatName
 import Data.List
 import Data.Map                 (Map)
@@ -25,8 +24,8 @@ detectModule
         -> (Module a Name, Map Name GhcName)
 
 detectModule mm
- = let  (mm', state)    = runState (detect mm) $ zeroState
-   in   (mm', stateNames state)
+ = let  (mm', state')    = runState (detect mm) $ zeroState
+   in   (mm', stateNames state')
 
 
 -- Detect ---------------------------------------------------------------------
@@ -95,12 +94,12 @@ instance Detect Bound where
   = case u of
         UName n@(FatName g d)
          -- Data Constructors.
-         | Just g       <- matchPrim "Int_" n
-         -> makePrim g (NamePrimTyCon   PrimTyConInt)    
+         | Just g'      <- matchPrim "Int_" n
+         -> makePrim g' (NamePrimTyCon   PrimTyConInt)    
                        kData
 
-         | Just g       <- matchPrim "Stream_" n
-         -> makePrim g (NameTyConFlow   TyConFlowStream) 
+         | Just g'       <- matchPrim "Stream_" n
+         -> makePrim g' (NameTyConFlow   TyConFlowStream) 
                        (kData `kFun` kData `kFun` kData)
 
          | otherwise
@@ -110,7 +109,7 @@ instance Detect Bound where
         UIx ix
          -> return $ UIx ix
 
-        UPrim n@(FatName g d) t
+        UPrim (FatName g d) t
          -> do  collect d g
                 t'      <- detect t
                 return  $ UPrim d t'
@@ -152,10 +151,10 @@ instance Detect DaConName where
 instance Detect TyCon where
  detect tc
   = case tc of
-        TyConSort  tc   -> return $ TyConSort tc
-        TyConKind  tc   -> return $ TyConKind tc
-        TyConWitness tc -> return $ TyConWitness tc
-        TyConSpec  tc   -> return $ TyConSpec tc
+        TyConSort    tc' -> return $ TyConSort tc'
+        TyConKind    tc' -> return $ TyConKind tc'
+        TyConWitness tc' -> return $ TyConWitness tc'
+        TyConSpec    tc' -> return $ TyConSpec tc'
         TyConBound u k  -> liftM2 TyConBound (detect u) (detect k)
 
 
@@ -185,6 +184,8 @@ instance Detect Type where
                 if rateVar
                  then return $ TForall (BName n kRate) t'
                  else return $ TForall b' t'
+
+         _ -> error "repa-plugin.detect no match"
 
   -- Boilerplate traversal.
   | otherwise
@@ -240,11 +241,13 @@ instance Detect (Exp a) where
                  then return $ XLAM a (BName n kRate) x'
                  else return $ XLam a b' x'
 
+         _ -> error "repa-plugin.detect[Exp] no match"
+
 
   -- Detect folds.
   | XApp a _ _                                          <- xx
   , Just (XVar _ uFold, [xTK, xTA, xTB, xF, xZ, xS])    <- takeXApps xx
-  , UName (FatName nG nD@(NameVar vFold))               <- uFold
+  , UName (FatName _ (NameVar vFold))                   <- uFold
   , isPrefixOf "fold_" vFold
   = do  args'  <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
         return  $  xApps a (XVar a (UPrim (NameOpFlow OpFlowFold) 
@@ -253,7 +256,7 @@ instance Detect (Exp a) where
 
 
   -- Inject required type arguments for arithmetic ops
-  | XVar a (UName (FatName nG nD@(NameVar str)))    <- xx
+  | XVar a (UName (FatName nG (NameVar str)))    <- xx
   , Just (nD', tArg, tPrim)  <- matchPrimArith str
   = do  collect nD' nG
         return  $ xApps a (XVar a (UPrim nD' tPrim)) [XType tArg]
@@ -275,15 +278,15 @@ instance Detect (Exp a) where
         XLet  a lts x   -> liftM3 XLet  (return a) (detect lts) (detect x)
         XType t         -> liftM  XType (detect t)
 
-        XCase a x alts  -> error "repa-plugin.detect: XCase not handled"
-        XCast a c x     -> error "repa-plugin.detect: XCast not handled"
-        XWitness w      -> error "repa-plugin.detect: XWitness not handled"
+        XCase{}         -> error "repa-plugin.detect: XCase not handled"
+        XCast{}         -> error "repa-plugin.detect: XCast not handled"
+        XWitness{}      -> error "repa-plugin.detect: XWitness not handled"
 
 
 instance Detect (Lets a) where
  detect ll
   = case ll of
-        LLet m b x      
+        LLet _ b x      
          -> do  b'      <- detect b
                 x'      <- detect x
                 return  $ LLet LetStrict b' x'

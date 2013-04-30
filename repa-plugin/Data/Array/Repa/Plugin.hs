@@ -3,7 +3,6 @@ module Data.Array.Repa.Plugin where
 import Data.Array.Repa.Plugin.Pipeline
 import GhcPlugins
 import StaticFlags
-import Debug.Trace
 import System.IO.Unsafe
 
 
@@ -13,7 +12,7 @@ plugin  = defaultPlugin
 
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
-install _ todos 
+install _ _todos
  = do   
         -- Initialize the staticflags so that we can pretty print core code.
         --   The pretty printers depend on static flags and will `error` if 
@@ -29,7 +28,7 @@ install _ todos
                 return (return ())
 
         -- Flatten out the tree of passes into a list to make it easier to handle.
-        let todos' = normalizeCoreDoPasses todos
+        -- let todos' = normalizeCoreDoPasses todos
 
         -- Replace the standard GHC pipeline with our one.
         return vectoriserPipeline

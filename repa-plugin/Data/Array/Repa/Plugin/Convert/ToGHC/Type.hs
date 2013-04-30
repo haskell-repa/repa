@@ -3,40 +3,18 @@ module Data.Array.Repa.Plugin.Convert.ToGHC.Type
         (convertType)
 where
 import Data.Array.Repa.Plugin.Convert.FatName
-import DDC.Base.Pretty
-import Control.Monad
-import Data.Maybe
-import Data.List
-import Data.Char
 import Data.Map                         (Map)
 
-import qualified HscTypes                as G
-import qualified Avail                   as G
-import qualified CoreSyn                 as G
 import qualified Type                    as G
 import qualified TypeRep                 as G
 import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
 import qualified TyCon                   as G
-import qualified IdInfo                  as G
-import qualified Coercion                as G
-import qualified Var                     as G
-import qualified DataCon                 as G
-import qualified Literal                 as G
-import qualified Id                      as G
-import qualified PrimOp                  as G
-import qualified Unique                  as G
-import qualified UniqSupply              as G
 import qualified FastString              as G
-import qualified UniqFM                  as UFM
-import qualified OccName                 as OccName
-import qualified Name                    as Name
 
 import qualified DDC.Core.Exp            as D
-import qualified DDC.Core.Module         as D
 import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
-import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map                as Map
@@ -72,7 +50,7 @@ convertType names tt
          | Just (nStream@(D.NameTyConFlow D.TyConFlowStream), [tK, tElem])
                 <- D.takePrimTyConApps tt
          , Just (GhcNameTyCon tc) <- Map.lookup nStream names
-         , Just tElem'            <- boxedGhcTypeOfFlowType tElem
+         , Just tElem'            <- boxedGhcTypeOfElemType tElem
          -> let tK'     = convertType names tK
             in  G.TyConApp tc [tK', tElem']
 
@@ -106,8 +84,8 @@ convertTyConApp
 convertTyConApp names tc tsArgs'
  = case tc of
         D.TyConBound (D.UName n) _
-         | Just (GhcNameTyCon tc) <- Map.lookup n names
-         -> G.TyConApp tc tsArgs'
+         | Just (GhcNameTyCon tc') <- Map.lookup n names
+         -> G.TyConApp tc' tsArgs'
 
         D.TyConBound (D.UPrim n _) _
          | Just tc'               <- convertTyConPrimName n

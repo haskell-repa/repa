@@ -9,13 +9,6 @@ import GhcPlugins
 
 -- DPH Compilation phase numbers. 
 -- These are defined in dph-base:include/fusion-phases.h
-dphPhaseClosures        = 6
-dphPhasePA              = 5
-dphPhasePar             = 4
-dphPhaseDist            = 3
-dphPhaseSeq             = 2
-dphPhaseStream          = 1
-dphPhaseInner           = 0
 
 
 -- | Our vectoriser pipeline.

@@ -4,32 +4,22 @@ module Data.Array.Repa.Plugin.Convert.ToGHC
 where
 import Data.Array.Repa.Plugin.Convert.ToGHC.Type
 import Data.Array.Repa.Plugin.Convert.FatName
-import DDC.Base.Pretty
 import Control.Monad
-import Data.Maybe
 import Data.List
-import Data.Char
 import Data.Map                         (Map)
 
 import qualified HscTypes                as G
-import qualified Avail                   as G
 import qualified CoreSyn                 as G
 import qualified Type                    as G
 import qualified TypeRep                 as G
 import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
-import qualified TyCon                   as G
 import qualified IdInfo                  as G
-import qualified Coercion                as G
 import qualified Var                     as G
 import qualified DataCon                 as G
 import qualified Literal                 as G
-import qualified Id                      as G
 import qualified PrimOp                  as G
-import qualified Unique                  as G
 import qualified UniqSupply              as G
-import qualified FastString              as G
-import qualified UniqFM                  as UFM
 import qualified OccName                 as OccName
 import qualified Name                    as Name
 
@@ -94,7 +84,7 @@ spliceBind guts names names' mm (G.NonRec b _)
         return  $ G.NonRec b x'
 
 -- Otherwise leave the original GHC binding as it is.
-spliceBind _ names _ _ b
+spliceBind _ _ _ _ b
  = return b
 
 
@@ -129,8 +119,8 @@ convertExp guts names xx
         -- Convert Core Flow's polymorphic array primops to monomorphic GHC primops.
         -- newArray# [tElem] xSize xWorld
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ bWorld@(D.BName nWorld tWorld)
-                                     ,   bArr@(D.BName nArr tArr)]) x1]
+                 [ D.AAlt (D.PData _ [ bWorld@(D.BName _ _)
+                                     ,   bArr@(D.BName _ _)]) x1]
          | Just (  D.NameOpStore D.OpStoreNewArray
                 , [D.XType tA, xNum, xWorld])
                 <- D.takeXPrimApps xScrut
@@ -154,14 +144,13 @@ convertExp guts names xx
 
         -- writeArray# [tElem] xArr xIx xVal xWorld
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ bWorld@(D.BName nWorld tWorld)
+                 [ D.AAlt (D.PData _ [ bWorld@(D.BName _ _)
                                      , _bVoid]) x1]
          | Just (  D.NameOpStore D.OpStoreWriteArray
                 , [D.XType tA, xArr, xIx, xVal, xWorld])
                 <- D.takeXPrimApps xScrut
          -> do  
                 Just vOp          <- getPrim_writeByteArrayOpM guts tA
-                let tA'           =  convertType names tA
                 
                 (xArr',   _)      <- convertExp  guts names xArr
                 (xIx',    _)      <- convertExp  guts names xIx
@@ -202,7 +191,7 @@ convertExp guts names xx
                         , G.varType gv)
 
         -- Data constructors.
-        D.XCon _ (D.DaCon dn dt _)
+        D.XCon _ (D.DaCon dn _ _)
          -> case dn of
                 -- Unit constructor.
                 D.DaConUnit
@@ -246,7 +235,7 @@ convertExp guts names xx
                         , G.mkFunTy (G.varType gv) tBody')
 
         -- Function abstractions.
-        D.XLam _ b@(D.BName dn dt) xBody
+        D.XLam _ (D.BName dn dt) xBody
          -> do  (names1, gv)     <- getExpBind names (D.BAnon dt)       
                                         -- TODO: BRUTAL fresh name generator
                 let names'       = Map.insert dn (GhcNameVar gv) names1
@@ -265,14 +254,13 @@ convertExp guts names xx
         -- General applications.
         D.XApp _ x1 x2
          -> do  (x1', t1')      <- convertExp guts names x1
-                (x2', t2')      <- convertExp guts names x2
-                let G.FunTy _ tResult' = t1'
+                (x2', _)        <- convertExp guts names x2
                 return  ( G.App x1' x2'
                         , t1')  -- WRONG
 
         -- Case expressions
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ bWorld@(D.BName nWorld tWorld)
+                 [ D.AAlt (D.PData _ [ bWorld@(D.BName{})
                                      ,     b2]) x1]
          -> do  
                 (xScrut', _)       <- convertExp guts names xScrut
@@ -332,11 +320,11 @@ convertPolyPrim guts names n tArg
         _
          -> error $ "repa-plugin.toGHC.convertPolyPrim: no match for " ++ show n
 
-getPrim_add guts t
+getPrim_add _ t
  | t == D.tInt  = liftM Just $ getPrimOpVar G.IntAddOp
  | otherwise    = return Nothing
 
-getPrim_mul guts t
+getPrim_mul _ t
  | t == D.tInt  = liftM Just $ getPrimOpVar G.IntMulOp
  | otherwise    = return Nothing
 
@@ -344,11 +332,11 @@ getPrim_next guts t
  | t == D.tInt  = findImportedPrimVar guts "primNext_Int"
  | otherwise    = Nothing
 
-getPrim_writeByteArrayOpM guts t
+getPrim_writeByteArrayOpM _ t
  | t == D.tInt  = liftM Just $ getPrimOpVar G.WriteByteArrayOp_Int
  | otherwise    = return Nothing
 
-getPrim_readByteArrayOpM guts t
+getPrim_readByteArrayOpM _ t
  | t == D.tInt  = liftM Just $ getPrimOpVar G.ReadByteArrayOp_Int
  | otherwise    = return Nothing
 
@@ -405,11 +393,11 @@ findImportedPrimVar :: G.ModGuts -> String -> Maybe G.Var
 findImportedPrimVar guts str
  = go (G.mg_binds guts)
  where  
-        go (G.NonRec v x : bs)
+        go (G.NonRec v _ : bs)
          | plainNameOfVar v == str = Just v
          | otherwise               = go bs
 
-        go ( (G.Rec ((v, x) : vxs)) : bs)
+        go ( (G.Rec ((v, _) : vxs)) : bs)
          | plainNameOfVar v == str = Just v
          | otherwise               = go (G.Rec vxs : bs)
 

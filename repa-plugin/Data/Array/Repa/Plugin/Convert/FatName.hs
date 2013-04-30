@@ -3,16 +3,16 @@ module Data.Array.Repa.Plugin.Convert.FatName
         ( GhcName (..)
         , FatName (..))
 where
-import Data.Array.Repa.Plugin.GHC.Pretty
+import Data.Array.Repa.Plugin.GHC.Pretty        ()
+
 import DDC.Base.Pretty
+import qualified DDC.Core.Flow.Prim     as D
 
 import qualified Var                    as G
 import qualified Literal                as G
 import qualified TyCon                  as G
 import qualified TypeRep                as G
 
-import qualified DDC.Core.Exp           as D
-import qualified DDC.Core.Flow.Prim     as D
 
 
 data GhcName

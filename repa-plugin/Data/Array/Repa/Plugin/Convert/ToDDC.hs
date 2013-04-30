@@ -8,32 +8,24 @@ import DDC.Base.Pretty
 import Data.Maybe
 import Data.List
 import Data.Char
-
-import qualified HscTypes               as G
-import qualified Avail                  as G
-import qualified CoreSyn                as G
-import qualified Type                   as G
-import qualified TypeRep                as G
-import qualified TyCon                  as G
-import qualified Coercion               as G
-import qualified Var                    as G
-import qualified OccName                as OccName
-import qualified Name                   as Name
-import qualified DataCon                as G
-import qualified Literal                as G
-import qualified Id                     as G
-import qualified Unique                 as G
-import qualified FastString             as G
-import qualified UniqFM                 as UFM
+import qualified Data.Map               as Map
 
 import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Module         as D
 import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
-import qualified DDC.Core.Flow.Prim      as D
-import qualified DDC.Core.Flow.Compounds as D
 
-import qualified Data.Map               as Map
+import qualified HscTypes               as G
+import qualified CoreSyn                as G
+import qualified Type                   as G
+import qualified TypeRep                as G
+import qualified TyCon                  as G
+import qualified Var                    as G
+import qualified OccName                as OccName
+import qualified Name                   as Name
+import qualified Literal                as G
+import qualified FastString             as G
+
 
 
 -------------------------------------------------------------------------------
@@ -88,7 +80,7 @@ convertName name
 
    in   case baseName of
          []         -> error "repa-plugin.convertName: base name is empty"
-         c : cs 
+         c : _ 
           | isUpper c   -> D.NameCon str
           | otherwise   -> D.NameVar str
 
@@ -223,6 +215,8 @@ convertExpr xx
 
         -- We can't convert coercions.
         G.Coercion{}    -> Nothing
+
+        _               -> error "repa-plugin.ToDDC.convertExpr: no match"
 
 
 -- Literals -------------------------------------------------------------------

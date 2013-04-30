@@ -45,3 +45,10 @@ Library
         TypeSynonymInstances
         KindSignatures
         BangPatterns
+
+  GHC-options:
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-unused-do-bind
+

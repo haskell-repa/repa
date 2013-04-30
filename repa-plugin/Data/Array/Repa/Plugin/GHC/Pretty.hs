@@ -7,23 +7,18 @@ import DDC.Base.Pretty
 
 import HscTypes
 import Avail
-
 import Type
 import TypeRep
 import TyCon
-
 import CoreSyn
 import Coercion
-
 import Name
-import OccName
 import DataCon
 import Literal
 import Var
 import Id
-import Unique
-
 import qualified UniqFM as UFM
+
 
 -- Guts -----------------------------------------------------------------------
 pprModGuts :: ModGuts -> Doc
@@ -67,7 +62,7 @@ pprTopBind (NonRec binder expr)
 pprTopBind (Rec [])
   = text "Rec { }"
 
-pprTopBind (Rec bb@(b:bs))
+pprTopBind (Rec bb)
   = vcat 
   [ text "Rec {"
   , vcat [empty <$$> pprBinding b | b <- bb]
@@ -124,7 +119,7 @@ instance Pretty a => Pretty (Expr a) where
                                 <> pprPrec 11 x2)
 
         -- Destructors.
-        Case x1 var ty [(con, binds, x2)]
+        Case x1 _ _ [(con, binds, x2)]
          -> pprParen' (d > 2)
          $  text "let" 
                 <+> (fill 12 (ppr con <+> hsep (map ppr binds)))
@@ -134,7 +129,7 @@ instance Pretty a => Pretty (Expr a) where
                         <+> text "in"
                 <$$> ppr x2
 
-        Case x1 var ty alts
+        Case x1 var _ alts
          -> pprParen' (d > 2)
          $  (nest 2 
                 $ text "case" <+> ppr x1 <+> text "of" 
@@ -175,7 +170,7 @@ pprAlt (con, binds, x)
 instance Pretty AltCon where
  ppr con
   = case con of
-        DataAlt con     -> ppr con
+        DataAlt con'    -> ppr con'
         LitAlt  lit     -> ppr lit
         DEFAULT         -> text "_"
 
@@ -231,8 +226,8 @@ instance Pretty Name where
         = ppr (nameOccName name)
 
 instance Pretty OccName where
- ppr occName
-        = text (occNameString occName)
+ ppr occ
+        = text (occNameString occ)
 
 
 
