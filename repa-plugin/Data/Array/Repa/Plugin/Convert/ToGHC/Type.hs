@@ -1,6 +1,7 @@
 
 module Data.Array.Repa.Plugin.Convert.ToGHC.Type
-        (convertType)
+        ( getExpBind
+        , convertType)
 where
 import Data.Array.Repa.Plugin.Convert.FatName
 import Data.Map                         (Map)
@@ -11,6 +12,11 @@ import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
 import qualified TyCon                   as G
 import qualified FastString              as G
+import qualified UniqSupply              as G
+import qualified Var                     as G
+import qualified IdInfo                  as G
+import qualified OccName                 as OccName
+import qualified Name                    as Name
 
 import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Compounds      as D
@@ -20,6 +26,41 @@ import qualified DDC.Core.Flow.Compounds as D
 import qualified Data.Map                as Map
 
 
+-- Exp ------------------------------------------------------------------------
+-- | Get the GHC expression var corresponding to some DDC name.
+getExpBind 
+        :: Map D.Name GhcName 
+        -> D.Bind D.Name
+        -> G.UniqSM (Map D.Name GhcName, G.Var)
+
+getExpBind names b
+ -- DDC name was created from a GHC name originally, or is the name of some
+ -- primitive thing, so we can use the known GHC name for it.
+ | D.BName dn _         <- b
+ , Just (GhcNameVar gv) <- Map.lookup dn names
+ = return (names, gv)
+
+ -- DDC name was created during program transformation, so we need to create
+ -- a new GHC name for it.
+ | otherwise
+ = do   let tName   = D.typeOfBind b
+
+        let details = G.VanillaId
+        let occName = OccName.mkOccName OccName.varName "x"
+        unique      <- G.getUniqueUs
+        let name    = Name.mkSystemName unique occName
+        let ty      = convertType names tName
+        let info    = G.vanillaIdInfo
+        let gv      = G.mkLocalVar details name ty info
+
+        let names'  = case b of
+                        D.BName dn _ -> Map.insert dn (GhcNameVar gv) names
+                        _            -> names
+
+        return  ( names', gv)
+
+
+-- Type -----------------------------------------------------------------------
 convertType 
         :: Map D.Name GhcName
         -> D.Type D.Name -> G.Type

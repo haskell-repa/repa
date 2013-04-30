@@ -16,6 +16,7 @@ Library
         Data.Array.Repa.Plugin.Convert.ToDDC
 
         Data.Array.Repa.Plugin.Convert.ToGHC.Type
+        Data.Array.Repa.Plugin.Convert.ToGHC.Prim
         Data.Array.Repa.Plugin.Convert.ToGHC
         Data.Array.Repa.Plugin.Convert.Detect
 

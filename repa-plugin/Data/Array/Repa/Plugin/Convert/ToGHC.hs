@@ -3,8 +3,9 @@ module Data.Array.Repa.Plugin.Convert.ToGHC
         (spliceModGuts)
 where
 import Data.Array.Repa.Plugin.Convert.ToGHC.Type
+import Data.Array.Repa.Plugin.Convert.ToGHC.Prim
+import Data.Array.Repa.Plugin.Convert.ToGHC.Var
 import Data.Array.Repa.Plugin.Convert.FatName
-import Control.Monad
 import Data.List
 import Data.Map                         (Map)
 
@@ -14,14 +15,11 @@ import qualified Type                    as G
 import qualified TypeRep                 as G
 import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
-import qualified IdInfo                  as G
 import qualified Var                     as G
 import qualified DataCon                 as G
 import qualified Literal                 as G
 import qualified PrimOp                  as G
 import qualified UniqSupply              as G
-import qualified OccName                 as OccName
-import qualified Name                    as Name
 
 import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Module         as D
@@ -281,161 +279,6 @@ convertExp guts names xx
                         , G.wordTy )    -- WRONG
 
         _ -> convertExp guts names (D.xNat () 666)
-
-
--- PolyPrim -------------------------------------------------------------------
-convertPolyPrim 
-        :: G.ModGuts
-        -> Map D.Name GhcName
-        -> D.Name -> D.Type D.Name 
-        -> G.UniqSM (G.CoreExpr, G.Type)
-
-convertPolyPrim guts names n tArg
- = case n of
-        D.NamePrimArith D.PrimArithAdd
-         -> do  Just gv <- getPrim_add guts tArg
-                return  (G.Var gv, G.varType gv)
-
-        D.NamePrimArith D.PrimArithMul
-         -> do  Just gv <- getPrim_mul guts tArg
-                return  (G.Var gv, G.varType gv)
-
-        D.NameOpStore D.OpStoreNext 
-         | Just  gv     <- getPrim_next guts tArg
-         ->     return  (G.Var gv, G.varType gv)
-
-        D.NameOpStore D.OpStoreReadArray
-         -> do  Just gv <- getPrim_readByteArrayOpM guts tArg
-                return  (G.Var gv, G.varType gv)
-
-        D.NameOpFlow D.OpFlowLengthOfRate
-         |  D.TVar (D.UName (D.NameVar str)) <- tArg
-         , Just gv              <- findImportedPrimVar guts "primLengthOfRate"
-         , Just (GhcNameVar vk) <- Map.lookup (D.NameVar $ str ++ "_val")  names 
-                        -- HACKS!. Store a proper mapping between rate vars
-                        --         and their singleton types.
-         -> return ( G.App (G.Var gv) (G.Var vk)
-                   , convertType names D.tInt)
-
-        _
-         -> error $ "repa-plugin.toGHC.convertPolyPrim: no match for " ++ show n
-
-getPrim_add _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.IntAddOp
- | otherwise    = return Nothing
-
-getPrim_mul _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.IntMulOp
- | otherwise    = return Nothing
-
-getPrim_next guts t
- | t == D.tInt  = findImportedPrimVar guts "primNext_Int"
- | otherwise    = Nothing
-
-getPrim_writeByteArrayOpM _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.WriteByteArrayOp_Int
- | otherwise    = return Nothing
-
-getPrim_readByteArrayOpM _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.ReadByteArrayOp_Int
- | otherwise    = return Nothing
-
-
--- Exp ------------------------------------------------------------------------
--- | Get the GHC expression var corresponding to some DDC name.
-getExpBind 
-        :: Map D.Name GhcName 
-        -> D.Bind D.Name
-        -> G.UniqSM (Map D.Name GhcName, G.Var)
-
-getExpBind names b
- -- DDC name was created from a GHC name originally, or is the name of some
- -- primitive thing, so we can use the known GHC name for it.
- | D.BName dn _         <- b
- , Just (GhcNameVar gv) <- Map.lookup dn names
- = return (names, gv)
-
- -- DDC name was created during program transformation, so we need to create
- -- a new GHC name for it.
- | otherwise
- = do   let tName   = D.typeOfBind b
-
-        let details = G.VanillaId
-        let occName = OccName.mkOccName OccName.varName "x"
-        unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName
-        let ty      = convertType names tName
-        let info    = G.vanillaIdInfo
-        let gv      = G.mkLocalVar details name ty info
-
-        let names'  = case b of
-                        D.BName dn _ -> Map.insert dn (GhcNameVar gv) names
-                        _            -> names
-
-        return  ( names', gv)
-
-
--- Variable utils -------------------------------------------------------------
-ghcVarOfPrimName :: G.ModGuts -> D.Name -> G.UniqSM G.Var
-ghcVarOfPrimName guts n
- = case n of
-        D.NameOpLoop D.OpLoopLoop
-         |  Just gv     <- findImportedPrimVar guts "primLoop"
-         -> return gv
-        _       
-         -> error $ "repa-plugin.ToGHC.ghcVarOfPrimName: no match for " ++ show n
-
-
--- | Find the variable with this name from the source module.
---   TODO: right now it must be defined in the current module,
---         fix this to actually look in the import list.
-findImportedPrimVar :: G.ModGuts -> String -> Maybe G.Var
-findImportedPrimVar guts str
- = go (G.mg_binds guts)
- where  
-        go (G.NonRec v _ : bs)
-         | plainNameOfVar v == str = Just v
-         | otherwise               = go bs
-
-        go ( (G.Rec ((v, _) : vxs)) : bs)
-         | plainNameOfVar v == str = Just v
-         | otherwise               = go (G.Rec vxs : bs)
-
-        go ( G.Rec [] : bs )       = go bs
-
-        go []                      = Nothing
-
-
--- | Take the plain unqualified printable name of a GHC variable.
-plainNameOfVar :: G.Var -> String
-plainNameOfVar gv
- = let  name    = G.varName gv
-        occ     = Name.nameOccName name
-   in   OccName.occNameString occ
-
-
--- | Convert a GHC primop to a variable.
-getPrimOpVar :: G.PrimOp -> G.UniqSM G.Var
-getPrimOpVar op
- = do   let details = G.PrimOpId   op
-        let occName = G.primOpOcc  op
-        let ty      = G.primOpType op
-        unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName
-        let info    = G.vanillaIdInfo
-        return  $ G.mkGlobalVar details name ty info
-
-
--- | Create a fresh dummy GHC variable with the given type.
-newDummyVar :: String -> G.Type -> G.UniqSM G.Var
-newDummyVar basename ty
- = do   let details = G.VanillaId
-        let occName = OccName.mkOccName OccName.varName basename
-        unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName
-        let info    = G.vanillaIdInfo
-        return  $ G.mkLocalVar details name ty info
-
 
 
 
