@@ -14,6 +14,8 @@ Library
   Other-Modules:
         Data.Array.Repa.Plugin.Convert.FatName
         Data.Array.Repa.Plugin.Convert.ToDDC
+
+        Data.Array.Repa.Plugin.Convert.ToGHC.Type
         Data.Array.Repa.Plugin.Convert.ToGHC
         Data.Array.Repa.Plugin.Convert.Detect
 
