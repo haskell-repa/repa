@@ -9,7 +9,7 @@ import Data.Array.Repa.Plugin.GHC.Pretty
 import DDC.Core.Exp
 
 import qualified DDC.Core.Flow                          as Flow
-import qualified DDC.Build.Language.Flow                as Flow
+import qualified DDC.Core.Flow.Profile                  as Flow
 import qualified DDC.Core.Flow.Transform.Prep           as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
@@ -142,7 +142,7 @@ passLower name guts
         -- Thread -----------------------------------------
         -- Thread the World# token through stateful functions in preparation
         -- for conversion back to GHC core.
-        let mm_thread'  = Core.thread Flow.threadConfig mm_storage
+        let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_storage
         let mm_thread   = evalState (Core.namify namifierT namifierX mm_thread') 0
 
         writeFile ("dump." ++ name ++ ".7-dc-threaded.dcf")

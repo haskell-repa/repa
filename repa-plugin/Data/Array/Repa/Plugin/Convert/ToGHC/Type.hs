@@ -109,6 +109,12 @@ convertType names tt
          -> G.ForAllTy gv (convertType names t)
 
         D.TApp{}
+         | Just (t1, _, _, t2)         <- D.takeTFun tt
+         -> let t1'     = convertType names t1
+                t2'     = convertType names t2
+            in  G.FunTy t1' t2'
+
+        D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
          -> let tsArgs' = map (convertType names) tsArgs
             in  convertTyConApp names tc tsArgs'
@@ -136,7 +142,7 @@ convertTyConApp names tc tsArgs'
          -> G.LitTy (G.StrTyLit $ G.fsLit str)
 
         D.TyConSpec D.TcConFun
-         |  [t1, t2]     <- tsArgs'
+         | [t1, t2] <- tsArgs'
          -> G.FunTy t1 t2
 
         _ -> error $ "repa-plugin.convertTyConApp: no match for " 

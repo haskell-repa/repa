@@ -7,6 +7,7 @@ import Data.Array.Repa.Plugin.Convert.ToGHC.Prim
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
 import Data.Array.Repa.Plugin.Convert.FatName
 import Data.List
+import Control.Monad
 import Data.Map                         (Map)
 
 import qualified HscTypes                as G
@@ -47,7 +48,7 @@ spliceModGuts namesSource mm guts
                         $ map (\(x, y) -> (y, x)) 
                         $ Map.toList names
 
-        binds'  <- mapM (spliceBind guts names names' mm) 
+        binds'  <- liftM concat $ mapM (spliceBind guts names names' mm) 
                 $  G.mg_binds guts
 
         return  $ guts { G.mg_binds = binds' }
@@ -72,19 +73,46 @@ spliceBind
         -> Map GhcName D.Name
         -> D.Module () D.Name
         -> G.CoreBind
-        -> G.UniqSM G.CoreBind
+        -> G.UniqSM [G.CoreBind]
 
 -- If there is a matching binding in the Disciple module then use that.
-spliceBind guts names names' mm (G.NonRec b _)
- | Just dn        <- Map.lookup (GhcNameVar b) names'
- , Just (_db, dx) <- lookupModuleBindOfName mm dn
- = do   (x', _)   <- convertExp guts names dx
-        return  $ G.NonRec b x'
+spliceBind guts names names' mm (G.NonRec gbOrig _)
+ | Just nOrig                  <- Map.lookup (GhcNameVar gbOrig) names'
+ , Just (dbLowered, dxLowered) <- lookupModuleBindOfName mm nOrig
+ = do   
+        -- make a new binding for the lowered version.
+        let dtLowered         = D.typeOfBind dbLowered
+        let gtLowered         = convertType names dtLowered
+        gvLowered              <- newDummyVar "lowered" gtLowered
+
+        -- convert the lowered version
+        (gxLowered, _)        <- convertExp guts names dxLowered
+
+        return  [ G.NonRec gbOrig  (G.Var gvLowered)    -- TODO: add wrapper
+                , G.NonRec gvLowered gxLowered ]
+
 
 -- Otherwise leave the original GHC binding as it is.
 spliceBind _ _ _ _ b
- = return b
+ = return [b]
 
+{-
+callLowered 
+        :: G.Type       -- ^ Type of original version.
+        -> G.Type       -- ^ Type of lowered  version.
+        -> [G.Var]      -- ^ Lambda bound variables in wrapper.
+        -> G.Var        -- ^ Name of lowered version.
+        -> G.CoreExpr
+
+callLowered tOrig tLowered vsParam vLowered
+        | G.ForAllTy vOrig tOrig'     <- tOrig
+        , G.ForAllTy _     tLowered'  <- tLowered
+        = G.Lam vOrig (callLowered tOrig' tLowered' vLowered)
+
+        | G.FunTy tOrig1      tOrig2    <- tOrig
+        , G.FunTy _tLowered1 _tLowered2 <- tLowered
+        = G.FunTy tOrig1 tOrig2
+-}
 
 -------------------------------------------------------------------------------
 -- | Lookup a top-level binding from a DDC module.
@@ -101,7 +129,6 @@ lookupModuleBindOfName mm n
 
  | otherwise
  = Nothing
-
 
 
 -- Top -----------------------------------------------------------------------
