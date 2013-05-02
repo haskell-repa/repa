@@ -92,9 +92,9 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
                  , envVars      = [] }
 
         -- make a new binding for the lowered version.
-        let dtLowered         = D.typeOfBind dbLowered
-        let gtLowered         = convertType kenv dtLowered
-        gvLowered             <- newDummyVar "lowered" gtLowered
+        let dtLowered   = D.typeOfBind dbLowered
+        gtLowered       <- convertType kenv dtLowered
+        gvLowered       <- newDummyVar "lowered" gtLowered
 
 
         (gxLowered, _)        
@@ -159,7 +159,7 @@ convertExp kenv tenv xx
                 (xNum', _)      <- convertExp kenv tenv xNum
                 (xWorld', _)    <- convertExp kenv tenv xWorld
 
-                let tScrut'     = convertType kenv (D.tTuple2 D.tWorld (D.tArray tA))
+                tScrut'         <- convertType kenv (D.tTuple2 D.tWorld (D.tArray tA))
                 let xScrut'     = G.mkApps (G.Var vOp) 
                                         [G.Type G.realWorldTy, xNum', xWorld']
                 vScrut'         <- newDummyVar "scrut" tScrut'
@@ -177,7 +177,7 @@ convertExp kenv tenv xx
 
         -- writeArray# [tElem] xArr xIx xVal xWorld
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ _bWorld@(D.BName _ _)
+                 [ D.AAlt (D.PData _ [ _bWorld@(D.BName nWorld _)
                                      , _bVoid]) x1]
          | Just (  D.NameOpStore D.OpStoreWriteArray
                 , [D.XType tA, xArr, xIx, xVal, xWorld])
@@ -190,13 +190,14 @@ convertExp kenv tenv xx
                 (xVal',   _)    <- convertExp kenv tenv xVal
                 (xWorld', _)    <- convertExp kenv tenv xWorld
 
-                let tScrut'     = convertType kenv (D.tTuple2 D.tWorld tA)
+                tScrut'         <- convertType kenv (D.tTuple2 D.tWorld tA)
                 let xScrut'     = G.mkApps (G.Var vOp) 
                                         [G.Type G.realWorldTy, xArr', xIx', xVal', xWorld']
                 vScrut'         <- newDummyVar "scrut" tScrut'
 
                 -- alt
-                (x1', t1')      <- convertExp kenv tenv x1
+                let tenv'       = tenv { envVars = (nWorld, vScrut') : envVars tenv }
+                (x1', t1')      <- convertExp kenv tenv' x1
 
                 return  ( G.Case xScrut' vScrut' t1'
                                 [ (G.DEFAULT, [], x1')]
@@ -209,9 +210,16 @@ convertExp kenv tenv xx
         --  other top-level bindings, or dummy variables that we've
         --  introduced locally in this function.
         D.XVar _ (D.UName dn)
-         |  Just gv     <- lookup dn (envVars tenv)
-         ->     return  ( G.Var gv
-                        , G.varType gv)
+         -> case lookup dn (envVars tenv) of
+                Nothing 
+                 -> error $ unlines 
+                          [ "repa-plugin.ToGHC.convertExp: variable " 
+                                     ++ show dn ++ " not in scope"
+                          , "env = " ++ show (map fst $ envVars tenv) ]
+
+                Just gv
+                 -> return ( G.Var gv
+                           , G.varType gv)
 
         -- Primops.
         --  Polymorphic primops are handled specially in the code above, 
@@ -329,7 +337,7 @@ convertExp kenv tenv xx
 
         -- Type arguments.
         D.XType t
-         -> do  let t'          = convertType kenv t
+         -> do  t'      <- convertType kenv t
                 return  ( G.Type t'
                         , G.wordTy )                                -- TODO: wrong type.
 

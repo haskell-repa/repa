@@ -25,48 +25,13 @@ import qualified DDC.Core.Flow.Compounds as D
 import qualified DDC.Core.Flow.Prim      as D
 
 import qualified Data.Map                as Map
-import Debug.Trace
-import DDC.Base.Pretty
 
--- Exp ------------------------------------------------------------------------
--- | Get the GHC expression var corresponding to some DDC name.
-{-
-getExpBind 
-        :: Env 
-        -> D.Bind D.Name
-        -> G.UniqSM (Env, G.Var)
-
-getExpBind kenv b
- -- DDC name was created from a GHC name originally, or is the name of some
- -- primitive thing, so we can use the known GHC name for it.
- | D.BName dn _         <- b
- , Just (GhcNameVar gv) <- Map.lookup dn (envNames kenv)
- = return (names, gv)
-
- -- DDC name was created during program transformation, so we need to create
- -- a new GHC name for it.
- | otherwise
- = do   let tName   = D.typeOfBind b
-
-        let details = G.VanillaId
-        let occName = OccName.mkOccName OccName.varName "x"
-        unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName
-        let ty      = convertType kenv tName
-        let info    = G.vanillaIdInfo
-        let gv      = G.mkLocalVar details name ty info
-
-        let names'  = case b of
-                        D.BName dn _ -> Map.insert dn (GhcNameVar gv) names
-                        _            -> names
-
-        return  ( names', gv)
--}
 
 -- Type -----------------------------------------------------------------------
 convertType 
         :: Env
-        -> D.Type D.Name -> G.Type
+        -> D.Type D.Name 
+        -> G.UniqSM G.Type
 
 convertType kenv tt
  = case tt of
@@ -75,7 +40,7 @@ convertType kenv tt
         --   The GHC state token takes a phantom type to indicate
         --   what state thread it corresponds to.
         D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
-         -> G.TyConApp G.statePrimTyCon [G.realWorldTy]
+         -> return $ G.TyConApp G.statePrimTyCon [G.realWorldTy]
 
         -- DDC[Array# _] => GHC[MutableByteArray#]
         --   GHC uses the same monomorphic array type to store all types
@@ -83,7 +48,7 @@ convertType kenv tt
         D.TApp{}
          | Just (D.NameTyConFlow D.TyConFlowArray, [_tA])
                 <- D.takePrimTyConApps tt
-         -> G.mkMutableByteArrayPrimTy G.realWorldTy
+         -> return $ G.mkMutableByteArrayPrimTy G.realWorldTy
 
         -- DDC[Stream# a] => GHC[Stream {Lifted a}]
         --   In the code we get from the lowering transform, for element
@@ -95,35 +60,42 @@ convertType kenv tt
                 <- D.takePrimTyConApps tt
          , Just (GhcNameTyCon tc) <- Map.lookup nStream (envNames kenv)
          , Just tElem'            <- boxedGhcTypeOfElemType tElem
-         -> let tK'     = convertType kenv tK
-            in  G.TyConApp tc [tK', tElem']
+         -> do  tK'     <- convertType kenv tK
+                return  $ G.TyConApp tc [tK', tElem']
 
 
         -- Generic Conversion -------------------
         D.TVar (D.UName n)
-         | Just gv              <- lookup n (envVars kenv)
-         -> G.TyVarTy gv
+         -> case lookup n (envVars kenv) of
+                Nothing
+                 -> error $ unlines 
+                          [ "repa-plugin.ToGHC.convertType: variable " 
+                                     ++ show n ++ " not in scope"
+                          , "env = " ++ show (map fst $ envVars kenv) ]
+
+                Just gv  
+                 -> return $ G.TyVarTy gv
 
         D.TCon tc
-         -> convertTyConApp (envNames kenv) tc []
+         -> return $ convertTyConApp (envNames kenv) tc []
 
-        D.TForall (D.BName n _) t
-         | Just (GhcNameVar gv)   <- Map.lookup n (envNames kenv)       -- TODO: wrong
-         -> G.ForAllTy gv (convertType kenv t)
+        D.TForall b t
+         -> do  (kenv', gv)     <- bindVarT kenv b
+                t'              <- convertType kenv' t
+                return  $ G.ForAllTy gv t'
 
         -- Function types.
         D.TApp{}
          | Just (t1, _, _, t2)    <- D.takeTFun tt
-         -> let t1'     = convertType kenv t1
-                t2'     = convertType kenv t2
-            in  G.FunTy t1' t2'
+         -> do  t1'     <- convertType kenv t1
+                t2'     <- convertType kenv t2
+                return  $  G.FunTy t1' t2'
 
         -- Applied type constructors.
         D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
-         -> let tsArgs' = map (convertType kenv) tsArgs
-            in  trace (renderIndent $ text "converted" <+> ppr tt)
-                $ convertTyConApp (envNames kenv) tc tsArgs'
+         -> do  tsArgs' <- mapM (convertType kenv) tsArgs
+                return  $ convertTyConApp (envNames kenv) tc tsArgs'
 
         _ -> error $ "repa-plugin.convertType: no match for " ++ show tt
 
@@ -203,14 +175,14 @@ data Env
 -- | Bind a fresh GHC variable for a DDC expression variable.
 bindVar :: Env -> Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
 bindVar kenv env (D.BName n@(D.NameVar str) t)
- = do   let gt   = convertType kenv t
-        gv       <- newDummyVar str gt
+ = do   gt      <-  convertType kenv t
+        gv      <- newDummyVar str gt
         let env' = env { envVars       = (n, gv) : envVars env }
         return   (env', gv)
 
 bindVar kenv env (D.BNone t)
- = do   let gt   = convertType kenv t
-        gv       <- newDummyVar "v" gt
+ = do   gt      <- convertType kenv t
+        gv      <- newDummyVar "v" gt
         return  (env, gv)
 
 bindVar _ _ b

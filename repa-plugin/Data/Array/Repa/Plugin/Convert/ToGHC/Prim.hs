@@ -52,9 +52,9 @@ convertPolyPrim kenv tenv n tArg
          , Just vk      <- lookup (D.NameVar $ str ++ "_val") (envVars tenv) 
                         -- HACKS!. Store a proper mapping between rate vars
                         --         and their singleton types.
-         -> return ( G.App (G.Var gv) (G.Var vk)
-                   , convertType kenv D.tInt)
-
+         -> do  t'      <- convertType kenv D.tInt
+                return  ( G.App (G.Var gv) (G.Var vk)
+                        , t')
         _
          -> error $ "repa-plugin.toGHC.convertPolyPrim: no match for " ++ show n
 
