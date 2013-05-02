@@ -63,6 +63,13 @@ convertType kenv tt
          -> do  tK'     <- convertType kenv tK
                 return  $ G.TyConApp tc [tK', tElem']
 
+        -- DDC[Data] => GHC[*]
+        D.TCon (D.TyConKind D.KiConData)
+         -> return $ G.liftedTypeKind
+
+        -- DDC[Rate] => GHC[*]
+        D.TCon (D.TyConBound (D.UPrim (D.NameKiConFlow D.KiConFlowRate) _) _)
+         -> return $ G.liftedTypeKind
 
         -- Generic Conversion -------------------
         D.TVar (D.UName n)
@@ -135,9 +142,6 @@ convertTyConPrimName n
         D.NameTyConFlow (D.TyConFlowTuple 2)
          -> Just G.unboxedPairTyCon
 
-        D.NameKiConFlow D.KiConFlowRate
-         -> Just G.liftedTypeKindTyCon
-
         D.NamePrimTyCon D.PrimTyConNat  
          -> Just G.intPrimTyCon
 
@@ -153,7 +157,6 @@ boxedGhcTypeOfElemType :: D.Type D.Name -> Maybe G.Type
 boxedGhcTypeOfElemType t
  | t == D.tInt          = Just G.intTy
  | otherwise            = Nothing
-
 
 
 -- Env ------------------------------------------------------------------------
@@ -173,22 +176,32 @@ data Env
 
 
 -- | Bind a fresh GHC variable for a DDC expression variable.
-bindVar :: Env -> Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
-bindVar kenv env (D.BName n@(D.NameVar str) t)
- = do   gt      <-  convertType kenv t
-        gv      <- newDummyVar str gt
-        let env' = env { envVars       = (n, gv) : envVars env }
-        return   (env', gv)
-
-bindVar kenv env (D.BNone t)
+bindVarX :: Env -> Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
+bindVarX kenv tenv (D.BName n@(D.NameVar str) t)
  = do   gt      <- convertType kenv t
-        gv      <- newDummyVar "v" gt
-        return  (env, gv)
+        gv      <- newDummyVar str gt
+        let tenv' = tenv { envVars       = (n, gv) : envVars tenv }
+        return   (tenv', gv)
 
-bindVar _ _ b
-        = error $ "repa-plugin.ToGHC.bindVar: can't bind " ++ show b
+bindVarX kenv tenv (D.BNone t)
+ = do   gt      <- convertType kenv t
+        gv      <- newDummyVar "x" gt
+        return  (tenv, gv)
+
+bindVarX _ _ b
+        = error $ "repa-plugin.ToGHC.bindVarX: can't bind " ++ show b
 
 
-bindVarT kenv           = bindVar kenv kenv
-bindVarX kenv tenv      = bindVar kenv tenv
+
+-- | Bind a fresh GHC type variable for a DDC type variable.
+bindVarT :: Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
+bindVarT kenv (D.BName n@(D.NameVar str) _)
+ = do   gv      <- newDummyTyVar str 
+        let kenv' = kenv { envVars       = (n, gv) : envVars kenv }
+        return  (kenv', gv)
+
+bindVarT _ b
+        = error $ "repa-plugin.ToGHC.bindVarT: can't bind " ++ show b
+
+
 

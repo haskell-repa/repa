@@ -278,7 +278,7 @@ convertExp kenv tenv xx
                 (xBody', tBody') <- convertExp kenv' tenv' xBody
 
                 return  ( G.Lam gv $ G.Lam gv_val xBody'
-                        , G.mkFunTy (G.varType gv) tBody')
+                        , G.mkForAllTy gv tBody')
 
 
         -- Type abstractions.
