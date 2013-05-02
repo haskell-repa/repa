@@ -17,6 +17,7 @@ import qualified TypeRep                 as G
 import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
 import qualified Var                     as G
+import qualified MkId                    as G
 import qualified DataCon                 as G
 import qualified Literal                 as G
 import qualified PrimOp                  as G
@@ -83,36 +84,85 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
         -- make a new binding for the lowered version.
         let dtLowered         = D.typeOfBind dbLowered
         let gtLowered         = convertType names dtLowered
-        gvLowered              <- newDummyVar "lowered" gtLowered
+        gvLowered             <- newDummyVar "lowered" gtLowered
 
         -- convert the lowered version
         (gxLowered, _)        <- convertExp guts names dxLowered
 
-        return  [ G.NonRec gbOrig  (G.Var gvLowered)    -- TODO: add wrapper
-                , G.NonRec gvLowered gxLowered ]
+        -- Call the lowered version from the original,
+        --  adding a wrapper to (unsafely) pass the world token and
+        --  marshal boxed to unboxed values.
+        xCall   <- callLowered 
+                        (G.varType gbOrig) gtLowered
+                        [] 
+                        gvLowered
+
+        return  [ G.NonRec gbOrig  xCall
+                , G.NonRec gvLowered gxLowered ]   -- TODO: attach NOINLINE pragma
+                                                   --       so the realWorld token doesn't get
+                                                   --       substituted.
 
 
 -- Otherwise leave the original GHC binding as it is.
 spliceBind _ _ _ _ b
  = return [b]
 
-{-
+-------------------------------------------------------------------------------
+-- | Make a wrapper to call a lowered version of a function from the original
+--   binding. We need to unsafely pass it the world token, as well as marshall
+--   between boxed and unboxed types.
 callLowered 
-        :: G.Type       -- ^ Type of original version.
-        -> G.Type       -- ^ Type of lowered  version.
-        -> [G.Var]      -- ^ Lambda bound variables in wrapper.
-        -> G.Var        -- ^ Name of lowered version.
-        -> G.CoreExpr
+        :: G.Type                       -- ^ Type of original version.
+        -> G.Type                       -- ^ Type of lowered  version.
+        -> [Either G.Var G.CoreExpr]    -- ^ Lambda bound variables in wrapper.
+        -> G.Var                        -- ^ Name of lowered version.
+        -> G.UniqSM G.CoreExpr
 
 callLowered tOrig tLowered vsParam vLowered
-        | G.ForAllTy vOrig tOrig'     <- tOrig
-        , G.ForAllTy _     tLowered'  <- tLowered
-        = G.Lam vOrig (callLowered tOrig' tLowered' vLowered)
+        -- Decend into foralls.
+        --  Bind the type argument with a new var so we can pass it to 
+        --  the lowered function.
+        | G.ForAllTy vOrig tOrig'       <- tOrig
+        , G.ForAllTy _     tLowered'    <- tLowered
+        = do    let vsParam'    = Left vOrig : vsParam
+                xBody   <- callLowered tOrig' tLowered' vsParam' vLowered
+                return  $  G.Lam vOrig xBody
 
+
+        -- If the type of the lowered function says it needs 
+        -- the realworld token, then just give it one.
+        --  This effectively unsafePerformIOs it.
+        | G.FunTy    tLowered1  tLowered2   <- tLowered
+        , G.TyConApp tcState _              <- tLowered1
+        , tcState == G.statePrimTyCon
+        = do    let vsParam'    = Right (G.Var G.realWorldPrimId) : vsParam
+                callLowered tOrig tLowered2 vsParam' vLowered
+
+
+        -- Decend into functions.
+        --  Bind the argument with a new var so we can pass it to the lowered
+        --  function.
         | G.FunTy tOrig1      tOrig2    <- tOrig
-        , G.FunTy _tLowered1 _tLowered2 <- tLowered
-        = G.FunTy tOrig1 tOrig2
--}
+        , G.FunTy _tLowered1  tLowered2 <- tLowered
+        = do    v'              <- newDummyVar "arg" tOrig1
+                let vsParam'    = Right (G.Var v') : vsParam
+                xBody           <- callLowered tOrig2 tLowered2 vsParam' vLowered
+                return  $  G.Lam v' xBody
+
+
+        -- We've decended though all the foralls and lambdas and now need
+        -- to call the actual lowered function, and marshall its result.
+        | otherwise
+        = do    -- Arguments to pass to the lowered function.
+                let xsArg       = map   (either (G.Type . G.TyVarTy) id) 
+                                        vsParam
+
+                -- Actual call to the lowered function.
+                let xLowered    = foldl G.App (G.Var vLowered) $ reverse xsArg
+
+                -- TODO: wrap in a case and unpack the result.
+                return xLowered
+
 
 -------------------------------------------------------------------------------
 -- | Lookup a top-level binding from a DDC module.
@@ -246,7 +296,8 @@ convertExp guts names xx
         D.XLAM _ (D.BName dn@(D.NameVar ks) k) xBody
          |  Just (GhcNameVar gv) <- Map.lookup dn names
          ,  k == D.kRate
-         -> do  let ks_val       =  ks ++ "_val"                        -- HACKS!
+         -> do  let ks_val       =  ks ++ "_val"                        -- TODO: handle singletons
+                                                                        -- properly in a Disciple pass.
                 gv_val          <- newDummyVar "rate" G.intPrimTy
                 let names'       =  Map.insert (D.NameVar ks_val) (GhcNameVar gv_val) names
                 (xBody', tBody') <- convertExp guts names' xBody
@@ -261,8 +312,7 @@ convertExp guts names xx
 
         -- Function abstractions.
         D.XLam _ (D.BName dn dt) xBody
-         -> do  (names1, gv)     <- getExpBind names (D.BAnon dt)       
-                                        -- TODO: BRUTAL fresh name generator
+         -> do  (names1, gv)     <- getExpBind names (D.BAnon dt)     -- TODO: Avoid fresh name hacks.
                 let names'       = Map.insert dn (GhcNameVar gv) names1
                 (xBody', tBody') <- convertExp guts names' xBody
                 return  ( G.Lam gv xBody'
@@ -281,7 +331,7 @@ convertExp guts names xx
          -> do  (x1', t1')      <- convertExp guts names x1
                 (x2', _)        <- convertExp guts names x2
                 return  ( G.App x1' x2'
-                        , t1')  -- WRONG
+                        , t1')                                          -- TODO: wrong type.
 
         -- Case expressions
         D.XCase _ xScrut 
@@ -303,7 +353,7 @@ convertExp guts names xx
         D.XType t
          -> do  let t'          = convertType names t
                 return  ( G.Type t'
-                        , G.wordTy )    -- WRONG
+                        , G.wordTy )                                -- TODO: wrong type.
 
         _ -> convertExp guts names (D.xNat () 666)
 
