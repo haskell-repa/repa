@@ -5,7 +5,6 @@ where
 import Data.Array.Repa.Plugin.Convert.ToGHC.Wrap
 import Data.Array.Repa.Plugin.Convert.ToGHC.Type
 import Data.Array.Repa.Plugin.Convert.ToGHC.Prim
-import Data.Array.Repa.Plugin.Convert.ToGHC.Env
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
 import Data.Array.Repa.Plugin.Convert.FatName
 import Data.List
@@ -81,20 +80,25 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
  | Just nOrig                  <- Map.lookup (GhcNameVar gbOrig) names'
  , Just (dbLowered, dxLowered) <- lookupModuleBindOfName mm nOrig
  = do   
-        -- make a new binding for the lowered version.
-        let dtLowered         = D.typeOfBind dbLowered
-        let gtLowered         = convertType names dtLowered
-        gvLowered             <- newDummyVar "lowered" gtLowered
-
         -- convert the lowered version
-        let env = Env
+        let kenv = Env
                 { envGuts       = guts
                 , envNames      = names
-                , envVarsT      = []
-                , envVarsX      = [] }
+                , envVars       = [] }
+
+        let tenv = Env
+                 { envGuts      = guts
+                 , envNames     = names
+                 , envVars      = [] }
+
+        -- make a new binding for the lowered version.
+        let dtLowered         = D.typeOfBind dbLowered
+        let gtLowered         = convertType kenv dtLowered
+        gvLowered             <- newDummyVar "lowered" gtLowered
+
 
         (gxLowered, _)        
-                <- convertExp env dxLowered
+                <- convertExp kenv tenv dxLowered
 
         -- Call the lowered version from the original,
         --  adding a wrapper to (unsafely) pass the world token and
@@ -134,11 +138,11 @@ lookupModuleBindOfName mm n
 
 -- Top -----------------------------------------------------------------------
 convertExp
-        :: Env  
+        :: Env -> Env
         -> D.Exp () D.Name
         -> G.UniqSM (G.CoreExpr, G.Type)
 
-convertExp env xx
+convertExp kenv tenv xx
  = case xx of
         ---------------------------------------------------
         -- Convert Core Flow's polymorphic array primops to monomorphic GHC primops.
@@ -152,20 +156,19 @@ convertExp env xx
          -> do  
                 -- scrut
                 vOp             <- getPrimOpVar $ G.NewByteArrayOp_Char
-                (xNum', _)      <- convertExp env xNum
-                (xWorld', _)    <- convertExp env xWorld
+                (xNum', _)      <- convertExp kenv tenv xNum
+                (xWorld', _)    <- convertExp kenv tenv xWorld
 
-                let names       = envNames env
-                let tScrut'     = convertType names (D.tTuple2 D.tWorld (D.tArray tA))
+                let tScrut'     = convertType kenv (D.tTuple2 D.tWorld (D.tArray tA))
                 let xScrut'     = G.mkApps (G.Var vOp) 
                                         [G.Type G.realWorldTy, xNum', xWorld']
                 vScrut'         <- newDummyVar "scrut" tScrut'
 
                 -- alt
-                (env1,   vWorld') <- bindVarX env  bWorld
-                (env2,   vArr')   <- bindVarX env1 bArr
-                let env'        = env2
-                (x1', t1')      <- convertExp env' x1
+                (tenv1,  vWorld') <- bindVarX kenv tenv  bWorld
+                (tenv2,  vArr')   <- bindVarX kenv tenv1 bArr
+                let tenv'       = tenv2
+                (x1', t1')      <- convertExp kenv tenv' x1
 
                 return  ( G.Case xScrut' vScrut' t1'
                                  [(G.DataAlt G.unboxedPairDataCon, [vWorld', vArr'], x1')]
@@ -181,20 +184,19 @@ convertExp env xx
                 <- D.takeXPrimApps xScrut
          -> do  
                 -- scrut
-                Just vOp        <- getPrim_writeByteArrayOpM (envGuts env) tA
-                (xArr',   _)    <- convertExp env xArr
-                (xIx',    _)    <- convertExp env xIx
-                (xVal',   _)    <- convertExp env xVal
-                (xWorld', _)    <- convertExp env xWorld
+                Just vOp        <- getPrim_writeByteArrayOpM (envGuts tenv) tA
+                (xArr',   _)    <- convertExp kenv tenv xArr
+                (xIx',    _)    <- convertExp kenv tenv xIx
+                (xVal',   _)    <- convertExp kenv tenv xVal
+                (xWorld', _)    <- convertExp kenv tenv xWorld
 
-                let names       = envNames env
-                let tScrut'     = convertType names (D.tTuple2 D.tWorld tA)
+                let tScrut'     = convertType kenv (D.tTuple2 D.tWorld tA)
                 let xScrut'     = G.mkApps (G.Var vOp) 
                                         [G.Type G.realWorldTy, xArr', xIx', xVal', xWorld']
                 vScrut'         <- newDummyVar "scrut" tScrut'
 
                 -- alt
-                (x1', t1')      <- convertExp env x1
+                (x1', t1')      <- convertExp kenv tenv x1
 
                 return  ( G.Case xScrut' vScrut' t1'
                                 [ (G.DEFAULT, [], x1')]
@@ -207,7 +209,7 @@ convertExp env xx
         --  other top-level bindings, or dummy variables that we've
         --  introduced locally in this function.
         D.XVar _ (D.UName dn)
-         |  Just gv     <- lookup dn (envVarsX env)
+         |  Just gv     <- lookup dn (envVars tenv)
          ->     return  ( G.Var gv
                         , G.varType gv)
 
@@ -217,7 +219,7 @@ convertExp env xx
         --  binding in the source module, or convert them directly to 
         --  a GHC primop.
         D.XVar _ (D.UPrim n _)
-         -> do  gv      <- ghcVarOfPrimName (envGuts env) n
+         -> do  gv      <- ghcVarOfPrimName (envGuts tenv) n
                 return  ( G.Var gv
                         , G.varType gv)
 
@@ -258,14 +260,14 @@ convertExp env xx
         D.XLAM _ (b@(D.BName (D.NameVar ks) k)) xBody
          |  k == D.kRate
          -> do  
-                (env1, gv)      <- bindVarT env b
+                (kenv', gv)     <- bindVarT kenv b
 
                 let ks_val      = ks ++ "_val"         -- TODO: handle singletons properly in DDC pass.
                 let dn_val      = D.NameVar ks_val
                 gv_val          <- newDummyVar "rate" G.intPrimTy
-                let env'        = env1 { envVarsX = (dn_val, gv_val) : envVarsX env1 }
+                let tenv'       = tenv { envVars = (dn_val, gv_val) : envVars tenv }
 
-                (xBody', tBody') <- convertExp env' xBody
+                (xBody', tBody') <- convertExp kenv' tenv' xBody
 
                 return  ( G.Lam gv $ G.Lam gv_val xBody'
                         , G.mkFunTy (G.varType gv) tBody')
@@ -274,8 +276,8 @@ convertExp env xx
         -- Type abstractions.
         D.XLAM _ b@(D.BName{}) xBody
          -> do  
-                (env',   gv)     <- bindVarT env b
-                (xBody', tBody') <- convertExp env' xBody
+                (kenv',  gv)     <- bindVarT   kenv b
+                (xBody', tBody') <- convertExp kenv' tenv xBody
 
                 return  ( G.Lam gv xBody'
                         , G.mkForAllTy gv tBody')
@@ -284,8 +286,8 @@ convertExp env xx
         -- Function abstractions.
         D.XLam _ b@(D.BName{}) xBody
          -> do  
-                (env',   gv)     <- bindVarX env b
-                (xBody', tBody') <- convertExp env' xBody
+                (tenv',  gv)     <- bindVarX   kenv tenv b
+                (xBody', tBody') <- convertExp kenv tenv' xBody
 
                 return  ( G.Lam gv  xBody'
                         , G.mkFunTy (G.varType gv) tBody')
@@ -295,13 +297,13 @@ convertExp env xx
         -- In GHC core, functions cannot be polymorphic in unlifted primitive
         -- types. We convert most of the DDC polymorphic prims in a uniform way.
         D.XApp _ (D.XVar _ (D.UPrim n _)) (D.XType t)
-         ->     convertPolyPrim env n t
+         ->     convertPolyPrim kenv tenv n t
 
 
         -- General applications.
         D.XApp _ x1 x2
-         -> do  (x1', t1')      <- convertExp env x1
-                (x2', _)        <- convertExp env x2
+         -> do  (x1', t1')      <- convertExp kenv tenv x1
+                (x2', _)        <- convertExp kenv tenv x2
                 return  ( G.App x1' x2'
                         , t1')                                          -- TODO: wrong type.
 
@@ -311,15 +313,15 @@ convertExp env xx
                                      ,     b2]) x1]
          -> do  
                 -- scrut
-                (xScrut', tScrut') <- convertExp env xScrut
-                vScrut'            <- newDummyVar "scrut" tScrut'
+                (xScrut', tScrut')  <- convertExp kenv tenv xScrut
+                vScrut'             <- newDummyVar "scrut" tScrut'
 
                 -- alt
-                (env1,    vWorld') <- bindVarX env  bWorld
-                (env2,    v2')     <- bindVarX env1 b2
-                let env' = env2
+                (tenv1,    vWorld') <- bindVarX kenv tenv  bWorld
+                (tenv2,    v2')     <- bindVarX kenv tenv1 b2
+                let tenv' = tenv2
 
-                (x1',     t1')     <- convertExp env' x1
+                (x1',     t1')      <- convertExp kenv tenv' x1
 
                 return ( G.Case xScrut' vScrut' t1'
                                 [ (G.DataAlt G.unboxedPairDataCon, [vWorld', v2'], x1') ]
@@ -327,9 +329,9 @@ convertExp env xx
 
         -- Type arguments.
         D.XType t
-         -> do  let t'          = convertType (envNames env) t
+         -> do  let t'          = convertType kenv t
                 return  ( G.Type t'
                         , G.wordTy )                                -- TODO: wrong type.
 
-        _ -> convertExp env (D.xNat () 666)
+        _ -> convertExp kenv tenv (D.xNat () 666)
 

@@ -3,7 +3,7 @@ module Data.Array.Repa.Plugin.Convert.ToGHC.Wrap
         (wrapLowered)
 where
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
-import Data.Array.Repa.Plugin.GHC.Pretty
+import Data.Array.Repa.Plugin.GHC.Pretty ()
 import DDC.Base.Pretty
 
 import qualified CoreSyn                as G
@@ -97,6 +97,10 @@ callLowered tOrig tLowered xLowered
                                 [ (G.DataAlt G.unboxedPairDataCon
                                         , [vWorld, vVal]
                                         , xResult) ]
+
+        | otherwise
+        = error "repa-plugin.Wrap.callLowered: no match"
+
 
 unwrapResult 
         :: G.Type               -- ^ Type of result for original unlowered version.

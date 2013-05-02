@@ -1,21 +1,22 @@
 
 module Data.Array.Repa.Plugin.Convert.ToGHC.Type
-        ( getExpBind
-        , convertType)
+        ( convertType
+
+        , Env(..)
+        , bindVarT
+        , bindVarX)
 where
 import Data.Array.Repa.Plugin.Convert.FatName
+import Data.Array.Repa.Plugin.Convert.ToGHC.Var
 import Data.Map                         (Map)
 
+import qualified HscTypes                as G
 import qualified Type                    as G
 import qualified TypeRep                 as G
 import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
 import qualified TyCon                   as G
 import qualified UniqSupply              as G
-import qualified Var                     as G
-import qualified IdInfo                  as G
-import qualified OccName                 as OccName
-import qualified Name                    as Name
 
 import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Compounds      as D
@@ -29,16 +30,17 @@ import DDC.Base.Pretty
 
 -- Exp ------------------------------------------------------------------------
 -- | Get the GHC expression var corresponding to some DDC name.
+{-
 getExpBind 
-        :: Map D.Name GhcName 
+        :: Env 
         -> D.Bind D.Name
-        -> G.UniqSM (Map D.Name GhcName, G.Var)
+        -> G.UniqSM (Env, G.Var)
 
-getExpBind names b
+getExpBind kenv b
  -- DDC name was created from a GHC name originally, or is the name of some
  -- primitive thing, so we can use the known GHC name for it.
  | D.BName dn _         <- b
- , Just (GhcNameVar gv) <- Map.lookup dn names
+ , Just (GhcNameVar gv) <- Map.lookup dn (envNames kenv)
  = return (names, gv)
 
  -- DDC name was created during program transformation, so we need to create
@@ -50,7 +52,7 @@ getExpBind names b
         let occName = OccName.mkOccName OccName.varName "x"
         unique      <- G.getUniqueUs
         let name    = Name.mkSystemName unique occName
-        let ty      = convertType names tName
+        let ty      = convertType kenv tName
         let info    = G.vanillaIdInfo
         let gv      = G.mkLocalVar details name ty info
 
@@ -59,14 +61,14 @@ getExpBind names b
                         _            -> names
 
         return  ( names', gv)
-
+-}
 
 -- Type -----------------------------------------------------------------------
 convertType 
-        :: Map D.Name GhcName
+        :: Env
         -> D.Type D.Name -> G.Type
 
-convertType names tt
+convertType kenv tt
  = case tt of
 
         -- DDC[World#]   => GHC[State# RealWorld#]
@@ -91,37 +93,37 @@ convertType names tt
         D.TApp{}
          | Just (nStream@(D.NameTyConFlow D.TyConFlowStream), [tK, tElem])
                 <- D.takePrimTyConApps tt
-         , Just (GhcNameTyCon tc) <- Map.lookup nStream names
+         , Just (GhcNameTyCon tc) <- Map.lookup nStream (envNames kenv)
          , Just tElem'            <- boxedGhcTypeOfElemType tElem
-         -> let tK'     = convertType names tK
+         -> let tK'     = convertType kenv tK
             in  G.TyConApp tc [tK', tElem']
 
 
         -- Generic Conversion -------------------
         D.TVar (D.UName n)
-         | Just (GhcNameVar gv)   <- Map.lookup n names
+         | Just gv              <- lookup n (envVars kenv)
          -> G.TyVarTy gv
 
         D.TCon tc
-         -> convertTyConApp names tc []
+         -> convertTyConApp (envNames kenv) tc []
 
         D.TForall (D.BName n _) t
-         | Just (GhcNameVar gv)   <- Map.lookup n names
-         -> G.ForAllTy gv (convertType names t)
+         | Just (GhcNameVar gv)   <- Map.lookup n (envNames kenv)       -- TODO: wrong
+         -> G.ForAllTy gv (convertType kenv t)
 
         -- Function types.
         D.TApp{}
          | Just (t1, _, _, t2)    <- D.takeTFun tt
-         -> let t1'     = convertType names t1
-                t2'     = convertType names t2
+         -> let t1'     = convertType kenv t1
+                t2'     = convertType kenv t2
             in  G.FunTy t1' t2'
 
         -- Applied type constructors.
         D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
-         -> let tsArgs' = map (convertType names) tsArgs
+         -> let tsArgs' = map (convertType kenv) tsArgs
             in  trace (renderIndent $ text "converted" <+> ppr tt)
-                $ convertTyConApp names tc tsArgs'
+                $ convertTyConApp (envNames kenv) tc tsArgs'
 
         _ -> error $ "repa-plugin.convertType: no match for " ++ show tt
 
@@ -181,4 +183,40 @@ boxedGhcTypeOfElemType t
  | otherwise            = Nothing
 
 
+
+-- Env ------------------------------------------------------------------------
+-- | Environment used to map DDC names to GHC names.
+--   Used when converting DDC Core to GHC core.
+data Env
+        = Env 
+        { -- | Guts of the original GHC module.
+          envGuts       :: G.ModGuts
+
+          -- | Name map we got during the original GHC -> DDC conversion.
+        , envNames      :: Map D.Name GhcName
+
+          -- | Locally scoped variables.
+        , envVars       :: [(D.Name, G.Var)]
+        }
+
+
+-- | Bind a fresh GHC variable for a DDC expression variable.
+bindVar :: Env -> Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
+bindVar kenv env (D.BName n@(D.NameVar str) t)
+ = do   let gt   = convertType kenv t
+        gv       <- newDummyVar str gt
+        let env' = env { envVars       = (n, gv) : envVars env }
+        return   (env', gv)
+
+bindVar kenv env (D.BNone t)
+ = do   let gt   = convertType kenv t
+        gv       <- newDummyVar "v" gt
+        return  (env, gv)
+
+bindVar _ _ b
+        = error $ "repa-plugin.ToGHC.bindVar: can't bind " ++ show b
+
+
+bindVarT kenv           = bindVar kenv kenv
+bindVarX kenv tenv      = bindVar kenv tenv
 

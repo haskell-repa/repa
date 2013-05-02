@@ -17,7 +17,6 @@ import DataCon
 import Literal
 import Var
 import Id
-import qualified OccName        as OccName
 import qualified UniqFM         as UFM
 
 
@@ -206,7 +205,7 @@ instance Pretty Type where
         TyConApp  tc ks -> ppr tc <+> (hsep $ map ppr ks)
         FunTy     t1 t2 -> ppr t1 <+> text "->" <+> ppr t2
         ForAllTy  v t   -> text "forall " <> ppr v  <> text "." <> ppr t
-        LitTy     lit   -> text "LitTy"
+        LitTy     _     -> text "LitTy"
 
 
 -- Coercion -------------------------------------------------------------------
