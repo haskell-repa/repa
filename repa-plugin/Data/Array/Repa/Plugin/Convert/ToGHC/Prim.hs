@@ -1,7 +1,6 @@
 
 module Data.Array.Repa.Plugin.Convert.ToGHC.Prim
         ( convertPolyPrim
-
         , getPrim_add
         , getPrim_mul
         , getPrim_next
@@ -11,6 +10,7 @@ where
 import Data.Array.Repa.Plugin.Convert.FatName
 import Data.Array.Repa.Plugin.Convert.ToGHC.Type
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
+import Data.Array.Repa.Plugin.Convert.ToGHC.Env
 import Control.Monad
 import Data.Map                         (Map)
 
@@ -30,37 +30,36 @@ import qualified Data.Map                as Map
 
 
 convertPolyPrim 
-        :: G.ModGuts
-        -> Map D.Name GhcName
+        :: Env
         -> D.Name -> D.Type D.Name 
         -> G.UniqSM (G.CoreExpr, G.Type)
 
-convertPolyPrim guts names n tArg
+convertPolyPrim env n tArg
  = case n of
         D.NamePrimArith D.PrimArithAdd
-         -> do  Just gv <- getPrim_add guts tArg
+         -> do  Just gv <- getPrim_add (envGuts env) tArg
                 return  (G.Var gv, G.varType gv)
 
         D.NamePrimArith D.PrimArithMul
-         -> do  Just gv <- getPrim_mul guts tArg
+         -> do  Just gv <- getPrim_mul (envGuts env) tArg
                 return  (G.Var gv, G.varType gv)
 
         D.NameOpStore D.OpStoreNext 
-         | Just  gv     <- getPrim_next guts tArg
+         | Just  gv     <- getPrim_next (envGuts env) tArg
          ->     return  (G.Var gv, G.varType gv)
 
         D.NameOpStore D.OpStoreReadArray
-         -> do  Just gv <- getPrim_readByteArrayOpM guts tArg
+         -> do  Just gv <- getPrim_readByteArrayOpM (envGuts env) tArg
                 return  (G.Var gv, G.varType gv)
 
         D.NameOpFlow D.OpFlowLengthOfRate
          |  D.TVar (D.UName (D.NameVar str)) <- tArg
-         , Just gv              <- findImportedPrimVar guts "primLengthOfRate"
-         , Just (GhcNameVar vk) <- Map.lookup (D.NameVar $ str ++ "_val")  names 
+         , Just gv      <- findImportedPrimVar (envGuts env) "primLengthOfRate"
+         , Just vk      <- lookup (D.NameVar $ str ++ "_val") (envVarsX env) 
                         -- HACKS!. Store a proper mapping between rate vars
                         --         and their singleton types.
          -> return ( G.App (G.Var gv) (G.Var vk)
-                   , convertType names D.tInt)
+                   , convertType (envNames env) D.tInt)
 
         _
          -> error $ "repa-plugin.toGHC.convertPolyPrim: no match for " ++ show n

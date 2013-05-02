@@ -17,7 +17,8 @@ import DataCon
 import Literal
 import Var
 import Id
-import qualified UniqFM as UFM
+import qualified OccName        as OccName
+import qualified UniqFM         as UFM
 
 
 -- Guts -----------------------------------------------------------------------
@@ -194,14 +195,18 @@ instance Pretty Literal where
 
 
 -- Type -----------------------------------------------------------------------
-instance Pretty TyCon where
- ppr _  = text "<TYCON>"
-
 instance Pretty TyLit where
  ppr _  = text "<TYLIT>"
 
 instance Pretty Type where
- ppr _  = text "<TYPE>"
+ ppr tt  
+  = case tt of
+        TyVarTy   var   -> ppr var
+        AppTy     t1 t2 -> ppr t1 <+> ppr t2
+        TyConApp  tc ks -> ppr tc <+> (hsep $ map ppr ks)
+        FunTy     t1 t2 -> ppr t1 <+> text "->" <+> ppr t2
+        ForAllTy  v t   -> text "forall " <> ppr v  <> text "." <> ppr t
+        LitTy     lit   -> text "LitTy"
 
 
 -- Coercion -------------------------------------------------------------------
@@ -228,6 +233,12 @@ instance Pretty Name where
 instance Pretty OccName where
  ppr occ
         = text (occNameString occ)
+
+instance Pretty TyCon where
+ ppr tc 
+        = ppr (tyConName tc)
+
+
 
 
 

@@ -11,7 +11,6 @@ import qualified TypeRep                 as G
 import qualified TysPrim                 as G
 import qualified TysWiredIn              as G
 import qualified TyCon                   as G
-import qualified FastString              as G
 import qualified UniqSupply              as G
 import qualified Var                     as G
 import qualified IdInfo                  as G
@@ -22,9 +21,11 @@ import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
 import qualified DDC.Core.Flow.Compounds as D
+import qualified DDC.Core.Flow.Prim      as D
 
 import qualified Data.Map                as Map
-
+import Debug.Trace
+import DDC.Base.Pretty
 
 -- Exp ------------------------------------------------------------------------
 -- | Get the GHC expression var corresponding to some DDC name.
@@ -108,16 +109,19 @@ convertType names tt
          | Just (GhcNameVar gv)   <- Map.lookup n names
          -> G.ForAllTy gv (convertType names t)
 
+        -- Function types.
         D.TApp{}
-         | Just (t1, _, _, t2)         <- D.takeTFun tt
+         | Just (t1, _, _, t2)    <- D.takeTFun tt
          -> let t1'     = convertType names t1
                 t2'     = convertType names t2
             in  G.FunTy t1' t2'
 
+        -- Applied type constructors.
         D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
          -> let tsArgs' = map (convertType names) tsArgs
-            in  convertTyConApp names tc tsArgs'
+            in  trace (renderIndent $ text "converted" <+> ppr tt)
+                $ convertTyConApp names tc tsArgs'
 
         _ -> error $ "repa-plugin.convertType: no match for " ++ show tt
 
@@ -130,16 +134,16 @@ convertTyConApp
 
 convertTyConApp names tc tsArgs'
  = case tc of
+        D.TyConBound (D.UPrim n _) _
+         | Just tc'                <- convertTyConPrimName n
+         -> G.TyConApp tc' tsArgs'
+
         D.TyConBound (D.UName n) _
          | Just (GhcNameTyCon tc') <- Map.lookup n names
          -> G.TyConApp tc' tsArgs'
 
-        D.TyConBound (D.UPrim n _) _
-         | Just tc'               <- convertTyConPrimName n
-         -> G.TyConApp tc' tsArgs'
-
-        D.TyConBound (D.UName (D.NameCon str)) _
-         -> G.LitTy (G.StrTyLit $ G.fsLit str)
+--        D.TyConBound (D.UName (D.NameCon str)) _
+--         -> G.LitTy (G.StrTyLit $ G.fsLit str)
 
         D.TyConSpec D.TcConFun
          | [t1, t2] <- tsArgs'
@@ -156,6 +160,9 @@ convertTyConPrimName n
  = case n of
         D.NameTyConFlow (D.TyConFlowTuple 2)
          -> Just G.unboxedPairTyCon
+
+        D.NameKiConFlow D.KiConFlowRate
+         -> Just G.liftedTypeKindTyCon
 
         D.NamePrimTyCon D.PrimTyConNat  
          -> Just G.intPrimTyCon

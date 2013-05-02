@@ -3,12 +3,17 @@ module Data.Array.Repa.Plugin.Convert.ToGHC.Wrap
         (wrapLowered)
 where
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
-import qualified CoreSyn                 as G
-import qualified Type                    as G
-import qualified TypeRep                 as G
-import qualified TysPrim                 as G
-import qualified MkId                    as G
-import qualified UniqSupply              as G
+import Data.Array.Repa.Plugin.GHC.Pretty
+import DDC.Base.Pretty
+
+import qualified CoreSyn                as G
+import qualified DataCon                as G
+import qualified Type                   as G
+import qualified TypeRep                as G
+import qualified TysPrim                as G
+import qualified TysWiredIn             as G
+import qualified MkId                   as G
+import qualified UniqSupply             as G
 
 
 -- | Make a wrapper to call a lowered version of a function from the original
@@ -63,5 +68,51 @@ wrapLowered tOrig tLowered vsParam vLowered
                 -- Actual call to the lowered function.
                 let xLowered    = foldl G.App (G.Var vLowered) $ reverse xsArg
 
-                -- TODO: wrap in a case and unpack the result.
-                return xLowered
+                callLowered tOrig tLowered xLowered
+
+
+-- | Make the call site for the lowered function.
+callLowered
+        :: G.Type               -- ^ Type of result for original unlowered version.
+        -> G.Type               -- ^ Type of result for lowered version.
+        -> G.CoreExpr           -- ^ Exp that calls the lowered version.
+        -> G.UniqSM G.CoreExpr
+
+callLowered tOrig tLowered xLowered
+
+        -- Assume this function returns a (# World#, a #)               -- TODO: check this.
+        | G.TyConApp _ [_tWorld, tVal]  <- tLowered
+        = do
+                vScrut  <- newDummyVar "scrut"  tLowered
+                vWorld  <- newDummyVar "world"  G.realWorldStatePrimTy
+                vResult <- newDummyVar "result" tOrig
+                vVal    <- newDummyVar "val"    tVal
+
+                -- Unwrap the actual result value.
+                let tOrigVal    = tOrig
+                let tLoweredVal = tVal
+                xResult <- unwrapResult tOrigVal tLoweredVal (G.Var vVal) 
+
+                return  $ G.Case xLowered vScrut tOrig 
+                                [ (G.DataAlt G.unboxedPairDataCon
+                                        , [vWorld, vVal]
+                                        , xResult) ]
+
+unwrapResult 
+        :: G.Type               -- ^ Type of result for original unlowered version.
+        -> G.Type               -- ^ Type of result for lowered version.
+        -> G.CoreExpr           -- ^ Expression for result value.
+        -> G.UniqSM G.CoreExpr
+
+unwrapResult tOrig tLowered xResult
+
+        | G.TyConApp tcInt []    <- tOrig
+        , tcInt == G.intTyCon
+        , G.TyConApp tcIntU []   <- tLowered    
+                        -- TODO: do a proper check. Is this supposed to be a TyLit? 
+
+        = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
+
+        | otherwise
+        = error $ "repa-plugin.ToGHC.unwrapResult: don't know how to unwrap this."
+                ++ " " ++ (renderIndent $ ppr tLowered)
