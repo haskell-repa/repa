@@ -1,7 +1,6 @@
 module Data.Array.Repa.Plugin.Convert.ToGHC.Var
         ( findImportedPrimVar
         , plainNameOfVar
-        , getPrimOpVar
         , newDummyVar
         , newDummyTyVar)
 where
@@ -10,7 +9,6 @@ import qualified CoreSyn                as G
 import qualified Type                   as G
 import qualified IdInfo                 as G
 import qualified Var                    as G
-import qualified PrimOp                 as G
 import qualified UniqSupply             as G
 import qualified FastString             as G
 import qualified OccName                as OccName
@@ -44,18 +42,6 @@ plainNameOfVar gv
  = let  name    = G.varName gv
         occ     = Name.nameOccName name
    in   OccName.occNameString occ
-
-
--- | Convert a GHC primop to a variable.
-getPrimOpVar :: G.PrimOp -> G.UniqSM G.Var
-getPrimOpVar op
- = do   let details = G.PrimOpId   op
-        let occName = G.primOpOcc  op
-        let ty      = G.primOpType op
-        unique      <- G.getUniqueUs
-        let name    = Name.mkSystemName unique occName
-        let info    = G.vanillaIdInfo
-        return  $ G.mkGlobalVar details name ty info
 
 
 -- | Create a fresh dummy GHC expression variable with the given type.

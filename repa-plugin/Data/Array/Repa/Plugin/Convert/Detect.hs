@@ -246,7 +246,7 @@ instance Detect (Exp a) where
 
   -- Detect folds.
   | XApp a _ _                                          <- xx
-  , Just (XVar _ uFold, [xTK, xTA, xTB, xF, xZ, xS])    <- takeXApps xx
+  , Just (XVar _ uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    <- takeXApps xx
   , UName (FatName _ (NameVar vFold))                   <- uFold
   , isPrefixOf "fold_" vFold
   = do  args'  <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]

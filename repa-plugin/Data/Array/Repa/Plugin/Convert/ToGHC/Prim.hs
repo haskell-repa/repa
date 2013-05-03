@@ -12,13 +12,11 @@ module Data.Array.Repa.Plugin.Convert.ToGHC.Prim
 where
 import Data.Array.Repa.Plugin.Convert.ToGHC.Type
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
-import Control.Monad
 
 import qualified CoreSyn                 as G
 import qualified Type                    as G
 import qualified TysPrim                 as G
 import qualified Var                     as G
-import qualified PrimOp                  as G
 import qualified UniqSupply              as G
 
 import qualified DDC.Core.Exp            as D
@@ -55,36 +53,36 @@ convertPolytypicPrim
 convertPolytypicPrim kenv _tenv n tArg
  = case n of
         D.NamePrimArith D.PrimArithAdd
-         -> do  Just gv <- getPrim_add (envGuts kenv) tArg
-                return  (G.Var gv, G.varType gv)
+         | Just gv      <- getPrim_add (envGuts kenv) tArg
+         ->     return  (G.Var gv, G.varType gv)
 
         D.NamePrimArith D.PrimArithMul
-         -> do  Just gv <- getPrim_mul (envGuts kenv) tArg
-                return  (G.Var gv, G.varType gv)
+         | Just gv      <- getPrim_mul (envGuts kenv) tArg
+         ->     return  (G.Var gv, G.varType gv)
 
         D.NameOpStore D.OpStoreNext 
-         | Just  gv     <- getPrim_next (envGuts kenv) tArg
+         | Just gv     <- getPrim_next (envGuts kenv) tArg
          ->     return  (G.Var gv, G.varType gv)
 
         D.NameOpStore D.OpStoreNewArray
-         -> do  Just gv <- getPrim_newByteArrayOpM (envGuts kenv) tArg
-                return  ( G.App (G.Var gv)         (G.Type G.realWorldTy)
+         | Just gv      <- getPrim_newByteArrayOpM (envGuts kenv) tArg
+         ->     return  ( G.App (G.Var gv)         (G.Type G.realWorldTy)
                         , G.applyTy (G.varType gv) G.realWorldTy)
 
         D.NameOpStore D.OpStoreReadArray
-         -> do  Just gv <- getPrim_readByteArrayOpM (envGuts kenv) tArg
-                return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
+         | Just gv      <- getPrim_readByteArrayOpM (envGuts kenv) tArg
+         ->     return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
                         , G.applyTy (G.varType gv) G.realWorldTy)
 
         D.NameOpStore D.OpStoreWriteArray
-         -> do  Just gv <- getPrim_writeByteArrayOpM (envGuts kenv) tArg
-                return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
+         | Just gv <- getPrim_writeByteArrayOpM (envGuts kenv) tArg
+         ->     return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
                         , G.applyTy (G.varType gv) G.realWorldTy)
 
         D.NameOpLoop D.OpLoopLoopN
          | Just gv      <- findImportedPrimVar (envGuts kenv) "primLoop"
-         ->    return  ( G.Var gv
-                       , G.varType gv)
+         ->     return  ( G.Var gv
+                        , G.varType gv)
 
         _       -> errorMissingPrim n
 
@@ -108,28 +106,28 @@ errorMissingPrim n
 
 
 -------------------------------------------------------------------------------
-getPrim_add _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.IntAddOp
- | otherwise    = return Nothing
-
-getPrim_mul _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.IntMulOp
- | otherwise    = return Nothing
-
-getPrim_next guts t
- | t == D.tInt  = findImportedPrimVar guts "primNext_Int"
+getPrim_add guts t
+ | t == D.tInt  = findImportedPrimVar guts "primAddInt"
  | otherwise    = Nothing
 
-getPrim_newByteArrayOpM _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.NewByteArrayOp_Char
- | otherwise    = return Nothing
+getPrim_mul guts t
+ | t == D.tInt  = findImportedPrimVar guts "primMulInt"
+ | otherwise    = Nothing
 
-getPrim_readByteArrayOpM _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.ReadByteArrayOp_Int
- | otherwise    = return Nothing
+getPrim_next guts t
+ | t == D.tInt  = findImportedPrimVar guts "primNextInt"
+ | otherwise    = Nothing
 
-getPrim_writeByteArrayOpM _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.WriteByteArrayOp_Int
- | otherwise    = return Nothing
+getPrim_newByteArrayOpM   guts t
+ | t == D.tInt  = findImportedPrimVar guts "primNewByteArray"
+ | otherwise    = Nothing
+
+getPrim_readByteArrayOpM  guts t
+ | t == D.tInt  = findImportedPrimVar guts "primReadIntArray"
+ | otherwise    = Nothing
+
+getPrim_writeByteArrayOpM guts t
+ | t == D.tInt  = findImportedPrimVar guts "primWriteIntArray"
+ | otherwise    = Nothing
 
 

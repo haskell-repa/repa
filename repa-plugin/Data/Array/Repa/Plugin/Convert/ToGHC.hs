@@ -7,9 +7,6 @@ import Data.Array.Repa.Plugin.Convert.ToGHC.Type
 import Data.Array.Repa.Plugin.Convert.ToGHC.Prim
 import Data.Array.Repa.Plugin.Convert.ToGHC.Var
 import Data.Array.Repa.Plugin.Convert.FatName
-import Data.List
-import Control.Monad
-import Data.Map                         (Map)
 
 import qualified HscTypes               as G
 import qualified CoreSyn                as G
@@ -20,11 +17,9 @@ import qualified TysWiredIn             as G
 import qualified Var                    as G
 import qualified DataCon                as G
 import qualified Literal                as G
-import qualified PrimOp                 as G
 import qualified UniqSupply             as G
-import qualified Outputable             as G
-import qualified DynFlags               as G
 
+import DDC.Base.Pretty
 import qualified DDC.Core.Exp           as D
 import qualified DDC.Core.Module        as D
 import qualified DDC.Core.Compounds     as D
@@ -32,28 +27,35 @@ import qualified DDC.Core.Flow          as D
 import qualified DDC.Core.Flow.Prim     as D
 import qualified DDC.Core.Flow.Compounds as D
 
-import qualified Data.Map                as Map
+import Data.List
+import Control.Monad
+import Data.Map                         (Map)
+import qualified Data.Map               as Map
 
-import Debug.Trace
-import DDC.Base.Pretty
 
+
+-------------------------------------------------------------------------------
 -- | Splice bindings from a DDC module into a GHC core program.
+--
+--   If the GHC module contains a top-level binding that map onto a binding
+--   in the DDC module then add the converted DDC binding to the GHC module
+--   and patch the original GHC binding to call it.
+--
 spliceModGuts
         :: Map D.Name GhcName   -- ^ Maps DDC names to GHC names.
         -> D.Module () D.Name   -- ^ DDC module.
         -> G.ModGuts            -- ^ GHC module guts.
         -> G.UniqSM G.ModGuts
 
-spliceModGuts namesSource mm guts
- = do   -- Add the builtin names to the map we got from the source program.
-        let names       = namesSource
-
+spliceModGuts names mm guts
+ = do   
         -- Invert the map so it maps GHC names to DDC names.
         let names'      = Map.fromList 
                         $ map (\(x, y) -> (y, x)) 
                         $ Map.toList names
 
-        binds'  <- liftM concat $ mapM (spliceBind guts names names' mm) 
+        binds'  <- liftM concat 
+                $  mapM (spliceBind guts names names' mm) 
                 $  G.mg_binds guts
 
         return  $ guts { G.mg_binds = binds' }
@@ -75,7 +77,7 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
  | Just nOrig                  <- Map.lookup (GhcNameVar gbOrig) names'
  , Just (dbLowered, dxLowered) <- lookupModuleBindOfName mm nOrig
  = do   
-        -- convert the lowered version
+        -- starting environments.
         let kenv = Env
                 { envGuts       = guts
                 , envNames      = names
@@ -89,26 +91,23 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
         -- make a new binding for the lowered version.
         let dtLowered   = D.typeOfBind dbLowered
         gtLowered       <- convertType kenv dtLowered
-        gvLowered       <- newDummyVar "lowered" gtLowered
+        gvLowered       <- newDummyVar "lowered" gtLowered       -- TODO: base on orig name.
 
+        -- Convert the lowered version from DDC to GHC core.
+        (gxLowered, _)  <- convertExp kenv tenv dxLowered
 
-        (gxLowered, _)        
-                <- convertExp kenv tenv dxLowered
-
-        -- Call the lowered version from the original,
-        --  adding a wrapper to (unsafely) pass the world token and
-        --  marshal boxed to unboxed values.
+        -- Call the lowered version from the original, adding a wrapper
+        --  to (unsafely) pass the world token and marshal boxed to
+        --  unboxed values.
         xCall   <- wrapLowered 
                         (G.varType gbOrig) gtLowered
                         [] 
                         gvLowered
 
-        return  [ G.NonRec gbOrig  xCall
-                , G.NonRec gvLowered gxLowered ]   
-                        -- TODO: attach NOINLINE pragma
-                        --       so the realWorld token doesn't get
-                        --       substituted.
-
+        return  [ G.NonRec gvLowered gxLowered
+                , G.NonRec gbOrig  xCall ]
+                        -- TODO: ensure the NOINLINE pragma is attached so we know
+                        --       the faked realWorld token will never be substituted.
 
 -- Otherwise leave the original GHC binding as it is.
 spliceBind _ _ _ _ b
@@ -117,7 +116,7 @@ spliceBind _ _ _ _ b
 
 -------------------------------------------------------------------------------
 -- | Lookup a top-level binding from a DDC module.
---   TODO: don't require a top-level letrec.
+                                        --   TODO: don't require a top-level letrec.
 lookupModuleBindOfName
         :: D.Module () D.Name 
         -> D.Name 
@@ -140,7 +139,6 @@ convertExp
 
 convertExp kenv tenv xx
  = case xx of
-        -- Generic Conversion -----------------------------
         -- Variables.
         --  Names of plain variables should be in the name map, and refer
         --  other top-level bindings, or dummy variables that we've
@@ -152,10 +150,10 @@ convertExp kenv tenv xx
                           [ "repa-plugin.ToGHC.convertExp: variable " 
                                      ++ show dn ++ " not in scope"
                           , "env = " ++ show (map fst $ envVars tenv) ]
-
                 Just gv
                  -> return ( G.Var gv
                            , G.varType gv)
+
 
         -- The unboxed tuple constructor.
         -- When we produce unboxed tuple we always want to preserve
@@ -172,9 +170,9 @@ convertExp kenv tenv xx
                         , G.applyTys gt [t1', t2'] )
 
 
-        -- Data constructors.
+        -- Data constructors.                           
         D.XCon _ (D.DaCon dn _ _)
-         -> case dn of
+         -> case dn of                                          -- TODO: shift into Prim module.
                 -- Unit constructor.
                 D.DaConUnit
                  -> return ( G.Var (G.dataConWorkId G.unitDataCon)
@@ -190,13 +188,6 @@ convertExp kenv tenv xx
                 D.DaConNamed (D.NameLitNat i)
                  -> return ( G.Lit (G.MachInt i)
                            , G.intPrimTy)
-
-                --  -- T2# data constructor
-                -- D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple 2))
-                --  -> let gv      = G.Var      (G.dataConWorkId G.unboxedPairDataCon)
-                --        gt      = G.varType $ G.dataConWorkId G.unboxedPairDataCon
-                --    in  trace (G.showSDoc G.tracingDynFlags (G.ppr $ gt)) 
-                --      $ return (gv, gt)
 
                 -- Don't know how to convert this.
                 _ -> error $ "repa-plugin.ToGHC.convertExp: "
@@ -223,10 +214,12 @@ convertExp kenv tenv xx
                 return  ( G.Lam gv  xBody'
                         , G.mkFunTy (G.varType gv) tBody')
 
+
         -- Non-polytypic primops.
         D.XVar _ (D.UPrim n _)
          |  not $ isPolytypicPrimName n
          ->     convertPrim kenv tenv n
+
         
         -- Application of a polytypic primitive.
         -- In GHC core, functions cannot be polymorphic in unlifted primitive
@@ -235,10 +228,12 @@ convertExp kenv tenv xx
          |  isPolytypicPrimName n
          ->     convertPolytypicPrim kenv tenv n t
 
-        -- General applications.
+
+        -- Value/Type applications.
         D.XApp _ x1 (D.XType t2)
          -> do  (x1', t1')      <- convertExp        kenv tenv x1
                 t2'             <- convertType_boxed kenv t2
+
                 let tResult
                      = case t1' of
                         G.ForAllTy{}    
@@ -254,10 +249,11 @@ convertExp kenv tenv xx
                 return  ( G.App x1' (G.Type t2')
                         , tResult)
 
-
+        -- Value/Value applications.
         D.XApp _ x1 x2
          -> do  (x1', t1')      <- convertExp kenv tenv x1
                 (x2', _)        <- convertExp kenv tenv x2
+
                 let tResult 
                      = case t1' of
                         G.FunTy    _ t12'  
@@ -273,33 +269,31 @@ convertExp kenv tenv xx
                 return  ( G.App x1' x2'
                         , tResult)
 
-        -- Case expresions
+
+        -- Case expresions, with a single binder.
+        --  assume these are 1-tuples                           -- TODO: check really 1-tuples.
         D.XCase _ xScrut
                  [ D.AAlt (D.PData _ [ bWorld ]) x1]
          -> do
-                -- scrut
-                (xScrut', tScrut')  <- convertExp kenv tenv xScrut
+                (xScrut', _)       <- convertExp kenv tenv xScrut
 
-                -- alt
                 (tenv',   vWorld') <- bindVarX kenv tenv  bWorld
-
-                (x1',     t1')      <- convertExp kenv tenv' x1
+                (x1',     t1')     <- convertExp kenv tenv' x1
 
                 return  ( G.Case xScrut' vWorld' t1'
                                 [ (G.DEFAULT, [], x1') ]
                         , t1')
 
 
-        -- Case expressions, tuples
+        -- Case expressions, with two binders.
+        --  assume these are 2-tuples                           -- TODO: check really 2-tuples.
         D.XCase _ xScrut 
                  [ D.AAlt (D.PData _ [ bWorld@(D.BName{})
                                      ,     b2]) x1]
          -> do  
-                -- scrut
                 (xScrut', tScrut')  <- convertExp kenv tenv xScrut
                 vScrut'             <- newDummyVar "scrut" tScrut'
 
-                -- alt
                 (tenv1,    vWorld') <- bindVarX kenv tenv  bWorld
                 (tenv2,    v2')     <- bindVarX kenv tenv1 b2
                 let tenv' = tenv2
@@ -312,5 +306,5 @@ convertExp kenv tenv xx
                        , t1')
 
 
-        _ -> convertExp kenv tenv (D.xNat () 666)
+        _ -> error "repa-plugin.ToGHC.convertExp: no conversion."
 
