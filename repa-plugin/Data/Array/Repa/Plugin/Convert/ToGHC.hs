@@ -11,26 +11,30 @@ import Data.List
 import Control.Monad
 import Data.Map                         (Map)
 
-import qualified HscTypes                as G
-import qualified CoreSyn                 as G
-import qualified Type                    as G
-import qualified TysPrim                 as G
-import qualified TysWiredIn              as G
-import qualified Var                     as G
-import qualified DataCon                 as G
-import qualified Literal                 as G
-import qualified PrimOp                  as G
-import qualified UniqSupply              as G
+import qualified HscTypes               as G
+import qualified CoreSyn                as G
+import qualified Type                   as G
+import qualified TypeRep                as G
+import qualified TysPrim                as G
+import qualified TysWiredIn             as G
+import qualified Var                    as G
+import qualified DataCon                as G
+import qualified Literal                as G
+import qualified PrimOp                 as G
+import qualified UniqSupply             as G
+import qualified Outputable             as G
+import qualified DynFlags               as G
 
-import qualified DDC.Core.Exp            as D
-import qualified DDC.Core.Module         as D
-import qualified DDC.Core.Compounds      as D
-import qualified DDC.Core.Flow           as D
-import qualified DDC.Core.Flow.Prim      as D
+import qualified DDC.Core.Exp           as D
+import qualified DDC.Core.Module        as D
+import qualified DDC.Core.Compounds     as D
+import qualified DDC.Core.Flow          as D
+import qualified DDC.Core.Flow.Prim     as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map                as Map
 
+import Debug.Trace
 
 -- | Splice bindings from a DDC module into a GHC core program.
 spliceModGuts
@@ -58,7 +62,6 @@ namesBuiltin :: Map D.Name GhcName
 namesBuiltin 
  = Map.fromList
  $ [ (D.NameTyConFlow D.TyConFlowWorld,     GhcNameTyCon G.realWorldTyCon)
-   , (D.NameTyConFlow (D.TyConFlowTuple 2), GhcNameTyCon G.unboxedPairTyCon)
    , (D.NameTyConFlow D.TyConFlowArray,     GhcNameTyCon G.byteArrayPrimTyCon)
    , (D.NamePrimTyCon D.PrimTyConInt,       GhcNameTyCon G.intPrimTyCon) 
    , (D.NamePrimTyCon D.PrimTyConNat,       GhcNameTyCon G.intTyCon) ]  
@@ -171,7 +174,9 @@ convertExp kenv tenv xx
                 (x1', t1')      <- convertExp kenv tenv' x1
 
                 return  ( G.Case xScrut' vScrut' t1'
-                                 [(G.DataAlt G.unboxedPairDataCon, [vWorld', vArr'], x1')]
+                                 [(G.DataAlt G.unboxedPairDataCon
+                                        , [vWorld', vArr']
+                                        , x1')]
                         , t1')
 
 
@@ -190,9 +195,9 @@ convertExp kenv tenv xx
                 (xVal',   _)    <- convertExp kenv tenv xVal
                 (xWorld', _)    <- convertExp kenv tenv xWorld
 
-                tScrut'         <- convertType kenv (D.tTuple2 D.tWorld tA)
                 let xScrut'     = G.mkApps (G.Var vOp) 
                                         [G.Type G.realWorldTy, xArr', xIx', xVal', xWorld']
+                tScrut'         <- convertType kenv D.tWorld
                 vScrut'         <- newDummyVar "scrut" tScrut'
 
                 -- alt
@@ -221,17 +226,6 @@ convertExp kenv tenv xx
                  -> return ( G.Var gv
                            , G.varType gv)
 
-        -- Primops.
-        --  Polymorphic primops are handled specially in the code above, 
-        --  for all others we should be able to map them to a top-level
-        --  binding in the source module, or convert them directly to 
-        --  a GHC primop.
-        D.XVar _ (D.UPrim n _)
-         -> do  gv      <- ghcVarOfPrimName (envGuts tenv) n
-                return  ( G.Var gv
-                        , G.varType gv)
-
-
         -- Data constructors.
         D.XCon _ (D.DaCon dn _ _)
          -> case dn of
@@ -253,8 +247,10 @@ convertExp kenv tenv xx
 
                 -- T2# data constructor
                 D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple 2))
-                 -> return ( G.Var      (G.dataConWorkId G.unboxedPairDataCon)
-                           , G.varType $ G.dataConWorkId G.unboxedPairDataCon)
+                 -> let gv      = G.Var      (G.dataConWorkId G.unboxedPairDataCon)
+                        gt      = G.varType $ G.dataConWorkId G.unboxedPairDataCon
+                    in  trace (G.showSDoc G.tracingDynFlags (G.ppr $ gt)) 
+                      $ return (gv, gt)
 
                 -- Don't know how to convert this.
                 _ -> error $ "repa-plugin.ToGHC.convertExp: "
@@ -300,20 +296,31 @@ convertExp kenv tenv xx
                 return  ( G.Lam gv  xBody'
                         , G.mkFunTy (G.varType gv) tBody')
 
-
-        -- Application of a polymorphic primitive.
+        -- Non-polytypic primops.
+        D.XVar _ (D.UPrim n _)
+         |  not $ isPolytypicPrimName n
+         ->     convertPrim kenv tenv n
+        
+        -- Application of a polytypic primitive.
         -- In GHC core, functions cannot be polymorphic in unlifted primitive
         -- types. We convert most of the DDC polymorphic prims in a uniform way.
         D.XApp _ (D.XVar _ (D.UPrim n _)) (D.XType t)
-         ->     convertPolyPrim kenv tenv n t
-
+         |  isPolytypicPrimName n
+         ->     convertPolytypicPrim kenv tenv n t
 
         -- General applications.
         D.XApp _ x1 x2
          -> do  (x1', t1')      <- convertExp kenv tenv x1
                 (x2', _)        <- convertExp kenv tenv x2
+                let tResult 
+                     = case t1' of
+                        G.FunTy    _ t12'  -> t12'
+                        G.ForAllTy _ t12'  -> t12'
+                        _ -> error $  "repa-plugin.ToGHC.convertExp: "
+                                   ++ " type error during conversion."
+
                 return  ( G.App x1' x2'
-                        , t1')                                          -- TODO: wrong type.
+                        , tResult)
 
         -- Case expressions
         D.XCase _ xScrut 
@@ -337,7 +344,7 @@ convertExp kenv tenv xx
 
         -- Type arguments.
         D.XType t
-         -> do  t'      <- convertType kenv t
+         -> do  t'      <- convertTypeArg kenv t
                 return  ( G.Type t'
                         , G.wordTy )                                -- TODO: wrong type.
 

@@ -1,6 +1,7 @@
 
 module Data.Array.Repa.Plugin.Convert.ToGHC.Type
         ( convertType
+        , convertTypeArg
 
         , Env(..)
         , bindVarT
@@ -27,6 +28,7 @@ import qualified DDC.Core.Flow.Prim      as D
 import qualified Data.Map                as Map
 
 
+
 -- Type -----------------------------------------------------------------------
 convertType 
         :: Env
@@ -40,7 +42,7 @@ convertType kenv tt
         --   The GHC state token takes a phantom type to indicate
         --   what state thread it corresponds to.
         D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
-         -> return $ G.TyConApp G.statePrimTyCon [G.realWorldTy]
+         -> return $ G.mkTyConApp G.statePrimTyCon [G.realWorldTy]
 
         -- DDC[Array# _] => GHC[MutableByteArray#]
         --   GHC uses the same monomorphic array type to store all types
@@ -59,9 +61,9 @@ convertType kenv tt
          | Just (nStream@(D.NameTyConFlow D.TyConFlowStream), [tK, tElem])
                 <- D.takePrimTyConApps tt
          , Just (GhcNameTyCon tc) <- Map.lookup nStream (envNames kenv)
-         , Just tElem'            <- boxedGhcTypeOfElemType tElem
+         , Just tElem'  <- boxedGhcTypeOfElemType tElem
          -> do  tK'     <- convertType kenv tK
-                return  $ G.TyConApp tc [tK', tElem']
+                return  $ G.mkTyConApp tc [tK', tElem']
 
         -- DDC[Data] => GHC[*]
         D.TCon (D.TyConKind D.KiConData)
@@ -72,6 +74,27 @@ convertType kenv tt
          -> return $ G.liftedTypeKind
 
         -- Generic Conversion -------------------
+        D.TForall b t
+         -> do  (kenv', gv)     <- bindVarT kenv b
+                t'              <- convertType kenv' t
+                return  $  G.mkForAllTy gv t'
+
+        -- Function types.
+        D.TApp{}
+         | Just (t1, _, _, t2)    <- D.takeTFun tt
+         -> do  t1'     <- convertType    kenv t1
+                t2'     <- convertTypeArg kenv t2
+                return  $  G.mkFunTy t1' t2'
+
+        -- Applied type constructors.
+        D.TApp{}
+         | Just (tc, tsArgs)      <- D.takeTyConApps tt
+         -> do  tsArgs' <- mapM (convertType kenv) tsArgs
+                return  $ convertTyConApp (envNames kenv) tc tsArgs'
+
+        D.TCon tc
+         -> return $ convertTyConApp (envNames kenv) tc []
+
         D.TVar (D.UName n)
          -> case lookup n (envVars kenv) of
                 Nothing
@@ -83,28 +106,20 @@ convertType kenv tt
                 Just gv  
                  -> return $ G.TyVarTy gv
 
-        D.TCon tc
-         -> return $ convertTyConApp (envNames kenv) tc []
-
-        D.TForall b t
-         -> do  (kenv', gv)     <- bindVarT kenv b
-                t'              <- convertType kenv' t
-                return  $ G.ForAllTy gv t'
-
-        -- Function types.
-        D.TApp{}
-         | Just (t1, _, _, t2)    <- D.takeTFun tt
-         -> do  t1'     <- convertType kenv t1
-                t2'     <- convertType kenv t2
-                return  $  G.FunTy t1' t2'
-
-        -- Applied type constructors.
-        D.TApp{}
-         | Just (tc, tsArgs)      <- D.takeTyConApps tt
-         -> do  tsArgs' <- mapM (convertType kenv) tsArgs
-                return  $ convertTyConApp (envNames kenv) tc tsArgs'
 
         _ -> error $ "repa-plugin.convertType: no match for " ++ show tt
+
+
+-- TypeArg --------------------------------------------------------------------
+convertTypeArg
+        :: Env
+        -> D.Type D.Name
+        -> G.UniqSM G.Type
+
+convertTypeArg kenv tt
+ = case boxedGhcTypeOfElemType tt of
+        Just t' -> return t'
+        _       -> convertType kenv tt
 
 
 -- TyConApp -------------------------------------------------------------------
@@ -115,20 +130,26 @@ convertTyConApp
 
 convertTyConApp names tc tsArgs'
  = case tc of
+        D.TyConSpec D.TcConFun
+         |  [t1, t2] <- tsArgs'
+         -> G.FunTy t1 t2
+
+        D.TyConSpec D.TcConUnit
+         |  []       <- tsArgs'
+         -> G.unitTy
+
+        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple 2)) _) _
+         |  [t1, t2] <- tsArgs'
+         -> G.mkTyConApp G.unboxedPairTyCon [t1, t2]
+
         D.TyConBound (D.UPrim n _) _
-         | Just tc'                <- convertTyConPrimName n
-         -> G.TyConApp tc' tsArgs'
+         |  []       <- tsArgs'
+         ,  Just tc'               <- convertTyConPrimName n
+         -> G.mkTyConApp tc' tsArgs'
 
         D.TyConBound (D.UName n) _
          | Just (GhcNameTyCon tc') <- Map.lookup n names
-         -> G.TyConApp tc' tsArgs'
-
---        D.TyConBound (D.UName (D.NameCon str)) _
---         -> G.LitTy (G.StrTyLit $ G.fsLit str)
-
-        D.TyConSpec D.TcConFun
-         | [t1, t2] <- tsArgs'
-         -> G.FunTy t1 t2
+         -> G.mkTyConApp tc' tsArgs'
 
         _ -> error $ "repa-plugin.convertTyConApp: no match for " 
                    ++ show tc -- ++ " " ++ show (Map.keys names)
@@ -139,9 +160,6 @@ convertTyConApp names tc tsArgs'
 convertTyConPrimName :: D.Name -> Maybe G.TyCon
 convertTyConPrimName n
  = case n of
-        D.NameTyConFlow (D.TyConFlowTuple 2)
-         -> Just G.unboxedPairTyCon
-
         D.NamePrimTyCon D.PrimTyConNat  
          -> Just G.intPrimTyCon
 

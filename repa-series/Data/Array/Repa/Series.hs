@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Series
-        ( Stream 
+        ( Stream  (..)
         , streamUnboxed
         , fold)
 where

@@ -73,7 +73,7 @@ pprTopBind (Rec bb)
 -- Binding --------------------------------------------------------------------
 pprBinding :: Pretty a => (a, Expr a) -> Doc
 pprBinding (binder, x)
-        =   ppr binder
+        =   ppr binder 
         <+> breakWhen (not $ isSimpleX x)
         <+> equals <+> align (ppr x)
               
@@ -87,7 +87,7 @@ instance Pretty a => Pretty (Expr a) where
          -> pprBound ident 
 
         -- Discard types and coersions
-        Type _          -> text "<T>"
+        Type t          -> text "@ " <> ppr t
         Coercion _      -> text "<C>"
 
         -- Literals.
@@ -109,10 +109,6 @@ instance Pretty a => Pretty (Expr a) where
 
         -- Applications.
         App x1 x2
-         |  isTypeArg x2
-         -> pprPrec d x1
-
-         |  otherwise
          -> pprParen' (d > 10)
          $  ppr x1
                 <> nest 2 (breakWhen (not $ isSimpleX x2) 

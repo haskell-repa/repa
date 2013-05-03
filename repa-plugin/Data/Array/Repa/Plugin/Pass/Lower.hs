@@ -15,6 +15,7 @@ import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Storage        as Flow
+import qualified DDC.Core.Flow.Transform.Concretize     as Flow
 import qualified DDC.Core.Flow.PrimState.Thread         as Flow
 
 import qualified DDC.Core.Simplifier                    as Core
@@ -131,11 +132,19 @@ passLower name guts
          $ D.renderIndent $ D.ppr mm_lowered
 
 
+        -- Concretize ------------------------------------
+        -- Concretize rate variables.
+        let mm_concrete = Flow.concretizeModule mm_lowered
+
+        writeFile ("dump." ++ name ++ ".6-dc-concrete.dcf")
+         $ D.renderIndent $ D.ppr mm_concrete
+
+
         -- Storage ---------------------------------------
         -- Assign mutable variables to array storage.
-        let mm_storage  = Flow.storageModule mm_lowered
+        let mm_storage  = Flow.storageModule mm_concrete
 
-        writeFile ("dump." ++ name ++ ".6-dc-storage.dcf")
+        writeFile ("dump." ++ name ++ ".7-dc-storage.dcf")
          $ D.renderIndent $ D.ppr mm_storage
 
 
@@ -145,7 +154,7 @@ passLower name guts
         let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_storage
         let mm_thread   = evalState (Core.namify namifierT namifierX mm_thread') 0
 
-        writeFile ("dump." ++ name ++ ".7-dc-threaded.dcf")
+        writeFile ("dump." ++ name ++ ".8-dc-threaded.dcf")
          $ D.renderIndent $ D.ppr mm_thread
 
 
@@ -154,7 +163,7 @@ passLower name guts
         us              <- G.mkSplitUniqSupply 's'              -- Here's hoping this is unique...
         let guts'       = G.initUs_ us (spliceModGuts names mm_thread guts)
 
-        writeFile ("dump." ++ name ++ ".8-ghc-spliced.dcf")
+        writeFile ("dump." ++ name ++ ".9-ghc-spliced.dcf")
          $ D.render D.RenderIndent (pprModGuts guts')
 
         return (return guts')

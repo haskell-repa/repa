@@ -1,6 +1,9 @@
 
 module Data.Array.Repa.Plugin.Convert.ToGHC.Prim
-        ( convertPolyPrim
+        ( convertPrim
+        , convertPolytypicPrim
+        , isPolytypicPrimName
+
         , getPrim_add
         , getPrim_mul
         , getPrim_next
@@ -23,12 +26,36 @@ import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 
-convertPolyPrim 
+-- | Convert a primop that has the same definition independent 
+--   of its type arguments.
+convertPrim 
         :: Env -> Env
-        -> D.Name -> D.Type D.Name 
+        -> D.Name
         -> G.UniqSM (G.CoreExpr, G.Type)
 
-convertPolyPrim kenv tenv n tArg
+convertPrim _kenv tenv n 
+ = case n of 
+        D.NameOpLoop D.OpLoopLoopN
+         | Just gv      <- findImportedPrimVar (envGuts tenv) "primLoop"
+         ->    return  (G.Var gv, G.varType gv)
+
+        D.NameOpFlow D.OpFlowRateOfStream
+         | Just gv      <- findImportedPrimVar (envGuts tenv) "primRateOfStream"
+         ->     return (G.Var gv, G.varType gv)
+
+        _       -> errorMissingPrim n
+
+
+-------------------------------------------------------------------------------
+-- | Convert a primop that has a different definition depending on the type
+--   argument. If primops handled by this function must be detected by
+--   `isPolyTypicPrimName` below.
+convertPolytypicPrim 
+        :: Env -> Env
+        -> D.Name -> D.Type D.Name
+        -> G.UniqSM (G.CoreExpr, G.Type)
+
+convertPolytypicPrim kenv _tenv n tArg
  = case n of
         D.NamePrimArith D.PrimArithAdd
          -> do  Just gv <- getPrim_add (envGuts kenv) tArg
@@ -46,18 +73,25 @@ convertPolyPrim kenv tenv n tArg
          -> do  Just gv <- getPrim_readByteArrayOpM (envGuts kenv) tArg
                 return  (G.Var gv, G.varType gv)
 
-        D.NameOpFlow D.OpFlowLengthOfRate
-         |  D.TVar (D.UName (D.NameVar str)) <- tArg
-         , Just gv      <- findImportedPrimVar (envGuts kenv) "primLengthOfRate"
-         , Just vk      <- lookup (D.NameVar $ str ++ "_val") (envVars tenv) 
-                        -- HACKS!. Store a proper mapping between rate vars
-                        --         and their singleton types.
-         -> do  t'      <- convertType kenv D.tInt
-                return  ( G.App (G.Var gv) (G.Var vk)
-                        , t')
-        _
-         -> error $ "repa-plugin.toGHC.convertPolyPrim: no match for " ++ show n
+        _       -> errorMissingPrim n
 
+
+-- | Check for the name of a primitive that must be handled polytypically.
+isPolytypicPrimName :: D.Name -> Bool
+isPolytypicPrimName n
+ = elem n
+        [ D.NamePrimArith D.PrimArithAdd
+        , D.NamePrimArith D.PrimArithMul
+        , D.NameOpStore   D.OpStoreNext
+        , D.NameOpStore   D.OpStoreReadArray ]
+
+
+-------------------------------------------------------------------------------
+errorMissingPrim n
+        = error $ "repa-plugin.toGHC.convertPrim: no match for " ++ show n
+
+
+-------------------------------------------------------------------------------
 getPrim_add _ t
  | t == D.tInt  = liftM Just $ getPrimOpVar G.IntAddOp
  | otherwise    = return Nothing

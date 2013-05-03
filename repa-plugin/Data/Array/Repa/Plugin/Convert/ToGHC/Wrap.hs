@@ -85,7 +85,6 @@ callLowered tOrig tLowered xLowered
         = do
                 vScrut  <- newDummyVar "scrut"  tLowered
                 vWorld  <- newDummyVar "world"  G.realWorldStatePrimTy
-                vResult <- newDummyVar "result" tOrig
                 vVal    <- newDummyVar "val"    tVal
 
                 -- Unwrap the actual result value.
@@ -112,7 +111,7 @@ unwrapResult tOrig tLowered xResult
 
         | G.TyConApp tcInt []    <- tOrig
         , tcInt == G.intTyCon
-        , G.TyConApp tcIntU []   <- tLowered    
+        , G.TyConApp _tcIntU []   <- tLowered    
                         -- TODO: do a proper check. Is this supposed to be a TyLit? 
 
         = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
