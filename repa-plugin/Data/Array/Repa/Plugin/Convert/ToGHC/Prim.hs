@@ -16,6 +16,7 @@ import Control.Monad
 
 import qualified CoreSyn                 as G
 import qualified Type                    as G
+import qualified TysPrim                 as G
 import qualified Var                     as G
 import qualified PrimOp                  as G
 import qualified UniqSupply              as G
@@ -35,10 +36,6 @@ convertPrim
 
 convertPrim _kenv tenv n 
  = case n of 
-        D.NameOpLoop D.OpLoopLoopN
-         | Just gv      <- findImportedPrimVar (envGuts tenv) "primLoop"
-         ->    return  (G.Var gv, G.varType gv)
-
         D.NameOpFlow D.OpFlowRateOfStream
          | Just gv      <- findImportedPrimVar (envGuts tenv) "primRateOfStream"
          ->     return (G.Var gv, G.varType gv)
@@ -69,9 +66,25 @@ convertPolytypicPrim kenv _tenv n tArg
          | Just  gv     <- getPrim_next (envGuts kenv) tArg
          ->     return  (G.Var gv, G.varType gv)
 
+        D.NameOpStore D.OpStoreNewArray
+         -> do  Just gv <- getPrim_newByteArrayOpM (envGuts kenv) tArg
+                return  ( G.App (G.Var gv)         (G.Type G.realWorldTy)
+                        , G.applyTy (G.varType gv) G.realWorldTy)
+
         D.NameOpStore D.OpStoreReadArray
          -> do  Just gv <- getPrim_readByteArrayOpM (envGuts kenv) tArg
-                return  (G.Var gv, G.varType gv)
+                return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
+                        , G.applyTy (G.varType gv) G.realWorldTy)
+
+        D.NameOpStore D.OpStoreWriteArray
+         -> do  Just gv <- getPrim_writeByteArrayOpM (envGuts kenv) tArg
+                return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
+                        , G.applyTy (G.varType gv) G.realWorldTy)
+
+        D.NameOpLoop D.OpLoopLoopN
+         | Just gv      <- findImportedPrimVar (envGuts kenv) "primLoop"
+         ->    return  ( G.Var gv
+                       , G.varType gv)
 
         _       -> errorMissingPrim n
 
@@ -83,7 +96,10 @@ isPolytypicPrimName n
         [ D.NamePrimArith D.PrimArithAdd
         , D.NamePrimArith D.PrimArithMul
         , D.NameOpStore   D.OpStoreNext
-        , D.NameOpStore   D.OpStoreReadArray ]
+        , D.NameOpStore   D.OpStoreNewArray
+        , D.NameOpStore   D.OpStoreReadArray 
+        , D.NameOpStore   D.OpStoreWriteArray 
+        , D.NameOpLoop    D.OpLoopLoopN ]
 
 
 -------------------------------------------------------------------------------
@@ -104,11 +120,16 @@ getPrim_next guts t
  | t == D.tInt  = findImportedPrimVar guts "primNext_Int"
  | otherwise    = Nothing
 
-getPrim_writeByteArrayOpM _ t
- | t == D.tInt  = liftM Just $ getPrimOpVar G.WriteByteArrayOp_Int
+getPrim_newByteArrayOpM _ t
+ | t == D.tInt  = liftM Just $ getPrimOpVar G.NewByteArrayOp_Char
  | otherwise    = return Nothing
 
 getPrim_readByteArrayOpM _ t
  | t == D.tInt  = liftM Just $ getPrimOpVar G.ReadByteArrayOp_Int
  | otherwise    = return Nothing
+
+getPrim_writeByteArrayOpM _ t
+ | t == D.tInt  = liftM Just $ getPrimOpVar G.WriteByteArrayOp_Int
+ | otherwise    = return Nothing
+
 

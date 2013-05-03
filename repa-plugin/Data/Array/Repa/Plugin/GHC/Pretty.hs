@@ -17,6 +17,7 @@ import DataCon
 import Literal
 import Var
 import Id
+import IdInfo
 import qualified UniqFM         as UFM
 
 
@@ -85,6 +86,7 @@ instance Pretty a => Pretty (Expr a) where
   = case xx of
         Var  ident
          -> pprBound ident 
+         <> text "{" <> ppr (idDetails ident) <> text "}"
 
         -- Discard types and coersions
         Type t          -> text "@ " <> ppr t
@@ -110,9 +112,9 @@ instance Pretty a => Pretty (Expr a) where
         -- Applications.
         App x1 x2
          -> pprParen' (d > 10)
-         $  ppr x1
+         $  text "(" <> ppr x1
                 <> nest 2 (breakWhen (not $ isSimpleX x2) 
-                                <> pprPrec 11 x2)
+                                <> pprPrec 11 x2) <> text ")"
 
         -- Destructors.
         Case x1 _ _ [(con, binds, x2)]
@@ -217,9 +219,10 @@ instance Pretty CoreBndr where
         <> text (show $ idUnique bndr)
 
 
-instance Pretty DataCon where
- ppr con 
+{- instance Pretty DataCon where
+   ppr con 
         = ppr (dataConName con)
+-}
 
 instance Pretty Name where
  ppr name
@@ -234,8 +237,24 @@ instance Pretty TyCon where
         = ppr (tyConName tc)
 
 
+instance Pretty IdDetails where
+ ppr deets
+  = case deets of
+        VanillaId        -> text "VanillaId"
+        RecSelId{}       -> text "RecSelId ..."
+        DataConWorkId dc -> text "DataConWorkId " <> ppr dc
+        DataConWrapId{}  -> text "DataConWrapId ..."
+        ClassOpId{}      -> text "ClassOpId ..."
+        PrimOpId{}       -> text "PrimOpId ..."
+        FCallId{}        -> text "FCallId ..."
+        TickBoxOpId{}    -> text "TickBoxOpId ..."
+        DFunId{}         -> text "DFunId ..."
 
-
+instance Pretty DataCon where
+ ppr dc
+        =   text "DataCon {"
+        <+> text "repType = " <+> ppr (dataConRepType dc)
+        <+>  text "}"
 
 -- Utils ----------------------------------------------------------------------
 breakWhen :: Bool -> Doc

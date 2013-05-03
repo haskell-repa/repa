@@ -1,8 +1,11 @@
 
 module Data.Array.Repa.Plugin.Convert.ToGHC.Type
         ( convertType
-        , convertTypeArg
+        , convertType_boxed
+        , convertType_unboxed
 
+        , convertBoxed
+        , convertUnboxed
         , Env(..)
         , bindVarT
         , bindVarX)
@@ -27,6 +30,28 @@ import qualified DDC.Core.Flow.Prim      as D
 
 import qualified Data.Map                as Map
 
+
+-- Boxed/Unboxed versions -----------------------------------------------------
+convertType_boxed
+        :: Env
+        -> D.Type D.Name
+        -> G.UniqSM G.Type
+
+convertType_boxed env tt
+ = case convertBoxed tt of
+        Just t' -> return t'
+        _       -> convertType env tt
+
+
+convertType_unboxed
+        :: Env
+        -> D.Type D.Name
+        -> G.UniqSM G.Type
+
+convertType_unboxed env tt
+ = case convertUnboxed tt of
+        Just t' -> return t'
+        _       -> convertType env tt
 
 
 -- Type -----------------------------------------------------------------------
@@ -61,8 +86,8 @@ convertType kenv tt
          | Just (nStream@(D.NameTyConFlow D.TyConFlowStream), [tK, tElem])
                 <- D.takePrimTyConApps tt
          , Just (GhcNameTyCon tc) <- Map.lookup nStream (envNames kenv)
-         , Just tElem'  <- boxedGhcTypeOfElemType tElem
-         -> do  tK'     <- convertType kenv tK
+         , Just tElem'  <- convertBoxed tElem
+         -> do  tK'     <- convertType  kenv tK
                 return  $ G.mkTyConApp tc [tK', tElem']
 
         -- DDC[Data] => GHC[*]
@@ -82,8 +107,8 @@ convertType kenv tt
         -- Function types.
         D.TApp{}
          | Just (t1, _, _, t2)    <- D.takeTFun tt
-         -> do  t1'     <- convertType    kenv t1
-                t2'     <- convertTypeArg kenv t2
+         -> do  t1'     <- convertType kenv t1
+                t2'     <- convertType kenv t2
                 return  $  G.mkFunTy t1' t2'
 
         -- Applied type constructors.
@@ -108,18 +133,6 @@ convertType kenv tt
 
 
         _ -> error $ "repa-plugin.convertType: no match for " ++ show tt
-
-
--- TypeArg --------------------------------------------------------------------
-convertTypeArg
-        :: Env
-        -> D.Type D.Name
-        -> G.UniqSM G.Type
-
-convertTypeArg kenv tt
- = case boxedGhcTypeOfElemType tt of
-        Just t' -> return t'
-        _       -> convertType kenv tt
 
 
 -- TyConApp -------------------------------------------------------------------
@@ -171,11 +184,16 @@ convertTyConPrimName n
 
 -------------------------------------------------------------------------------
 -- | Get the GHC boxed type corresponding to this Flow element type.
-boxedGhcTypeOfElemType :: D.Type D.Name -> Maybe G.Type
-boxedGhcTypeOfElemType t
+convertBoxed :: D.Type D.Name -> Maybe G.Type
+convertBoxed t
  | t == D.tInt          = Just G.intTy
  | otherwise            = Nothing
 
+
+convertUnboxed :: D.Type D.Name -> Maybe G.Type
+convertUnboxed t
+ | t == D.tInt          = Just G.intPrimTy
+ | otherwise            = Nothing
 
 -- Env ------------------------------------------------------------------------
 -- | Environment used to map DDC names to GHC names.

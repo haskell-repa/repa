@@ -35,6 +35,7 @@ import qualified DDC.Core.Flow.Compounds as D
 import qualified Data.Map                as Map
 
 import Debug.Trace
+import DDC.Base.Pretty
 
 -- | Splice bindings from a DDC module into a GHC core program.
 spliceModGuts
@@ -45,7 +46,7 @@ spliceModGuts
 
 spliceModGuts namesSource mm guts
  = do   -- Add the builtin names to the map we got from the source program.
-        let names       = Map.union namesBuiltin namesSource
+        let names       = namesSource
 
         -- Invert the map so it maps GHC names to DDC names.
         let names'      = Map.fromList 
@@ -56,15 +57,6 @@ spliceModGuts namesSource mm guts
                 $  G.mg_binds guts
 
         return  $ guts { G.mg_binds = binds' }
-
-
-namesBuiltin :: Map D.Name GhcName
-namesBuiltin 
- = Map.fromList
- $ [ (D.NameTyConFlow D.TyConFlowWorld,     GhcNameTyCon G.realWorldTyCon)
-   , (D.NameTyConFlow D.TyConFlowArray,     GhcNameTyCon G.byteArrayPrimTyCon)
-   , (D.NamePrimTyCon D.PrimTyConInt,       GhcNameTyCon G.intPrimTyCon) 
-   , (D.NamePrimTyCon D.PrimTyConNat,       GhcNameTyCon G.intTyCon) ]  
 
 
 -- Splice ---------------------------------------------------------------------
@@ -112,9 +104,10 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
                         gvLowered
 
         return  [ G.NonRec gbOrig  xCall
-                , G.NonRec gvLowered gxLowered ]   -- TODO: attach NOINLINE pragma
-                                                   --       so the realWorld token doesn't get
-                                                   --       substituted.
+                , G.NonRec gvLowered gxLowered ]   
+                        -- TODO: attach NOINLINE pragma
+                        --       so the realWorld token doesn't get
+                        --       substituted.
 
 
 -- Otherwise leave the original GHC binding as it is.
@@ -147,68 +140,6 @@ convertExp
 
 convertExp kenv tenv xx
  = case xx of
-        ---------------------------------------------------
-        -- Convert Core Flow's polymorphic array primops to monomorphic GHC primops.
-        -- newArray# [tElem] xSize xWorld
-        D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ bWorld@(D.BName _ _)
-                                     ,   bArr@(D.BName _ _)]) x1]
-         | Just (  D.NameOpStore D.OpStoreNewArray
-                , [D.XType tA, xNum, xWorld])
-                <- D.takeXPrimApps xScrut
-         -> do  
-                -- scrut
-                vOp             <- getPrimOpVar $ G.NewByteArrayOp_Char
-                (xNum', _)      <- convertExp kenv tenv xNum
-                (xWorld', _)    <- convertExp kenv tenv xWorld
-
-                tScrut'         <- convertType kenv (D.tTuple2 D.tWorld (D.tArray tA))
-                let xScrut'     = G.mkApps (G.Var vOp) 
-                                        [G.Type G.realWorldTy, xNum', xWorld']
-                vScrut'         <- newDummyVar "scrut" tScrut'
-
-                -- alt
-                (tenv1,  vWorld') <- bindVarX kenv tenv  bWorld
-                (tenv2,  vArr')   <- bindVarX kenv tenv1 bArr
-                let tenv'       = tenv2
-                (x1', t1')      <- convertExp kenv tenv' x1
-
-                return  ( G.Case xScrut' vScrut' t1'
-                                 [(G.DataAlt G.unboxedPairDataCon
-                                        , [vWorld', vArr']
-                                        , x1')]
-                        , t1')
-
-
-        -- writeArray# [tElem] xArr xIx xVal xWorld
-        D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ _bWorld@(D.BName nWorld _)
-                                     , _bVoid]) x1]
-         | Just (  D.NameOpStore D.OpStoreWriteArray
-                , [D.XType tA, xArr, xIx, xVal, xWorld])
-                <- D.takeXPrimApps xScrut
-         -> do  
-                -- scrut
-                Just vOp        <- getPrim_writeByteArrayOpM (envGuts tenv) tA
-                (xArr',   _)    <- convertExp kenv tenv xArr
-                (xIx',    _)    <- convertExp kenv tenv xIx
-                (xVal',   _)    <- convertExp kenv tenv xVal
-                (xWorld', _)    <- convertExp kenv tenv xWorld
-
-                let xScrut'     = G.mkApps (G.Var vOp) 
-                                        [G.Type G.realWorldTy, xArr', xIx', xVal', xWorld']
-                tScrut'         <- convertType kenv D.tWorld
-                vScrut'         <- newDummyVar "scrut" tScrut'
-
-                -- alt
-                let tenv'       = tenv { envVars = (nWorld, vScrut') : envVars tenv }
-                (x1', t1')      <- convertExp kenv tenv' x1
-
-                return  ( G.Case xScrut' vScrut' t1'
-                                [ (G.DEFAULT, [], x1')]
-                        , t1')
-
-
         -- Generic Conversion -----------------------------
         -- Variables.
         --  Names of plain variables should be in the name map, and refer
@@ -225,6 +156,21 @@ convertExp kenv tenv xx
                 Just gv
                  -> return ( G.Var gv
                            , G.varType gv)
+
+        -- The unboxed tuple constructor.
+        -- When we produce unboxed tuple we always want to preserve
+        -- the unboxed versions of element types.
+        D.XApp _ (D.XApp _ (D.XCon _ (D.DaCon dn _ _)) (D.XType t1)) (D.XType t2)
+         | D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple 2)) <- dn
+         -> do  t1'     <- convertType_unboxed kenv t1
+                t2'     <- convertType_unboxed kenv t2
+
+                let gv  = G.dataConWorkId G.unboxedPairDataCon
+                let gt  = G.varType gv
+
+                return  ( G.App (G.App (G.Var gv) (G.Type t1')) (G.Type t2')
+                        , G.applyTys gt [t1', t2'] )
+
 
         -- Data constructors.
         D.XCon _ (D.DaCon dn _ _)
@@ -245,36 +191,17 @@ convertExp kenv tenv xx
                  -> return ( G.Lit (G.MachInt i)
                            , G.intPrimTy)
 
-                -- T2# data constructor
-                D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple 2))
-                 -> let gv      = G.Var      (G.dataConWorkId G.unboxedPairDataCon)
-                        gt      = G.varType $ G.dataConWorkId G.unboxedPairDataCon
-                    in  trace (G.showSDoc G.tracingDynFlags (G.ppr $ gt)) 
-                      $ return (gv, gt)
+                --  -- T2# data constructor
+                -- D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple 2))
+                --  -> let gv      = G.Var      (G.dataConWorkId G.unboxedPairDataCon)
+                --        gt      = G.varType $ G.dataConWorkId G.unboxedPairDataCon
+                --    in  trace (G.showSDoc G.tracingDynFlags (G.ppr $ gt)) 
+                --      $ return (gv, gt)
 
                 -- Don't know how to convert this.
                 _ -> error $ "repa-plugin.ToGHC.convertExp: "
                            ++ "Cannot convert DDC data constructor " 
                                 ++ show xx ++ " to GHC Core."
-
-
-        -- Type abstractions for rate variables.
-        --   If we're binding a rate type variable then also inject the
-        --   value level version.
-        D.XLAM _ (b@(D.BName (D.NameVar ks) k)) xBody
-         |  k == D.kRate
-         -> do  
-                (kenv', gv)     <- bindVarT kenv b
-
-                let ks_val      = ks ++ "_val"         -- TODO: handle singletons properly in DDC pass.
-                let dn_val      = D.NameVar ks_val
-                gv_val          <- newDummyVar "rate" G.intPrimTy
-                let tenv'       = tenv { envVars = (dn_val, gv_val) : envVars tenv }
-
-                (xBody', tBody') <- convertExp kenv' tenv' xBody
-
-                return  ( G.Lam gv $ G.Lam gv_val xBody'
-                        , G.mkForAllTy gv tBody')
 
 
         -- Type abstractions.
@@ -309,20 +236,61 @@ convertExp kenv tenv xx
          ->     convertPolytypicPrim kenv tenv n t
 
         -- General applications.
+        D.XApp _ x1 (D.XType t2)
+         -> do  (x1', t1')      <- convertExp        kenv tenv x1
+                t2'             <- convertType_boxed kenv t2
+                let tResult
+                     = case t1' of
+                        G.ForAllTy{}    
+                          -> G.applyTy t1' t2'
+
+                        _ -> error 
+                          $  renderIndent $ vcat
+                                [ text $ "repa-plugin.ToGHC.convertExp: "
+                                        ++ "type error during conversion."
+                                , ppr x1
+                                , ppr t2 ]
+
+                return  ( G.App x1' (G.Type t2')
+                        , tResult)
+
+
         D.XApp _ x1 x2
          -> do  (x1', t1')      <- convertExp kenv tenv x1
                 (x2', _)        <- convertExp kenv tenv x2
                 let tResult 
                      = case t1' of
-                        G.FunTy    _ t12'  -> t12'
-                        G.ForAllTy _ t12'  -> t12'
-                        _ -> error $  "repa-plugin.ToGHC.convertExp: "
-                                   ++ " type error during conversion."
+                        G.FunTy    _ t12'  
+                          -> t12'
+
+                        _ -> error 
+                           $ renderIndent $ vcat
+                                [ text $ "repa-plugin.ToGHC.convertExp: "
+                                        ++ "type error during conversion."
+                                , text (show x1)
+                                , text (show x2) ]
 
                 return  ( G.App x1' x2'
                         , tResult)
 
-        -- Case expressions
+        -- Case expresions
+        D.XCase _ xScrut
+                 [ D.AAlt (D.PData _ [ bWorld ]) x1]
+         -> do
+                -- scrut
+                (xScrut', tScrut')  <- convertExp kenv tenv xScrut
+
+                -- alt
+                (tenv',   vWorld') <- bindVarX kenv tenv  bWorld
+
+                (x1',     t1')      <- convertExp kenv tenv' x1
+
+                return  ( G.Case xScrut' vWorld' t1'
+                                [ (G.DEFAULT, [], x1') ]
+                        , t1')
+
+
+        -- Case expressions, tuples
         D.XCase _ xScrut 
                  [ D.AAlt (D.PData _ [ bWorld@(D.BName{})
                                      ,     b2]) x1]
@@ -339,14 +307,10 @@ convertExp kenv tenv xx
                 (x1',     t1')      <- convertExp kenv tenv' x1
 
                 return ( G.Case xScrut' vScrut' t1'
-                                [ (G.DataAlt G.unboxedPairDataCon, [vWorld', v2'], x1') ]
+                                [ (G.DataAlt G.unboxedPairDataCon
+                                , [vWorld', v2'], x1') ]
                        , t1')
 
-        -- Type arguments.
-        D.XType t
-         -> do  t'      <- convertTypeArg kenv t
-                return  ( G.Type t'
-                        , G.wordTy )                                -- TODO: wrong type.
 
         _ -> convertExp kenv tenv (D.xNat () 666)
 
