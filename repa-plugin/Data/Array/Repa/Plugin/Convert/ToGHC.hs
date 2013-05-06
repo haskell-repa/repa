@@ -25,7 +25,6 @@ import qualified DDC.Core.Module        as D
 import qualified DDC.Core.Compounds     as D
 import qualified DDC.Core.Flow          as D
 import qualified DDC.Core.Flow.Prim     as D
-import qualified DDC.Core.Flow.Compounds as D
 
 import Data.List
 import Control.Monad
