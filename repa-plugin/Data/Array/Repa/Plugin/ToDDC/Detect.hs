@@ -96,11 +96,11 @@ instance Detect Bound where
          -- Data Constructors.
          | Just g'      <- matchPrim "Int_" n
          -> makePrim g' (NamePrimTyCon   PrimTyConInt)    
-                       kData
+                        kData
 
          | Just g'       <- matchPrim "Stream_" n
          -> makePrim g' (NameTyConFlow   TyConFlowStream) 
-                       (kData `kFun` kData `kFun` kData)
+                        (kRate `kFun` kData `kFun` kData)
 
          | otherwise
          -> do  collect d g
@@ -155,7 +155,14 @@ instance Detect TyCon where
         TyConKind    tc' -> return $ TyConKind tc'
         TyConWitness tc' -> return $ TyConWitness tc'
         TyConSpec    tc' -> return $ TyConSpec tc'
-        TyConBound u k  -> liftM2 TyConBound (detect u) (detect k)
+
+        TyConBound u k
+         -> do  u'      <- detect u
+                k'      <- detect k
+                case u' of
+                 UPrim _ k2  -> return $ TyConBound u' k2
+                 _           -> return $ TyConBound u' k'
+
 
 
 -- Type ------------------------------------------------------------------------

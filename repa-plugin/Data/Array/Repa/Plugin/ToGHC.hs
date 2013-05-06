@@ -26,6 +26,7 @@ import qualified DDC.Core.Module        as D
 import qualified DDC.Core.Compounds     as D
 import qualified DDC.Core.Flow          as D
 import qualified DDC.Core.Flow.Prim     as D
+import qualified DDC.Base.Pretty        as D
 
 import Data.List
 import Control.Monad
@@ -157,6 +158,11 @@ convertExp kenv tenv xx
                  -> return ( G.Var gv
                            , G.varType gv)
 
+        -- Non-polytypic primops.
+        D.XVar _ (D.UPrim n _)
+         |  not $ isPolytypicPrimName n
+         ->     convertPrim kenv tenv n
+
 
         -- The unboxed tuple constructor.
         -- When we produce unboxed tuple we always want to preserve
@@ -218,12 +224,6 @@ convertExp kenv tenv xx
                         , G.mkFunTy (G.varType gv) tBody')
 
 
-        -- Non-polytypic primops.
-        D.XVar _ (D.UPrim n _)
-         |  not $ isPolytypicPrimName n
-         ->     convertPrim kenv tenv n
-
-        
         -- Application of a polytypic primitive.
         -- In GHC core, functions cannot be polymorphic in unlifted primitive
         -- types. We convert most of the DDC polymorphic prims in a uniform way.
@@ -272,6 +272,16 @@ convertExp kenv tenv xx
                 return  ( G.App x1' x2'
                         , tResult)
 
+        -- Non-recursive let bindings
+        D.XLet _ (D.LLet _ b x1) x2
+         -> do  (xScrut', _)      <- convertExp kenv tenv x1
+                (tenv',  vBind')  <- bindVarX   kenv tenv b
+                (x2',    t2')     <- convertExp kenv tenv' x2
+
+                return  ( G.Case xScrut' vBind' t2'
+                                [ ( G.DEFAULT, [], x2') ]
+                        , t2')
+
 
         -- Case expresions, with a single binder.
         --  assume these are 1-tuples                           -- TODO: check really 1-tuples.
@@ -309,5 +319,16 @@ convertExp kenv tenv xx
                        , t1')
 
 
-        _ -> error "repa-plugin.ToGHC.convertExp: no conversion."
+        _ -> errorNoConversion xx
+
+
+-- Errors ---------------------------------------------------------------------
+errorNoConversion xx
+ = error $ D.renderIndent $ D.vcat
+ $      [ D.text "repa-plugin.ToGHC: cannot convert this to GHC Core"
+        , D.empty
+        , D.indent 8 $ D.ppr xx ]
+
+
+
 

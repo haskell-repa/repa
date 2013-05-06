@@ -18,6 +18,7 @@ import qualified DDC.Core.Flow.Transform.Storage        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
 import qualified DDC.Core.Flow.PrimState.Thread         as Flow
 
+import qualified DDC.Core.Check                         as Core
 import qualified DDC.Core.Simplifier                    as Core
 import qualified DDC.Core.Transform.Namify              as Core
 import qualified DDC.Core.Transform.Snip                as Core
@@ -41,7 +42,7 @@ passLower name guts
  = unsafePerformIO
  $ do
         -- Input ------------------------------------------
-        writeFile ("dump." ++ name ++ ".1-ghc.hs")
+        writeFile ("dump." ++ name ++ ".01-ghc.hs")
          $ D.render D.RenderIndent (pprModGuts guts)
 
 
@@ -49,7 +50,7 @@ passLower name guts
         -- Convert the GHC Core module to Disciple Core.
         let mm_dc       = convertModGuts guts
 
-        writeFile ("dump." ++ name ++ ".2-dc-raw.dcf")
+        writeFile ("dump." ++ name ++ ".02-dc-raw.dcf")
          $ D.render D.RenderIndent (D.ppr mm_dc)
 
 
@@ -58,10 +59,10 @@ passLower name guts
         --  We also get a map of DDC names to GHC names
         let (mm_detect, names) = detectModule mm_dc
 
-        writeFile ("dump." ++ name ++ ".3-dc-detect.dcf")
+        writeFile ("dump." ++ name ++ ".03-dc-detect.dcf")
          $ D.render D.RenderIndent (D.ppr mm_detect)
 
-        writeFile ("dump." ++ name ++ ".3-dc-detect.names")
+        writeFile ("dump." ++ name ++ ".03-dc-detect.names")
          $ D.renderIndent (D.vcat $ map D.ppr $ Map.toList names)
 
 
@@ -76,7 +77,7 @@ passLower name guts
         let mm_snip'    = Core.flatten $ Core.snip False mm_detect
         let mm_snip     = evalState (Core.namify namifierT namifierX mm_snip') 0
 
-        writeFile ("dump." ++ name ++ ".4-dc-prep.1-snip.dcf")
+        writeFile ("dump." ++ name ++ ".04-dc-prep.1-snip.dcf")
          $ D.render D.RenderIndent (D.ppr mm_snip)
 
 
@@ -86,7 +87,7 @@ passLower name guts
         let (mm_prepanon, workerNameArgs) 
                         = Flow.prepModule mm_snip
 
-        writeFile ("dump." ++ name ++ ".4-dc-prep.2-prepanon.dcf")
+        writeFile ("dump." ++ name ++ ".04-dc-prep.2-prepanon.dcf")
          $ D.render D.RenderIndent (D.ppr mm_prepanon)
 
 
@@ -103,7 +104,7 @@ passLower name guts
                                         isFloatable mm_prepanon
         let mm_forward          = Core.result result_forward
 
-        writeFile ("dump." ++ name ++ ".4-dc-prep.3-forward.dcf")
+        writeFile ("dump." ++ name ++ ".04-dc-prep.3-forward.dcf")
          $ D.render D.RenderIndent (D.ppr mm_forward)
 
 
@@ -111,7 +112,7 @@ passLower name guts
         --     The lowering pass needs them all to have real names.
         let mm_namify   = evalState (Core.namify namifierT namifierX mm_forward) 0
 
-        writeFile ("dump." ++ name ++ ".4-dc-prep.4-namify.dcf")
+        writeFile ("dump." ++ name ++ ".04-dc-prep.4-namify.dcf")
          $ D.render D.RenderIndent (D.ppr mm_namify)
 
         let mm_prep     = mm_namify
@@ -128,7 +129,7 @@ passLower name guts
         let mm_lowered' = Flow.extractModule mm_prep procs
         let mm_lowered  = evalState (Core.namify namifierT namifierX mm_lowered') 0
 
-        writeFile ("dump." ++ name ++ ".5-dc-lowered.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-lowered.dcf")
          $ D.renderIndent $ D.ppr mm_lowered
 
 
@@ -136,7 +137,7 @@ passLower name guts
         -- Concretize rate variables.
         let mm_concrete = Flow.concretizeModule mm_lowered
 
-        writeFile ("dump." ++ name ++ ".6-dc-concrete.dcf")
+        writeFile ("dump." ++ name ++ ".06-dc-concrete.dcf")
          $ D.renderIndent $ D.ppr mm_concrete
 
 
@@ -144,17 +145,34 @@ passLower name guts
         -- Assign mutable variables to array storage.
         let mm_storage  = Flow.storageModule mm_concrete
 
-        writeFile ("dump." ++ name ++ ".7-dc-storage.dcf")
+        writeFile ("dump." ++ name ++ ".07-dc-storage.dcf")
          $ D.renderIndent $ D.ppr mm_storage
+
+
+        -- Check -----------------------------------------
+        -- Type check the module,
+        --  the thread transform wants type annotations at each node.
+        let checkResult
+                = Core.checkModule 
+                        (Core.configOfProfile Flow.profile)
+                        mm_storage
+
+        let mm_checked  
+                = case checkResult of
+                        Right mm        -> mm
+                        Left err        -> error $ D.renderIndent (D.ppr err)
+
+        writeFile ("dump." ++ name ++ ".08-dc-checked.dcf")
+         $ D.renderIndent $ D.ppr mm_checked
 
 
         -- Thread -----------------------------------------
         -- Thread the World# token through stateful functions in preparation
         -- for conversion back to GHC core.
-        let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_storage
+        let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_checked
         let mm_thread   = evalState (Core.namify namifierT namifierX mm_thread') 0
 
-        writeFile ("dump." ++ name ++ ".8-dc-threaded.dcf")
+        writeFile ("dump." ++ name ++ ".09-dc-threaded.dcf")
          $ D.renderIndent $ D.ppr mm_thread
 
 
@@ -163,7 +181,7 @@ passLower name guts
         us              <- G.mkSplitUniqSupply 's'              -- Here's hoping this is unique...
         let guts'       = G.initUs_ us (spliceModGuts names mm_thread guts)
 
-        writeFile ("dump." ++ name ++ ".9-ghc-spliced.dcf")
+        writeFile ("dump." ++ name ++ ".10-ghc-spliced.dcf")
          $ D.render D.RenderIndent (pprModGuts guts')
 
         return (return guts')

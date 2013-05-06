@@ -17,15 +17,24 @@ repa_loop               = R.repa_loop
 
 ---------------------------------------------------------------------
 main
- =      print $ R.streamUnboxed 
+ = do 
+        -- print $ R.streamUnboxed 
+        --        (U.enumFromN (1 :: Int) 10) 
+        --        lower_process
+
+        print $ R.streamUnboxed 
                 (U.enumFromN (1 :: Int) 10) 
-                lower_process
+                lower_process2
 
 
-lower_process :: R.Stream k Int -> Int
-lower_process s
- = R.fold (+) 0 s + R.fold (*) 1 s
-{-# NOINLINE lower_process #-}
+-- lower_process :: R.Stream k Int -> Int
+-- lower_process s
+--  = R.fold (+) 0 s + R.fold (*) 1 s
+-- {-# NOINLINE lower_process #-}
 
 
+lower_process2 :: R.Stream k Int -> Int
+lower_process2 s
+ = R.fold (+) 0 s + R.fold (*) 1 s + R.fold (*) 1 s
+{-# NOINLINE lower_process2 #-}
 
