@@ -12,15 +12,18 @@ Library
         Data.Array.Repa.Plugin
 
   Other-Modules:
-        Data.Array.Repa.Plugin.Convert.FatName
-        Data.Array.Repa.Plugin.Convert.ToDDC
+        Data.Array.Repa.Plugin.FatName
 
-        Data.Array.Repa.Plugin.Convert.ToGHC.Wrap
-        Data.Array.Repa.Plugin.Convert.ToGHC.Type
-        Data.Array.Repa.Plugin.Convert.ToGHC.Prim
-        Data.Array.Repa.Plugin.Convert.ToGHC.Var
-        Data.Array.Repa.Plugin.Convert.ToGHC
-        Data.Array.Repa.Plugin.Convert.Detect
+        Data.Array.Repa.Plugin.ToDDC.Detect
+        Data.Array.Repa.Plugin.ToDDC
+
+        Data.Array.Repa.Plugin.ToGHC.Prim.Imported
+        Data.Array.Repa.Plugin.ToGHC.Prim.Table
+        Data.Array.Repa.Plugin.ToGHC.Prim
+        Data.Array.Repa.Plugin.ToGHC.Wrap
+        Data.Array.Repa.Plugin.ToGHC.Type
+        Data.Array.Repa.Plugin.ToGHC.Var
+        Data.Array.Repa.Plugin.ToGHC
 
         Data.Array.Repa.Plugin.GHC.Pretty
 

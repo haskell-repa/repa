@@ -27,9 +27,6 @@ install _ _todos
                 initStaticOpts
                 return (return ())
 
-        -- Flatten out the tree of passes into a list to make it easier to handle.
-        -- let todos' = normalizeCoreDoPasses todos
-
         -- Replace the standard GHC pipeline with our one.
         return vectoriserPipeline
 

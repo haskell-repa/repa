@@ -7,72 +7,72 @@
 --
 module Data.Array.Repa.Series.Prim
         ( -- * Primitive arithmetic
-          primAddInt
-        , primMulInt
+          repa_addInt
+        , repa_mulInt
 
           -- * Array operators
-        , primNewByteArray
-        , primReadIntArray
-        , primWriteIntArray
+        , repa_newByteArray
+        , repa_readIntArray
+        , repa_writeIntArray
 
           -- * Streams
-        , primRateOfStream
-        , primNextInt
+        , repa_rateOfStream
+        , repa_nextInt
 
           -- * Loops
-        , primLoop)
+        , repa_loop)
 where
 import Data.Array.Repa.Series.Stream
 import GHC.Exts
 
 
 -- Primitive Arithmetic -------------------------------------------------------
-primAddInt              = (+#)
-{-# INLINE primAddInt #-}
+repa_addInt              = (+#)
+{-# INLINE repa_addInt #-}
 
-primMulInt              = (*#)
-{-# INLINE primMulInt #-}
+repa_mulInt              = (*#)
+{-# INLINE repa_mulInt #-}
 
 
 -- Array Operators ------------------------------------------------------------
-primNewByteArray        = newByteArray#
-{-# INLINE primNewByteArray #-}
+repa_newByteArray       = newByteArray#
+{-# INLINE repa_newByteArray #-}
 
-primReadIntArray        = readIntArray#
-{-# INLINE primReadIntArray #-}
+repa_readIntArray       = readIntArray#
+{-# INLINE repa_readIntArray #-}
 
-primWriteIntArray       = writeIntArray#
-{-# INLINE primWriteIntArray #-}
+repa_writeIntArray      = writeIntArray#
+{-# INLINE repa_writeIntArray #-}
 
 
 -- Streams --------------------------------------------------------------------
 -- | Get the Rate / Length of a stream.
-primRateOfStream :: Stream k a -> Int#
-primRateOfStream s = streamLength s
-{-# INLINE primRateOfStream #-}
+repa_rateOfStream :: Stream k a -> Int#
+repa_rateOfStream s = streamLength s
+{-# INLINE repa_rateOfStream #-}
 
 
 -- | Get the next element of a stream.
-primNextInt 
+repa_nextInt 
         :: Stream k Int   
         -> Int# 
         -> State# RealWorld -> (# State# RealWorld, Int# #)
 
-primNextInt s ix world
+repa_nextInt s ix world
  = case streamNext s ix of
         I# i    -> (# world, i #)
-{-# INLINE primNextInt #-}
+{-# INLINE repa_nextInt #-}
 
 
 -- Loop combinators -----------------------------------------------------------
 -- | Primitive stateful loop combinator.
-primLoop 
+repa_loop 
         :: Int# 
         -> (Int# -> State# RealWorld -> State# RealWorld)
         -> State# RealWorld 
         -> State# RealWorld
 
-primLoop len worker world0
+repa_loop len worker world0
  = go 0# world0
  where  
         go ix world
@@ -81,5 +81,5 @@ primLoop len worker world0
 
          | world' <- worker ix world
          = go (ix +# 1#) world'
-{-# INLINE primLoop #-}
+{-# INLINE repa_loop #-}
 

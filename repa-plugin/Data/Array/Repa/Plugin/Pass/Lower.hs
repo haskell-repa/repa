@@ -2,9 +2,9 @@
 module Data.Array.Repa.Plugin.Pass.Lower
         (passLower)
 where
-import Data.Array.Repa.Plugin.Convert.ToDDC
-import Data.Array.Repa.Plugin.Convert.ToGHC
-import Data.Array.Repa.Plugin.Convert.Detect
+import Data.Array.Repa.Plugin.ToDDC.Detect
+import Data.Array.Repa.Plugin.ToDDC
+import Data.Array.Repa.Plugin.ToGHC
 import Data.Array.Repa.Plugin.GHC.Pretty
 import DDC.Core.Exp
 
@@ -35,7 +35,7 @@ import System.IO.Unsafe
 import Control.Monad.State.Strict
 
 
--- | Dump a module.
+-- | Run the lowering pass on this module.
 passLower :: String -> G.ModGuts -> G.CoreM G.ModGuts
 passLower name guts
  = unsafePerformIO

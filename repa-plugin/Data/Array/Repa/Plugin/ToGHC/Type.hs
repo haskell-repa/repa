@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Plugin.Convert.ToGHC.Type
+module Data.Array.Repa.Plugin.ToGHC.Type
         ( convertType
         , convertType_boxed
         , convertType_unboxed
@@ -10,8 +10,9 @@ module Data.Array.Repa.Plugin.Convert.ToGHC.Type
         , bindVarT
         , bindVarX)
 where
-import Data.Array.Repa.Plugin.Convert.FatName
-import Data.Array.Repa.Plugin.Convert.ToGHC.Var
+import Data.Array.Repa.Plugin.FatName
+import Data.Array.Repa.Plugin.ToGHC.Var
+import Data.Array.Repa.Plugin.ToGHC.Prim.Imported
 import Data.Map                         (Map)
 
 import qualified HscTypes                as G
@@ -195,6 +196,7 @@ convertUnboxed t
  | t == D.tInt          = Just G.intPrimTy
  | otherwise            = Nothing
 
+
 -- Env ------------------------------------------------------------------------
 -- | Environment used to map DDC names to GHC names.
 --   Used when converting DDC Core to GHC core.
@@ -202,6 +204,9 @@ data Env
         = Env 
         { -- | Guts of the original GHC module.
           envGuts       :: G.ModGuts
+
+          -- | Imported prims from original GHC module
+        , envImported   :: ImportedNames
 
           -- | Name map we got during the original GHC -> DDC conversion.
         , envNames      :: Map D.Name GhcName

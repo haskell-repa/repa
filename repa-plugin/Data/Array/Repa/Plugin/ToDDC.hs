@@ -1,9 +1,9 @@
 -- TODO: Turn the generic conversion stuff into a separate module.
 --       Make it easier to convert between GHC and DDC.
-module Data.Array.Repa.Plugin.Convert.ToDDC
+module Data.Array.Repa.Plugin.ToDDC
         (convertModGuts)
 where
-import Data.Array.Repa.Plugin.Convert.FatName
+import Data.Array.Repa.Plugin.FatName
 import DDC.Base.Pretty
 import Data.Maybe
 import Data.List
@@ -119,8 +119,8 @@ convertBinding
 
 convertBinding (b, x)
  | D.NameVar str  <- convertVarName b
- , isPrefixOf "repa" str                                -- TODO: select the bindings we care about
-                                                        --       more generally.
+ , isPrefixOf "lower" str                 -- TODO: select the bindings we care about
+                                          --       more generally.
  = do   x'      <- convertExpr x
         return  ( D.BName (convertFatName b) (convertVarType b)
                 , x')

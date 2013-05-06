@@ -1,8 +1,8 @@
 
-module Data.Array.Repa.Plugin.Convert.ToGHC.Wrap
+module Data.Array.Repa.Plugin.ToGHC.Wrap
         (wrapLowered)
 where
-import Data.Array.Repa.Plugin.Convert.ToGHC.Var
+import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.Array.Repa.Plugin.GHC.Pretty ()
 import DDC.Base.Pretty
 

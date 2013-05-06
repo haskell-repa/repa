@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Plugin.Convert.FatName
+module Data.Array.Repa.Plugin.FatName
         ( GhcName (..)
         , FatName (..))
 where
@@ -12,7 +12,6 @@ import qualified Var                    as G
 import qualified Literal                as G
 import qualified TyCon                  as G
 import qualified TypeRep                as G
-
 
 
 data GhcName

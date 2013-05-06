@@ -1,54 +1,32 @@
-module Data.Array.Repa.Plugin.Convert.ToGHC.Var
-        ( findImportedPrimVar
-        , plainNameOfVar
+
+module Data.Array.Repa.Plugin.ToGHC.Var
+        ( plainNameOfVar
         , newDummyVar
         , newDummyTyVar)
 where
-import qualified HscTypes               as G
-import qualified CoreSyn                as G
 import qualified Type                   as G
 import qualified IdInfo                 as G
 import qualified Var                    as G
 import qualified UniqSupply             as G
 import qualified FastString             as G
-import qualified OccName                as OccName
+import qualified OccName                as Occ
 import qualified Name                   as Name
 
 
 -- Variable utils -------------------------------------------------------------
--- | Find the variable with this name from the source module.
---   TODO: right now it must be defined in the current module,
---         fix this to actually look in the import list.
-findImportedPrimVar :: G.ModGuts -> String -> Maybe G.Var
-findImportedPrimVar guts str
- = go (G.mg_binds guts)
- where  
-        go (G.NonRec v _ : bs)
-         | plainNameOfVar v == str = Just v
-         | otherwise               = go bs
-
-        go ( (G.Rec ((v, _) : vxs)) : bs)
-         | plainNameOfVar v == str = Just v
-         | otherwise               = go (G.Rec vxs : bs)
-
-        go ( G.Rec [] : bs )       = go bs
-
-        go []                      = Nothing
-
-
 -- | Take the plain unqualified printable name of a GHC variable.
 plainNameOfVar :: G.Var -> String
 plainNameOfVar gv
  = let  name    = G.varName gv
         occ     = Name.nameOccName name
-   in   OccName.occNameString occ
+   in   Occ.occNameString occ
 
 
 -- | Create a fresh dummy GHC expression variable with the given type.
 newDummyVar :: String -> G.Type -> G.UniqSM G.Var
 newDummyVar basename ty
  = do   let details = G.VanillaId
-        let occName = OccName.mkOccName OccName.varName basename
+        let occName = Occ.mkOccName Occ.varName basename
         unique      <- G.getUniqueUs
         let name    = Name.mkSystemName unique occName
         let info    = G.vanillaIdInfo

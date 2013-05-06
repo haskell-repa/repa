@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Plugin.Convert.Detect
+module Data.Array.Repa.Plugin.ToDDC.Detect
         (detectModule)
 where
 import DDC.Core.Module
@@ -8,7 +8,7 @@ import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Compounds
-import Data.Array.Repa.Plugin.Convert.FatName
+import Data.Array.Repa.Plugin.FatName
 import Data.List
 import Data.Map                 (Map)
 import Data.Set                 (Set)

@@ -1,12 +1,13 @@
 
-module Data.Array.Repa.Plugin.Convert.ToGHC
+module Data.Array.Repa.Plugin.ToGHC
         (spliceModGuts)
 where
-import Data.Array.Repa.Plugin.Convert.ToGHC.Wrap
-import Data.Array.Repa.Plugin.Convert.ToGHC.Type
-import Data.Array.Repa.Plugin.Convert.ToGHC.Prim
-import Data.Array.Repa.Plugin.Convert.ToGHC.Var
-import Data.Array.Repa.Plugin.Convert.FatName
+import Data.Array.Repa.Plugin.ToGHC.Wrap
+import Data.Array.Repa.Plugin.ToGHC.Type
+import Data.Array.Repa.Plugin.ToGHC.Prim
+import Data.Array.Repa.Plugin.ToGHC.Prim.Imported
+import Data.Array.Repa.Plugin.ToGHC.Var
+import Data.Array.Repa.Plugin.FatName
 
 import qualified HscTypes               as G
 import qualified CoreSyn                as G
@@ -30,7 +31,6 @@ import Data.List
 import Control.Monad
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
-
 
 
 -------------------------------------------------------------------------------
@@ -77,13 +77,17 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
  , Just (dbLowered, dxLowered) <- lookupModuleBindOfName mm nOrig
  = do   
         -- starting environments.
+        let imported            = importedNamesOfGuts guts
+
         let kenv = Env
                 { envGuts       = guts
+                , envImported   = imported
                 , envNames      = names
                 , envVars       = [] }
 
         let tenv = Env
                  { envGuts      = guts
+                 , envImported  = imported
                  , envNames     = names
                  , envVars      = [] }
 
