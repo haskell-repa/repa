@@ -4,6 +4,7 @@ module Data.Array.Repa.Series
         , streamUnboxed2
 
           -- * Stream Operators
+        , map
         , fold
 
           -- * Primitives used by the Repa plugin
@@ -12,4 +13,4 @@ where
 import Data.Array.Repa.Series.Stream
 import Data.Array.Repa.Series.Fallback
 import Data.Array.Repa.Series.Prim
-
+import Prelude hiding (map)

@@ -34,6 +34,7 @@ import qualified DDC.Base.Pretty                        as D
 import qualified Data.Map                               as Map
 import System.IO.Unsafe
 import Control.Monad.State.Strict
+import Data.List
 
 
 -- | Run the lowering pass on this module.
@@ -128,6 +129,9 @@ passLower name guts
         -- Extract concrete code from the abstract loops.
         let mm_lowered' = Flow.extractModule mm_prep procs
         let mm_lowered  = evalState (Core.namify namifierT namifierX mm_lowered') 0
+
+        writeFile ("dump." ++ name ++ ".05-dc-lowered.1-processes.txt")
+         $ D.renderIndent $ D.vcat $ intersperse D.empty $ map D.ppr $ processes
 
         writeFile ("dump." ++ name ++ ".05-dc-lowered.dcf")
          $ D.renderIndent $ D.ppr mm_lowered

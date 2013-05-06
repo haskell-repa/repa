@@ -17,7 +17,7 @@ import GHC.Exts
 data Stream k a
         = Stream 
         { streamLength  :: Int#
-        , streamVector  :: !(Vector a) }
+        , streamVector  :: Int# -> a }
 
 
 -- | Take the next element from a stream.
@@ -26,7 +26,7 @@ data Stream k a
 --   how do we support filtering operations without the plugin?
 streamNext :: Unbox a => Stream k a -> Int# -> a
 streamNext s ix
-        = U.unsafeIndex (streamVector s) (I# ix)
+        = streamVector s ix
 {-# INLINE [1] streamNext #-}
 
 
@@ -41,9 +41,13 @@ streamUnboxed
 
 streamUnboxed vec f
  = let  !(I# len)  = U.length vec
+
+        get ix     = U.unsafeIndex vec (I# ix)
+        {-# INLINE get #-}
+
         s          = Stream
                    { streamLength = len
-                   , streamVector = vec }
+                   , streamVector = get }
    in   f s
 {-# INLINE [1] streamUnboxed #-}
 
@@ -60,8 +64,13 @@ streamUnboxed2
 streamUnboxed2 vec1 vec2 f
  | U.length vec1 == U.length vec2
  = let  !(I# len)  = U.length vec1
-        s1      = Stream len vec1
-        s2      = Stream len vec2
+
+        get vec ix = U.unsafeIndex vec (I# ix)
+        {-# INLINE get #-}
+
+        s1      = Stream len (get vec1)
+        s2      = Stream len (get vec2)
+
    in   Just (f s1 s2)
 
  | otherwise
