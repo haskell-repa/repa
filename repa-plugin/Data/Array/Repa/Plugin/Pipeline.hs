@@ -14,6 +14,10 @@ import GhcPlugins
 -- | Our vectoriser pipeline.
 --   This replaces the standard compilation pipeline defined in 
 --   SimplCore.lhs of the main compiler.
+--
+--   TODO: inject the lowering transform just after the first simplification stage,
+--         instead of replacing the whole pipeline.
+--
 vectoriserPipeline :: [CoreToDo]
 vectoriserPipeline
  = [    

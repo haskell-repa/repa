@@ -29,7 +29,7 @@ detectModule mm
 
 
 -- Detect ---------------------------------------------------------------------
--- | Detect flow operators in code converted from GHC Core, rewriting the raw
+-- | Detect series operators in code converted from GHC Core, rewriting the raw
 --   AST converted from GHC to be a well formed Disciple Core program. At the 
 --   same time, remember the mapping from Disciple to GHC core names so we can
 --   convert the transformed Disciple program back to GHC core.
@@ -98,8 +98,8 @@ instance Detect Bound where
          -> makePrim g' (NamePrimTyCon   PrimTyConInt)    
                         kData
 
-         | Just g'       <- matchPrim "Stream_" n
-         -> makePrim g' (NameTyConFlow   TyConFlowStream) 
+         | Just g'       <- matchPrim "Series_" n
+         -> makePrim g' (NameTyConFlow   TyConFlowSeries) 
                         (kRate `kFun` kData `kFun` kData)
 
          | otherwise
@@ -169,13 +169,13 @@ instance Detect TyCon where
 instance Detect Type where
  detect tt
 
-  -- Detect rate variables being applied to Stream type constructors.
+  -- Detect rate variables being applied to Series type constructors.
   | TApp t1 t2  <- tt
   , [ TCon (TyConBound (UName (FatName _ (NameCon str))) _)
     , TVar             (UName (FatName _ n))
     , _]  
                 <- takeTApps tt
-  , isPrefixOf "Stream_" str
+  , isPrefixOf "Series_" str
   = do  setRateVar n
         t1'     <- detect t1
         t2'     <- detect t2
@@ -305,5 +305,5 @@ instance Detect (Lets a) where
                 return  $ LRec $ zip bs' xs'
 
         LLetRegions{}   -> error "repa-plugin.detect: LLetRegions not handled"
-        LWithRegion{}   -> error "repa-plugin.detect: LWitnRegions not handled"
+        LWithRegion{}   -> error "repa-plugin.detect: LWithRegions not handled"
 

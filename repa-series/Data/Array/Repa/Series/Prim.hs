@@ -15,14 +15,14 @@ module Data.Array.Repa.Series.Prim
         , repa_readIntArray
         , repa_writeIntArray
 
-          -- * Streams
-        , repa_rateOfStream
+          -- * Series
+        , repa_rateOfSeries
         , repa_nextInt
 
           -- * Loops
         , repa_loop)
 where
-import Data.Array.Repa.Series.Stream
+import Data.Array.Repa.Series.Base
 import GHC.Exts
 
 
@@ -46,20 +46,20 @@ repa_writeIntArray      = writeIntArray#
 
 
 -- Streams --------------------------------------------------------------------
--- | Get the Rate / Length of a stream.
-repa_rateOfStream :: Stream k a -> Int#
-repa_rateOfStream s = streamLength s
-{-# INLINE repa_rateOfStream #-}
+-- | Get the Rate / Length of a series.
+repa_rateOfSeries :: Series k a -> Int#
+repa_rateOfSeries s = seriesLength s
+{-# INLINE repa_rateOfSeries #-}
 
 
--- | Get the next element of a stream.
+-- | Get the next element of a series.
 repa_nextInt 
-        :: Stream k Int   
+        :: Series k Int   
         -> Int# 
         -> State# RealWorld -> (# State# RealWorld, Int# #)
 
 repa_nextInt s ix world
- = case streamNext s ix of
+ = case index s ix of
         I# i    -> (# world, i #)
 {-# INLINE repa_nextInt #-}
 

@@ -1,7 +1,7 @@
 module Data.Array.Repa.Series
-        ( Stream (..)
-        , streamUnboxed
-        , streamUnboxed2
+        ( Series (..)
+        , eatUnboxed
+        , eatUnboxed2
 
           -- * Stream Operators
         , map
@@ -10,7 +10,7 @@ module Data.Array.Repa.Series
           -- * Primitives used by the Repa plugin
         , module Data.Array.Repa.Series.Prim)
 where
-import Data.Array.Repa.Series.Stream
+import Data.Array.Repa.Series.Base
 import Data.Array.Repa.Series.Fallback
 import Data.Array.Repa.Series.Prim
 import Prelude hiding (map)

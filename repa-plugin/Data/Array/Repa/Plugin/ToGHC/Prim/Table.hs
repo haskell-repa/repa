@@ -88,9 +88,9 @@ primitives
                 "repa_mulInt"
 
         -- Flow Operators
-   ,    Prim    (D.NameOpFlow D.OpFlowRateOfStream)
+   ,    Prim    (D.NameOpFlow D.OpFlowRateOfSeries)
                 []
-                "repa_rateOfStream"
+                "repa_rateOfSeries"
 
         -- Store Operators
    ,    Prim    (D.NameOpStore D.OpStoreNext)

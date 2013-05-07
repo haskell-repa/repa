@@ -78,15 +78,15 @@ convertType kenv tt
                 <- D.takePrimTyConApps tt
          -> return $ G.mkMutableByteArrayPrimTy G.realWorldTy
 
-        -- DDC[Stream# a] => GHC[Stream {Lifted a}]
+        -- DDC[Series# a] => GHC[Series {Lifted a}]
         --   In the code we get from the lowering transform, for element
         --   types like Int# the "hash" refers to the fact that it is
         --   primitive, and not nessesarally unboxed. The type arguments 
-        --   to 'Stream' in GHC land need to be the boxed versions.
+        --   to 'Series' in GHC land need to be the boxed versions.
         D.TApp{}
-         | Just (nStream@(D.NameTyConFlow D.TyConFlowStream), [tK, tElem])
+         | Just (nSeries@(D.NameTyConFlow D.TyConFlowSeries), [tK, tElem])
                 <- D.takePrimTyConApps tt
-         , Just (GhcNameTyCon tc) <- Map.lookup nStream (envNames kenv)
+         , Just (GhcNameTyCon tc) <- Map.lookup nSeries (envNames kenv)
          , Just tElem'  <- convertBoxed tElem
          -> do  tK'     <- convertType  kenv tK
                 return  $ G.mkTyConApp tc [tK', tElem']
