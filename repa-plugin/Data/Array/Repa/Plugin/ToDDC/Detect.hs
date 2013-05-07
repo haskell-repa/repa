@@ -43,19 +43,6 @@ instance Detect (Module a) where
                 , moduleBody            = body' }
 
 
--- Match arithmetic operators.
-matchPrimArith :: String -> Maybe (Name, Type Name, Type Name)
-matchPrimArith str
- | isPrefixOf "$fNumInt_$c+_" str       
- = Just (NamePrimArith PrimArithAdd, tInt, typePrimArith PrimArithAdd)
-
- | isPrefixOf "$fNumInt_$c*_" str
- = Just (NamePrimArith PrimArithMul, tInt, typePrimArith PrimArithMul)
-
- | otherwise
- = Nothing
-
-
 -- DaCon ----------------------------------------------------------------------
 instance Detect DaCon where
  detect (DaCon dcn t isAlg)
@@ -94,17 +81,31 @@ instance Detect (Exp a) where
 
 
   -- Detect folds.
-  | XApp a _ _                                          <- xx
-  , Just (XVar _ uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    <- takeXApps xx
-  , UName (FatName _ (NameVar vFold))                   <- uFold
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vFold))   <- uFold
   , isPrefixOf "fold_" vFold
-  = do  args'  <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
+  = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
         return  $  xApps a (XVar a (UPrim (NameOpFlow OpFlowFold) 
                                           (typeOpFlow OpFlowFold)))
                            args'
 
+  -- Detect maps
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ uMap,  [xTK, xTA, xTB, _xD1, _xD2, xF, xS ])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vMap))    <- uMap
+  , isPrefixOf "map_" vMap
+  = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xS]
+        return  $ xApps a (XVar a (UPrim (NameOpFlow (OpFlowMap 1))
+                                         (typeOpFlow (OpFlowMap 1))))
+                          args'
 
-  -- Inject required type arguments for arithmetic ops
+
+  -- Inject type arguments for arithmetic ops.
+  --   In the Core code, arithmetic operations are expressed as monomorphic
+  --   dictionary methods, which we convert to polytypic DDC primops.
   | XVar a (UName (FatName nG (NameVar str)))    <- xx
   , Just (nD', tArg, tPrim)  <- matchPrimArith str
   = do  collect nD' nG
@@ -115,6 +116,7 @@ instance Detect (Exp a) where
   | XApp _ (XVar _ (UName (FatName _ (NameCon str1)))) x2 <- xx
   , isPrefixOf "I#_" str1
   = detect x2
+
   
   -- Boilerplate traversal.
   | otherwise
@@ -132,6 +134,20 @@ instance Detect (Exp a) where
         XWitness{}      -> error "repa-plugin.detect: XWitness not handled"
 
 
+-- Match arithmetic operators.
+matchPrimArith :: String -> Maybe (Name, Type Name, Type Name)
+matchPrimArith str
+ | isPrefixOf "$fNumInt_$c+_" str       
+ = Just (NamePrimArith PrimArithAdd, tInt, typePrimArith PrimArithAdd)
+
+ | isPrefixOf "$fNumInt_$c*_" str
+ = Just (NamePrimArith PrimArithMul, tInt, typePrimArith PrimArithMul)
+
+ | otherwise
+ = Nothing
+
+
+--- Lets ----------------------------------------------------------------------
 instance Detect (Lets a) where
  detect ll
   = case ll of
