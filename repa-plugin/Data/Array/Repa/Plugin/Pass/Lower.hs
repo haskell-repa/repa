@@ -21,10 +21,10 @@ import qualified DDC.Core.Flow.PrimState.Thread         as Flow
 import qualified DDC.Core.Check                         as Core
 import qualified DDC.Core.Simplifier                    as Core
 import qualified DDC.Core.Transform.Namify              as Core
-import qualified DDC.Core.Transform.Snip                as Core
 import qualified DDC.Core.Transform.Flatten             as Core
 import qualified DDC.Core.Transform.Forward             as Core
 import qualified DDC.Core.Transform.Thread              as Core
+import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
@@ -75,7 +75,8 @@ passLower name guts
         --  1. Snip and flatten the code to create new let-bindings
         --     for flow combinators. This ensures all the flow combinators
         --     and workers are bound at the top-level of the function.
-        let mm_snip'    = Core.flatten $ Core.snip False mm_detect
+        let snipConfig  = Snip.configZero { Snip.configSnipLetBody = True }
+        let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_detect
         let mm_snip     = evalState (Core.namify namifierT namifierX mm_snip') 0
 
         writeFile ("dump." ++ name ++ ".04-dc-prep.1-snip.dcf")
@@ -162,9 +163,13 @@ passLower name guts
                         mm_storage
 
         let mm_checked  
-                = case checkResult of
-                        Right mm        -> mm
-                        Left err        -> error $ D.renderIndent (D.ppr err)
+             = case checkResult of
+                Right mm        -> mm
+                Left  err
+                 -> error $ D.renderIndent $ D.indent 8 $ D.vcat
+                        [ D.empty
+                        , D.text "repa-plugin: Type error in generated code"
+                        , D.indent 2 $ D.ppr err ]
 
         writeFile ("dump." ++ name ++ ".08-dc-checked.dcf")
          $ D.renderIndent $ D.ppr mm_checked
