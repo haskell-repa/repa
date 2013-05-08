@@ -53,3 +53,10 @@ lower_foldMap :: R.Series k Int -> Int
 lower_foldMap s
  = R.fold (+) 0 (R.map (\x -> x * 2) s)
 {-# NOINLINE lower_foldMap #-}
+
+
+-- Single maps
+lower_map :: R.Series k Int -> R.Series k Int
+lower_map s
+ = R.map (\x -> x * 2 + 1) s
+{-# NOINLINE lower_map #-} 

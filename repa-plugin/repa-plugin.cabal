@@ -14,6 +14,10 @@ Library
   Other-Modules:
         Data.Array.Repa.Plugin.FatName
 
+
+        Data.Array.Repa.Plugin.ToDDC.Convert.Type
+        Data.Array.Repa.Plugin.ToDDC.Convert.Var
+        Data.Array.Repa.Plugin.ToDDC.Convert
         Data.Array.Repa.Plugin.ToDDC.Detect.Base
         Data.Array.Repa.Plugin.ToDDC.Detect.Type
         Data.Array.Repa.Plugin.ToDDC.Detect
