@@ -51,10 +51,13 @@ passLower name guts
 
         -- Convert ----------------------------------------
         -- Convert the GHC Core module to Disciple Core.
-        let mm_dc       = convertModGuts guts
+        let (mm_dc, failsConvert) = convertModGuts guts
 
         writeFile ("dump." ++ name ++ ".02-dc-raw.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_dc)
+         $ D.renderIndent (D.ppr mm_dc)
+
+        writeFile ("dump." ++ name ++ ".02-dc-raw.fails")
+         $ D.renderIndent (D.vcat $ intersperse D.empty $ map D.ppr failsConvert)
 
 
         -- Detect -----------------------------------------

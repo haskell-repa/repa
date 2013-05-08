@@ -5,6 +5,7 @@ module Data.Array.Repa.Plugin.ToDDC.Convert.Var
         , convertName
         , convertLiteral)
 where
+import Data.Array.Repa.Plugin.ToDDC.Convert.Base
 import Data.Array.Repa.Plugin.FatName
 import DDC.Base.Pretty
 import Data.Char
@@ -22,19 +23,20 @@ import qualified Literal                as G
 
 -- Names ----------------------------------------------------------------------
 -- | Convert a FatName from a GHC variable.
-convertFatName :: G.Var -> FatName
+convertFatName :: G.Var -> Either Fail FatName
 convertFatName var
-        = FatName (GhcNameVar var) (convertVarName var)
+ = do   vn      <- convertVarName var
+        return  $ FatName (GhcNameVar var) vn
 
 
 -- | Convert a printable DDC name from a GHC variable.
-convertVarName :: G.Var -> D.Name
+convertVarName :: G.Var -> Either Fail D.Name
 convertVarName var
         = convertName (G.varName var)
 
 
 -- | Convert a DDC name from a GHC name.
-convertName :: Name.Name -> D.Name
+convertName :: Name.Name -> Either Fail D.Name
 convertName name
  = let  baseName = OccName.occNameString
                  $ Name.nameOccName name
@@ -43,28 +45,32 @@ convertName name
         str      = renderPlain (text baseName <> text "_" <> text unique)
 
    in   case baseName of
-         []         -> error "repa-plugin.convertName: base name is empty"
+         []             -> Left FailEmptyName
          c : _ 
-          | isUpper c   -> D.NameCon str
-          | otherwise   -> D.NameVar str
+          | isUpper c   -> return $ D.NameCon str
+          | otherwise   -> return $ D.NameVar str
 
 
 -- Literals -------------------------------------------------------------------
 -- | Slurp a literal.
-convertLiteral :: G.Literal -> D.DaCon FatName
+convertLiteral 
+        :: G.Literal 
+        -> Either Fail (D.DaCon FatName)
+
 convertLiteral lit
  = case lit of
         G.MachInt i 
-          -> D.mkDaConAlg (FatName (GhcNameLiteral lit) (D.NameLitInt i)) 
-                          tIntU'
+         -> let fn      = (FatName (GhcNameLiteral lit) (D.NameLitInt i))
+            in  return $ D.mkDaConAlg fn tIntU'
 
         -- TODO: convert the rest of the literals.
-        _ -> error "repa-plugin.slurpLiteral: can't convert literal"
+        _ -> Left (FailUnhandledLiteral lit)
 
 
 tIntU' =  D.TCon 
         $ D.TyConBound 
-                (D.UPrim  (FatName GhcNameIntU (D.NamePrimTyCon D.PrimTyConInt))
+                (D.UPrim  (FatName GhcNameIntU 
+                                   (D.NamePrimTyCon D.PrimTyConInt))
                           D.kData)
                 D.kData
 

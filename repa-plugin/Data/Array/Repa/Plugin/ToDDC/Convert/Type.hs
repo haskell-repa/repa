@@ -3,6 +3,7 @@ module Data.Array.Repa.Plugin.ToDDC.Convert.Type
         ( convertVarType
         , convertType)
 where
+import Data.Array.Repa.Plugin.ToDDC.Convert.Base
 import Data.Array.Repa.Plugin.ToDDC.Convert.Var
 import Data.Array.Repa.Plugin.FatName
 
@@ -19,48 +20,57 @@ import qualified FastString             as G
 
 -- Variables ------------------------------------------------------------------
 -- | Convert a type from a GHC variable.
-convertVarType :: G.Var -> D.Type FatName
+convertVarType :: G.Var -> Either Fail (D.Type FatName)
 convertVarType v
         = convertType $ G.varType v
 
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a type.
-convertType :: G.Type -> D.Type FatName
+convertType :: G.Type -> Either Fail (D.Type FatName)
 convertType tt
  = case tt of
         G.TyVarTy v
-         -> D.TVar    (D.UName (convertFatName v)) 
+         -> do  v'      <- convertFatName v
+                return  $ D.TVar (D.UName v')
 
         G.AppTy t1 t2
-         -> D.TApp    (convertType t1) (convertType t2)
+         -> do  t1'     <- convertType t1
+                t2'     <- convertType t2
+                return  $ D.TApp t1' t2'
 
         G.TyConApp tc ts
-         -> D.tApps   (D.TCon (convertTyCon tc)) (map convertType ts)
+         -> do  tc'     <- convertTyCon tc
+                ts'     <- mapM convertType ts
+                return  $ D.tApps (D.TCon tc') ts'
 
         G.FunTy t1 t2
-         -> D.tFunPE  (convertType t1) (convertType t2)
+         -> do  t1'     <- convertType t1
+                t2'     <- convertType t2
+                return  $ D.tFunPE t1' t2'
 
         G.ForAllTy v t
-         -> D.TForall (D.BName (convertFatName v) D.kData)
-                      (convertType t)
+         -> do  v'      <- convertFatName v
+                t'      <- convertType t
+                return  $ D.TForall (D.BName v' D.kData) t'
 
         G.LitTy (G.NumTyLit _) 
          -> error "repa-plugin.slurpType: numeric type literals not handled."
 
         G.LitTy tyLit@(G.StrTyLit fs)
-         -> D.TVar  (D.UName (FatName (GhcNameTyLit tyLit)
-                                      (D.NameCon (G.unpackFS fs))))
+         ->     return  $ D.TVar  (D.UName (FatName (GhcNameTyLit tyLit)
+                                                    (D.NameCon (G.unpackFS fs))))
 
 
+-- TyCon ----------------------------------------------------------------------
 -- | Convert a tycon.
-convertTyCon :: G.TyCon -> D.TyCon FatName
+convertTyCon :: G.TyCon -> Either Fail (D.TyCon FatName)
 convertTyCon tc
         | G.isFunTyCon tc
-        = D.TyConSpec D.TcConFun
+        =       return $ D.TyConSpec D.TcConFun
 
         | otherwise
-        = D.TyConBound
-                (D.UName (FatName (GhcNameTyCon tc)
-                         (convertName $ G.tyConName tc)))
-                (D.kData)                                                       -- TODO: WRONG
+        = do    name'   <- convertName $ G.tyConName tc
+                return  $ D.TyConBound
+                                (D.UName (FatName (GhcNameTyCon tc) name'))
+                                (D.kData)                       -- TODO: WRONG
