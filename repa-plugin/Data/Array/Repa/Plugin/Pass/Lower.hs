@@ -18,12 +18,14 @@ import qualified DDC.Core.Flow.Transform.Storage        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
 import qualified DDC.Core.Flow.PrimState.Thread         as Flow
 
+import qualified DDC.Core.Module                        as Core
 import qualified DDC.Core.Check                         as Core
 import qualified DDC.Core.Simplifier                    as Core
 import qualified DDC.Core.Transform.Namify              as Core
 import qualified DDC.Core.Transform.Flatten             as Core
 import qualified DDC.Core.Transform.Forward             as Core
 import qualified DDC.Core.Transform.Thread              as Core
+import qualified DDC.Core.Transform.Reannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Type.Env                           as Env
 
@@ -117,7 +119,11 @@ passLower name guts
         writeFile ("dump." ++ name ++ ".04-dc-prep.4-namify.dcf")
          $ D.render D.RenderIndent (D.ppr mm_namify)
 
-        let mm_prep     = mm_namify
+        --  5. Type check add type annots on all binders.
+        let mm_prep     = checkFlowModule_ mm_namify
+
+        writeFile ("dump." ++ name ++ ".04-dc-prep.5-check.dcf")
+         $ D.renderIndent (D.ppr mm_prep)
 
 
         -- Lower ------------------------------------------
@@ -157,19 +163,7 @@ passLower name guts
         -- Check -----------------------------------------
         -- Type check the module,
         --  the thread transform wants type annotations at each node.
-        let checkResult
-                = Core.checkModule 
-                        (Core.configOfProfile Flow.profile)
-                        mm_storage
-
-        let mm_checked  
-             = case checkResult of
-                Right mm        -> mm
-                Left  err
-                 -> error $ D.renderIndent $ D.indent 8 $ D.vcat
-                        [ D.empty
-                        , D.text "repa-plugin: Type error in generated code"
-                        , D.indent 2 $ D.ppr err ]
+        let mm_checked  = checkFlowModule mm_storage
 
         writeFile ("dump." ++ name ++ ".08-dc-checked.dcf")
          $ D.renderIndent $ D.ppr mm_checked
@@ -194,3 +188,33 @@ passLower name guts
          $ D.render D.RenderIndent (pprModGuts guts')
 
         return (return guts')
+
+
+-- | Type check a Core Flow module
+checkFlowModule_ 
+        :: Core.Module () Flow.Name 
+        -> Core.Module () Flow.Name
+
+checkFlowModule_ mm
+        = Core.reannotate Core.annotTail 
+        $ checkFlowModule mm
+
+
+-- | Type check a Core Flow module, producing type annotations on every node.
+checkFlowModule 
+        :: Core.Module () Flow.Name 
+        -> Core.Module (Core.AnTEC () Flow.Name) Flow.Name
+
+checkFlowModule mm
+ = let  result  = Core.checkModule 
+                        (Core.configOfProfile Flow.profile)
+                        mm
+   in   case result of
+         Right mm'      -> mm'
+         Left err
+          -> error $ D.renderIndent $ D.indent 8 $ D.vcat
+                   [ D.empty
+                   , D.text "repa-plugin: Type error in generated code"
+                   , D.indent 2 $ D.ppr err ]
+
+

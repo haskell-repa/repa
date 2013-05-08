@@ -26,7 +26,6 @@ main
 
 
 -- Single fold.
--- TODO: not lowered.
 lower_single :: R.Series k Int -> Int
 lower_single s
  = R.fold (+) 0 s
