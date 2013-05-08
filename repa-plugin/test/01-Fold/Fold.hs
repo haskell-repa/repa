@@ -41,6 +41,7 @@ lower_single s
 
 
 -- Double fold fusion.
+--  Computation of both reductions is interleaved.
 lower_process :: R.Series k Int -> Int
 lower_process s
  = R.fold (+) 0 s + R.fold (*) 1 s
@@ -62,11 +63,22 @@ lower_foldMap s
  = R.fold (+) 0 (R.map (\x -> x * 2) s)
 {-# NOINLINE lower_foldMap #-}
 
+
 {-
 -- Single maps
-lower_map 
-        :: R.Series k Int 
-        -> U.Vector Int
+--  The resulting code produces a vector rather than a plain Int.
+lower_map :: R.Series k Int -> Vector Int
 lower_map s
  = R.vectorOfSeries (R.map (\x -> x * 2 + 1) s)
+
+
+-- Fold a series while mapping across it.
+--  The source elements are only read from memory once.
+lower_fold_map :: R.Series k Int -> (Int, Vector Int)
+lower_fold_map s
+ = ( R.fold (+) 0 s
+   , R.map  (\x -> x * 2) s)
+
 -}
+
+
