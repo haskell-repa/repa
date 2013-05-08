@@ -6,6 +6,12 @@ import Data.Array.Repa.Series.Vector    as V
 import qualified Data.Vector.Unboxed    as U
 
 -- prim binding workaround
+repa_proxy_Series       :: R.Series k a -> ()
+repa_proxy_Series _     = ()
+
+repa_proxy_Vector       :: R.Vector a   -> ()
+repa_proxy_Vector _     = ()
+
 repa_addInt             = R.repa_addInt
 repa_mulInt             = R.repa_mulInt
 
