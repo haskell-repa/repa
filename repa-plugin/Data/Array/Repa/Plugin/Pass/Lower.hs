@@ -217,7 +217,9 @@ checkFlowModule mm
          Left err
           -> error $ D.renderIndent $ D.indent 8 $ D.vcat
                    [ D.empty
-                   , D.text "repa-plugin: Type error in generated code"
-                   , D.indent 2 $ D.ppr err ]
+                   , D.text "repa-plugin:"
+                   , D.indent 2 
+                        $ D.vcat [ D.text "Type error in generated code"
+                                 , D.ppr err ] ]
 
 

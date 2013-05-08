@@ -70,19 +70,19 @@ convertType kenv tt
         D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
          -> return $ G.mkTyConApp G.statePrimTyCon [G.realWorldTy]
 
-        -- DDC[Array# _] => GHC[MutableByteArray#]
-        --   GHC uses the same monomorphic array type to store all types
-        --   of unboxed elements.
-        D.TApp{}
-         | Just (D.NameTyConFlow D.TyConFlowArray, [_tA])
-                <- D.takePrimTyConApps tt
-         -> return $ G.mkMutableByteArrayPrimTy G.realWorldTy
-
-        -- DDC[Series# a] => GHC[Series {Lifted a}]
+        -- DDC[Vector# a] => GHC[Vector {Lifted a} #]
         --   In the code we get from the lowering transform, for element
         --   types like Int# the "hash" refers to the fact that it is
         --   primitive, and not nessesarally unboxed. The type arguments 
         --   to 'Series' in GHC land need to be the boxed versions.
+        D.TApp{}
+         | Just (nVector@(D.NameTyConFlow D.TyConFlowVector),  [tElem])
+                <- D.takePrimTyConApps tt
+         , Just (GhcNameTyCon tc) <- Map.lookup nVector (envNames kenv)
+         , Just tElem'  <- convertBoxed tElem
+         -> do  return  $ G.mkTyConApp tc [tElem']
+
+        -- DDC[Series# a] => GHC[Series {Lifted a}]
         D.TApp{}
          | Just (nSeries@(D.NameTyConFlow D.TyConFlowSeries), [tK, tElem])
                 <- D.takePrimTyConApps tt

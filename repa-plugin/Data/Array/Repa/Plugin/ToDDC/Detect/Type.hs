@@ -29,13 +29,17 @@ instance Detect Bound where
  detect u
   = case u of
         UName n@(FatName g d)
-         -- Data Constructors.
+         -- Type constructor names.
          | Just g'      <- matchPrim "Int_" n
          -> makePrim g' (NamePrimTyCon   PrimTyConInt)    
                         kData
 
+         | Just g'      <- matchPrim "Vector_" n
+         -> makePrim g' (NameTyConFlow TyConFlowVector)    
+                        (kData `kFun` kData)
+
          | Just g'       <- matchPrim "Series_" n
-         -> makePrim g' (NameTyConFlow   TyConFlowSeries) 
+         -> makePrim g' (NameTyConFlow TyConFlowSeries) 
                         (kRate `kFun` kData `kFun` kData)
 
          | otherwise
@@ -58,6 +62,7 @@ matchPrim str n
  , isPrefixOf str str'  = Just g
 
  | otherwise            = Nothing
+
 
 makePrim g d t
  = do   collect d g

@@ -79,6 +79,15 @@ instance Detect (Exp a) where
 
          _ -> error "repa-plugin.detect[Exp] no match"
 
+  -- Detect vectorOfSeries
+  | XApp a _ _                           <- xx
+  , Just  (XVar _ u,     [xTK, xTA, xS]) <- takeXApps xx
+  , UName (FatName _ (NameVar v))        <- u
+  , isPrefixOf "vectorOfSeries_" v
+  = do  args'   <- mapM detect [xTK, xTA, xS]
+        return  $ xApps a (XVar a (UPrim (NameOpFlow OpFlowVectorOfSeries)
+                                         (typeOpFlow OpFlowVectorOfSeries)))
+                          args'
 
   -- Detect folds.
   | XApp a _ _                          <- xx

@@ -11,19 +11,20 @@ module Data.Array.Repa.Series.Fallback
         ( map
         , fold)
 where
-import Data.Array.Repa.Series.Base
-import Data.Vector.Unboxed              (Unbox)
+import Data.Array.Repa.Series.Series            (Series)
+import qualified Data.Array.Repa.Series.Series  as S
+import qualified Data.Vector.Unboxed            as U
+import Data.Vector.Unboxed                      (Unbox)
 import GHC.Exts
-import Prelude                          hiding (map)
-import qualified Data.Vector.Unboxed    as U
+import Prelude                                  hiding (map)
 
 
 -- | Apply a function to all elements of a stream.
 map     :: forall k a b. (Unbox a, Unbox b)
         => (a -> b) -> Series k a -> Series k b
 
-map f (Series len vec)
- = Series len (U.map f vec)
+map f (S.Series len vec)
+ = S.Series len (U.map f vec)
 {-# INLINE [0] map #-}
 
 
@@ -34,11 +35,11 @@ fold    :: forall k a b. Unbox b
 fold f z !source
  = go 0# z
  where  go !ix !acc
-         | ix >=# seriesLength source
+         | ix >=# S.length source
          = acc
 
          | otherwise
-         = let  x = index source ix
+         = let  x = S.index source ix
            in   go (ix +# 1#) (f acc x)
 {-# INLINE [0] fold #-}
 

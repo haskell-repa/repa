@@ -266,8 +266,8 @@ convertExp kenv tenv xx
                            $ renderIndent $ vcat
                                 [ text $ "repa-plugin.ToGHC.convertExp: "
                                         ++ "type error during conversion."
-                                , text (show x1)
-                                , text (show x2) ]
+                                , ppr x1
+                                , ppr x2 ]
 
                 return  ( G.App x1' x2'
                         , tResult)

@@ -1,14 +1,17 @@
 module Main where
 import Data.Array.Repa.Series           as R
+import Data.Array.Repa.Series.Series    as S
+import Data.Array.Repa.Series.Vector    as V
+
 import qualified Data.Vector.Unboxed    as U
 
 -- prim binding workaround
 repa_addInt             = R.repa_addInt
 repa_mulInt             = R.repa_mulInt
 
-repa_newByteArray       = R.repa_newByteArray
-repa_readIntArray       = R.repa_readIntArray
-repa_writeIntArray      = R.repa_writeIntArray
+repa_newIntVector       = R.repa_newIntVector
+repa_readIntVector      = R.repa_readIntVector
+repa_writeIntVector     = R.repa_writeIntVector
 
 repa_rateOfSeries       = R.repa_rateOfSeries
 repa_nextInt            = R.repa_nextInt
@@ -17,12 +20,11 @@ repa_loop               = R.repa_loop
 
 ---------------------------------------------------------------------
 main
- = do   let s1  = U.enumFromN (1 :: Int) 10
-
-        print $ R.eatUnboxed s1 lower_single
-        print $ R.eatUnboxed s1 lower_process
-        print $ R.eatUnboxed s1 lower_process2
-        print $ R.eatUnboxed s1 lower_foldMap
+ = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
+        print $ R.runSeries v1 lower_single
+        print $ R.runSeries v1 lower_process
+        print $ R.runSeries v1 lower_process2
+        print $ R.runSeries v1 lower_foldMap
 
 
 -- Single fold.
@@ -54,9 +56,11 @@ lower_foldMap s
  = R.fold (+) 0 (R.map (\x -> x * 2) s)
 {-# NOINLINE lower_foldMap #-}
 
-
+{-
 -- Single maps
-lower_map :: R.Series k Int -> R.Series k Int
+lower_map 
+        :: R.Series k Int 
+        -> U.Vector Int
 lower_map s
- = R.map (\x -> x * 2 + 1) s
-{-# NOINLINE lower_map #-} 
+ = R.vectorOfSeries (R.map (\x -> x * 2 + 1) s)
+-}

@@ -53,28 +53,11 @@ convertPolytypicPrim
 
 convertPolytypicPrim kenv _tenv n tArg
  = case n of
-        -- IO primitives that need to be instantiated with RealWorld#.
-        D.NameOpStore D.OpStoreNewArray
-         | Just gv      <- findPrimitive (envImported kenv) n [tArg]
-         ->     return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
-                        , G.applyTy (G.varType gv) G.realWorldTy)
-
-        D.NameOpStore D.OpStoreReadArray
-         | Just gv      <- findPrimitive (envImported kenv) n [tArg]
-         ->     return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
-                        , G.applyTy (G.varType gv) G.realWorldTy)
-
-        D.NameOpStore D.OpStoreWriteArray
-         | Just gv      <- findPrimitive (envImported kenv) n [tArg]
-         ->     return  ( G.App (G.Var gv) (G.Type G.realWorldTy)
-                        , G.applyTy (G.varType gv) G.realWorldTy)
-
         -- Pure primitives.
         _
            | Just gv      <- findPrimitive (envImported kenv) n [tArg]
            ->   return  ( G.Var gv
                         , G.varType gv)
-
 
         -- ERROR: Primitive is in our prim table, but the Haskell client
         --        module hasn't imported an implementation of it.

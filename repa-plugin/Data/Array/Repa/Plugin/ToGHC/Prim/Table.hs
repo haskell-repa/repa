@@ -97,17 +97,17 @@ primitives
                 [Just D.tInt]
                 "repa_nextInt"
 
-   ,    Prim    (D.NameOpStore D.OpStoreNewArray)
-                [Nothing]
-                "repa_newByteArray"
-
-   ,    Prim    (D.NameOpStore D.OpStoreReadArray)
+   ,    Prim    (D.NameOpStore D.OpStoreNewVector)
                 [Just D.tInt]
-                "repa_readIntArray"
+                "repa_newIntVector"
 
-   ,    Prim    (D.NameOpStore D.OpStoreWriteArray)
+   ,    Prim    (D.NameOpStore D.OpStoreReadVector)
                 [Just D.tInt]
-                "repa_writeIntArray"
+                "repa_readIntVector"
+
+   ,    Prim    (D.NameOpStore D.OpStoreWriteVector)
+                [Just D.tInt]
+                "repa_writeIntVector"
 
         -- Loop Combinators
    ,    Prim    (D.NameOpLoop D.OpLoopLoopN)
