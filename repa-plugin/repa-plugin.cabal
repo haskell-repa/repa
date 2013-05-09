@@ -14,27 +14,22 @@ Library
   Other-Modules:
         Data.Array.Repa.Plugin.FatName
         Data.Array.Repa.Plugin.Primitives
+        Data.Array.Repa.Plugin.GHC.Pretty
 
         Data.Array.Repa.Plugin.ToDDC.Convert.Base
         Data.Array.Repa.Plugin.ToDDC.Convert.Type
         Data.Array.Repa.Plugin.ToDDC.Convert.Var
         Data.Array.Repa.Plugin.ToDDC.Convert
-
         Data.Array.Repa.Plugin.ToDDC.Detect.Base
         Data.Array.Repa.Plugin.ToDDC.Detect.Type
         Data.Array.Repa.Plugin.ToDDC.Detect
-
         Data.Array.Repa.Plugin.ToDDC
 
-        Data.Array.Repa.Plugin.ToGHC.Prim.Imported
-        Data.Array.Repa.Plugin.ToGHC.Prim.Table
         Data.Array.Repa.Plugin.ToGHC.Prim
         Data.Array.Repa.Plugin.ToGHC.Wrap
         Data.Array.Repa.Plugin.ToGHC.Type
         Data.Array.Repa.Plugin.ToGHC.Var
         Data.Array.Repa.Plugin.ToGHC
-
-        Data.Array.Repa.Plugin.GHC.Pretty
 
         Data.Array.Repa.Plugin.Pass.Dump
         Data.Array.Repa.Plugin.Pass.Lower

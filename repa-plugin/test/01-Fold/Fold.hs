@@ -18,8 +18,8 @@ dude1 = case repa_primitives of
 main
  = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
         print $ R.runSeries v1 lower_single
-        print $ R.runSeries v1 lower_process
-        print $ R.runSeries v1 lower_process2
+        print $ R.runSeries v1 lower_ffold
+        print $ R.runSeries v1 lower_fffold
         print $ R.runSeries v1 lower_foldMap
 
 
@@ -32,19 +32,19 @@ lower_single s
 
 -- Double fold fusion.
 --  Computation of both reductions is interleaved.
-lower_process :: R.Series k Int -> Int
-lower_process s
+lower_ffold :: R.Series k Int -> Int
+lower_ffold s
  = R.fold (+) 0 s + R.fold (*) 1 s
-{-# NOINLINE lower_process #-}
+{-# NOINLINE lower_ffold #-}
 
 
 -- Triple fold fusion.
 --  We end up with an extra let-binding for the second baseband 
 --  addition that needs to be handled properly.
-lower_process2 :: R.Series k Int -> Int
-lower_process2 s
+lower_fffold :: R.Series k Int -> Int
+lower_fffold s
  = R.fold (+) 0 s + R.fold (*) 1 s + R.fold (*) 1 s
-{-# NOINLINE lower_process2 #-}
+{-# NOINLINE lower_fffold #-}
 
 
 -- Fold/map fusion.

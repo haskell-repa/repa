@@ -5,7 +5,6 @@ where
 import Data.Array.Repa.Plugin.ToGHC.Wrap
 import Data.Array.Repa.Plugin.ToGHC.Type
 import Data.Array.Repa.Plugin.ToGHC.Prim
-import Data.Array.Repa.Plugin.ToGHC.Prim.Imported
 import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.FatName
@@ -81,18 +80,16 @@ spliceBind primitives guts names names' mm (G.NonRec gbOrig _)
  , Just (dbLowered, dxLowered) <- lookupModuleBindOfName mm nOrig
  = do   
         -- starting environments.
-        let imported            = importedNamesOfGuts guts
+        -- let imported            = importedNamesOfGuts guts
 
         let kenv = Env
                  { envGuts       = guts
-                 , envImported   = imported
                  , envPrimitives = primitives
                  , envNames      = names
                  , envVars       = [] }
 
         let tenv = Env
                  { envGuts       = guts
-                 , envImported   = imported
                  , envPrimitives = primitives
                  , envNames      = names
                  , envVars       = [] }

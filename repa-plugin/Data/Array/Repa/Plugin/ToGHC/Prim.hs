@@ -5,14 +5,11 @@ module Data.Array.Repa.Plugin.ToGHC.Prim
         , isPolytypicPrimName)
 where
 import Data.Array.Repa.Plugin.Primitives
-import Data.Array.Repa.Plugin.ToGHC.Prim.Table
 import Data.Array.Repa.Plugin.ToGHC.Type
-import Data.List
 
 import qualified HscTypes                as G
 import qualified CoreSyn                 as G
 import qualified Type                    as G
-import qualified Var                     as G
 import qualified UniqSupply              as G
 
 import qualified DDC.Core.Exp            as D
@@ -34,18 +31,9 @@ convertPrim _kenv tenv n
         D.NameOpFlow D.OpFlowRateOfSeries
          -> return $ prim_rateOfSeries prims
 
-        -- ERROR: Primitive is in our prim table, but the Haskell client
-        --        module hasn't imported an implementation of it.
-        _ |  Just prim   <- find (\p -> primName p == n) primitives
-          -> errorMissingPrim (envGuts tenv) n (Just $ primSymbol prim)
-
-        -- ERROR: Primitive is not even in the prim table,
-        --        this is definately a bug in the Repa plugin.
-        _ | otherwise
-          -> errorMissingPrim (envGuts tenv) n Nothing
-
---        | Just gv       <- findPrimitive (envImported tenv) n []
---        = return (G.Var gv, G.varType gv)
+        -- ERROR: This isn't a primtive name,
+        --        or we don't have an implementation for it.
+        _ -> errorMissingPrim (envGuts tenv) n Nothing
 
 
 -------------------------------------------------------------------------------
@@ -60,13 +48,6 @@ convertPolytypicPrim
 convertPolytypicPrim kenv _tenv n tArg
  = let prims    = envPrimitives kenv
    in case n of
-        D.NameOpLoop D.OpLoopLoopN
-         -> return $ prim_loop prims
-
-        D.NameOpStore D.OpStoreNext
-         |  tArg == D.tInt
-         -> return $ prim_nextInt        prims
-
         D.NamePrimArith D.PrimArithAdd
          |  tArg == D.tInt
          -> return $ prim_addInt         prims
@@ -87,24 +68,32 @@ convertPolytypicPrim kenv _tenv n tArg
          |  tArg == D.tInt       
          -> return $ prim_writeIntVector prims
 
+        D.NameOpStore D.OpStoreNext
+         |  tArg == D.tInt
+         -> return $ prim_nextInt        prims
 
-        -- Pure primitives.
-        _
-           | Just gv      <- findPrimitive (envImported kenv) n [tArg]
-           ->   return  ( G.Var gv
-                        , G.varType gv)
+        D.NameOpLoop D.OpLoopLoopN
+         -> return $ prim_loop prims
 
-        -- ERROR: Primitive is in our prim table, but the Haskell client
-        --        module hasn't imported an implementation of it.
-        _  |  Just prim   <- find (\p -> primName p == n) primitives
-           -> errorMissingPrim (envGuts kenv) n (Just $ primSymbol prim)
-
-        -- ERROR: Primitive is not even in the prim table,
-        --        this is definately a bug in the Repa plugin.
+        -- ERROR: This isn't a primitive name,
+        --        or we don't have an implementation for it,
+        --        or the function `isPolytypicPrimName` tells lies.
         _  -> errorMissingPrim (envGuts kenv) n Nothing
 
 
-
+-- | Check whether the function with this name must be handled polytypically. 
+--   This needs to match all the names handled by `convertPolytypicPrim` above.
+isPolytypicPrimName :: D.Name -> Bool
+isPolytypicPrimName n
+ = elem n       
+        [ D.NamePrimArith       D.PrimArithAdd
+        , D.NamePrimArith       D.PrimArithMul
+        , D.NameOpStore         D.OpStoreNewVector
+        , D.NameOpStore         D.OpStoreReadVector
+        , D.NameOpStore         D.OpStoreWriteVector 
+        , D.NameOpStore         D.OpStoreNext
+        , D.NameOpLoop          D.OpLoopLoopN ]
+        
 
 -- | Complain that we couldn't find a primitive that we needed.
 errorMissingPrim :: G.ModGuts -> D.Name -> Maybe String -> a

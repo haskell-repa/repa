@@ -11,7 +11,6 @@ module Data.Array.Repa.Plugin.ToGHC.Type
         , bindVarX)
 where
 import Data.Array.Repa.Plugin.ToGHC.Var
-import Data.Array.Repa.Plugin.ToGHC.Prim.Imported
 import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.FatName
 import Data.Map                         (Map)
@@ -64,32 +63,32 @@ convertType
 
 convertType kenv tt
  = case tt of
-
-        -- DDC[World#]   => GHC[State# RealWorld#]
+        -- DDC[World#]    => GHC[State# RealWorld#]
         --   The GHC state token takes a phantom type to indicate
         --   what state thread it corresponds to.
         D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
          -> return $ G.mkTyConApp G.statePrimTyCon [G.realWorldTy]
 
-        -- DDC[Vector# a] => GHC[Vector {Lifted a} #]
+        -- DDC[Vector# a] => GHC[Vector# {Lifted a}]
         --   In the code we get from the lowering transform, for element
         --   types like Int# the "hash" refers to the fact that it is
         --   primitive, and not nessesarally unboxed. The type arguments 
-        --   to 'Series' in GHC land need to be the boxed versions.
+        --   for 'Series' in GHC land need to be the boxed/lifted versions.
         D.TApp{}
          | Just (D.NameTyConFlow D.TyConFlowVector,  [tElem])
                 <- D.takePrimTyConApps tt
          , Just tElem'  <- convertBoxed tElem
-         -> do  return  $ G.applyTy (prim_Vector (envPrimitives kenv)) tElem'
+         -> do  return  $ G.applyTy  (prim_Vector (envPrimitives kenv)) 
+                                     tElem'
 
-        -- DDC[Series# a] => GHC[Series {Lifted a}]
+        -- DDC[Series# k a] => GHC[Series k {Lifted a}]
         D.TApp{}
-         | Just (nSeries@(D.NameTyConFlow D.TyConFlowSeries), [tK, tElem])
+         | Just (D.NameTyConFlow D.TyConFlowSeries, [tK, tElem])
                 <- D.takePrimTyConApps tt
-         , Just (GhcNameTyCon tc) <- Map.lookup nSeries (envNames kenv)
          , Just tElem'  <- convertBoxed tElem
          -> do  tK'     <- convertType  kenv tK
-                return  $ G.mkTyConApp tc [tK', tElem']
+                return  $ G.applyTys (prim_Series (envPrimitives kenv)) 
+                                     [tK', tElem']
 
         -- DDC[Data] => GHC[*]
         D.TCon (D.TyConKind D.KiConData)
@@ -98,6 +97,7 @@ convertType kenv tt
         -- DDC[Rate] => GHC[*]
         D.TCon (D.TyConBound (D.UPrim (D.NameKiConFlow D.KiConFlowRate) _) _)
          -> return $ G.liftedTypeKind
+
 
         -- Generic Conversion -------------------
         D.TForall b t
@@ -116,10 +116,14 @@ convertType kenv tt
         D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
          -> do  tsArgs' <- mapM (convertType kenv) tsArgs
-                return  $ convertTyConApp (envPrimitives kenv) (envNames kenv) tc tsArgs'
+                return $ convertTyConApp 
+                                (envPrimitives kenv) (envNames kenv) 
+                                tc tsArgs'
 
         D.TCon tc
-         -> return $ convertTyConApp (envPrimitives kenv) (envNames kenv) tc []
+         ->     return $ convertTyConApp 
+                                (envPrimitives kenv) (envNames kenv) 
+                                tc []
 
         D.TVar (D.UName n)
          -> case lookup n (envVars kenv) of
@@ -137,13 +141,16 @@ convertType kenv tt
 
 
 -- TyConApp -------------------------------------------------------------------
--- Type constructor applications.
+-- | Covnert a type constructor application.
+--
+--   Note that our baked-in types Series and Vector are handled by
+--   convertType instead.
 convertTyConApp 
         :: Primitives
         -> Map D.Name GhcName
         -> D.TyCon D.Name -> [G.Type] -> G.Type
 
-convertTyConApp prims names tc tsArgs'
+convertTyConApp _prims names tc tsArgs'
  = case tc of
         -- Functions
         D.TyConSpec D.TcConFun
@@ -160,14 +167,6 @@ convertTyConApp prims names tc tsArgs'
          |  [t1, t2] <- tsArgs'
          -> G.mkTyConApp G.unboxedPairTyCon [t1, t2]
 
-        -- Series
-        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowSeries)) _) _
-         -> prim_Series prims
-
-        -- Vector
-        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowVector)) _) _
-         -> prim_Vector prims
-
         -- Machine types
         D.TyConBound (D.UPrim n _) _
          |  []       <- tsArgs'
@@ -179,8 +178,9 @@ convertTyConApp prims names tc tsArgs'
          | Just (GhcNameTyCon tc') <- Map.lookup n names
          -> G.mkTyConApp tc' tsArgs'
 
+        -- Couldn't convert this type constructor application.
         _ -> error $ "repa-plugin.convertTyConApp: no match for " 
-                   ++ show tc -- ++ " " ++ show (Map.keys names)
+                   ++ show tc 
 
 
 -- TyCon ----------------------------------------------------------------------
@@ -198,13 +198,14 @@ convertTyConPrimName n
 
 
 -------------------------------------------------------------------------------
--- | Get the GHC boxed type corresponding to this Flow element type.
+-- | Get the GHC boxed type corresponding to this Flow series element type.
 convertBoxed :: D.Type D.Name -> Maybe G.Type
 convertBoxed t
  | t == D.tInt          = Just G.intTy
  | otherwise            = Nothing
 
 
+-- | Get the GHC unboxed type corresponding to this Flow series element type.
 convertUnboxed :: D.Type D.Name -> Maybe G.Type
 convertUnboxed t
  | t == D.tInt          = Just G.intPrimTy
@@ -218,9 +219,6 @@ data Env
         = Env 
         { -- | Guts of the original GHC module.
           envGuts       :: G.ModGuts
-
-          -- | Imported prims from original GHC module
-        , envImported   :: ImportedNames
 
           -- | Table of Repa primitives
         , envPrimitives :: Primitives

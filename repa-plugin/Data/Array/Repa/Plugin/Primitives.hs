@@ -1,5 +1,4 @@
 
-
 module Data.Array.Repa.Plugin.Primitives
         ( Primitives (..)
         , slurpPrimitives)
@@ -22,6 +21,7 @@ import qualified Name           as Name
 import UniqSupply               as G
 import qualified UniqSet        as US
 
+
 -------------------------------------------------------------------------------
 -- | Table of GHC core expressions to use to invoke the primitives
 --   needed by the lowering transform.
@@ -42,6 +42,12 @@ data Primitives
 
 -------------------------------------------------------------------------------
 -- | Try to slurp the primitive table from a GHC module.
+--
+--   The table should be in a top-level binding named "repa_primitives".
+--   If we find it, then we add more top-level functions to the module 
+--   that select the individual primitives, then build a table of expressions
+--   that can be used to access them.
+--
 slurpPrimitives 
         :: G.ModGuts 
         -> UniqSM (Maybe (Primitives, G.ModGuts))
@@ -79,6 +85,7 @@ findTableFromTopBind bnd
 
 
 -- | Try to find the primitive table in this top level binding.
+--   It needs to be named "repa_primitives"
 findTableFromBinding :: G.CoreBndr -> Maybe G.Var
 findTableFromBinding b
         | strName      <- Occ.occNameString 
@@ -113,7 +120,10 @@ insertAfterTable bsMore bs
 -------------------------------------------------------------------------------
 -- | Create top-level projection functions based on the primitive table
 --   attached to this variable.
-makeTable :: G.Var -> UniqSM (Maybe (Primitives, [G.CoreBind]))
+makeTable 
+        :: G.Var 
+        -> UniqSM (Maybe (Primitives, [G.CoreBind]))
+
 makeTable v
  | t                      <- G.varType v
  , Just tc                <- G.tyConAppTyCon_maybe t
@@ -181,20 +191,20 @@ makeSelector v strField
         -- Lookup the Name for the field we want.
         let labels      = G.dataConFieldLabels dc
         let Just field  = find (\n -> stringOfName n == strField) labels
-        makeFieldProjection' dc field (G.Var v) (G.varType v)
+        makeSelector' dc field (G.Var v) (G.varType v)
 
  | otherwise
  = error "repa-plugin.Selector: malformed primitive table"
 
 
-makeFieldProjection'
+makeSelector'
         :: G.DataCon            -- ^ Data constructor for the primitive table.
         -> G.FieldLabel         -- ^ Name of the field to project out.
         -> G.CoreExpr           -- ^ Expression to produce the table.
         -> G.Type               -- ^ Type of the table.
         -> UniqSM (G.CoreBind, (G.CoreExpr, G.Type))
 
-makeFieldProjection' dc labelWanted xTable tTable
+makeSelector' dc labelWanted xTable tTable
  = do   
         -- Make binders to match all fields,
         --      including one for the field we want.
@@ -241,6 +251,4 @@ makeFieldBinders dc labelWanted
 stringOfName :: Name.Name -> String
 stringOfName name
  = Occ.occNameString $ Name.nameOccName name
-
-
 
