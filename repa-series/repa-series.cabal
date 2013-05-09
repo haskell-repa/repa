@@ -1,0 +1,32 @@
+Name:           repa-series
+Version:        4.0.0.0
+License:        BSD3
+License-File:   LICENSE
+Synopsis:       Repa series expressions API
+Cabal-Version:  >= 1.10
+Build-Type:     Simple
+Author:         The DPH Team
+
+Library
+  Exposed-Modules:
+        Data.Array.Repa.Series
+        Data.Array.Repa.Series.Series
+        Data.Array.Repa.Series.Vector
+        Data.Array.Repa.Series.Fallback
+        Data.Array.Repa.Series.Prim
+
+  Build-Depends:
+        base       == 4.6.*,
+        ghc        >= 7.5,
+        ghc-prim   >= 0.3,
+        vector     == 0.10.*
+
+  Default-Language:
+        Haskell2010
+
+  Default-Extensions:
+        TypeSynonymInstances
+        BangPatterns
+        RankNTypes
+        MagicHash
+        UnboxedTuples
