@@ -11,7 +11,8 @@ module Data.Array.Repa.Series
         , fold
 
           -- * Primitives used by the Repa plugin
-        , module Data.Array.Repa.Series.Prim)
+        , Primitives (..)
+        , primitives)
 where
 import Data.Array.Repa.Series.Series
 import Data.Array.Repa.Series.Vector

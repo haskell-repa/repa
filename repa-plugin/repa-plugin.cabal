@@ -13,6 +13,7 @@ Library
 
   Other-Modules:
         Data.Array.Repa.Plugin.FatName
+        Data.Array.Repa.Plugin.Primitives
 
         Data.Array.Repa.Plugin.ToDDC.Convert.Base
         Data.Array.Repa.Plugin.ToDDC.Convert.Type

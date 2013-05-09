@@ -2,6 +2,7 @@
 module Data.Array.Repa.Plugin.Pass.Lower
         (passLower)
 where
+import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.ToDDC.Detect
 import Data.Array.Repa.Plugin.ToDDC
 import Data.Array.Repa.Plugin.ToGHC
@@ -39,14 +40,31 @@ import Control.Monad.State.Strict
 import Data.List
 
 
+-- | We use this unique when generating fresh names.
+--   If this is not actually unique relative to the rest of the compiler
+--   and other plugins then we're complety screwed.
+letsHopeThisIsUnique    :: Char
+letsHopeThisIsUnique    = 's'
+
+
 -- | Run the lowering pass on this module.
 passLower :: String -> G.ModGuts -> G.CoreM G.ModGuts
 passLower name guts
  = unsafePerformIO
  $ do
+        -- Here's hoping this is really unique
+        us      <- G.mkSplitUniqSupply letsHopeThisIsUnique
+
         -- Input ------------------------------------------
         writeFile ("dump." ++ name ++ ".01-ghc.hs")
          $ D.render D.RenderIndent (pprModGuts guts)
+
+        -- Primitives -------------------------------------
+        -- Build a table of expressions to access our primitives.
+        let (Just primitives, us2) 
+                = G.initUs us (slurpPrimitives guts)
+
+        putStrLn (primitives `seq` "blerk")
 
 
         -- Convert ----------------------------------------
@@ -184,8 +202,7 @@ passLower name guts
 
         -- Splice -----------------------------------------
         -- Splice the lowered functions back into the GHC core program.
-        us              <- G.mkSplitUniqSupply 's'              -- Here's hoping this is unique...
-        let guts'       = G.initUs_ us (spliceModGuts names mm_thread guts)
+        let guts'       = G.initUs_ us2 (spliceModGuts names mm_thread guts)
 
         writeFile ("dump." ++ name ++ ".10-ghc-spliced.dcf")
          $ D.render D.RenderIndent (pprModGuts guts')

@@ -6,26 +6,74 @@
 --   into the module to be vectorized.
 --
 module Data.Array.Repa.Series.Prim
-        ( -- * Primitive arithmetic
-          repa_addInt
-        , repa_mulInt
-
-          -- * Vector operations.
-        , repa_newIntVector
-        , repa_readIntVector
-        , repa_writeIntVector
-
-          -- * Loops
-        , repa_loop
-
-          -- * Series
-        , repa_rateOfSeries
-        , repa_nextInt)
+        ( Primitives (..)
+        , primitives )
 where
 import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Series    as S
 import GHC.Exts
 import GHC.Types
+
+
+-- | Primitives needed by the lowering transform.
+data Primitives
+  = Primitives
+  { prim_Series
+        :: forall k a. Series k a
+
+  , prim_Vector
+        :: forall a.   Vector a
+
+  , prim_addInt 
+        :: Int# -> Int# -> Int#
+
+  , prim_mulInt 
+        :: Int# -> Int# -> Int#
+
+  , prim_newIntVector   
+        :: Int# 
+        -> State# RealWorld -> (# State# RealWorld, Vector Int #)
+
+  , prim_readIntVector
+        :: Vector Int -> Int# 
+        -> State# RealWorld -> (# State# RealWorld, Int #)
+
+  , prim_writeIntVector
+        :: Vector Int -> Int# -> Int 
+        -> State# RealWorld -> State# RealWorld
+
+  , prim_loop
+        :: Int# 
+        -> (Int# -> State# RealWorld -> State# RealWorld)
+        -> State# RealWorld 
+        -> State# RealWorld
+
+  , prim_rateOfSeries
+        :: forall k a
+        .  Series k a -> Int#
+
+  , prim_nextInt
+        :: forall k
+        .  Series k Int
+        -> Int#
+        -> State# RealWorld -> (# State# RealWorld, Int# #)
+  }
+
+
+-- | Table of primitives used by the lowering transform.
+primitives :: Primitives
+primitives
+  = Primitives
+  { prim_Series         = undefined
+  , prim_Vector         = undefined
+  , prim_addInt         = repa_addInt
+  , prim_mulInt         = repa_mulInt
+  , prim_newIntVector   = repa_newIntVector
+  , prim_readIntVector  = repa_readIntVector
+  , prim_writeIntVector = repa_writeIntVector
+  , prim_loop           = repa_loop
+  , prim_rateOfSeries   = repa_rateOfSeries
+  , prim_nextInt        = repa_nextInt }
 
 
 -- Primitive Arithmetic -------------------------------------------------------

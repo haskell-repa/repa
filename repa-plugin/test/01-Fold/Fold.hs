@@ -2,27 +2,17 @@ module Main where
 import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Vector    as V
-
 import qualified Data.Vector.Unboxed    as U
 
--- prim binding workaround
-repa_proxy_Series       :: R.Series k a -> ()
-repa_proxy_Series _     = ()
+-- | Set the primitives used by the lowering transform.
+repa_primitives :: R.Primitives
+repa_primitives =  R.primitives
 
-repa_proxy_Vector       :: R.Vector a   -> ()
-repa_proxy_Vector _     = ()
 
-repa_addInt             = R.repa_addInt
-repa_mulInt             = R.repa_mulInt
+dude  = prim_addInt repa_primitives
 
-repa_newIntVector       = R.repa_newIntVector
-repa_readIntVector      = R.repa_readIntVector
-repa_writeIntVector     = R.repa_writeIntVector
-
-repa_rateOfSeries       = R.repa_rateOfSeries
-repa_nextInt            = R.repa_nextInt
-repa_loop               = R.repa_loop
-
+dude1 = case repa_primitives of
+         Primitives { prim_addInt = x } -> x
 
 ---------------------------------------------------------------------
 main

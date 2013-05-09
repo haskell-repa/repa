@@ -11,13 +11,11 @@ import Data.List
 import qualified HscTypes                as G
 import qualified CoreSyn                 as G
 import qualified Type                    as G
-import qualified TysPrim                 as G
 import qualified Var                     as G
 import qualified UniqSupply              as G
 
 import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Flow           as D
-import qualified DDC.Core.Flow.Prim      as D
 
 
 -- | Convert a primop that has the same definition independent 
