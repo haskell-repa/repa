@@ -81,9 +81,10 @@ instance Detect (Exp a) where
 
   -- Detect vectorOfSeries
   | XApp a _ _                           <- xx
-  , Just  (XVar _ u,     [xTK, xTA, xS]) <- takeXApps xx
+  , Just  (XVar _ u,     [xTK, xTA, _xD, xS]) 
+                                        <- takeXApps xx
   , UName (FatName _ (NameVar v))        <- u
-  , isPrefixOf "vectorOfSeries_" v
+  , isPrefixOf "toVector_" v
   = do  args'   <- mapM detect [xTK, xTA, xS]
         return  $ xApps a (XVar a (UPrim (NameOpFlow OpFlowVectorOfSeries)
                                          (typeOpFlow OpFlowVectorOfSeries)))

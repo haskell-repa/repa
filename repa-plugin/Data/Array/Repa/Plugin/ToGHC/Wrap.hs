@@ -117,5 +117,8 @@ unwrapResult tOrig tLowered xResult
         = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
 
         | otherwise
-        = error $ "repa-plugin.ToGHC.unwrapResult: don't know how to unwrap this."
-                ++ " " ++ (renderIndent $ ppr tLowered)
+        = return xResult
+
+--        | otherwise
+--        = error $ "repa-plugin.ToGHC.unwrapResult: don't know how to unwrap this."
+--                ++ " " ++ (renderIndent $ ppr tLowered)

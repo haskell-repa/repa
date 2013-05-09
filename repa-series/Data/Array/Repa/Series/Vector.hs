@@ -24,6 +24,13 @@ data Vector a
         , vectorData    :: !(UM.IOVector a) }
 
 
+instance (Unbox a, Show a) => Show (Vector a) where
+ show vec 
+  = unsafePerformIO
+  $ do  fvec    <- U.unsafeFreeze (vectorData vec)
+        return  $ show fvec
+
+
 -- | Take the length of a vector.
 length :: Vector a -> Int#
 length vec

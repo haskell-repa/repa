@@ -42,35 +42,43 @@ convertPrim _kenv tenv n
 --   `isPolyTypicPrimName` below.
 convertPolytypicPrim 
         :: Env -> Env
-        -> D.Name -> D.Type D.Name
+        -> D.Name -> [D.Type D.Name]
         -> G.UniqSM (G.CoreExpr, G.Type)
 
-convertPolytypicPrim kenv _tenv n tArg
+convertPolytypicPrim kenv _tenv n tsArg
  = let prims    = envPrimitives kenv
    in case n of
         D.NamePrimArith D.PrimArithAdd
-         |  tArg == D.tInt
+         |  tsArg == [D.tInt]
          -> return $ prim_addInt         prims
 
         D.NamePrimArith D.PrimArithMul
-         |  tArg == D.tInt
+         |  tsArg == [D.tInt]
          -> return $ prim_mulInt         prims
 
         D.NameOpStore D.OpStoreNewVector
-         |  tArg == D.tInt       
+         |  tsArg == [D.tInt]       
+         -> return $ prim_newIntVector   prims
+
+        D.NameOpStore D.OpStoreNewVectorN
+         |  [tA, _tK] <- tsArg, tA == D.tInt
          -> return $ prim_newIntVector   prims
 
         D.NameOpStore D.OpStoreReadVector
-         |  tArg == D.tInt       
+         |  tsArg == [D.tInt]       
          -> return $ prim_readIntVector  prims
 
         D.NameOpStore D.OpStoreWriteVector
-         |  tArg == D.tInt       
+         |  tsArg == [D.tInt]       
          -> return $ prim_writeIntVector prims
 
         D.NameOpStore D.OpStoreNext
-         |  tArg == D.tInt
-         -> return $ prim_nextInt        prims
+         |  [tA, tK] <- tsArg, tA == D.tInt
+         -> do  tK'             <- convertType kenv tK
+                let (x, t)      = prim_nextInt prims
+                return  ( G.App x (G.Type tK')
+                        , G.applyTy t tK' )
+
 
         D.NameOpLoop D.OpLoopLoopN
          -> return $ prim_loop prims
@@ -89,6 +97,7 @@ isPolytypicPrimName n
         [ D.NamePrimArith       D.PrimArithAdd
         , D.NamePrimArith       D.PrimArithMul
         , D.NameOpStore         D.OpStoreNewVector
+        , D.NameOpStore         D.OpStoreNewVectorN
         , D.NameOpStore         D.OpStoreReadVector
         , D.NameOpStore         D.OpStoreWriteVector 
         , D.NameOpStore         D.OpStoreNext
