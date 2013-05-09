@@ -77,11 +77,10 @@ convertType kenv tt
         --   primitive, and not nessesarally unboxed. The type arguments 
         --   to 'Series' in GHC land need to be the boxed versions.
         D.TApp{}
-         | Just (nVector@(D.NameTyConFlow D.TyConFlowVector),  [tElem])
+         | Just (D.NameTyConFlow D.TyConFlowVector,  [tElem])
                 <- D.takePrimTyConApps tt
-         , Just (GhcNameTyCon tc) <- Map.lookup nVector (envNames kenv)
          , Just tElem'  <- convertBoxed tElem
-         -> do  return  $ G.mkTyConApp tc [tElem']
+         -> do  return  $ G.applyTy (prim_Vector (envPrimitives kenv)) tElem'
 
         -- DDC[Series# a] => GHC[Series {Lifted a}]
         D.TApp{}

@@ -36,10 +36,10 @@ data Primitives
 
   , prim_readIntVector
         :: Vector Int -> Int# 
-        -> State# RealWorld -> (# State# RealWorld, Int #)
+        -> State# RealWorld -> (# State# RealWorld, Int# #)
 
   , prim_writeIntVector
-        :: Vector Int -> Int# -> Int 
+        :: Vector Int -> Int# -> Int# 
         -> State# RealWorld -> State# RealWorld
 
   , prim_loop
@@ -87,17 +87,25 @@ repa_mulInt              = (*#)
 -- Vector Operators ------------------------------------------------------------
 repa_newIntVector   :: Int# 
                     -> State# RealWorld -> (# State# RealWorld, Vector Int #)
-repa_newIntVector len            = unwrapIO' (V.new len)
+repa_newIntVector len            
+        = unwrapIO' (V.new len)
 {-# INLINE repa_newIntVector #-}
 
+
 repa_readIntVector  :: Vector Int -> Int# 
-                    -> State# RealWorld -> (# State# RealWorld, Int #)
-repa_readIntVector vec ix        = unwrapIO' (V.read vec ix)
+                    -> State# RealWorld -> (# State# RealWorld, Int# #)
+repa_readIntVector vec ix
+ = case V.read vec ix of
+        IO f -> \world 
+             -> case f world of
+                        (# world', I# i #) -> (# world', i #)
 {-# INLINE repa_readIntVector #-}
 
-repa_writeIntVector :: Vector Int -> Int# -> Int 
+
+repa_writeIntVector :: Vector Int -> Int# -> Int#
                     -> State# RealWorld -> State# RealWorld
-repa_writeIntVector vec ix val   = unwrapIO_ (V.write vec ix val)
+repa_writeIntVector vec ix val   
+        = unwrapIO_ (V.write vec ix (I# val))
 {-# INLINE repa_writeIntVector #-}
 
 

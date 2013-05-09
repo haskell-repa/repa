@@ -49,7 +49,7 @@ letsHopeThisIsUnique    = 's'
 
 -- | Run the lowering pass on this module.
 passLower :: String -> G.ModGuts -> G.CoreM G.ModGuts
-passLower name guts
+passLower name guts0
  = unsafePerformIO
  $ do
         -- Here's hoping this is really unique
@@ -57,13 +57,12 @@ passLower name guts
 
         -- Input ------------------------------------------
         writeFile ("dump." ++ name ++ ".01-ghc.hs")
-         $ D.render D.RenderIndent (pprModGuts guts)
+         $ D.render D.RenderIndent (pprModGuts guts0)
 
         -- Primitives -------------------------------------
         -- Build a table of expressions to access our primitives.
-        let (Just primitives, us2) 
-                = G.initUs us (slurpPrimitives guts)
-
+        let (Just (primitives, guts), us2) 
+                = G.initUs us (slurpPrimitives guts0)
 
         -- Convert ----------------------------------------
         -- Convert the GHC Core module to Disciple Core.

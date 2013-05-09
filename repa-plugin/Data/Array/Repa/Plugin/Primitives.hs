@@ -1,4 +1,5 @@
 
+
 module Data.Array.Repa.Plugin.Primitives
         ( Primitives (..)
         , slurpPrimitives)
@@ -17,8 +18,9 @@ import qualified Type           as G
 import qualified Var            as G
 import qualified OccName        as Occ
 import qualified Name           as Name
-import UniqSupply               as G
 
+import UniqSupply               as G
+import qualified UniqSet        as US
 
 -------------------------------------------------------------------------------
 -- | Table of GHC core expressions to use to invoke the primitives
@@ -42,48 +44,77 @@ data Primitives
 -- | Try to slurp the primitive table from a GHC module.
 slurpPrimitives 
         :: G.ModGuts 
-        -> UniqSM (Maybe Primitives)
+        -> UniqSM (Maybe (Primitives, G.ModGuts))
 
 slurpPrimitives guts
- = do   results <- mapM slurpTopBind $ G.mg_binds guts
-        return  $ listToMaybe $ catMaybes results
+ | Just vTable  <- listToMaybe 
+                $  mapMaybe findTableFromTopBind 
+                $  G.mg_binds guts
+ = do   
+        Just (prims, bsMoar) <- makeTable vTable
 
+        let hackedGuts          
+                = guts  
+                { G.mg_binds    
+                        = insertAfterTable bsMoar 
+                        $ G.mg_binds guts
+                
+                , G.mg_used_names       
+                        = US.addListToUniqSet (G.mg_used_names guts)
+                        $ [G.varName b | G.NonRec b _ <- bsMoar ]}
 
--- | Try to slurp the primitive table from some top level bindings.
-slurpTopBind 
-        :: G.CoreBind 
-        -> UniqSM (Maybe Primitives)
+        return  $ Just (prims, hackedGuts)
 
-slurpTopBind bnd
+ | otherwise
+ =      return Nothing
+        
+
+-------------------------------------------------------------------------------
+-- | Try to find the primitive table in this top level binding.
+findTableFromTopBind :: G.CoreBind -> Maybe G.Var
+findTableFromTopBind bnd
  = case bnd of
-        G.Rec{}         -> return Nothing
-        G.NonRec b _x   -> slurpBinding b
+        G.Rec{}         -> Nothing
+        G.NonRec b _    -> findTableFromBinding b
 
 
--- | Try to slurp the primitive table from a single top-level binding
---   named "repa_primitives".
-slurpBinding 
-        :: G.CoreBndr 
-        -> UniqSM (Maybe Primitives)
-
-slurpBinding b
+-- | Try to find the primitive table in this top level binding.
+findTableFromBinding :: G.CoreBndr -> Maybe G.Var
+findTableFromBinding b
         | strName      <- Occ.occNameString 
                        $  Name.nameOccName 
                        $  G.varName b
         , strName == "repa_primitives"
-        = slurpTable b
+        = Just b
 
         | otherwise
-        = return Nothing
+        = Nothing
 
 
--- | Slurp the primitive table from the the top-level 
---   @repa_primitive@ binding in the module to be transformed.
-slurpTable 
-        :: G.Var 
-        -> UniqSM (Maybe Primitives)
+-------------------------------------------------------------------------------
+-- | Insert some top-level bindings after the primitive table.
+insertAfterTable :: [G.CoreBind] -> [G.CoreBind] -> [G.CoreBind]
+insertAfterTable bsMore bs
+ = case bs of
+        []                      
+         -> bs
+        
+        bb@G.Rec{} : bs'         
+         -> bb : insertAfterTable bsMore bs'
+        
+        bb@(G.NonRec b _) : bs'
+         |  isJust $ findTableFromBinding b
+         -> bb : bsMore ++ bs'
 
-slurpTable v
+         | otherwise
+         -> bb : insertAfterTable bsMore bs'
+
+
+-------------------------------------------------------------------------------
+-- | Create top-level projection functions based on the primitive table
+--   attached to this variable.
+makeTable :: G.Var -> UniqSM (Maybe (Primitives, [G.CoreBind]))
+makeTable v
  | t                      <- G.varType v
  , Just tc                <- G.tyConAppTyCon_maybe t
  , G.isAlgTyCon tc
@@ -102,31 +133,33 @@ slurpTable v
                 $ find (\n -> stringOfName n ==  "prim_Vector") labels
 
         -- Generic combinators.
-        expr_loop               <- makeFieldProjection v "prim_loop"
-        expr_rateOfSeries       <- makeFieldProjection v "prim_rateOfSeries"
+        (b1, expr_loop)                 <- makeSelector v "prim_loop"
+        (b2, expr_rateOfSeries)         <- makeSelector v "prim_rateOfSeries"
 
         -- Int functions.
-        expr_addInt             <- makeFieldProjection v "prim_addInt"
-        expr_mulInt             <- makeFieldProjection v "prim_mulInt"
-        expr_newIntVector       <- makeFieldProjection v "prim_newIntVector"
-        expr_readIntVector      <- makeFieldProjection v "prim_readIntVector"
-        expr_writeIntVector     <- makeFieldProjection v "prim_writeIntVector"
-        expr_nextInt            <- makeFieldProjection v "prim_nextInt"
+        (b3, expr_addInt)               <- makeSelector v "prim_addInt"
+        (b4, expr_mulInt)               <- makeSelector v "prim_mulInt"
+        (b5, expr_newIntVector)         <- makeSelector v "prim_newIntVector"
+        (b6, expr_readIntVector)        <- makeSelector v "prim_readIntVector"
+        (b7, expr_writeIntVector)       <- makeSelector v "prim_writeIntVector"
+        (b8, expr_nextInt)              <- makeSelector v "prim_nextInt"
+        let bs  = [b1, b2, b3, b4, b5, b6, b7, b8]
+
+        let table      
+                = Primitives
+                { prim_Series           = tySeries
+                , prim_Vector           = tyVector
+                , prim_loop             = expr_loop
+                , prim_rateOfSeries     = expr_rateOfSeries
+                , prim_addInt           = expr_addInt
+                , prim_mulInt           = expr_mulInt
+                , prim_newIntVector     = expr_newIntVector
+                , prim_readIntVector    = expr_readIntVector
+                , prim_writeIntVector   = expr_writeIntVector
+                , prim_nextInt          = expr_nextInt }
 
 
-        return $ Just $ Primitives
-         { prim_Series          = tySeries
-         , prim_Vector          = tyVector
- 
-         , prim_loop            = expr_loop
-         , prim_rateOfSeries    = expr_rateOfSeries
- 
-         , prim_addInt          = expr_addInt
-         , prim_mulInt          = expr_mulInt
-         , prim_newIntVector    = expr_newIntVector
-         , prim_readIntVector   = expr_readIntVector
-         , prim_writeIntVector  = expr_writeIntVector
-         , prim_nextInt         = expr_nextInt }
+        return $ Just (table, bs)
 
  | otherwise
  = return Nothing
@@ -134,12 +167,12 @@ slurpTable v
 
 -------------------------------------------------------------------------------
 -- | Build a CoreExpr that produces the primtive with the given name.
-makeFieldProjection
+makeSelector
         :: G.Var                -- ^ Core variable bound to our primtiive table.
         -> String               -- ^ Name of the primitive we want.
-        -> UniqSM (G.CoreExpr, G.Type)
+        -> UniqSM (G.CoreBind, (G.CoreExpr, G.Type))
 
-makeFieldProjection v strField
+makeSelector v strField
  | t                      <- G.varType v
  , Just tc                <- G.tyConAppTyCon_maybe t
  , G.isAlgTyCon tc
@@ -151,7 +184,7 @@ makeFieldProjection v strField
         makeFieldProjection' dc field (G.Var v) (G.varType v)
 
  | otherwise
- = error "repa-plugin.makeFieldProjection: malformed primitive table"
+ = error "repa-plugin.Selector: malformed primitive table"
 
 
 makeFieldProjection'
@@ -159,7 +192,7 @@ makeFieldProjection'
         -> G.FieldLabel         -- ^ Name of the field to project out.
         -> G.CoreExpr           -- ^ Expression to produce the table.
         -> G.Type               -- ^ Type of the table.
-        -> UniqSM (G.CoreExpr, G.Type)
+        -> UniqSM (G.CoreBind, (G.CoreExpr, G.Type))
 
 makeFieldProjection' dc labelWanted xTable tTable
  = do   
@@ -168,12 +201,17 @@ makeFieldProjection' dc labelWanted xTable tTable
         (bsAll, vWanted) <- makeFieldBinders dc labelWanted
 
         -- The type of the wanted field.
-        let tResult      =  G.dataConFieldType dc labelWanted
+        let tResult     =  G.dataConFieldType dc labelWanted
 
-        return  ( G.mkWildCase xTable tTable tResult
-                        [ (G.DataAlt dc, bsAll, G.Var vWanted)]
-                , tResult)
+        -- Top level name for this primitive.
+        vPrim           <- newDummyExportedVar (stringOfName labelWanted) tResult
+        
+        let bPrim       = G.NonRec vPrim 
+                        $ G.mkWildCase xTable tTable tResult
+                                [ (G.DataAlt dc, bsAll, G.Var vWanted)]
 
+        return  (bPrim, (G.Var vPrim, tResult))
+                
 
 -- | Make a sequence of binders 
 makeFieldBinders 

@@ -2,6 +2,7 @@
 module Data.Array.Repa.Plugin.ToGHC.Var
         ( plainNameOfVar
         , newDummyVar
+        , newDummyExportedVar
         , newDummyTyVar)
 where
 import qualified Type                   as G
@@ -20,6 +21,17 @@ plainNameOfVar gv
  = let  name    = G.varName gv
         occ     = Name.nameOccName name
    in   Occ.occNameString occ
+
+
+-- | Create a fresh dummy GHC expression variable with the given type.
+newDummyExportedVar :: String -> G.Type -> G.UniqSM G.Var
+newDummyExportedVar basename ty
+ = do   let details = G.VanillaId
+        let occName = Occ.mkOccName Occ.varName basename
+        unique      <- G.getUniqueUs
+        let name    = Name.mkSystemName unique occName
+        let info    = G.vanillaIdInfo
+        return  $ G.mkExportedLocalVar details name ty info
 
 
 -- | Create a fresh dummy GHC expression variable with the given type.
