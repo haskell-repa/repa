@@ -10,9 +10,10 @@ module Data.Array.Repa.Plugin.ToGHC.Type
         , bindVarT
         , bindVarX)
 where
-import Data.Array.Repa.Plugin.FatName
 import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.Array.Repa.Plugin.ToGHC.Prim.Imported
+import Data.Array.Repa.Plugin.Primitives
+import Data.Array.Repa.Plugin.FatName
 import Data.Map                         (Map)
 
 import qualified HscTypes                as G
@@ -116,10 +117,10 @@ convertType kenv tt
         D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
          -> do  tsArgs' <- mapM (convertType kenv) tsArgs
-                return  $ convertTyConApp (envNames kenv) tc tsArgs'
+                return  $ convertTyConApp (envPrimitives kenv) (envNames kenv) tc tsArgs'
 
         D.TCon tc
-         -> return $ convertTyConApp (envNames kenv) tc []
+         -> return $ convertTyConApp (envPrimitives kenv) (envNames kenv) tc []
 
         D.TVar (D.UName n)
          -> case lookup n (envVars kenv) of
@@ -139,28 +140,42 @@ convertType kenv tt
 -- TyConApp -------------------------------------------------------------------
 -- Type constructor applications.
 convertTyConApp 
-        :: Map D.Name GhcName
+        :: Primitives
+        -> Map D.Name GhcName
         -> D.TyCon D.Name -> [G.Type] -> G.Type
 
-convertTyConApp names tc tsArgs'
+convertTyConApp prims names tc tsArgs'
  = case tc of
+        -- Functions
         D.TyConSpec D.TcConFun
          |  [t1, t2] <- tsArgs'
          -> G.FunTy t1 t2
 
+        -- Unit
         D.TyConSpec D.TcConUnit
          |  []       <- tsArgs'
          -> G.unitTy
 
+        -- Tuples
         D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple 2)) _) _
          |  [t1, t2] <- tsArgs'
          -> G.mkTyConApp G.unboxedPairTyCon [t1, t2]
 
+        -- Series
+        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowSeries)) _) _
+         -> prim_Series prims
+
+        -- Vector
+        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowVector)) _) _
+         -> prim_Vector prims
+
+        -- Machine types
         D.TyConBound (D.UPrim n _) _
          |  []       <- tsArgs'
          ,  Just tc'               <- convertTyConPrimName n
          -> G.mkTyConApp tc' tsArgs'
 
+        -- User-defined types
         D.TyConBound (D.UName n) _
          | Just (GhcNameTyCon tc') <- Map.lookup n names
          -> G.mkTyConApp tc' tsArgs'
@@ -207,6 +222,9 @@ data Env
 
           -- | Imported prims from original GHC module
         , envImported   :: ImportedNames
+
+          -- | Table of Repa primitives
+        , envPrimitives :: Primitives
 
           -- | Name map we got during the original GHC -> DDC conversion.
         , envNames      :: Map D.Name GhcName

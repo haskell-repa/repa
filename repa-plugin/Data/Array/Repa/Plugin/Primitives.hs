@@ -17,10 +17,8 @@ import qualified Type           as G
 import qualified Var            as G
 import qualified OccName        as Occ
 import qualified Name           as Name
-
 import UniqSupply               as G
 
-import Debug.Trace
 
 -------------------------------------------------------------------------------
 -- | Table of GHC core expressions to use to invoke the primitives
@@ -29,14 +27,14 @@ data Primitives
         = Primitives
         { prim_Series           :: !G.Type
         , prim_Vector           :: !G.Type
-        , prim_addInt           :: G.CoreExpr
-        , prim_mulInt           :: G.CoreExpr
-        , prim_newIntVector     :: G.CoreExpr
-        , prim_readIntVector    :: G.CoreExpr
-        , prim_writeIntVector   :: G.CoreExpr
-        , prim_loop             :: G.CoreExpr
-        , prim_rateOfSeries     :: G.CoreExpr
-        , prim_nextInt          :: G.CoreExpr
+        , prim_addInt           :: (G.CoreExpr, G.Type)
+        , prim_mulInt           :: (G.CoreExpr, G.Type)
+        , prim_newIntVector     :: (G.CoreExpr, G.Type)
+        , prim_readIntVector    :: (G.CoreExpr, G.Type)
+        , prim_writeIntVector   :: (G.CoreExpr, G.Type)
+        , prim_loop             :: (G.CoreExpr, G.Type)
+        , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
+        , prim_nextInt          :: (G.CoreExpr, G.Type)
         }
 
 
@@ -96,8 +94,7 @@ slurpTable v
 
         -- Load types from their proxy fields.
         let Just tySeries   
-                = trace (show $ map stringOfName labels)
-                $ liftM (G.dataConFieldType dc)
+                = liftM (G.dataConFieldType dc)
                 $ find (\n -> stringOfName n ==  "prim_Series") labels
 
         let Just tyVector   
@@ -118,18 +115,18 @@ slurpTable v
 
 
         return $ Just $ Primitives
-         { prim_Series           = tySeries
-         , prim_Vector           = tyVector
+         { prim_Series          = tySeries
+         , prim_Vector          = tyVector
  
-         , prim_loop             = expr_loop
-         , prim_rateOfSeries     = expr_rateOfSeries
+         , prim_loop            = expr_loop
+         , prim_rateOfSeries    = expr_rateOfSeries
  
-         , prim_addInt           = expr_addInt
-         , prim_mulInt           = expr_mulInt
-         , prim_newIntVector     = expr_newIntVector
-         , prim_readIntVector    = expr_readIntVector
-         , prim_writeIntVector   = expr_writeIntVector
-         , prim_nextInt          = expr_nextInt }
+         , prim_addInt          = expr_addInt
+         , prim_mulInt          = expr_mulInt
+         , prim_newIntVector    = expr_newIntVector
+         , prim_readIntVector   = expr_readIntVector
+         , prim_writeIntVector  = expr_writeIntVector
+         , prim_nextInt         = expr_nextInt }
 
  | otherwise
  = return Nothing
@@ -140,7 +137,7 @@ slurpTable v
 makeFieldProjection
         :: G.Var                -- ^ Core variable bound to our primtiive table.
         -> String               -- ^ Name of the primitive we want.
-        -> UniqSM G.CoreExpr
+        -> UniqSM (G.CoreExpr, G.Type)
 
 makeFieldProjection v strField
  | t                      <- G.varType v
@@ -162,7 +159,7 @@ makeFieldProjection'
         -> G.FieldLabel         -- ^ Name of the field to project out.
         -> G.CoreExpr           -- ^ Expression to produce the table.
         -> G.Type               -- ^ Type of the table.
-        -> UniqSM G.CoreExpr   
+        -> UniqSM (G.CoreExpr, G.Type)
 
 makeFieldProjection' dc labelWanted xTable tTable
  = do   
@@ -173,8 +170,9 @@ makeFieldProjection' dc labelWanted xTable tTable
         -- The type of the wanted field.
         let tResult      =  G.dataConFieldType dc labelWanted
 
-        return $ G.mkWildCase xTable tTable tResult
+        return  ( G.mkWildCase xTable tTable tResult
                         [ (G.DataAlt dc, bsAll, G.Var vWanted)]
+                , tResult)
 
 
 -- | Make a sequence of binders 

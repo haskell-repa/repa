@@ -7,6 +7,7 @@ import Data.Array.Repa.Plugin.ToGHC.Type
 import Data.Array.Repa.Plugin.ToGHC.Prim
 import Data.Array.Repa.Plugin.ToGHC.Prim.Imported
 import Data.Array.Repa.Plugin.ToGHC.Var
+import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.FatName
 
 import qualified HscTypes               as G
@@ -42,12 +43,13 @@ import qualified Data.Map               as Map
 --   and patch the original GHC binding to call it.
 --
 spliceModGuts
-        :: Map D.Name GhcName   -- ^ Maps DDC names to GHC names.
+        :: Primitives           -- ^ Table of Repa primitives
+        -> Map D.Name GhcName   -- ^ Maps DDC names to GHC names.
         -> D.Module () D.Name   -- ^ DDC module.
         -> G.ModGuts            -- ^ GHC module guts.
         -> G.UniqSM G.ModGuts
 
-spliceModGuts names mm guts
+spliceModGuts primitives names mm guts
  = do   
         -- Invert the map so it maps GHC names to DDC names.
         let names'      = Map.fromList 
@@ -55,7 +57,7 @@ spliceModGuts names mm guts
                         $ Map.toList names
 
         binds'  <- liftM concat 
-                $  mapM (spliceBind guts names names' mm) 
+                $  mapM (spliceBind primitives guts names names' mm) 
                 $  G.mg_binds guts
 
         return  $ guts { G.mg_binds = binds' }
@@ -65,7 +67,8 @@ spliceModGuts names mm guts
 -- | If a GHC core binding has a matching one in the provided DDC module
 --   then convert the DDC binding from GHC core and use that instead.
 spliceBind 
-        :: G.ModGuts
+        :: Primitives
+        -> G.ModGuts
         -> Map D.Name  GhcName
         -> Map GhcName D.Name
         -> D.Module () D.Name
@@ -73,7 +76,7 @@ spliceBind
         -> G.UniqSM [G.CoreBind]
 
 -- If there is a matching binding in the Disciple module then use that.
-spliceBind guts names names' mm (G.NonRec gbOrig _)
+spliceBind primitives guts names names' mm (G.NonRec gbOrig _)
  | Just nOrig                  <- Map.lookup (GhcNameVar gbOrig) names'
  , Just (dbLowered, dxLowered) <- lookupModuleBindOfName mm nOrig
  = do   
@@ -81,16 +84,18 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
         let imported            = importedNamesOfGuts guts
 
         let kenv = Env
-                { envGuts       = guts
-                , envImported   = imported
-                , envNames      = names
-                , envVars       = [] }
+                 { envGuts       = guts
+                 , envImported   = imported
+                 , envPrimitives = primitives
+                 , envNames      = names
+                 , envVars       = [] }
 
         let tenv = Env
-                 { envGuts      = guts
-                 , envImported  = imported
-                 , envNames     = names
-                 , envVars      = [] }
+                 { envGuts       = guts
+                 , envImported   = imported
+                 , envPrimitives = primitives
+                 , envNames      = names
+                 , envVars       = [] }
 
         -- make a new binding for the lowered version.
         let dtLowered   = D.typeOfBind dbLowered
@@ -103,10 +108,10 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
         -- Call the lowered version from the original, adding a wrapper
         --  to (unsafely) pass the world token and marshal boxed to
         --  unboxed values.
-        xCall   <- wrapLowered 
-                        (G.varType gbOrig) gtLowered
-                        [] 
-                        gvLowered
+        xCall           <- wrapLowered 
+                                (G.varType gbOrig) gtLowered
+                                [] 
+                                gvLowered
 
         return  [ G.NonRec gvLowered gxLowered
                 , G.NonRec gbOrig  xCall ]
@@ -114,7 +119,7 @@ spliceBind guts names names' mm (G.NonRec gbOrig _)
                         --       the faked realWorld token will never be substituted.
 
 -- Otherwise leave the original GHC binding as it is.
-spliceBind _ _ _ _ b
+spliceBind _ _ _ _ _ b
  = return [b]
 
 

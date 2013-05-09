@@ -64,8 +64,6 @@ passLower name guts
         let (Just primitives, us2) 
                 = G.initUs us (slurpPrimitives guts)
 
-        putStrLn (primitives `seq` "blerk")
-
 
         -- Convert ----------------------------------------
         -- Convert the GHC Core module to Disciple Core.
@@ -202,7 +200,8 @@ passLower name guts
 
         -- Splice -----------------------------------------
         -- Splice the lowered functions back into the GHC core program.
-        let guts'       = G.initUs_ us2 (spliceModGuts names mm_thread guts)
+        let guts'       = G.initUs_ us2 
+                        $ spliceModGuts primitives names mm_thread guts
 
         writeFile ("dump." ++ name ++ ".10-ghc-spliced.dcf")
          $ D.render D.RenderIndent (pprModGuts guts')

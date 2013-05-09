@@ -4,6 +4,7 @@ module Data.Array.Repa.Plugin.ToGHC.Prim
         , convertPolytypicPrim
         , isPolytypicPrimName)
 where
+import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.ToGHC.Prim.Table
 import Data.Array.Repa.Plugin.ToGHC.Type
 import Data.List
@@ -16,6 +17,8 @@ import qualified UniqSupply              as G
 
 import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Flow           as D
+import qualified DDC.Core.Flow.Prim      as D
+import qualified DDC.Core.Flow.Compounds as D
 
 
 -- | Convert a primop that has the same definition independent 
@@ -26,18 +29,23 @@ convertPrim
         -> G.UniqSM (G.CoreExpr, G.Type)
 
 convertPrim _kenv tenv n 
-        | Just gv       <- findPrimitive (envImported tenv) n []
-        = return (G.Var gv, G.varType gv)
+ = let prims    = envPrimitives tenv
+   in case n of
+        D.NameOpFlow D.OpFlowRateOfSeries
+         -> return $ prim_rateOfSeries prims
 
         -- ERROR: Primitive is in our prim table, but the Haskell client
         --        module hasn't imported an implementation of it.
-        |  Just prim   <- find (\p -> primName p == n) primitives
-        = errorMissingPrim (envGuts tenv) n (Just $ primSymbol prim)
+        _ |  Just prim   <- find (\p -> primName p == n) primitives
+          -> errorMissingPrim (envGuts tenv) n (Just $ primSymbol prim)
 
         -- ERROR: Primitive is not even in the prim table,
         --        this is definately a bug in the Repa plugin.
-        | otherwise
-        = errorMissingPrim (envGuts tenv) n Nothing
+        _ | otherwise
+          -> errorMissingPrim (envGuts tenv) n Nothing
+
+--        | Just gv       <- findPrimitive (envImported tenv) n []
+--        = return (G.Var gv, G.varType gv)
 
 
 -------------------------------------------------------------------------------
@@ -50,7 +58,36 @@ convertPolytypicPrim
         -> G.UniqSM (G.CoreExpr, G.Type)
 
 convertPolytypicPrim kenv _tenv n tArg
- = case n of
+ = let prims    = envPrimitives kenv
+   in case n of
+        D.NameOpLoop D.OpLoopLoopN
+         -> return $ prim_loop prims
+
+        D.NameOpStore D.OpStoreNext
+         |  tArg == D.tInt
+         -> return $ prim_nextInt        prims
+
+        D.NamePrimArith D.PrimArithAdd
+         |  tArg == D.tInt
+         -> return $ prim_addInt         prims
+
+        D.NamePrimArith D.PrimArithMul
+         |  tArg == D.tInt
+         -> return $ prim_mulInt         prims
+
+        D.NameOpStore D.OpStoreNewVector
+         |  tArg == D.tInt       
+         -> return $ prim_newIntVector   prims
+
+        D.NameOpStore D.OpStoreReadVector
+         |  tArg == D.tInt       
+         -> return $ prim_readIntVector  prims
+
+        D.NameOpStore D.OpStoreWriteVector
+         |  tArg == D.tInt       
+         -> return $ prim_writeIntVector prims
+
+
         -- Pure primitives.
         _
            | Just gv      <- findPrimitive (envImported kenv) n [tArg]
@@ -65,6 +102,7 @@ convertPolytypicPrim kenv _tenv n tArg
         -- ERROR: Primitive is not even in the prim table,
         --        this is definately a bug in the Repa plugin.
         _  -> errorMissingPrim (envGuts kenv) n Nothing
+
 
 
 
