@@ -4,7 +4,6 @@ module Data.Array.Repa.Plugin.ToGHC.Wrap
 where
 import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.Array.Repa.Plugin.GHC.Pretty ()
-import DDC.Base.Pretty
 
 import qualified CoreSyn                as G
 import qualified DataCon                as G

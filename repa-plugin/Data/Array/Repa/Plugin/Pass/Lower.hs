@@ -17,7 +17,7 @@ import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Storage        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
-import qualified DDC.Core.Flow.PrimState.Thread         as Flow
+import qualified DDC.Core.Flow.Transform.Thread         as Flow
 
 import qualified DDC.Core.Module                        as Core
 import qualified DDC.Core.Check                         as Core
@@ -87,29 +87,30 @@ passLower name guts0
          $ D.renderIndent (D.vcat $ map D.ppr $ Map.toList names)
 
 
-        -- Prep -------------------------------------------
-        -- Prep module for lowering.
+        -- Norm -------------------------------------------
+        -- A-normalize module for the Prep transform.
         let namifierT   = Core.makeNamifier Flow.freshT Env.empty
         let namifierX   = Core.makeNamifier Flow.freshX Env.empty
 
-        --  1. Snip and flatten the code to create new let-bindings
-        --     for flow combinators. This ensures all the flow combinators
-        --     and workers are bound at the top-level of the function.
+        --  Snip and flatten the code to create new let-bindings
+        --  for flow combinators. This ensures all the flow combinators
+        --  and workers are bound at the top-level of the function.
         let snipConfig  = Snip.configZero { Snip.configSnipLetBody = True }
         let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_detect
         let mm_snip     = evalState (Core.namify namifierT namifierX mm_snip') 0
 
-        writeFile ("dump." ++ name ++ ".04-dc-prep.1-snip.dcf")
+        writeFile ("dump." ++ name ++ ".04-dc-norm.dcf")
          $ D.render D.RenderIndent (D.ppr mm_snip)
 
 
+        -- Prep -------------------------------------------
         --  2. Eta-expand worker functions passed to flow combinators.
         --     We also get back a map containing the types of parameters
         --     to worker functions.
         let (mm_prepanon, workerNameArgs) 
                         = Flow.prepModule mm_snip
 
-        writeFile ("dump." ++ name ++ ".04-dc-prep.2-prepanon.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.1-prepanon.dcf")
          $ D.render D.RenderIndent (D.ppr mm_prepanon)
 
 
@@ -126,7 +127,7 @@ passLower name guts0
                                         isFloatable mm_prepanon
         let mm_forward          = Core.result result_forward
 
-        writeFile ("dump." ++ name ++ ".04-dc-prep.3-forward.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.2-forward.dcf")
          $ D.render D.RenderIndent (D.ppr mm_forward)
 
 
@@ -134,13 +135,13 @@ passLower name guts0
         --     The lowering pass needs them all to have real names.
         let mm_namify   = evalState (Core.namify namifierT namifierX mm_forward) 0
 
-        writeFile ("dump." ++ name ++ ".04-dc-prep.4-namify.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.3-namify.dcf")
          $ D.render D.RenderIndent (D.ppr mm_namify)
 
         --  5. Type check add type annots on all binders.
         let mm_prep     = checkFlowModule_ mm_namify
 
-        writeFile ("dump." ++ name ++ ".04-dc-prep.5-check.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.4-check.dcf")
          $ D.renderIndent (D.ppr mm_prep)
 
 
@@ -155,10 +156,10 @@ passLower name guts0
         let mm_lowered' = Flow.extractModule mm_prep procs
         let mm_lowered  = evalState (Core.namify namifierT namifierX mm_lowered') 0
 
-        writeFile ("dump." ++ name ++ ".05-dc-lowered.1-processes.txt")
+        writeFile ("dump." ++ name ++ ".06-dc-lowered.1-processes.txt")
          $ D.renderIndent $ D.vcat $ intersperse D.empty $ map D.ppr $ processes
 
-        writeFile ("dump." ++ name ++ ".05-dc-lowered.dcf")
+        writeFile ("dump." ++ name ++ ".06-dc-lowered.dcf")
          $ D.renderIndent $ D.ppr mm_lowered
 
 
@@ -166,7 +167,7 @@ passLower name guts0
         -- Concretize rate variables.
         let mm_concrete = Flow.concretizeModule mm_lowered
 
-        writeFile ("dump." ++ name ++ ".06-dc-concrete.dcf")
+        writeFile ("dump." ++ name ++ ".07-dc-concrete.dcf")
          $ D.renderIndent $ D.ppr mm_concrete
 
 
@@ -174,7 +175,7 @@ passLower name guts0
         -- Assign mutable variables to array storage.
         let mm_storage  = Flow.storageModule mm_concrete
 
-        writeFile ("dump." ++ name ++ ".07-dc-storage.dcf")
+        writeFile ("dump." ++ name ++ ".08-dc-storage.dcf")
          $ D.renderIndent $ D.ppr mm_storage
 
 
@@ -183,7 +184,7 @@ passLower name guts0
         --  the thread transform wants type annotations at each node.
         let mm_checked  = checkFlowModule mm_storage
 
-        writeFile ("dump." ++ name ++ ".08-dc-checked.dcf")
+        writeFile ("dump." ++ name ++ ".09-dc-checked.dcf")
          $ D.renderIndent $ D.ppr mm_checked
 
 
@@ -193,7 +194,7 @@ passLower name guts0
         let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_checked
         let mm_thread   = evalState (Core.namify namifierT namifierX mm_thread') 0
 
-        writeFile ("dump." ++ name ++ ".09-dc-threaded.dcf")
+        writeFile ("dump." ++ name ++ ".10-dc-threaded.dcf")
          $ D.renderIndent $ D.ppr mm_thread
 
 
@@ -202,7 +203,7 @@ passLower name guts0
         let guts'       = G.initUs_ us2 
                         $ spliceModGuts primitives names mm_thread guts
 
-        writeFile ("dump." ++ name ++ ".10-ghc-spliced.dcf")
+        writeFile ("dump." ++ name ++ ".11-ghc-spliced.dcf")
          $ D.render D.RenderIndent (pprModGuts guts')
 
         return (return guts')
