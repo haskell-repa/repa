@@ -1,10 +1,12 @@
 
 module Data.Array.Repa.Plugin.ToGHC.Wrap
-        (wrapLowered)
+        ( wrapLowered
+        , unwrapResult)
 where
 import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.Array.Repa.Plugin.GHC.Pretty ()
 
+import qualified BasicTypes             as G
 import qualified CoreSyn                as G
 import qualified DataCon                as G
 import qualified Type                   as G
@@ -114,6 +116,27 @@ unwrapResult tOrig tLowered xResult
                         -- TODO: do a proper check. Is this supposed to be a TyLit? 
 
         = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
+
+        -- Original is a boxed tuple and lowered version is unboxed:
+        -- raise to a boxed tuple, boxing its elements too.
+        | G.TyConApp tcTup [ta,tb]    <- tOrig
+        , tcTup == G.tupleTyCon G.BoxedTuple   2
+        , G.TyConApp tcUnb [ta',tb']  <- tLowered    
+        , tcUnb == G.tupleTyCon G.UnboxedTuple 2
+        = do
+            -- Case on the unboxed tuple, raise the elements, then create a boxed tuple
+            vScrut <- newDummyVar "scrut" tLowered
+
+            va <- newDummyVar "a" ta'
+            vb <- newDummyVar "b" tb'
+            xa <- unwrapResult ta ta' (G.Var va)
+            xb <- unwrapResult tb tb' (G.Var vb)
+
+            return (G.Case xResult vScrut tOrig
+                    [ (G.DataAlt (G.tupleCon G.UnboxedTuple 2)
+                    , [va, vb],
+                        G.mkConApp (G.tupleCon G.BoxedTuple 2)
+                         [G.Type ta, G.Type tb, xa, xb])])
 
         | otherwise
         = return xResult

@@ -42,6 +42,11 @@ instance Detect Bound where
          -> makePrim g' (NameTyConFlow TyConFlowSeries) 
                         (kRate `kFun` kData `kFun` kData)
 
+         | Just g'       <- matchPrim "(,)_" n
+         -> do   let k = (kData `kFun` kData `kFun` kData)
+                 p <- (makePrim g' (NameTyConFlow (TyConFlowTuple 2)) k)
+                 return p -- $ TyConBound p k
+
          | otherwise
          -> do  collect d g
                 return  $ UName d

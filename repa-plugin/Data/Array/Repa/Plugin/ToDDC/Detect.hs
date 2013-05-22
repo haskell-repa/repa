@@ -112,6 +112,17 @@ instance Detect (Exp a) where
                                          (typeOpFlow (OpFlowMap 1))))
                           args'
 
+  -- Detect 2-tuples
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ uTuple,  [xTA, xTB, xA, xB ])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vTuple))  <- uTuple
+  , isPrefixOf "(,)_" vTuple
+  = do  args'   <- mapM detect [xTA, xTB, xA, xB]
+        return  $ xApps a (XCon a dcTuple2)
+                          args'
+
+
 
   -- Inject type arguments for arithmetic ops.
   --   In the Core code, arithmetic operations are expressed as monomorphic

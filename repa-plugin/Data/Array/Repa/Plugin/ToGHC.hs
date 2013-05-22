@@ -9,6 +9,7 @@ import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.FatName
 
+import qualified BasicTypes             as G
 import qualified HscTypes               as G
 import qualified CoreSyn                as G
 import qualified Type                   as G
@@ -307,21 +308,27 @@ convertExp kenv tenv xx
         -- Case expressions, with two binders.
         --  assume these are 2-tuples                           -- TODO: check really 2-tuples.
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ bWorld@(D.BName{})
-                                     ,     b2]) x1]
+                 [ D.AAlt (D.PData _ [ b1, b2]) x1]
          -> do  
                 (xScrut', tScrut')  <- convertExp kenv tenv xScrut
                 vScrut'             <- newDummyVar "scrut" tScrut'
 
-                (tenv1,    vWorld') <- bindVarX kenv tenv  bWorld
+                (tenv1,    v1')     <- bindVarX kenv tenv  b1
                 (tenv2,    v2')     <- bindVarX kenv tenv1 b2
                 let tenv' = tenv2
 
                 (x1',     t1')      <- convertExp kenv tenv' x1
 
+                -- Tuple may be boxed or unboxed
+                let boxity
+                     | G.isUnboxedTupleType tScrut'
+                     = G.UnboxedTuple
+                     | otherwise
+                     = G.BoxedTuple
+
                 return ( G.Case xScrut' vScrut' t1'
-                                [ (G.DataAlt G.unboxedPairDataCon
-                                , [vWorld', v2'], x1') ]
+                                [ (G.DataAlt (G.tupleCon boxity 2)
+                                , [v1', v2'], x1') ]
                        , t1')
 
 

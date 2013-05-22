@@ -15,6 +15,7 @@ import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.FatName
 import Data.Map                         (Map)
 
+import qualified BasicTypes              as G
 import qualified HscTypes                as G
 import qualified Type                    as G
 import qualified TypeRep                 as G
@@ -165,7 +166,7 @@ convertTyConApp _prims names tc tsArgs'
         -- Tuples
         D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple 2)) _) _
          |  [t1, t2] <- tsArgs'
-         -> G.mkTyConApp G.unboxedPairTyCon [t1, t2]
+         -> G.mkTyConApp (G.tupleTyCon G.UnboxedTuple 2) [t1, t2]
 
         -- Machine types
         D.TyConBound (D.UPrim n _) _
