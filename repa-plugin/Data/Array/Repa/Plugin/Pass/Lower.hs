@@ -89,15 +89,15 @@ passLower name guts0
 
         -- Norm -------------------------------------------
         -- A-normalize module for the Prep transform.
-        let namifierT   = Core.makeNamifier Flow.freshT Env.empty
-        let namifierX   = Core.makeNamifier Flow.freshX Env.empty
+        let mkNamT   = Core.makeNamifier Flow.freshT
+        let mkNamX   = Core.makeNamifier Flow.freshX
 
         --  Snip and flatten the code to create new let-bindings
         --  for flow combinators. This ensures all the flow combinators
         --  and workers are bound at the top-level of the function.
         let snipConfig  = Snip.configZero { Snip.configSnipLetBody = True }
         let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_detect
-        let mm_snip     = evalState (Core.namify namifierT namifierX mm_snip') 0
+        let mm_snip     = evalState (Core.namifyUnique mkNamT mkNamX mm_snip') 0
 
         writeFile ("dump." ++ name ++ ".04-dc-norm.dcf")
          $ D.render D.RenderIndent (D.ppr mm_snip)
@@ -133,7 +133,7 @@ passLower name guts0
 
         --  4. Create fresh names for anonymous binders.
         --     The lowering pass needs them all to have real names.
-        let mm_namify   = evalState (Core.namify namifierT namifierX mm_forward) 0
+        let mm_namify   = evalState (Core.namifyUnique mkNamT mkNamX mm_forward) 0
 
         writeFile ("dump." ++ name ++ ".05-dc-prep.3-namify.dcf")
          $ D.render D.RenderIndent (D.ppr mm_namify)
@@ -154,7 +154,7 @@ passLower name guts0
 
         -- Extract concrete code from the abstract loops.
         let mm_lowered' = Flow.extractModule mm_prep procs
-        let mm_lowered  = evalState (Core.namify namifierT namifierX mm_lowered') 0
+        let mm_lowered  = evalState (Core.namifyUnique mkNamT mkNamX mm_lowered') 0
 
         writeFile ("dump." ++ name ++ ".06-dc-lowered.1-processes.txt")
          $ D.renderIndent $ D.vcat $ intersperse D.empty $ map D.ppr $ processes
@@ -192,7 +192,7 @@ passLower name guts0
         -- Thread the World# token through stateful functions in preparation
         -- for conversion back to GHC core.
         let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_checked
-        let mm_thread   = evalState (Core.namify namifierT namifierX mm_thread') 0
+        let mm_thread   = evalState (Core.namifyUnique mkNamT mkNamX mm_thread') 0
 
         writeFile ("dump." ++ name ++ ".10-dc-threaded.dcf")
          $ D.renderIndent $ D.ppr mm_thread
