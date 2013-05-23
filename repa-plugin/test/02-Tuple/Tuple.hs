@@ -14,7 +14,9 @@ repa_primitives =  R.primitives
 main
  = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
         print $ R.runSeries v1 lower_fffold
---        print $ R.runSeries v1 lower_fold_map
+        print $ R.runSeries v1 lower_fffold_nest
+        print $ R.runSeries v1 lower_fffold_4
+        print $ R.runSeries v1 lower_fold_map
 
 
 -- Triple fold fusion.
@@ -24,7 +26,14 @@ lower_fffold :: R.Series k Int -> (Int, Int)
 lower_fffold s
  = (R.fold (+) 0 s + R.fold (*) 1 s, R.fold (*) 1 s)
 
-{-
+lower_fffold_nest :: R.Series k Int -> ((Int,Int), (Int,Int))
+lower_fffold_nest s
+ = ((R.fold (+) 0 s, R.fold (*) 1 s), (R.fold (*) 1 s, 500))
+
+lower_fffold_4 :: R.Series k Int -> (Int,Int,Int,Int)
+lower_fffold_4 s
+ = (R.fold (+) 0 s, R.fold (*) 1 s, R.fold (*) 1 s, 500)
+
 -- Fold a series while mapping across it.
 --  The source elements are only read from memory once.
 lower_fold_map :: R.Series k Int -> (Int, Vector Int)

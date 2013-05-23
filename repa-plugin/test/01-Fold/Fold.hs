@@ -31,7 +31,7 @@ lower_single s
 --  Computation of both reductions is interleaved.
 lower_ffold :: R.Series k Int -> Int
 lower_ffold s
- = R.fold (\z -> x + z) 0 s + R.fold (*) 1 s
+ = R.fold (+) 0 s + R.fold (*) 1 s
 
 
 -- Triple fold fusion.
