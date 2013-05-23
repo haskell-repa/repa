@@ -12,7 +12,7 @@ plugin  = defaultPlugin
 
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
-install _ _todos
+install _ todos
  = do   
         -- Initialize the staticflags so that we can pretty print core code.
         --   The pretty printers depend on static flags and will `error` if 
@@ -28,7 +28,7 @@ install _ _todos
                 return (return ())
 
         -- Replace the standard GHC pipeline with our one.
-        return vectoriserPipeline
+        return (vectoriserPipeline todos)
 
 
 -- CoreToDo -------------------------------------------------------------------

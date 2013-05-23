@@ -12,83 +12,45 @@ import GhcPlugins
 
 
 -- | Our vectoriser pipeline.
---   This replaces the standard compilation pipeline defined in 
---   SimplCore.lhs of the main compiler.
 --
---   TODO: inject the lowering transform just after the first simplification stage,
---         instead of replacing the whole pipeline.
+--   Inject the lowering transform just after the first simplification stage,
+--   or add a simplification and lowering at the end if there is none.
 --
-vectoriserPipeline :: [CoreToDo]
-vectoriserPipeline
- = [    
-        -- Our transform requires the desugared code to be pre-simplified
-        CoreDoSimplify 10
+vectoriserPipeline :: [CoreToDo] -> [CoreToDo]
+vectoriserPipeline todos
+ -- If an initial simplifier exists, lower straight afterwards
+ | (before, (simp:after)) <- break findPreSimplifier todos
+ = before ++ [simp] ++ lower ++ after ++ dump
+ -- There is no simplifier (eg not compiled with -O)
+ -- So add our own at the end
+ | otherwise
+ = todos ++ preSimp ++ lower ++ dump
+ where
+  findPreSimplifier c
+   = case c of
+     CoreDoSimplify _
+      SimplMode { sm_phase = InitialPhase }
+      -> True
+     _
+      -> False
+
+  preSimp
+   = [ CoreDoSimplify 10
                 SimplMode 
                 { sm_names      = ["Vectorise", "PreSimplify"]
                 , sm_phase      = InitialPhase
                 , sm_rules      = True
                 , sm_eta_expand = True
                 , sm_inline     = False
-                , sm_case_case  = False }
+                , sm_case_case  = False } ]
 
-        -- Dump the simplified code
-   ,    CoreDoPluginPass "Dump" (passDump "1-dump")
+  -- Dump the simplified code,
+  -- then lower the series expressions in the code.
+  lower
+   = [ CoreDoPluginPass "Dump" (passDump "1-dump")
+     , CoreDoPluginPass "Lower" (passLower "2-lower") ]
 
-        ---------------------
-        -- Lower the series expressions in the code.
-   ,    CoreDoPluginPass "Lower" (passLower "2-lower")
+  -- Dump the final result, after GHC optimises the lowered code
+  dump
+   = [ CoreDoPluginPass "Dump"   (passDump "3-final") ]
 
-        ---------------------
-        -- From this point onwards we've got the code expressed as
-        -- imperative-style loops, and need to optimise this low-level code.
-
-        -- Do Worker/Wrapper to try to eliminate leftover boxings and unboxings
-        -- from recursive functions.
-   ,    CoreDoStrictness
-   ,    CoreDoWorkerWrapper
-   ,    CoreDoSimplify 10
-                SimplMode
-                { sm_names      = ["Vectorise", "Post Worker-Wrapper"]
-                , sm_phase      = Phase 0
-                , sm_rules      = True
-                , sm_eta_expand = True
-                , sm_inline     = True
-                , sm_case_case  = True }
-
-        -- Do Constructor Specialisation.
-        -- Data.Vector code relies on this.
-   ,    CoreDoSpecConstr
-   ,    CoreDoSimplify 10
-                SimplMode
-                { sm_names      = ["Vectorise", "Post SpecConstr"]
-                , sm_phase      = Phase 0
-                , sm_rules      = False
-                , sm_eta_expand = False
-                , sm_inline     = False
-                , sm_case_case  = True }
-
-        -- Do Floating and CSE to shift unboxings outwards and combine common
-        -- constants. 
-   ,    CoreDoFloatOutwards
-                FloatOutSwitches
-                { floatOutLambdas               = Nothing
-                , floatOutConstants             = False 
-                , floatOutPartialApplications   = False }
-   ,    CoreCSE
-   ,    CoreDoFloatInwards
-
-   ,    CoreDoStrictness
-   ,    CoreDoStaticArgs
-
-        -- Final simplification.
-   ,    CoreDoSimplify 20
-                SimplMode
-                { sm_names      = ["Vectorise", "Final"]
-                , sm_phase      = Phase 0
-                , sm_rules      = True
-                , sm_eta_expand = True
-                , sm_inline     = True
-                , sm_case_case  = True }
-
-   ,    CoreDoPluginPass "Dump"   (passDump "7-final")
-   ]
