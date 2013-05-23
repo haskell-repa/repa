@@ -33,6 +33,7 @@ import Data.List
 import Control.Monad
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
+import Data.Maybe                       (catMaybes)
 
 
 -------------------------------------------------------------------------------
@@ -170,16 +171,27 @@ convertExp kenv tenv xx
         -- The unboxed tuple constructor.
         -- When we produce unboxed tuple we always want to preserve
         -- the unboxed versions of element types.
-        D.XApp _ (D.XApp _ (D.XCon _ (D.DaCon dn _ _)) (D.XType t1)) (D.XType t2)
-         | D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple 2)) <- dn
-         -> do  t1'     <- convertType_unboxed kenv t1
-                t2'     <- convertType_unboxed kenv t2
+        D.XApp _ x1 x2
+         | (D.XCon _ (D.DaCon dn _ _), args)                   <- D.takeXApps1 x1 x2
+         , D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple n)) <- dn
+         -- The first n arguments are type parameters, the rest are values
+         , (tyxs, vals)                                        <- splitAt n args
+         , tys                                                 <- catMaybes (map D.takeXType tyxs)
+         -- Types must be fully applied, but we can get away with
+         -- only partial value application
+         , length tys  == n
+         -> do  tys'    <- mapM (convertType_unboxed kenv)      tys
+                vals'   <- mapM (convertExp          kenv tenv) vals
 
-                let gv  = G.dataConWorkId G.unboxedPairDataCon
-                let gt  = G.varType gv
+                let dacon    = G.tupleCon G.UnboxedTuple n
+                -- Find type of tuple constructor, instantiate the foralls
+                let gt       = G.varType (G.dataConWorkId dacon)
+                let gt'      = G.applyTys gt tys'
+                -- Get the result of the function type after applying the arguments in vals
+                let (_,tRes) = G.splitFunTysN (length vals) gt'
 
-                return  ( G.App (G.App (G.Var gv) (G.Type t1')) (G.Type t2')
-                        , G.applyTys gt [t1', t2'] )
+                return  ( G.mkConApp dacon (map G.Type tys' ++ map fst vals')
+                        , tRes )
 
 
         -- Data constructors.                           
@@ -305,32 +317,27 @@ convertExp kenv tenv xx
                         , t1')
 
 
-        -- Case expressions, with two binders.
-        --  assume these are 2-tuples                           -- TODO: check really 2-tuples.
+        -- Case expressions over n-tuples
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData _ [ b1, b2]) x1]
+                 [ D.AAlt (D.PData dacon binders) x1]
+         | D.DaCon dn _ _                                      <- dacon
+         , D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple n)) <- dn
+         , length binders == n
          -> do  
                 (xScrut', tScrut')  <- convertExp kenv tenv xScrut
                 vScrut'             <- newDummyVar "scrut" tScrut'
 
-                (tenv1,    v1')     <- bindVarX kenv tenv  b1
-                (tenv2,    v2')     <- bindVarX kenv tenv1 b2
-                let tenv' = tenv2
+                let goBind (tenv', vs) b
+                     = do   (tenv'', v) <- bindVarX kenv tenv' b
+                            return (tenv'', v:vs)
 
-                (x1',     t1')      <- convertExp kenv tenv' x1
-
-                -- Tuple may be boxed or unboxed
-                let boxity
-                     | G.isUnboxedTupleType tScrut'
-                     = G.UnboxedTuple
-                     | otherwise
-                     = G.BoxedTuple
+                (tenv',vs)         <- foldM goBind (tenv,[]) binders
+                (x1',  t1')        <- convertExp kenv tenv' x1
 
                 return ( G.Case xScrut' vScrut' t1'
-                                [ (G.DataAlt (G.tupleCon boxity 2)
-                                , [v1', v2'], x1') ]
+                                [ (G.DataAlt (G.tupleCon G.UnboxedTuple n)
+                                , reverse vs, x1') ]
                        , t1')
-
 
         _ -> errorNoConversion xx
 

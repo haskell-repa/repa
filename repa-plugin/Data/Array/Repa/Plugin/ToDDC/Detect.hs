@@ -112,14 +112,21 @@ instance Detect (Exp a) where
                                          (typeOpFlow (OpFlowMap 1))))
                           args'
 
-  -- Detect 2-tuples
+  -- Detect n-tuples
   | XApp a _ _                          <- xx
-  , Just  (XVar _ uTuple,  [xTA, xTB, xA, xB ])
-                                        <- takeXApps xx
+  , Just  (XVar _ uTuple,  args)        <- takeXApps xx
   , UName (FatName _ (NameVar vTuple))  <- uTuple
-  , isPrefixOf "(,)_" vTuple
-  = do  args'   <- mapM detect [xTA, xTB, xA, xB]
-        return  $ xApps a (XCon a dcTuple2)
+
+  , size                                <- length args `div` 2
+  , commas                              <- replicate (size-1) ','
+  , prefix                              <- "(" ++ commas ++ ")_"
+
+  , size > 1
+  , isPrefixOf prefix vTuple
+  = do  args'   <- mapM detect args
+        let tuple = DaConFlowTuple size
+            ty    = typeDaConFlow tuple
+        return  $ xApps a (XCon a $ mkDaConAlg (NameDaConFlow tuple) ty)
                           args'
 
 

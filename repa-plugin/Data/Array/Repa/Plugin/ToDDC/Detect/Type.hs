@@ -42,10 +42,14 @@ instance Detect Bound where
          -> makePrim g' (NameTyConFlow TyConFlowSeries) 
                         (kRate `kFun` kData `kFun` kData)
 
-         | Just g'       <- matchPrim "(,)_" n
-         -> do   let k = (kData `kFun` kData `kFun` kData)
-                 p <- (makePrim g' (NameTyConFlow (TyConFlowTuple 2)) k)
-                 return p -- $ TyConBound p k
+         -- N-tuples: (,)_ etc. Holds one more than the number of commas
+         | Just (str, g')       <- stringPrim n
+         , '(':rest             <- str
+         , (commas,aftercommas) <- span (==',') rest
+         , isPrefixOf ")_" aftercommas
+         , size                 <- length commas + 1
+         -> do   let k = foldr kFun kData (replicate size kData)
+                 makePrim g' (NameTyConFlow (TyConFlowTuple size)) k
 
          | otherwise
          -> do  collect d g
@@ -59,14 +63,23 @@ instance Detect Bound where
                 t'      <- detect t
                 return  $ UPrim d t'
 
-matchPrim str n
- | FatName g (NameVar str') <- n
- , isPrefixOf str str'  = Just g
 
- | FatName g (NameCon str') <- n
+matchPrim str n
+ | Just (str', g)      <- stringPrim n
  , isPrefixOf str str'  = Just g
 
  | otherwise            = Nothing
+
+
+stringPrim n
+ | FatName g (NameVar str') <- n
+ = Just (str', g)
+
+ | FatName g (NameCon str') <- n
+ = Just (str', g)
+
+ | otherwise
+ = Nothing
 
 
 makePrim g d t

@@ -119,24 +119,26 @@ unwrapResult tOrig tLowered xResult
 
         -- Original is a boxed tuple and lowered version is unboxed:
         -- raise to a boxed tuple, boxing its elements too.
-        | G.TyConApp tcTup [ta,tb]    <- tOrig
-        , tcTup == G.tupleTyCon G.BoxedTuple   2
-        , G.TyConApp tcUnb [ta',tb']  <- tLowered    
-        , tcUnb == G.tupleTyCon G.UnboxedTuple 2
+        | G.TyConApp tcTup tins          <- tOrig
+        , G.TyConApp tcUnb touts         <- tLowered    
+        , n                              <- length tins
+        , G.tupleTyCon G.BoxedTuple   n  == tcTup
+        , G.tupleTyCon G.UnboxedTuple n  == tcUnb
         = do
             -- Case on the unboxed tuple, raise the elements, then create a boxed tuple
             vScrut <- newDummyVar "scrut" tLowered
+            vs     <- mapM (newDummyVar "v") touts
 
-            va <- newDummyVar "a" ta'
-            vb <- newDummyVar "b" tb'
-            xa <- unwrapResult ta ta' (G.Var va)
-            xb <- unwrapResult tb tb' (G.Var vb)
+            let unwrap (t,t',v)
+                    = unwrapResult t t' (G.Var v)
+
+            xs     <- mapM unwrap (zip3 tins touts vs)
 
             return (G.Case xResult vScrut tOrig
-                    [ (G.DataAlt (G.tupleCon G.UnboxedTuple 2)
-                    , [va, vb],
-                        G.mkConApp (G.tupleCon G.BoxedTuple 2)
-                         [G.Type ta, G.Type tb, xa, xb])])
+                    [ (G.DataAlt (G.tupleCon G.UnboxedTuple n)
+                    , vs,
+                        G.mkConApp (G.tupleCon G.BoxedTuple n)
+                         (map G.Type tins ++ xs))])
 
         | otherwise
         = return xResult

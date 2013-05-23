@@ -164,9 +164,9 @@ convertTyConApp _prims names tc tsArgs'
          -> G.unitTy
 
         -- Tuples
-        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple 2)) _) _
-         |  [t1, t2] <- tsArgs'
-         -> G.mkTyConApp (G.tupleTyCon G.UnboxedTuple 2) [t1, t2]
+        D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple n)) _) _
+         |  length tsArgs' == n
+         -> G.mkTyConApp (G.tupleTyCon G.UnboxedTuple n) tsArgs'
 
         -- Machine types
         D.TyConBound (D.UPrim n _) _
