@@ -36,7 +36,7 @@ data FatName
         = FatName
         { fatNameGHC    :: GhcName
         , fatNameDDC    :: D.Name }
-        deriving Eq
+        deriving (Eq, Ord)
 
 instance Pretty FatName where
  ppr (FatName _ name)   = ppr name

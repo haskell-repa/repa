@@ -33,14 +33,27 @@ detectModule mm
 -- Module ---------------------------------------------------------------------
 instance Detect (Module a) where
  detect mm
-  = do  body'   <- detect (moduleBody mm)
+  = do  body'   <- detect     (moduleBody mm)
+        imports <- detectMap  (moduleImportTypes mm)
         return  $ ModuleCore
                 { moduleName            = moduleName mm
                 , moduleExportKinds     = Map.empty
                 , moduleExportTypes     = Map.empty
                 , moduleImportKinds     = Map.empty
-                , moduleImportTypes     = Map.empty
+                , moduleImportTypes     = imports
                 , moduleBody            = body' }
+
+-- Convert the FatNames of an import map
+detectMap  :: Map FatName (QualName FatName, Type FatName)
+           -> State DetectS (Map Name (QualName Name, Type Name))
+detectMap  m
+ = do   let ms = Map.toList   m
+        ms'   <- mapM detect' ms
+        return $ Map.fromList ms'
+ where
+  detect' (FatName _ k,(QualName mn (FatName _ n), t))
+   = do t' <- detect t
+        return (k, (QualName mn n, t'))
 
 
 -- DaCon ----------------------------------------------------------------------
