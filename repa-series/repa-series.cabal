@@ -12,6 +12,7 @@ Library
         Data.Array.Repa.Series
         Data.Array.Repa.Series.Series
         Data.Array.Repa.Series.Vector
+        Data.Array.Repa.Series.Sel
         Data.Array.Repa.Series.Fallback
         Data.Array.Repa.Series.Prim
 
