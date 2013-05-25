@@ -112,6 +112,28 @@ instance Detect (Exp a) where
                                          (typeOpFlow (OpFlowMap 1))))
                           args'
 
+  -- Detect packs
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ uPack,  [xTK1, xTK2, xTA, _xD1, xSel, xF])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vPack))   <- uPack
+  , isPrefixOf "pack_" vPack
+  = do  args'   <- mapM detect [xTK1, xTK2, xTA, xSel, xF]
+        return  $ xApps a (XVar a (UPrim (NameOpFlow OpFlowPack)
+                                         (typeOpFlow OpFlowPack)))
+                          args'
+
+  -- Detect mkSels
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ u,    [xTK, xTA, xFlags, xWorker])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar v))       <- u
+  , isPrefixOf "mkSel1_" v
+  = do  args'   <- mapM detect [xTK, xTA, xFlags, xWorker]
+        return  $ xApps a (XVar a (UPrim (NameOpFlow (OpFlowMkSel 1))
+                                         (typeOpFlow (OpFlowMkSel 1))))
+                          args'
+
   -- Detect n-tuples
   | XApp a _ _                          <- xx
   , Just  (XVar _ uTuple,  args)        <- takeXApps xx
@@ -165,11 +187,29 @@ instance Detect (Exp a) where
 -- Match arithmetic operators.
 matchPrimArith :: String -> Maybe (Name, Type Name, Type Name)
 matchPrimArith str
+ -- Num
  | isPrefixOf "$fNumInt_$c+_" str       
  = Just (NamePrimArith PrimArithAdd, tInt, typePrimArith PrimArithAdd)
 
+ | isPrefixOf "$fNumInt_$c-_" str       
+ = Just (NamePrimArith PrimArithSub, tInt, typePrimArith PrimArithSub)
+
  | isPrefixOf "$fNumInt_$c*_" str
  = Just (NamePrimArith PrimArithMul, tInt, typePrimArith PrimArithMul)
+
+ -- Integral
+ | isPrefixOf "$fIntegralInt_$cdiv_" str
+ = Just (NamePrimArith PrimArithDiv, tInt, typePrimArith PrimArithDiv)
+
+ | isPrefixOf "$fIntegralInt_$crem_" str
+ = Just (NamePrimArith PrimArithRem, tInt, typePrimArith PrimArithRem)
+
+ | isPrefixOf "$fIntegralInt_$cmod_" str
+ = Just (NamePrimArith PrimArithMod, tInt, typePrimArith PrimArithMod)
+
+ -- Eq
+ | isPrefixOf "eqInt_" str
+ = Just (NamePrimArith PrimArithEq,  tInt, typePrimArith PrimArithEq)
 
  | otherwise
  = Nothing

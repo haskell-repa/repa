@@ -21,4 +21,4 @@ lower_positive :: Series k Int -> Vector Int
 lower_positive s1
  = R.mkSel1 
         (R.map (\x -> x `mod` 2 == 0) s1)
-        (\sel -> S.toVector $ R.pack sel s1)
+        (\sel -> S.toVector (R.pack sel s1))

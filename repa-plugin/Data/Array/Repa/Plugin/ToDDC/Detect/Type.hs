@@ -29,18 +29,45 @@ instance Detect Bound where
  detect u
   = case u of
         UName n@(FatName g d)
-         -- Type constructor names.
-         | Just g'      <- matchPrim "Int_" n
-         -> makePrim g' (NamePrimTyCon   PrimTyConInt)    
-                        kData
 
+         -- Primitive type constructors.
+         | Just g'      <- matchPrim "Bool_" n
+         -> makePrim g' (NamePrimTyCon PrimTyConBool)           kData
+
+         | Just g'      <- matchPrim "Int_" n
+         -> makePrim g' (NamePrimTyCon PrimTyConInt)            kData
+
+         | Just g'      <- matchPrim "Word8_" n
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 8))       kData
+
+         | Just g'      <- matchPrim "Word16_" n
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 16))       kData
+
+         | Just g'      <- matchPrim "Word32_" n
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 32))       kData
+
+         | Just g'      <- matchPrim "Word64_" n
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 64))       kData
+
+         | Just g'      <- matchPrim "Float_" n
+         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 32))     kData
+
+         | Just g'      <- matchPrim "Double_" n
+         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 64))     kData
+
+
+         -- Vectors, series and selectors.
          | Just g'      <- matchPrim "Vector_" n
          -> makePrim g' (NameTyConFlow TyConFlowVector)    
                         (kData `kFun` kData)
 
-         | Just g'       <- matchPrim "Series_" n
+         | Just g'      <- matchPrim "Series_" n
          -> makePrim g' (NameTyConFlow TyConFlowSeries) 
                         (kRate `kFun` kData `kFun` kData)
+
+         | Just g'      <- matchPrim "Sel1_" n
+         -> makePrim g' (NameTyConFlow (TyConFlowSel 1))
+                        (kRate `kFun` kRate `kFun` kData)
 
          -- N-tuples: (,)_ etc. Holds one more than the number of commas
          | Just (str, g')       <- stringPrim n
@@ -120,6 +147,20 @@ instance Detect Type where
         t1'     <- detect t1
         t2'     <- detect t2
         return  $ TApp t1' t2'
+
+  -- Detect rate variables being applied to Sel1 type constructors.
+  | TApp t1 t2  <- tt
+  , [ TCon (TyConBound (UName (FatName _ (NameCon str))) _)
+    , TVar             (UName (FatName _ n1))
+    , TVar             (UName (FatName _ n2))]  
+                <- takeTApps tt
+  , isPrefixOf "Sel1_" str
+  = do  setRateVar n1
+        setRateVar n2
+        t1'     <- detect t1
+        t2'     <- detect t2
+        return  $ TApp t1' t2'
+
 
   -- Set kind of detected rate variables to Rate.
   | TForall b t <- tt
