@@ -82,6 +82,14 @@ convertType kenv tt
          -> do  return  $ G.applyTy  (prim_Vector (envPrimitives kenv)) 
                                      tElem'
 
+        -- DDC[Ref# a] => GHC[Ref {Lifted a}]
+        D.TApp{}
+         | Just (D.NameTyConFlow D.TyConFlowRef, [tElem])
+                <- D.takePrimTyConApps tt
+         , Just tElem'  <- convertBoxed tElem
+         -> do  return  $ G.applyTy  (prim_Ref (envPrimitives kenv))
+                                     tElem'
+
         -- DDC[Series# k a] => GHC[Series k {Lifted a}]
         D.TApp{}
          | Just (D.NameTyConFlow D.TyConFlowSeries, [tK, tElem])
@@ -189,11 +197,9 @@ convertTyConApp _prims names tc tsArgs'
 convertTyConPrimName :: D.Name -> Maybe G.TyCon
 convertTyConPrimName n
  = case n of
-        D.NamePrimTyCon D.PrimTyConNat  
-         -> Just G.intPrimTyCon
-
-        D.NamePrimTyCon D.PrimTyConInt  
-         -> Just G.intPrimTyCon
+        D.NamePrimTyCon D.PrimTyConBool -> Just G.boolTyCon
+        D.NamePrimTyCon D.PrimTyConNat  -> Just G.intPrimTyCon
+        D.NamePrimTyCon D.PrimTyConInt  -> Just G.intPrimTyCon
 
         _ -> Nothing
 
@@ -202,6 +208,7 @@ convertTyConPrimName n
 -- | Get the GHC boxed type corresponding to this Flow series element type.
 convertBoxed :: D.Type D.Name -> Maybe G.Type
 convertBoxed t
+ | t == D.tNat          = Just G.intTy
  | t == D.tInt          = Just G.intTy
  | otherwise            = Nothing
 
@@ -209,6 +216,7 @@ convertBoxed t
 -- | Get the GHC unboxed type corresponding to this Flow series element type.
 convertUnboxed :: D.Type D.Name -> Maybe G.Type
 convertUnboxed t
+ | t == D.tNat          = Just G.intPrimTy
  | t == D.tInt          = Just G.intPrimTy
  | otherwise            = Nothing
 

@@ -31,6 +31,9 @@ convertPrim _kenv tenv n
         D.NameOpFlow D.OpFlowRateOfSeries
          -> return $ prim_rateOfSeries prims
 
+        D.NameOpLoop D.OpLoopGuard
+         -> return $ prim_guard prims
+
         -- ERROR: This isn't a primtive name,
         --        or we don't have an implementation for it.
         _ -> errorMissingPrim (envGuts tenv) n Nothing
@@ -48,40 +51,101 @@ convertPolytypicPrim
 convertPolytypicPrim kenv _tenv n tsArg
  = let prims    = envPrimitives kenv
    in case n of
+
+        -- Arith
         D.NamePrimArith D.PrimArithAdd
-         |  tsArg == [D.tInt]
-         -> return $ prim_addInt         prims
+         |  tsArg == [D.tNat]                   -> return $ prim_addInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_addInt prims
+
+        D.NamePrimArith D.PrimArithSub
+         |  tsArg == [D.tNat]                   -> return $ prim_subInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_subInt prims
 
         D.NamePrimArith D.PrimArithMul
-         |  tsArg == [D.tInt]
-         -> return $ prim_mulInt         prims
+         |  tsArg == [D.tNat]                   -> return $ prim_mulInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_mulInt prims
 
+        D.NamePrimArith D.PrimArithDiv
+         |  tsArg == [D.tNat]                   -> return $ prim_divInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_divInt prims
+
+        D.NamePrimArith D.PrimArithMod
+         |  tsArg == [D.tNat]                   -> return $ prim_modInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_modInt prims
+
+        D.NamePrimArith D.PrimArithRem
+         |  tsArg == [D.tNat]                   -> return $ prim_remInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_remInt prims
+
+        -- Eq
+        D.NamePrimArith D.PrimArithEq
+         | tsArg == [D.tNat]                    -> return $ prim_eqInt prims
+         | tsArg == [D.tInt]                    -> return $ prim_eqInt prims
+
+        D.NamePrimArith D.PrimArithNeq
+         | tsArg == [D.tNat]                    -> return $ prim_neqInt prims
+         | tsArg == [D.tInt]                    -> return $ prim_neqInt prims
+
+        D.NamePrimArith D.PrimArithGt
+         | tsArg == [D.tNat]                    -> return $ prim_gtInt prims
+         | tsArg == [D.tInt]                    -> return $ prim_gtInt prims
+
+        D.NamePrimArith D.PrimArithGe
+         | tsArg == [D.tNat]                    -> return $ prim_geInt prims
+         | tsArg == [D.tInt]                    -> return $ prim_geInt prims
+
+        D.NamePrimArith D.PrimArithLt
+         | tsArg == [D.tNat]                    -> return $ prim_ltInt prims
+         | tsArg == [D.tInt]                    -> return $ prim_ltInt prims
+
+        D.NamePrimArith D.PrimArithLe
+         | tsArg == [D.tNat]                    -> return $ prim_leInt prims
+         | tsArg == [D.tInt]                    -> return $ prim_leInt prims
+
+
+        -- Ref
+        D.NameOpStore D.OpStoreNew
+         |  tsArg == [D.tNat]                   -> return $ prim_newRefInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_newRefInt prims
+
+        D.NameOpStore D.OpStoreRead
+         |  tsArg == [D.tNat]                   -> return $ prim_readRefInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_readRefInt prims
+
+        D.NameOpStore D.OpStoreWrite
+         |  tsArg == [D.tNat]                   -> return $ prim_writeRefInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_writeRefInt prims
+
+        -- Vector
         D.NameOpStore D.OpStoreNewVector
-         |  tsArg == [D.tInt]       
-         -> return $ prim_newIntVector   prims
+         |  tsArg == [D.tNat]                   -> return $ prim_newVectorInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_newVectorInt prims
 
         D.NameOpStore D.OpStoreNewVectorN
-         |  [tA, _tK] <- tsArg, tA == D.tInt
-         -> return $ prim_newIntVector   prims
+         |  [tA, _tK] <- tsArg, tA == D.tNat    -> return $ prim_newVectorInt   prims
+         |  [tA, _tK] <- tsArg, tA == D.tInt    -> return $ prim_newVectorInt   prims
 
         D.NameOpStore D.OpStoreReadVector
-         |  tsArg == [D.tInt]       
-         -> return $ prim_readIntVector  prims
+         |  tsArg == [D.tNat]                   -> return $ prim_readVectorInt  prims
+         |  tsArg == [D.tInt]                   -> return $ prim_readVectorInt  prims
 
         D.NameOpStore D.OpStoreWriteVector
-         |  tsArg == [D.tInt]       
-         -> return $ prim_writeIntVector prims
+         |  tsArg == [D.tNat]                   -> return $ prim_writeVectorInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_writeVectorInt prims
 
+        -- Next
         D.NameOpStore D.OpStoreNext
-         |  [tA, tK] <- tsArg, tA == D.tInt
+         |  [tA, tK] <- tsArg, tA == D.tInt || tA == D.tNat
          -> do  tK'             <- convertType kenv tK
                 let (x, t)      = prim_nextInt prims
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
 
+        -- Loop
         D.NameOpLoop D.OpLoopLoopN
          -> return $ prim_loop prims
+
 
         -- ERROR: This isn't a primitive name,
         --        or we don't have an implementation for it,
@@ -95,12 +159,28 @@ isPolytypicPrimName :: D.Name -> Bool
 isPolytypicPrimName n
  = elem n       
         [ D.NamePrimArith       D.PrimArithAdd
+        , D.NamePrimArith       D.PrimArithSub
         , D.NamePrimArith       D.PrimArithMul
+        , D.NamePrimArith       D.PrimArithDiv
+        , D.NamePrimArith       D.PrimArithMod
+        , D.NamePrimArith       D.PrimArithRem
+
+        , D.NamePrimArith       D.PrimArithEq
+        , D.NamePrimArith       D.PrimArithNeq
+        , D.NamePrimArith       D.PrimArithGt
+        , D.NamePrimArith       D.PrimArithGe
+        , D.NamePrimArith       D.PrimArithLt
+        , D.NamePrimArith       D.PrimArithLe
+
+        , D.NameOpStore         D.OpStoreNew
+        , D.NameOpStore         D.OpStoreRead
+        , D.NameOpStore         D.OpStoreWrite
         , D.NameOpStore         D.OpStoreNewVector
         , D.NameOpStore         D.OpStoreNewVectorN
         , D.NameOpStore         D.OpStoreReadVector
         , D.NameOpStore         D.OpStoreWriteVector 
         , D.NameOpStore         D.OpStoreNext
+
         , D.NameOpLoop          D.OpLoopLoopN ]
         
 

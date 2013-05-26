@@ -29,15 +29,84 @@ data Primitives
         = Primitives
         { prim_Series           :: !G.Type
         , prim_Vector           :: !G.Type
+        , prim_Ref              :: !G.Type
+
+          -- Arith Int
         , prim_addInt           :: (G.CoreExpr, G.Type)
+        , prim_subInt           :: (G.CoreExpr, G.Type)
         , prim_mulInt           :: (G.CoreExpr, G.Type)
-        , prim_newIntVector     :: (G.CoreExpr, G.Type)
-        , prim_readIntVector    :: (G.CoreExpr, G.Type)
-        , prim_writeIntVector   :: (G.CoreExpr, G.Type)
+        , prim_divInt           :: (G.CoreExpr, G.Type)
+        , prim_modInt           :: (G.CoreExpr, G.Type)
+        , prim_remInt           :: (G.CoreExpr, G.Type)
+
+          -- Eq Int
+        , prim_eqInt            :: (G.CoreExpr, G.Type)
+        , prim_neqInt           :: (G.CoreExpr, G.Type)
+        , prim_gtInt            :: (G.CoreExpr, G.Type)
+        , prim_geInt            :: (G.CoreExpr, G.Type)
+        , prim_ltInt            :: (G.CoreExpr, G.Type)
+        , prim_leInt            :: (G.CoreExpr, G.Type)
+
+          -- Ref Int
+        , prim_newRefInt        :: (G.CoreExpr, G.Type)
+        , prim_readRefInt       :: (G.CoreExpr, G.Type)
+        , prim_writeRefInt      :: (G.CoreExpr, G.Type)
+
+          -- Vector Int
+        , prim_newVectorInt     :: (G.CoreExpr, G.Type)
+        , prim_readVectorInt    :: (G.CoreExpr, G.Type)
+        , prim_writeVectorInt   :: (G.CoreExpr, G.Type)
+
+          -- Loop
         , prim_loop             :: (G.CoreExpr, G.Type)
+        , prim_guard            :: (G.CoreExpr, G.Type)
         , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
         , prim_nextInt          :: (G.CoreExpr, G.Type)
         }
+
+
+-- | Names of all the primitive types.
+--   These should match the field names of `Primitives` above.
+_primitive_types
+ =      [ "Series"
+        , "Vector"
+        , "Ref" ]
+
+
+-- | Names of all the primitive operators.
+--   These should match the field names of `Primitives` above.
+primitive_ops
+ =      -- Arith Int
+        [ "prim_addInt"
+        , "prim_subInt"
+        , "prim_mulInt"
+        , "prim_divInt"
+        , "prim_modInt"
+        , "prim_remInt"
+
+        -- Eq Int
+        , "prim_eqInt"
+        , "prim_neqInt"
+        , "prim_gtInt"
+        , "prim_geInt"
+        , "prim_ltInt"
+        , "prim_leInt"
+
+        -- Ref Int
+        , "prim_newRefInt"
+        , "prim_readRefInt"
+        , "prim_writeRefInt"
+
+        -- Vector Int
+        , "prim_newVectorInt"
+        , "prim_readVectorInt"
+        , "prim_writeVectorInt"
+
+        -- Loop
+        , "prim_loop"
+        , "prim_guard"
+        , "prim_rateOfSeries"
+        , "prim_nextInt" ]
 
 
 -------------------------------------------------------------------------------
@@ -142,37 +211,74 @@ makeTable v
                 = liftM (G.dataConFieldType dc)
                 $ find (\n -> stringOfName n ==  "prim_Vector") labels
 
-        -- Generic combinators.
-        (b1, expr_loop)                 <- makeSelector v "prim_loop"
-        (b2, expr_rateOfSeries)         <- makeSelector v "prim_rateOfSeries"
+        let Just tyRef
+                = liftM (G.dataConFieldType dc)
+                $ find (\n -> stringOfName n ==  "prim_Ref") labels
 
-        -- Int functions.
-        (b3, expr_addInt)               <- makeSelector v "prim_addInt"
-        (b4, expr_mulInt)               <- makeSelector v "prim_mulInt"
-        (b5, expr_newIntVector)         <- makeSelector v "prim_newIntVector"
-        (b6, expr_readIntVector)        <- makeSelector v "prim_readIntVector"
-        (b7, expr_writeIntVector)       <- makeSelector v "prim_writeIntVector"
-        (b8, expr_nextInt)              <- makeSelector v "prim_nextInt"
-        let bs  = [b1, b2, b3, b4, b5, b6, b7, b8]
+        -- Build table of selectors for all the operators.
+        (bs, selectors)     <- makeSelectors v primitive_ops
+        let get name
+                = let Just r    = lookup name selectors
+                  in  r
 
         let table      
                 = Primitives
                 { prim_Series           = tySeries
                 , prim_Vector           = tyVector
-                , prim_loop             = expr_loop
-                , prim_rateOfSeries     = expr_rateOfSeries
-                , prim_addInt           = expr_addInt
-                , prim_mulInt           = expr_mulInt
-                , prim_newIntVector     = expr_newIntVector
-                , prim_readIntVector    = expr_readIntVector
-                , prim_writeIntVector   = expr_writeIntVector
-                , prim_nextInt          = expr_nextInt }
+                , prim_Ref              = tyRef
+
+                -- Arith Int
+                , prim_addInt           = get "prim_addInt"
+                , prim_subInt           = get "prim_subInt"
+                , prim_mulInt           = get "prim_mulInt"
+                , prim_divInt           = get "prim_divInt"
+                , prim_modInt           = get "prim_modInt"
+                , prim_remInt           = get "prim_remInt"
+
+                -- Eq Int
+                , prim_eqInt            = get "prim_eqInt"
+                , prim_neqInt           = get "prim_neqInt"
+                , prim_gtInt            = get "prim_gtInt"
+                , prim_geInt            = get "prim_geInt"
+                , prim_ltInt            = get "prim_ltInt"
+                , prim_leInt            = get "prim_leInt"
+
+                -- Ref Int
+                , prim_newRefInt        = get "prim_newRefInt"
+                , prim_readRefInt       = get "prim_readRefInt"
+                , prim_writeRefInt      = get "prim_writeRefInt"
+
+                -- Vector Int
+                , prim_newVectorInt     = get "prim_newVectorInt"
+                , prim_readVectorInt    = get "prim_readVectorInt"
+                , prim_writeVectorInt   = get "prim_writeVectorInt"
+
+                -- Loop
+                , prim_rateOfSeries     = get "prim_rateOfSeries" 
+                , prim_loop             = get "prim_loop"
+                , prim_guard            = get "prim_guard"
+                , prim_nextInt          = get "prim_nextInt" }
 
 
         return $ Just (table, bs)
 
  | otherwise
  = return Nothing
+
+
+-------------------------------------------------------------------------------
+-- | Make the selector table.
+makeSelectors
+        :: G.Var                -- ^ Core variable bound to our primitive table.
+        -> [String]             -- ^ Names of all the primtiives.
+        -> UniqSM ([G.CoreBind], [(String, (G.CoreExpr, G.Type))])
+
+makeSelectors v strs
+ = do
+        (bs, xts)       <- liftM unzip
+                        $  mapM (makeSelector v) strs
+
+        return  $ (bs, zip strs xts)
 
 
 -------------------------------------------------------------------------------
@@ -187,14 +293,12 @@ makeSelector v strField
  , Just tc                <- G.tyConAppTyCon_maybe t
  , G.isAlgTyCon tc
  , G.DataTyCon [dc] False <- G.algTyConRhs tc
- = do   
-        -- Lookup the Name for the field we want.
-        let labels      = G.dataConFieldLabels dc
-        let Just field  = find (\n -> stringOfName n == strField) labels
-        makeSelector' dc field (G.Var v) (G.varType v)
+ , labels                 <- G.dataConFieldLabels dc
+ , Just field             <- find (\n -> stringOfName n == strField) labels
+ = makeSelector' dc field (G.Var v) (G.varType v)
 
  | otherwise
- = error "repa-plugin.Selector: malformed primitive table"
+ = error $ "repa-plugin.makeSelector: can't find primitive named " ++ strField
 
 
 makeSelector'

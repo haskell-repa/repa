@@ -25,6 +25,8 @@ data Primitives
   , prim_Vector         :: forall a.   Vector a
   , prim_Ref            :: forall a.   Ref a
 
+
+    -- Int ------------------------------------------------
     -- Arith Int
   , prim_addInt         :: Int# -> Int# -> Int#
   , prim_subInt         :: Int# -> Int# -> Int#
@@ -33,21 +35,33 @@ data Primitives
   , prim_modInt         :: Int# -> Int# -> Int#
   , prim_remInt         :: Int# -> Int# -> Int#
 
+    -- Eq Int
+  , prim_eqInt          :: Int# -> Int# -> Bool
+  , prim_neqInt         :: Int# -> Int# -> Bool
+  , prim_gtInt          :: Int# -> Int# -> Bool
+  , prim_geInt          :: Int# -> Int# -> Bool
+  , prim_ltInt          :: Int# -> Int# -> Bool
+  , prim_leInt          :: Int# -> Int# -> Bool
+
     -- Ref Int
-  , prim_newRefInt      :: World   -> (# World, Ref Int #) 
+  , prim_newRefInt      :: Int#    -> World -> (# World, Ref Int #) 
   , prim_readRefInt     :: Ref Int -> World -> (# World, Int# #)
   , prim_writeRefInt    :: Ref Int -> Int#  -> World -> World
 
     -- Vector Int
-  , prim_newIntVector   :: Int# -> World -> (# World, Vector Int #)
-  , prim_readIntVector  :: Vector Int -> Int# -> World -> (# World, Int# #)
-  , prim_writeIntVector :: Vector Int -> Int# -> Int# -> World -> World
+  , prim_newVectorInt   :: Int# -> World -> (# World, Vector Int #)
+  , prim_readVectorInt  :: Vector Int -> Int# -> World -> (# World, Int# #)
+  , prim_writeVectorInt :: Vector Int -> Int# -> Int# -> World -> World
 
     -- Loop
+  , prim_rateOfSeries   :: forall k a.  Series k a -> Int#
+
   , prim_loop           :: Int#  -> (Int# -> World -> World)
                         -> World -> World
 
-  , prim_rateOfSeries   :: forall k a.  Series k a -> Int#
+  , prim_guard          :: Ref Int -> Bool
+                        -> (Int# -> World -> World)
+                        -> World -> World
 
     -- Next
   , prim_nextInt        :: forall k
@@ -72,23 +86,46 @@ primitives
   , prim_modInt         = repa_modInt
   , prim_remInt         = repa_remInt
 
+    -- Eq Int
+  , prim_eqInt          = repa_eqInt
+  , prim_neqInt         = repa_neqInt
+  , prim_gtInt          = repa_gtInt
+  , prim_geInt          = repa_geInt
+  , prim_ltInt          = repa_ltInt
+  , prim_leInt          = repa_leInt
+
     -- Ref Int
   , prim_newRefInt      = repa_newRefInt
   , prim_readRefInt     = repa_readRefInt
   , prim_writeRefInt    = repa_writeRefInt
 
     -- Vector Int
-  , prim_newIntVector   = repa_newIntVector
-  , prim_readIntVector  = repa_readIntVector
-  , prim_writeIntVector = repa_writeIntVector
+  , prim_newVectorInt   = repa_newVectorInt
+  , prim_readVectorInt  = repa_readVectorInt
+  , prim_writeVectorInt = repa_writeVectorInt
 
     -- Loop
-  , prim_loop           = repa_loop
   , prim_rateOfSeries   = repa_rateOfSeries
+  , prim_loop           = repa_loop
+  , prim_guard          = repa_guard
+
+    -- Next
   , prim_nextInt        = repa_nextInt }
 
 
--- Primitive Arithmetic -------------------------------------------------------
+-- Utils ----------------------------------------------------------------------
+unwrapIO'  :: IO a -> State# RealWorld -> (# State# RealWorld, a #)
+unwrapIO' (IO f) = f
+{-# INLINE unwrapIO' #-}
+
+unwrapIO_  :: IO a -> State# RealWorld -> State# RealWorld
+unwrapIO_ (IO f) world 
+ = case f world of
+        (# world', _ #) -> world'
+{-# INLINE unwrapIO_ #-}
+
+
+-- Arith Int ------------------------------------------------------------------
 repa_divInt i1 i2
  = case div (I# i1) (I# i2) of
         I# i3   -> i3
@@ -105,10 +142,30 @@ repa_remInt i1 i2
 {-# INLINE repa_remInt #-}
 
 
--- Ref Int ---------------------------------------------------------------
+-- Eq Int ---------------------------------------------------------------------
+repa_eqInt i1 i2        = I# i1 == I# i2
+{-# INLINE repa_eqInt #-}
+
+repa_neqInt i1 i2       = I# i1 /= I# i2
+{-# INLINE repa_neqInt #-}
+
+repa_gtInt i1 i2        = I# i1 >  I# i2
+{-# INLINE repa_gtInt #-}
+
+repa_geInt i1 i2        = I# i1 >= I# i2
+{-# INLINE repa_geInt #-}
+
+repa_ltInt i1 i2        = I# i1 <  I# i2
+{-# INLINE repa_ltInt #-}
+
+repa_leInt i1 i2        = I# i1 <= I# i2
+{-# INLINE repa_leInt #-}
+
+
+-- Ref Int --------------------------------------------------------------------
 repa_newRefInt          :: Int# -> World -> (# World, Ref Int #)
 repa_newRefInt x
-        = unwrapIO' (Ref.new x)
+        = unwrapIO' (Ref.new (I# x))
 {-# INLINE repa_newRefInt #-}
 
 
@@ -122,58 +179,36 @@ repa_readRefInt ref
 
 
 repa_writeRefInt        :: Ref Int -> Int# -> World -> World
+repa_writeRefInt ref val
+        = unwrapIO_ (Ref.write ref (I# val))
+{-# INLINE repa_writeRefInt #-}
 
 
--- Vector Int ------------------------------------------------------------
-repa_newIntVector   
-        :: Int# 
-        -> State# RealWorld -> (# State# RealWorld, Vector Int #)
-
-repa_newIntVector len            
+-- Vector Int -----------------------------------------------------------------
+repa_newVectorInt       :: Int#  -> World -> (# World, Vector Int #)
+repa_newVectorInt len            
         = unwrapIO' (V.new len)
-{-# INLINE repa_newIntVector #-}
+{-# INLINE repa_newVectorInt #-}
 
 
-repa_readIntVector  
-        :: Vector Int -> Int# 
-        -> State# RealWorld -> (# State# RealWorld, Int# #)
-
-repa_readIntVector vec ix
+repa_readVectorInt      :: Vector Int -> Int# -> World -> (# World, Int# #)
+repa_readVectorInt vec ix
  = case V.read vec ix of
         IO f -> \world 
              -> case f world of
                         (# world', I# i #) -> (# world', i #)
-{-# INLINE repa_readIntVector #-}
+{-# INLINE repa_readVectorInt #-}
 
 
-repa_writeIntVector
-        :: Vector Int -> Int# -> Int#
-        -> State# RealWorld -> State# RealWorld
-
-repa_writeIntVector vec ix val   
+repa_writeVectorInt     :: Vector Int -> Int# -> Int# -> World -> World
+repa_writeVectorInt vec ix val   
         = unwrapIO_ (V.write vec ix (I# val))
-{-# INLINE repa_writeIntVector #-}
-
-
-unwrapIO'  :: IO a -> State# RealWorld -> (# State# RealWorld, a #)
-unwrapIO' (IO f) = f
-{-# INLINE unwrapIO' #-}
-
-unwrapIO_  :: IO a -> State# RealWorld -> State# RealWorld
-unwrapIO_ (IO f) world 
- = case f world of
-        (# world', _ #) -> world'
-{-# INLINE unwrapIO_ #-}
+{-# INLINE repa_writeVectorInt #-}
 
 
 -- Loop combinators -----------------------------------------------------------
 -- | Primitive stateful loop combinator.
-repa_loop 
-        :: Int# 
-        -> (Int# -> State# RealWorld -> State# RealWorld)
-        -> State# RealWorld 
-        -> State# RealWorld
-
+repa_loop       :: Int#  -> (Int# -> World -> World) -> World -> World
 repa_loop len worker world0
  = go 0# world0
  where  
@@ -186,6 +221,22 @@ repa_loop len worker world0
 {-# INLINE repa_loop #-}
 
 
+-- | Guard an inner context with a flag.
+repa_guard      :: Ref Int -> Bool
+                -> (Int# -> World -> World)
+                -> World -> World
+
+repa_guard ref flag worker world0
+ | False                <- flag
+ = world0
+
+ | (# world1, ix #)     <- repa_readRefInt  ref world0
+ , world2               <- repa_writeRefInt ref (ix +# 1#) world1
+ , world3               <- worker ix world2
+ = world3
+{-# INLINE repa_guard #-}
+
+
 -- Series ---------------------------------------------------------------------
 -- | Get the Rate / Length of a series.
 repa_rateOfSeries :: Series k a -> Int#
@@ -194,11 +245,7 @@ repa_rateOfSeries s = seriesLength s
 
 
 -- | Get the next element of a series.
-repa_nextInt 
-        :: Series k Int   
-        -> Int# 
-        -> State# RealWorld -> (# State# RealWorld, Int# #)
-
+repa_nextInt    :: Series k Int -> Int# -> World -> (# World, Int# #)
 repa_nextInt s ix world
  = case S.index s ix of
         I# i    -> (# world, i #)
