@@ -300,11 +300,18 @@ convertExp kenv tenv xx
 
         -- Non-recursive let bindings
         D.XLet _ (D.LLet _ b x1) x2
-         -> do  (xScrut', _)      <- convertExp kenv tenv x1
+         -> do  (xScrut', tScrut')<- convertExp kenv tenv x1
                 (tenv',  vBind')  <- bindVarX   kenv tenv b
+
+                -- When using bindVarX, the actual type (tScrut) may be different
+                -- from the desired type (type of vBind).
+                -- Use unwrapResult to box or unbox xScrut as necessary,
+                -- based on the types.
+                xScrut''          <- unwrapResult (G.varType vBind') tScrut' xScrut'
+
                 (x2',    t2')     <- convertExp kenv tenv' x2
 
-                return  ( G.Case xScrut' vBind' t2'
+                return  ( G.Case xScrut'' vBind' t2'
                                 [ ( G.DEFAULT, [], x2') ]
                         , t2')
 
