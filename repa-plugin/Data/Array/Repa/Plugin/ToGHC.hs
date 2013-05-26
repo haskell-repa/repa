@@ -279,12 +279,12 @@ convertExp kenv tenv xx
         -- Value/Value applications.
         D.XApp _ x1 x2
          -> do  (x1', t1')      <- convertExp kenv tenv x1
-                (x2', _)        <- convertExp kenv tenv x2
+                (x2', t2')      <- convertExp kenv tenv x2
 
-                let tResult 
+                let (tArg, tResult)
                      = case t1' of
-                        G.FunTy    _ t12'  
-                          -> t12'
+                        G.FunTy    t11' t12'  
+                          -> (t11', t12')
 
                         _ -> error 
                            $ renderIndent $ vcat
@@ -293,7 +293,9 @@ convertExp kenv tenv xx
                                 , ppr x1
                                 , ppr x2 ]
 
-                return  ( G.App x1' x2'
+                x2'' <- unwrapResult tArg t2' x2'
+
+                return  ( G.App x1' x2''
                         , tResult)
 
         -- Non-recursive let bindings
