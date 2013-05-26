@@ -15,7 +15,6 @@ import qualified DDC.Core.Flow.Transform.Prep           as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
-import qualified DDC.Core.Flow.Transform.Storage        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
 import qualified DDC.Core.Flow.Transform.Thread         as Flow
 
@@ -172,11 +171,12 @@ passLower name guts0
 
 
         -- Storage ---------------------------------------
-        -- Assign mutable variables to array storage.
-        let mm_storage  = Flow.storageModule mm_concrete
+        -- -- Assign mutable variables to array storage.
+        -- let mm_storage  = Flow.storageModule mm_concrete
 
-        writeFile ("dump." ++ name ++ ".08-dc-storage.dcf")
-         $ D.renderIndent $ D.ppr mm_storage
+        -- writeFile ("dump." ++ name ++ ".08-dc-storage.dcf")
+        --  $ D.renderIndent $ D.ppr mm_storage
+        let mm_storage  = mm_concrete
 
 
         -- Check -----------------------------------------
