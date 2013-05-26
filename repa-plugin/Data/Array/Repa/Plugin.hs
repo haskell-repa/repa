@@ -23,7 +23,6 @@ install _ todos
                 addOpt "-dsuppress-uniques"
                 addOpt "-dppr-case-as-let"
                 addOpt "-dppr-cols200"
-                addOpt "-dcore-lint"
 
                 initStaticOpts
                 return (return ())
