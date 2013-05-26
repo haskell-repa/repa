@@ -224,6 +224,12 @@ matchPrimArith str
  | isPrefixOf "eqInt_" str
  = Just (NamePrimArith PrimArithEq,  tInt, typePrimArith PrimArithEq)
 
+ | isPrefixOf "gtInt_" str
+ = Just (NamePrimArith PrimArithGt,  tInt, typePrimArith PrimArithGt)
+
+ | isPrefixOf "ltInt_" str
+ = Just (NamePrimArith PrimArithLt,  tInt, typePrimArith PrimArithLt)
+
  | otherwise
  = Nothing
 

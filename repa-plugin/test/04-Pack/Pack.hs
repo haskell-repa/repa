@@ -17,7 +17,7 @@ main
        
         print $ R.runSeries v1 lower_even
         print $ R.runSeries v1 lower_even_sum
---        print $ R.runSeries v1 lower_even_sum_2
+        print $ R.runSeries v1 lower_even_sum_2
 
 
 -- | Return just the even values.
@@ -35,11 +35,11 @@ lower_even_sum s1
  = let  total   = R.fold (+) 0 s1
         flags   = R.map (\x -> x `mod` 2 == 0) s1
    in   R.mkSel1 flags
-         (\sel ->  let  sPositive       = R.pack sel s1
-                        totalPositive   = R.fold (+) 0 sPositive
-                   in   ( S.toVector sPositive
+         (\sel ->  let  sEven       = R.pack sel s1
+                        totalEven   = R.fold (+) 0 sEven
+                   in   ( S.toVector sEven
                         , total
-                        , totalPositive))
+                        , totalEven))
 
 
 -- | As above, but making the total syntactically inside
@@ -47,7 +47,22 @@ lower_even_sum s1
 lower_even_sum_2 :: Series k Int -> (Vector Int, Int, Int)
 lower_even_sum_2 s1
  = R.mkSel1 (R.map (\x -> x `mod` 2 == 0) s1)
-   (\sel -> let  sPositive       = R.pack sel s1
-            in  ( S.toVector sPositive
+   (\sel -> let  sEven  = R.pack sel s1
+            in  ( S.toVector sEven
                 , R.fold (+) 0 s1
-                , R.fold (+) 0 sPositive))
+                , R.fold (+) 0 sEven))
+
+
+-- | Get the vector of positive values,
+--   as well as the maximual element.
+--lower_maxx :: Series k Int -> (Vector Int, Int)
+--lower_maxx s1
+-- = R.mkSel1 (R.map (\x -> x > 0) s1)            -- TODO: if this is not eta-expanded it breaks
+--   (\sel -> let sEven   = R.pack sel s1
+--            in  ( S.toVector sEven
+--                , R.fold maxx 0 sEven))         -- TODO: fold not detected, prob due to maxx
+
+--maxx :: Int -> Int -> Int
+--maxx x y
+-- = if x > y then x else y
+--{-# INLINE [0] maxx #-}
