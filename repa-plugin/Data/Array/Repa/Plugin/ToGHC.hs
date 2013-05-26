@@ -151,9 +151,14 @@ convertExp kenv tenv xx
         --  Names of plain variables should be in the name map, and refer
         --  other top-level bindings, or dummy variables that we've
         --  introduced locally in this function.
+        --  If they're not in envVars, they may be imported
+        --  functions in envNames.
         D.XVar _ (D.UName dn)
          -> case lookup dn (envVars tenv) of
                 Nothing 
+                 | Just (GhcNameVar gv) <- Map.lookup dn (envNames tenv)
+                 -> return (G.Var gv, G.varType gv)
+                Nothing
                  -> error $ unlines 
                           [ "repa-plugin.ToGHC.convertExp: variable " 
                                      ++ show dn ++ " not in scope"
