@@ -27,6 +27,7 @@ import qualified DDC.Core.Transform.Forward             as Core
 import qualified DDC.Core.Transform.Thread              as Core
 import qualified DDC.Core.Transform.Reannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
+import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
@@ -87,6 +88,10 @@ passLower name guts0
 
 
         -- Norm -------------------------------------------
+        -- Eta expand everything so we have names for parameters.
+        let etaConfig   = Eta.configZero { Eta.configExpand = True }
+        let mm_eta      = Core.result $ Eta.etaModule etaConfig Flow.profile mm_detect
+
         -- A-normalize module for the Prep transform.
         let mkNamT   = Core.makeNamifier Flow.freshT
         let mkNamX   = Core.makeNamifier Flow.freshX
@@ -95,7 +100,7 @@ passLower name guts0
         --  for flow combinators. This ensures all the flow combinators
         --  and workers are bound at the top-level of the function.
         let snipConfig  = Snip.configZero { Snip.configSnipLetBody = True }
-        let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_detect
+        let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_eta
         let mm_snip     = evalState (Core.namifyUnique mkNamT mkNamX mm_snip') 0
 
         writeFile ("dump." ++ name ++ ".04-dc-norm.dcf")
@@ -106,12 +111,10 @@ passLower name guts0
         --  2. Eta-expand worker functions passed to flow combinators.
         --     We also get back a map containing the types of parameters
         --     to worker functions.
-        let (mm_prepanon, workerNameArgs) 
+        --  NOTE: We're not using the module result of prep now that 
+        --        we have real eta-expansion.
+        let (_, workerNameArgs) 
                         = Flow.prepModule mm_snip
-
-        writeFile ("dump." ++ name ++ ".05-dc-prep.1-prepanon.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_prepanon)
-
 
         --  3. Move worker functions forward so they are directly
         --     applied to flow combinators.
@@ -123,10 +126,11 @@ passLower name guts0
                 _ -> Core.FloatAllow
 
         let result_forward      = Core.forwardModule Flow.profile 
-                                        isFloatable mm_prepanon
+                                        isFloatable mm_snip
+        
         let mm_forward          = Core.result result_forward
 
-        writeFile ("dump." ++ name ++ ".05-dc-prep.2-forward.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.1-forward.dcf")
          $ D.render D.RenderIndent (D.ppr mm_forward)
 
 
@@ -134,13 +138,13 @@ passLower name guts0
         --     The lowering pass needs them all to have real names.
         let mm_namify   = evalState (Core.namifyUnique mkNamT mkNamX mm_forward) 0
 
-        writeFile ("dump." ++ name ++ ".05-dc-prep.3-namify.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.2-namify.dcf")
          $ D.render D.RenderIndent (D.ppr mm_namify)
 
         --  5. Type check add type annots on all binders.
         let mm_prep     = checkFlowModule_ mm_namify
 
-        writeFile ("dump." ++ name ++ ".05-dc-prep.4-check.dcf")
+        writeFile ("dump." ++ name ++ ".05-dc-prep.3-check.dcf")
          $ D.renderIndent (D.ppr mm_prep)
 
 
