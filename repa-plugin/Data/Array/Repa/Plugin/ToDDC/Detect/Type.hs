@@ -175,6 +175,19 @@ instance Detect Type where
 
          _ -> error "repa-plugin.detect no match"
 
+  -- Convert all kindy things to kData
+  | TCon (TyConBound (UName n) _) <- tt
+  , Just _       <- matchPrim "*_" n
+  = do  return $ TCon (TyConKind KiConData)
+  | TCon (TyConBound (UName n) _) <- tt
+  , Just _       <- matchPrim "#_" n
+  = do  return $ TCon (TyConKind KiConData)
+  | TCon (TyConBound (UName n) _) <- tt
+  , Just _       <- matchPrim "Constraint_" n
+  = do  return $ TCon (TyConKind KiConData)
+        
+  -- makePrim g' (NamePrimTyCon (PrimTyConFloat 64))     kData
+
   -- Boilerplate traversal.
   | otherwise
   = case tt of

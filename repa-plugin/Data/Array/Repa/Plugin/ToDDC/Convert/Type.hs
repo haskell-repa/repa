@@ -1,7 +1,8 @@
 
 module Data.Array.Repa.Plugin.ToDDC.Convert.Type
         ( convertVarType
-        , convertType)
+        , convertType
+        , convertKind)
 where
 import Data.Array.Repa.Plugin.ToDDC.Convert.Base
 import Data.Array.Repa.Plugin.ToDDC.Convert.Var
@@ -74,3 +75,42 @@ convertTyCon tc
                 return  $ D.TyConBound
                                 (D.UName (FatName (GhcNameTyCon tc) name'))
                                 (D.kData)                       -- TODO: WRONG
+
+
+-- Kind -----------------------------------------------------------------------
+-- | Convert a kind: particularly function arrows are changed to kind arrows.
+convertKind :: G.Type -> Either Fail (D.Type FatName)
+convertKind tt
+ = case tt of
+        G.TyVarTy v
+         -> do  v'      <- convertFatName v
+                return  $ D.TVar (D.UName v')
+
+        G.AppTy t1 t2
+         -> do  t1'     <- convertKind t1
+                t2'     <- convertKind t2
+                return  $ D.TApp t1' t2'
+
+        G.TyConApp tc ts
+         -> do  tc'     <- convertTyCon tc
+                ts'     <- mapM convertKind ts
+                return  $ D.tApps (D.TCon tc') ts'
+
+        G.FunTy t1 t2
+         -> do  t1'     <- convertKind t1
+                t2'     <- convertKind t2
+                return  $ D.kFun t1' t2'
+
+        G.ForAllTy v t
+         -> do  v'      <- convertFatName v
+                t'      <- convertKind t
+                return  $ D.TForall (D.BName v' D.kData) t'
+
+        G.LitTy (G.NumTyLit _) 
+         -> error "repa-plugin.convertKind: numeric type literals not handled."
+
+        G.LitTy tyLit@(G.StrTyLit fs)
+         ->     return  $ D.TVar  (D.UName (FatName (GhcNameTyLit tyLit)
+                                                    (D.NameCon (G.unpackFS fs))))
+
+

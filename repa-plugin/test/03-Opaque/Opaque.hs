@@ -20,11 +20,17 @@ f_opaque x = x + 1
 main
  = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
         print $ R.runSeries v1 lower_map
+        print $ R.runSeries v1 lower_map_ext
 
 
--- Fold a series while mapping across it.
---  The source elements are only read from memory once.
+-- Map with the opaque function defined in this module
 lower_map :: R.Series k Int -> (Vector Int)
 lower_map s
  = S.toVector (R.map f_opaque s)
+
+
+-- Map with an opaque function defined in another module
+lower_map_ext :: R.Series k Int -> (Vector Int)
+lower_map_ext s
+ = S.toVector (R.map ([20..] !!) s)
 

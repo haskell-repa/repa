@@ -34,13 +34,14 @@ detectModule mm
 instance Detect (Module a) where
  detect mm
   = do  body'   <- detect     (moduleBody mm)
-        imports <- detectMap  (moduleImportTypes mm)
+        importK <- detectMap  (moduleImportKinds mm)
+        importT <- detectMap  (moduleImportTypes mm)
         return  $ ModuleCore
                 { moduleName            = moduleName mm
                 , moduleExportKinds     = Map.empty
                 , moduleExportTypes     = Map.empty
-                , moduleImportKinds     = Map.empty
-                , moduleImportTypes     = imports
+                , moduleImportKinds     = importK
+                , moduleImportTypes     = importT
                 , moduleBody            = body' }
 
 -- Convert the FatNames of an import map

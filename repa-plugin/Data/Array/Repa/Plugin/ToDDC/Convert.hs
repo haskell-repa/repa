@@ -9,6 +9,7 @@ import Data.Array.Repa.Plugin.FatName
 import Control.Monad
 import Data.Either
 import Data.List
+import           Data.Map                 (Map)
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
@@ -19,8 +20,11 @@ import qualified DDC.Core.Flow           as D
 import qualified DDC.Core.Collect        as D
 import qualified DDC.Type.Env            as D
 
-import qualified HscTypes               as G
 import qualified CoreSyn                as G
+import qualified HscTypes               as G
+import qualified TyCon                  as G
+import qualified Type                   as G
+import qualified Var                    as G
 
 
 -------------------------------------------------------------------------------
@@ -38,42 +42,57 @@ convertModGuts
         -> (D.Module () FatName, [Fail])
 
 convertModGuts guts
- = let  (bnds', failtys)  
+ = let  (bnds', fails)  
                 = convertTopBinds $ G.mg_binds guts
         body    = D.xLets () bnds' (D.xUnit ())
 
-        -- Grab the types of the failures, add them to the imports
-        (fails, failbinds)
-                = unzip failtys
-        insertImport m (n,t)
-                = Map.insert n (D.QualName (D.ModuleName []) n, t) m
-        importT
-                = foldl insertImport Map.empty
-                $ concat failbinds
-        -- Filter them to only the ones used
-        free    = D.freeX D.empty body
-        importT'
-                = Map.filterWithKey (\k _ -> Set.member (D.UName k) free)
-                  importT
-        
-        -- TODO Then find the other free variables and find their types...
+        -- Find the free variables in the module body
+        freeX   = D.freeX D.empty body
+        -- And add them all to the import types
+        importT = foldl (insertImport convertType) Map.empty
+                $ Set.toList freeX
+
+        -- Then find the type constructors mentioned in the imports
+        freeT   = Set.unions (map (D.supportTyCon . D.support D.empty D.empty . snd . snd) $ Map.toList importT)
+        -- And add them to the import kinds
+        importK = foldl (insertImport convertKind) Map.empty
+                $ Set.toList freeT
 
         mm'     = D.ModuleCore
                 { D.moduleName          = D.ModuleName ["Flow"]
                 , D.moduleExportKinds   = Map.empty
                 , D.moduleExportTypes   = Map.empty
-                , D.moduleImportKinds   = Map.empty
-                , D.moduleImportTypes   = importT'
+                , D.moduleImportKinds   = importK
+                , D.moduleImportTypes   = importT
                 , D.moduleBody          = body }
 
    in   (mm', fails)
+
+
+-- | Convert a type/kind and add it to the import map, if conversion succeeds.
+insertImport :: (G.Type -> Either Fail (D.Type FatName))
+             -> Map FatName (D.QualName FatName, D.Type FatName)
+             -> D.Bound FatName
+             -> Map FatName (D.QualName FatName, D.Type FatName)
+insertImport c m bound
+ | D.UName n@(FatName ghc _) <- bound
+ , GhcNameVar v              <- ghc
+ = ins n (c $ G.varType v)
+ | D.UName n@(FatName ghc _) <- bound
+ , GhcNameTyCon tc           <- ghc
+ = ins n (c $ G.tyConKind tc)
+ | otherwise
+ = m
+ where
+  ins _ (Left _)  = m
+  ins n (Right t) = Map.insert n (D.QualName (D.ModuleName []) n, t) m
 
 
 -- Bindings -------------------------------------------------------------------
 -- | Convert top-level bindings.
 convertTopBinds 
         :: [G.CoreBind] 
-        -> ([D.Lets () FatName], [(Fail, [(FatName, D.Type FatName)])])
+        -> ([D.Lets () FatName], [Fail])
 
 convertTopBinds bnds
  = let  results         = map convertTopBind bnds
@@ -84,29 +103,19 @@ convertTopBinds bnds
 -- | Convert a possibly recursive top-level binding.
 convertTopBind 
         :: G.CoreBind 
-        -> Either (Fail, [(FatName, D.Type FatName)]) (D.Lets () FatName)
+        -> Either Fail (D.Lets () FatName)
 
 convertTopBind bnd
  = case bnd of
         G.NonRec b x      
          -> case convertBinding (b, x) of
-                Left fails      -> Left ( FailInBinding b fails
-                                        , bindingFailureInfo b)
+                Left fails      -> Left   $ FailInBinding b fails
                 Right (b', x')  -> return $ D.LLet D.LetStrict b' x'
 
         G.Rec bxs
          -> let bs   = map fst bxs
-            in  Left ( FailNoRecursion bs
-                     , concatMap bindingFailureInfo bs)
+            in  Left $ FailNoRecursion bs
 
-bindingFailureInfo :: G.CoreBndr -> [(FatName, D.Type FatName)]
-bindingFailureInfo b
- = case (convertFatName b, convertVarType b) of
-   (Right n, Right t)
-    -> [(n,t)]
-   -- Failed
-   _
-    -> []
 
 -- | Convert a single binding.
 --   TODO: select the bindings we care about more generally.
