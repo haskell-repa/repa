@@ -19,6 +19,7 @@ main
         print $ R.runSeries v1 lower_even_sum
         print $ R.runSeries v1 lower_even_sum_2
         print $ R.runSeries v1 lower_maxx
+        -- print $ R.runSeries v1 (lower_partial 5)     -- BROKEN
 
 
 -- | Return just the even values.
@@ -68,3 +69,11 @@ maxx x y
  = if x > y then x else y
 {-# INLINE [0] maxx #-}
 
+
+-- | Get all the values more than the given limit,
+--   tests out passing non-series values to fusable function.
+lower_partial :: Int -> Series k Int -> Vector Int              
+        -- TODO: broken, wrapper uses Int# instead of Int for first arg.
+lower_partial limit s1
+ = R.mkSel1 (R.map (\x -> x > limit) s1)
+   (\sel -> S.toVector (R.pack sel s1))

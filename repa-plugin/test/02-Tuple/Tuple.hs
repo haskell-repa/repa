@@ -43,11 +43,3 @@ lower_fold_map :: R.Series k Int -> (Int, Vector Int)
 lower_fold_map s
  = ( R.fold (+) 0 s
    , S.toVector (R.map  (\x -> x * 2) s))
-
-
--- Fold a series of tuples.
--- TODO: this doesn't convert to DDC due to tuples
--- lower_fold_tuples :: R.Series k (Int, Int) -> (Int, Int)
--- lower_fold_tuples s
- -- = R.fold (\(x1, y1) (x2, y2) -> (x1 + x2, y1 + y2)) (0, 0) s
-
