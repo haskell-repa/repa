@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.2.3.1
+Version:             3.2.3.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -187,7 +187,7 @@ Executable repa-unit-test
   Build-depends: 
         base                 == 4.*,
         repa                 == 3.2.*,
-        QuickCheck           >= 2.3 && < 2.6
+        QuickCheck           >= 2.3 && < 2.7
 
   Main-is: examples/UnitTesting/UnitTesting.hs
   hs-source-dirs: examples/UnitTesting .

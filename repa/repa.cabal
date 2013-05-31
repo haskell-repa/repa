@@ -1,5 +1,5 @@
 Name:                repa
-Version:             3.2.3.2
+Version:             3.2.3.3
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -26,7 +26,7 @@ Library
         vector               == 0.10.*,
         bytestring           == 0.10.*,
         template-haskell     == 2.8.*,
-        QuickCheck           >= 2.3 && < 2.6
+        QuickCheck           >= 2.3 && < 2.7
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
