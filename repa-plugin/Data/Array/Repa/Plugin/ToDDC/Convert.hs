@@ -21,6 +21,7 @@ import qualified DDC.Core.Collect        as D
 import qualified DDC.Type.Env            as D
 
 import qualified CoreSyn                as G
+import qualified DataCon                as G
 import qualified HscTypes               as G
 import qualified TyCon                  as G
 import qualified Type                   as G
@@ -174,11 +175,24 @@ convertExpr xx
                                                 (D.BName n' t') x1') x2'
 
         -- Cannot convert recursive bindings.
-        G.Let (G.Rec bxs) _
-                        -> Left (FailNoRecursion $ map fst bxs)
+        G.Let (G.Rec bxs) x
+         -> do  ns'     <- mapM (convertFatName.fst) bxs
+                ts'     <- mapM (convertVarType.fst) bxs
+                xs'     <- mapM (convertExpr   .snd) bxs
+                let bxs' = zip (zipWith D.BName ns' ts') xs'
+                x'      <- convertExpr x
+                return  $  D.XLet () (D.LRec bxs') x'
 
-        -- We don't handle case expressions yet.
-        G.Case{}        -> Left FailUnhandledCase
+        -- Simple case expressions with just DataAlts
+        G.Case x b _tres alts
+         -> do  b'      <- convertFatName b
+                t'      <- convertVarType b
+                x'      <- convertExpr    x
+                alts'   <- mapM convertAlt alts
+
+                -- Case
+                return $ D.XLet  () (D.LLet D.LetStrict (D.BName b' t') x')
+                       $ D.XCase () (D.XVar () (D.UName b')) alts'
 
         -- We can't represent type casts/
         G.Cast{}        -> Left FailNoCasts
@@ -192,3 +206,23 @@ convertExpr xx
         -- Cannot convert coercions.
         G.Coercion{}    -> Left FailNoCoercions
 
+
+-- Convert a case alternative
+convertAlt :: G.Alt G.Var -> Either Fail (D.Alt () FatName)
+convertAlt (con, bs, x)
+ = do   ns' <- mapM convertFatName bs
+        ts' <- mapM convertVarType bs
+        x'  <-      convertExpr    x
+        case con of
+         G.DEFAULT -> -- Assume bs == []?
+          return $ D.AAlt D.PDefault x'
+         G.DataAlt dc
+          -> do nm <- convertName $ G.dataConName    dc
+                ty <- convertType $ G.dataConRepType dc
+                let binds = zipWith D.BName ns' ts'
+                let fat   = FatName (GhcNameTyCon $ G.promoteDataCon dc) nm
+                -- It must be algebraic, since we are casing on it.
+                let pat   = D.PData (D.mkDaConAlg fat ty) binds
+                return $ D.AAlt pat x'
+         G.LitAlt _ ->
+          Left FailUnhandledCase

@@ -71,6 +71,16 @@ instance Detect DaConName where
         DaConUnit       
          -> return DaConUnit
 
+        -- Booleans
+        DaConNamed (FatName g d@(NameCon v))
+         | isPrefixOf "True_" v
+         -> do  collect d g
+                return $ DaConNamed (NameLitBool True)
+        DaConNamed (FatName g d@(NameCon v))
+         | isPrefixOf "False_" v
+         -> do  collect d g
+                return $ DaConNamed (NameLitBool False)
+
         DaConNamed (FatName g d)
          -> do  collect d g
                 return $ DaConNamed d
@@ -193,7 +203,7 @@ instance Detect (Exp a) where
         XLet  a lts x   -> liftM3 XLet  (return a) (detect lts) (detect x)
         XType t         -> liftM  XType (detect t)
 
-        XCase{}         -> error "repa-plugin.detect: XCase not handled"
+        XCase a x alts  -> liftM3 XCase (return a) (detect x)   (mapM detect alts)
         XCast{}         -> error "repa-plugin.detect: XCast not handled"
         XWitness{}      -> error "repa-plugin.detect: XWitness not handled"
 
@@ -252,4 +262,18 @@ instance Detect (Lets a) where
 
         LLetRegions{}   -> error "repa-plugin.detect: LLetRegions not handled"
         LWithRegion{}   -> error "repa-plugin.detect: LWithRegions not handled"
+
+
+--- Alt  ----------------------------------------------------------------------
+instance Detect (Alt a) where
+ detect (AAlt p x)
+  = liftM2 AAlt (detect p) (detect x)
+
+instance Detect Pat where
+ detect p
+  = case p of
+        PDefault
+         -> return PDefault
+        PData dc bs
+         -> liftM2 PData (detect dc) (mapM detect bs)
 

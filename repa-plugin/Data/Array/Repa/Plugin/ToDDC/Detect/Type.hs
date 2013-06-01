@@ -37,6 +37,9 @@ instance Detect Bound where
          | Just g'      <- matchPrim "Int_" n
          -> makePrim g' (NamePrimTyCon PrimTyConInt)            kData
 
+         | Just g'      <- matchPrim "Int#_" n
+         -> makePrim g' (NamePrimTyCon PrimTyConInt)            kData
+
          | Just g'      <- matchPrim "Word8_" n
          -> makePrim g' (NamePrimTyCon (PrimTyConWord 8))       kData
 
