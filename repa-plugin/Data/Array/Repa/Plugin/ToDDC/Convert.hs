@@ -114,8 +114,12 @@ convertTopBind bnd
                 Right (b', x')  -> return $ D.LLet D.LetStrict b' x'
 
         G.Rec bxs
-         -> let bs   = map fst bxs
-            in  Left $ FailNoRecursion bs
+         -> do  ns'     <- mapM (convertFatName.fst) bxs
+                ts'     <- mapM (convertVarType.fst) bxs
+                xs'     <- mapM (convertExpr   .snd) bxs
+                let bxs' = zip (zipWith D.BName ns' ts') xs'
+                return  $  D.LRec bxs'
+
 
 
 -- | Convert a single binding.
@@ -174,7 +178,6 @@ convertExpr xx
                 return  $  D.XLet () (D.LLet D.LetStrict 
                                                 (D.BName n' t') x1') x2'
 
-        -- Cannot convert recursive bindings.
         G.Let (G.Rec bxs) x
          -> do  ns'     <- mapM (convertFatName.fst) bxs
                 ts'     <- mapM (convertVarType.fst) bxs
