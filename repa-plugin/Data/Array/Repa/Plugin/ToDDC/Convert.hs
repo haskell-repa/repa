@@ -198,7 +198,9 @@ convertExpr xx
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
 
         -- We can't represent type casts/
-        G.Cast{}        -> Left FailNoCasts
+        -- Actually, we require these for series of tuples.
+        -- HACK but it may do for now
+        G.Cast x _      -> convertExpr x -- Left FailNoCasts
 
         -- Just ditch tick nodes, we probably don't need them.
         G.Tick _ x      -> convertExpr x
