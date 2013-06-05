@@ -7,7 +7,9 @@ import Data.Array.Repa.Plugin.ToDDC.Detect.Base
 import Data.Array.Repa.Plugin.ToDDC.Detect.Type  ()
 
 import DDC.Core.Module
+import DDC.Core.Collect
 import DDC.Core.Compounds
+import DDC.Type.Env
 import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
@@ -17,6 +19,7 @@ import Control.Monad.State.Strict
 
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
+import qualified Data.Set       as Set
 import Data.List
 
 
@@ -36,12 +39,20 @@ instance Detect (Module a) where
   = do  body'   <- detect     (moduleBody mm)
         importK <- detectMap  (moduleImportKinds mm)
         importT <- detectMap  (moduleImportTypes mm)
+
+        -- Limit the import types to free vars in body:
+        -- This cleans up the dump a little, but I'm actually doing it because I was getting 
+        -- "$fUnbox(,) :: ... Vector# Vector# (Tuple2# a_aPj b_aPk) -> ..."
+        -- which is a kind error.
+        let free     = freeX empty body'
+            importT' = Map.filterWithKey (\k _ -> Set.member (UName k) free) importT
+
         return  $ ModuleCore
                 { moduleName            = moduleName mm
                 , moduleExportKinds     = Map.empty
                 , moduleExportTypes     = Map.empty
                 , moduleImportKinds     = importK
-                , moduleImportTypes     = importT
+                , moduleImportTypes     = importT'
                 , moduleBody            = body' }
 
 -- Convert the FatNames of an import map
