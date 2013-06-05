@@ -92,6 +92,13 @@ instance Detect DaConName where
          -> do  collect d g
                 return $ DaConNamed (NameLitBool False)
 
+        -- HACK Why is this NameVar, and the booleans above NameCon?
+        -- I really don't know.
+        DaConNamed (FatName g d@(NameVar v))
+         | isPrefixOf "(,)_" v
+         -> do  collect d g
+                return $ DaConNamed (NameDaConFlow (DaConFlowTuple 2))
+
         DaConNamed (FatName g d)
          -> do  collect d g
                 return $ DaConNamed d
