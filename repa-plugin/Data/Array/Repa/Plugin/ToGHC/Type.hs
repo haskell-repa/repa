@@ -217,6 +217,13 @@ convertBoxed :: D.Type D.Name -> Maybe G.Type
 convertBoxed t
  | t == D.tNat          = Just G.intTy
  | t == D.tInt          = Just G.intTy
+
+ | Just (tc,args) <- D.takeTyConApps t
+ , D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple n)) _) _
+                  <- tc
+ , Just args'     <- mapM convertBoxed args
+ = Just $ G.mkTyConApp (G.tupleTyCon G.BoxedTuple n) args'
+
  | otherwise            = Nothing
 
 
