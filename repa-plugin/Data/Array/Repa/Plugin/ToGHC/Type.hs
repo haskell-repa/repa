@@ -124,15 +124,16 @@ convertType kenv tt
         -- Applied type constructors.
         D.TApp{}
          | Just (tc, tsArgs)      <- D.takeTyConApps tt
-         -> do  tsArgs' <- mapM (convertType kenv) tsArgs
+         -> do  tsArgs'   <- mapM (convertType kenv) tsArgs
+                tsArgs_b' <- mapM (convertType_boxed kenv) tsArgs
                 return $ convertTyConApp 
                                 (envPrimitives kenv) (envNames kenv) 
-                                tc tsArgs'
+                                tc tsArgs' tsArgs_b'
 
         D.TCon tc
          ->     return $ convertTyConApp 
                                 (envPrimitives kenv) (envNames kenv) 
-                                tc []
+                                tc [] []
 
         D.TVar (D.UName n)
          -> case lookup n (envVars kenv) of
@@ -154,12 +155,18 @@ convertType kenv tt
 --
 --   Note that our baked-in types Series and Vector are handled by
 --   convertType instead.
+--
+--   We require in the unboxed and boxed argument types:
+--      user-defined types require boxed.
 convertTyConApp 
         :: Primitives
         -> Map D.Name GhcName
-        -> D.TyCon D.Name -> [G.Type] -> G.Type
+        -> D.TyCon D.Name
+        -> [G.Type]             -- ^ Normal (unboxed?) argument types
+        -> [G.Type]             -- ^ Boxed argument types
+        -> G.Type
 
-convertTyConApp _prims names tc tsArgs'
+convertTyConApp _prims names tc tsArgs' tsArgs_b'
  = case tc of
         -- Functions
         D.TyConSpec D.TcConFun
@@ -182,10 +189,10 @@ convertTyConApp _prims names tc tsArgs'
          ,  Just tc'               <- convertTyConPrimName n
          -> G.mkTyConApp tc' tsArgs'
 
-        -- User-defined types
+        -- User-defined types: use boxed arguments
         D.TyConBound (D.UName n) _
          | Just (GhcNameTyCon tc') <- Map.lookup n names
-         -> G.mkTyConApp tc' tsArgs'
+         -> G.mkTyConApp tc' tsArgs_b'
 
         -- Couldn't convert this type constructor application.
         _ -> error $ "repa-plugin.convertTyConApp: no match for " 
