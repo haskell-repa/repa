@@ -48,13 +48,15 @@ wrapLowered tOrig tLowered vsParam vLowered
                 wrapLowered tOrig tLowered2 vsParam' vLowered
 
 
-        -- Decend into functions.
+        -- Descend into functions.
         --  Bind the argument with a new var so we can pass it to the lowered
         --  function.
         | G.FunTy tOrig1      tOrig2    <- tOrig
-        , G.FunTy _tLowered1  tLowered2 <- tLowered
+        , G.FunTy tLowered1  tLowered2 <- tLowered
         = do    v'              <- newDummyVar "arg" tOrig1
-                let vsParam'    = Right (G.Var v') : vsParam
+                -- Convert from type 'tOrig1' to 'tLowered1'
+                arg'            <- unwrapResult tLowered1 tOrig1 (G.Var v')
+                let vsParam'    = Right arg' : vsParam
                 xBody           <- wrapLowered tOrig2 tLowered2 vsParam' vLowered
                 return  $  G.Lam v' xBody
 
@@ -104,7 +106,9 @@ callLowered tOrig tLowered xLowered
 
 unwrapResult 
         :: G.Type               -- ^ Type of result for original unlowered version.
+                                -- Converting TO
         -> G.Type               -- ^ Type of result for lowered version.
+                                -- Converting FROM
         -> G.CoreExpr           -- ^ Expression for result value.
         -> G.UniqSM G.CoreExpr
 
