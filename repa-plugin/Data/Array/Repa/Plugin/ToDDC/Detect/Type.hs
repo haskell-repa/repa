@@ -10,6 +10,9 @@ import Control.Monad.State.Strict
 import qualified DDC.Type.Sum   as Sum
 import Data.List
 
+import qualified Kind                   as G
+import qualified TyCon                  as G
+import qualified Var                    as G
 
 -- Bind -----------------------------------------------------------------------
 instance Detect Bind where
@@ -61,6 +64,9 @@ instance Detect Bound where
 
          -- Vectors, series and selectors.
          | Just g'      <- matchPrim "Vector_" n
+         -- Find ghc's kind for the var
+         -- Only if it's a data type, not a Constraint?
+         , not $ returnsConstraintKind g'
          -> makePrim g' (NameTyConFlow TyConFlowVector)    
                         (kData `kFun` kData)
 
@@ -115,6 +121,14 @@ stringPrim n
 makePrim g d t
  = do   collect d g
         return  $ UPrim d t
+
+
+returnsConstraintKind :: GhcName -> Bool
+returnsConstraintKind g
+ = case g of
+    GhcNameVar   v  -> G.returnsConstraintKind $ G.varType   v
+    GhcNameTyCon tc -> G.returnsConstraintKind $ G.tyConKind tc
+    _               -> False
 
 
 -- TyCon ----------------------------------------------------------------------
