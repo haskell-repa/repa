@@ -28,7 +28,7 @@ lower_points :: Int -> Int
              -> (R.Vector Int, Int)
 lower_points ox oy xs
  = let dists = R.map  (\(x,y) -> (x-ox)*(x-ox) + (y-oy)*(y-oy)) xs
-       mini  = R.fold (\a b -> if a < b then a else b) 1000 dists
+       mini  = R.fold min 1000 dists
    in  (S.toVector dists, mini)
 
 
