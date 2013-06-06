@@ -62,6 +62,7 @@ data Primitives
         , prim_guard            :: (G.CoreExpr, G.Type)
         , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
         , prim_nextInt          :: (G.CoreExpr, G.Type)
+        , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
         }
 
 
@@ -106,7 +107,8 @@ primitive_ops
         , "prim_loop"
         , "prim_guard"
         , "prim_rateOfSeries"
-        , "prim_nextInt" ]
+        , "prim_nextInt" 
+        , "prim_nextInt_T2" ]
 
 
 -------------------------------------------------------------------------------
@@ -257,7 +259,8 @@ makeTable v
                 , prim_rateOfSeries     = get "prim_rateOfSeries" 
                 , prim_loop             = get "prim_loop"
                 , prim_guard            = get "prim_guard"
-                , prim_nextInt          = get "prim_nextInt" }
+                , prim_nextInt          = get "prim_nextInt"
+                , prim_nextInt_T2       = get "prim_nextInt_T2" }
 
 
         return $ Just (table, bs)

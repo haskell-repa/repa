@@ -141,6 +141,14 @@ convertPolytypicPrim kenv _tenv n tsArg
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
+        D.NameOpStore D.OpStoreNext
+         |  [tA, tK] <- tsArg, tA == D.tTuple2 D.tInt D.tInt
+         -> do  tK'             <- convertType kenv tK
+                let (x, t)      = prim_nextInt_T2 prims
+                return  ( G.App x (G.Type tK')
+                        , G.applyTy t tK' )
+
+
 
         -- Loop
         D.NameOpLoop D.OpLoopLoopN

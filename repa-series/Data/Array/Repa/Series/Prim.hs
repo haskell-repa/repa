@@ -67,6 +67,9 @@ data Primitives
   , prim_nextInt        :: forall k
                         .  Series k Int -> Int#
                         -> World -> (# World, Int# #)
+  , prim_nextInt_T2     :: forall k
+                        .  Series k (Int,Int) -> Int#
+                        -> World -> (# World, (# Int#, Int# #) #)
   }
 
 
@@ -110,7 +113,8 @@ primitives
   , prim_guard          = repa_guard
 
     -- Next
-  , prim_nextInt        = repa_nextInt }
+  , prim_nextInt        = repa_nextInt
+  , prim_nextInt_T2     = repa_nextInt_T2 }
 
 
 -- Utils ----------------------------------------------------------------------
@@ -251,3 +255,9 @@ repa_nextInt s ix world
         I# i    -> (# world, i #)
 {-# INLINE repa_nextInt #-}
 
+-- TODO generalise
+repa_nextInt_T2 :: Series k (Int,Int) -> Int# -> World -> (# World, (# Int#, Int# #) #)
+repa_nextInt_T2 s ix world
+ = case S.index s ix of
+        (I# i1, I# i2)    -> (# world, (# i1, i2 #) #)
+{-# INLINE repa_nextInt_T2 #-}
