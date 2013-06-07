@@ -218,6 +218,13 @@ convertExp kenv tenv xx
                  -> return ( G.Lit (G.MachInt i)
                            , G.intPrimTy)
 
+                {-
+                -- Bool# literal
+                D.DaConNamed (D.NameLitBool b)
+                 -> return ( if b then G.trueDataCon else G.falseDataCon
+                           , G.boolTy)
+                 -}
+
                 -- Don't know how to convert this.
                 _ -> error $ "repa-plugin.ToGHC.convertExp: "
                            ++ "Cannot convert DDC data constructor " 
@@ -352,6 +359,29 @@ convertExp kenv tenv xx
                                 [ (G.DataAlt (G.tupleCon G.UnboxedTuple n)
                                 , reverse vs, x1') ]
                        , t1')
+
+        -- Case expressions over bools
+        -- or at least things that look like bools
+        D.XCase _ xScrut 
+                 [ D.AAlt (D.PData dc1 []) x1,
+                   D.AAlt (D.PData dc2 []) x2 ]
+         | D.DaCon dn1 _ _                    <- dc1
+         , D.DaConNamed (D.NameLitBool False) == dn1
+         , D.DaCon dn2 _ _                    <- dc2
+         , D.DaConNamed (D.NameLitBool True)  == dn2
+         -> do  
+                (xScrut', tScrut')  <- convertExp kenv tenv xScrut
+                vScrut'             <- newDummyVar "scrut" tScrut'
+
+                (x1',  t1')         <- convertExp kenv tenv x1
+                (x2', _t2')         <- convertExp kenv tenv x2
+                -- Assert t1' == t2' ?
+
+                return ( G.Case xScrut' vScrut' t1'
+                                [ (G.DataAlt G.falseDataCon, [], x1')
+                                , (G.DataAlt G.trueDataCon,  [], x2') ]
+                       , t1')
+
 
         _ -> errorNoConversion xx
 
