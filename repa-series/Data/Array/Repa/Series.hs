@@ -8,7 +8,9 @@ module Data.Array.Repa.Series
 
           -- * Series operators.
         , map
+        , map2
         , fold
+        , foldIndex
         , pack
 
           -- * Selectors

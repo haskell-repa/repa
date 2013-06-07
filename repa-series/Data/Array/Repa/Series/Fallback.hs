@@ -9,7 +9,9 @@
 --
 module Data.Array.Repa.Series.Fallback
         ( map
+        , map2
         , fold
+        , foldIndex
         , pack)
 where
 import Data.Array.Repa.Series.Series            as S
@@ -29,6 +31,16 @@ map f (S.Series len vec)
 {-# INLINE [0] map #-}
 
 
+-- | zipWith for equal-length series
+map2    :: forall k a b c. (Unbox a, Unbox b, Unbox c)
+        => (a -> b -> c) -> Series k a -> Series k b
+        -> Series k c
+
+map2 f (S.Series len vec1) (S.Series _len vec2)
+ = S.Series len (U.zipWith f vec1 vec2)
+{-# INLINE [0] map2 #-}
+
+
 -- | Combine all elements of a series with an associative operator.
 fold    :: forall k a b. Unbox b 
         => (a -> b -> a) -> a -> Series k b -> a
@@ -43,6 +55,22 @@ fold f z !source
          = let  x = S.index source ix
            in   go (ix +# 1#) (f acc x)
 {-# INLINE [0] fold #-}
+
+-- | Combine all elements of a series with an associative operator.
+foldIndex :: forall k a b. Unbox b 
+          => (Int# -> a -> b -> a) -> a -> Series k b -> a
+
+foldIndex f z !source
+ = go 0# z
+ where  go !ix !acc
+         | ix >=# S.length source
+         = acc
+
+         | otherwise
+         = let  x = S.index source ix
+           in   go (ix +# 1#) (f ix acc x)
+{-# INLINE [0] foldIndex #-}
+
 
 
 -- | Pack elements of a series using a selector.

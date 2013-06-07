@@ -143,6 +143,18 @@ instance Detect (Exp a) where
                                           (typeOpFlow OpFlowFold)))
                            args'
 
+  -- foldIndex
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vFold))   <- uFold
+  , isPrefixOf "foldIndex_" vFold
+  = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
+        return  $  xApps a (XVar a (UPrim (NameOpFlow OpFlowFoldIndex) 
+                                          (typeOpFlow OpFlowFoldIndex)))
+                           args'
+
+
   -- Detect maps
   | XApp a _ _                          <- xx
   , Just  (XVar _ uMap,  [xTK, xTA, xTB, _xD1, _xD2, xF, xS ])
@@ -152,6 +164,17 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xS]
         return  $ xApps a (XVar a (UPrim (NameOpFlow (OpFlowMap 1))
                                          (typeOpFlow (OpFlowMap 1))))
+                          args'
+
+  -- TODO mapN
+  | XApp a _ _                          <- xx
+  , Just  (XVar _ uMap,  [xTK, xTA, xTB, xTC, _xD1, _xD2, _xD3, xF, xS1, xS2 ])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vMap))    <- uMap
+  , isPrefixOf "map2_" vMap
+  = do  args'   <- mapM detect [xTK, xTA, xTB, xTC, xF, xS1, xS2]
+        return  $ xApps a (XVar a (UPrim (NameOpFlow (OpFlowMap 2))
+                                         (typeOpFlow (OpFlowMap 2))))
                           args'
 
   -- Detect packs
