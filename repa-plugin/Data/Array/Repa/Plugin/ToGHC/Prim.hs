@@ -107,14 +107,17 @@ convertPolytypicPrim kenv _tenv n tsArg
         D.NameOpStore D.OpStoreNew
          |  tsArg == [D.tNat]                   -> return $ prim_newRefInt prims
          |  tsArg == [D.tInt]                   -> return $ prim_newRefInt prims
+         |  tsArg == [D.tTuple2 D.tInt D.tInt]  -> return $ prim_newRefInt_T2 prims
 
         D.NameOpStore D.OpStoreRead
          |  tsArg == [D.tNat]                   -> return $ prim_readRefInt prims
          |  tsArg == [D.tInt]                   -> return $ prim_readRefInt prims
+         |  tsArg == [D.tTuple2 D.tInt D.tInt]  -> return $ prim_readRefInt_T2 prims
 
         D.NameOpStore D.OpStoreWrite
          |  tsArg == [D.tNat]                   -> return $ prim_writeRefInt prims
          |  tsArg == [D.tInt]                   -> return $ prim_writeRefInt prims
+         |  tsArg == [D.tTuple2 D.tInt D.tInt]  -> return $ prim_writeRefInt_T2 prims
 
         -- Vector
         D.NameOpStore D.OpStoreNewVector
