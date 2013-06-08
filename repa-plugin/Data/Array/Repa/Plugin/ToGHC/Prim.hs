@@ -136,6 +136,10 @@ convertPolytypicPrim kenv _tenv n tsArg
          |  tsArg == [D.tNat]                   -> return $ prim_writeVectorInt prims
          |  tsArg == [D.tInt]                   -> return $ prim_writeVectorInt prims
 
+        D.NameOpStore D.OpStoreSliceVector
+         |  tsArg == [D.tNat]                   -> return $ prim_sliceVectorInt prims
+         |  tsArg == [D.tInt]                   -> return $ prim_sliceVectorInt prims
+
         -- Next
         D.NameOpStore D.OpStoreNext
          |  [tA, tK] <- tsArg, tA == D.tInt || tA == D.tNat
@@ -190,6 +194,7 @@ isPolytypicPrimName n
         , D.NameOpStore         D.OpStoreNewVectorN
         , D.NameOpStore         D.OpStoreReadVector
         , D.NameOpStore         D.OpStoreWriteVector 
+        , D.NameOpStore         D.OpStoreSliceVector 
         , D.NameOpStore         D.OpStoreNext
 
         , D.NameOpLoop          D.OpLoopLoopN ]

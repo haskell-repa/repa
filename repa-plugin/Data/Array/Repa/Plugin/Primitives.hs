@@ -59,6 +59,7 @@ data Primitives
         , prim_newVectorInt     :: (G.CoreExpr, G.Type)
         , prim_readVectorInt    :: (G.CoreExpr, G.Type)
         , prim_writeVectorInt   :: (G.CoreExpr, G.Type)
+        , prim_sliceVectorInt   :: (G.CoreExpr, G.Type)
 
           -- Loop
         , prim_loop             :: (G.CoreExpr, G.Type)
@@ -109,6 +110,7 @@ primitive_ops
         , "prim_newVectorInt"
         , "prim_readVectorInt"
         , "prim_writeVectorInt"
+        , "prim_sliceVectorInt"
 
         -- Loop
         , "prim_loop"
@@ -265,6 +267,7 @@ makeTable v
                 , prim_newVectorInt     = get "prim_newVectorInt"
                 , prim_readVectorInt    = get "prim_readVectorInt"
                 , prim_writeVectorInt   = get "prim_writeVectorInt"
+                , prim_sliceVectorInt   = get "prim_sliceVectorInt"
 
                 -- Loop
                 , prim_rateOfSeries     = get "prim_rateOfSeries" 

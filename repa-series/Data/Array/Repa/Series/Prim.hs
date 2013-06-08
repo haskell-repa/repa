@@ -57,6 +57,7 @@ data Primitives
   , prim_newVectorInt   :: Int# -> World -> (# World, Vector Int #)
   , prim_readVectorInt  :: Vector Int -> Int# -> World -> (# World, Int# #)
   , prim_writeVectorInt :: Vector Int -> Int# -> Int# -> World -> World
+  , prim_sliceVectorInt :: Int# -> Vector Int -> World -> (# World, Vector Int #)
 
     -- Loop
   , prim_rateOfSeries   :: forall k a.  Series k a -> Int#
@@ -115,6 +116,7 @@ primitives
   , prim_newVectorInt   = repa_newVectorInt
   , prim_readVectorInt  = repa_readVectorInt
   , prim_writeVectorInt = repa_writeVectorInt
+  , prim_sliceVectorInt = repa_sliceVectorInt
 
     -- Loop
   , prim_rateOfSeries   = repa_rateOfSeries
@@ -239,6 +241,11 @@ repa_writeVectorInt     :: Vector Int -> Int# -> Int# -> World -> World
 repa_writeVectorInt vec ix val   
         = unwrapIO_ (V.write vec ix (I# val))
 {-# INLINE repa_writeVectorInt #-}
+
+repa_sliceVectorInt     :: Int# -> Vector Int -> World -> (# World, Vector Int #)
+repa_sliceVectorInt len vec   
+        = unwrapIO' (V.take len vec)
+{-# INLINE repa_sliceVectorInt #-}
 
 
 -- Loop combinators -----------------------------------------------------------

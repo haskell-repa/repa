@@ -5,6 +5,7 @@ module Data.Array.Repa.Series.Vector
         , new
         , read
         , write
+        , take
 
           -- * Conversions
         , fromUnboxed
@@ -15,7 +16,7 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 import Data.Vector.Unboxed                      (Unbox)
 import System.IO.Unsafe
 import GHC.Exts
-import Prelude  hiding (length, read)
+import Prelude  hiding (length, read, take)
 
 
 data Vector a
@@ -58,6 +59,13 @@ write :: Unbox a => Vector a -> Int# -> a -> IO ()
 write vec ix val
         = UM.unsafeWrite (vectorData vec) (I# ix) val
 {-# INLINE write #-}
+
+-- | Take the first n elements of a vector
+take :: Unbox a => Int# -> Vector a -> IO (Vector a)
+take len (Vector _ mvec)
+ = do   return $ Vector len $ UM.unsafeTake (I# len) mvec
+
+{-# INLINE take #-}
 
 
 -- | Convert from an Unboxed vector.
