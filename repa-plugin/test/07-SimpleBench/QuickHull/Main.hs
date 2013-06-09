@@ -18,10 +18,17 @@ main
  = do   args <- getArgs
         let sz = case args of
                    [szStr] -> (Prelude.read szStr :: Int)
-                   _       -> error "Usage: simplebench <size>"
-        let pts = U.enumFromN (0 :: Int) sz `U.zip` U.enumFromN (0 :: Int) sz
+                   _       -> error "Usage: quickhull <size>"
+        let pts = gen 23489 sz `U.zip` gen 12387 sz
         pts' <- quickhull pts
         print pts'
+
+-- incredibly dodgy number generator
+gen :: Int -> Int -> U.Vector Int
+gen seed size
+ = U.generate size r
+ where
+  r i = i * (seed*5319) `mod` (seed * 978) `mod` 500
 
 
 quickhull :: U.Vector (Int,Int)
@@ -34,7 +41,7 @@ quickhull ps
         xs <- V.fromUnboxed uxs
         ys <- V.fromUnboxed uys
         let (ix,iy)     = ps U.! 0
-            Just ((_,imin),(_,imax)) = R.runSeries2 xs ys (lower_minmax ix iy)
+            Just (imin,imax) = R.runSeries2 xs ys (lower_minmax ix iy)
             pmin        = ps U.! imin
             pmax        = ps U.! imax
 
@@ -43,7 +50,7 @@ quickhull ps
         return (uncurry U.zip u1 U.++ uncurry U.zip u2)
  where
   hsplit xs ys p1@(x1,y1) p2@(x2,y2)
-   = do  let Just (pxs,pys,(_,im)) = R.runSeries2 xs ys (lower_filtermax x1 y1 x2 y2)
+   = do  let Just (pxs,pys,im) = R.runSeries2 xs ys (lower_filtermax x1 y1 x2 y2)
          upxs <- V.toUnboxed pxs
          upys <- V.toUnboxed pys
          case V.length pxs <# 2# of
@@ -56,14 +63,18 @@ quickhull ps
                  return (ux1 U.++ ux2, uy1 U.++ uy2)
 
 
+minIx = (\i (x',i') x -> if x < x' then (x, I# i) else (x', i'))
+maxIx = (\i (x',i') x -> if x > x' then (x, I# i) else (x', i'))
+
+
 lower_minmax :: Int -> Int
              -> R.Series k Int
              -> R.Series k Int
-             -> ((Int,Int), (Int,Int))
+             -> (Int, Int)
 lower_minmax ix iy xs ys
- = let imin = R.foldIndex (\i (x',i') x -> if x < x' then (x, I# i) else (x',i')) (ix,0) xs
-       imax = R.foldIndex (\i (x',i') x -> if x > x' then (x, I# i) else (x',i')) (ix,0) xs
-   in  (imin,imax)
+ = let imin = R.foldIndex minIx (ix,0) xs
+       imax = R.foldIndex maxIx (ix,0) xs
+   in  (snd imin, snd imax)
 
 
 lower_filtermax
@@ -71,17 +82,17 @@ lower_filtermax
              -> Int -> Int
              -> R.Series k Int
              -> R.Series k Int
-             -> (R.Vector Int, R.Vector Int, (Int,Int))
+             -> (R.Vector Int, R.Vector Int, Int)
 lower_filtermax x1 y1 x2 y2 xs ys
- = let cs    = R.map2   (\x y -> (x1-x)*(y2-y) - (y1-y)*(x2-x)) xs ys
---       pmax  = R.fold   (\((x,y),d) ((x',y'),d') -> if d > d' then ((x,y),d) else ((x',y'),d')) ((0,0),0) cs
+ = let cross = (\x y -> (x1-x)*(y2-y) - (y1-y)*(x2-x))
+       cs    = R.map2   cross xs ys
        pack  = R.map    (\d -> d > 0) cs
    in R.mkSel1 pack (\sel ->
        let xs'   = R.pack sel xs
            ys'   = R.pack sel ys
            cs'   = R.pack sel cs
-           pmax  = R.foldIndex (\i (c',i') c -> if c > c' then (c, I# i) else (c', i')) (0,0) cs'
-           -- (pm,_)= pmax
-       in  (S.toVector xs', S.toVector ys', pmax))
+           pmax  = R.foldIndex maxIx (0,0) cs'
+       in  (S.toVector xs', S.toVector ys', snd pmax))
+
 
 
