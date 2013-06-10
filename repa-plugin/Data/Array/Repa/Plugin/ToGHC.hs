@@ -148,16 +148,16 @@ convertExp
 convertExp kenv tenv xx
  = case xx of
         -- Variables.
-        --  Names of plain variables should be in the name map, and refer
-        --  other top-level bindings, or dummy variables that we've
-        --  introduced locally in this function.
-        --  If they're not in envVars, they may be imported
-        --  functions in envNames.
+        -- Names of plain variables should be in the name map, and refer other
+        -- top-level bindings, or dummy variables that we've introduced locally
+        -- in this function.
+        -- If they're not in envVars, they may be imported functions in envNames.
         D.XVar _ (D.UName dn)
          -> case lookup dn (envVars tenv) of
                 Nothing 
                  | Just (GhcNameVar gv) <- Map.lookup dn (envNames tenv)
                  -> return (G.Var gv, G.varType gv)
+
                 Nothing
                  -> error $ unlines 
                           [ "repa-plugin.ToGHC.convertExp: variable " 
@@ -173,15 +173,24 @@ convertExp kenv tenv xx
          ->     convertPrim kenv tenv n
 
 
+        -- RateOfRateNat is Id                                  -- HACKS: make a real prim.
+        D.XApp{}
+         | Just (n, [_xTK, xRate]) <- D.takeXPrimApps xx
+         ,  D.NameOpFlow D.OpFlowNatOfRateNat   <- n
+         -> convertExp kenv tenv xRate
+
+
         -- The unboxed tuple constructor.
         -- When we produce unboxed tuple we always want to preserve
         -- the unboxed versions of element types.
         D.XApp _ x1 x2
          | (D.XCon _ (D.DaCon dn _ _), args)                   <- D.takeXApps1 x1 x2
          , D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple n)) <- dn
+
          -- The first n arguments are type parameters, the rest are values
          , (tyxs, vals)                                        <- splitAt n args
          , tys                                                 <- catMaybes (map D.takeXType tyxs)
+
          -- Types must be fully applied, but we can get away with
          -- only partial value application
          , length tys  == n
@@ -275,10 +284,11 @@ convertExp kenv tenv xx
 
                         _ -> error 
                           $  renderIndent $ vcat
-                                [ text $ "repa-plugin.ToGHC.convertExp: "
-                                        ++ "type error during conversion."
-                                , ppr x1
-                                , ppr t2 ]
+                              [ text $ "repa-plugin.ToGHC.convertExp: in value/type application"
+                                     ++ " type error during conversion."
+                              , ppr x1 
+                              , ppr x1' <+> text "::" <+> (ppr t1')
+                              , ppr t2 ]
 
                 return  ( G.App x1' (G.Type t2')
                         , tResult)
@@ -295,8 +305,8 @@ convertExp kenv tenv xx
 
                         _ -> error 
                            $ renderIndent $ vcat
-                                [ text $ "repa-plugin.ToGHC.convertExp: "
-                                        ++ "type error during conversion."
+                                [ text $  "repa-plugin.ToGHC.convertExp: in value/value application"
+                                       ++ " type error during conversion."
                                 , ppr x1
                                 , ppr x2 ]
 
@@ -304,6 +314,16 @@ convertExp kenv tenv xx
 
                 return  ( G.App x1' x2''
                         , tResult)
+
+        -- Recursive let-binding
+        D.XLet _ (D.LRec [(b, x)]) x2
+         -> do  
+                (tenv', vBind') <- bindVarX kenv tenv b
+                (x', _)         <- convertExp kenv tenv' x
+                (x2', t2')      <- convertExp kenv tenv' x2
+
+                return  ( G.Let (G.Rec [(vBind', x')]) x2'
+                        , t2')
 
         -- Non-recursive let bindings
         D.XLet _ (D.LLet _ b x1) x2
@@ -325,6 +345,7 @@ convertExp kenv tenv xx
 
         -- Case expresions, with a single binder.
         --  assume these are 1-tuples                           -- TODO: check really 1-tuples.
+                                                                -- TODO: make generic
         D.XCase _ xScrut
                  [ D.AAlt (D.PData _ [ bWorld ]) x1]
          -> do
@@ -338,7 +359,7 @@ convertExp kenv tenv xx
                         , t1')
 
 
-        -- Case expressions over n-tuples
+        -- Case expressions over n-tuples                       -- TODO: make generic
         D.XCase _ xScrut 
                  [ D.AAlt (D.PData dacon binders) x1]
          | D.DaCon dn _ _                                      <- dacon
@@ -361,7 +382,7 @@ convertExp kenv tenv xx
                        , t1')
 
         -- Case expressions over bools
-        -- or at least things that look like bools
+        -- or at least things that look like bools              -- TODO: make generic
         D.XCase _ xScrut 
                  [ D.AAlt (D.PData dc1 []) x1,
                    D.AAlt (D.PData dc2 []) x2 ]
@@ -382,8 +403,64 @@ convertExp kenv tenv xx
                                 , (G.DataAlt G.trueDataCon,  [], x2') ]
                        , t1')
 
+        -- Other case expressions.
+        D.XCase _ xScrut alts
+         -> do  
+                (xScrut', tScrut')  <- convertExp kenv tenv xScrut
+                vScrut'             <- newDummyVar "scrut" tScrut'
+
+                (alts', ts')        <- liftM unzip $ mapM (convertAlt kenv tenv) alts
+                let t' : _ = ts'
+
+                return  ( G.Case xScrut' vScrut' t' (shuffleAlts alts')
+                        , t')
+
 
         _ -> errorNoConversion xx
+
+
+-------------------------------------------------------------------------------
+convertAlt 
+        :: Env -> Env
+        -> D.Alt () D.Name
+        -> G.UniqSM (G.CoreAlt, G.Type)
+
+convertAlt kenv tenv aalt
+
+ -- Default alternative.
+ |  D.AAlt D.PDefault x                 <- aalt
+ = do   (x', t')        <- convertExp kenv tenv x
+        return  ( ( G.DEFAULT, [], x')
+                , t')
+
+
+ -- Alternative matching a literal.
+ |  D.AAlt (D.PData dc []) x            <- aalt
+ ,  D.DaCon dn _ _                      <- dc
+ ,  D.DaConNamed (D.NameLitInt i)       <- dn
+ =  do  (x', t')        <- convertExp kenv tenv x
+        return  ( ( G.LitAlt (G.MachInt i), [], x')
+                , t')
+
+ | otherwise
+ = errorNoConversion aalt
+
+
+-- | Ensure any default alternative comes first.
+--   The GHC code generator panics if there is a default alt which is not first.
+shuffleAlts :: [G.CoreAlt] -> [G.CoreAlt]
+shuffleAlts alts
+ = go [] alts
+ where  
+        go acc []
+         = []
+
+        go acc (a : more)
+         = case a of
+                (G.DEFAULT, [], x)      -> (a : acc) ++ more
+                _                       -> go (acc ++ [a]) more
+
+
 
 
 -- Errors ---------------------------------------------------------------------

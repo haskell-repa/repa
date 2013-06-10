@@ -17,10 +17,12 @@ import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
 import qualified DDC.Core.Flow.Transform.Thread         as Flow
+import qualified DDC.Core.Flow.Transform.Wind           as Flow
 
 import qualified DDC.Core.Module                        as Core
 import qualified DDC.Core.Check                         as Core
 import qualified DDC.Core.Simplifier                    as Core
+import qualified DDC.Core.Fragment                      as Core
 import qualified DDC.Core.Transform.Namify              as Core
 import qualified DDC.Core.Transform.Flatten             as Core
 import qualified DDC.Core.Transform.Forward             as Core
@@ -28,7 +30,6 @@ import qualified DDC.Core.Transform.Thread              as Core
 import qualified DDC.Core.Transform.Reannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Eta                 as Eta
-import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
 import qualified CoreMonad                              as G
@@ -42,7 +43,8 @@ import Data.List
 
 -- | We use this unique when generating fresh names.
 --   If this is not actually unique relative to the rest of the compiler
---   and other plugins then we're complety screwed.
+--   then we're completely screwed. GHC doesn't seem to have an API to
+--   generate actually unique prefixes.
 letsHopeThisIsUnique    :: Char
 letsHopeThisIsUnique    = 's'
 
@@ -174,19 +176,19 @@ passLower name guts0
          $ D.renderIndent $ D.ppr mm_concrete
 
 
-        -- Storage ---------------------------------------
-        -- -- Assign mutable variables to array storage.
-        -- let mm_storage  = Flow.storageModule mm_concrete
+        -- Wind ------------------------------------------
+        -- Convert uses of the  loop# and guard# combinator to real tail-recursive
+        -- loops.
+        let mm_wind     = Flow.windModule mm_concrete
 
-        -- writeFile ("dump." ++ name ++ ".08-dc-storage.dcf")
-        --  $ D.renderIndent $ D.ppr mm_storage
-        let mm_storage  = mm_concrete
+        writeFile ("dump." ++ name ++ ".08-dc-wind.dcf")
+         $ D.renderIndent $ D.ppr mm_wind
 
 
         -- Check -----------------------------------------
         -- Type check the module,
         --  the thread transform wants type annotations at each node.
-        let mm_checked  = checkFlowModule mm_storage
+        let mm_checked  = checkFlowModule mm_wind
 
         writeFile ("dump." ++ name ++ ".09-dc-checked.dcf")
          $ D.renderIndent $ D.ppr mm_checked
@@ -195,7 +197,10 @@ passLower name guts0
         -- Thread -----------------------------------------
         -- Thread the World# token through stateful functions in preparation
         -- for conversion back to GHC core.
-        let mm_thread'  = Core.thread Flow.threadConfig Env.empty Env.empty mm_checked
+        let mm_thread'  = Core.thread Flow.threadConfig 
+                                (Core.profilePrimKinds Flow.profile)
+                                (Core.profilePrimTypes Flow.profile)
+                                mm_checked
         let mm_thread   = evalState (Core.namifyUnique mkNamT mkNamX mm_thread') 0
 
         writeFile ("dump." ++ name ++ ".10-dc-threaded.dcf")
