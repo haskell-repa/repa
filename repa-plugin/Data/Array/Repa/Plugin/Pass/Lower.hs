@@ -25,7 +25,7 @@ import qualified DDC.Core.Simplifier                    as Core
 import qualified DDC.Core.Fragment                      as Core
 import qualified DDC.Core.Transform.Namify              as Core
 import qualified DDC.Core.Transform.Flatten             as Core
-import qualified DDC.Core.Transform.Forward             as Core
+import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Thread              as Core
 import qualified DDC.Core.Transform.Reannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
@@ -124,11 +124,11 @@ passLower name guts0
              = case lts of
                 LLet _ (BName n _) _    
                   | Just{}       <- Map.lookup n workerNameArgs
-                  -> Core.FloatForce
-                _ -> Core.FloatAllow
+                  -> Forward.FloatForce
+                _ -> Forward.FloatAllow
 
-        let result_forward      = Core.forwardModule Flow.profile 
-                                        isFloatable mm_snip
+        let config              = Forward.Config isFloatable False
+        let result_forward      = Forward.forwardModule Flow.profile config mm_snip
         
         let mm_forward          = Core.result result_forward
 
@@ -179,7 +179,10 @@ passLower name guts0
         -- Wind ------------------------------------------
         -- Convert uses of the  loop# and guard# combinator to real tail-recursive
         -- loops.
-        let mm_wind     = Flow.windModule mm_concrete
+        let mm_wind     = Core.result
+                        $ Forward.forwardModule Flow.profile 
+                                (Forward.Config (const Forward.FloatAllow) True)
+                        $ Flow.windModule mm_concrete
 
         writeFile ("dump." ++ name ++ ".08-dc-wind.dcf")
          $ D.renderIndent $ D.ppr mm_wind

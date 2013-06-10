@@ -15,7 +15,7 @@ import qualified TysPrim                as G
 import qualified TysWiredIn             as G
 import qualified MkId                   as G
 import qualified UniqSupply             as G
-
+import Control.Monad
 
 -- | Make a wrapper to call a lowered version of a function from the original
 --   binding. We need to unsafely pass it the world token, as well as marshall
@@ -83,32 +83,60 @@ callLowered
 
 callLowered tOrig tLowered xLowered
 
-        -- Assume this function returns a (# World#, a #)               -- TODO: check this.
-        | G.TyConApp _ [_tWorld, tVal]  <- tLowered
+        -- Assume this function returns a (# World#, ts.. #)               -- TODO: check this.
+        | G.TyConApp _ (_tWorld : tsVal)  <- tLowered
         = do
                 vScrut  <- newDummyVar "scrut"  tLowered
                 vWorld  <- newDummyVar "world"  G.realWorldStatePrimTy
-                vVal    <- newDummyVar "val"    tVal
+                vsVal   <- zipWithM (\i t -> newDummyVar ("val" ++ show i) t)
+                                [0 :: Int ..] tsVal
 
                 -- Unwrap the actual result value.
-                let tOrigVal    = tOrig
-                let tLoweredVal = tVal
-                xResult <- unwrapResult tOrigVal tLoweredVal (G.Var vVal) 
+                let tOrigVal     = tOrig
+                let tsLoweredVal = tsVal
+                xResult         <- unwrapResultBits 
+                                        tOrigVal 
+                                        tsLoweredVal 
+                                        (map G.Var vsVal)
 
                 return  $ G.Case xLowered vScrut tOrig 
-                                [ (G.DataAlt G.unboxedPairDataCon
-                                        , [vWorld, vVal]
+                                [ (G.DataAlt (G.tupleCon G.UnboxedTuple (1 + length tsVal))
+                                        , (vWorld : vsVal)
                                         , xResult) ]
 
         | otherwise
         = error "repa-plugin.Wrap.callLowered: no match"
 
 
+unwrapResultBits
+        :: G.Type               -- ^ Type of result for original version.
+        -> [G.Type]             -- ^ Types of arguments lowered arguments
+        -> [G.CoreExpr]         -- ^ Types of components
+        -> G.UniqSM G.CoreExpr
+
+unwrapResultBits tOrig tsBits xsBits
+        | [tBit]                <- tsBits
+        , [xBit]                <- xsBits
+        = unwrapResult tOrig tBit xBit 
+
+        | G.TyConApp tcTup tsOrig <- tOrig
+        , n                       <- length tsOrig
+        , G.tupleTyCon G.BoxedTuple n   == tcTup
+        = do    
+                xsResult        <- mapM (\(tOrig', tLowered, xBit) 
+                                        -> unwrapResult tOrig' tLowered xBit)
+                                $  zip3 tsOrig tsBits xsBits
+
+                return $ G.mkConApp (G.tupleCon G.BoxedTuple n)
+                                    (map G.Type tsOrig ++ xsResult)
+
+        | otherwise
+        = error "unwrapResultBits: failed"
+
+
 unwrapResult 
         :: G.Type               -- ^ Type of result for original unlowered version.
-                                -- Converting TO
         -> G.Type               -- ^ Type of result for lowered version.
-                                -- Converting FROM
         -> G.CoreExpr           -- ^ Expression for result value.
         -> G.UniqSM G.CoreExpr
 
