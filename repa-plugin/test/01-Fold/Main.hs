@@ -14,11 +14,11 @@ repa_primitives =  R.primitives
 main
  = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
         print $ R.runSeries v1 lower_single
-        --print $ R.runSeries v1 lower_ffold
-        --print $ R.runSeries v1 lower_fffold
-        --print $ R.runSeries v1 lower_foldMap
-        --print $ R.runSeries v1 lower_map
-        --print $ R.runSeries v1 lower_map_map
+        print $ R.runSeries v1 lower_ffold
+        print $ R.runSeries v1 lower_fffold
+        print $ R.runSeries v1 lower_foldMap
+        print $ R.runSeries v1 lower_map
+        print $ R.runSeries v1 lower_map_map
 
 
 -- Single fold.
@@ -26,7 +26,7 @@ lower_single :: Series k Int -> Int
 lower_single s
  = R.fold (+) 0 s
 
-{-
+
 -- Double fold fusion.
 --  Computation of both reductions is interleaved.
 lower_ffold :: Series k Int -> Int
@@ -61,4 +61,4 @@ lower_map_map :: Series k Int -> Vector Int
 lower_map_map s
  = S.toVector (R.map (\x -> x * 2) (R.map (\x -> x + 1) s))
 
--}
+
