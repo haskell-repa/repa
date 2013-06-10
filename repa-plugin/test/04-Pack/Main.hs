@@ -15,20 +15,27 @@ repa_primitives =  R.primitives
 main
  = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
        
-        print $ R.runSeries v1 lower_even
+        print $ R.runSeries v1 lower_fffold
+--      print $ R.runSeries v1 lower_even               -- BROKEN
         print $ R.runSeries v1 lower_even_sum
         print $ R.runSeries v1 lower_even_sum_2
         print $ R.runSeries v1 lower_maxx
         -- print $ R.runSeries v1 lower_partition       -- BROKEN
         -- print $ R.runSeries v1 (lower_partial 5)     -- BROKEN
 
+-- Double fold fusion.
+--  Computation of both reductions is interleaved.
+lower_fffold :: R.Series k Int -> (Int, Int)
+lower_fffold s
+ = (R.fold (+) 0 s + R.fold (*) 1 s, R.fold (*) 1 s)
+
 
 -- | Return just the even values.
-lower_even :: Series k Int -> Vector Int
-lower_even s1
- = R.mkSel1 
-        (R.map (\x -> x `mod` 2 == 0) s1)
-        (\sel -> S.toVector (R.pack sel s1))
+--lower_even :: Series k Int -> Vector Int              -- BROKEN: the slice result floats into 
+--lower_even s1                                         -- the result and wrapResult gets confused.
+-- = R.mkSel1 
+--        (R.map (\x -> x `mod` 2 == 0) s1)
+--        (\sel -> S.toVector (R.pack sel s1))
 
 
 -- | Return the positive values, 

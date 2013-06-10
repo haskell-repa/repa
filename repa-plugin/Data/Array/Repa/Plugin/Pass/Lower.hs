@@ -179,8 +179,13 @@ passLower name guts0
         -- Wind ------------------------------------------
         -- Convert uses of the  loop# and guard# combinator to real tail-recursive
         -- loops.
-        let mm_wind     = Core.result
-                        $ Forward.forwardModule Flow.profile 
+        let mm_wind     = Core.result $ Forward.forwardModule Flow.profile 
+                                (Forward.Config (const Forward.FloatAllow) True)
+                        $ Core.result $ Forward.forwardModule Flow.profile 
+                                (Forward.Config (const Forward.FloatAllow) True)
+                        $ Core.result $ Forward.forwardModule Flow.profile 
+                                (Forward.Config (const Forward.FloatAllow) True)
+                        $ Core.result $ Forward.forwardModule Flow.profile 
                                 (Forward.Config (const Forward.FloatAllow) True)
                         $ Flow.windModule mm_concrete
 

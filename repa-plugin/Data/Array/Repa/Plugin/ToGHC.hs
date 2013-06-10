@@ -433,14 +433,26 @@ convertAlt kenv tenv aalt
         return  ( ( G.DEFAULT, [], x')
                 , t')
 
-
- -- Alternative matching a literal.
+ -- Alternative matching an integer.
  |  D.AAlt (D.PData dc []) x            <- aalt
  ,  D.DaCon dn _ _                      <- dc
  ,  D.DaConNamed (D.NameLitInt i)       <- dn
  =  do  (x', t')        <- convertExp kenv tenv x
         return  ( ( G.LitAlt (G.MachInt i), [], x')
                 , t')
+
+ -- Alternative matching a boolean
+ |  D.AAlt (D.PData dc []) x            <- aalt
+ ,  D.DaCon dn _ _                      <- dc
+ ,  D.DaConNamed (D.NameLitBool flag)   <- dn
+ =  do  (x', t')        <- convertExp kenv tenv x
+        let altcon = case flag of
+                        True    -> G.DataAlt G.trueDataCon
+                        False   -> G.DataAlt G.falseDataCon
+
+        return  ( ( altcon, [], x')
+                , t')
+
 
  | otherwise
  = errorNoConversion aalt
