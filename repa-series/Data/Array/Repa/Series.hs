@@ -5,6 +5,8 @@ module Data.Array.Repa.Series
           -- * Running series expressions.
         , runSeries
         , runSeries2
+        , runSeries3
+        , runSeries4
 
           -- * Series operators.
         , map

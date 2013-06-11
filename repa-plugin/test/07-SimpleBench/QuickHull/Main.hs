@@ -4,9 +4,14 @@ import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Vector    as V
 import qualified Data.Vector.Unboxed    as U
+import Data.Array.Repa.IO.Timing        as R
 
 import GHC.Exts
 import System.Environment
+
+import System.CPUTime
+import System.Time
+import Debug.Trace
 
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
@@ -20,7 +25,10 @@ main
                    [szStr] -> (Prelude.read szStr :: Int)
                    _       -> error "Usage: quickhull <size>"
         let pts = gen 23489 sz `U.zip` gen 12387 sz
-        pts' <- quickhull pts
+        pts `seq` return ()
+        (pts',t) <- R.time $ do p' <- quickhull pts
+                                p' `seq` return p'
+        putStr	$ R.prettyTime t
         print pts'
 
 -- incredibly dodgy number generator

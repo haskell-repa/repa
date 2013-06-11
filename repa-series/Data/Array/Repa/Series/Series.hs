@@ -5,7 +5,9 @@ module Data.Array.Repa.Series.Series
         , length
         , toVector
         , runSeries
-        , runSeries2)
+        , runSeries2
+        , runSeries3
+        , runSeries4)
 where
 import qualified Data.Array.Repa.Series.Vector  as V
 import Data.Array.Repa.Series.Vector            (Vector)
@@ -92,3 +94,57 @@ runSeries2 vec1 vec2 f
  = Nothing
 {-# INLINE [1] runSeries2 #-}
 
+
+-- | Three!
+runSeries3 
+        :: (Unbox a, Unbox b, Unbox c)
+        => Vector a
+        -> Vector b
+        -> Vector c
+        -> (forall k. Series k a -> Series k b -> Series k c -> d)    -- ^ worker function
+        -> Maybe d
+
+runSeries3 vec1 vec2 vec3 f
+ | len1      <- V.length vec1
+ , len2      <- V.length vec2
+ , len3      <- V.length vec3
+ , len1 ==# len2
+ , len2 ==# len3
+ = unsafePerformIO
+ $ do   uvec1   <- V.toUnboxed vec1
+        uvec2   <- V.toUnboxed vec2
+        uvec3   <- V.toUnboxed vec3
+        return  $ Just (f (Series len1 uvec1) (Series len2 uvec2) (Series len3 uvec3))
+
+ | otherwise
+ = Nothing
+{-# INLINE [1] runSeries3 #-}
+
+
+runSeries4 
+        :: (Unbox a, Unbox b, Unbox c, Unbox d)
+        => Vector a
+        -> Vector b
+        -> Vector c
+        -> Vector d
+        -> (forall k. Series k a -> Series k b -> Series k c -> Series k d -> e)    -- ^ worker function
+        -> Maybe e
+
+runSeries4 vec1 vec2 vec3 vec4 f
+ | len1      <- V.length vec1
+ , len2      <- V.length vec2
+ , len3      <- V.length vec3
+ , len4      <- V.length vec4
+ , len1 ==# len2
+ , len2 ==# len3
+ , len3 ==# len4
+ = unsafePerformIO
+ $ do   uvec1   <- V.toUnboxed vec1
+        uvec2   <- V.toUnboxed vec2
+        uvec3   <- V.toUnboxed vec3
+        uvec4   <- V.toUnboxed vec4
+        return  $ Just (f (Series len1 uvec1) (Series len2 uvec2) (Series len3 uvec3) (Series len4 uvec4))
+
+ | otherwise
+ = Nothing
+{-# INLINE [1] runSeries4 #-}
