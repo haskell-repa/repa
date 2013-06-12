@@ -6,16 +6,27 @@
 #include "Timing.h"
 
 
-void mapmap(long lens, long* uvec, long* out1, long* out2)
+void nested(long lens, long* uvec, long* out1, long* out2, long* out1_len, long* out2_len)
 {
+	long len1 = 0;
+	long len2 = 0;
 	for (long i = 0; i != lens; ++i) {
-		long x = uvec[i] * 2;
-		long y = x + 50;
-		long z = x - 50;
-		out1[i] = y;
-		out2[i] = y;
+		long x = uvec[i];
+		if (x > 50) {
+			out1[len1++] = x;
+			if (x < 100) {
+				out2[len2++] = x;
+			}
+		}
 	}
+	*out1_len = len1;
+	*out2_len = len2;
 }
+/*
+ = let ys  = U.filter (\x -> x > 50) xs
+       zs  = U.filter (\x -> x < 100) ys
+   in  (ys, zs)
+*/
 
 int main(int argc, char** argv)
 {
@@ -47,7 +58,8 @@ int main(int argc, char** argv)
         getrusage( RUSAGE_SELF, &start_ru );
 
 	// Do the deed.
-	mapmap(pointCount, uvec, out1, out2);
+	long out1_len, out2_len;
+	nested(pointCount, uvec, out1, out2, &out1_len, &out2_len);
 
 	// Print how long it took.
         gettimeofday( &finish, NULL );
