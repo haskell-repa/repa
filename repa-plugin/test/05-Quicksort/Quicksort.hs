@@ -8,6 +8,7 @@ import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
 import System.IO.Unsafe
+import System.Environment
 
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
@@ -16,9 +17,20 @@ repa_primitives =  R.primitives
 
 ---------------------------------------------------------------------
 main
- = do   v1      <- V.fromUnboxed $ U.enumFromN (0 :: Int) 100
+ = do   args <- getArgs
+        let sz = case args of
+                   [szStr] -> (Prelude.read szStr :: Int)
+                   _       -> error "Usage: quickselect <size>"
+        v1 <- V.fromUnboxed $ gen 23489 sz
         print $ R.runSeries v1 quickselect -- quickselect v1
 
+
+-- incredibly dodgy number generator
+gen :: Int -> Int -> U.Vector Int
+gen seed size
+ = U.generate size r
+ where
+  r i = i * (seed*5319) `mod` (seed * 978) `mod` 500
 
 {-
 -- Doesn't work: loop comes before "let p = S.index ..."
