@@ -18,11 +18,16 @@ module Data.Array.Repa.Algorithms.Matrix
 	, mmultP,      mmultS
 
           -- * Transposition.
-        , transpose2P, transpose2S) 
+        , transpose2P, transpose2S
+
+          -- * Trace.
+        , trace2P, trace2S)
+
 where
 import Data.Array.Repa                  as R
 import Data.Array.Repa.Eval             as R
 import Data.Array.Repa.Unsafe           as R
+import Control.Monad
 import Control.Monad.ST.Strict
 
 
@@ -108,3 +113,22 @@ transpose2S arr
         new_extent              = swap (extent arr)
 {-# NOINLINE transpose2S #-}
 
+
+-- Trace ------------------------------------------------------------------------
+-- | Get the trace of a (square) 2D matrix, in parallel.
+trace2P :: Monad m => Array U DIM2 Double -> m Double
+
+trace2P x = liftM (head . toList) $ sumP $ slice y (Z :. (0 :: Int) :. All)
+  where
+    y =  backpermute (extent x) f x
+    f (Z :. i :. j) = Z :. (i - j) `mod` nRows:. j
+    Z :. nRows :. _nCols = extent x
+
+-- | Get the trace of a (square) 2D matrix, sequentially.
+trace2S :: Array U DIM2 Double -> Double
+
+trace2S x = head $ toList $ sumS $ slice y (Z :. (0 :: Int) :. All)
+  where
+    y =  backpermute (extent x) f x
+    f (Z :. i :. j) = Z :. (i - j) `mod` nRows:. j
+    Z :. nRows :. _nCols = extent x
