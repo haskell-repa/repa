@@ -1,0 +1,24 @@
+
+# Best of 5 on Kallisti.
+# Input size 10^7
+# ghc -O2 --make Main.hs -fllvm -optlo-O3 -fplugin=Data.Array.Repa/Plugin
+# gcc --std=c99 -O3 -o bin/filtermax src/Main_FilterMax.c src/Timing.c
+
+                Stream          Flow            C
+dotproduct      63              46  (73%)       46  (73%)
+mapmap          84              65  (77%)       63  (75%)
+filterMax       49              44  (90%)       37  (75%)
+filterSum       52              44  (84%)       35  (67%)
+nestedFilter    49              42  (85%)       38  (77%)
+quickhull       419             208 (49%)       183 (43%)
+
+
+# Input size 10^8
+                Stream          Flow            C
+dotproduct      646             486  (75%)      481  (74%)   
+mapmap          833             633  (76%)      631  (76%)
+filterMax       477             422  (88%)      364  (76%)
+filterSum       509             423  (83%)      338  (66%)
+nestedFilter    480             408  (85%)      365  (76%)
+quickhull       4584            2103 (45%)      1831 (39%)
+
