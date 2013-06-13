@@ -1,23 +1,23 @@
 
 all: quickhull dotproduct filtermax filtersum mapmap nestedfilter
 
-quickhull  : Main_QuickHull.c QuickHull.c Timing.c Timing.h Vector.h
-	gcc --std=c99 -O2 -o bin/quickhull Main_QuickHull.c QuickHull.c Timing.c
+quickhull  : src/Main_QuickHull.c src/QuickHull.c src/Timing.c src/Timing.h src/Vector.h
+	gcc --std=c99 -O3 -o bin/quickhull src/Main_QuickHull.c src/QuickHull.c src/Timing.c
 
-dotproduct : Main_DotProduct.c Timing.c Timing.h Vector.h
-	gcc --std=c99 -O2 -o bin/dotproduct Main_DotProduct.c Timing.c
+dotproduct : src/Main_DotProduct.c src/Timing.c src/Timing.h src/Vector.h
+	gcc --std=c99 -O3 -o bin/dotproduct src/Main_DotProduct.c src/Timing.c
 
-filtermax : Main_FilterMax.c Timing.c Timing.h Vector.h
-	gcc --std=c99 -O2 -o bin/filtermax Main_FilterMax.c Timing.c
+filtermax : src/Main_FilterMax.c src/Timing.c src/Timing.h src/Vector.h
+	gcc --std=c99 -O3 -o bin/filtermax src/Main_FilterMax.c src/Timing.c
 
-filtersum : Main_FilterSum.c Timing.c Timing.h Vector.h
-	gcc --std=c99 -O2 -o bin/filtersum Main_FilterSum.c Timing.c
+filtersum : src/Main_FilterSum.c src/Timing.c src/Timing.h src/Vector.h
+	gcc --std=c99 -O3 -o bin/filtersum src/Main_FilterSum.c src/Timing.c
 
-mapmap    : Main_MapMap.c Timing.c Timing.h Vector.h
-	gcc --std=c99 -O2 -o bin/mapmap Main_MapMap.c Timing.c
+mapmap    : src/Main_MapMap.c src/Timing.c src/Timing.h src/Vector.h
+	gcc --std=c99 -O3 -o bin/mapmap src/Main_MapMap.c src/Timing.c
 
-nestedfilter: Main_NestedFilter.c Timing.c Timing.h Vector.h
-	gcc --std=c99 -O2 -o bin/nestedfilter Main_NestedFilter.c Timing.c
+nestedfilter: src/Main_NestedFilter.c src/Timing.c src/Timing.h src/Vector.h
+	gcc --std=c99 -O3 -o bin/nestedfilter src/Main_NestedFilter.c src/Timing.c
 
 
 .PHONY : clean
