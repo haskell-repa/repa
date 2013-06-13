@@ -42,33 +42,34 @@ gen seed size
 quickhull :: U.Vector (Int,Int)
           -> IO (U.Vector (Int,Int))
 quickhull ps
- | U.length ps == 0
- = return U.empty
+ | U.length ps == 0 = return U.empty
  | otherwise
  = do   let (uxs, uys) = U.unzip ps
-        xs <- V.fromUnboxed uxs
-        ys <- V.fromUnboxed uys
+        xs      <- V.fromUnboxed uxs
+        ys      <- V.fromUnboxed uys
         let (ix,iy)     = ps U.! 0
-            Just (imin,imax) = R.runSeries2 xs ys (lower_minmax ix iy)
+            Just (imin, imax) 
+             = R.runSeries2 xs ys (lower_minmax ix iy)
             pmin        = ps U.! imin
             pmax        = ps U.! imax
 
-        u1 <- hsplit xs ys pmin pmax
-        u2 <- hsplit xs ys pmax pmin
+        u1      <- hsplit xs ys pmin pmax
+        u2      <- hsplit xs ys pmax pmin
         return (uncurry U.zip u1 U.++ uncurry U.zip u2)
- where
-  hsplit xs ys p1@(x1,y1) p2@(x2,y2)
-   = do  let Just (pxs,pys,im) = R.runSeries2 xs ys (lower_filtermax x1 y1 x2 y2)
-         upxs <- V.toUnboxed pxs
-         upys <- V.toUnboxed pys
-         case V.length pxs <# 2# of
-          True
-           ->    return (x1 `U.cons` upxs, y1 `U.cons` upys)
-          False
-           -> do let pm = (upxs U.! im, upys U.! im)
-                 (ux1,uy1) <- hsplit pxs pys p1 pm
-                 (ux2,uy2) <- hsplit pxs pys pm p2
-                 return (ux1 U.++ ux2, uy1 U.++ uy2)
+
+hsplit xs ys p1@(x1,y1) p2@(x2,y2)
+ = do  let Just (pxs,pys,im) 
+             = R.runSeries2 xs ys (lower_filtermax x1 y1 x2 y2)
+       upxs   <- V.toUnboxed pxs
+       upys   <- V.toUnboxed pys
+       case V.length pxs <# 2# of
+        True
+         ->    return (x1 `U.cons` upxs, y1 `U.cons` upys)
+        False
+         -> do let pm = (upxs U.! im, upys U.! im)
+               (ux1,uy1) <- hsplit pxs pys p1 pm
+               (ux2,uy2) <- hsplit pxs pys pm p2
+               return (ux1 U.++ ux2, uy1 U.++ uy2)
 
 
 minIx = (\i (x',i') x -> if x < x' then (x, I# i) else (x', i'))
@@ -101,6 +102,4 @@ lower_filtermax x1 y1 x2 y2 xs ys
            cs'   = R.pack sel cs
            pmax  = R.foldIndex maxIx (0,0) cs'
        in  (S.toVector xs', S.toVector ys', snd pmax))
-
-
 
