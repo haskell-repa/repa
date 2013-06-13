@@ -1,0 +1,14 @@
+
+# Best of 5 on Desire.
+# Input size 10^8
+# ghc -O2 --make Main.hs -fllvm -optlo-O3 -fplugin=Data.Array.Repa/Plugin
+# gcc --std=c99 -O3 -o bin/filtermax src/Main_FilterMax.c src/Timing.c
+
+                Stream          Flow            C
+dotproduct      (missing)       (missing)
+mapmap          (missing)       951             918
+filterMax       707             588 (83%)       491 (69%)
+filterSum       735             578 (79%)       481 (65%)
+nestedFilter    689             599 (87%)       490 (71%)
+quickhull 10^7  747             412 (55%)       264 (35%)
+

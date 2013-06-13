@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 		pointCount	= atoi(argv[1]);
 	}
 	else {
-		printf("usage: quickhull <points>\n");
+		printf("usage: filtersum <size>\n");
 		exit(1);
 	}
 
