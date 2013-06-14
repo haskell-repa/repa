@@ -4,13 +4,13 @@
 # ghc -O2 --make Main.hs -fllvm -optlo-O3 -fplugin=Data.Array.Repa/Plugin
 # gcc --std=c99 -O3 -o bin/filtermax src/Main_FilterMax.c src/Timing.c
 
-                Stream          Flow            C
-dotproduct      63              46  (73%)       46  (73%)
-mapmap          84              65  (77%)       63  (75%)
-filterMax       49              44  (90%)       37  (75%)
-filterSum       52              44  (84%)       35  (67%)
-nestedFilter    49              42  (85%)       38  (77%)
-quickhull       419             208 (49%)       183 (43%)
+                Stream          Flow            C	    Unfused Flow
+dotproduct      63              46  (73%)       46  (73%)   101 (160%)
+mapmap          84              65  (77%)       63  (75%)   84  (100%)
+filterMax       49              44  (90%)       37  (75%)   135 (275%)
+filterSum       52              44  (84%)       35  (67%)   112 (215%)
+nestedFilter    49              42  (85%)       38  (77%)   117 (238%)
+quickhull       419             208 (49%)       183 (43%)   857 (204%)
 
 
 # Input size 10^8
