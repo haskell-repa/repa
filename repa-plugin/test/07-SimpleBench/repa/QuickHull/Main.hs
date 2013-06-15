@@ -31,7 +31,7 @@ main
         putStr	$ R.prettyTime t
         print pts'
 
--- incredibly dodgy number generator
+
 gen :: Int -> Int -> U.Vector Int
 gen seed size
  = U.generate size r
@@ -72,10 +72,6 @@ hsplit xs ys p1@(x1,y1) p2@(x2,y2)
                return (ux1 U.++ ux2, uy1 U.++ uy2)
 
 
-minIx = (\i (x',i') x -> if x < x' then (x, I# i) else (x', i'))
-maxIx = (\i (x',i') x -> if x > x' then (x, I# i) else (x', i'))
-
-
 lower_minmax :: Int -> Int
              -> R.Series k Int
              -> R.Series k Int
@@ -102,4 +98,9 @@ lower_filtermax x1 y1 x2 y2 xs ys
            cs'   = R.pack sel cs
            pmax  = R.foldIndex maxIx (0,0) cs'
        in  (S.toVector xs', S.toVector ys', snd pmax))
+
+
+minIx = (\i (x',i') x -> if x < x' then (x, I# i) else (x', i'))
+
+maxIx = (\i (x',i') x -> if x > x' then (x, I# i) else (x', i'))
 

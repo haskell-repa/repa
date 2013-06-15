@@ -29,12 +29,13 @@ main
         putStr (prettyTime t)
         print (U.head ys', U.length ys', U.head zs', U.length zs')
 
-{-# NOINLINE lower_mapmap #-}
+
 lower_mapmap :: R.Series k Int -> (R.Vector Int, R.Vector Int)
 lower_mapmap xs
  = let xs' = R.map (\x -> x * 2)  xs
        ys  = R.map (\x -> x + 50) xs'
        zs  = R.map (\x -> x - 50) xs'
    in  (S.toVector ys, S.toVector zs)
+{-# NOINLINE lower_mapmap #-}
 
 

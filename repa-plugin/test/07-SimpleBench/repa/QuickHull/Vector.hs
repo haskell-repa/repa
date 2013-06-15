@@ -20,7 +20,7 @@ main
         putStr	$ prettyTime t
         print pts'
 
--- incredibly dodgy number generator
+
 gen :: Int -> Int -> Vector Int
 gen seed size
  = V.generate size r
@@ -32,8 +32,8 @@ quickHull :: Vector (Int, Int) -> Vector (Int, Int)
 quickHull vv
 	= uncurry V.zip $ quickhull $ V.unzip vv
 
+
 quickhull :: (Vector Int, Vector Int) -> (Vector Int, Vector Int)
-{-# NOINLINE quickhull #-}
 quickhull (xs, ys) = xs' `seq` ys' `seq` (xs',ys')
     where
       (xs',ys') = V.unzip
@@ -58,5 +58,7 @@ quickhull (xs, ys) = xs' `seq` ys' `seq` (xs',ys')
 
           pm     = points V.! V.maxIndex cs
 
-      cross (x,y) (x1,y1) (x2,y2) = (x1-x)*(y2-y) - (y1-y)*(x2-x)
+      cross (x,y) (x1,y1) (x2,y2) 
+        = (x1-x)*(y2-y) - (y1-y)*(x2-x)
+{-# NOINLINE quickhull #-}
 

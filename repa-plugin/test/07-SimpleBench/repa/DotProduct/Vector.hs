@@ -1,14 +1,10 @@
 {-# LANGUAGE MagicHash, RankNTypes #-}
 module Main where
-
 import qualified Data.Vector.Unboxed	as V
 import Data.Vector.Unboxed		(Vector)
-
 import System.Environment
-
 import Data.Array.Repa.IO.Timing
 
----------------------------------------------------------------------
 main
  = do   args <- getArgs
         let sz = case args of
@@ -27,6 +23,7 @@ main
 dotp :: V.Vector   Int -> V.Vector   Int
      -> V.Vector   Int -> V.Vector   Int
      -> V.Vector   Int
+
 dotp x1 y1 x2 y2
  = (V.zipWith (+) (V.zipWith (*) x1 x2) (V.zipWith (*) y1 y2))
 

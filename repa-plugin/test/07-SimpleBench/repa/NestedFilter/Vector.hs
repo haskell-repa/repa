@@ -20,10 +20,10 @@ main
         putStr	$ prettyTime t
         print (U.length v, U.length u)
 
-{-# NOINLINE nested #-}
+
 nested :: U.Vector Int -> (U.Vector Int, U.Vector Int)
 nested xs
  = let ys  = U.filter (\x -> x > 50) xs
        zs  = U.filter (\x -> x < 100) ys
    in  (ys, zs)
-
+{-# NOINLINE nested #-}

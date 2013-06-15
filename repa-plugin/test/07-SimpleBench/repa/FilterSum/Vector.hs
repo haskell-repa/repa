@@ -20,11 +20,12 @@ main
         putStr	$ prettyTime t
         print (U.length v, i, a)
 
-{-# NOINLINE lower_filterSum #-}
+
 lower_filterSum :: U.Vector Int -> (U.Vector Int, Int, Int)
 lower_filterSum xs
  = let xs'  = U.filter (\x -> x > 50) xs
        sum1 = U.foldl (+) 0 xs
        sum2 = U.foldl (+) 0 xs'
    in  (xs', sum1, sum2)
+{-# NOINLINE lower_filterSum #-}
 

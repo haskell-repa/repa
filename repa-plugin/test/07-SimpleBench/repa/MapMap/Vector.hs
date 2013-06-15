@@ -19,12 +19,11 @@ main
         putStr (prettyTime t)
         print (U.head ys, U.length ys, U.head zs, U.length zs)
 
-{-# NOINLINE lower_mapmap #-}
+
 lower_mapmap :: U.Vector Int -> (U.Vector Int, U.Vector Int)
 lower_mapmap !xs
  = let !xs' = U.map (\x -> x * 2)  xs
        !ys  = U.map (\x -> x + 50) xs'
        !zs  = U.map (\x -> x - 50) xs'
    in  (ys, zs)
-
-
+{-# NOINLINE lower_mapmap #-}
