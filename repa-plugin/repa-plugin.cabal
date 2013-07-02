@@ -54,6 +54,7 @@ Library
         TypeSynonymInstances
         KindSignatures
         BangPatterns
+        FlexibleInstances
 
   GHC-options:
         -Wall

@@ -249,6 +249,14 @@ convertExp kenv tenv xx
                 return  ( G.Lam gv xBody'
                         , G.mkForAllTy gv tBody')
 
+        -- Non-binding function abstractions.
+        D.XLam _ b@(D.BNone{}) xBody
+         -> do  gt               <- convertType kenv (D.typeOfBind b)
+                gv               <- newDummyVar "z" gt
+                (xBody', tBody') <- convertExp kenv tenv xBody
+
+                return  ( G.Lam gv xBody'
+                        , G.mkFunTy gt tBody')
 
         -- Function abstractions.
         D.XLam _ b@(D.BName{}) xBody
@@ -326,7 +334,7 @@ convertExp kenv tenv xx
                         , t2')
 
         -- Non-recursive let bindings
-        D.XLet _ (D.LLet _ b x1) x2
+        D.XLet _ (D.LLet b x1) x2
          -> do  (xScrut', tScrut')<- convertExp kenv tenv x1
                 (tenv',  vBind')  <- bindVarX   kenv tenv b
 

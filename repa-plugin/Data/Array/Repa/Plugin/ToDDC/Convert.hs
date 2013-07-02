@@ -111,7 +111,7 @@ convertTopBind bnd
         G.NonRec b x      
          -> case convertBinding (b, x) of
                 Left fails      -> Left   $ FailInBinding b fails
-                Right (b', x')  -> return $ D.LLet D.LetStrict b' x'
+                Right (b', x')  -> return $ D.LLet b' x'
 
         G.Rec bxs
          -> do  ns'     <- mapM (convertFatName.fst) bxs
@@ -175,8 +175,7 @@ convertExpr xx
                 t'      <- convertVarType b
                 x1'     <- convertExpr x1
                 x2'     <- convertExpr x2
-                return  $  D.XLet () (D.LLet D.LetStrict 
-                                                (D.BName n' t') x1') x2'
+                return  $  D.XLet () (D.LLet (D.BName n' t') x1') x2'
 
         G.Let (G.Rec bxs) x
          -> do  ns'     <- mapM (convertFatName.fst) bxs
@@ -194,7 +193,7 @@ convertExpr xx
                 alts'   <- mapM convertAlt alts
 
                 -- Case
-                return $ D.XLet  () (D.LLet D.LetStrict (D.BName b' t') x')
+                return $ D.XLet  () (D.LLet (D.BName b' t') x')
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
 
         -- We can't represent type casts/

@@ -122,7 +122,7 @@ passLower name guts0
         --     applied to flow combinators.
         let isFloatable lts
              = case lts of
-                LLet _ (BName n _) _    
+                LLet (BName n _) _    
                   | Just{}       <- Map.lookup n workerNameArgs
                   -> Forward.FloatForce
                 _ -> Forward.FloatAllow
