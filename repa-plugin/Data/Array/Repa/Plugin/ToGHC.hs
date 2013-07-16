@@ -472,12 +472,12 @@ shuffleAlts :: [G.CoreAlt] -> [G.CoreAlt]
 shuffleAlts alts
  = go [] alts
  where  
-        go acc []
+        go _ []
          = []
 
         go acc (a : more)
          = case a of
-                (G.DEFAULT, [], x)      -> (a : acc) ++ more
+                (G.DEFAULT, [], _)      -> (a : acc) ++ more
                 _                       -> go (acc ++ [a]) more
 
 

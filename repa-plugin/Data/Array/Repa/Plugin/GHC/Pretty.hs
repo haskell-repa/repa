@@ -256,6 +256,7 @@ instance Pretty DataCon where
         <+> text "repType = " <+> ppr (dataConRepType dc)
         <+>  text "}"
 
+
 -- Utils ----------------------------------------------------------------------
 breakWhen :: Bool -> Doc
 breakWhen True   = line
@@ -270,6 +271,7 @@ isSimpleX xx
         App x1 x2       -> isSimpleX x1 && isAtomX x2
         Cast x1 _       -> isSimpleX x1
         _               -> False
+
 
 isAtomX :: Expr a -> Bool
 isAtomX xx

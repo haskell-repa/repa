@@ -29,6 +29,7 @@ import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
 import qualified DDC.Core.Flow.Compounds as D
 import qualified DDC.Core.Flow.Prim      as D
+import qualified DDC.Base.Pretty         as D
 
 import qualified Data.Map                as Map
 
@@ -256,10 +257,11 @@ data Env
 
 -- | Bind a fresh GHC variable for a DDC expression variable.
 bindVarX :: Env -> Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
-bindVarX kenv tenv (D.BName n@(D.NameVar str) t)
- = do   gt      <- convertType kenv t
-        gv      <- newDummyVar str gt
-        let tenv' = tenv { envVars       = (n, gv) : envVars tenv }
+bindVarX kenv tenv (D.BName n t)
+ = do   gt        <- convertType kenv t
+        let str   =  D.renderPlain (D.ppr n)
+        gv        <- newDummyVar str gt
+        let tenv' =  tenv { envVars     = (n, gv) : envVars tenv }
         return   (tenv', gv)
 
 bindVarX kenv tenv (D.BNone t)
@@ -274,9 +276,10 @@ bindVarX _ _ b
 
 -- | Bind a fresh GHC type variable for a DDC type variable.
 bindVarT :: Env -> D.Bind D.Name -> G.UniqSM (Env, G.Var)
-bindVarT kenv (D.BName n@(D.NameVar str) _)
- = do   gv      <- newDummyTyVar str 
-        let kenv' = kenv { envVars       = (n, gv) : envVars kenv }
+bindVarT kenv (D.BName n _)
+ = do   let str   =  D.renderPlain (D.ppr n)
+        gv        <- newDummyTyVar str 
+        let kenv' =  kenv { envVars     = (n, gv) : envVars kenv }
         return  (kenv', gv)
 
 bindVarT _ b
