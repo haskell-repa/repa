@@ -10,6 +10,7 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 import Prelude hiding (read)
 
 
+-- | Mutable references.
 data Ref a
         = Ref !(IOVector a)
 

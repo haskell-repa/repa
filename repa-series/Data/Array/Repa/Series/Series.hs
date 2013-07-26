@@ -22,9 +22,8 @@ import Prelude hiding (length)
 
 -- Series ---------------------------------------------------------------------
 -- | A `Series` is an abstract source of element data and is consumed
---   by series processes. A `Series` cannot be returned from a lowered
---   series process. To export data from such a process, convert it
---   to a `Vector` instead.
+--   by series processes. The elements of a series must be consumed
+--   sequentially, so they don't support random access indexing.
 --
 --   The rate parameter @k@ represents the abstract length of the series.
 data Series k a
@@ -121,6 +120,7 @@ runSeries3 vec1 vec2 vec3 f
 {-# INLINE [1] runSeries3 #-}
 
 
+-- | Four!
 runSeries4 
         :: (Unbox a, Unbox b, Unbox c, Unbox d)
         => Vector a
@@ -148,3 +148,4 @@ runSeries4 vec1 vec2 vec3 vec4 f
  | otherwise
  = Nothing
 {-# INLINE [1] runSeries4 #-}
+

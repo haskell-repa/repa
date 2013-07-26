@@ -1,11 +1,11 @@
 
--- | Fallback implementations of stream operators.
+-- | Fallback implementations of Series operators.
 --
 --   Code using these series operators is typically fused and vectorised by
 --   the Repa plugin. If this transformation is successful then the resulting
 --   GHC Core program will use primitives from the @Data.Array.Repa.Series.Prim@
---   module instead. If the fusion process is not successful then you will get a
---   compile-time warning and the implementations in this module will be used directly.
+--   module instead. If the fusion process is not successful then the implementations
+--   in this module will be used directly.
 --
 module Data.Array.Repa.Series.Fallback
         ( map
@@ -31,7 +31,7 @@ map f (S.Series len vec)
 {-# INLINE [0] map #-}
 
 
--- | zipWith for equal-length series
+-- | Like `zipWith`, but for equal-length series
 map2    :: forall k a b c. (Unbox a, Unbox b, Unbox c)
         => (a -> b -> c) -> Series k a -> Series k b
         -> Series k c
@@ -58,6 +58,7 @@ fold f z !source
 
 
 -- | Combine all elements of a series with an associative operator.
+--   The worker function is given the current index into the series.
 foldIndex :: forall k a b. Unbox b 
           => (Int# -> a -> b -> a) -> a -> Series k b -> a
 

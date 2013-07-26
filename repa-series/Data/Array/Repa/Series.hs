@@ -1,24 +1,28 @@
 module Data.Array.Repa.Series
-        ( Series (..)
-        , Vector (..)
+        ( -- * Series
+          Series (..)
 
-          -- * Running series expressions.
+          -- * Vectors
+        , Vector (..)
+        , fromUnboxed
+        , toUnboxed
+
+          -- * Running series expressions
         , runSeries
         , runSeries2
         , runSeries3
         , runSeries4
 
-          -- * Series operators.
+          -- * Selectors
+        , Sel1   (..)
+        , mkSel1
+
+          -- * Series operators
         , map
         , map2
         , fold
         , foldIndex
         , pack
-
-          -- * Selectors
-        , Sel1   (..)
-        , mkSel1
-
 
           -- * Primitives used by the Repa plugin
         , Primitives (..)

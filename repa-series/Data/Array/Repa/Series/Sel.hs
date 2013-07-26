@@ -7,7 +7,7 @@ import Data.Array.Repa.Series.Series    as S
 import qualified Data.Vector.Unboxed    as U
 import GHC.Exts
 
-
+-- | Selectors.
 data Sel1 k1 k2
         = Sel1
         { sel1Length    :: Int#

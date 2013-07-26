@@ -1,5 +1,5 @@
 Name:           repa-plugin
-Version:        4.0.0.0
+Version:        1.0.0.0
 License:        BSD3
 License-File:   LICENSE
 Synopsis:       Repa vectorisation plugin

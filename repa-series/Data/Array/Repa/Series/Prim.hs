@@ -1,5 +1,5 @@
 
--- | The repa-plugin rewrites client code to use these primitives.
+-- | The @repa-plugin@ rewrites client code to use these primitives.
 --
 --   The plugin will use whatever names are in scope, so if you want to debug
 --   your code you can import a different implementation of these primitives
@@ -18,7 +18,7 @@ import GHC.Types
 type World      = State# RealWorld
 
 
--- | Primitives needed by the lowering transform.
+-- | Primitives needed by the repa-plugin.
 data Primitives
   = Primitives
   { prim_Series         :: forall k a. Series k a
@@ -79,7 +79,7 @@ data Primitives
   }
 
 
--- | Table of primitives used by the lowering transform.
+-- | Table of primitives used by the repa-plugin.
 primitives :: Primitives
 primitives
   = Primitives
@@ -107,6 +107,7 @@ primitives
   , prim_newRefInt      = repa_newRefInt
   , prim_readRefInt     = repa_readRefInt
   , prim_writeRefInt    = repa_writeRefInt
+
     -- Ref (Int,Int)
   , prim_newRefInt_T2   = repa_newRefInt_T2
   , prim_readRefInt_T2  = repa_readRefInt_T2
@@ -198,6 +199,7 @@ repa_writeRefInt ref val
         = unwrapIO_ (Ref.write ref (I# val))
 {-# INLINE repa_writeRefInt #-}
 
+
 -- Ref (Int,Int) --------------------------------------------------------------
 repa_newRefInt_T2       :: (# Int#, Int# #) -> World -> (# World, Ref (Int,Int) #)
 repa_newRefInt_T2 (# x, y #)
@@ -242,10 +244,12 @@ repa_writeVectorInt vec ix val
         = unwrapIO_ (V.write vec ix (I# val))
 {-# INLINE repa_writeVectorInt #-}
 
+
 repa_sliceVectorInt     :: Int# -> Vector Int -> World -> (# World, Vector Int #)
 repa_sliceVectorInt len vec   
         = unwrapIO' (V.take len vec)
 {-# INLINE repa_sliceVectorInt #-}
+
 
 
 -- Loop combinators -----------------------------------------------------------
@@ -292,6 +296,7 @@ repa_nextInt s ix world
  = case S.index s ix of
         I# i    -> (# world, i #)
 {-# INLINE repa_nextInt #-}
+
 
 -- TODO generalise
 repa_nextInt_T2 :: Series k (Int,Int) -> Int# -> World -> (# World, (# Int#, Int# #) #)

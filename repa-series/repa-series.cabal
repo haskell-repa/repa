@@ -1,11 +1,17 @@
 Name:           repa-series
-Version:        4.0.0.0
+Version:        1.0.0.0
 License:        BSD3
 License-File:   LICENSE
-Synopsis:       Repa series expressions API
 Cabal-Version:  >= 1.10
 Build-Type:     Simple
 Author:         The DPH Team
+Synopsis:       Repa Series Expressionss API
+Description:   
+        This is the Series expression API used to write programs subjected to
+        Flow Fusion performed by the `repa-plugin`.
+
+        This prototype version currently only supports Series of `Int`, and tuples of `Int`. 
+        This needs to be generalized.
 
 Library
   Exposed-Modules:
