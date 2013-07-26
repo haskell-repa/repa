@@ -1,5 +1,5 @@
 Name:           repa-series
-Version:        1.0.0.0
+Version:        1.0.0.1
 License:        BSD3
 License-File:   LICENSE
 Cabal-Version:  >= 1.10
@@ -9,7 +9,7 @@ Synopsis:       Series Expressionss API
 Description:   
         Series expression API for writing programs subjected to the
         Data Flow Fusion performed by the repa-plugin.
-        
+
 Library
   Exposed-Modules:
         Data.Array.Repa.Series
