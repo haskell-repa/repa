@@ -5,14 +5,11 @@ License-File:   LICENSE
 Cabal-Version:  >= 1.10
 Build-Type:     Simple
 Author:         The DPH Team
-Synopsis:       Repa Series Expressionss API
+Synopsis:       Series Expressionss API
 Description:   
-        This is the Series expression API used to write programs subjected to
-        Flow Fusion performed by the `repa-plugin`.
-
-        This prototype version currently only supports Series of `Int`, and tuples of `Int`. 
-        This needs to be generalized.
-
+        Series expression API for writing programs subjected to the
+        Data Flow Fusion performed by the repa-plugin.
+        
 Library
   Exposed-Modules:
         Data.Array.Repa.Series

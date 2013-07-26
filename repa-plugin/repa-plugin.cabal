@@ -2,10 +2,14 @@ Name:           repa-plugin
 Version:        1.0.0.0
 License:        BSD3
 License-File:   LICENSE
-Synopsis:       Repa vectorisation plugin
 Cabal-Version:  >= 1.10
 Build-Type:     Simple
 Author:         The DPH Team
+Synopsis:       Implements Data Flow Fusion.
+Description:    
+        This GHC plugin implements Data Flow Fusion as described in the paper:
+        Data Flow Fusion with Series Expressions in Haskell, Haskell Symposium 2013.
+
 
 Library
   Exposed-Modules:
