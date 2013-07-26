@@ -23,7 +23,7 @@ main
  = do   args <- getArgs
         let sz = case args of
                    [szStr] -> (Prelude.read szStr :: Int)
-                   _       -> error "Usage: quickhull <size>"
+                   _       -> error "Usage: dotprodct <size>"
         x1 <- V.fromUnboxed $ U.enumFromN 0 sz
         y1 <- V.fromUnboxed $ U.enumFromN 0 sz
         x2 <- V.fromUnboxed $ U.enumFromN 0 sz
@@ -35,9 +35,11 @@ main
 	putStr	$ prettyTime t
         print (U.head d, U.length d)
 
+
 lower_dotp :: R.Series k Int -> R.Series k Int
      -> R.Series k Int -> R.Series k Int
      -> R.Vector   Int
+
 lower_dotp x1 y1 x2 y2
  = S.toVector (R.map2 (+) (R.map2 (*) x1 x2) (R.map2 (*) y1 y2))
 

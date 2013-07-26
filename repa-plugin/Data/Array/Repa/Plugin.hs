@@ -12,7 +12,7 @@ plugin  = defaultPlugin
 
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
-install _ todos
+install options todos
  = do   
         -- Initialize the staticflags so that we can pretty print core code.
         --   The pretty printers depend on static flags and will `error` if 
@@ -28,7 +28,7 @@ install _ todos
                 return (return ())
 
         -- Replace the standard GHC pipeline with our one.
-        return (vectoriserPipeline todos)
+        return (vectoriserPipeline options todos)
 
 
 -- CoreToDo -------------------------------------------------------------------
@@ -60,13 +60,13 @@ isCoreDoVectorisation cc
 -- | The main DPH Plugin.
 dphPluginPass :: PluginPass
 dphPluginPass modGuts
-        = trace "******** PASS"
+        = trace "***** PASS"
         $ dumpCore modGuts
 
 dumpCore :: ModGuts -> CoreM ModGuts 
 dumpCore guts
  = unsafePerformIO
- $ do   putStrLn $ "*** GUTS " ++ show (length $ mg_binds guts)
+ $ do   putStrLn $ "***** GUTS " ++ show (length $ mg_binds guts)
 
         return (return guts)
 

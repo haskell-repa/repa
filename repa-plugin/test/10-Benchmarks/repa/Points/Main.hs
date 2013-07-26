@@ -23,9 +23,11 @@ main
         let (ys,zs) = R.runSeries v1 (lower_points 5 5)
         print (ys,zs)
 
+
 lower_points :: Int -> Int
              -> R.Series k (Int, Int)
              -> (R.Vector Int, Int)
+
 lower_points ox oy xs
  = let dists = R.map  (\(x,y) -> (x-ox)*(x-ox) + (y-oy)*(y-oy)) xs
        mini  = R.fold min 1000 dists

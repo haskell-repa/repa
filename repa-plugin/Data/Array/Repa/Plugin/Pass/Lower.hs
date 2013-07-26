@@ -42,38 +42,49 @@ import Data.List
 
 
 -- | We use this unique when generating fresh names.
+--
 --   If this is not actually unique relative to the rest of the compiler
---   then we're completely screwed. GHC doesn't seem to have an API to
---   generate actually unique prefixes.
+--   then we're completely screwed.
+--
+--   GHC doesn't seem to have an API to generate unique prefixes.
+--
 letsHopeThisIsUnique    :: Char
 letsHopeThisIsUnique    = 's'
 
 
 -- | Run the lowering pass on this module.
-passLower :: String -> G.ModGuts -> G.CoreM G.ModGuts
-passLower name guts0
+passLower :: [G.CommandLineOption] -> String -> G.ModGuts -> G.CoreM G.ModGuts
+passLower options name guts0
  = unsafePerformIO
  $ do
         -- Here's hoping this is really unique
         us      <- G.mkSplitUniqSupply letsHopeThisIsUnique
 
+        -- Decide whether to dump intermediate files
+        let shouldDump      = elem "dump" options
+        let dump thing str  = when shouldDump 
+                            $ writeFile ("dump." ++ name ++ "." ++ thing) str
+
         -- Input ------------------------------------------
-        writeFile ("dump." ++ name ++ ".01-ghc.hs")
-         $ D.render D.RenderIndent (pprModGuts guts0)
+        -- Dump the GHC core code that we start with.
+        dump "01-ghc.hs" 
+         $ D.renderIndent (pprModGuts guts0)
+
 
         -- Primitives -------------------------------------
         -- Build a table of expressions to access our primitives.
         let (Just (primitives, guts), us2) 
                 = G.initUs us (slurpPrimitives guts0)
 
+
         -- Convert ----------------------------------------
         -- Convert the GHC Core module to Disciple Core.
         let (mm_dc, failsConvert) = convertModGuts guts
 
-        writeFile ("dump." ++ name ++ ".02-dc-raw.dcf")
+        dump "02-raw.dcf"
          $ D.renderIndent (D.ppr mm_dc)
 
-        writeFile ("dump." ++ name ++ ".02-dc-raw.fails")
+        dump "02-raw.fails"
          $ D.renderIndent (D.vcat $ intersperse D.empty $ map D.ppr failsConvert)
 
 
@@ -82,10 +93,10 @@ passLower name guts0
         --  We also get a map of DDC names to GHC names
         let (mm_detect, names) = detectModule mm_dc
 
-        writeFile ("dump." ++ name ++ ".03-dc-detect.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_detect)
+        dump "03-detect.dcf"
+         $ D.renderIndent (D.ppr mm_detect)
 
-        writeFile ("dump." ++ name ++ ".03-dc-detect.names")
+        dump "03-detect.names"
          $ D.renderIndent (D.vcat $ map D.ppr $ Map.toList names)
 
 
@@ -94,8 +105,8 @@ passLower name guts0
         let etaConfig   = Eta.configZero { Eta.configExpand = True }
         let mm_eta      = Core.result $ Eta.etaModule etaConfig Flow.profile mm_detect
 
-        writeFile ("dump." ++ name ++ ".04-dc-norm.1-eta.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_eta)
+        dump "04-norm.1-eta.dcf"
+         $ D.renderIndent (D.ppr mm_eta)
 
         -- A-normalize module for the Prep transform.
         let mkNamT   = Core.makeNamifier Flow.freshT
@@ -108,12 +119,12 @@ passLower name guts0
         let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_eta
         let mm_snip     = evalState (Core.namifyUnique mkNamT mkNamX mm_snip') 0
 
-        writeFile ("dump." ++ name ++ ".04-dc-norm.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_snip)
+        dump "04-norm.dcf"
+         $ D.renderIndent (D.ppr mm_snip)
 
 
         -- Prep -------------------------------------------
-        --  2. Eta-expand worker functions passed to flow combinators.
+        --  1. Eta-expand worker functions passed to flow combinators.
         --     We also get back a map containing the types of parameters
         --     to worker functions.
         --  NOTE: We're not using the module result of prep now that 
@@ -121,7 +132,7 @@ passLower name guts0
         let (_, workerNameArgs) 
                         = Flow.prepModule mm_snip
 
-        --  3. Move worker functions forward so they are directly
+        --  2. Move worker functions forward so they are directly
         --     applied to flow combinators.
         let isFloatable lts
              = case lts of
@@ -135,21 +146,20 @@ passLower name guts0
         
         let mm_forward          = Core.result result_forward
 
-        writeFile ("dump." ++ name ++ ".05-dc-prep.1-forward.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_forward)
+        dump "05-prep.1-forward.dcf"
+         $ D.renderIndent (D.ppr mm_forward)
 
-
-        --  4. Create fresh names for anonymous binders.
+        --  3. Create fresh names for anonymous binders.
         --     The lowering pass needs them all to have real names.
         let mm_namify   = evalState (Core.namifyUnique mkNamT mkNamX mm_forward) 0
 
-        writeFile ("dump." ++ name ++ ".05-dc-prep.2-namify.dcf")
-         $ D.render D.RenderIndent (D.ppr mm_namify)
+        dump "05-prep.2-namify.dcf"
+         $ D.renderIndent (D.ppr mm_namify)
 
-        --  5. Type check add type annots on all binders.
+        --  4. Type check add type annots on all binders.
         let mm_prep     = checkFlowModule_ mm_namify
 
-        writeFile ("dump." ++ name ++ ".05-dc-prep.3-check.dcf")
+        dump "05-prep.3-check.dcf"
          $ D.renderIndent (D.ppr mm_prep)
 
 
@@ -164,19 +174,19 @@ passLower name guts0
         let mm_lowered' = Flow.extractModule mm_prep procs
         let mm_lowered  = evalState (Core.namifyUnique mkNamT mkNamX mm_lowered') 0
 
-        writeFile ("dump." ++ name ++ ".06-dc-lowered.1-processes.txt")
-         $ D.renderIndent $ D.vcat $ intersperse D.empty $ map D.ppr $ processes
+        dump "06-lowered.1-processes.txt"
+         $ D.renderIndent (D.vcat $ intersperse D.empty $ map D.ppr $ processes)
 
-        writeFile ("dump." ++ name ++ ".06-dc-lowered.dcf")
-         $ D.renderIndent $ D.ppr mm_lowered
+        dump "06-lowered.dcf"
+         $ D.renderIndent (D.ppr mm_lowered)
 
 
         -- Concretize ------------------------------------
         -- Concretize rate variables.
         let mm_concrete = Flow.concretizeModule mm_lowered
 
-        writeFile ("dump." ++ name ++ ".07-dc-concrete.dcf")
-         $ D.renderIndent $ D.ppr mm_concrete
+        dump "07-concrete.dcf"
+         $ D.renderIndent (D.ppr mm_concrete)
 
 
         -- Wind ------------------------------------------
@@ -192,8 +202,8 @@ passLower name guts0
                                 (Forward.Config (const Forward.FloatAllow) True)
                         $ Flow.windModule mm_concrete
 
-        writeFile ("dump." ++ name ++ ".08-dc-wind.dcf")
-         $ D.renderIndent $ D.ppr mm_wind
+        dump "08-wind.dcf"
+         $ D.renderIndent (D.ppr mm_wind)
 
 
         -- Check -----------------------------------------
@@ -201,8 +211,8 @@ passLower name guts0
         --  the thread transform wants type annotations at each node.
         let mm_checked  = checkFlowModule mm_wind
 
-        writeFile ("dump." ++ name ++ ".09-dc-checked.dcf")
-         $ D.renderIndent $ D.ppr mm_checked
+        dump "09-checked.dcf"
+         $ D.renderIndent (D.ppr mm_checked)
 
 
         -- Thread -----------------------------------------
@@ -214,8 +224,8 @@ passLower name guts0
                                 mm_checked
         let mm_thread   = evalState (Core.namifyUnique mkNamT mkNamX mm_thread') 0
 
-        writeFile ("dump." ++ name ++ ".10-dc-threaded.dcf")
-         $ D.renderIndent $ D.ppr mm_thread
+        dump "10-threaded.dcf"
+         $ D.renderIndent (D.ppr mm_thread)
 
 
         -- Splice -----------------------------------------
@@ -223,8 +233,8 @@ passLower name guts0
         let guts'       = G.initUs_ us2 
                         $ spliceModGuts primitives names mm_thread guts
 
-        writeFile ("dump." ++ name ++ ".11-ghc-spliced.dcf")
-         $ D.render D.RenderIndent (pprModGuts guts')
+        dump "11-spliced.fc"
+         $ D.renderIndent (pprModGuts guts')
 
         return (return guts')
 
@@ -257,5 +267,4 @@ checkFlowModule mm
                    , D.indent 2 
                         $ D.vcat [ D.text "Type error in generated code"
                                  , D.ppr err ] ]
-
 

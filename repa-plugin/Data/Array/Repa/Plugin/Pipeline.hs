@@ -7,35 +7,26 @@ import Data.Array.Repa.Plugin.Pass.Lower
 import GhcPlugins
 
 
--- DPH Compilation phase numbers. 
--- These are defined in dph-base:include/fusion-phases.h
-
-
 -- | Our vectoriser pipeline.
 --
 --   Inject the lowering transform just after the first simplification stage,
 --   or add a simplification and lowering at the end if there is none.
 --
-vectoriserPipeline :: [CoreToDo] -> [CoreToDo]
-vectoriserPipeline todos
+vectoriserPipeline :: [CommandLineOption] -> [CoreToDo] -> [CoreToDo]
+vectoriserPipeline options todos
  -- If an initial simplifier exists, lower straight afterwards
- | (before, (simp:after)) <- break findPreSimplifier todos
- = before ++ [simp] ++ lower ++ after ++ dump
+ | (before, (simp:after)) <- break isPreSimplifier todos
+ = before ++ [simp] ++ todoLower options ++ after ++ todoDump options
 
  -- There is no simplifier (eg not compiled with -O)
  -- So add our own at the end
  | otherwise
- = todos ++ preSimp ++ lower ++ dump
- where
-  findPreSimplifier c
-   = case c of
-     CoreDoSimplify _
-      SimplMode { sm_phase = InitialPhase }
-      -> True
-     _
-      -> False
+ = todos ++ todoPreSimplifier ++ todoLower options ++ todoDump options
 
-  preSimp
+
+-- Do our own pre simplification.
+todoPreSimplifier :: [CoreToDo]
+todoPreSimplifier
    = [ CoreDoSimplify 10
                 SimplMode 
                 { sm_names      = ["Vectorise", "PreSimplify"]
@@ -45,13 +36,27 @@ vectoriserPipeline todos
                 , sm_inline     = False
                 , sm_case_case  = False } ]
 
-  -- Dump the simplified code,
-  -- then lower the series expressions in the code.
-  lower
-   = [ CoreDoPluginPass "Dump" (passDump "1-dump")
-     , CoreDoPluginPass "Lower" (passLower "2-lower") ]
 
-  -- Dump the final result, after GHC optimises the lowered code
-  dump
-   = [ CoreDoPluginPass "Dump"   (passDump "3-final") ]
+-- Dump the simplified code,
+-- then lower the series expressions in the code.
+todoLower :: [CommandLineOption] -> [CoreToDo]
+todoLower options
+ =      [ CoreDoPluginPass "Dump"  (passDump  options "1-dump")
+        , CoreDoPluginPass "Lower" (passLower options "2-lower") ]
+
+
+-- Dump the final result, after GHC optimises the lowered code
+todoDump  :: [CommandLineOption] -> [CoreToDo]
+todoDump options
+ =      [ CoreDoPluginPass "Dump"   (passDump options "3-final") ]
+
+
+-- | Check if a `CoreToDo` looks like the pre-simplifier.
+isPreSimplifier :: CoreToDo -> Bool
+isPreSimplifier c
+ = case c of
+        CoreDoSimplify _ SimplMode { sm_phase = InitialPhase }
+          -> True
+        _ -> False
+
 

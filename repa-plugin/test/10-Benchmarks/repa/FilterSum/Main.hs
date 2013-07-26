@@ -27,6 +27,7 @@ main
         putStr	$ prettyTime t
         print (I# (V.length v), i, a)
 
+
 lower_filterSum :: R.Series k Int -> (R.Vector Int, Int, Int)
 lower_filterSum xs
  = let xsS = R.map (\x -> x > 50) xs
