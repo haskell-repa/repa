@@ -127,7 +127,7 @@ convertTopBind bnd
 
 
 -- | Convert a single binding.
---   TODO: select the bindings we care about more generally.
+                                                        -- TODO: select bindings to lower more generally.
 convertBinding 
         :: (G.CoreBndr, G.CoreExpr)
         -> Either Fail (D.Bind FatName, D.Exp () FatName)
@@ -201,9 +201,9 @@ convertExpr xx
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
 
         -- We can't represent type casts/
-        -- Actually, we require these for series of tuples.
-        -- HACK but it may do for now
-        G.Cast x _      -> convertExpr x -- Left FailNoCasts
+        -- Actually, we require these for series of tuples.     
+        G.Cast x _      -> convertExpr x                        
+                                                        -- TODO: We're just ditching casts.
 
         -- Just ditch tick nodes, we probably don't need them.
         G.Tick _ x      -> convertExpr x
@@ -222,18 +222,19 @@ convertAlt (con, bs, x)
         ts' <- mapM convertVarType bs
         x'  <-      convertExpr    x
         case con of
-         G.DEFAULT -> -- Assume bs == []?
-          return $ D.AAlt D.PDefault x'
+         G.DEFAULT 
+          ->    return $ D.AAlt D.PDefault x'
 
          G.DataAlt dc
           -> do nm <- convertName $ G.dataConName    dc
                 ty <- convertType $ G.dataConRepType dc
                 let binds = zipWith D.BName ns' ts'
                 let fat   = FatName (GhcNameTyCon $ G.promoteDataCon dc) nm
+
                 -- It must be algebraic, since we are casing on it.
                 let pat   = D.PData (D.mkDaConAlg fat ty) binds
                 return $ D.AAlt pat x'
 
-         G.LitAlt _ ->
-          Left FailUnhandledCase
+         G.LitAlt _ 
+          ->    Left FailUnhandledCase
 

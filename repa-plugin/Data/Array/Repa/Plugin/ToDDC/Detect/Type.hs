@@ -205,8 +205,6 @@ instance Detect Type where
   , Just _       <- matchPrim "Constraint_" n
   = do  return $ TCon (TyConKind KiConData)
         
-  -- makePrim g' (NamePrimTyCon (PrimTyConFloat 64))     kData
-
   -- Boilerplate traversal.
   | otherwise
   = case tt of

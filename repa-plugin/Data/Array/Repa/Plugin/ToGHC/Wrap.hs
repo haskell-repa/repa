@@ -147,7 +147,8 @@ unwrapResult tOrig tLowered xResult
         , tcInt  == G.intTyCon
         , G.TyConApp tcIntU []   <- tLowered    
         , tcIntU == G.intPrimTyCon
-                        -- TODO: do a proper check. Is this supposed to be a TyLit? 
+                                                -- TODO: do a proper check. 
+                                                --       Is this supposed to be a TyLit? 
 
         = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
 
@@ -212,7 +213,3 @@ unwrapResult tOrig tLowered xResult
 
         | otherwise
         = return xResult
-
---        | otherwise
---        = error $ "repa-plugin.ToGHC.unwrapResult: don't know how to unwrap this."
---                ++ " " ++ (renderIndent $ ppr tLowered)

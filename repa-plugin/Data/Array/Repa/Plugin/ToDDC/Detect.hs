@@ -42,9 +42,6 @@ instance Detect (Module ()) where
         importT <- detectMap  (moduleImportTypes mm)
 
         -- Limit the import types to free vars in body:
-        -- This cleans up the dump a little, but I'm actually doing it because I was getting 
-        -- "$fUnbox(,) :: ... Vector# Vector# (Tuple2# a_aPj b_aPk) -> ..."
-        -- which is a kind error.
         let free     = freeX empty body'
             importT' = Map.filterWithKey (\k _ -> Set.member (UName k) free) importT
 
@@ -55,6 +52,7 @@ instance Detect (Module ()) where
                 , moduleImportKinds     = importK
                 , moduleImportTypes     = importT'
                 , moduleBody            = body' }
+
 
 -- Convert the FatNames of an import map
 detectMap  :: Map FatName (QualName FatName, Type FatName)
@@ -93,8 +91,7 @@ instance Detect DaConName where
          -> do  collect d g
                 return $ DaConNamed (NameLitBool False)
 
-        -- HACK Why is this NameVar, and the booleans above NameCon?
-        -- I really don't know.
+                                                        -- TODO This should have been a NameCon
         DaConNamed (FatName g d@(NameVar v))
          | isPrefixOf "(,)_" v
          -> do  collect d g

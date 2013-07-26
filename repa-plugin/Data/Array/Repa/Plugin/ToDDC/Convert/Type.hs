@@ -74,7 +74,7 @@ convertTyCon tc
         = do    name'   <- convertName $ G.tyConName tc
                 return  $ D.TyConBound
                                 (D.UName (FatName (GhcNameTyCon tc) name'))
-                                (D.kData)                       -- TODO: WRONG
+                                (D.kData)                               -- TODO: Get real kind of tycon.
 
 
 -- Kind -----------------------------------------------------------------------

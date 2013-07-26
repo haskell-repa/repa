@@ -40,6 +40,7 @@ data DetectS
         , stateRateVars :: Set Name }
 
 
+-- | Initial detector state.
 zeroState :: DetectS
 zeroState
         = DetectS
@@ -47,16 +48,19 @@ zeroState
         , stateRateVars = Set.empty }
 
 
+-- | Remember a mapping between a DDC and GHC name.
 collect :: Name -> GhcName -> State DetectS ()
 collect !d !g
  = modify $ \s -> s { stateNames    = Map.insert d g (stateNames s) }
 
 
+-- | Remember that is a rate variable.
 setRateVar :: Name -> State DetectS ()
 setRateVar !name
  = modify $ \s -> s { stateRateVars = Set.insert name (stateRateVars s) }
 
 
+-- | Check whether this is a rate variable.
 isRateVar  :: Name -> State DetectS Bool
 isRateVar name
  = do   s       <- gets stateRateVars 

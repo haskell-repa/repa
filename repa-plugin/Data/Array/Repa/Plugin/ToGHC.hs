@@ -99,7 +99,7 @@ spliceBind primitives guts names names' mm (G.NonRec gbOrig _)
         -- make a new binding for the lowered version.
         let dtLowered   = D.typeOfBind dbLowered
         gtLowered       <- convertType kenv dtLowered
-        gvLowered       <- newDummyVar "lowered" gtLowered       -- TODO: base on orig name.
+        gvLowered       <- newDummyVar "lowered" gtLowered
 
         -- Convert the lowered version from DDC to GHC core.
         (gxLowered, _)  <- convertExp kenv tenv dxLowered
@@ -124,7 +124,6 @@ spliceBind _ _ _ _ _ b
 
 -------------------------------------------------------------------------------
 -- | Lookup a top-level binding from a DDC module.
-                                        --   TODO: don't require a top-level letrec.
 lookupModuleBindOfName
         :: D.Module () D.Name 
         -> D.Name 
@@ -173,7 +172,7 @@ convertExp kenv tenv xx
          ->     convertPrim kenv tenv n
 
 
-        -- RateOfRateNat is Id                                  -- HACKS: make a real prim.
+        -- RateOfRateNat is Id
         D.XApp{}
          | Just (n, [_xTK, xRate]) <- D.takeXPrimApps xx
          ,  D.NameOpFlow D.OpFlowNatOfRateNat   <- n
@@ -480,5 +479,4 @@ errorNoConversion xx
  $      [ D.text "repa-plugin.ToGHC: cannot convert this to GHC Core"
         , D.empty
         , D.indent 8 $ D.ppr xx ]
-
 
