@@ -94,6 +94,9 @@ passLower name guts0
         let etaConfig   = Eta.configZero { Eta.configExpand = True }
         let mm_eta      = Core.result $ Eta.etaModule etaConfig Flow.profile mm_detect
 
+        writeFile ("dump." ++ name ++ ".04-dc-norm.1-eta.dcf")
+         $ D.render D.RenderIndent (D.ppr mm_eta)
+
         -- A-normalize module for the Prep transform.
         let mkNamT   = Core.makeNamifier Flow.freshT
         let mkNamX   = Core.makeNamifier Flow.freshX

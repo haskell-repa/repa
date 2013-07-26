@@ -73,6 +73,7 @@ data Primitives
   , prim_nextInt        :: forall k
                         .  Series k Int -> Int#
                         -> World -> (# World, Int# #)
+
   , prim_nextInt_T2     :: forall k
                         .  Series k (Int,Int) -> Int#
                         -> World -> (# World, (# Int#, Int# #) #)

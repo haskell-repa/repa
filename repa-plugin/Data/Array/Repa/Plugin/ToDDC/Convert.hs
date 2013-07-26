@@ -49,12 +49,14 @@ convertModGuts guts
 
         -- Find the free variables in the module body
         freeX   = D.freeX D.empty body
+
         -- And add them all to the import types
         importT = foldl (insertImport convertType) Map.empty
                 $ Set.toList freeX
 
         -- Then find the type constructors mentioned in the imports
-        freeT   = Set.unions (map (D.supportTyCon . D.support D.empty D.empty . snd . snd) $ Map.toList importT)
+        freeT   = Set.unions (map (D.supportTyCon . D.support D.empty D.empty . snd . snd) 
+                        $ Map.toList importT)
         -- And add them to the import kinds
         importK = foldl (insertImport convertKind) Map.empty
                 $ Set.toList freeT
@@ -79,9 +81,11 @@ insertImport c m bound
  | D.UName n@(FatName ghc _) <- bound
  , GhcNameVar v              <- ghc
  = ins n (c $ G.varType v)
+
  | D.UName n@(FatName ghc _) <- bound
  , GhcNameTyCon tc           <- ghc
  = ins n (c $ G.tyConKind tc)
+
  | otherwise
  = m
  where
@@ -220,6 +224,7 @@ convertAlt (con, bs, x)
         case con of
          G.DEFAULT -> -- Assume bs == []?
           return $ D.AAlt D.PDefault x'
+
          G.DataAlt dc
           -> do nm <- convertName $ G.dataConName    dc
                 ty <- convertType $ G.dataConRepType dc
@@ -228,5 +233,7 @@ convertAlt (con, bs, x)
                 -- It must be algebraic, since we are casing on it.
                 let pat   = D.PData (D.mkDaConAlg fat ty) binds
                 return $ D.AAlt pat x'
+
          G.LitAlt _ ->
           Left FailUnhandledCase
+

@@ -47,13 +47,13 @@ instance Detect Bound where
          -> makePrim g' (NamePrimTyCon (PrimTyConWord 8))       kData
 
          | Just g'      <- matchPrim "Word16_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConWord 16))       kData
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 16))      kData
 
          | Just g'      <- matchPrim "Word32_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConWord 32))       kData
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 32))      kData
 
          | Just g'      <- matchPrim "Word64_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConWord 64))       kData
+         -> makePrim g' (NamePrimTyCon (PrimTyConWord 64))      kData
 
          | Just g'      <- matchPrim "Float_" n
          -> makePrim g' (NamePrimTyCon (PrimTyConFloat 32))     kData
@@ -196,9 +196,11 @@ instance Detect Type where
   | TCon (TyConBound (UName n) _) <- tt
   , Just _       <- matchPrim "*_" n
   = do  return $ TCon (TyConKind KiConData)
+
   | TCon (TyConBound (UName n) _) <- tt
   , Just _       <- matchPrim "#_" n
   = do  return $ TCon (TyConKind KiConData)
+
   | TCon (TyConBound (UName n) _) <- tt
   , Just _       <- matchPrim "Constraint_" n
   = do  return $ TCon (TyConKind KiConData)

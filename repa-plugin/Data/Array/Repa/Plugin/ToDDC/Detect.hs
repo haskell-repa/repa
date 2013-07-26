@@ -33,7 +33,6 @@ detectModule mm
    in   (mm', stateNames state')
 
 
-
 -- Module ---------------------------------------------------------------------
 instance Detect (Module ()) where
  detect mm
@@ -219,7 +218,6 @@ instance Detect (Exp a) where
             ty    = typeDaConFlow tuple
         return  $ xApps (XCon $ mkDaConAlg (NameDaConFlow tuple) ty)
                         args'
-
 
 
   -- Inject type arguments for arithmetic ops.

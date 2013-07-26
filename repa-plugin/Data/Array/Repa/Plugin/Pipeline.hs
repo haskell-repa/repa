@@ -21,6 +21,7 @@ vectoriserPipeline todos
  -- If an initial simplifier exists, lower straight afterwards
  | (before, (simp:after)) <- break findPreSimplifier todos
  = before ++ [simp] ++ lower ++ after ++ dump
+
  -- There is no simplifier (eg not compiled with -O)
  -- So add our own at the end
  | otherwise

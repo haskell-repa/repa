@@ -40,11 +40,11 @@ Library
         base            == 4.6.*,
         containers      == 0.5.*,
         mtl             == 2.1.*,
-        ghc             >= 7.5,
-        ddc-base        == 0.3.*,
-        ddc-core        == 0.3.*,
-        ddc-core-flow   == 0.3.*,
-        ddc-core-simpl  == 0.3.*
+        ghc             == 7.6.*,
+        ddc-base        == 0.3.2.*,
+        ddc-core        == 0.3.2.*,
+        ddc-core-flow   == 0.3.2.*,
+        ddc-core-simpl  == 0.3.2.*
 
 
   Default-Language:

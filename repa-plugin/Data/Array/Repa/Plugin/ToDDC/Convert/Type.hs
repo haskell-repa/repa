@@ -48,7 +48,7 @@ convertType tt
         G.FunTy t1 t2
          -> do  t1'     <- convertType t1
                 t2'     <- convertType t2
-                return  $ D.tFunPE t1' t2'
+                return  $ D.tFun t1' t2'
 
         G.ForAllTy v t
          -> do  v'      <- convertFatName v

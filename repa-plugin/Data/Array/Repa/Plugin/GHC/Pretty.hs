@@ -219,11 +219,6 @@ instance Pretty CoreBndr where
         <> text (show $ idUnique bndr)
 
 
-{- instance Pretty DataCon where
-   ppr con 
-        = ppr (dataConName con)
--}
-
 instance Pretty Name where
  ppr name
         = ppr (nameOccName name)

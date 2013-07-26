@@ -155,8 +155,6 @@ convertPolytypicPrim kenv _tenv n tsArg
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
-
-
         -- Loop
         D.NameOpLoop D.OpLoopLoopN
          -> return $ prim_loop prims

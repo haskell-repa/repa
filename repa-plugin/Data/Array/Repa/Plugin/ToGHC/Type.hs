@@ -117,7 +117,7 @@ convertType kenv tt
 
         -- Function types.
         D.TApp{}
-         | Just (t1, _, _, t2)    <- D.takeTFun tt
+         | Just (t1, t2)        <- D.takeTFun tt
          -> do  t1'     <- convertType kenv t1
                 t2'     <- convertType kenv t2
                 return  $  G.mkFunTy t1' t2'
@@ -284,6 +284,4 @@ bindVarT kenv (D.BName n _)
 
 bindVarT _ b
         = error $ "repa-plugin.ToGHC.bindVarT: can't bind " ++ show b
-
-
 

@@ -227,13 +227,6 @@ convertExp kenv tenv xx
                  -> return ( G.Lit (G.MachInt i)
                            , G.intPrimTy)
 
-                {-
-                -- Bool# literal
-                D.DaConNamed (D.NameLitBool b)
-                 -> return ( if b then G.trueDataCon else G.falseDataCon
-                           , G.boolTy)
-                 -}
-
                 -- Don't know how to convert this.
                 _ -> error $ "repa-plugin.ToGHC.convertExp: "
                            ++ "Cannot convert DDC data constructor " 
@@ -481,15 +474,11 @@ shuffleAlts alts
                 _                       -> go (acc ++ [a]) more
 
 
-
-
 -- Errors ---------------------------------------------------------------------
 errorNoConversion xx
  = error $ D.renderIndent $ D.vcat
  $      [ D.text "repa-plugin.ToGHC: cannot convert this to GHC Core"
         , D.empty
         , D.indent 8 $ D.ppr xx ]
-
-
 
 
