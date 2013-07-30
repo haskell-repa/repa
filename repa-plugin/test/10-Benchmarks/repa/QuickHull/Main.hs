@@ -103,9 +103,10 @@ lower_filtermax x1 y1 x2 y2 xs ys
 minIx :: Int -> (Int, Int) -> Int -> (Int, Int)
 minIx i (x', i') x 
         = if x < x' then (x, i) else (x', i')
+{-# INLINE minIx #-}
 
 
 maxIx :: Int -> (Int, Int) -> Int -> (Int, Int)
 maxIx i (x', i') x
         = if x > x' then (x, i) else (x', i')
-
+{-# INLINE maxIx #-}

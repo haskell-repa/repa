@@ -16,7 +16,7 @@ import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
--- import qualified DDC.Core.Flow.Transform.Melt           as Flow
+import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Thread         as Flow
 
@@ -210,10 +210,10 @@ passLower options name guts0
 
         -- Melt ------------------------------------------
         -- Melt mutable references to tuples into references to their components.
-        let mm_melt     = mm_concrete
-        --let (mm_melt, _) = Flow.meltModule mm_concrete
-        --dump "08-melt.dcf"
-        -- $ D.renderIndent (D.ppr mm_melt)
+        -- let mm_melt     = mm_concrete
+        let (mm_melt, _) = Flow.meltModule mm_concrete
+        dump "08-melt.dcf"
+         $ D.renderIndent (D.ppr mm_melt)
 
 
         -- Wind ------------------------------------------
