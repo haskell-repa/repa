@@ -48,11 +48,6 @@ data Primitives
   , prim_readRefInt     :: Ref Int -> World -> (# World, Int# #)
   , prim_writeRefInt    :: Ref Int -> Int#  -> World -> World
 
-    -- Ref (Int,Int)
-  , prim_newRefInt_T2   :: (# Int#, Int# #) -> World -> (# World, Ref (Int,Int) #) 
-  , prim_readRefInt_T2  :: Ref (Int,Int) -> World -> (# World, (# Int#, Int# #) #)
-  , prim_writeRefInt_T2 :: Ref (Int,Int) -> (# Int#, Int# #)  -> World -> World
-
     -- Vector Int
   , prim_newVectorInt   :: Int# -> World -> (# World, Vector Int #)
   , prim_readVectorInt  :: Vector Int -> Int# -> World -> (# World, Int# #)
@@ -84,9 +79,9 @@ data Primitives
 primitives :: Primitives
 primitives
   = Primitives
-  { prim_Series         = undefined
-  , prim_Vector         = undefined
-  , prim_Ref            = undefined
+  { prim_Series         = error "repa-series.primitives: you can't touch this."
+  , prim_Vector         = error "repa-series.primitives: you can't touch this."
+  , prim_Ref            = error "repa-series.primitives: you can't touch this."
 
     -- Arith Int
   , prim_addInt         = (+#)
@@ -108,11 +103,6 @@ primitives
   , prim_newRefInt      = repa_newRefInt
   , prim_readRefInt     = repa_readRefInt
   , prim_writeRefInt    = repa_writeRefInt
-
-    -- Ref (Int,Int)
-  , prim_newRefInt_T2   = repa_newRefInt_T2
-  , prim_readRefInt_T2  = repa_readRefInt_T2
-  , prim_writeRefInt_T2 = repa_writeRefInt_T2
 
     -- Vector Int
   , prim_newVectorInt   = repa_newVectorInt
@@ -199,29 +189,6 @@ repa_writeRefInt        :: Ref Int -> Int# -> World -> World
 repa_writeRefInt ref val
         = unwrapIO_ (Ref.write ref (I# val))
 {-# INLINE repa_writeRefInt #-}
-
-
--- Ref (Int,Int) --------------------------------------------------------------
-repa_newRefInt_T2       :: (# Int#, Int# #) -> World -> (# World, Ref (Int,Int) #)
-repa_newRefInt_T2 (# x, y #)
-        = unwrapIO' (Ref.new (I# x, I# y))
-{-# INLINE repa_newRefInt_T2 #-}
-
-
-repa_readRefInt_T2      :: Ref (Int,Int) -> World -> (# World, (# Int#, Int# #) #)
-repa_readRefInt_T2 ref
- = case Ref.read ref of
-        IO f -> \world
-             -> case f world of
-                        (# world', (I# i, I# j) #) -> (# world', (# i, j #) #)
-{-# INLINE repa_readRefInt_T2 #-}
-
-
-repa_writeRefInt_T2     :: Ref (Int,Int) -> (# Int#, Int# #) -> World -> World
-repa_writeRefInt_T2 ref (# i, j #)
-        = unwrapIO_ (Ref.write ref (I# i, I# j))
-{-# INLINE repa_writeRefInt_T2 #-}
-
 
 
 -- Vector Int -----------------------------------------------------------------

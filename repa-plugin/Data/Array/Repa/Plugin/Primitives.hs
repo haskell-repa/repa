@@ -51,9 +51,6 @@ data Primitives
         , prim_newRefInt        :: (G.CoreExpr, G.Type)
         , prim_readRefInt       :: (G.CoreExpr, G.Type)
         , prim_writeRefInt      :: (G.CoreExpr, G.Type)
-        , prim_newRefInt_T2     :: (G.CoreExpr, G.Type)
-        , prim_readRefInt_T2    :: (G.CoreExpr, G.Type)
-        , prim_writeRefInt_T2   :: (G.CoreExpr, G.Type)
 
           -- Vector Int
         , prim_newVectorInt     :: (G.CoreExpr, G.Type)
@@ -101,10 +98,6 @@ primitive_ops
         , "prim_newRefInt"
         , "prim_readRefInt"
         , "prim_writeRefInt"
-        -- Ref (Int,Int)
-        , "prim_newRefInt_T2"
-        , "prim_readRefInt_T2"
-        , "prim_writeRefInt_T2"
 
         -- Vector Int
         , "prim_newVectorInt"
@@ -258,10 +251,6 @@ makeTable v
                 , prim_newRefInt        = get "prim_newRefInt"
                 , prim_readRefInt       = get "prim_readRefInt"
                 , prim_writeRefInt      = get "prim_writeRefInt"
-                -- Ref (Int,Int)
-                , prim_newRefInt_T2     = get "prim_newRefInt_T2"
-                , prim_readRefInt_T2    = get "prim_readRefInt_T2"
-                , prim_writeRefInt_T2   = get "prim_writeRefInt_T2"
 
                 -- Vector Int
                 , prim_newVectorInt     = get "prim_newVectorInt"
