@@ -49,7 +49,7 @@ wrapLowered tOrig tLowered vsParam vLowered
                 wrapLowered tOrig tLowered2 vsParam' vLowered
 
 
-        -- Descend into functions.
+        -- Decend into functions.
         --  Bind the argument with a new var so we can pass it to the lowered
         --  function.
         | G.FunTy tOrig1      tOrig2    <- tOrig
@@ -213,3 +213,4 @@ unwrapResult tOrig tLowered xResult
 
         | otherwise
         = return xResult
+

@@ -9,12 +9,14 @@ import qualified Data.Vector.Unboxed    as U
 repa_primitives :: R.Primitives
 repa_primitives =  R.primitives
 
+
 ---------------------------------------------------------------------
 -- | The opaque worker function for map
 -- Noinline, because we want to make sure lower can handle arbitrary functions
 {-# NOINLINE f_opaque #-}
 f_opaque :: Int -> Int
 f_opaque x = x + 1
+
 
 ---------------------------------------------------------------------
 main

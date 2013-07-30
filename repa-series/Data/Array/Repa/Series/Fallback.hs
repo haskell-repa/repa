@@ -60,17 +60,19 @@ fold f z !source
 -- | Combine all elements of a series with an associative operator.
 --   The worker function is given the current index into the series.
 foldIndex :: forall k a b. Unbox b 
-          => (Int# -> a -> b -> a) -> a -> Series k b -> a
+          => (Int -> a -> b -> a) -> a -> Series k b -> a
 
 foldIndex f z !source
  = go 0# z
- where  go !ix !acc
-         | ix >=# S.length source
+ where  
+        len = S.length source
+        go !ix !acc
+         | ix >=# len
          = acc
 
          | otherwise
          = let  x = S.index source ix
-           in   go (ix +# 1#) (f ix acc x)
+           in   go (ix +# 1#) (f (I# ix) acc x)
 {-# INLINE [0] foldIndex #-}
 
 

@@ -100,7 +100,12 @@ lower_filtermax x1 y1 x2 y2 xs ys
        in  (S.toVector xs', S.toVector ys', snd pmax))
 
 
-minIx = (\i (x',i') x -> if x < x' then (x, I# i) else (x', i'))
+minIx :: Int -> (Int, Int) -> Int -> (Int, Int)
+minIx i (x', i') x 
+        = if x < x' then (x, i) else (x', i')
 
-maxIx = (\i (x',i') x -> if x > x' then (x, I# i) else (x', i'))
+
+maxIx :: Int -> (Int, Int) -> Int -> (Int, Int)
+maxIx i (x', i') x
+        = if x > x' then (x, i) else (x', i')
 

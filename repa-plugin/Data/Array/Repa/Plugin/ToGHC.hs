@@ -28,6 +28,7 @@ import qualified DDC.Core.Compounds     as D
 import qualified DDC.Core.Flow          as D
 import qualified DDC.Core.Flow.Prim     as D
 import qualified DDC.Base.Pretty        as D
+import DDC.Data.ListUtils               (index)
 
 import Data.List
 import Control.Monad
@@ -166,10 +167,34 @@ convertExp kenv tenv xx
                  -> return ( G.Var gv
                            , G.varType gv)
 
+
         -- Non-polytypic primops.
         D.XVar _ (D.UPrim n _)
          |  not $ isPolytypicPrimName n
          ->     convertPrim kenv tenv n
+
+
+        -- Application of tuple projection primop.
+        D.XApp{}
+         | Just ( D.NameOpFlow (D.OpFlowProj arity ix)
+                , xsArg)                   <- D.takeXPrimApps xx
+         , tsA          <- [ t | D.XType t <- take arity xsArg ]
+         , length tsA == arity
+         , Just xScrut  <- xsArg `index` arity
+         -> do  
+                (xScrut', tScrut')  <- convertExp kenv tenv xScrut
+                vScrut'         <- newDummyVar "scrut" tScrut'
+
+                tsA'            <- mapM (convertType_unboxed kenv) tsA
+                vsParts         <- mapM (\(i, t) -> newDummyVar ("v" ++ show i) t)
+                                        $ zip [0 :: Int ..] tsA'
+                let Just vWanted = vsParts `index` (ix - 1)
+                let tResult     = G.varType vWanted
+
+                return  ( G.Case xScrut' vScrut' tResult
+                                [ ( G.DataAlt (G.tupleCon G.UnboxedTuple arity)
+                                  , vsParts, G.Var vWanted) ]
+                        , tResult)
 
 
         -- RateOfRateNat is Id
@@ -197,9 +222,11 @@ convertExp kenv tenv xx
                 vals'   <- mapM (convertExp          kenv tenv) vals
 
                 let dacon    = G.tupleCon G.UnboxedTuple n
+
                 -- Find type of tuple constructor, instantiate the foralls
                 let gt       = G.varType (G.dataConWorkId dacon)
                 let gt'      = G.applyTys gt tys'
+
                 -- Get the result of the function type after applying the arguments in vals
                 let (_,tRes) = G.splitFunTysN (length vals) gt'
 

@@ -16,28 +16,32 @@ import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
-import qualified DDC.Core.Flow.Transform.Thread         as Flow
+-- import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
+import qualified DDC.Core.Flow.Transform.Thread         as Flow
 
 import qualified DDC.Core.Module                        as Core
 import qualified DDC.Core.Check                         as Core
 import qualified DDC.Core.Simplifier                    as Core
 import qualified DDC.Core.Fragment                      as Core
 import qualified DDC.Core.Transform.Namify              as Core
-import qualified DDC.Core.Transform.Flatten             as Core
+import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Thread              as Core
 import qualified DDC.Core.Transform.Reannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Eta                 as Eta
+import qualified DDC.Core.Simplifier.Recipe             as Core
+import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
 import qualified CoreMonad                              as G
 import qualified UniqSupply                             as G
 import qualified DDC.Base.Pretty                        as D
 import qualified Data.Map                               as Map
+import qualified Data.Monoid                            as M
 import System.IO.Unsafe
-import Control.Monad.State.Strict
+import Control.Monad.State.Strict                       as S
 import Data.List
 
 
@@ -103,7 +107,7 @@ passLower options name guts0
         -- Norm -------------------------------------------
         -- Eta expand everything so we have names for parameters.
         let etaConfig   = Eta.configZero { Eta.configExpand = True }
-        let mm_eta      = Core.result $ Eta.etaModule etaConfig Flow.profile mm_detect
+        let mm_eta      = Core.result $ Eta.etaModule Flow.profile etaConfig mm_detect
 
         dump "04-norm.1-eta.dcf"
          $ D.renderIndent (D.ppr mm_eta)
@@ -116,7 +120,7 @@ passLower options name guts0
         --  for flow combinators. This ensures all the flow combinators
         --  and workers are bound at the top-level of the function.
         let snipConfig  = Snip.configZero { Snip.configSnipLetBody = True }
-        let mm_snip'    = Core.flatten $ Snip.snip snipConfig mm_eta
+        let mm_snip'    = Flatten.flatten (Snip.snip snipConfig mm_eta)
         let mm_snip     = evalState (Core.namifyUnique mkNamT mkNamX mm_snip') 0
 
         dump "04-norm.dcf"
@@ -168,11 +172,26 @@ passLower options name guts0
         let processes   = Flow.slurpProcesses mm_prep
 
         -- Schedule processes into abstract loops.
-        let procs       = map Flow.scheduleProcess processes
+        let procedures  = map Flow.scheduleProcess processes
 
         -- Extract concrete code from the abstract loops.
-        let mm_lowered' = Flow.extractModule mm_prep procs
-        let mm_lowered  = evalState (Core.namifyUnique mkNamT mkNamX mm_lowered') 0
+        let mm_lowered' = Flow.extractModule mm_prep procedures
+
+        -- Do some beta-reductions to ensure that arguments to worker functions
+        -- are inlined, then normalize nested applications. 
+        -- When snipping, leave lambda abstractions in place so the worker functions
+        -- applied to our loop combinators aren't moved.
+        let simp_clean           
+                 =    Core.Fix 4 Core.beta 
+                 M.<> Core.Trans (Core.Snip (Snip.configZero { Snip.configPreserveLambdas = True }))
+                 M.<> Core.Trans Core.Flatten
+                 M.<> Core.Trans (Core.Namify mkNamT mkNamX)
+
+        let mm_lowered
+                 = S.evalState
+                        (Core.applySimplifier Flow.profile Env.empty Env.empty
+                                simp_clean mm_lowered')
+                        0
 
         dump "06-lowered.1-processes.txt"
          $ D.renderIndent (D.vcat $ intersperse D.empty $ map D.ppr $ processes)
@@ -189,6 +208,14 @@ passLower options name guts0
          $ D.renderIndent (D.ppr mm_concrete)
 
 
+        -- Melt ------------------------------------------
+        -- Melt mutable references to tuples into references to their components.
+        let mm_melt     = mm_concrete
+        --let (mm_melt, _) = Flow.meltModule mm_concrete
+        --dump "08-melt.dcf"
+        -- $ D.renderIndent (D.ppr mm_melt)
+
+
         -- Wind ------------------------------------------
         -- Convert uses of the  loop# and guard# combinator to real tail-recursive
         -- loops.
@@ -200,9 +227,9 @@ passLower options name guts0
                                 (Forward.Config (const Forward.FloatAllow) True)
                         $ Core.result $ Forward.forwardModule Flow.profile 
                                 (Forward.Config (const Forward.FloatAllow) True)
-                        $ Flow.windModule mm_concrete
+                        $ Flow.windModule mm_melt
 
-        dump "08-wind.dcf"
+        dump "09-wind.dcf"
          $ D.renderIndent (D.ppr mm_wind)
 
 
@@ -211,7 +238,7 @@ passLower options name guts0
         --  the thread transform wants type annotations at each node.
         let mm_checked  = checkFlowModule mm_wind
 
-        dump "09-checked.dcf"
+        dump "10-checked.dcf"
          $ D.renderIndent (D.ppr mm_checked)
 
 
@@ -224,7 +251,7 @@ passLower options name guts0
                                 mm_checked
         let mm_thread   = evalState (Core.namifyUnique mkNamT mkNamX mm_thread') 0
 
-        dump "10-threaded.dcf"
+        dump "11-threaded.dcf"
          $ D.renderIndent (D.ppr mm_thread)
 
 
@@ -233,7 +260,7 @@ passLower options name guts0
         let guts'       = G.initUs_ us2 
                         $ spliceModGuts primitives names mm_thread guts
 
-        dump "11-spliced.fc"
+        dump "12-spliced.fc"
          $ D.renderIndent (pprModGuts guts')
 
         return (return guts')
