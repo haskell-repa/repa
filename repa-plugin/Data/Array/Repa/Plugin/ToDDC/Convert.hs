@@ -55,8 +55,10 @@ convertModGuts guts
                 $ Set.toList freeX
 
         -- Then find the type constructors mentioned in the imports
-        freeT   = Set.unions (map (D.supportTyCon . D.support D.empty D.empty . snd . snd) 
-                        $ Map.toList importT)
+        freeT   = Set.unions 
+                $ map (D.supportTyCon . D.support D.empty D.empty . snd . snd) 
+                $ Map.toList importT
+
         -- And add them to the import kinds
         importK = foldl (insertImport convertKind) Map.empty
                 $ Set.toList freeT
@@ -126,8 +128,8 @@ convertTopBind bnd
 
 
 
--- | Convert a single binding.
-                                                        -- TODO: select bindings to lower more generally.
+-- | Convert a single top-level binding.
+--   The binding must be named "lower_something"
 convertBinding 
         :: (G.CoreBndr, G.CoreExpr)
         -> Either Fail (D.Bind FatName, D.Exp () FatName)
@@ -200,10 +202,9 @@ convertExpr xx
                 return $ D.XLet  () (D.LLet (D.BName b' t') x')
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
 
-        -- We can't represent type casts/
-        -- Actually, we require these for series of tuples.     
+        -- We can't represent type casts,
+        -- so just drop them on the floor.
         G.Cast x _      -> convertExpr x                        
-                                                        -- TODO: We're just ditching casts.
 
         -- Just ditch tick nodes, we probably don't need them.
         G.Tick _ x      -> convertExpr x

@@ -86,13 +86,13 @@ instance Detect DaConName where
          | isPrefixOf "True_" v
          -> do  collect d g
                 return $ DaConNamed (NameLitBool True)
+
         DaConNamed (FatName g d@(NameCon v))
          | isPrefixOf "False_" v
          -> do  collect d g
                 return $ DaConNamed (NameLitBool False)
-
-                                                        -- TODO This should have been a NameCon
-        DaConNamed (FatName g d@(NameVar v))
+                                                        
+        DaConNamed (FatName g d@(NameVar v))    -- TODO This should have been a NameCon
          | isPrefixOf "(,)_" v
          -> do  collect d g
                 return $ DaConNamed (NameDaConFlow (DaConFlowTuple 2))
@@ -143,7 +143,7 @@ instance Detect (Exp a) where
                                       (typeOpFlow OpFlowFold)))
                          args'
 
-  -- foldIndex
+  -- Detect foldIndex
   | XApp{}                              <- xx
   , Just  (XVar uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    
                                         <- takeXApps xx
