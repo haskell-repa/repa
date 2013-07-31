@@ -143,27 +143,33 @@ unwrapResult
 
 unwrapResult tOrig tLowered xResult
 
-        | G.TyConApp tcInt  []   <- tOrig
-        , tcInt  == G.intTyCon
-        , G.TyConApp tcIntU []   <- tLowered    
-        , tcIntU == G.intPrimTyCon
-                                                -- TODO: do a proper check. 
-                                                --       Is this supposed to be a TyLit? 
-
+        -- Wrap Ints
+        | G.TyConApp tcInt  []    <- tOrig,      tcInt  == G.intTyCon
+        , G.TyConApp tcIntU []    <- tLowered,   tcIntU == G.intPrimTyCon
         = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
 
+        -- Wrap Floats
+        | G.TyConApp tcFloat  []  <- tOrig,      tcFloat  == G.floatTyCon
+        , G.TyConApp tcFloatU []  <- tLowered,   tcFloatU == G.floatPrimTyCon
+        = return $ G.App (G.Var (G.dataConWorkId G.floatDataCon)) xResult
+
+        -- Wrap Doubles
+        | G.TyConApp tcDouble  [] <- tOrig,      tcDouble  == G.doubleTyCon
+        , G.TyConApp tcDoubleU [] <- tLowered,   tcDoubleU == G.doublePrimTyCon
+        = return $ G.App (G.Var (G.dataConWorkId G.doubleDataCon)) xResult
+
+
+        -- Unwrap Ints
         | G.TyConApp tcIntU []   <- tOrig
         , tcIntU == G.intPrimTyCon
         , G.TyConApp tcInt  []   <- tLowered    
         , tcInt  == G.intTyCon
-        = do
-            -- Case on the int constructor
-            vScrut <- newDummyVar "scrut" tLowered
-            v      <- newDummyVar "v"     tOrig
-            return $ G.Case xResult vScrut tOrig
-                     [ (G.DataAlt G.intDataCon
-                       , [v]
-                       , G.Var v)]
+        = do    vScrut  <- newDummyVar "scrut" tLowered
+                v       <- newDummyVar "v"     tOrig
+                return  $ G.Case xResult vScrut tOrig
+                        [ (G.DataAlt G.intDataCon, [v], G.Var v)]
+
+
 
         -- Original is a boxed tuple and lowered version is unboxed:
         -- raise to a boxed tuple, boxing its elements too.

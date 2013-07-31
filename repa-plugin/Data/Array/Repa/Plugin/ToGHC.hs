@@ -253,6 +253,16 @@ convertExp kenv tenv xx
                  -> return ( G.Lit (G.MachInt i)
                            , G.intPrimTy)
 
+                -- Float32# literal
+                D.DaConNamed (D.NameLitFloat r 32)
+                 -> return ( G.Lit (G.MachFloat r)
+                           , G.floatPrimTy)
+
+                -- Float64# literal
+                D.DaConNamed (D.NameLitFloat r 64)
+                 -> return ( G.Lit (G.MachDouble r)
+                           , G.doublePrimTy)
+
                 -- Don't know how to convert this.
                 _ -> error $ "repa-plugin.ToGHC.convertExp: "
                            ++ "Cannot convert DDC data constructor " 
