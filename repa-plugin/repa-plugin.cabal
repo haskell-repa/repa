@@ -18,6 +18,7 @@ Library
   Other-Modules:
         Data.Array.Repa.Plugin.FatName
         Data.Array.Repa.Plugin.Primitives
+        Data.Array.Repa.Plugin.Primitives.Selectors
         Data.Array.Repa.Plugin.GHC.Pretty
 
         Data.Array.Repa.Plugin.ToDDC.Convert.Base

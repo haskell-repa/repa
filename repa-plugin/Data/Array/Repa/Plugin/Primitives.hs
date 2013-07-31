@@ -3,14 +3,14 @@ module Data.Array.Repa.Plugin.Primitives
         ( Primitives (..)
         , slurpPrimitives)
 where
-import Data.Array.Repa.Plugin.ToGHC.Var
+import Data.Array.Repa.Plugin.Primitives.Selectors
+import DDC.Core.Flow.Prim
 import Data.List
 import Data.Maybe
 import Control.Monad
 
 import qualified HscTypes       as G
 import qualified CoreSyn        as G
-import qualified MkCore         as G
 import qualified DataCon        as G
 import qualified TyCon          as G
 import qualified Type           as G
@@ -20,7 +20,7 @@ import qualified Name           as Name
 
 import UniqSupply               as G
 import qualified UniqSet        as US
-
+import qualified Data.Map       as Map
 
 -------------------------------------------------------------------------------
 -- | Table of GHC core expressions to use to invoke the primitives
@@ -30,6 +30,15 @@ data Primitives
         { prim_Series           :: !G.Type
         , prim_Vector           :: !G.Type
         , prim_Ref              :: !G.Type
+
+          -- Loop
+        , prim_loop             :: (G.CoreExpr, G.Type)
+        , prim_guard            :: (G.CoreExpr, G.Type)
+        , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
+
+        , prim_nextInt          :: (G.CoreExpr, G.Type)
+
+        , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
 
           -- Arith Int
         , prim_addInt           :: (G.CoreExpr, G.Type)
@@ -58,13 +67,38 @@ data Primitives
         , prim_writeVectorInt   :: (G.CoreExpr, G.Type)
         , prim_sliceVectorInt   :: (G.CoreExpr, G.Type)
 
-          -- Loop
-        , prim_loop             :: (G.CoreExpr, G.Type)
-        , prim_guard            :: (G.CoreExpr, G.Type)
-        , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
-        , prim_nextInt          :: (G.CoreExpr, G.Type)
-        , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
         }
+
+
+-- | Map Core Flow primitive name to the base name used in the imported
+--   primitive table. To turn this into the external name we need to add
+--   the "prim_" prefix and TYPE suffix.
+--   Like "add" => "prim_addInt"
+--
+primitive_baseName
+ = Map.fromList
+ $      [ (NamePrimArith PrimArithAdd,          "add")
+        , (NamePrimArith PrimArithSub,          "sub")
+        , (NamePrimArith PrimArithMul,          "mul")
+        , (NamePrimArith PrimArithDiv,          "div")
+        , (NamePrimArith PrimArithMod,          "mod")
+        , (NamePrimArith PrimArithRem,          "rem")
+
+        , (NamePrimArith PrimArithEq,           "eq")
+        , (NamePrimArith PrimArithNeq,          "neq")
+        , (NamePrimArith PrimArithGt,           "gt")
+        , (NamePrimArith PrimArithLt,           "lt")
+        , (NamePrimArith PrimArithLe,           "le")
+        , (NamePrimArith PrimArithGe,           "ge")
+
+        , (NameOpStore OpStoreNew,              "newRef")
+        , (NameOpStore OpStoreRead,             "readRef")
+        , (NameOpStore OpStoreWrite,            "writeRef")
+
+        , (NameOpStore OpStoreNewVector,        "newVector")
+        , (NameOpStore OpStoreReadVector,       "readVector")
+        , (NameOpStore OpStoreWriteVector,      "writeVector")
+        , (NameOpStore OpStoreSliceVector,      "sliceVector") ]
 
 
 -- | Names of all the primitive types.
@@ -271,94 +305,4 @@ makeTable v
  | otherwise
  = return Nothing
 
-
--------------------------------------------------------------------------------
--- | Make the selector table.
-makeSelectors
-        :: G.Var                -- ^ Core variable bound to our primitive table.
-        -> [String]             -- ^ Names of all the primtiives.
-        -> UniqSM ([G.CoreBind], [(String, (G.CoreExpr, G.Type))])
-
-makeSelectors v strs
- = do
-        (bs, xts)       <- liftM unzip
-                        $  mapM (makeSelector v) strs
-
-        return  $ (bs, zip strs xts)
-
-
--------------------------------------------------------------------------------
--- | Build a CoreExpr that produces the primtive with the given name.
-makeSelector
-        :: G.Var                -- ^ Core variable bound to our primtiive table.
-        -> String               -- ^ Name of the primitive we want.
-        -> UniqSM (G.CoreBind, (G.CoreExpr, G.Type))
-
-makeSelector v strField
- | t                      <- G.varType v
- , Just tc                <- G.tyConAppTyCon_maybe t
- , G.isAlgTyCon tc
- , G.DataTyCon [dc] False <- G.algTyConRhs tc
- , labels                 <- G.dataConFieldLabels dc
- , Just field             <- find (\n -> stringOfName n == strField) labels
- = makeSelector' dc field (G.Var v) (G.varType v)
-
- | otherwise
- = error $ "repa-plugin.makeSelector: can't find primitive named " ++ strField
-
-
-makeSelector'
-        :: G.DataCon            -- ^ Data constructor for the primitive table.
-        -> G.FieldLabel         -- ^ Name of the field to project out.
-        -> G.CoreExpr           -- ^ Expression to produce the table.
-        -> G.Type               -- ^ Type of the table.
-        -> UniqSM (G.CoreBind, (G.CoreExpr, G.Type))
-
-makeSelector' dc labelWanted xTable tTable
- = do   
-        -- Make binders to match all fields,
-        --      including one for the field we want.
-        (bsAll, vWanted) <- makeFieldBinders dc labelWanted
-
-        -- The type of the wanted field.
-        let tResult     =  G.dataConFieldType dc labelWanted
-
-        -- Top level name for this primitive.
-        vPrim           <- newDummyExportedVar (stringOfName labelWanted) tResult
-        
-        let bPrim       = G.NonRec vPrim 
-                        $ G.mkWildCase xTable tTable tResult
-                                [ (G.DataAlt dc, bsAll, G.Var vWanted)]
-
-        return  (bPrim, (G.Var vPrim, tResult))
-                
-
--- | Make a sequence of binders 
-makeFieldBinders 
-        :: G.DataCon               -- ^ Data constructor for the primtiive table.
-        -> G.FieldLabel            -- ^ The field we want to project out.
-        -> UniqSM ([G.Var], G.Var) -- ^ All binders, and the one for our desired field.
-
-makeFieldBinders dc labelWanted
- = do   let tWanted =  G.dataConFieldType dc labelWanted
-        vWanted     <- newDummyVar "wanted" tWanted
-        let bsAll   =  go vWanted (G.dataConFieldLabels dc)
-        return  (bsAll, vWanted)
-
- where  go _       []   = []
-        go vWanted (l:ls)
-         | l == labelWanted 
-         = vWanted
-                : go vWanted ls
-
-         | otherwise        
-         = (G.mkWildValBinder $ G.dataConFieldType dc l)
-                : go vWanted ls
-
-
--- Utils ----------------------------------------------------------------------
--- | Convert a GHC name to a string
-stringOfName :: Name.Name -> String
-stringOfName name
- = Occ.occNameString $ Name.nameOccName name
 
