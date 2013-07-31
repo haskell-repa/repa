@@ -27,13 +27,30 @@ matchPrimArith str
 
 
 primArithTable
- =      [ ("$fNumInt_$c+_",             (tInt, PrimArithAdd))
-        , ("$fNumInt_$c-_",             (tInt, PrimArithSub))
-        , ("$fNumInt_$c*_",             (tInt, PrimArithMul))
-        , ("$fIntegralInt_$cdiv_",      (tInt, PrimArithDiv))
-        , ("$fIntegralInt_$crem_",      (tInt, PrimArithRem))
-        , ("$fIntegralInt_$cmod_",      (tInt, PrimArithMod))
-        , ("eqInt_",                    (tInt, PrimArithEq))
-        , ("gtInt_",                    (tInt, PrimArithGt))
-        , ("ltInt_",                    (tInt, PrimArithLt)) ]
+ =      -- Int
+        [ ("$fNumInt_$c+_",             (tInt,          PrimArithAdd))
+        , ("$fNumInt_$c-_",             (tInt,          PrimArithSub))
+        , ("$fNumInt_$c*_",             (tInt,          PrimArithMul))
+        , ("$fIntegralInt_$cdiv_",      (tInt,          PrimArithDiv))
+        , ("$fIntegralInt_$crem_",      (tInt,          PrimArithRem))
+        , ("$fIntegralInt_$cmod_",      (tInt,          PrimArithMod))
+        , ("eqInt_",                    (tInt,          PrimArithEq))
+        , ("gtInt_",                    (tInt,          PrimArithGt))
+        , ("ltInt_",                    (tInt,          PrimArithLt)) 
+
+        -- Float
+        , ("$fNumFloat_$c+_",           (tFloat 32,     PrimArithAdd))
+        , ("$fNumFloat_$c-_",           (tFloat 32,     PrimArithSub))
+        , ("$fNumFloat_$c*_",           (tFloat 32,     PrimArithMul))
+        , ("eqFloat_",                  (tFloat 32,     PrimArithEq))
+        , ("gtFloat_",                  (tFloat 32,     PrimArithGt))
+        , ("ltFloat_",                  (tFloat 32,     PrimArithLt)) 
+
+        -- Double
+        , ("$fNumDouble_$c+_",          (tFloat 64,     PrimArithAdd))
+        , ("$fNumDouble_$c-_",          (tFloat 64,     PrimArithSub))
+        , ("$fNumDouble_$c*_",          (tFloat 64,     PrimArithMul))
+        , ("eqDouble_",                 (tFloat 64,     PrimArithEq))
+        , ("gtDouble_",                 (tFloat 64,     PrimArithGt))
+        , ("ltDouble_",                 (tFloat 64,     PrimArithLt)) ]
 

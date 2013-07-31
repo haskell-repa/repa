@@ -26,13 +26,13 @@ main
 
 
 -- Map with the opaque function defined in this module
-lower_map :: R.Series k Int -> (Vector Int)
+lower_map :: R.Series k Int -> Vector Int
 lower_map s
  = S.toVector (R.map f_opaque s)
 
 
 -- Map with an opaque function defined in another module
-lower_map_ext :: R.Series k Int -> (Vector Int)
+lower_map_ext :: R.Series k Int -> Vector Int
 lower_map_ext s
  = S.toVector (R.map ([20..] !!) s)
 

@@ -205,11 +205,12 @@ convertTyConApp _prims names tc tsArgs' tsArgs_b'
 convertTyConPrimName :: D.Name -> Maybe G.TyCon
 convertTyConPrimName n
  = case n of
-        D.NamePrimTyCon D.PrimTyConBool -> Just G.boolTyCon
-        D.NamePrimTyCon D.PrimTyConNat  -> Just G.intPrimTyCon
-        D.NamePrimTyCon D.PrimTyConInt  -> Just G.intPrimTyCon
-
-        _ -> Nothing
+        D.NamePrimTyCon D.PrimTyConBool         -> Just G.boolTyCon
+        D.NamePrimTyCon D.PrimTyConNat          -> Just G.intPrimTyCon
+        D.NamePrimTyCon D.PrimTyConInt          -> Just G.intPrimTyCon
+        D.NamePrimTyCon (D.PrimTyConFloat 32)   -> Just G.floatPrimTyCon
+        D.NamePrimTyCon (D.PrimTyConFloat 64)   -> Just G.doublePrimTyCon
+        _                                       -> Nothing
 
 
 -------------------------------------------------------------------------------
@@ -218,6 +219,8 @@ convertBoxed :: D.Type D.Name -> Maybe G.Type
 convertBoxed t
  | t == D.tNat          = Just G.intTy
  | t == D.tInt          = Just G.intTy
+ | t == D.tFloat 32     = Just G.floatTy
+ | t == D.tFloat 64     = Just G.doubleTy
 
  | Just (tc,args) <- D.takeTyConApps t
  , D.TyConBound (D.UPrim (D.NameTyConFlow (D.TyConFlowTuple n)) _) _
@@ -233,6 +236,8 @@ convertUnboxed :: D.Type D.Name -> Maybe G.Type
 convertUnboxed t
  | t == D.tNat          = Just G.intPrimTy
  | t == D.tInt          = Just G.intPrimTy
+ | t == D.tFloat 32     = Just G.floatPrimTy
+ | t == D.tFloat 64     = Just G.doublePrimTy
  | otherwise            = Nothing
 
 

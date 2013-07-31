@@ -60,17 +60,39 @@ convertLiteral
 convertLiteral lit
  = case lit of
         G.MachInt i 
-         -> let fn      = (FatName (GhcNameLiteral lit) (D.NameLitInt i))
+         -> let fn = FatName (GhcNameLiteral lit) (D.NameLitInt i)
             in  return $ D.mkDaConAlg fn tIntU'
 
-        -- TODO: convert the rest of the literals.
+        G.MachFloat r
+         -> let fn = FatName (GhcNameLiteral lit) (D.NameLitFloat r 32)
+            in  return $ D.mkDaConAlg fn tFloat32U'
+
+        G.MachDouble r
+         -> let fn = FatName (GhcNameLiteral lit) (D.NameLitFloat r 64)
+            in  return $ D.mkDaConAlg fn tFloat64U'
+
         _ -> Left (FailUnhandledLiteral lit)
 
 
-tIntU' =  D.TCon 
-        $ D.TyConBound 
-                (D.UPrim  (FatName GhcNameIntU 
-                                   (D.NamePrimTyCon D.PrimTyConInt))
-                          D.kData)
-                D.kData
+tIntU' :: D.Type FatName
+tIntU'  
+ = D.TCon $ D.TyConBound 
+        (D.UPrim  (FatName GhcNameIntU   (D.NamePrimTyCon D.PrimTyConInt))
+                  D.kData)
+        D.kData
 
+
+tFloat32U' :: D.Type FatName
+tFloat32U' 
+ = D.TCon $ D.TyConBound 
+        (D.UPrim  (FatName GhcNameFloatU  (D.NamePrimTyCon (D.PrimTyConFloat 32)))
+                  D.kData)
+        D.kData
+
+
+tFloat64U' :: D.Type FatName
+tFloat64U'
+ = D.TCon $ D.TyConBound 
+        (D.UPrim  (FatName GhcNameDoubleU (D.NamePrimTyCon (D.PrimTyConFloat 64)))
+                  D.kData)
+        D.kData

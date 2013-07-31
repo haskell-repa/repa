@@ -210,9 +210,8 @@ instance Detect (Exp a) where
 
   -- Strip boxing constructors from literal values.
   | XApp (XVar (UName (FatName _ (NameCon str1)))) x2 <- xx
-  , isPrefixOf "I#_" str1
+  , isPrefixOf "I#_" str1 || isPrefixOf "F#_" str1 || isPrefixOf "D#_" str1
   = detect x2
-
   
   -- Boilerplate traversal.
   | otherwise
