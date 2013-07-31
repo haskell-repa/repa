@@ -17,6 +17,8 @@ import qualified DDC.Core.Flow           as D
 import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Core.Flow.Compounds as D
 
+import qualified Data.Map                as Map
+
 
 -- | Convert a primop that has the same definition independent 
 --   of its type arguments.
@@ -49,112 +51,44 @@ convertPolytypicPrim
         -> G.UniqSM (G.CoreExpr, G.Type)
 
 convertPolytypicPrim kenv _tenv n tsArg
- = let prims    = envPrimitives kenv
+ = let  prims    = envPrimitives kenv
+
+        getPrim nn t 
+         | t == D.tInt      = let Just r = Map.lookup nn (prim_baseInt    prims) in r
+         | t == D.tNat      = let Just r = Map.lookup nn (prim_baseInt    prims) in r
+         | t == D.tFloat 32 = let Just r = Map.lookup nn (prim_baseFloat  prims) in r
+         | t == D.tFloat 64 = let Just r = Map.lookup nn (prim_baseDouble prims) in r
+         | otherwise        = error "repa-plugin.convertPolytypicPrim failed"
+
    in case n of
+        -- Loop Combinators
+        D.NameOpLoop D.OpLoopLoopN
+         -> return $ prim_loop prims
 
-        -- Arith
-        D.NamePrimArith D.PrimArithAdd
-         |  tsArg == [D.tNat]                   -> return $ prim_addInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_addInt prims
+        -- Arithmetic Primops
+        D.NamePrimArith _
+         |  [t]   <- tsArg       
+         -> return $ getPrim n t
 
-        D.NamePrimArith D.PrimArithSub
-         |  tsArg == [D.tNat]                   -> return $ prim_subInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_subInt prims
 
-        D.NamePrimArith D.PrimArithMul
-         |  tsArg == [D.tNat]                   -> return $ prim_mulInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_mulInt prims
-
-        D.NamePrimArith D.PrimArithDiv
-         |  tsArg == [D.tNat]                   -> return $ prim_divInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_divInt prims
-
-        D.NamePrimArith D.PrimArithMod
-         |  tsArg == [D.tNat]                   -> return $ prim_modInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_modInt prims
-
-        D.NamePrimArith D.PrimArithRem
-         |  tsArg == [D.tNat]                   -> return $ prim_remInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_remInt prims
-
-        -- Eq
-        D.NamePrimArith D.PrimArithEq
-         | tsArg == [D.tNat]                    -> return $ prim_eqInt prims
-         | tsArg == [D.tInt]                    -> return $ prim_eqInt prims
-
-        D.NamePrimArith D.PrimArithNeq
-         | tsArg == [D.tNat]                    -> return $ prim_neqInt prims
-         | tsArg == [D.tInt]                    -> return $ prim_neqInt prims
-
-        D.NamePrimArith D.PrimArithGt
-         | tsArg == [D.tNat]                    -> return $ prim_gtInt prims
-         | tsArg == [D.tInt]                    -> return $ prim_gtInt prims
-
-        D.NamePrimArith D.PrimArithGe
-         | tsArg == [D.tNat]                    -> return $ prim_geInt prims
-         | tsArg == [D.tInt]                    -> return $ prim_geInt prims
-
-        D.NamePrimArith D.PrimArithLt
-         | tsArg == [D.tNat]                    -> return $ prim_ltInt prims
-         | tsArg == [D.tInt]                    -> return $ prim_ltInt prims
-
-        D.NamePrimArith D.PrimArithLe
-         | tsArg == [D.tNat]                    -> return $ prim_leInt prims
-         | tsArg == [D.tInt]                    -> return $ prim_leInt prims
-
-        -- Ref
-        D.NameOpStore D.OpStoreNew
-         |  tsArg == [D.tNat]                   -> return $ prim_newRefInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_newRefInt prims
-
-        D.NameOpStore D.OpStoreRead
-         |  tsArg == [D.tNat]                   -> return $ prim_readRefInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_readRefInt prims
-
-        D.NameOpStore D.OpStoreWrite
-         |  tsArg == [D.tNat]                   -> return $ prim_writeRefInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_writeRefInt prims
-
-        -- Vector
-        D.NameOpStore D.OpStoreNewVector
-         |  tsArg == [D.tNat]                   -> return $ prim_newVectorInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_newVectorInt prims
-
-        D.NameOpStore D.OpStoreNewVectorN
-         |  [tA, _tK] <- tsArg, tA == D.tNat    -> return $ prim_newVectorInt   prims
-         |  [tA, _tK] <- tsArg, tA == D.tInt    -> return $ prim_newVectorInt   prims
-
-        D.NameOpStore D.OpStoreReadVector
-         |  tsArg == [D.tNat]                   -> return $ prim_readVectorInt  prims
-         |  tsArg == [D.tInt]                   -> return $ prim_readVectorInt  prims
-
-        D.NameOpStore D.OpStoreWriteVector
-         |  tsArg == [D.tNat]                   -> return $ prim_writeVectorInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_writeVectorInt prims
-
-        D.NameOpStore D.OpStoreSliceVector
-         |  tsArg == [D.tNat]                   -> return $ prim_sliceVectorInt prims
-         |  tsArg == [D.tInt]                   -> return $ prim_sliceVectorInt prims
-
-        -- Next
-        D.NameOpStore D.OpStoreNext
-         |  [tA, tK] <- tsArg, tA == D.tInt || tA == D.tNat
-         -> do  tK'             <- convertType kenv tK
-                let (x, t)      = prim_nextInt prims
-                return  ( G.App x (G.Type tK')
-                        , G.applyTy t tK' )
-
+        -- Store Primops
         D.NameOpStore D.OpStoreNext
          |  [tA, tK] <- tsArg, tA == D.tTuple2 D.tInt D.tInt
-         -> do  tK'             <- convertType kenv tK
+         -> do  tK'     <- convertType kenv tK
                 let (x, t)      = prim_nextInt_T2 prims
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
-        -- Loop
-        D.NameOpLoop D.OpLoopLoopN
-         -> return $ prim_loop prims
+        D.NameOpStore D.OpStoreNext
+         |  [tA, tK] <- tsArg
+         -> do  let (x, t) = getPrim n tA
+                tK'        <- convertType kenv tK
+                return  ( G.App x (G.Type tK')
+                        , G.applyTy t tK' )
 
+        D.NameOpStore _
+         | t : _ <- tsArg
+         -> return $ getPrim n t
 
         -- ERROR: This isn't a primitive name,
         --        or we don't have an implementation for it,

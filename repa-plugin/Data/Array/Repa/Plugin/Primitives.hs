@@ -21,6 +21,8 @@ import qualified Name           as Name
 import UniqSupply               as G
 import qualified UniqSet        as US
 import qualified Data.Map       as Map
+import Data.Map                 (Map)
+
 
 -------------------------------------------------------------------------------
 -- | Table of GHC core expressions to use to invoke the primitives
@@ -36,48 +38,33 @@ data Primitives
         , prim_guard            :: (G.CoreExpr, G.Type)
         , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
 
-        , prim_nextInt          :: (G.CoreExpr, G.Type)
-
+          -- Hacks
         , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
 
-          -- Arith Int
-        , prim_addInt           :: (G.CoreExpr, G.Type)
-        , prim_subInt           :: (G.CoreExpr, G.Type)
-        , prim_mulInt           :: (G.CoreExpr, G.Type)
-        , prim_divInt           :: (G.CoreExpr, G.Type)
-        , prim_modInt           :: (G.CoreExpr, G.Type)
-        , prim_remInt           :: (G.CoreExpr, G.Type)
-
-          -- Eq Int
-        , prim_eqInt            :: (G.CoreExpr, G.Type)
-        , prim_neqInt           :: (G.CoreExpr, G.Type)
-        , prim_gtInt            :: (G.CoreExpr, G.Type)
-        , prim_geInt            :: (G.CoreExpr, G.Type)
-        , prim_ltInt            :: (G.CoreExpr, G.Type)
-        , prim_leInt            :: (G.CoreExpr, G.Type)
-
-          -- Ref Int
-        , prim_newRefInt        :: (G.CoreExpr, G.Type)
-        , prim_readRefInt       :: (G.CoreExpr, G.Type)
-        , prim_writeRefInt      :: (G.CoreExpr, G.Type)
-
-          -- Vector Int
-        , prim_newVectorInt     :: (G.CoreExpr, G.Type)
-        , prim_readVectorInt    :: (G.CoreExpr, G.Type)
-        , prim_writeVectorInt   :: (G.CoreExpr, G.Type)
-        , prim_sliceVectorInt   :: (G.CoreExpr, G.Type)
-
+          -- Primitives per base type.
+        , prim_baseInt          :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseFloat        :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseDouble       :: Map Name (G.CoreExpr, G.Type)
         }
 
 
--- | Map Core Flow primitive name to the base name used in the imported
---   primitive table. To turn this into the external name we need to add
---   the "prim_" prefix and TYPE suffix.
---   Like "add" => "prim_addInt"
+-- | Names of loop combinators.
+primitive_loop :: [(Name, String)]
+primitive_loop
+ =      [ (NameOpLoop   OpLoopLoop,             "prim_loop")
+        , (NameOpLoop   OpLoopGuard,            "prim_guard")
+        , (NameOpFlow   OpFlowRateOfSeries,     "prim_rateOfSeries") ]
+
+
+-- | Map Core Flow Name to the base name used in the imported primitive table.
+--   To turn this into the external name we need to add  a "prim_" prefix and
+--   TYPE suffix.  Like "add" => "prim_addInt"
 --
-primitive_baseName
- = Map.fromList
- $      [ (NamePrimArith PrimArithAdd,          "add")
+primitive_baseTYPE :: [(Name, String)]
+primitive_baseTYPE
+ =      [ (NameOpStore OpStoreNext,             "next") 
+
+        , (NamePrimArith PrimArithAdd,          "add")
         , (NamePrimArith PrimArithSub,          "sub")
         , (NamePrimArith PrimArithMul,          "mul")
         , (NamePrimArith PrimArithDiv,          "div")
@@ -101,50 +88,32 @@ primitive_baseName
         , (NameOpStore OpStoreSliceVector,      "sliceVector") ]
 
 
--- | Names of all the primitive types.
---   These should match the field names of `Primitives` above.
-_primitive_types
- =      [ "Series"
-        , "Vector"
-        , "Ref" ]
+-- | Primitive table names for Int operators.
+primitive_baseInt    :: [(Name, String)]
+primitive_baseInt
+ =      [ (n, "prim_" ++ s ++ "Int")    | (n, s) <- primitive_baseTYPE ]
 
 
--- | Names of all the primitive operators.
---   These should match the field names of `Primitives` above.
-primitive_ops
- =      -- Arith Int
-        [ "prim_addInt"
-        , "prim_subInt"
-        , "prim_mulInt"
-        , "prim_divInt"
-        , "prim_modInt"
-        , "prim_remInt"
+-- | Primitive table names for Float operators.
+primitive_baseFloat  :: [(Name, String)]
+primitive_baseFloat
+ =      [ (n, "prim_" ++ s ++ "Float")  | (n, s) <- primitive_baseTYPE ]
 
-        -- Eq Int
-        , "prim_eqInt"
-        , "prim_neqInt"
-        , "prim_gtInt"
-        , "prim_geInt"
-        , "prim_ltInt"
-        , "prim_leInt"
 
-        -- Ref Int
-        , "prim_newRefInt"
-        , "prim_readRefInt"
-        , "prim_writeRefInt"
+-- | Primitive table names for Double operators.
+primitive_baseDouble :: [(Name, String)]
+primitive_baseDouble
+ =      [ (n, "prim_" ++ s ++ "Double") | (n, s) <- primitive_baseTYPE ]
 
-        -- Vector Int
-        , "prim_newVectorInt"
-        , "prim_readVectorInt"
-        , "prim_writeVectorInt"
-        , "prim_sliceVectorInt"
 
-        -- Loop
-        , "prim_loop"
-        , "prim_guard"
-        , "prim_rateOfSeries"
-        , "prim_nextInt" 
-        , "prim_nextInt_T2" ]
+-- | Names of all primitive operators imported from repa-series.
+allPrimOpNames :: [String]
+allPrimOpNames
+ =      (map snd primitive_loop)
+ ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
+ ++     (map snd primitive_baseInt)
+ ++     (map snd primitive_baseFloat)
+ ++     (map snd primitive_baseDouble)
 
 
 -------------------------------------------------------------------------------
@@ -254,10 +223,15 @@ makeTable v
                 $ find (\n -> stringOfName n ==  "prim_Ref") labels
 
         -- Build table of selectors for all the operators.
-        (bs, selectors)     <- makeSelectors v primitive_ops
+        (bs, selectors)     <- makeSelectors v allPrimOpNames
         let get name
                 = let Just r    = lookup name selectors
                   in  r
+
+        let populate :: (Name, String) -> (Name, (G.CoreExpr, G.Type))
+            populate (name, str)
+             = let Just r = lookup str selectors
+               in  (name, r)
 
         let table      
                 = Primitives
@@ -265,39 +239,24 @@ makeTable v
                 , prim_Vector           = tyVector
                 , prim_Ref              = tyRef
 
-                -- Arith Int
-                , prim_addInt           = get "prim_addInt"
-                , prim_subInt           = get "prim_subInt"
-                , prim_mulInt           = get "prim_mulInt"
-                , prim_divInt           = get "prim_divInt"
-                , prim_modInt           = get "prim_modInt"
-                , prim_remInt           = get "prim_remInt"
-
-                -- Eq Int
-                , prim_eqInt            = get "prim_eqInt"
-                , prim_neqInt           = get "prim_neqInt"
-                , prim_gtInt            = get "prim_gtInt"
-                , prim_geInt            = get "prim_geInt"
-                , prim_ltInt            = get "prim_ltInt"
-                , prim_leInt            = get "prim_leInt"
-
-                -- Ref Int
-                , prim_newRefInt        = get "prim_newRefInt"
-                , prim_readRefInt       = get "prim_readRefInt"
-                , prim_writeRefInt      = get "prim_writeRefInt"
-
-                -- Vector Int
-                , prim_newVectorInt     = get "prim_newVectorInt"
-                , prim_readVectorInt    = get "prim_readVectorInt"
-                , prim_writeVectorInt   = get "prim_writeVectorInt"
-                , prim_sliceVectorInt   = get "prim_sliceVectorInt"
-
                 -- Loop
                 , prim_rateOfSeries     = get "prim_rateOfSeries" 
                 , prim_loop             = get "prim_loop"
                 , prim_guard            = get "prim_guard"
-                , prim_nextInt          = get "prim_nextInt"
-                , prim_nextInt_T2       = get "prim_nextInt_T2" }
+
+                -- Hacks
+                , prim_nextInt_T2       = get "prim_nextInt_T2"
+
+                -- Primitives per base type
+                , prim_baseInt          = Map.fromList
+                                        $ map populate primitive_baseInt
+
+                , prim_baseFloat        = Map.fromList
+                                        $ map populate primitive_baseFloat
+
+                , prim_baseDouble       = Map.fromList
+                                        $ map populate primitive_baseDouble
+                 }
 
 
         return $ Just (table, bs)
