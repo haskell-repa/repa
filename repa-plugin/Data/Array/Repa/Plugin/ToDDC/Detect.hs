@@ -5,6 +5,7 @@ where
 import Data.Array.Repa.Plugin.FatName
 import Data.Array.Repa.Plugin.ToDDC.Detect.Base
 import Data.Array.Repa.Plugin.ToDDC.Detect.Type  ()
+import Data.Array.Repa.Plugin.ToDDC.Detect.Prim
 
 import DDC.Core.Module
 import DDC.Core.Collect
@@ -119,7 +120,7 @@ instance Detect (Exp a) where
                  then return $ XLAM (BName n kRate) x'
                  else return $ XLam b' x'
 
-         _ -> error "repa-plugin.detect[Exp] no match"
+         _ -> return $ XLam b' x'
 
   -- Detect vectorOfSeries
   | XApp{}                              <- xx
@@ -128,9 +129,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar v))       <- u
   , isPrefixOf "toVector_" v
   = do  args'   <- mapM detect [xTK, xTA, xS]
-        return  $ xApps (XVar (UPrim (NameOpFlow OpFlowVectorOfSeries)
-                                     (typeOpFlow OpFlowVectorOfSeries)))
-                          args'
+        return  $ xApps (xOpFlow OpFlowVectorOfSeries) args'
 
   -- Detect folds.
   | XApp{}                              <- xx
@@ -139,9 +138,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vFold))   <- uFold
   , isPrefixOf "fold_" vFold
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $  xApps (XVar (UPrim (NameOpFlow OpFlowFold) 
-                                      (typeOpFlow OpFlowFold)))
-                         args'
+        return  $  xApps (xOpFlow OpFlowFold) args'
 
   -- Detect foldIndex
   | XApp{}                              <- xx
@@ -150,32 +147,25 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vFold))   <- uFold
   , isPrefixOf "foldIndex_" vFold
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $  xApps (XVar (UPrim (NameOpFlow OpFlowFoldIndex) 
-                                      (typeOpFlow OpFlowFoldIndex)))
-                         args'
+        return  $ xApps (xOpFlow OpFlowFoldIndex) args'
 
-
-  -- Detect maps
+  -- Detect map
   | XApp{}                              <- xx
   , Just  (XVar uMap,  [xTK, xTA, xTB, _xD1, _xD2, xF, xS ])
                                         <- takeXApps xx
   , UName (FatName _ (NameVar vMap))    <- uMap
   , isPrefixOf "map_" vMap
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xS]
-        return  $ xApps (XVar (UPrim (NameOpFlow (OpFlowMap 1))
-                                     (typeOpFlow (OpFlowMap 1))))
-                        args'
+        return  $ xApps (xOpFlow (OpFlowMap 1)) args'
 
-  -- TODO mapN
+  -- Detect map2
   | XApp{}                              <- xx
   , Just  (XVar uMap,  [xTK, xTA, xTB, xTC, _xD1, _xD2, _xD3, xF, xS1, xS2 ])
                                         <- takeXApps xx
   , UName (FatName _ (NameVar vMap))    <- uMap
   , isPrefixOf "map2_" vMap
   = do  args'   <- mapM detect [xTK, xTA, xTB, xTC, xF, xS1, xS2]
-        return  $ xApps (XVar (UPrim (NameOpFlow (OpFlowMap 2))
-                                     (typeOpFlow (OpFlowMap 2))))
-                        args'
+        return  $ xApps (xOpFlow (OpFlowMap 2)) args'
 
   -- Detect packs
   | XApp{}                              <- xx
@@ -184,9 +174,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vPack))   <- uPack
   , isPrefixOf "pack_" vPack
   = do  args'   <- mapM detect [xTK1, xTK2, xTA, xSel, xF]
-        return  $ xApps (XVar (UPrim (NameOpFlow OpFlowPack)
-                                     (typeOpFlow OpFlowPack)))
-                        args'
+        return  $ xApps (xOpFlow OpFlowPack) args'
 
   -- Detect mkSels
   | XApp{}                              <- xx
@@ -195,19 +183,15 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar v))       <- u
   , isPrefixOf "mkSel1_" v
   = do  args'   <- mapM detect [xTK, xTA, xFlags, xWorker]
-        return  $ xApps (XVar (UPrim (NameOpFlow (OpFlowMkSel 1))
-                                     (typeOpFlow (OpFlowMkSel 1))))
-                        args'
+        return  $ xApps (xOpFlow (OpFlowMkSel 1)) args'
 
   -- Detect n-tuples
   | XApp{}                              <- xx
   , Just  (XVar uTuple,  args)          <- takeXApps xx
   , UName (FatName _ (NameVar vTuple))  <- uTuple
-
   , size                                <- length args `div` 2
   , commas                              <- replicate (size-1) ','
   , prefix                              <- "(" ++ commas ++ ")_"
-
   , size > 1
   , isPrefixOf prefix vTuple
   = do  args'   <- mapM detect args
@@ -216,7 +200,6 @@ instance Detect (Exp a) where
         return  $ xApps (XCon $ mkDaConAlg (NameDaConFlow tuple) ty)
                         args'
 
-
   -- Inject type arguments for arithmetic ops.
   --   In the Core code, arithmetic operations are expressed as monomorphic
   --   dictionary methods, which we convert to polytypic DDC primops.
@@ -224,7 +207,6 @@ instance Detect (Exp a) where
   , Just (nD', tArg, tPrim)  <- matchPrimArith str
   = do  collect nD' nG
         return  $ xApps (XVar (UPrim nD' tPrim)) [XType tArg]
-
 
   -- Strip boxing constructors from literal values.
   | XApp (XVar (UName (FatName _ (NameCon str1)))) x2 <- xx
@@ -248,42 +230,9 @@ instance Detect (Exp a) where
         XCast{}         -> error "repa-plugin.detect: XCast not handled"
         XWitness{}      -> error "repa-plugin.detect: XWitness not handled"
 
-
--- Match arithmetic operators.
-matchPrimArith :: String -> Maybe (Name, Type Name, Type Name)
-matchPrimArith str
- -- Num
- | isPrefixOf "$fNumInt_$c+_" str       
- = Just (NamePrimArith PrimArithAdd, tInt, typePrimArith PrimArithAdd)
-
- | isPrefixOf "$fNumInt_$c-_" str       
- = Just (NamePrimArith PrimArithSub, tInt, typePrimArith PrimArithSub)
-
- | isPrefixOf "$fNumInt_$c*_" str
- = Just (NamePrimArith PrimArithMul, tInt, typePrimArith PrimArithMul)
-
- -- Integral
- | isPrefixOf "$fIntegralInt_$cdiv_" str
- = Just (NamePrimArith PrimArithDiv, tInt, typePrimArith PrimArithDiv)
-
- | isPrefixOf "$fIntegralInt_$crem_" str
- = Just (NamePrimArith PrimArithRem, tInt, typePrimArith PrimArithRem)
-
- | isPrefixOf "$fIntegralInt_$cmod_" str
- = Just (NamePrimArith PrimArithMod, tInt, typePrimArith PrimArithMod)
-
- -- Eq
- | isPrefixOf "eqInt_" str
- = Just (NamePrimArith PrimArithEq,  tInt, typePrimArith PrimArithEq)
-
- | isPrefixOf "gtInt_" str
- = Just (NamePrimArith PrimArithGt,  tInt, typePrimArith PrimArithGt)
-
- | isPrefixOf "ltInt_" str
- = Just (NamePrimArith PrimArithLt,  tInt, typePrimArith PrimArithLt)
-
- | otherwise
- = Nothing
+  where xOpFlow :: OpFlow -> Exp a Name
+        xOpFlow op
+         = XVar (UPrim (NameOpFlow op) (typeOpFlow op))
 
 
 --- Lets ----------------------------------------------------------------------

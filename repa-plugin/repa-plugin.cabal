@@ -26,6 +26,7 @@ Library
         Data.Array.Repa.Plugin.ToDDC.Convert
         Data.Array.Repa.Plugin.ToDDC.Detect.Base
         Data.Array.Repa.Plugin.ToDDC.Detect.Type
+        Data.Array.Repa.Plugin.ToDDC.Detect.Prim
         Data.Array.Repa.Plugin.ToDDC.Detect
         Data.Array.Repa.Plugin.ToDDC
 
