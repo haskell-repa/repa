@@ -126,8 +126,8 @@ data Primitives
   , prim_sliceVectorDouble :: Int# -> Vector Double -> World -> (# World, Vector Double #)
 
   , prim_nextDouble        :: forall k
-                          .  Series k Double -> Int#
-                          -> World -> (# World, Double# #)
+                           .  Series k Double -> Int#
+                           -> World -> (# World, Double# #)
   }
 
 
