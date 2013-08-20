@@ -129,7 +129,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar v))       <- u
   , isPrefixOf "toVector_" v
   = do  args'   <- mapM detect [xTK, xTA, xS]
-        return  $ xApps (xOpFlow OpFlowVectorOfSeries) args'
+        return  $ xApps (xOpFlow OpFlowCreate) args'
 
   -- Detect folds.
   | XApp{}                              <- xx

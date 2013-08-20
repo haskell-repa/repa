@@ -28,7 +28,6 @@ import qualified DDC.Core.Exp            as D
 import qualified DDC.Core.Compounds      as D
 import qualified DDC.Core.Flow           as D
 import qualified DDC.Core.Flow.Compounds as D
-import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Base.Pretty         as D
 
 import qualified Data.Map                as Map

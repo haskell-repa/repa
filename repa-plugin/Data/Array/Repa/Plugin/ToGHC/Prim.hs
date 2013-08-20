@@ -30,10 +30,10 @@ convertPrim
 convertPrim _kenv tenv n 
  = let prims    = envPrimitives tenv
    in case n of
-        D.NameOpFlow D.OpFlowRateOfSeries
+        D.NameOpSeries D.OpSeriesRateOfSeries
          -> return $ prim_rateOfSeries prims
 
-        D.NameOpLoop D.OpLoopGuard
+        D.NameOpControl D.OpControlGuard
          -> return $ prim_guard prims
 
         -- ERROR: This isn't a primtive name,
@@ -62,7 +62,7 @@ convertPolytypicPrim kenv _tenv n tsArg
 
    in case n of
         -- Loop Combinators
-        D.NameOpLoop D.OpLoopLoopN
+        D.NameOpControl D.OpControlLoopN
          -> return $ prim_loop prims
 
         -- Arithmetic Primops
@@ -72,14 +72,14 @@ convertPolytypicPrim kenv _tenv n tsArg
 
 
         -- Store Primops
-        D.NameOpStore D.OpStoreNext
+        D.NameOpSeries (D.OpSeriesNext 1)
          |  [tA, tK] <- tsArg, tA == D.tTuple2 D.tInt D.tInt
          -> do  tK'     <- convertType kenv tK
                 let (x, t)      = prim_nextInt_T2 prims
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
-        D.NameOpStore D.OpStoreNext
+        D.NameOpSeries (D.OpSeriesNext 1)
          |  [tA, tK] <- tsArg
          -> do  let (x, t) = getPrim n tA
                 tK'        <- convertType kenv tK
@@ -115,17 +115,19 @@ isPolytypicPrimName n
         , D.NamePrimArith       D.PrimArithLt
         , D.NamePrimArith       D.PrimArithLe
 
+        , D.NameOpSeries        (D.OpSeriesNext 1)
+
+        , D.NameOpControl       D.OpControlLoopN
+
         , D.NameOpStore         D.OpStoreNew
         , D.NameOpStore         D.OpStoreRead
         , D.NameOpStore         D.OpStoreWrite
         , D.NameOpStore         D.OpStoreNewVector
         , D.NameOpStore         D.OpStoreNewVectorN
-        , D.NameOpStore         D.OpStoreReadVector
-        , D.NameOpStore         D.OpStoreWriteVector 
-        , D.NameOpStore         D.OpStoreSliceVector 
-        , D.NameOpStore         D.OpStoreNext
+        , D.NameOpStore         (D.OpStoreReadVector  1)
+        , D.NameOpStore         (D.OpStoreWriteVector 1)
+        , D.NameOpStore         D.OpStoreSliceVector ]
 
-        , D.NameOpLoop          D.OpLoopLoopN ]
         
 
 -- | Complain that we couldn't find a primitive that we needed.

@@ -49,11 +49,16 @@ data Primitives
 
 
 -- | Names of loop combinators.
-primitive_loop :: [(Name, String)]
-primitive_loop
- =      [ (NameOpLoop   OpLoopLoop,             "prim_loop")
-        , (NameOpLoop   OpLoopGuard,            "prim_guard")
-        , (NameOpFlow   OpFlowRateOfSeries,     "prim_rateOfSeries") ]
+primitive_control :: [(Name, String)]
+primitive_control
+ =      [ (NameOpControl OpControlLoop,         "prim_loop")
+        , (NameOpControl OpControlGuard,        "prim_guard") ]
+
+
+-- | Name sof series primitives.
+primitive_series :: [(Name, String)]
+primitive_series 
+ =      [ (NameOpSeries OpSeriesRateOfSeries,   "prim_rateOfSeries") ]
 
 
 -- | Map Core Flow Name to the base name used in the imported primitive table.
@@ -62,7 +67,7 @@ primitive_loop
 --
 primitive_baseTYPE :: [(Name, String)]
 primitive_baseTYPE
- =      [ (NameOpStore OpStoreNext,             "next") 
+ =      [ (NameOpSeries  (OpSeriesNext 1),      "next") 
 
         , (NamePrimArith PrimArithAdd,          "add")
         , (NamePrimArith PrimArithSub,          "sub")
@@ -83,8 +88,8 @@ primitive_baseTYPE
         , (NameOpStore OpStoreWrite,            "writeRef")
 
         , (NameOpStore OpStoreNewVector,        "newVector")
-        , (NameOpStore OpStoreReadVector,       "readVector")
-        , (NameOpStore OpStoreWriteVector,      "writeVector")
+        , (NameOpStore (OpStoreReadVector  1),  "readVector")
+        , (NameOpStore (OpStoreWriteVector 1),  "writeVector")
         , (NameOpStore OpStoreSliceVector,      "sliceVector") ]
 
 
@@ -109,7 +114,8 @@ primitive_baseDouble
 -- | Names of all primitive operators imported from repa-series.
 allPrimOpNames :: [String]
 allPrimOpNames
- =      (map snd primitive_loop)
+ =      (map snd primitive_control)
+ ++     (map snd primitive_series)
  ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
  ++     (map snd primitive_baseInt)
  ++     (map snd primitive_baseFloat)

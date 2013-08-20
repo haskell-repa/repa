@@ -200,7 +200,7 @@ convertExp kenv tenv xx
         -- RateOfRateNat is Id
         D.XApp{}
          | Just (n, [_xTK, xRate]) <- D.takeXPrimApps xx
-         ,  D.NameOpFlow D.OpFlowNatOfRateNat   <- n
+         ,  D.NameOpSeries D.OpSeriesNatOfRateNat   <- n
          -> convertExp kenv tenv xRate
 
 

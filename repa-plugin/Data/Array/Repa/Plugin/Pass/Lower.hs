@@ -11,7 +11,6 @@ import DDC.Core.Exp
 
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
-import qualified DDC.Core.Flow.Transform.Prep           as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
 import qualified DDC.Core.Flow.Transform.Schedule       as Flow
 import qualified DDC.Core.Flow.Transform.Extract        as Flow
@@ -29,6 +28,7 @@ import qualified DDC.Core.Transform.Flatten             as Flatten
 import qualified DDC.Core.Transform.Forward             as Forward
 import qualified DDC.Core.Transform.Thread              as Core
 import qualified DDC.Core.Transform.Reannotate          as Core
+import qualified DDC.Core.Transform.Deannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Simplifier.Recipe             as Core
@@ -104,12 +104,12 @@ passLower options name guts0
          $ D.renderIndent (D.vcat $ map D.ppr $ Map.toList names)
 
 
-        -- Norm -------------------------------------------
+        -- Prep -------------------------------------------
         -- Eta expand everything so we have names for parameters.
         let etaConfig   = Eta.configZero { Eta.configExpand = True }
         let mm_eta      = Core.result $ Eta.etaModule Flow.profile etaConfig mm_detect
 
-        dump "04-norm.1-eta.dcf"
+        dump "04-prep.1-eta.dcf"
          $ D.renderIndent (D.ppr mm_eta)
 
         -- A-normalize module for the Prep transform.
@@ -123,47 +123,37 @@ passLower options name guts0
         let mm_snip'    = Flatten.flatten (Snip.snip snipConfig mm_eta)
         let mm_snip     = evalState (Core.namifyUnique mkNamT mkNamX mm_snip') 0
 
-        dump "04-norm.dcf"
+        dump "04-prep.2-snip.dcf"
          $ D.renderIndent (D.ppr mm_snip)
 
-
-        -- Prep -------------------------------------------
-        --  1. Eta-expand worker functions passed to flow combinators.
-        --     We also get back a map containing the types of parameters
-        --     to worker functions.
-        --  NOTE: We're not using the module result of prep now that 
-        --        we have real eta-expansion.
-        let (_, workerNameArgs) 
-                        = Flow.prepModule mm_snip
-
-        --  2. Move worker functions forward so they are directly
-        --     applied to flow combinators.
+        --  Move worker functions forward so they are directly
+        --  applied to flow combinators.
         let isFloatable lts
              = case lts of
-                LLet (BName n _) _    
-                  | Just{}       <- Map.lookup n workerNameArgs
-                  -> Forward.FloatForce
-                _ -> Forward.FloatAllow
+                LLet (BName _ _) x
+                  | Flow.isFlowOperator (Core.deannotate (const Nothing) x)
+                  -> Forward.FloatDeny
+                _ -> Forward.FloatForce
 
         let config              = Forward.Config isFloatable False
         let result_forward      = Forward.forwardModule Flow.profile config mm_snip
         
         let mm_forward          = Core.result result_forward
 
-        dump "05-prep.1-forward.dcf"
+        dump "05-prep.3-float.dcf"
          $ D.renderIndent (D.ppr mm_forward)
 
         --  3. Create fresh names for anonymous binders.
         --     The lowering pass needs them all to have real names.
         let mm_namify   = evalState (Core.namifyUnique mkNamT mkNamX mm_forward) 0
 
-        dump "05-prep.2-namify.dcf"
+        dump "05-prep.4-namify.dcf"
          $ D.renderIndent (D.ppr mm_namify)
 
         --  4. Type check add type annots on all binders.
         let mm_prep     = checkFlowModule_ mm_namify
 
-        dump "05-prep.3-check.dcf"
+        dump "05-prep.5-check.dcf"
          $ D.renderIndent (D.ppr mm_prep)
 
 
@@ -172,7 +162,7 @@ passLower options name guts0
         let processes   = Flow.slurpProcesses mm_prep
 
         -- Schedule processes into abstract loops.
-        let procedures  = map Flow.scheduleProcess processes
+        let Right procedures  = sequence $ map Flow.scheduleScalar processes
 
         -- Extract concrete code from the abstract loops.
         let mm_lowered' = Flow.extractModule mm_prep procedures
