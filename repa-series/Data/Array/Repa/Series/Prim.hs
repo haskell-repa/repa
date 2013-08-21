@@ -72,6 +72,35 @@ data Primitives
                         -> World -> (# World, Int# #)
 
 
+    -- Word ------------------------------------------------
+  , prim_addWord        :: Word# -> Word# -> Word#
+  , prim_subWord        :: Word# -> Word# -> Word#
+  , prim_mulWord        :: Word# -> Word# -> Word#
+  , prim_divWord        :: () -- Word# -> Word# -> Word#  NOT IMPLEMENTED
+  , prim_modWord        :: () -- Word# -> Word# -> Word#  NOT IMPLEMENTED
+  , prim_remWord        :: Word# -> Word# -> Word#
+
+  , prim_eqWord         :: Word# -> Word# -> Bool
+  , prim_neqWord        :: Word# -> Word# -> Bool
+  , prim_gtWord         :: Word# -> Word# -> Bool
+  , prim_geWord         :: Word# -> Word# -> Bool
+  , prim_ltWord         :: Word# -> Word# -> Bool
+  , prim_leWord         :: Word# -> Word# -> Bool
+
+  , prim_newRefWord     :: Word#    -> World -> (# World, Ref Word #) 
+  , prim_readRefWord    :: Ref Word -> World -> (# World, Word# #)
+  , prim_writeRefWord   :: Ref Word -> Word#  -> World -> World
+
+  , prim_newVectorWord   :: Int# -> World -> (# World, Vector Word #)
+  , prim_readVectorWord  :: Vector Word -> Int# -> World -> (# World, Word# #)
+  , prim_writeVectorWord :: Vector Word -> Int# -> Word# -> World -> World
+  , prim_sliceVectorWord :: Int# -> Vector Word -> World -> (# World, Vector Word #)
+
+  , prim_nextWord       :: forall k
+                        .  Series k Word -> Int#
+                        -> World -> (# World, Word# #)
+
+
     -- Float ------------------------------------------------
   , prim_addFloat          :: Float# -> Float# -> Float#
   , prim_subFloat          :: Float# -> Float# -> Float#
@@ -172,6 +201,33 @@ primitives
   , prim_sliceVectorInt         = repa_sliceVectorInt
 
   , prim_nextInt                = repa_nextInt
+
+
+    -- Word --------------------------------------
+  , prim_addWord                = plusWord#
+  , prim_subWord                = minusWord#
+  , prim_mulWord                = timesWord#
+  , prim_divWord                = repa_divWord
+  , prim_modWord                = repa_modWord
+  , prim_remWord                = remWord#
+
+  , prim_eqWord                 = eqWord#
+  , prim_neqWord                = neWord#
+  , prim_gtWord                 = gtWord#
+  , prim_geWord                 = geWord#
+  , prim_ltWord                 = ltWord#
+  , prim_leWord                 = leWord#
+
+  , prim_newRefWord             = repa_newRefWord
+  , prim_readRefWord            = repa_readRefWord
+  , prim_writeRefWord           = repa_writeRefWord
+
+  , prim_newVectorWord          = repa_newVectorWord
+  , prim_readVectorWord         = repa_readVectorWord
+  , prim_writeVectorWord        = repa_writeVectorWord
+  , prim_sliceVectorWord        = repa_sliceVectorWord
+
+  , prim_nextWord               = repa_nextWord
 
 
     -- Float --------------------------------------
@@ -350,13 +406,78 @@ repa_nextInt s ix world
 {-# INLINE repa_nextInt #-}
 
 
+-- Word ========================================================================
+-- Arithmetic
+repa_divWord            = error "repa-series: div[Word] not implemented"
+{-# INLINE repa_divWord #-}
+
+repa_modWord            = error "repa-series: mod[Word] not implemented"
+{-# INLINE repa_modWord #-}
+
+
+-- Ref
+repa_newRefWord         :: Word# -> World -> (# World, Ref Word #)
+repa_newRefWord x       = unwrapIO' (Ref.new (W# x))
+{-# INLINE repa_newRefWord #-}
+
+repa_readRefWord        :: Ref Word -> World -> (# World, Word# #)
+repa_readRefWord ref
+ = case Ref.read ref of
+        IO f -> \world
+             -> case f world of
+                        (# world', W# i #) -> (# world', i #)
+{-# INLINE repa_readRefWord #-}
+
+
+repa_writeRefWord        :: Ref Word -> Word# -> World -> World
+repa_writeRefWord ref val = unwrapIO_ (Ref.write ref (W# val))
+{-# INLINE repa_writeRefWord #-}
+
+
+-- Vector
+repa_newVectorWord       :: Int#  -> World -> (# World, Vector Word #)
+repa_newVectorWord len    = unwrapIO' (V.new len)
+{-# INLINE repa_newVectorWord #-}
+
+
+repa_readVectorWord      :: Vector Word -> Int# -> World -> (# World, Word# #)
+repa_readVectorWord vec ix
+ = case V.read vec ix of
+        IO f -> \world 
+             -> case f world of
+                        (# world', W# i #) -> (# world', i #)
+{-# INLINE repa_readVectorWord #-}
+
+
+repa_writeVectorWord     :: Vector Word -> Int# -> Word# -> World -> World
+repa_writeVectorWord vec ix val   
+        = unwrapIO_ (V.write vec ix (W# val))
+{-# INLINE repa_writeVectorWord #-}
+
+
+repa_sliceVectorWord     :: Int# -> Vector Word -> World -> (# World, Vector Word #)
+repa_sliceVectorWord len vec   
+        = unwrapIO' (V.take len vec)
+{-# INLINE repa_sliceVectorWord #-}
+
+
+-- Series
+-- | Get the next element of a series.
+repa_nextWord    :: Series k Word -> Int# -> World -> (# World, Word# #)
+repa_nextWord s ix world
+ = case S.index s ix of
+        W# i    -> (# world, i #)
+{-# INLINE repa_nextWord #-}
+
+
+
 -- Float ======================================================================
 -- Arithmetic
 repa_modFloat           = error "repa-series: mod[Float] not implemented"
 {-# NOINLINE repa_modFloat #-}
 
 repa_remFloat           = error "repa-series: rem[Float] not implemented"
-{-# INLINE repa_remFloat #-}
+{-# NOINLINE repa_remFloat #-}
 
 
 -- Ref

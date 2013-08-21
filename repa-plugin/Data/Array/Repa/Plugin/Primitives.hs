@@ -43,6 +43,7 @@ data Primitives
 
           -- Primitives per base type.
         , prim_baseInt          :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseWord         :: Map Name (G.CoreExpr, G.Type)
         , prim_baseFloat        :: Map Name (G.CoreExpr, G.Type)
         , prim_baseDouble       :: Map Name (G.CoreExpr, G.Type)
         }
@@ -87,7 +88,7 @@ primitive_baseTYPE
         , (NameOpStore OpStoreRead,             "readRef")
         , (NameOpStore OpStoreWrite,            "writeRef")
 
-        , (NameOpStore OpStoreNewVector,        "newVector")
+        , (NameOpStore OpStoreNewVectorN,       "newVector")
         , (NameOpStore (OpStoreReadVector  1),  "readVector")
         , (NameOpStore (OpStoreWriteVector 1),  "writeVector")
         , (NameOpStore OpStoreSliceVector,      "sliceVector") ]
@@ -97,6 +98,12 @@ primitive_baseTYPE
 primitive_baseInt    :: [(Name, String)]
 primitive_baseInt
  =      [ (n, "prim_" ++ s ++ "Int")    | (n, s) <- primitive_baseTYPE ]
+
+
+-- | Primitive table names for Word operators.
+primitive_baseWord   :: [(Name, String)]
+primitive_baseWord
+ =      [ (n, "prim_" ++ s ++ "Word")   | (n, s) <- primitive_baseTYPE ]
 
 
 -- | Primitive table names for Float operators.
@@ -118,6 +125,7 @@ allPrimOpNames
  ++     (map snd primitive_series)
  ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
  ++     (map snd primitive_baseInt)
+ ++     (map snd primitive_baseWord)
  ++     (map snd primitive_baseFloat)
  ++     (map snd primitive_baseDouble)
 
@@ -256,6 +264,9 @@ makeTable v
                 -- Primitives per base type
                 , prim_baseInt          = Map.fromList
                                         $ map populate primitive_baseInt
+
+                , prim_baseWord         = Map.fromList
+                                        $ map populate primitive_baseWord
 
                 , prim_baseFloat        = Map.fromList
                                         $ map populate primitive_baseFloat

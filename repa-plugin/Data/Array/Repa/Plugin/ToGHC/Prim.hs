@@ -18,7 +18,7 @@ import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map                as Map
-
+import Data.Maybe
 
 -- | Convert a primop that has the same definition independent 
 --   of its type arguments.
@@ -55,7 +55,7 @@ convertPolytypicPrim kenv _tenv n tsArg
 
         getPrim nn t 
          | t == D.tInt      = let Just r = Map.lookup nn (prim_baseInt    prims) in r
-         | t == D.tNat      = let Just r = Map.lookup nn (prim_baseInt    prims) in r
+         | t == D.tNat      = let Just r = Map.lookup nn (prim_baseWord   prims) in r
          | t == D.tFloat 32 = let Just r = Map.lookup nn (prim_baseFloat  prims) in r
          | t == D.tFloat 64 = let Just r = Map.lookup nn (prim_baseDouble prims) in r
          | otherwise        = error "repa-plugin.convertPolytypicPrim failed"
