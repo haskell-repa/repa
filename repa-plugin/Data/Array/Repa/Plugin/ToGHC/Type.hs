@@ -183,6 +183,11 @@ convertTyConApp _prims names tc tsArgs' tsArgs_b'
          |  length tsArgs' == n
          -> G.mkTyConApp (G.tupleTyCon G.UnboxedTuple n) tsArgs'
 
+        -- RateNat
+        D.TyConBound (D.UPrim n@(D.NameTyConFlow D.TyConFlowRateNat) _) _
+         | Just (GhcNameTyCon tc') <- Map.lookup n names
+         -> G.mkTyConApp tc' []
+
         -- Machine types
         D.TyConBound (D.UPrim n _) _
          |  []       <- tsArgs'

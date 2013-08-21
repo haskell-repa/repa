@@ -44,7 +44,9 @@ instance Detect (Module ()) where
 
         -- Limit the import types to free vars in body:
         let free     = freeX empty body'
-            importT' = Map.filterWithKey (\k _ -> Set.member (UName k) free) importT
+            importT' = Map.filterWithKey 
+                        (\k _ -> Set.member (UName k) free) 
+                                importT
 
         return  $ ModuleCore
                 { moduleName            = moduleName mm
@@ -122,7 +124,7 @@ instance Detect (Exp a) where
 
          _ -> return $ XLam b' x'
 
-  -- Detect vectorOfSeries
+  -- Detect create
   | XApp{}                              <- xx
   , Just  (XVar u,     [xTK, xTA, _xD, xS]) 
                                         <- takeXApps xx
@@ -131,14 +133,23 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK, xTA, xS]
         return  $ xApps (xOpFlow OpFlowCreate) args'
 
-  -- Detect folds.
+  -- Detect reduce
+  | XApp{}                              <- xx
+  , Just  (XVar uReduce, [xTK, xTA, _xD, xRef, xF, xZ, xS])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vReduce)) <- uReduce
+  , isPrefixOf "reduce_" vReduce
+  = do  args'   <- mapM detect [xTK, xTA, xRef, xF, xZ, xS]
+        return  $ xApps (xOpFlow OpFlowReduce) args'
+
+  -- Detect fold
   | XApp{}                              <- xx
   , Just  (XVar uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    
                                         <- takeXApps xx
   , UName (FatName _ (NameVar vFold))   <- uFold
   , isPrefixOf "fold_" vFold
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $  xApps (xOpFlow OpFlowFold) args'
+        return  $ xApps (xOpFlow OpFlowFold) args'
 
   -- Detect foldIndex
   | XApp{}                              <- xx
@@ -167,7 +178,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK, xTA, xTB, xTC, xF, xS1, xS2]
         return  $ xApps (xOpFlow (OpFlowMap 2)) args'
 
-  -- Detect packs
+  -- Detect pack
   | XApp{}                              <- xx
   , Just  (XVar uPack,  [xTK1, xTK2, xTA, _xD1, xSel, xF])
                                         <- takeXApps xx
@@ -176,7 +187,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK1, xTK2, xTA, xSel, xF]
         return  $ xApps (xOpFlow OpFlowPack) args'
 
-  -- Detect mkSels
+  -- Detect mkSel
   | XApp{}                              <- xx
   , Just  (XVar u,    [xTK, xTA, xFlags, xWorker])
                                         <- takeXApps xx

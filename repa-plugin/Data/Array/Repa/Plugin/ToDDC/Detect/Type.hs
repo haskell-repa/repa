@@ -49,7 +49,6 @@ instance Detect Bound where
          | Just g'      <- matchPrim "Double_" n
          -> makePrim g' (NamePrimTyCon (PrimTyConFloat 64))     kData
 
-
          -- RateNats
          | Just g'      <- matchPrim "RateNat_" n
          -> makePrim g' (NameTyConFlow TyConFlowRateNat)
@@ -136,6 +135,14 @@ instance Detect TyCon where
         TyConKind    tc' -> return $ TyConKind tc'
         TyConWitness tc' -> return $ TyConWitness tc'
         TyConSpec    tc' -> return $ TyConSpec tc'
+
+        -- Detect Unit types,
+        --  these look similar to zero arity tuples.
+        TyConBound u _
+         | UName n        <- u
+         , Just (str, _) <- stringPrim n
+         , isPrefixOf "()_" str
+         -> return $ TyConSpec TcConUnit
 
         TyConBound u k
          -> do  u'      <- detect u
