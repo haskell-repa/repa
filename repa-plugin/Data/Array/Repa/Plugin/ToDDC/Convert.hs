@@ -20,12 +20,15 @@ import qualified DDC.Core.Flow           as D
 import qualified DDC.Core.Collect        as D
 import qualified DDC.Type.Env            as D
 
-import qualified CoreSyn                as G
-import qualified DataCon                as G
-import qualified HscTypes               as G
-import qualified TyCon                  as G
-import qualified Type                   as G
-import qualified Var                    as G
+import qualified CoreSyn                 as G
+import qualified DataCon                 as G
+import qualified HscTypes                as G
+import qualified TyCon                   as G
+import qualified Type                    as G
+import qualified Var                     as G
+
+import qualified OccName                as OccName
+import qualified Name                   as Name
 
 
 -------------------------------------------------------------------------------
@@ -191,6 +194,26 @@ convertExpr xx
                 x'      <- convertExpr x
                 return  $  D.XLet () (D.LRec bxs') x'
 
+
+        -- Case expression matching against a unit.
+        --
+        --    case EXP1 of { () -> EXP2 }
+        -- => let _ = EXP1 in EXP2
+        --
+        --   The target langauge is strict, so we don't need the extra
+        --   demand on EXP1 from the pattern match.
+        --
+        G.Case x1 _b _tres [(G.DataAlt dc, [], x2)]
+         | isPrefixOf "()"
+                $ OccName.occNameString
+                $ Name.nameOccName 
+                $ G.dataConName dc
+         -> do  x1'     <- convertExpr  x1
+                x2'     <- convertExpr  x2
+
+                return  $ D.XLet () (D.LLet (D.BNone D.tUnit) x1')
+                                    x2'
+
         -- Simple case expressions with just DataAlts
         G.Case x b _tres alts
          -> do  b'      <- convertFatName b
@@ -202,15 +225,19 @@ convertExpr xx
                 return $ D.XLet  () (D.LLet (D.BName b' t') x')
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
 
+
         -- We can't represent type casts,
         -- so just drop them on the floor.
         G.Cast x _      -> convertExpr x                        
 
+
         -- Just ditch tick nodes, we probably don't need them.
         G.Tick _ x      -> convertExpr x
 
+
         -- Type arguments.
         G.Type t        -> liftM D.XType (convertType t)
+
 
         -- Cannot convert coercions.
         G.Coercion{}    -> Left FailNoCoercions

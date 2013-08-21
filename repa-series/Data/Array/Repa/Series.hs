@@ -20,6 +20,7 @@ module Data.Array.Repa.Series
           -- * Series operators
         , map
         , map2
+        , reduce
         , fold
         , foldIndex
         , pack

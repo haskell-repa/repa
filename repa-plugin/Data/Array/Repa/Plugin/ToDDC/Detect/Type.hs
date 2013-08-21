@@ -50,12 +50,21 @@ instance Detect Bound where
          -> makePrim g' (NamePrimTyCon (PrimTyConFloat 64))     kData
 
 
+         -- RateNats
+         | Just g'      <- matchPrim "RateNat_" n
+         -> makePrim g' (NameTyConFlow TyConFlowRateNat)
+                        (kRate `kFun` kData)
+
          -- Vectors, series and selectors.
          | Just g'      <- matchPrim "Vector_" n
          -- Find ghc's kind for the var
          -- Only if it's a data type, not a Constraint?
          , not $ returnsConstraintKind g'
          -> makePrim g' (NameTyConFlow TyConFlowVector)    
+                        (kData `kFun` kData)
+
+         | Just g'      <- matchPrim "Ref_" n
+         -> makePrim g' (NameTyConFlow TyConFlowRef)
                         (kData `kFun` kData)
 
          | Just g'      <- matchPrim "Series_" n

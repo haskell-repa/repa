@@ -12,14 +12,17 @@ module Data.Array.Repa.Series.Fallback
         , map2
         , fold
         , foldIndex
+        , reduce
         , pack)
 where
 import Data.Array.Repa.Series.Series            as S
 import Data.Array.Repa.Series.Sel               as S
+import Data.Array.Repa.Series.Ref               as Ref
 import qualified Data.Vector.Unboxed            as U
 import Data.Vector.Unboxed                      (Unbox)
 import GHC.Exts
 import Prelude                                  hiding (map)
+import System.IO.Unsafe
 
 
 -- | Apply a function to all elements of a series.
@@ -39,6 +42,19 @@ map2    :: forall k a b c. (Unbox a, Unbox b, Unbox c)
 map2 f (S.Series len vec1) (S.Series _len vec2)
  = S.Series len (U.zipWith f vec1 vec2)
 {-# INLINE [0] map2 #-}
+
+
+-- | Destructively reduce a sequence into an accumulator.
+reduce  :: forall k a. Unbox a
+        => Ref a -> (a -> a -> a) -> a -> Series k a -> ()
+
+reduce ref f z s
+ = unsafePerformIO
+ $ do   let x   = fold f z s
+        v       <- Ref.read ref
+        Ref.write ref (f v x)
+{-# INLINE [0] reduce #-}
+
 
 
 -- | Combine all elements of a series with an associative operator.
