@@ -13,6 +13,7 @@ import System.CPUTime
 import System.Time
 import Debug.Trace
 
+
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
 repa_primitives :: R.Primitives
@@ -50,8 +51,8 @@ quickhull ps
         let (ix,iy)     = ps U.! 0
             Just (imin, imax) 
              = R.runSeries2 xs ys (lower_minmax ix iy)
-            pmin        = ps U.! imin
-            pmax        = ps U.! imax
+            pmin        = ps U.! (fromIntegral imin)
+            pmax        = ps U.! (fromIntegral imax)
 
         u1      <- hsplit xs ys pmin pmax
         u2      <- hsplit xs ys pmax pmin
@@ -66,7 +67,7 @@ hsplit xs ys p1@(x1,y1) p2@(x2,y2)
         True
          ->    return (x1 `U.cons` upxs, y1 `U.cons` upys)
         False
-         -> do let pm = (upxs U.! im, upys U.! im)
+         -> do let pm = (upxs U.! (fromIntegral im), upys U.! (fromIntegral im))
                (ux1,uy1) <- hsplit pxs pys p1 pm
                (ux2,uy2) <- hsplit pxs pys pm p2
                return (ux1 U.++ ux2, uy1 U.++ uy2)
@@ -75,10 +76,10 @@ hsplit xs ys p1@(x1,y1) p2@(x2,y2)
 lower_minmax :: Int -> Int
              -> R.Series k Int
              -> R.Series k Int
-             -> (Int, Int)
+             -> (Word, Word)
 lower_minmax ix iy xs ys
- = let imin = R.foldIndex minIx (ix,0) xs
-       imax = R.foldIndex maxIx (ix,0) xs
+ = let imin = R.foldIndex minIx (ix, 0) xs
+       imax = R.foldIndex maxIx (ix, 0) xs
    in  (snd imin, snd imax)
 
 
@@ -87,7 +88,7 @@ lower_filtermax
              -> Int -> Int
              -> R.Series k Int
              -> R.Series k Int
-             -> (R.Vector Int, R.Vector Int, Int)
+             -> (R.Vector Int, R.Vector Int, Word)
 lower_filtermax x1 y1 x2 y2 xs ys
  = let cross = (\x y -> (x1-x)*(y2-y) - (y1-y)*(x2-x))
        cs    = R.map2   cross xs ys
@@ -100,13 +101,13 @@ lower_filtermax x1 y1 x2 y2 xs ys
        in  (S.toVector xs', S.toVector ys', snd pmax))
 
 
-minIx :: Int -> (Int, Int) -> Int -> (Int, Int)
+minIx :: Word -> (Int, Word) -> Int -> (Int, Word)
 minIx i (x', i') x 
         = if x < x' then (x, i) else (x', i')
 {-# INLINE minIx #-}
 
 
-maxIx :: Int -> (Int, Int) -> Int -> (Int, Int)
+maxIx :: Word -> (Int, Word) -> Int -> (Int, Word)
 maxIx i (x', i') x
         = if x > x' then (x, i) else (x', i')
 {-# INLINE maxIx #-}

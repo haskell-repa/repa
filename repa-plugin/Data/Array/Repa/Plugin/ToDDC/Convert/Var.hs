@@ -63,6 +63,10 @@ convertLiteral lit
          -> let fn = FatName (GhcNameLiteral lit) (D.NameLitInt i)
             in  return $ D.mkDaConAlg fn tIntU'
 
+        G.MachWord w
+         -> let fn = FatName (GhcNameLiteral lit) (D.NameLitNat w)
+            in  return $ D.mkDaConAlg fn tNatU'
+
         G.MachFloat r
          -> let fn = FatName (GhcNameLiteral lit) (D.NameLitFloat r 32)
             in  return $ D.mkDaConAlg fn tFloat32U'
@@ -78,6 +82,14 @@ tIntU' :: D.Type FatName
 tIntU'  
  = D.TCon $ D.TyConBound 
         (D.UPrim  (FatName GhcNameIntU   (D.NamePrimTyCon D.PrimTyConInt))
+                  D.kData)
+        D.kData
+
+
+tNatU' :: D.Type FatName
+tNatU'  
+ = D.TCon $ D.TyConBound 
+        (D.UPrim  (FatName GhcNameWordU   (D.NamePrimTyCon D.PrimTyConNat))
                   D.kData)
         D.kData
 

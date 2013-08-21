@@ -39,6 +39,7 @@ import qualified CoreMonad                              as G
 import qualified UniqSupply                             as G
 import qualified DDC.Base.Pretty                        as D
 import qualified Data.Map                               as Map
+import qualified Data.Set                               as Set
 import qualified Data.Monoid                            as M
 import System.IO.Unsafe
 import Control.Monad.State.Strict                       as S
@@ -128,10 +129,12 @@ passLower options name guts0
 
         --  Move worker functions forward so they are directly
         --  applied to flow combinators.
+        let nsTop       = Core.moduleTopBinds mm_snip
         let isFloatable lts
              = case lts of
-                LLet (BName _ _) x
-                  | Flow.isFlowOperator (Core.deannotate (const Nothing) x)
+                LLet (BName n _) x
+                  |   Set.member n nsTop
+                   || Flow.isFlowOperator (Core.deannotate (const Nothing) x)
                   -> Forward.FloatDeny
                 _ -> Forward.FloatForce
 

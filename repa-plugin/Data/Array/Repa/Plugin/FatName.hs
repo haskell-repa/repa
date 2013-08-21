@@ -20,6 +20,7 @@ data GhcName
         | GhcNameTyLit   G.TyLit
         | GhcNameLiteral G.Literal
         | GhcNameIntU   
+        | GhcNameWordU
         | GhcNameFloatU
         | GhcNameDoubleU
         deriving (Eq, Ord)
@@ -32,6 +33,7 @@ instance Pretty GhcName where
         GhcNameTyLit   tylit    -> text "TYLIT " <> ppr tylit
         GhcNameLiteral lit      -> text "LIT   " <> ppr lit
         GhcNameIntU             -> text "Int#"
+        GhcNameWordU            -> text "Word#"
         GhcNameFloatU           -> text "Float#"
         GhcNameDoubleU          -> text "Double#"
 
