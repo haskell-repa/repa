@@ -18,7 +18,7 @@ import qualified DDC.Core.Flow.Prim      as D
 import qualified DDC.Core.Flow.Compounds as D
 
 import qualified Data.Map                as Map
-import Data.Maybe
+
 
 -- | Convert a primop that has the same definition independent 
 --   of its type arguments.

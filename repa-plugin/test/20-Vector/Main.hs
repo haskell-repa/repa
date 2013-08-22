@@ -20,10 +20,6 @@ main
         r2      <- Ref.new 1
         R.runSeries v1 (lower_rreduce (RateNat 10) r1 r2) `seq` return ()
 
-data RateNat k
-        = RateNat Word
-
-
 
 -- Double reduce fusion.
 --  Computation of both reductions is interleaved.

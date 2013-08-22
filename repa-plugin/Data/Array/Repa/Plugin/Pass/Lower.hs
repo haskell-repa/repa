@@ -12,8 +12,6 @@ import DDC.Core.Exp
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
 import qualified DDC.Core.Flow.Transform.Slurp          as Flow
-import qualified DDC.Core.Flow.Transform.Schedule       as Flow
-import qualified DDC.Core.Flow.Transform.Extract        as Flow
 import qualified DDC.Core.Flow.Transform.Concretize     as Flow
 import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
@@ -31,8 +29,6 @@ import qualified DDC.Core.Transform.Reannotate          as Core
 import qualified DDC.Core.Transform.Deannotate          as Core
 import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Eta                 as Eta
-import qualified DDC.Core.Simplifier.Recipe             as Core
-import qualified DDC.Type.Env                           as Env
 
 import qualified HscTypes                               as G
 import qualified CoreMonad                              as G
@@ -40,7 +36,6 @@ import qualified UniqSupply                             as G
 import qualified DDC.Base.Pretty                        as D
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
-import qualified Data.Monoid                            as M
 import System.IO.Unsafe
 import Control.Monad.State.Strict                       as S
 import Data.List
@@ -161,33 +156,18 @@ passLower options name guts0
 
 
         -- Lower ------------------------------------------
-        -- Slurp out flow processes from the preped module.
-        let processes   = Flow.slurpProcesses mm_prep
+        let mm_lowered_fail
+                | elem "vector" options
+                = Flow.lowerModule Flow.defaultConfigVector mm_prep
 
-        -- Schedule processes into abstract loops.
-        let Right procedures  = sequence $ map Flow.scheduleScalar processes
+                | otherwise
+                = Flow.lowerModule Flow.defaultConfigScalar mm_prep
 
-        -- Extract concrete code from the abstract loops.
-        let mm_lowered' = Flow.extractModule mm_prep procedures
-
-        -- Do some beta-reductions to ensure that arguments to worker functions
-        -- are inlined, then normalize nested applications. 
-        -- When snipping, leave lambda abstractions in place so the worker functions
-        -- applied to our loop combinators aren't moved.
-        let simp_clean           
-                 =    Core.Fix 4 Core.beta 
-                 M.<> Core.Trans (Core.Snip (Snip.configZero { Snip.configPreserveLambdas = True }))
-                 M.<> Core.Trans Core.Flatten
-                 M.<> Core.Trans (Core.Namify mkNamT mkNamX)
-
+        -- TODO: do something sensibler if we can't lower the code.
         let mm_lowered
-                 = S.evalState
-                        (Core.applySimplifier Flow.profile Env.empty Env.empty
-                                simp_clean mm_lowered')
-                        0
-
-        dump "06-lowered.1-processes.txt"
-         $ D.renderIndent (D.vcat $ intersperse D.empty $ map D.ppr $ processes)
+                = case mm_lowered_fail of
+                        Left fails      -> error $ show fails
+                        Right mm'       -> mm'
 
         dump "06-lowered.dcf"
          $ D.renderIndent (D.ppr mm_lowered)

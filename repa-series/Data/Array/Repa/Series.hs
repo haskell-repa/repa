@@ -1,6 +1,7 @@
 module Data.Array.Repa.Series
         ( -- * Series
-          Series (..)
+          RateNat (..)
+        , Series  (..)
 
           -- * Vectors
         , Vector (..)
