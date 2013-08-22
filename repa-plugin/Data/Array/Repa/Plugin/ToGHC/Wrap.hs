@@ -4,10 +4,8 @@ module Data.Array.Repa.Plugin.ToGHC.Wrap
         , repackExp )
 where
 import Data.Array.Repa.Plugin.ToGHC.Var
-import Data.Array.Repa.Plugin.ToDDC.Convert.Var (stringOfGhcTyCon)
 import Data.Array.Repa.Plugin.Primitives
 import Data.Array.Repa.Plugin.GHC.Pretty ()
-import DDC.Base.Pretty
 
 import qualified BasicTypes             as G
 import qualified CoreSyn                as G
@@ -19,7 +17,6 @@ import qualified TysWiredIn             as G
 import qualified MkId                   as G
 import qualified UniqSupply             as G
 import Control.Monad
-import Data.List
 
 
 -- | Make a wrapper to call a lowered version of a function from the original

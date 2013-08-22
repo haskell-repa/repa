@@ -5,6 +5,8 @@ module Data.Array.Repa.Series.Series
         , length
         , toVector
         , rateOfSeries
+        , down4
+        , tail4
         , runSeries
         , runSeries2
         , runSeries3
@@ -62,6 +64,17 @@ rateOfSeries :: Series k a -> Word#
 rateOfSeries s = seriesLength s
 {-# INLINE rateOfSeries #-}
 
+
+-- | Window a series to the initial range of 4 elements.
+down4 :: forall k a. RateNat k -> Series k a -> Series (Down4 k) a
+down4 = error "repa-series: down4 not done yet"
+{-# NOINLINE down4 #-}
+
+
+-- | Window a series to the ending elements.
+tail4 :: forall k a. RateNat k -> Series k a -> Series (Tail4 k) a
+tail4 = error "repa-series: tail4 not done yet"
+{-# NOINLINE tail4 #-}
 
 
 -------------------------------------------------------------------------------

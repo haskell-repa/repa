@@ -64,11 +64,29 @@ convertType
 
 convertType kenv tt
  = case tt of
-        -- DDC[World#]    => GHC[State# RealWorld#]
-        --   The GHC state token takes a phantom type to indicate
-        --   what state thread it corresponds to.
-        D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
-         -> return $ G.mkTyConApp G.statePrimTyCon [G.realWorldTy]
+        -- DDC[Data] => GHC[*]
+        D.TCon (D.TyConKind D.KiConData)
+         -> return $ G.liftedTypeKind
+
+        -- DDC[Rate] => GHC[*]
+        D.TCon (D.TyConBound (D.UPrim (D.NameKiConFlow D.KiConFlowRate) _) _)
+         -> return $ G.liftedTypeKind
+
+        -- Down4
+        D.TApp{}
+         | Just (D.NameTyConFlow (D.TyConFlowDown 4), [tK])
+                <- D.takePrimTyConApps tt
+         -> do  tK'     <- convertType kenv tK
+                return  $ G.applyTys (prim_Down4 (envPrimitives kenv))
+                                     [tK']
+
+        -- Tail4
+        D.TApp{}
+         | Just (D.NameTyConFlow (D.TyConFlowTail 4), [tK])
+                <- D.takePrimTyConApps tt
+         -> do  tK'     <- convertType kenv tK
+                return  $ G.applyTys (prim_Tail4 (envPrimitives kenv))
+                                     [tK']
 
         -- DDC[Vector# a] => GHC[Vector# {Lifted a}]
         --   In the code we get from the lowering transform, for element
@@ -99,13 +117,11 @@ convertType kenv tt
                 return  $ G.applyTys (prim_Series (envPrimitives kenv)) 
                                      [tK', tElem']
 
-        -- DDC[Data] => GHC[*]
-        D.TCon (D.TyConKind D.KiConData)
-         -> return $ G.liftedTypeKind
-
-        -- DDC[Rate] => GHC[*]
-        D.TCon (D.TyConBound (D.UPrim (D.NameKiConFlow D.KiConFlowRate) _) _)
-         -> return $ G.liftedTypeKind
+        -- DDC[World#]    => GHC[State# RealWorld#]
+        --   The GHC state token takes a phantom type to indicate
+        --   what state thread it corresponds to.
+        D.TCon (D.TyConBound (D.UPrim (D.NameTyConFlow D.TyConFlowWorld) _) _)
+         -> return $ G.mkTyConApp G.statePrimTyCon [G.realWorldTy]
 
 
         -- Generic Conversion -------------------

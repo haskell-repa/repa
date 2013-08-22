@@ -5,6 +5,8 @@ License-File:   LICENSE
 Cabal-Version:  >= 1.10
 Build-Type:     Simple
 Author:         The DPH Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Category:       Data Structures
 Synopsis:       Series Expressionss API
 Description:   
         Series expression API for writing programs subjected to the

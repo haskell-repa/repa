@@ -26,15 +26,20 @@ import GHC.Types
 -- | Primitives needed by the repa-plugin.
 data Primitives
   = Primitives
-  { prim_Series         :: forall k a. Series k a
+  { -- Types ----------------------------------------------
+    prim_Series         :: forall k a. Series k a
   , prim_Vector         :: forall a.   Vector a
   , prim_Ref            :: forall a.   Ref a
+  , prim_Down4          :: forall k.   Down4 k
+  , prim_Tail4          :: forall k.   Tail4 k
 
-
-    -- Loop Combinators -----------------------------------
+    -- Series ---------------------------------------------
   , prim_natOfRateNat   :: forall k.    RateNat k  -> Word#
   , prim_rateOfSeries   :: forall k a.  Series k a -> Word#
+  , prim_down4          :: forall k a.  RateNat k  -> Series k a -> Series (Down4 k) a
+  , prim_tail4          :: forall k a.  RateNat k  -> Series k a -> Series (Tail4 k) a
 
+    -- Control --------------------------------------------
   , prim_loop           :: Word#  -> (Word# -> World -> World)
                         -> World -> World
 
@@ -42,12 +47,16 @@ data Primitives
                         -> (Word# -> World -> World)
                         -> World -> World
 
+  , prim_split4         :: forall k
+                        .  RateNat k
+                        -> (RateNat (Down4 k) -> World -> World)
+                        -> (RateNat (Tail4 k) -> World -> World)
+                        -> World -> World
 
     -- Hacks ----------------------------------------------
   , prim_nextInt_T2     :: forall k
                         .  Series k (Int,Int) -> Word#
                         -> World -> (# World, (# Int#, Int# #) #)
-
 
     -- Int ------------------------------------------------
   , prim_newRefInt      :: Int#    -> World -> (# World, Ref Int #) 
@@ -63,7 +72,6 @@ data Primitives
                         .  Series k Int -> Word#
                         -> World -> (# World, Int# #)
 
-
     -- Word ------------------------------------------------
   , prim_newRefWord     :: Word#    -> World -> (# World, Ref Word #) 
   , prim_readRefWord    :: Ref Word -> World -> (# World, Word# #)
@@ -78,7 +86,6 @@ data Primitives
                         .  Series k Word -> Word#
                         -> World -> (# World, Word# #)
 
-
     -- Float ------------------------------------------------
   , prim_newRefFloat       :: Float#    -> World -> (# World, Ref Float #) 
   , prim_readRefFloat      :: Ref Float -> World -> (# World, Float# #)
@@ -92,7 +99,6 @@ data Primitives
   , prim_nextFloat         :: forall k
                            .  Series k Float -> Word#
                            -> World -> (# World, Float# #)
-
 
     -- Double ------------------------------------------------
   , prim_newRefDouble      :: Double#    -> World -> (# World, Ref Double #) 
@@ -117,12 +123,20 @@ primitives
   { prim_Series = error "repa-series.primitives: you can't touch this."
   , prim_Vector = error "repa-series.primitives: you can't touch this."
   , prim_Ref    = error "repa-series.primitives: you can't touch this."
+  , prim_Down4  = error "repa-series.primitives: you can't touch this."
+  , prim_Tail4  = error "repa-series.primitives: you can't touch this."
 
-    -- Loop Combinators -------------------------
-  , prim_natOfRateNat           = rateOfRateNat
+
+    -- Series ----------------------------------
   , prim_rateOfSeries           = S.rateOfSeries
+  , prim_down4                  = down4
+  , prim_tail4                  = tail4
+
+    -- Control ---------------------------------
+  , prim_natOfRateNat           = rateOfRateNat
   , prim_loop                   = repa_loop
   , prim_guard                  = repa_guard
+  , prim_split4                 = repa_split4
 
     -- Hacks ------------------------------------
   , prim_nextInt_T2             = repa_nextInt_T2 

@@ -5,11 +5,12 @@ License-File:   LICENSE
 Cabal-Version:  >= 1.10
 Build-Type:     Simple
 Author:         The DPH Team
-Synopsis:       Implements Data Flow Fusion.
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Category:       Data Structures
+Synopsis:       Data Flow Fusion GHC Plugin.
 Description:    
         This GHC plugin implements Data Flow Fusion as described in the paper:
         Data Flow Fusion with Series Expressions in Haskell, Haskell Symposium 2013.
-
 
 Library
   Exposed-Modules:

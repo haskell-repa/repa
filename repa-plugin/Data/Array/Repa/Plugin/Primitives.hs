@@ -34,12 +34,19 @@ data Primitives
         { prim_Series           :: !G.Type
         , prim_Vector           :: !G.Type
         , prim_Ref              :: !G.Type
+        , prim_Down4            :: !G.Type
+        , prim_Tail4            :: !G.Type
 
-          -- Loop combinators.
+          -- Series
         , prim_natOfRateNat     :: (G.CoreExpr, G.Type)
         , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
+        , prim_down4            :: (G.CoreExpr, G.Type)
+        , prim_tail4            :: (G.CoreExpr, G.Type)
+
+          -- Loop combinators.
         , prim_loop             :: (G.CoreExpr, G.Type)
         , prim_guard            :: (G.CoreExpr, G.Type)
+        , prim_split4           :: (G.CoreExpr, G.Type)
 
           -- Hacks
         , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
@@ -130,6 +137,30 @@ insertAfterTable bsMore bs
 
 
 -------------------------------------------------------------------------------
+-- Build a map of operators from bakedin and external atables.
+buildOpMap
+        :: [(String, (G.CoreExpr, G.Type))]   
+                                -- ^ Selectors
+        -> [(Name, G.Id)]       -- ^ Directly implemented operators.
+        -> [(Name, String)]     -- ^ Operators from the repa-primitives table.
+        -> Map Name (G.CoreExpr, G.Type)
+
+buildOpMap selectors bakedin external
+ = Map.fromList
+        $ [(name, getPrim name) 
+                | name <- map fst bakedin ++ map fst external ]
+
+ where  getPrim name
+         | Just gid <- lookup name bakedin 
+         = (G.Var gid, G.varType gid)
+
+         | otherwise
+         = let Just str = lookup name external
+               Just r   = lookup str selectors
+           in  r
+
+
+-------------------------------------------------------------------------------
 -- | Create top-level projection functions based on the primitive table
 --   attached to this variable.
 makeTable 
@@ -146,80 +177,51 @@ makeTable v
                 = G.dataConFieldLabels dc
 
         -- Load types from their proxy fields.
-        let Just tySeries   
-                = liftM (G.dataConFieldType dc)
-                $ find (\n -> stringOfName n ==  "prim_Series") labels
+        let getTy str
+                = let Just ty   = liftM (G.dataConFieldType dc)
+                                $ find (\n -> stringOfName n == str) labels
+                  in  ty
 
-        let Just tyVector   
-                = liftM (G.dataConFieldType dc)
-                $ find (\n -> stringOfName n ==  "prim_Vector") labels
+        let tySeries    = getTy "prim_Series"
+        let tyVector    = getTy "prim_Vector"
+        let tyRef       = getTy "prim_Ref"
+        let tyDown4     = getTy "prim_Down4"
+        let tyTail4     = getTy "prim_Tail4"
 
-        let Just tyRef
-                = liftM (G.dataConFieldType dc)
-                $ find (\n -> stringOfName n ==  "prim_Ref") labels
 
         -- Build table of selectors for all the external operators.
         -- Each selector projects the appropriate field from the primitives table.
-        (bs, selectors)     <- makeSelectors v allExternalNames
-        let get name
-                = let Just r    = lookup name selectors
-                  in  r
-
-        -- Find the definition for some Core Flow primitive.
-        --  It might be baked into GHC or externally implemented in the
-        --  repa-primitives table.
-        let populate 
-                :: [(Name, G.Id)]       -- Direcrtly implemented operators.
-                -> [(Name, String)]     -- Operators from the repa-primitives table.
-                -> Name
-                -> (Name, (G.CoreExpr, G.Type))
-
-            populate bakedin prims name
-             | Just gid <- lookup name bakedin 
-             = (name, (G.Var gid, G.varType gid))
-
-             | otherwise
-             = let Just str = lookup name prims 
-                   Just r   = lookup str selectors
-               in  (name, r)
-
+        (bs, sels)      <- makeSelectors v allExternalNames
+        let get name    =  let Just r = lookup name sels in  r
+        
         let table      
                 = Primitives
                 { prim_Series           = tySeries
                 , prim_Vector           = tyVector
                 , prim_Ref              = tyRef
+                , prim_Down4            = tyDown4
+                , prim_Tail4            = tyTail4
 
-                -- Loop
+                -- Series
                 , prim_natOfRateNat     = get "prim_natOfRateNat"
                 , prim_rateOfSeries     = get "prim_rateOfSeries" 
+                , prim_down4            = get "prim_down4"
+                , prim_tail4            = get "prim_tail4"
+                
+                -- Control
                 , prim_loop             = get "prim_loop"
                 , prim_guard            = get "prim_guard"
+                , prim_split4           = get "prim_split4"
 
                 -- Hacks
                 , prim_nextInt_T2       = get "prim_nextInt_T2"
 
                 -- Primitives per base type
-                , prim_baseInt          = Map.fromList
-                                        $ map (populate bakedin_int external_baseInt) 
-                                        $  map fst external_baseInt
-                                        ++ map fst bakedin_int
-
-                , prim_baseWord         = Map.fromList
-                                        $ map (populate bakedin_word external_baseWord) 
-                                        $  map fst external_baseWord
-                                        ++ map fst bakedin_word
-
-                , prim_baseFloat        = Map.fromList
-                                        $ map (populate bakedin_float external_baseFloat) 
-                                        $   map fst external_baseFloat
-                                        ++  map fst bakedin_float
-
-                , prim_baseDouble       = Map.fromList
-                                        $ map (populate bakedin_double external_baseDouble) 
-                                        $  map fst external_baseDouble
-                                        ++ map fst bakedin_double
-                 }
-
+                , prim_baseInt          = buildOpMap sels bakedin_Int    external_Int
+                , prim_baseWord         = buildOpMap sels bakedin_Word   external_Word
+                , prim_baseFloat        = buildOpMap sels bakedin_Float  external_Float
+                , prim_baseDouble       = buildOpMap sels bakedin_Double external_Double
+                }
 
         return $ Just (table, bs)
 
@@ -232,8 +234,8 @@ makeTable v
 --   Each of these tables map the DDC name for the primop at the appropriate
 --   type onto the GHC Id for it.
 --
-bakedin_int :: [(Name, G.Id)]
-bakedin_int 
+bakedin_Int :: [(Name, G.Id)]
+bakedin_Int 
  =      [ (NamePrimArith PrimArithAdd,  G.mkPrimOpId G.IntAddOp) 
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.IntSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.IntMulOp) 
@@ -248,8 +250,8 @@ bakedin_int
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.IntLeOp) ]
 
 
-bakedin_word :: [(Name, G.Id)]
-bakedin_word 
+bakedin_Word :: [(Name, G.Id)]
+bakedin_Word 
  =      [ (NamePrimArith PrimArithAdd,  G.mkPrimOpId G.WordAddOp) 
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.WordSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.WordMulOp) 
@@ -264,8 +266,8 @@ bakedin_word
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.WordLeOp) ]
 
 
-bakedin_float :: [(Name, G.Id)]
-bakedin_float
+bakedin_Float :: [(Name, G.Id)]
+bakedin_Float
  =      [ (NamePrimArith PrimArithAdd,  G.mkPrimOpId G.FloatAddOp) 
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.FloatSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.FloatMulOp) 
@@ -279,8 +281,8 @@ bakedin_float
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.FloatLeOp) ]
 
 
-bakedin_double :: [(Name, G.Id)]
-bakedin_double 
+bakedin_Double :: [(Name, G.Id)]
+bakedin_Double 
  =      [ (NamePrimArith PrimArithAdd,  G.mkPrimOpId G.DoubleAddOp) 
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.DoubleSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.DoubleMulOp) 
@@ -306,31 +308,38 @@ allExternalNames
  =      (map snd external_control)
  ++     (map snd external_series)
  ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
- ++     (map snd external_baseInt)
- ++     (map snd external_baseWord)
- ++     (map snd external_baseFloat)
- ++     (map snd external_baseDouble)
+ ++     (map snd external_Int)
+ ++     (map snd external_Word)
+ ++     (map snd external_Float)
+ ++     (map snd external_Double)
 
 
 -- | Names of loop combinators.
 external_control :: [(Name, String)]
 external_control
  =      [ (NameOpControl OpControlLoop,         "prim_loop")
-        , (NameOpControl OpControlGuard,        "prim_guard") ]
+        , (NameOpControl OpControlGuard,        "prim_guard") 
+        , (NameOpControl OpControlGuard,        "prim_split4") ]
 
 
 -- | Name of series primitives.
 external_series :: [(Name, String)]
 external_series 
  =      [ (NameOpSeries OpSeriesRateOfSeries,   "prim_rateOfSeries") 
-        , (NameOpSeries OpSeriesNatOfRateNat,   "prim_natOfRateNat") ]
+        , (NameOpSeries OpSeriesNatOfRateNat,   "prim_natOfRateNat")
+        , (NameOpSeries (OpSeriesDown 4),       "prim_down4")
+        , (NameOpSeries (OpSeriesTail 4),       "prim_tail4") ]
 
 
--- | Map Core Flow Name to the base name used in the imported primitive table.
---   To turn this into the external name we need to add  a "prim_" prefix and
---   TYPE suffix.  Like "add" => "prim_addInt"
-external_baseTYPE :: [(Name, String)]
-external_baseTYPE
+-- External scalar operators --------------------------------------------------
+-- | These functions are defined for every scalar type.
+--  
+--   The table maps the Core Flow name to the base name used in the imported
+--   primitive table. To turn this into the external name we add a "prim_"
+--   prefix and TYPE suffix.  Like "add" => "prim_addInt"
+--
+external_scalarTYPE :: [(Name, String)]
+external_scalarTYPE
  =      [ (NameOpSeries  (OpSeriesNext 1),      "next") 
 
         , (NameOpStore OpStoreNew,              "newRef")
@@ -344,25 +353,25 @@ external_baseTYPE
 
 
 -- | Primitive table names for Int operators.
-external_baseInt    :: [(Name, String)]
-external_baseInt
- =      [ (n, "prim_" ++ s ++ "Int")    | (n, s) <- external_baseTYPE ]
+external_Int    :: [(Name, String)]
+external_Int
+ =      [ (n, "prim_" ++ s ++ "Int")    | (n, s) <- external_scalarTYPE ]
 
 
 -- | Primitive table names for Word operators.
-external_baseWord   :: [(Name, String)]
-external_baseWord
- =      [ (n, "prim_" ++ s ++ "Word")   | (n, s) <- external_baseTYPE ]
+external_Word   :: [(Name, String)]
+external_Word
+ =      [ (n, "prim_" ++ s ++ "Word")   | (n, s) <- external_scalarTYPE ]
 
 
 -- | Primitive table names for Float operators.
-external_baseFloat  :: [(Name, String)]
-external_baseFloat
- =      [ (n, "prim_" ++ s ++ "Float")  | (n, s) <- external_baseTYPE ]
+external_Float  :: [(Name, String)]
+external_Float
+ =      [ (n, "prim_" ++ s ++ "Float")  | (n, s) <- external_scalarTYPE ]
 
 
 -- | Primitive table names for Double operators.
-external_baseDouble :: [(Name, String)]
-external_baseDouble
- =      [ (n, "prim_" ++ s ++ "Double") | (n, s) <- external_baseTYPE ]
+external_Double :: [(Name, String)]
+external_Double
+ =      [ (n, "prim_" ++ s ++ "Double") | (n, s) <- external_scalarTYPE ]
 

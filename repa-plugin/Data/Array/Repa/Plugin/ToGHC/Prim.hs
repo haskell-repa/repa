@@ -20,6 +20,7 @@ import qualified DDC.Core.Flow.Compounds as D
 import qualified Data.Map                as Map
 
 
+-------------------------------------------------------------------------------
 -- | Convert a primop that has the same definition independent 
 --   of its type arguments.
 convertPrim 
@@ -30,14 +31,12 @@ convertPrim
 convertPrim _kenv tenv n 
  = let prims    = envPrimitives tenv
    in case n of
-        D.NameOpSeries  D.OpSeriesRateOfSeries
-         -> return $ prim_rateOfSeries prims
-
-        D.NameOpSeries  D.OpSeriesNatOfRateNat
-         -> return $ prim_natOfRateNat prims
-
-        D.NameOpControl D.OpControlGuard
-         -> return $ prim_guard prims
+        D.NameOpSeries  D.OpSeriesRateOfSeries  -> return $ prim_rateOfSeries prims
+        D.NameOpSeries  D.OpSeriesNatOfRateNat  -> return $ prim_natOfRateNat prims
+        D.NameOpSeries (D.OpSeriesDown 4)       -> return $ prim_down4 prims
+        D.NameOpSeries (D.OpSeriesTail 4)       -> return $ prim_tail4 prims
+        D.NameOpControl D.OpControlGuard        -> return $ prim_guard prims
+        D.NameOpControl (D.OpControlSplit 4)    -> return $ prim_split4 prims
 
         -- ERROR: This isn't a primtive name,
         --        or we don't have an implementation for it.
