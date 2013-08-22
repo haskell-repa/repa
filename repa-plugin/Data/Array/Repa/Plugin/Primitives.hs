@@ -54,8 +54,8 @@ data Primitives
           -- Primitives per base type.
         , prim_baseInt          :: Map Name (G.CoreExpr, G.Type)
         , prim_baseWord         :: Map Name (G.CoreExpr, G.Type)
-        , prim_baseFloat        :: Map Name (G.CoreExpr, G.Type)
-        , prim_baseDouble       :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseFloat32      :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseFloat64      :: Map Name (G.CoreExpr, G.Type)
         }
 
 
@@ -217,10 +217,10 @@ makeTable v
                 , prim_nextInt_T2       = get "prim_nextInt_T2"
 
                 -- Primitives per base type
-                , prim_baseInt          = buildOpMap sels bakedin_Int    external_Int
-                , prim_baseWord         = buildOpMap sels bakedin_Word   external_Word
-                , prim_baseFloat        = buildOpMap sels bakedin_Float  external_Float
-                , prim_baseDouble       = buildOpMap sels bakedin_Double external_Double
+                , prim_baseInt          = buildOpMap sels bakedin_Int     external_Int
+                , prim_baseWord         = buildOpMap sels bakedin_Word    external_Word
+                , prim_baseFloat32      = buildOpMap sels bakedin_Float32 external_Float32
+                , prim_baseFloat64      = buildOpMap sels bakedin_Float64 external_Float64
                 }
 
         return $ Just (table, bs)
@@ -266,8 +266,8 @@ bakedin_Word
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.WordLeOp) ]
 
 
-bakedin_Float :: [(Name, G.Id)]
-bakedin_Float
+bakedin_Float32 :: [(Name, G.Id)]
+bakedin_Float32
  =      [ (NamePrimArith PrimArithAdd,  G.mkPrimOpId G.FloatAddOp) 
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.FloatSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.FloatMulOp) 
@@ -278,11 +278,13 @@ bakedin_Float
         , (NamePrimArith PrimArithGt,   G.mkPrimOpId G.FloatGtOp) 
         , (NamePrimArith PrimArithGe,   G.mkPrimOpId G.FloatGeOp) 
         , (NamePrimArith PrimArithLt,   G.mkPrimOpId G.FloatLtOp) 
-        , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.FloatLeOp) ]
+        , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.FloatLeOp) 
+
+        , (NamePrimVec  (PrimVecRep 4), G.mkPrimOpId G.FloatToFloatX4Op) ]
 
 
-bakedin_Double :: [(Name, G.Id)]
-bakedin_Double 
+bakedin_Float64 :: [(Name, G.Id)]
+bakedin_Float64 
  =      [ (NamePrimArith PrimArithAdd,  G.mkPrimOpId G.DoubleAddOp) 
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.DoubleSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.DoubleMulOp) 
@@ -310,8 +312,8 @@ allExternalNames
  ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
  ++     (map snd external_Int)
  ++     (map snd external_Word)
- ++     (map snd external_Float)
- ++     (map snd external_Double)
+ ++     (map snd external_Float32)
+ ++     (map snd external_Float64)
 
 
 -- | Names of loop combinators.
@@ -364,14 +366,14 @@ external_Word
  =      [ (n, "prim_" ++ s ++ "Word")   | (n, s) <- external_scalarTYPE ]
 
 
--- | Primitive table names for Float operators.
-external_Float  :: [(Name, String)]
-external_Float
+-- | Primitive table names for Float32 operators.
+external_Float32  :: [(Name, String)]
+external_Float32
  =      [ (n, "prim_" ++ s ++ "Float")  | (n, s) <- external_scalarTYPE ]
 
 
 -- | Primitive table names for Double operators.
-external_Double :: [(Name, String)]
-external_Double
+external_Float64 :: [(Name, String)]
+external_Float64
  =      [ (n, "prim_" ++ s ++ "Double") | (n, s) <- external_scalarTYPE ]
 

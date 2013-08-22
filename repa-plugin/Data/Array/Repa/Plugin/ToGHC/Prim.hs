@@ -56,10 +56,10 @@ convertPolytypicPrim kenv _tenv n tsArg
  = let  prims    = envPrimitives kenv
 
         getPrim nn t 
-         | t == D.tInt      = let Just r = Map.lookup nn (prim_baseInt    prims) in r
-         | t == D.tNat      = let Just r = Map.lookup nn (prim_baseWord   prims) in r
-         | t == D.tFloat 32 = let Just r = Map.lookup nn (prim_baseFloat  prims) in r
-         | t == D.tFloat 64 = let Just r = Map.lookup nn (prim_baseDouble prims) in r
+         | t == D.tInt      = let Just r = Map.lookup nn (prim_baseInt     prims) in r
+         | t == D.tNat      = let Just r = Map.lookup nn (prim_baseWord    prims) in r
+         | t == D.tFloat 32 = let Just r = Map.lookup nn (prim_baseFloat32 prims) in r
+         | t == D.tFloat 64 = let Just r = Map.lookup nn (prim_baseFloat64 prims) in r
          | otherwise        = error "repa-plugin.convertPolytypicPrim failed"
 
    in case n of

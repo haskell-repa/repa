@@ -174,6 +174,7 @@ convertExp kenv tenv xx
 
 
         -- Application of tuple projection primop.
+        -- Build an inline case-expression to project the element we want.
         D.XApp{}
          | Just ( D.NameOpFlow (D.OpFlowProj arity ix)
                 , xsArg)                   <- D.takeXPrimApps xx
@@ -204,8 +205,8 @@ convertExp kenv tenv xx
          , D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple n)) <- dn
 
          -- The first n arguments are type parameters, the rest are values
-         , (tyxs, vals)                                        <- splitAt n args
-         , tys                                                 <- catMaybes (map D.takeXType tyxs)
+         , (tyxs, vals) <- splitAt n args
+         , tys          <- catMaybes (map D.takeXType tyxs)
 
          -- Types must be fully applied, but we can get away with
          -- only partial value application
@@ -224,7 +225,6 @@ convertExp kenv tenv xx
 
                 return  ( G.mkConApp dacon (map G.Type tys' ++ map fst vals')
                         , tRes )
-
 
         -- Data constructors.                           
         D.XCon _ (D.DaCon dn _ _)

@@ -16,15 +16,16 @@ repa_primitives =  R.primitives
 
 ---------------------------------------------------------------------
 main
- = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
+ = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Float) 10
         r1      <- Ref.new 0
         r2      <- Ref.new 1
-        R.runSeries v1 (lower_rreduce (RateNat (int2Word# 10#)) r1 r2) `seq` return ()
+        R.runSeries v1 (lower_rreduce (RateNat (int2Word# 10#)) r1 r2) 
+                `seq` return ()
 
 
 -- Double reduce fusion.
 --  Computation of both reductions is interleaved.
-lower_rreduce :: RateNat k -> Ref Int -> Ref Int -> Series k Int -> ()
+lower_rreduce :: RateNat k -> Ref Float -> Ref Float -> Series k Float -> ()
 lower_rreduce _ ref1 ref2 s
  =      R.reduce ref1 (+) 0 s 
  `seq`  R.reduce ref2 (*) 1 s
