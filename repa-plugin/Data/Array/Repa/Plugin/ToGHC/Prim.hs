@@ -30,8 +30,11 @@ convertPrim
 convertPrim _kenv tenv n 
  = let prims    = envPrimitives tenv
    in case n of
-        D.NameOpSeries D.OpSeriesRateOfSeries
+        D.NameOpSeries  D.OpSeriesRateOfSeries
          -> return $ prim_rateOfSeries prims
+
+        D.NameOpSeries  D.OpSeriesNatOfRateNat
+         -> return $ prim_natOfRateNat prims
 
         D.NameOpControl D.OpControlGuard
          -> return $ prim_guard prims

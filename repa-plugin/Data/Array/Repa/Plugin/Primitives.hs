@@ -36,9 +36,10 @@ data Primitives
         , prim_Ref              :: !G.Type
 
           -- Loop combinators.
+        , prim_natOfRateNat     :: (G.CoreExpr, G.Type)
+        , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
         , prim_loop             :: (G.CoreExpr, G.Type)
         , prim_guard            :: (G.CoreExpr, G.Type)
-        , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
 
           -- Hacks
         , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
@@ -189,6 +190,7 @@ makeTable v
                 , prim_Ref              = tyRef
 
                 -- Loop
+                , prim_natOfRateNat     = get "prim_natOfRateNat"
                 , prim_rateOfSeries     = get "prim_rateOfSeries" 
                 , prim_loop             = get "prim_loop"
                 , prim_guard            = get "prim_guard"
@@ -320,7 +322,8 @@ external_control
 -- | Name of series primitives.
 external_series :: [(Name, String)]
 external_series 
- =      [ (NameOpSeries OpSeriesRateOfSeries,   "prim_rateOfSeries") ]
+ =      [ (NameOpSeries OpSeriesRateOfSeries,   "prim_rateOfSeries") 
+        , (NameOpSeries OpSeriesNatOfRateNat,   "prim_natOfRateNat") ]
 
 
 -- | Map Core Flow Name to the base name used in the imported primitive table.

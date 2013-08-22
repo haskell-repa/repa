@@ -108,7 +108,7 @@ spliceBind primitives guts names names' mm (G.NonRec gbOrig _)
         -- Call the lowered version from the original, adding a wrapper
         --  to (unsafely) pass the world token and marshal boxed to
         --  unboxed values.
-        xCall           <- wrapLowered 
+        xCall           <- wrapLowered primitives
                                 (G.varType gbOrig) gtLowered
                                 [] 
                                 gvLowered
@@ -195,14 +195,7 @@ convertExp kenv tenv xx
                                 [ ( G.DataAlt (G.tupleCon G.UnboxedTuple arity)
                                   , vsParts, G.Var vWanted) ]
                         , tResult)
-
-
-        -- RateOfRateNat is Id
-        D.XApp{}
-         | Just (n, [_xTK, xRate]) <- D.takeXPrimApps xx
-         ,  D.NameOpSeries D.OpSeriesNatOfRateNat   <- n
-         -> convertExp kenv tenv xRate
-
+                
 
         -- The unboxed tuple constructor.
         -- When we produce unboxed tuple we always want to preserve
@@ -347,7 +340,7 @@ convertExp kenv tenv xx
                                 , ppr x1
                                 , ppr x2 ]
 
-                x2'' <- unwrapResult tArg t2' x2'
+                x2'' <- repackExp (envPrimitives kenv) tArg t2' x2'
 
                 return  ( G.App x1' x2''
                         , tResult)
@@ -371,7 +364,9 @@ convertExp kenv tenv xx
                 -- from the desired type (type of vBind).
                 -- Use unwrapResult to box or unbox xScrut as necessary,
                 -- based on the types.
-                xScrut''          <- unwrapResult (G.varType vBind') tScrut' xScrut'
+                xScrut''          <- repackExp 
+                                        (envPrimitives kenv) 
+                                        (G.varType vBind') tScrut' xScrut'
 
                 (x2',    t2')     <- convertExp kenv tenv' x2
 

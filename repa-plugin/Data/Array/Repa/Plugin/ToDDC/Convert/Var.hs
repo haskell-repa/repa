@@ -3,18 +3,21 @@ module Data.Array.Repa.Plugin.ToDDC.Convert.Var
         ( convertFatName
         , convertVarName
         , convertName
-        , convertLiteral)
+        , convertLiteral
+        , stringOfGhcName
+        , stringOfGhcTyCon)
 where
 import Data.Array.Repa.Plugin.ToDDC.Convert.Base
 import Data.Array.Repa.Plugin.FatName
 import DDC.Base.Pretty
 import Data.Char
 
-import qualified DDC.Core.Exp            as D
-import qualified DDC.Core.Compounds      as D
-import qualified DDC.Core.Flow           as D
+import qualified DDC.Core.Exp           as D
+import qualified DDC.Core.Compounds     as D
+import qualified DDC.Core.Flow          as D
 
 import qualified Type                   as G
+import qualified TyCon                  as G
 import qualified Var                    as G
 import qualified OccName                as OccName
 import qualified Name                   as Name
@@ -49,6 +52,21 @@ convertName name
          c : _ 
           | isUpper c   -> return $ D.NameCon str
           | otherwise   -> return $ D.NameVar str
+
+
+-- | Get the string name of a GHC Name.
+stringOfGhcName :: Name.Name -> String
+stringOfGhcName name
+        = OccName.occNameString
+        $ Name.nameOccName name
+
+
+-- | Get the string name of a GHC TyCon.
+stringOfGhcTyCon :: G.TyCon -> String
+stringOfGhcTyCon tc
+        = OccName.occNameString
+        $ Name.nameOccName
+        $ G.tyConName tc
 
 
 -- Literals -------------------------------------------------------------------

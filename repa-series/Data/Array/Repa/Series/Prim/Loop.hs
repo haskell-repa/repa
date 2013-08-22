@@ -45,12 +45,6 @@ repa_guard ref flag worker world0
 {-# INLINE repa_guard #-}
 
 
--- | Get the Rate / Length of a series.
-repa_rateOfSeries :: Series k a -> Word#
-repa_rateOfSeries s = seriesLength s
-{-# INLINE repa_rateOfSeries #-}
-
-
 repa_split4  
         :: forall k
         .  RateNat k 

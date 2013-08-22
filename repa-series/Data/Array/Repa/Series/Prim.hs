@@ -32,6 +32,7 @@ data Primitives
 
 
     -- Loop Combinators -----------------------------------
+  , prim_natOfRateNat   :: forall k.    RateNat k  -> Word#
   , prim_rateOfSeries   :: forall k a.  Series k a -> Word#
 
   , prim_loop           :: Word#  -> (Word# -> World -> World)
@@ -118,7 +119,8 @@ primitives
   , prim_Ref    = error "repa-series.primitives: you can't touch this."
 
     -- Loop Combinators -------------------------
-  , prim_rateOfSeries           = repa_rateOfSeries
+  , prim_natOfRateNat           = rateOfRateNat
+  , prim_rateOfSeries           = S.rateOfSeries
   , prim_loop                   = repa_loop
   , prim_guard                  = repa_guard
 

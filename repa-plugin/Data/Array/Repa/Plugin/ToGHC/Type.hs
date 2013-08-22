@@ -186,7 +186,7 @@ convertTyConApp _prims names tc tsArgs' tsArgs_b'
         -- RateNat
         D.TyConBound (D.UPrim n@(D.NameTyConFlow D.TyConFlowRateNat) _) _
          | Just (GhcNameTyCon tc') <- Map.lookup n names
-         -> G.mkTyConApp tc' []
+         -> G.mkTyConApp tc' tsArgs'
 
         -- Machine types
         D.TyConBound (D.UPrim n _) _

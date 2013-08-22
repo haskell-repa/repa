@@ -1,4 +1,4 @@
-
+{-# LANGUAGE MagicHash #-}
 module Main where
 import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S
@@ -6,6 +6,7 @@ import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Ref       as Ref
 import qualified Data.Vector.Unboxed    as U
 import Data.Word
+import GHC.Exts
 
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
@@ -18,7 +19,7 @@ main
  = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
         r1      <- Ref.new 0
         r2      <- Ref.new 1
-        R.runSeries v1 (lower_rreduce (RateNat 10) r1 r2) `seq` return ()
+        R.runSeries v1 (lower_rreduce (RateNat (int2Word# 10#)) r1 r2) `seq` return ()
 
 
 -- Double reduce fusion.

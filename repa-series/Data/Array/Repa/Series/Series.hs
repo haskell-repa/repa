@@ -4,6 +4,7 @@ module Data.Array.Repa.Series.Series
         , index
         , length
         , toVector
+        , rateOfSeries
         , runSeries
         , runSeries2
         , runSeries3
@@ -54,6 +55,13 @@ toVector (Series len vec)
  = unsafePerformIO
  $ do   V.fromUnboxed vec
 {-# INLINE [1] toVector #-}
+
+
+-- | Get the Rate / Length of a series.
+rateOfSeries :: Series k a -> Word#
+rateOfSeries s = seriesLength s
+{-# INLINE rateOfSeries #-}
+
 
 
 -------------------------------------------------------------------------------
