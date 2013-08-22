@@ -1,6 +1,10 @@
 module Data.Array.Repa.Series
-        ( -- * Series
+        ( -- * Rates
           RateNat (..)
+        , Down4   (..)
+        , Tail4   (..)
+
+          -- * Series
         , Series  (..)
 
           -- * Vectors
@@ -30,6 +34,7 @@ module Data.Array.Repa.Series
         , Primitives (..)
         , primitives)
 where
+import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Series
 import Data.Array.Repa.Series.Sel
 import Data.Array.Repa.Series.Vector

@@ -8,8 +8,7 @@
 --   in this module will be used directly.
 --
 module Data.Array.Repa.Series.Fallback
-        ( RateNat       (..)
-        , map
+        ( map
         , map2
         , fold
         , foldIndex
@@ -24,11 +23,6 @@ import Data.Vector.Unboxed                      (Unbox)
 import GHC.Exts
 import Prelude                                  hiding (map)
 import System.IO.Unsafe
-
-
-data RateNat k
-        = RateNat Word
-
 
 -- | Apply a function to all elements of a series.
 map     :: forall k a b. (Unbox a, Unbox b)

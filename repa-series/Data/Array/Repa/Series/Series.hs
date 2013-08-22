@@ -10,6 +10,7 @@ module Data.Array.Repa.Series.Series
         , runSeries4)
 where
 import qualified Data.Array.Repa.Series.Vector  as V
+import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Vector            (Vector)
 
 import qualified Data.Vector.Unboxed            as U
@@ -21,9 +22,11 @@ import Prelude hiding (length)
 
 
 -- Series ---------------------------------------------------------------------
--- | A `Series` is an abstract source of element data and is consumed
---   by series processes. The elements of a series must be consumed
---   sequentially, so they don't support random access indexing.
+-- | A `Series` is a source of element data that is tagged by rate variable,
+--   which is a type level version of its length.
+--
+--   Although the manifest representation of a series supports random-access
+--   indexing, all fusable series process must consume their series sequentially.
 --
 --   The rate parameter @k@ represents the abstract length of the series.
 data Series k a
@@ -77,7 +80,8 @@ runSeries2
         :: (Unbox a, Unbox b)
         => Vector a
         -> Vector b
-        -> (forall k. Series k a -> Series k b -> c)    -- ^ worker function
+        -> (forall k. Series k a -> Series k b -> c)    
+                        -- ^ worker function
         -> Maybe c
 
 runSeries2 vec1 vec2 f
@@ -87,7 +91,7 @@ runSeries2 vec1 vec2 f
  = unsafePerformIO
  $ do   uvec1   <- V.toUnboxed vec1
         uvec2   <- V.toUnboxed vec2
-        return  $ Just (f (Series len1 uvec1) (Series len2 uvec2))
+        return  $ Just (f       (Series len1 uvec1) (Series len2 uvec2))
 
  | otherwise
  = Nothing
@@ -100,7 +104,8 @@ runSeries3
         => Vector a
         -> Vector b
         -> Vector c
-        -> (forall k. Series k a -> Series k b -> Series k c -> d)    -- ^ worker function
+        -> (forall k. Series k a -> Series k b -> Series k c -> d)    
+                        -- ^ worker function
         -> Maybe d
 
 runSeries3 vec1 vec2 vec3 f
@@ -113,7 +118,8 @@ runSeries3 vec1 vec2 vec3 f
  $ do   uvec1   <- V.toUnboxed vec1
         uvec2   <- V.toUnboxed vec2
         uvec3   <- V.toUnboxed vec3
-        return  $ Just (f (Series len1 uvec1) (Series len2 uvec2) (Series len3 uvec3))
+        return  $ Just (f       (Series len1 uvec1) (Series len2 uvec2) 
+                                (Series len3 uvec3))
 
  | otherwise
  = Nothing
@@ -127,7 +133,8 @@ runSeries4
         -> Vector b
         -> Vector c
         -> Vector d
-        -> (forall k. Series k a -> Series k b -> Series k c -> Series k d -> e)    -- ^ worker function
+        -> (forall k. Series k a -> Series k b -> Series k c -> Series k d -> e)    
+                        -- ^ worker function
         -> Maybe e
 
 runSeries4 vec1 vec2 vec3 vec4 f
@@ -143,9 +150,11 @@ runSeries4 vec1 vec2 vec3 vec4 f
         uvec2   <- V.toUnboxed vec2
         uvec3   <- V.toUnboxed vec3
         uvec4   <- V.toUnboxed vec4
-        return  $ Just (f (Series len1 uvec1) (Series len2 uvec2) (Series len3 uvec3) (Series len4 uvec4))
+        return  $ Just (f       (Series len1 uvec1) (Series len2 uvec2) 
+                                (Series len3 uvec3) (Series len4 uvec4))
 
  | otherwise
  = Nothing
 {-# INLINE [1] runSeries4 #-}
+
 

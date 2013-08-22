@@ -19,7 +19,7 @@ import GHC.Exts
 import Prelude  hiding (length, read, take)
 
 
--- | Abstract mutable vector type that supports random access indexing.
+-- | Abstract mutable vector.
 -- 
 --   Use `fromUnboxed` and `toUnboxed` to convert to and from regular
 --   immutable unboxed vectors.
@@ -72,7 +72,9 @@ take len (Vector _ mvec)
 {-# INLINE take #-}
 
 
--- | O(1). Convert from an Unboxed vector.
+-- | O(1). Unsafely convert from an Unboxed vector.
+--
+--   You promise not to access the source vector again.
 fromUnboxed :: Unbox a => U.Vector a -> IO (Vector a)
 fromUnboxed vec
  = do   let !(I# len)   = U.length vec
@@ -81,7 +83,9 @@ fromUnboxed vec
 {-# INLINE fromUnboxed #-}
 
 
--- | O(1). Convert to an Unboxed vector.
+-- | O(1). Unsafely convert to an Unboxed vector.
+--
+--   You promise not to modify the source vector again.
 toUnboxed :: Unbox a => Vector a -> IO (U.Vector a)
 toUnboxed (Vector _ mvec)
  =      U.unsafeFreeze mvec

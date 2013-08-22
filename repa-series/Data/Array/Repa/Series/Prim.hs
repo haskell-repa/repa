@@ -9,13 +9,14 @@ module Data.Array.Repa.Series.Prim
         ( Primitives (..)
         , primitives )
 where
+import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Ref       as Ref
+import Data.Array.Repa.Series.Prim.Utils
+
 import GHC.Exts
 import GHC.Types
-
-type World      = State# RealWorld
 
 
 -- | Primitives needed by the repa-plugin.
@@ -285,18 +286,6 @@ primitives
 
   }
 
--- Utils ----------------------------------------------------------------------
-unwrapIO'  :: IO a -> State# RealWorld -> (# State# RealWorld, a #)
-unwrapIO' (IO f) = f
-{-# INLINE unwrapIO' #-}
-
-unwrapIO_  :: IO a -> State# RealWorld -> State# RealWorld
-unwrapIO_ (IO f) world 
- = case f world of
-        (# world', _ #) -> world'
-{-# INLINE unwrapIO_ #-}
-
-
 -- Loop combinators -----------------------------------------------------------
 -- | Primitive stateful loop combinator.
 repa_loop       :: Int#  -> (Int# -> World -> World) -> World -> World
@@ -332,6 +321,17 @@ repa_guard ref flag worker world0
 repa_rateOfSeries :: Series k a -> Int#
 repa_rateOfSeries s = seriesLength s
 {-# INLINE repa_rateOfSeries #-}
+
+
+repa_split4  
+        :: forall k
+        .  RateNat k 
+        -> (RateNat (Down4 k) -> World -> World)
+        -> (RateNat (Tail4 k) -> World -> World)
+        -> World -> World
+repa_split4 r fDown4 fTail4 w
+ = error "repa_split4: not done yet"
+{-# NOINLINE repa_split4 #-}
 
 
 -- Hacks ---------------------------------------------------------------------
@@ -595,5 +595,6 @@ repa_nextDouble s ix world
  = case S.index s ix of
         D# i    -> (# world, i #)
 {-# INLINE repa_nextDouble #-}
+
 
 

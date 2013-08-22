@@ -18,7 +18,9 @@ Library
         Data.Array.Repa.Series.Sel
         Data.Array.Repa.Series.Fallback
         Data.Array.Repa.Series.Ref
+        Data.Array.Repa.Series.Rate
         Data.Array.Repa.Series.Prim
+
 
   Build-Depends:
         base       == 4.6.*,
