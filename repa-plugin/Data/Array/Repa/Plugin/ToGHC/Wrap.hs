@@ -148,6 +148,11 @@ unwrapResult tOrig tLowered xResult
         , G.TyConApp tcIntU []    <- tLowered,   tcIntU == G.intPrimTyCon
         = return $ G.App (G.Var (G.dataConWorkId G.intDataCon)) xResult
 
+        -- Wrap Words
+        | G.TyConApp tcWord  []   <- tOrig,      tcWord  == G.wordTyCon
+        , G.TyConApp tcWordU []   <- tLowered,   tcWordU == G.wordPrimTyCon
+        = return $ G.App (G.Var (G.dataConWorkId G.wordDataCon)) xResult
+
         -- Wrap Floats
         | G.TyConApp tcFloat  []  <- tOrig,      tcFloat  == G.floatTyCon
         , G.TyConApp tcFloatU []  <- tLowered,   tcFloatU == G.floatPrimTyCon
@@ -169,6 +174,16 @@ unwrapResult tOrig tLowered xResult
                 return  $ G.Case xResult vScrut tOrig
                         [ (G.DataAlt G.intDataCon, [v], G.Var v)]
 
+
+        -- Unwrap Words
+        | G.TyConApp tcWordU []   <- tOrig
+        , tcWordU == G.wordPrimTyCon
+        , G.TyConApp tcWord  []   <- tLowered    
+        , tcWord  == G.wordTyCon
+        = do    vScrut  <- newDummyVar "scrut" tLowered
+                v       <- newDummyVar "v"     tOrig
+                return  $ G.Case xResult vScrut tOrig
+                        [ (G.DataAlt G.wordDataCon, [v], G.Var v)]
 
 
         -- Original is a boxed tuple and lowered version is unboxed:

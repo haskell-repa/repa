@@ -25,7 +25,7 @@ import Prelude  hiding (length, read, take)
 --   immutable unboxed vectors.
 data Vector a
         = Vector
-        { vectorLength  :: Int#
+        { vectorLength  :: Word#
         , vectorData    :: !(UM.IOVector a) }
 
 
@@ -37,38 +37,39 @@ instance (Unbox a, Show a) => Show (Vector a) where
 
 
 -- | Take the length of a vector.
-length :: Vector a -> Int#
+length :: Vector a -> Word#
 length vec
         = vectorLength vec
 {-# INLINE length #-}
 
 
 -- | Create a new vector of the given length.
-new  :: Unbox a => Int# -> IO (Vector a)
+new  :: Unbox a => Word# -> IO (Vector a)
 new len
- = do   vec     <- UM.new (I# len)
+ = do   vec     <- UM.new (I# (word2Int# len))
         return  $ Vector len vec
 {-# INLINE new #-}
 
 
 -- | Read a value from a vector.
-read :: Unbox a => Vector a -> Int# -> IO a
+read :: Unbox a => Vector a -> Word# -> IO a
 read vec ix
-        = UM.unsafeRead (vectorData vec) (I# ix)
+        = UM.unsafeRead (vectorData vec) (I# (word2Int# ix))
 {-# INLINE read #-}
 
 
 -- | Write a value into a vector.
-write :: Unbox a => Vector a -> Int# -> a -> IO ()
+write :: Unbox a => Vector a -> Word# -> a -> IO ()
 write vec ix val
-        = UM.unsafeWrite (vectorData vec) (I# ix) val
+        = UM.unsafeWrite (vectorData vec) (I# (word2Int# ix)) val
 {-# INLINE write #-}
 
--- | Take the first n elements of a vector
-take :: Unbox a => Int# -> Vector a -> IO (Vector a)
-take len (Vector _ mvec)
- = do   return $ Vector len $ UM.unsafeTake (I# len) mvec
 
+-- | Take the first n elements of a vector
+take :: Unbox a => Word# -> Vector a -> IO (Vector a)
+take len (Vector _ mvec)
+ = do   return  $ Vector len 
+                $ UM.unsafeTake (I# (word2Int# len)) mvec
 {-# INLINE take #-}
 
 
@@ -79,7 +80,7 @@ fromUnboxed :: Unbox a => U.Vector a -> IO (Vector a)
 fromUnboxed vec
  = do   let !(I# len)   = U.length vec
         mvec            <- U.unsafeThaw vec
-        return $ Vector len mvec
+        return $ Vector (int2Word# len) mvec
 {-# INLINE fromUnboxed #-}
 
 
@@ -90,3 +91,4 @@ toUnboxed :: Unbox a => Vector a -> IO (U.Vector a)
 toUnboxed (Vector _ mvec)
  =      U.unsafeFreeze mvec
 {-# INLINE toUnboxed #-}
+

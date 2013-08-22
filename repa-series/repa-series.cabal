@@ -20,7 +20,12 @@ Library
         Data.Array.Repa.Series.Ref
         Data.Array.Repa.Series.Rate
         Data.Array.Repa.Series.Prim
-
+        Data.Array.Repa.Series.Prim.Utils
+        Data.Array.Repa.Series.Prim.Loop
+        Data.Array.Repa.Series.Prim.Int
+        Data.Array.Repa.Series.Prim.Word
+        Data.Array.Repa.Series.Prim.Float
+        Data.Array.Repa.Series.Prim.Double
 
   Build-Depends:
         base       == 4.6.*,

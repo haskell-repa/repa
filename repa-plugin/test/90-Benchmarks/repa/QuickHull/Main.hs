@@ -63,7 +63,7 @@ hsplit xs ys p1@(x1,y1) p2@(x2,y2)
              = R.runSeries2 xs ys (lower_filtermax x1 y1 x2 y2)
        upxs   <- V.toUnboxed pxs
        upys   <- V.toUnboxed pys
-       case V.length pxs <# 2# of
+       case V.length pxs `ltWord#` (int2Word# 2#) of
         True
          ->    return (x1 `U.cons` upxs, y1 `U.cons` upys)
         False

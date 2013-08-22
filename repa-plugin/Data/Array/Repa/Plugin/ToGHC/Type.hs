@@ -210,7 +210,7 @@ convertTyConPrimName :: D.Name -> Maybe G.TyCon
 convertTyConPrimName n
  = case n of
         D.NamePrimTyCon D.PrimTyConBool         -> Just G.boolTyCon
-        D.NamePrimTyCon D.PrimTyConNat          -> Just G.intPrimTyCon
+        D.NamePrimTyCon D.PrimTyConNat          -> Just G.wordPrimTyCon
         D.NamePrimTyCon D.PrimTyConInt          -> Just G.intPrimTyCon
         D.NamePrimTyCon (D.PrimTyConFloat 32)   -> Just G.floatPrimTyCon
         D.NamePrimTyCon (D.PrimTyConFloat 64)   -> Just G.doublePrimTyCon
@@ -221,7 +221,7 @@ convertTyConPrimName n
 -- | Get the GHC boxed type corresponding to this Flow series element type.
 convertBoxed :: D.Type D.Name -> Maybe G.Type
 convertBoxed t
- | t == D.tNat          = Just G.intTy
+ | t == D.tNat          = Just G.wordTy
  | t == D.tInt          = Just G.intTy
  | t == D.tFloat 32     = Just G.floatTy
  | t == D.tFloat 64     = Just G.doubleTy
@@ -238,7 +238,7 @@ convertBoxed t
 -- | Get the GHC unboxed type corresponding to this Flow series element type.
 convertUnboxed :: D.Type D.Name -> Maybe G.Type
 convertUnboxed t
- | t == D.tNat          = Just G.intPrimTy
+ | t == D.tNat          = Just G.wordPrimTy
  | t == D.tInt          = Just G.intPrimTy
  | t == D.tFloat 32     = Just G.floatPrimTy
  | t == D.tFloat 64     = Just G.doublePrimTy

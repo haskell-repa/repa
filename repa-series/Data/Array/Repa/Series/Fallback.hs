@@ -61,14 +61,14 @@ fold    :: forall k a b. Unbox b
         => (a -> b -> a) -> a -> Series k b -> a
 
 fold f z !source
- = go 0# z
+ = go (int2Word# 0#) z
  where  go !ix !acc
-         | ix >=# S.length source
+         | geWord# ix (S.length source)
          = acc
 
          | otherwise
          = let  x = S.index source ix
-           in   go (ix +# 1#) (f acc x)
+           in   go (plusWord# ix (int2Word# 1#)) (f acc x)
 {-# INLINE [0] fold #-}
 
 
@@ -78,16 +78,16 @@ foldIndex :: forall k a b. Unbox b
           => (Word -> a -> b -> a) -> a -> Series k b -> a
 
 foldIndex f z !source
- = go 0# z
+ = go (int2Word# 0#) z
  where  
         len = S.length source
         go !ix !acc
-         | ix >=# len
+         | geWord# ix len
          = acc
 
          | otherwise
          = let  x = S.index source ix
-           in   go (ix +# 1#) (f (fromIntegral (I# ix)) acc x)
+           in   go (plusWord# ix (int2Word# 1#)) (f (W# ix) acc x)
 {-# INLINE [0] foldIndex #-}
 
 
@@ -103,6 +103,6 @@ pack sel1 s
 
         !(I# len') = U.length vec'
 
-   in   S.Series len' vec'
+   in   S.Series (int2Word# len') vec'
 {-# INLINE [0] pack #-}
 

@@ -31,19 +31,19 @@ import Prelude hiding (length)
 --   The rate parameter @k@ represents the abstract length of the series.
 data Series k a
         = Series 
-        { seriesLength  :: Int#
+        { seriesLength  :: Word#
         , seriesVector  :: !(U.Vector a) }  
 
 
 -- | Index into a series.
-index :: Unbox a => Series k a -> Int# -> a
+index :: Unbox a => Series k a -> Word# -> a
 index s ix
-        = U.unsafeIndex (seriesVector s) (I# ix)
+        = U.unsafeIndex (seriesVector s) (I# (word2Int# ix))
 {-# INLINE [1] index #-}
 
 
 -- | Take the length of a series.
-length :: Series k a -> Int#
+length :: Series k a -> Word#
 length (Series len d) = len
 {-# INLINE [1] length #-}
 
@@ -87,7 +87,7 @@ runSeries2
 runSeries2 vec1 vec2 f
  | len1      <- V.length vec1
  , len2      <- V.length vec2
- , len1 ==# len2
+ , eqWord# len1 len2
  = unsafePerformIO
  $ do   uvec1   <- V.toUnboxed vec1
         uvec2   <- V.toUnboxed vec2
@@ -112,8 +112,8 @@ runSeries3 vec1 vec2 vec3 f
  | len1      <- V.length vec1
  , len2      <- V.length vec2
  , len3      <- V.length vec3
- , len1 ==# len2
- , len2 ==# len3
+ , eqWord# len1 len2
+ , eqWord# len2 len3
  = unsafePerformIO
  $ do   uvec1   <- V.toUnboxed vec1
         uvec2   <- V.toUnboxed vec2
@@ -142,9 +142,9 @@ runSeries4 vec1 vec2 vec3 vec4 f
  , len2      <- V.length vec2
  , len3      <- V.length vec3
  , len4      <- V.length vec4
- , len1 ==# len2
- , len2 ==# len3
- , len3 ==# len4
+ , eqWord# len1 len2
+ , eqWord# len2 len3
+ , eqWord# len3 len4
  = unsafePerformIO
  $ do   uvec1   <- V.toUnboxed vec1
         uvec2   <- V.toUnboxed vec2

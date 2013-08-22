@@ -250,8 +250,8 @@ convertExp kenv tenv xx
                 -- Nat# literal
                 -- Disciple unsigned Nat#s just get squashed onto GHC Int#s.
                 D.DaConNamed (D.NameLitNat i)
-                 -> return ( G.Lit (G.MachInt i)
-                           , G.intPrimTy)
+                 -> return ( G.Lit (G.MachWord i)
+                           , G.wordPrimTy)
 
                 -- Float32# literal
                 D.DaConNamed (D.NameLitFloat r 32)
