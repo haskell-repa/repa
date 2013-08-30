@@ -1,5 +1,5 @@
 Name:                repa
-Version:             3.2.3.3
+Version:             3.2.3.4
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -21,11 +21,11 @@ Synopsis:
 
 Library
   Build-Depends: 
-        base                 == 4.6.*,
+        base                 >= 4.6 && < 4.8,
+        template-haskell     >= 2.8 && < 2.10,
+        vector               >= 0.9 && < 0.11,
         ghc-prim             == 0.3.*,
-        vector               == 0.10.*,
         bytestring           == 0.10.*,
-        template-haskell     == 2.8.*,
         QuickCheck           >= 2.3 && < 2.7
 
   ghc-options:
@@ -46,6 +46,7 @@ Library
         StandaloneDeriving
         ScopedTypeVariables
         PatternGuards
+        ExistentialQuantification
 
   Exposed-modules:
         Data.Array.Repa.Eval.Gang
