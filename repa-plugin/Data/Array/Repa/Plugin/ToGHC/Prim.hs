@@ -56,11 +56,12 @@ convertPolytypicPrim kenv _tenv n tsArg
  = let  prims    = envPrimitives kenv
 
         getPrim nn t 
-         | t == D.tInt      = let Just r = Map.lookup nn (prim_baseInt     prims) in r
-         | t == D.tNat      = let Just r = Map.lookup nn (prim_baseWord    prims) in r
-         | t == D.tFloat 32 = let Just r = Map.lookup nn (prim_baseFloat32 prims) in r
-         | t == D.tFloat 64 = let Just r = Map.lookup nn (prim_baseFloat64 prims) in r
-         | otherwise        = error "repa-plugin.convertPolytypicPrim failed"
+         | t == D.tInt,      Just r <- Map.lookup nn (prim_baseInt  prims)    = r
+         | t == D.tNat,      Just r <- Map.lookup nn (prim_baseWord prims)    = r
+         | t == D.tFloat 32, Just r <- Map.lookup nn (prim_baseFloat32 prims) = r
+         | t == D.tFloat 64, Just r <- Map.lookup nn (prim_baseFloat64 prims) = r
+         | otherwise        
+         = error $ "repa-plugin.convertPolytypicPrim: can't find prim for " ++ show nn
 
    in case n of
         -- Loop Combinators
@@ -72,6 +73,20 @@ convertPolytypicPrim kenv _tenv n tsArg
          |  [t]   <- tsArg       
          -> return $ getPrim n t
 
+        -- Vector Primops
+        D.NamePrimVec (D.PrimVecProj 4 ix)
+         |  [t]  <- tsArg,      t == D.tFloat 32
+         -> case ix of
+                0       -> return $ prim_projFloatX4_0 prims
+                1       -> return $ prim_projFloatX4_1 prims
+                2       -> return $ prim_projFloatX4_2 prims
+                3       -> return $ prim_projFloatX4_3 prims
+                _       -> error "repa-plugin.convertPolytypicPrim: vec proj float failed."
+
+        D.NamePrimVec _
+         |  [t] <- tsArg
+         -> return $ getPrim n t
+
 
         -- Store Primops
         D.NameOpConcrete (D.OpConcreteNext 1)
@@ -81,10 +96,18 @@ convertPolytypicPrim kenv _tenv n tsArg
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
-        D.NameOpConcrete (D.OpConcreteNext 1)
+        D.NameOpConcrete (D.OpConcreteNext m)
+         |  [tA, tK] <- tsArg, tA == D.tFloat 32, m == 4
+         -> do  let (x, t) = prim_next4Float prims
+                tK'     <- convertType kenv tK
+                return  ( G.App x (G.Type tK')
+                        , G.applyTy t tK')
+
+
          |  [tA, tK] <- tsArg
+         ,  elem m [1, 4]
          -> do  let (x, t) = getPrim n tA
-                tK'        <- convertType kenv tK
+                tK'     <- convertType kenv tK
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
@@ -109,7 +132,6 @@ isPolytypicPrimName n
         , D.NamePrimArith       D.PrimArithDiv
         , D.NamePrimArith       D.PrimArithMod
         , D.NamePrimArith       D.PrimArithRem
-
         , D.NamePrimArith       D.PrimArithEq
         , D.NamePrimArith       D.PrimArithNeq
         , D.NamePrimArith       D.PrimArithGt
@@ -117,7 +139,22 @@ isPolytypicPrimName n
         , D.NamePrimArith       D.PrimArithLt
         , D.NamePrimArith       D.PrimArithLe
 
+        , D.NamePrimVec         (D.PrimVecNeg     4)
+        , D.NamePrimVec         (D.PrimVecAdd     4)
+        , D.NamePrimVec         (D.PrimVecSub     4)
+        , D.NamePrimVec         (D.PrimVecMul     4)
+        , D.NamePrimVec         (D.PrimVecDiv     4)
+        , D.NamePrimVec         (D.PrimVecRep     4)
+        , D.NamePrimVec         (D.PrimVecPack    4)
+        , D.NamePrimVec         (D.PrimVecProj    4 0) 
+        , D.NamePrimVec         (D.PrimVecProj    4 1) 
+        , D.NamePrimVec         (D.PrimVecProj    4 2) 
+        , D.NamePrimVec         (D.PrimVecProj    4 3) 
+        , D.NamePrimVec         (D.PrimVecGather  4)
+        , D.NamePrimVec         (D.PrimVecScatter 4)
+
         , D.NameOpConcrete      (D.OpConcreteNext 1)
+        , D.NameOpConcrete      (D.OpConcreteNext 4)
 
         , D.NameOpControl       D.OpControlLoopN
 

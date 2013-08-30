@@ -204,11 +204,16 @@ convertTyConApp _prims names tc tsArgs' tsArgs_b'
          | Just (GhcNameTyCon tc') <- Map.lookup n names
          -> G.mkTyConApp tc' tsArgs'
 
-        -- Machine types
+        -- Scalar machine types
         D.TyConBound (D.UPrim n _) _
          |  []       <- tsArgs'
          ,  Just tc'               <- convertTyConPrimName n
          -> G.mkTyConApp tc' tsArgs'
+
+        -- Vector machine types
+        D.TyConBound (D.UPrim (D.NamePrimTyCon (D.PrimTyConVec 4)) _) _
+         |  [tElem]  <- tsArgs', G.eqType tElem G.floatPrimTy
+         -> G.floatX4PrimTy
 
         -- User-defined types: use boxed arguments
         D.TyConBound (D.UName n) _

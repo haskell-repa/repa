@@ -51,6 +51,14 @@ data Primitives
           -- Hacks
         , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
 
+        , prim_projFloatX4_0    :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_1    :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_2    :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_3    :: (G.CoreExpr, G.Type)
+
+        , prim_next4Float       :: (G.CoreExpr, G.Type)
+        , prim_next2Double      :: (G.CoreExpr, G.Type)
+
           -- Primitives per base type.
         , prim_baseInt          :: Map Name (G.CoreExpr, G.Type)
         , prim_baseWord         :: Map Name (G.CoreExpr, G.Type)
@@ -216,6 +224,14 @@ makeTable v
                 -- Hacks
                 , prim_nextInt_T2       = get "prim_nextInt_T2"
 
+                , prim_projFloatX4_0    = get "prim_projFloatX4_0"
+                , prim_projFloatX4_1    = get "prim_projFloatX4_1"
+                , prim_projFloatX4_2    = get "prim_projFloatX4_2"
+                , prim_projFloatX4_3    = get "prim_projFloatX4_3"
+
+                , prim_next4Float       = get "prim_next4Float"
+                , prim_next2Double      = get "prim_next2Double"
+
                 -- Primitives per base type
                 , prim_baseInt          = buildOpMap sels bakedin_Int     external_Int
                 , prim_baseWord         = buildOpMap sels bakedin_Word    external_Word
@@ -280,6 +296,11 @@ bakedin_Float32
         , (NamePrimArith PrimArithLt,   G.mkPrimOpId G.FloatLtOp) 
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.FloatLeOp) 
 
+        , (NamePrimVec  (PrimVecNeg 4), G.mkPrimOpId G.FloatX4NegOp)
+        , (NamePrimVec  (PrimVecAdd 4), G.mkPrimOpId G.FloatX4AddOp)
+        , (NamePrimVec  (PrimVecSub 4), G.mkPrimOpId G.FloatX4SubOp)
+        , (NamePrimVec  (PrimVecMul 4), G.mkPrimOpId G.FloatX4MulOp)
+        , (NamePrimVec  (PrimVecDiv 4), G.mkPrimOpId G.FloatX4DivOp)
         , (NamePrimVec  (PrimVecRep 4), G.mkPrimOpId G.FloatToFloatX4Op) ]
 
 
@@ -309,7 +330,16 @@ allExternalNames :: [String]
 allExternalNames
  =      (map snd external_control)
  ++     (map snd external_series)
+
  ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
+ ++     [ "prim_projFloatX4_0" ]         
+ ++     [ "prim_projFloatX4_1" ]         
+ ++     [ "prim_projFloatX4_2" ]         
+ ++     [ "prim_projFloatX4_3" ]         
+
+ ++     [ "prim_next4Float"]
+ ++     [ "prim_next2Double"]
+
  ++     (map snd external_Int)
  ++     (map snd external_Word)
  ++     (map snd external_Float32)
@@ -342,7 +372,7 @@ external_series
 --
 external_scalarTYPE :: [(Name, String)]
 external_scalarTYPE
- =      [ (NameOpConcrete  (OpConcreteNext 1),      "next") 
+ =      [ (NameOpConcrete  (OpConcreteNext 1),  "next") 
 
         , (NameOpStore OpStoreNew,              "newRef")
         , (NameOpStore OpStoreRead,             "readRef")

@@ -44,3 +44,6 @@ Library
         RankNTypes
         MagicHash
         UnboxedTuples
+
+  GHC-Options:
+        -fllvm

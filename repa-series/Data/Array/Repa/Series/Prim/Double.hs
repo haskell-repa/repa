@@ -63,3 +63,10 @@ repa_nextDouble s ix world
  = case S.index s ix of
         D# i    -> (# world, i #)
 {-# INLINE repa_nextDouble #-}
+
+
+repa_next2Double        :: Series (Down2 k) Float -> Word# -> World -> (# World, DoubleX2# #)
+repa_next2Double s ix world
+ = case S.indexDoubleX2 s ix of
+        d2      -> (# world, d2 #)
+{-# INLINE repa_next2Double #-}

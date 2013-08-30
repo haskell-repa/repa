@@ -1,10 +1,10 @@
 
 module Data.Array.Repa.Series.Rate
-        ( RateNat       (..)
+        ( RateNat (..)
         , rateOfRateNat
 
-        , Down4         (..)
-        , Tail4         (..))
+        , Down2 (..),   Down4 (..)    
+        , Tail2 (..),   Tail4 (..))
 where
 import GHC.Exts
 
@@ -24,19 +24,15 @@ rateOfRateNat (RateNat w) = w
 {-# INLINE rateOfRateNat #-}
 
 
--- | Represents the quotient of a rate divided by 4.
---
---   Should be treated abstactly by user code.
---
-data Down4 k
-        = Down4 Word#
+-- Represents the quotient of a rate divided by the multiplier.
+-- Should be treated abstractly by client code.
+data Down2 k    = Down2 Word#
+data Down4 k    = Down4 Word#
 
 
--- | Represents the remainder of a rate divided by 4.
---
---   Should be treated abstactly by user code.
---
-data Tail4 k
-        = Tail4 Word#
+-- Represents the remainder of a rate divided by the multiplier.
+-- Should be treated abstractly by client code.
+data Tail2 k    = Tail2 Word#
+data Tail4 k    = Tail4 Word#
 
 

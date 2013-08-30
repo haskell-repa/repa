@@ -34,24 +34,30 @@ repa_guard
         -> (Word# -> World -> World)
         -> World -> World
 
-repa_guard ref flag worker world0
+repa_guard ref flag worker w0
  | False        <- flag
- = world0
+ = w0
 
- | (# world1, ix #) <- repa_readRefWord  ref world0
- , world2       <- repa_writeRefWord ref (plusWord# ix (int2Word# 1#)) world1
- , world3       <- worker ix world2
- = world3
+ | (# w1, ix #) <- repa_readRefWord  ref w0
+ , w2           <- repa_writeRefWord ref (plusWord# ix (int2Word# 1#)) w1
+ , w3           <- worker ix w2
+ = w3
 {-# INLINE repa_guard #-}
 
 
+-- | Process 4-element chunks with one function, and the rest with some other.
 repa_split4  
         :: forall k
         .  RateNat k 
         -> (RateNat (Down4 k) -> World -> World)
         -> (RateNat (Tail4 k) -> World -> World)
         -> World -> World
-repa_split4 r fDown4 fTail4 w
- = error "repa_split4: not done yet"
-{-# NOINLINE repa_split4 #-}
+
+repa_split4 (RateNat len) goDown4 goTail4 w0
+ | chunks       <- len `quotWord#` (int2Word# 4#)
+ , leftover     <- len `remWord#`  (int2Word# 4#)
+ , w1           <- goDown4 (RateNat chunks)   w0
+ , w2           <- goTail4 (RateNat leftover) w1
+ = w2
+{-# INLINE repa_split4 #-}
 

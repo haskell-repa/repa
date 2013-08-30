@@ -58,10 +58,16 @@ repa_sliceVectorFloat len vec
 
 -- Series
 -- | Get the next element of a series.
-repa_nextFloat    :: Series k Float -> Word# -> World -> (# World, Float# #)
+repa_nextFloat  :: Series k Float -> Word# -> World -> (# World, Float# #)
 repa_nextFloat s ix world
  = case S.index s ix of
         F# i    -> (# world, i #)
 {-# INLINE repa_nextFloat #-}
 
+
+repa_next4Float :: Series (Down4 k) Float -> Word# -> World -> (# World, FloatX4# #)
+repa_next4Float s ix world
+ = case S.indexFloatX4 s ix of
+        f4      -> (# world, f4 #)
+{-# INLINE repa_next4Float #-}
 
