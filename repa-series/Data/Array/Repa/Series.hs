@@ -9,8 +9,8 @@ module Data.Array.Repa.Series
 
           -- * Vectors
         , Vector (..)
-        , fromUnboxed
-        , toUnboxed
+        , fromPrimitive
+        , toPrimitive
 
           -- * Running series expressions
         , runSeries

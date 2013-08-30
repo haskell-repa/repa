@@ -53,16 +53,6 @@ data Primitives
                                 -> (RateNat (Tail4 k) -> World -> World)
                                 -> World -> World
 
-    -- Hacks ----------------------------------------------
-  , prim_nextInt_T2             :: forall k
-                                .  Series k (Int,Int) -> Word#
-                                -> World -> (# World, (# Int#, Int# #) #)
-
-  , prim_projFloatX4_0          :: FloatX4# -> Float#
-  , prim_projFloatX4_1          :: FloatX4# -> Float#
-  , prim_projFloatX4_2          :: FloatX4# -> Float#
-  , prim_projFloatX4_3          :: FloatX4# -> Float#
-
     -- Int ------------------------------------------------
   , prim_newRefInt              :: Int#    -> World -> (# World, Ref Int #) 
   , prim_readRefInt             :: Ref Int -> World -> (# World, Int# #)
@@ -92,6 +82,11 @@ data Primitives
                                 -> World -> (# World, Word# #)
 
     -- Float ------------------------------------------------
+  , prim_projFloatX4_0          :: FloatX4# -> Float#
+  , prim_projFloatX4_1          :: FloatX4# -> Float#
+  , prim_projFloatX4_2          :: FloatX4# -> Float#
+  , prim_projFloatX4_3          :: FloatX4# -> Float#
+
   , prim_newRefFloat            :: Float#    -> World -> (# World, Ref Float #) 
   , prim_readRefFloat           :: Ref Float -> World -> (# World, Float# #)
   , prim_writeRefFloat          :: Ref Float -> Float#  -> World -> World
@@ -151,13 +146,6 @@ primitives
   , prim_guard                  = repa_guard
   , prim_split4                 = repa_split4
 
-    -- Hacks ------------------------------------
-  , prim_nextInt_T2             = repa_nextInt_T2 
-  , prim_projFloatX4_0          = \x -> case unpackFloatX4# x of { (# f, _, _, _ #) -> f }
-  , prim_projFloatX4_1          = \x -> case unpackFloatX4# x of { (# _, f, _, _ #) -> f }
-  , prim_projFloatX4_2          = \x -> case unpackFloatX4# x of { (# _, _, f, _ #) -> f }
-  , prim_projFloatX4_3          = \x -> case unpackFloatX4# x of { (# _, _, _, f #) -> f }
-
     -- Int --------------------------------------
   , prim_newRefInt              = repa_newRefInt
   , prim_readRefInt             = repa_readRefInt
@@ -183,6 +171,11 @@ primitives
   , prim_nextWord               = repa_nextWord
 
     -- Float --------------------------------------
+  , prim_projFloatX4_0          = \x -> case unpackFloatX4# x of { (# f, _, _, _ #) -> f }
+  , prim_projFloatX4_1          = \x -> case unpackFloatX4# x of { (# _, f, _, _ #) -> f }
+  , prim_projFloatX4_2          = \x -> case unpackFloatX4# x of { (# _, _, f, _ #) -> f }
+  , prim_projFloatX4_3          = \x -> case unpackFloatX4# x of { (# _, _, _, f #) -> f }
+
   , prim_newRefFloat            = repa_newRefFloat
   , prim_readRefFloat           = repa_readRefFloat
   , prim_writeRefFloat          = repa_writeRefFloat
@@ -208,14 +201,4 @@ primitives
   , prim_nextDouble             = repa_nextDouble
   , prim_next2Double            = repa_next2Double
   }
-
-
--- Hacks ---------------------------------------------------------------------
--- TODO generalise
-repa_nextInt_T2 :: Series k (Int,Int) -> Word# -> World -> (# World, (# Int#, Int# #) #)
-repa_nextInt_T2 s ix world
- = case S.index s ix of
-        (I# i1, I# i2)    -> (# world, (# i1, i2 #) #)
-{-# INLINE repa_nextInt_T2 #-}
-
 

@@ -16,12 +16,12 @@ module Data.Array.Repa.Series.Series
 where
 import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Vector            (Vector)
-import Data.Vector.Unboxed                      (Unbox)
+import Data.Vector.Primitive                    (Prim)
 import System.IO.Unsafe
 import GHC.Exts
 import qualified Data.Array.Repa.Series.Vector  as V
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import qualified Data.Vector.Primitive          as P
+import qualified Data.Vector.Primitive.Mutable  as PM
 import Prelude hiding (length)
 
 
@@ -32,45 +32,16 @@ import Prelude hiding (length)
 --   indexing, all fusable series process must consume their series sequentially.
 --
 --   The rate parameter @k@ represents the abstract length of the series.
+--
 data Series k a
         = Series 
         { seriesLength  :: Word#
-        , seriesVector  :: !(U.Vector a) }  
-
-
--- | Index into a series.
-index :: Unbox a => Series k a -> Word# -> a
-index s ix
-        = U.unsafeIndex (seriesVector s) (I# (word2Int# ix))
-{-# INLINE [1] index #-}
-
-
--- | Retrieve a packed FloatX4 from a `Series`.
-indexFloatX4  :: Series (Down4 k) Float -> Word# -> FloatX4#
-indexFloatX4 s ix
-        = floatToFloatX4# (int2Float# 5#)                       -- TODO: fixme
-{-# INLINE [1] indexFloatX4 #-}
-
-
--- | Retrieve a packed DoubleX2 from a `Series`.
-indexDoubleX2 :: Series (Down2 k) Float -> Word# -> DoubleX2#
-indexDoubleX2 s ix
-        = doubleToDoubleX2# (int2Double# 5#)                    -- TODO: fixme
-{-# INLINE [1] indexDoubleX2 #-}
-
+        , seriesVector  :: !(P.Vector a) }  
 
 -- | Take the length of a series.
 length :: Series k a -> Word#
 length (Series len d) = len
 {-# INLINE [1] length #-}
-
-
--- | Convert a series to a vector, discarding the rate information.
-toVector :: Unbox a => Series k a -> Vector a
-toVector (Series len vec) 
- = unsafePerformIO
- $ do   V.fromUnboxed vec
-{-# INLINE [1] toVector #-}
 
 
 -- | Get the Rate / Length of a series.
@@ -92,29 +63,58 @@ tail4 r (Series len vec)        = Series len vec
 {-# INLINE [1] tail4 #-}
 
 
+-- | Index into a series.
+index :: Prim a => Series k a -> Word# -> a
+index s ix
+ = P.unsafeIndex (seriesVector s) (I# (word2Int# ix))
+{-# INLINE [1] index #-}
+
+
+-- | Retrieve a packed FloatX4 from a `Series`.
+indexFloatX4  :: Series (Down4 k) Float -> Word# -> FloatX4#
+indexFloatX4 s ix
+        = floatToFloatX4# (int2Float# 5#)                       -- TODO: fixme
+{-# INLINE [1] indexFloatX4 #-}
+
+
+-- | Retrieve a packed DoubleX2 from a `Series`.
+indexDoubleX2 :: Series (Down2 k) Float -> Word# -> DoubleX2#
+indexDoubleX2 s ix
+        = doubleToDoubleX2# (int2Double# 5#)                    -- TODO: fixme
+{-# INLINE [1] indexDoubleX2 #-}
+
+
+-- | Convert a series to a vector, discarding the rate information.
+toVector :: Prim a => Series k a -> Vector a
+toVector (Series len vec) 
+ = unsafePerformIO
+ $ do   V.fromPrimitive vec
+{-# INLINE [1] toVector #-}
+
+
 -------------------------------------------------------------------------------
 -- | Evaluate a series expression, feeding it an unboxed vector.
 --
 --   The rate variable @k@ represents the length of the series.
-runSeries
-        :: Unbox a 
+runSeries 
+        :: Prim a
         => Vector a 
         -> (forall k. Series k a -> b)  -- ^ worker function
         -> b
 
-runSeries vec f
- | len       <- V.length vec
+runSeries v1 f
+ | len       <- V.length v1
  = unsafePerformIO
- $ do   uvec    <- V.toUnboxed vec
-        return  $ f (Series len uvec)
+ $ do   u1      <- V.toPrimitive v1
+        return  $ f (Series len u1)
 {-# INLINE [1] runSeries #-}
 
 
 -- | Evaluate a series expression, 
 --   feeding it two unboxed vectors of the same length.
 runSeries2 
- ::            (Unbox a,      Unbox b)
- =>            Vector a   -> Vector b
+ ::               (Prim a,       Prim b)
+ =>              Vector a   -> Vector b
  -> (forall k. Series k a -> Series k b -> c)    
                         -- ^ worker function
  -> Maybe c
@@ -123,9 +123,9 @@ runSeries2 v1 v2 f
  | l1 <- V.length v1
  , l2 <- V.length v2, eqWord# l1 l2
  = unsafePerformIO
- $ do   u1   <- V.toUnboxed v1
-        u2   <- V.toUnboxed v2
-        return  $ Just (f (Series l1 u1) (Series l2 u2))
+ $ do   u1      <- V.toPrimitive v1
+        u2      <- V.toPrimitive v2
+        return  $  Just (f (Series l1 u1) (Series l2 u2))
 
  | otherwise    = Nothing
 {-# INLINE [1] runSeries2 #-}
@@ -133,7 +133,7 @@ runSeries2 v1 v2 f
 
 -- | Three!
 runSeries3 
- ::              (Unbox a,      Unbox b,      Unbox c)
+ ::               (Prim a,       Prim b,       Prim c)
  =>            Vector   a -> Vector   b -> Vector   c
  -> (forall k. Series k a -> Series k b -> Series k c -> d)    
  -> Maybe d
@@ -143,9 +143,9 @@ runSeries3 v1 v2 v3 f
  , l2 <- V.length v2, eqWord# l1 l2
  , l3 <- V.length v3, eqWord# l2 l3
  = unsafePerformIO
- $ do   u1   <- V.toUnboxed v1
-        u2   <- V.toUnboxed v2
-        u3   <- V.toUnboxed v3
+ $ do   u1      <- V.toPrimitive v1
+        u2      <- V.toPrimitive v2
+        u3      <- V.toPrimitive v3
         return  $ Just (f (Series l1 u1) (Series l2 u2) 
                           (Series l3 u3))
  | otherwise = Nothing
@@ -154,7 +154,7 @@ runSeries3 v1 v2 v3 f
 
 -- | Four!
 runSeries4 
- ::           (Unbox    a,   Unbox    b,   Unbox    c,   Unbox    d)
+ ::               (Prim a,       Prim b,       Prim c,       Prim d)
  =>            Vector   a -> Vector   b -> Vector   c -> Vector   d
  -> (forall k. Series k a -> Series k b -> Series k c -> Series k d -> e)
  -> Maybe e
@@ -165,10 +165,10 @@ runSeries4 v1 v2 v3 v4 f
  , l3 <- V.length v3,   eqWord# l2 l3
  , l4 <- V.length v4,   eqWord# l3 l4
  = unsafePerformIO
- $ do   u1   <- V.toUnboxed v1
-        u2   <- V.toUnboxed v2
-        u3   <- V.toUnboxed v3
-        u4   <- V.toUnboxed v4
+ $ do   u1      <- V.toPrimitive v1
+        u2      <- V.toPrimitive v2
+        u3      <- V.toPrimitive v3
+        u4      <- V.toPrimitive v4
         return  $ Just (f (Series l1 u1) (Series l2 u2) 
                           (Series l3 u3) (Series l4 u4))
  | otherwise = Nothing

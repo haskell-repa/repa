@@ -15,36 +15,37 @@ module Data.Array.Repa.Series.Fallback
         , reduce
         , pack)
 where
+import GHC.Exts
+import System.IO.Unsafe
+import Data.Vector.Primitive                    (Prim)
 import Data.Array.Repa.Series.Series            as S
 import Data.Array.Repa.Series.Sel               as S
 import Data.Array.Repa.Series.Ref               as Ref
-import qualified Data.Vector.Unboxed            as U
-import Data.Vector.Unboxed                      (Unbox)
-import GHC.Exts
+import qualified Data.Vector.Primitive          as P
 import Prelude                                  hiding (map)
-import System.IO.Unsafe
+
 
 -- | Apply a function to all elements of a series.
-map     :: forall k a b. (Unbox a, Unbox b)
+map     :: forall k a b. (Prim a, Prim b)
         => (a -> b) -> Series k a -> Series k b
 
 map f (S.Series len vec)
- = S.Series len (U.map f vec)
+ = S.Series len (P.map f vec)
 {-# INLINE [0] map #-}
 
 
 -- | Like `zipWith`, but for equal-length series
-map2    :: forall k a b c. (Unbox a, Unbox b, Unbox c)
+map2    :: forall k a b c. (Prim a, Prim b, Prim c)
         => (a -> b -> c) -> Series k a -> Series k b
         -> Series k c
 
 map2 f (S.Series len vec1) (S.Series _len vec2)
- = S.Series len (U.zipWith f vec1 vec2)
+ = S.Series len (P.zipWith f vec1 vec2)
 {-# INLINE [0] map2 #-}
 
 
--- | Destructively reduce a sequence into an accumulator.
-reduce  :: forall k a. Unbox a
+-- | Reduce a sequence into an accumulator.
+reduce  :: forall k a. Prim a
         => Ref a -> (a -> a -> a) -> a -> Series k a -> ()
 
 reduce ref f z s
@@ -57,7 +58,7 @@ reduce ref f z s
 
 
 -- | Combine all elements of a series with an associative operator.
-fold    :: forall k a b. Unbox b 
+fold    :: forall k a b. Prim b 
         => (a -> b -> a) -> a -> Series k b -> a
 
 fold f z !source
@@ -74,7 +75,7 @@ fold f z !source
 
 -- | Combine all elements of a series with an associative operator.
 --   The worker function is given the current index into the series.
-foldIndex :: forall k a b. Unbox b 
+foldIndex :: forall k a b. Prim b 
           => (Word -> a -> b -> a) -> a -> Series k b -> a
 
 foldIndex f z !source
@@ -92,17 +93,10 @@ foldIndex f z !source
 
 
 -- | Pack elements of a series using a selector.
-pack    :: forall k1 k2 a. Unbox a
+pack    :: forall k1 k2 a. Prim a
         => Sel1 k1 k2 -> Series k1 a -> Series k2 a
 
-pack sel1 s
- = let  vec'    = U.map snd
-                $ U.filter fst 
-                $ U.zip (S.sel1Flags sel1) 
-                        (S.seriesVector s)
-
-        !(I# len') = U.length vec'
-
-   in   S.Series (int2Word# len') vec'
-{-# INLINE [0] pack #-}
+pack _ _
+ = error "repa-series: Fallback.pack is broken"
+{-# NOINLINE pack #-}
 

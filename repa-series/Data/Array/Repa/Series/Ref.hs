@@ -5,8 +5,8 @@ module Data.Array.Repa.Series.Ref
         , read
         , write)
 where
-import Data.Vector.Unboxed.Mutable              (IOVector, Unbox)
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import Data.Vector.Primitive.Mutable              (IOVector, Prim)
+import qualified Data.Vector.Primitive.Mutable    as PM
 import Prelude hiding (read)
 
 
@@ -16,24 +16,24 @@ data Ref a
 
 
 -- | Create a new unboxed reference.
-new :: Unbox a => a -> IO (Ref a)
+new :: Prim a => a -> IO (Ref a)
 new x
- = do   vec     <- UM.new 1
-        UM.unsafeWrite vec 0 x
+ = do   vec     <- PM.unsafeNew 1
+        PM.unsafeWrite vec 0 x
         return  (Ref vec)
 {-# INLINE new #-}
 
 
 -- | Read from an unboxed reference.
-read :: Unbox a => Ref a -> IO a
+read :: Prim a => Ref a -> IO a
 read (Ref vec)
- =      UM.unsafeRead vec 0
+ =      PM.unsafeRead vec 0
 {-# INLINE read #-}
 
 
 -- | Write to an unboxed reference.
-write :: Unbox a => Ref a -> a -> IO ()
+write :: Prim a => Ref a -> a -> IO ()
 write (Ref vec) x
- = do   UM.unsafeWrite vec 0 x
+ = do   PM.unsafeWrite vec 0 x
 {-# INLINE write #-}
 

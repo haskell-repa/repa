@@ -3,8 +3,11 @@ module Data.Array.Repa.Series.Sel
         ( Sel1 (..)
         , mkSel1)
 where
+import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Series    as S
-import qualified Data.Vector.Unboxed    as U
+import Data.Vector.Primitive            as P
+import System.IO.Unsafe
+import Data.Word
 import GHC.Exts
 
 
@@ -12,17 +15,16 @@ import GHC.Exts
 data Sel1 k1 k2
         = Sel1
         { sel1Length    :: Word#
-        , sel1Flags     :: !(U.Vector Bool) }
+        , sel1Flags     :: !(P.Vector Word8) }
 
 
 -- | Create a new selector from a series of flags.
-mkSel1  :: Series k1 Bool 
+mkSel1  :: Series k1 Word8
         -> (forall k2. Sel1 k1 k2 -> a)
         -> a
 
-mkSel1 sFlags worker
- = let  sel1    = Sel1
-                { sel1Length    = S.length sFlags
-                , sel1Flags     = S.seriesVector sFlags }
-   in   worker sel1
-{-# INLINE [1] mkSel1 #-}
+mkSel1 (Series len vec) worker
+ = worker       $ Sel1
+                { sel1Length    = len
+                , sel1Flags     = vec }
+{-# NOINLINE mkSel1 #-}
