@@ -39,9 +39,9 @@ primArithTable
         , ("ltInt_",                    (tInt,          PrimArithLt)) 
 
         -- Float
-        , ("$fNumFloat_$c+_",           (tFloat 32,     PrimArithAdd))
-        , ("$fNumFloat_$c-_",           (tFloat 32,     PrimArithSub))
-        , ("$fNumFloat_$c*_",           (tFloat 32,     PrimArithMul))
+        , ("plusFloat_",                (tFloat 32,     PrimArithAdd))
+        , ("minusFloat_",               (tFloat 32,     PrimArithSub))
+        , ("timesFloat_",               (tFloat 32,     PrimArithMul))
         , ("eqFloat_",                  (tFloat 32,     PrimArithEq))
         , ("gtFloat_",                  (tFloat 32,     PrimArithGt))
         , ("ltFloat_",                  (tFloat 32,     PrimArithLt)) 
