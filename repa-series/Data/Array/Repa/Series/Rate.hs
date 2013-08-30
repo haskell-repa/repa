@@ -17,7 +17,6 @@ import GHC.Exts
 --
 data RateNat k
         = RateNat Word#
-        deriving Show
 
 
 rateOfRateNat :: RateNat k -> Word#
@@ -31,7 +30,7 @@ rateOfRateNat (RateNat w) = w
 --
 data Down4 k
         = Down4 Word#
-        deriving Show
+
 
 -- | Represents the remainder of a rate divided by 4.
 --
@@ -39,6 +38,5 @@ data Down4 k
 --
 data Tail4 k
         = Tail4 Word#
-        deriving Show
 
 

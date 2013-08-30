@@ -348,7 +348,7 @@ external_scalarTYPE
         , (NameOpStore OpStoreRead,             "readRef")
         , (NameOpStore OpStoreWrite,            "writeRef")
 
-        , (NameOpStore OpStoreNewVectorN,       "newVector")
+        , (NameOpStore OpStoreNewVector,        "newVector")
         , (NameOpStore (OpStoreReadVector  1),  "readVector")
         , (NameOpStore (OpStoreWriteVector 1),  "writeVector")
         , (NameOpStore OpStoreSliceVector,      "sliceVector") ]

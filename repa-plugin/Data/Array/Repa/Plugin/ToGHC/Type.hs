@@ -225,7 +225,7 @@ convertTyConApp _prims names tc tsArgs' tsArgs_b'
 convertTyConPrimName :: D.Name -> Maybe G.TyCon
 convertTyConPrimName n
  = case n of
-        D.NamePrimTyCon D.PrimTyConBool         -> Just G.boolTyCon
+        D.NamePrimTyCon D.PrimTyConBool         -> Just G.intPrimTyCon
         D.NamePrimTyCon D.PrimTyConNat          -> Just G.wordPrimTyCon
         D.NamePrimTyCon D.PrimTyConInt          -> Just G.intPrimTyCon
         D.NamePrimTyCon (D.PrimTyConFloat 32)   -> Just G.floatPrimTyCon
@@ -254,6 +254,7 @@ convertBoxed t
 -- | Get the GHC unboxed type corresponding to this Flow series element type.
 convertUnboxed :: D.Type D.Name -> Maybe G.Type
 convertUnboxed t
+ | t == D.tBool         = Just G.intPrimTy
  | t == D.tNat          = Just G.wordPrimTy
  | t == D.tInt          = Just G.intPrimTy
  | t == D.tFloat 32     = Just G.floatPrimTy

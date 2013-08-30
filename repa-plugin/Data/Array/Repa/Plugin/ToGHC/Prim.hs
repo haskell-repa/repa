@@ -125,7 +125,6 @@ isPolytypicPrimName n
         , D.NameOpStore         D.OpStoreRead
         , D.NameOpStore         D.OpStoreWrite
         , D.NameOpStore         D.OpStoreNewVector
-        , D.NameOpStore         D.OpStoreNewVectorN
         , D.NameOpStore         (D.OpStoreReadVector  1)
         , D.NameOpStore         (D.OpStoreWriteVector 1)
         , D.NameOpStore         D.OpStoreSliceVector ]

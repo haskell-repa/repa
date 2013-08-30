@@ -35,7 +35,7 @@ data Primitives
 
     -- Series ---------------------------------------------
   , prim_natOfRateNat   :: forall k.    RateNat k  -> Word#
-  , prim_rateOfSeries   :: forall k a.  Series k a -> Word#
+  , prim_rateOfSeries   :: forall k a.  Series k a -> RateNat k
   , prim_down4          :: forall k a.  RateNat k  -> Series k a -> Series (Down4 k) a
   , prim_tail4          :: forall k a.  RateNat k  -> Series k a -> Series (Tail4 k) a
 

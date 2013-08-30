@@ -60,8 +60,9 @@ toVector (Series len vec)
 
 
 -- | Get the Rate / Length of a series.
-rateOfSeries :: Series k a -> Word#
-rateOfSeries s = seriesLength s
+rateOfSeries :: Series k a -> RateNat k
+rateOfSeries s 
+ = RateNat (seriesLength s)
 {-# INLINE rateOfSeries #-}
 
 

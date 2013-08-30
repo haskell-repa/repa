@@ -430,8 +430,8 @@ convertExp kenv tenv xx
                 -- Assert t1' == t2' ?
 
                 return ( G.Case xScrut' vScrut' t1'
-                                [ (G.DataAlt G.falseDataCon, [], x1')
-                                , (G.DataAlt G.trueDataCon,  [], x2') ]
+                                [ (G.LitAlt (G.MachInt 0), [], x1')
+                                , (G.LitAlt (G.MachInt 1), [], x2') ]
                        , t1')
 
         -- Other case expressions.
@@ -486,8 +486,8 @@ convertAlt kenv tenv aalt
  ,  D.DaConNamed (D.NameLitBool flag)   <- dn
  =  do  (x', t')        <- convertExp kenv tenv x
         let altcon = case flag of
-                        True    -> G.DataAlt G.trueDataCon
-                        False   -> G.DataAlt G.falseDataCon
+                        True    -> G.LitAlt (G.MachInt 1)
+                        False   -> G.LitAlt (G.MachInt 0)
 
         return  ( ( altcon, [], x')
                 , t')

@@ -30,10 +30,10 @@ Library
         Data.Array.Repa.Series.Prim.Double
 
   Build-Depends:
-        base       == 4.6.*,
-        ghc        >= 7.5,
-        ghc-prim   >= 0.3,
-        vector     == 0.10.*
+        base       >= 4.6 && < 4.8,
+        ghc        >= 7.5 && < 7.9,
+        vector     >= 0.9 && < 0.11,
+        ghc-prim   >= 0.3
 
   Default-Language:
         Haskell2010
