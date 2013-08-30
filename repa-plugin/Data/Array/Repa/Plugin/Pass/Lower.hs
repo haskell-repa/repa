@@ -129,7 +129,7 @@ passLower options name guts0
              = case lts of
                 LLet (BName n _) x
                   |   Set.member n nsTop
-                   || Flow.isFlowOperator (Core.deannotate (const Nothing) x)
+                   || Flow.isSeriesOperator (Core.deannotate (const Nothing) x)
                   -> Forward.FloatDeny
                 _ -> Forward.FloatForce
 

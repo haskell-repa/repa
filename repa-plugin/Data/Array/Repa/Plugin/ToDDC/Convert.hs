@@ -72,6 +72,7 @@ convertModGuts guts
                 , D.moduleExportTypes   = Map.empty
                 , D.moduleImportKinds   = importK
                 , D.moduleImportTypes   = importT
+                , D.moduleDataDefsLocal = Map.empty
                 , D.moduleBody          = body }
 
    in   (mm', fails)

@@ -327,10 +327,10 @@ external_control
 -- | Name of series primitives.
 external_series :: [(Name, String)]
 external_series 
- =      [ (NameOpSeries OpSeriesRateOfSeries,   "prim_rateOfSeries") 
-        , (NameOpSeries OpSeriesNatOfRateNat,   "prim_natOfRateNat")
-        , (NameOpSeries (OpSeriesDown 4),       "prim_down4")
-        , (NameOpSeries (OpSeriesTail 4),       "prim_tail4") ]
+ =      [ (NameOpConcrete OpConcreteRateOfSeries,   "prim_rateOfSeries") 
+        , (NameOpConcrete OpConcreteNatOfRateNat,   "prim_natOfRateNat")
+        , (NameOpConcrete (OpConcreteDown 4),       "prim_down4")
+        , (NameOpConcrete (OpConcreteTail 4),       "prim_tail4") ]
 
 
 -- External scalar operators --------------------------------------------------
@@ -342,7 +342,7 @@ external_series
 --
 external_scalarTYPE :: [(Name, String)]
 external_scalarTYPE
- =      [ (NameOpSeries  (OpSeriesNext 1),      "next") 
+ =      [ (NameOpConcrete  (OpConcreteNext 1),      "next") 
 
         , (NameOpStore OpStoreNew,              "newRef")
         , (NameOpStore OpStoreRead,             "readRef")

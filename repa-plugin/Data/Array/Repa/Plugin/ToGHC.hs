@@ -176,7 +176,7 @@ convertExp kenv tenv xx
         -- Application of tuple projection primop.
         -- Build an inline case-expression to project the element we want.
         D.XApp{}
-         | Just ( D.NameOpFlow (D.OpFlowProj arity ix)
+         | Just ( D.NameOpSeries (D.OpSeriesProj arity ix)
                 , xsArg)                   <- D.takeXPrimApps xx
          , tsA          <- [ t | D.XType t <- take arity xsArg ]
          , length tsA == arity

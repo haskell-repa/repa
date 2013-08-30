@@ -54,6 +54,7 @@ instance Detect (Module ()) where
                 , moduleExportTypes     = Map.empty
                 , moduleImportKinds     = importK
                 , moduleImportTypes     = importT'
+                , moduleDataDefsLocal   = Map.empty
                 , moduleBody            = body' }
 
 
@@ -131,7 +132,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar v))       <- u
   , isPrefixOf "toVector_" v
   = do  args'   <- mapM detect [xTK, xTA, xS]
-        return  $ xApps (xOpFlow OpFlowCreate) args'
+        return  $ xApps (xOpSeries OpSeriesCreate) args'
 
   -- Detect reduce
   | XApp{}                              <- xx
@@ -140,7 +141,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vReduce)) <- uReduce
   , isPrefixOf "reduce_" vReduce
   = do  args'   <- mapM detect [xTK, xTA, xRef, xF, xZ, xS]
-        return  $ xApps (xOpFlow OpFlowReduce) args'
+        return  $ xApps (xOpSeries OpSeriesReduce) args'
 
   -- Detect fold
   | XApp{}                              <- xx
@@ -149,7 +150,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vFold))   <- uFold
   , isPrefixOf "fold_" vFold
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $ xApps (xOpFlow OpFlowFold) args'
+        return  $ xApps (xOpSeries OpSeriesFold) args'
 
   -- Detect foldIndex
   | XApp{}                              <- xx
@@ -158,7 +159,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vFold))   <- uFold
   , isPrefixOf "foldIndex_" vFold
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $ xApps (xOpFlow OpFlowFoldIndex) args'
+        return  $ xApps (xOpSeries OpSeriesFoldIndex) args'
 
   -- Detect map
   | XApp{}                              <- xx
@@ -167,7 +168,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vMap))    <- uMap
   , isPrefixOf "map_" vMap
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xS]
-        return  $ xApps (xOpFlow (OpFlowMap 1)) args'
+        return  $ xApps (xOpSeries (OpSeriesMap 1)) args'
 
   -- Detect map2
   | XApp{}                              <- xx
@@ -176,7 +177,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vMap))    <- uMap
   , isPrefixOf "map2_" vMap
   = do  args'   <- mapM detect [xTK, xTA, xTB, xTC, xF, xS1, xS2]
-        return  $ xApps (xOpFlow (OpFlowMap 2)) args'
+        return  $ xApps (xOpSeries (OpSeriesMap 2)) args'
 
   -- Detect pack
   | XApp{}                              <- xx
@@ -185,7 +186,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar vPack))   <- uPack
   , isPrefixOf "pack_" vPack
   = do  args'   <- mapM detect [xTK1, xTK2, xTA, xSel, xF]
-        return  $ xApps (xOpFlow OpFlowPack) args'
+        return  $ xApps (xOpSeries OpSeriesPack) args'
 
   -- Detect mkSel
   | XApp{}                              <- xx
@@ -194,7 +195,7 @@ instance Detect (Exp a) where
   , UName (FatName _ (NameVar v))       <- u
   , isPrefixOf "mkSel1_" v
   = do  args'   <- mapM detect [xTK, xTA, xFlags, xWorker]
-        return  $ xApps (xOpFlow (OpFlowMkSel 1)) args'
+        return  $ xApps (xOpSeries (OpSeriesMkSel 1)) args'
 
   -- Detect n-tuples
   | XApp{}                              <- xx
@@ -243,9 +244,9 @@ instance Detect (Exp a) where
         XCast{}         -> error "repa-plugin.detect: XCast not handled"
         XWitness{}      -> error "repa-plugin.detect: XWitness not handled"
 
-  where xOpFlow :: OpFlow -> Exp a Name
-        xOpFlow op
-         = XVar (UPrim (NameOpFlow op) (typeOpFlow op))
+  where xOpSeries :: OpSeries -> Exp a Name
+        xOpSeries op
+         = XVar (UPrim (NameOpSeries op) (typeOpSeries op))
 
 
 --- Lets ----------------------------------------------------------------------

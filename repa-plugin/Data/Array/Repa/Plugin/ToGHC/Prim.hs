@@ -31,12 +31,12 @@ convertPrim
 convertPrim _kenv tenv n 
  = let prims    = envPrimitives tenv
    in case n of
-        D.NameOpSeries  D.OpSeriesRateOfSeries  -> return $ prim_rateOfSeries prims
-        D.NameOpSeries  D.OpSeriesNatOfRateNat  -> return $ prim_natOfRateNat prims
-        D.NameOpSeries (D.OpSeriesDown 4)       -> return $ prim_down4 prims
-        D.NameOpSeries (D.OpSeriesTail 4)       -> return $ prim_tail4 prims
-        D.NameOpControl D.OpControlGuard        -> return $ prim_guard prims
-        D.NameOpControl (D.OpControlSplit 4)    -> return $ prim_split4 prims
+        D.NameOpConcrete  D.OpConcreteRateOfSeries  -> return $ prim_rateOfSeries prims
+        D.NameOpConcrete  D.OpConcreteNatOfRateNat  -> return $ prim_natOfRateNat prims
+        D.NameOpConcrete (D.OpConcreteDown 4)       -> return $ prim_down4 prims
+        D.NameOpConcrete (D.OpConcreteTail 4)       -> return $ prim_tail4 prims
+        D.NameOpControl   D.OpControlGuard          -> return $ prim_guard prims
+        D.NameOpControl  (D.OpControlSplit 4)       -> return $ prim_split4 prims
 
         -- ERROR: This isn't a primtive name,
         --        or we don't have an implementation for it.
@@ -74,14 +74,14 @@ convertPolytypicPrim kenv _tenv n tsArg
 
 
         -- Store Primops
-        D.NameOpSeries (D.OpSeriesNext 1)
+        D.NameOpConcrete (D.OpConcreteNext 1)
          |  [tA, tK] <- tsArg, tA == D.tTuple2 D.tInt D.tInt
          -> do  tK'     <- convertType kenv tK
                 let (x, t)      = prim_nextInt_T2 prims
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
-        D.NameOpSeries (D.OpSeriesNext 1)
+        D.NameOpConcrete (D.OpConcreteNext 1)
          |  [tA, tK] <- tsArg
          -> do  let (x, t) = getPrim n tA
                 tK'        <- convertType kenv tK
@@ -117,7 +117,7 @@ isPolytypicPrimName n
         , D.NamePrimArith       D.PrimArithLt
         , D.NamePrimArith       D.PrimArithLe
 
-        , D.NameOpSeries        (D.OpSeriesNext 1)
+        , D.NameOpConcrete      (D.OpConcreteNext 1)
 
         , D.NameOpControl       D.OpControlLoopN
 
