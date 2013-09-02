@@ -7,7 +7,7 @@ import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Ref       as Ref
 import GHC.Exts
 import GHC.Types
-
+import Debug.Trace
 
 -- Ref
 repa_newRefFloat          :: Float# -> World -> (# World, Ref Float #)
@@ -60,14 +60,14 @@ repa_sliceVectorFloat len vec
 -- | Get the next element of a series.
 repa_nextFloat  :: Series k Float -> Word# -> World -> (# World, Float# #)
 repa_nextFloat s ix world
- = case S.index s ix of
+ = case (trace $ "nextFloat " ++ show (W# ix)) (S.index s ix) of
         F# i    -> (# world, i #)
 {-# INLINE repa_nextFloat #-}
 
 
 repa_next4Float :: Series (Down4 k) Float -> Word# -> World -> (# World, FloatX4# #)
 repa_next4Float s ix world
- = case S.indexFloatX4 s ix of
+ = case (trace ("nextFloat4 " ++ show (W# ix)) S.indexFloatX4) s ix of
         f4      -> (# world, f4 #)
 {-# INLINE repa_next4Float #-}
 

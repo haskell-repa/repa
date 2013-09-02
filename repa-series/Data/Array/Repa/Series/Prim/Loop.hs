@@ -8,7 +8,7 @@ import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Ref       as Ref
 import GHC.Exts
 import GHC.Types
-
+import Debug.Trace
 
 -- Loop combinators -----------------------------------------------------------
 -- | Primitive stateful loop combinator.
@@ -56,7 +56,7 @@ repa_split4
 repa_split4 (RateNat len) goDown4 goTail4 w0
  | chunks       <- len `quotWord#` (int2Word# 4#)
  , leftover     <- len `remWord#`  (int2Word# 4#)
- , w1           <- goDown4 (RateNat chunks)   w0
+ , w1           <- goDown4 (trace ("chunks" ++ show (W# chunks, W# leftover)) (RateNat chunks)) w0
  , w2           <- goTail4 (RateNat leftover) w1
  = w2
 {-# INLINE repa_split4 #-}

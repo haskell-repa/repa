@@ -21,7 +21,7 @@ import qualified Data.Array.Repa.Series.Vector  as V
 import qualified Data.Vector.Primitive          as P
 import qualified Data.Vector.Primitive.Mutable  as PM
 import Prelude hiding (length)
-
+import Debug.Trace
 
 -- | A `Series` is a source of element data that is tagged by rate variable,
 --   which is a type level version of its length.
