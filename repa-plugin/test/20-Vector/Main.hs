@@ -1,10 +1,10 @@
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE MagicHash, BangPatterns #-}
 module Main where
 import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Ref       as Ref
-import qualified Data.Vector.Unboxed    as U
+import qualified Data.Vector.Primitive  as P
 import Data.Word
 import GHC.Exts
 
@@ -16,17 +16,21 @@ repa_primitives =  R.primitives
 
 ---------------------------------------------------------------------
 main
- = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Float) 10
-        r1      <- Ref.new 0
-        r2      <- Ref.new 1
-        R.runSeries v1 (lower_rreduce (RateNat (int2Word# 10#)) r1 r2) 
-                `seq` return ()
+ = do   v1      <- V.fromPrimitive $ P.enumFromN (1 :: Float) 100
+        let rn  =  RateNat (int2Word# 100#)
+
+        r1      <- Ref.new 666
+        R.runProcess v1 (lower_rreduce rn r1)
+        x1      <- Ref.read r1
+        print x1
 
 
 -- Double reduce fusion.
 --  Computation of both reductions is interleaved.
-lower_rreduce :: RateNat k -> Ref Float -> Ref Float -> Series k Float -> ()
-lower_rreduce _ ref1 ref2 s
+lower_rreduce :: RateNat k -> Ref Float -> Series k Float -> Process
+lower_rreduce _ ref1 s
  =      R.reduce ref1 (+) 0 s 
- `seq`  R.reduce ref2 (*) 1 s
+ %      R.reduce ref2 (*) 1 s
 {-# NOINLINE lower_rreduce #-}
+
+

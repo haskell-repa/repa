@@ -48,15 +48,14 @@ data Primitives
         , prim_guard            :: (G.CoreExpr, G.Type)
         , prim_split4           :: (G.CoreExpr, G.Type)
 
-          -- Hacks
-        , prim_nextInt_T2       :: (G.CoreExpr, G.Type)
-
+          -- Float4
+        , prim_next4Float       :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_0    :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_1    :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_2    :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_3    :: (G.CoreExpr, G.Type)
 
-        , prim_next4Float       :: (G.CoreExpr, G.Type)
+         -- Double2
         , prim_next2Double      :: (G.CoreExpr, G.Type)
 
           -- Primitives per base type.
@@ -221,15 +220,14 @@ makeTable v
                 , prim_guard            = get "prim_guard"
                 , prim_split4           = get "prim_split4"
 
-                -- Hacks
-                , prim_nextInt_T2       = get "prim_nextInt_T2"
-
+                -- Float4
+                , prim_next4Float       = get "prim_next4Float"
                 , prim_projFloatX4_0    = get "prim_projFloatX4_0"
                 , prim_projFloatX4_1    = get "prim_projFloatX4_1"
                 , prim_projFloatX4_2    = get "prim_projFloatX4_2"
                 , prim_projFloatX4_3    = get "prim_projFloatX4_3"
 
-                , prim_next4Float       = get "prim_next4Float"
+                -- Double2
                 , prim_next2Double      = get "prim_next2Double"
 
                 -- Primitives per base type
@@ -331,7 +329,6 @@ allExternalNames
  =      (map snd external_control)
  ++     (map snd external_series)
 
- ++     [ "prim_nextInt_T2" ]           -- HACKS: Needs to die.
  ++     [ "prim_projFloatX4_0" ]         
  ++     [ "prim_projFloatX4_1" ]         
  ++     [ "prim_projFloatX4_2" ]         

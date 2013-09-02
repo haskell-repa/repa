@@ -12,23 +12,24 @@ module Data.Array.Repa.Series
         , fromPrimitive
         , toPrimitive
 
-          -- * Running series expressions
-        , runSeries
-        , runSeries2
-        , runSeries3
-        , runSeries4
-
           -- * Selectors
         , Sel1   (..)
         , mkSel1
 
-          -- * Series operators
+
+          -- * Processes
+        , Process       (..)
+        , with, (%)
+        , runProcess
+        , runProcess2
+
+          -- * Series combinators
         , map
         , map2
-        , reduce
-        , fold
-        , foldIndex
         , pack
+
+          -- * Process constructors
+        , reduce
 
           -- * Primitives used by the Repa plugin
         , Primitives (..)
@@ -40,4 +41,5 @@ import Data.Array.Repa.Series.Sel
 import Data.Array.Repa.Series.Vector
 import Data.Array.Repa.Series.Fallback
 import Data.Array.Repa.Series.Prim
+import Data.Array.Repa.Series.Process
 import Prelude hiding (map)

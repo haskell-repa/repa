@@ -89,13 +89,6 @@ convertPolytypicPrim kenv _tenv n tsArg
 
 
         -- Store Primops
-        D.NameOpConcrete (D.OpConcreteNext 1)
-         |  [tA, tK] <- tsArg, tA == D.tTuple2 D.tInt D.tInt
-         -> do  tK'     <- convertType kenv tK
-                let (x, t)      = prim_nextInt_T2 prims
-                return  ( G.App x (G.Type tK')
-                        , G.applyTy t tK' )
-
         D.NameOpConcrete (D.OpConcreteNext m)
          |  [tA, tK] <- tsArg, tA == D.tFloat 32, m == 4
          -> do  let (x, t) = prim_next4Float prims
