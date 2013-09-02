@@ -33,38 +33,43 @@ import Debug.Trace
 --
 data Series k a
         = Series 
-        { seriesLength  :: Word#
+        { seriesStart   :: Word#
+        , seriesLength  :: Word#
         , seriesVector  :: !(P.Vector a) }  
 
 -- | Take the length of a series.
 length :: Series k a -> Word#
-length (Series len d) = len
+length (Series start len d) = len
 {-# INLINE [1] length #-}
 
 
 -- | Get the Rate / Length of a series.
 rateOfSeries :: Series k a -> RateNat k
-rateOfSeries s 
+rateOfSeries s
  = RateNat (seriesLength s)
 {-# INLINE [1] rateOfSeries #-}
 
 
 -- | Window a series to the initial range of 4 elements.
 down4 :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
-down4 r (Series len vec)        = Series len vec
+down4 r (Series start len vec)        
+        = Series start len vec
 {-# INLINE [1] down4 #-}
 
 
 -- | Window a series to the ending elements.
 tail4 :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
-tail4 r (Series len vec)        = Series len vec
+tail4 r (Series start len vec)        
+        = Series (quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#))
+                 len vec
 {-# INLINE [1] tail4 #-}
 
 
 -- | Index into a series.
 index :: Prim a => Series k a -> Word# -> a
 index s ix
- = P.unsafeIndex (seriesVector s) (I# (word2Int# ix))
+ = P.unsafeIndex (seriesVector s) 
+                 (I# (word2Int# (ix `plusWord#` seriesStart s)))
 {-# INLINE [1] index #-}
 
 
@@ -73,7 +78,9 @@ indexFloatX4  :: Series (Down4 k) Float -> Word# -> FloatX4#
 indexFloatX4 s ix
  | P.MVector (I# start) (I# _) (MutableByteArray mba)
                 <- unsafePerformIO (P.unsafeThaw (seriesVector s))
- , (# _, f4 #)  <- readFloatX4Array# mba (start +# ((word2Int# ix) *# 4#)) realWorld#
+ , (# _, f4 #)  <- readFloatX4Array# mba 
+                        (start +# (word2Int# (seriesStart s)) +# ((word2Int# ix) *# 4#))
+                        realWorld#
  = f4
 {-# INLINE [1] indexFloatX4 #-}
 
@@ -87,7 +94,7 @@ indexDoubleX2 s ix
 
 -- | Convert a series to a vector, discarding the rate information.
 toVector :: Prim a => Series k a -> Vector a
-toVector (Series len vec) 
+toVector (Series _ _ vec) 
  = unsafePerformIO
  $ do   V.fromPrimitive vec
 {-# INLINE [1] toVector #-}

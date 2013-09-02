@@ -20,19 +20,25 @@ data RateNat k
 
 
 rateOfRateNat :: RateNat k -> Word#
-rateOfRateNat (RateNat w) = w
+rateOfRateNat (RateNat len) 
+        = len
 {-# INLINE rateOfRateNat #-}
 
 
 -- Represents the quotient of a rate divided by the multiplier.
 -- Should be treated abstractly by client code.
-data Down2 k    = Down2 Word#
-data Down4 k    = Down4 Word#
+data Down2 k
+data Down4 k
 
 
--- Represents the remainder of a rate divided by the multiplier.
--- Should be treated abstractly by client code.
-data Tail2 k    = Tail2 Word#
-data Tail4 k    = Tail4 Word#
+-- | Represents the remainder of a rate divided by the multiplier.
+-- 
+--   Contains the starting offset in the original vector, 
+--   and number of elements.
+--
+--   Should be treated abstractly by client code.
+--
+data Tail2 k
+data Tail4 k
 
 

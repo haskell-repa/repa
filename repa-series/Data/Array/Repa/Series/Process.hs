@@ -55,7 +55,7 @@ runProcess
 runProcess v1 f
  | l1  <- V.length v1
  = do   u1      <- V.toPrimitive v1
-        let (Process go) = f (Series l1 u1)
+        let (Process go) = f (Series (int2Word# 0#) l1 u1)
         go
 {-# INLINE [1] runProcess #-}
 
@@ -75,7 +75,8 @@ runProcess2 v1 v2 f
  = do   u1      <- V.toPrimitive v1
         u2      <- V.toPrimitive v2
         let (Process go) 
-                = f (Series l1 u1) (Series l2 u2)
+                = f (Series (int2Word# 0#) l1 u1) 
+                    (Series (int2Word# 0#) l2 u2)
         x       <- go
         return  True
 

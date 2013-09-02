@@ -20,21 +20,13 @@ main
         let rn  =  RateNat (V.length v1)
 
         r1      <- Ref.new 0
-        R.runProcess v1 (lower_rreduce rn r1)
+        r2      <- Ref.new 1
+        R.runProcess v1 (lower_rreduce rn r1 r2)
         x1      <- Ref.read r1
-        print x1
+        x2      <- Ref.read r2
+        print (x1, x2)
 
 
-lower_rreduce 
-        :: RateNat k 
-        -> Ref Float
-        -> Series k Float -> Process
-lower_rreduce _ ref1  s
- =      R.reduce ref1 (+) 0 s 
-{-# NOINLINE lower_rreduce #-}
-
-
-{-}
 -- Double reduce fusion.
 --  Computation of both reductions is interleaved.
 lower_rreduce 
@@ -45,5 +37,3 @@ lower_rreduce _ ref1 ref2 s
  =      R.reduce ref1 (+) 0 s 
  %      R.reduce ref2 (*) 1 s
 {-# NOINLINE lower_rreduce #-}
-
--}

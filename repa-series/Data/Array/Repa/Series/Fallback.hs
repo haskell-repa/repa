@@ -32,8 +32,8 @@ import System.IO.Unsafe
 map     :: forall k a b. (Prim a, Prim b)
         => (a -> b) -> Series k a -> Series k b
 
-map f (S.Series len vec)
- = S.Series len (P.map f vec)
+map f (S.Series start len vec)
+ = S.Series start len (P.map f vec)
 {-# INLINE [0] map #-}
 
 
@@ -42,8 +42,8 @@ map2    :: forall k a b c. (Prim a, Prim b, Prim c)
         => (a -> b -> c) -> Series k a -> Series k b
         -> Series k c
 
-map2 f (S.Series len vec1) (S.Series _len vec2)
- = S.Series len (P.zipWith f vec1 vec2)
+map2 f (S.Series start len vec1) (S.Series _ _len vec2)
+ = S.Series start len (P.zipWith f vec1 vec2)
 {-# INLINE [0] map2 #-}
 
 
