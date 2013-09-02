@@ -2,6 +2,7 @@
 module Data.Array.Repa.Series.Rate
         ( RateNat (..)
         , rateOfRateNat
+        , rateNatOfInt
 
         , Down2 (..),   Down4 (..)    
         , Tail2 (..),   Tail4 (..))
@@ -23,6 +24,12 @@ rateOfRateNat :: RateNat k -> Word#
 rateOfRateNat (RateNat len) 
         = len
 {-# INLINE rateOfRateNat #-}
+
+
+rateNatOfInt  :: Int -> RateNat k
+rateNatOfInt (I# i)
+        = RateNat (int2Word# i)
+{-# INLINE rateNatOfInt #-}
 
 
 -- Represents the quotient of a rate divided by the multiplier.

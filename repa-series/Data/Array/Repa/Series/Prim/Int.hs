@@ -31,7 +31,7 @@ repa_writeRefInt ref val = unwrapIO_ (Ref.write ref (I# val))
 
 -- Vector
 repa_newVectorInt       :: Word#  -> World -> (# World, Vector Int #)
-repa_newVectorInt len    = unwrapIO' (V.new len)
+repa_newVectorInt len    = unwrapIO' (V.new' len)
 {-# INLINE repa_newVectorInt #-}
 
 

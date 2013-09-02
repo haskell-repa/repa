@@ -2,15 +2,19 @@
 module Data.Array.Repa.Series.Vector
         ( Vector
         , length
-        , new
+        , new, new'
         , read
         , write
+        , writeFloatX4
+        , writeDoubleX2
         , take
 
           -- * Conversions
         , fromPrimitive
         , toPrimitive)
 where
+import Data.Array.Repa.Series.Prim.Utils
+import Data.Primitive.ByteArray
 import Data.Vector.Primitive                    (Prim)
 import qualified Data.Vector.Primitive          as P
 import qualified Data.Vector.Primitive.Mutable  as PM
@@ -43,11 +47,18 @@ length vec
 {-# INLINE length #-}
 
 
+
 -- | Create a new vector of the given length.
-new  :: Prim a => Word# -> IO (Vector a)
-new len
+new'  :: Prim a => Word# -> IO (Vector a)
+new' len
  = do   vec     <- PM.new (I# (word2Int# len))
         return  $ Vector len vec
+{-# INLINE new' #-}
+
+
+new :: Prim a => Int -> IO (Vector a)
+new (I# len)
+        = new' (int2Word# len)
 {-# INLINE new #-}
 
 
@@ -63,6 +74,28 @@ write :: Prim a => Vector a -> Word# -> a -> IO ()
 write vec ix val
         = PM.unsafeWrite (vectorData vec) (I# (word2Int# ix)) val
 {-# INLINE write #-}
+
+
+-- | Write a packed FloatX4 into a `Vector`
+writeFloatX4  :: Vector Float -> Word# -> FloatX4# -> IO ()
+writeFloatX4 v ix val
+ | P.MVector (I# start) (I# _) (MutableByteArray mba) 
+                <- vectorData v
+ = wrapIO_ (writeFloatX4Array# mba 
+                        (start +# ((word2Int# ix) *# 4#))
+                        val)
+{-# INLINE writeFloatX4 #-}
+
+
+-- | Write a packed DoubleX2 into a `Vector`
+writeDoubleX2  :: Vector Double -> Word# -> DoubleX2# -> IO ()
+writeDoubleX2 v ix val
+ | P.MVector (I# start) (I# _) (MutableByteArray mba) 
+                <- vectorData v
+ = wrapIO_ (writeDoubleX2Array# mba 
+                        (start +# ((word2Int# ix) *# 4#))
+                        val)
+{-# INLINE writeDoubleX2 #-}
 
 
 -- | Take the first n elements of a vector

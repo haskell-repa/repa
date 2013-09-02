@@ -31,39 +31,41 @@ import Data.Map                 (Map)
 --   needed by the lowering transform.
 data Primitives
         = Primitives
-        { prim_Series           :: !G.Type
-        , prim_Vector           :: !G.Type
-        , prim_Ref              :: !G.Type
-        , prim_Down4            :: !G.Type
-        , prim_Tail4            :: !G.Type
+        { prim_Series                   :: !G.Type
+        , prim_Vector                   :: !G.Type
+        , prim_Ref                      :: !G.Type
+        , prim_Down4                    :: !G.Type
+        , prim_Tail4                    :: !G.Type
 
           -- Series
-        , prim_natOfRateNat     :: (G.CoreExpr, G.Type)
-        , prim_rateOfSeries     :: (G.CoreExpr, G.Type)
-        , prim_down4            :: (G.CoreExpr, G.Type)
-        , prim_tail4            :: (G.CoreExpr, G.Type)
+        , prim_natOfRateNat             :: (G.CoreExpr, G.Type)
+        , prim_rateOfSeries             :: (G.CoreExpr, G.Type)
+        , prim_down4                    :: (G.CoreExpr, G.Type)
+        , prim_tail4                    :: (G.CoreExpr, G.Type)
 
           -- Loop combinators.
-        , prim_makeProcess      :: (G.CoreExpr, G.Type)
-        , prim_loop             :: (G.CoreExpr, G.Type)
-        , prim_guard            :: (G.CoreExpr, G.Type)
-        , prim_split4           :: (G.CoreExpr, G.Type)
+        , prim_makeProcess              :: (G.CoreExpr, G.Type)
+        , prim_loop                     :: (G.CoreExpr, G.Type)
+        , prim_guard                    :: (G.CoreExpr, G.Type)
+        , prim_split4                   :: (G.CoreExpr, G.Type)
 
           -- Float4
-        , prim_next4Float       :: (G.CoreExpr, G.Type)
-        , prim_projFloatX4_0    :: (G.CoreExpr, G.Type)
-        , prim_projFloatX4_1    :: (G.CoreExpr, G.Type)
-        , prim_projFloatX4_2    :: (G.CoreExpr, G.Type)
-        , prim_projFloatX4_3    :: (G.CoreExpr, G.Type)
+        , prim_next4Float               :: (G.CoreExpr, G.Type)
+        , prim_writeVectorFloatX4       :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_0            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_1            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_2            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX4_3            :: (G.CoreExpr, G.Type)
 
          -- Double2
-        , prim_next2Double      :: (G.CoreExpr, G.Type)
+        , prim_next2Double              :: (G.CoreExpr, G.Type)
+        , prim_writeVectorDoubleX2      :: (G.CoreExpr, G.Type)
 
           -- Primitives per base type.
-        , prim_baseInt          :: Map Name (G.CoreExpr, G.Type)
-        , prim_baseWord         :: Map Name (G.CoreExpr, G.Type)
-        , prim_baseFloat32      :: Map Name (G.CoreExpr, G.Type)
-        , prim_baseFloat64      :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseInt                  :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseWord                 :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseFloat32              :: Map Name (G.CoreExpr, G.Type)
+        , prim_baseFloat64              :: Map Name (G.CoreExpr, G.Type)
         }
 
 
@@ -223,14 +225,16 @@ makeTable v
                 , prim_split4           = get "prim_split4"
 
                 -- Float4
-                , prim_next4Float       = get "prim_next4Float"
-                , prim_projFloatX4_0    = get "prim_projFloatX4_0"
-                , prim_projFloatX4_1    = get "prim_projFloatX4_1"
-                , prim_projFloatX4_2    = get "prim_projFloatX4_2"
-                , prim_projFloatX4_3    = get "prim_projFloatX4_3"
+                , prim_next4Float         = get "prim_next4Float"
+                , prim_writeVectorFloatX4 = get "prim_writeVectorFloatX4"
+                , prim_projFloatX4_0      = get "prim_projFloatX4_0"
+                , prim_projFloatX4_1      = get "prim_projFloatX4_1"
+                , prim_projFloatX4_2      = get "prim_projFloatX4_2"
+                , prim_projFloatX4_3      = get "prim_projFloatX4_3"
 
                 -- Double2
-                , prim_next2Double      = get "prim_next2Double"
+                , prim_next2Double         = get "prim_next2Double"
+                , prim_writeVectorDoubleX2 = get "prim_writeVectorDoubleX2"
 
                 -- Primitives per base type
                 , prim_baseInt          = buildOpMap sels bakedin_Int     external_Int
@@ -336,8 +340,12 @@ allExternalNames
  ++     [ "prim_projFloatX4_2" ]         
  ++     [ "prim_projFloatX4_3" ]         
 
- ++     [ "prim_next4Float"]
- ++     [ "prim_next2Double"]
+ ++     [ "prim_next4Float"
+        , "prim_writeVectorFloatX4" ]
+ 
+ ++     [ "prim_next2Double"
+        , "prim_writeVectorDoubleX2" ]
+ 
  ++     [ "prim_makeProcess"]
 
  ++     (map snd external_Int)

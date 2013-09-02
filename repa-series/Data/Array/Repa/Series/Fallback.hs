@@ -12,11 +12,13 @@ module Data.Array.Repa.Series.Fallback
           map
         , map2
         , pack
+        , fill
 
           -- * Process constructors
         , reduce)
 where
 import Data.Array.Repa.Series.Process
+import Data.Array.Repa.Series.Vector
 import Data.Vector.Primitive                    (Prim)
 import Data.Array.Repa.Series.Series            as S
 import Data.Array.Repa.Series.Sel               as S
@@ -57,6 +59,15 @@ pack _ _
 
 
 -- Process constructors -------------------------------------------------------
+-- | Fill a vector buffer with elements of a series.
+fill    :: forall k a. Prim a
+        => Vector a -> Series k a -> Process
+
+fill vec s
+ = error "repa-series: Fallback fill is broken"
+{-# NOINLINE fill #-}
+
+
 -- | Reduce a sequence into an accumulator.
 reduce  :: forall k a. Prim a
         => Ref a -> (a -> a -> a) -> a -> Series k a -> Process

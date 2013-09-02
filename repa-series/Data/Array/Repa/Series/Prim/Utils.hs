@@ -3,7 +3,8 @@ module Data.Array.Repa.Series.Prim.Utils
         ( World
         , unwrapIO'
         , unwrapIO_
-        , wrapIO1)
+        , wrapIO1
+        , wrapIO_)
 where
 import GHC.Types
 import GHC.Exts
@@ -25,3 +26,7 @@ wrapIO1    :: (World -> (# World, a #)) -> IO a
 wrapIO1 = IO
 {-# INLINE wrapIO1 #-}
 
+wrapIO_    :: (World -> World) -> IO ()
+wrapIO_ f
+        = IO (\w -> let !w' = f w in (# w', () #))
+{-# INLINE wrapIO_ #-}

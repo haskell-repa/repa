@@ -40,7 +40,7 @@ convertPrim _kenv tenv n
 
         -- ERROR: This isn't a primtive name,
         --        or we don't have an implementation for it.
-        _ -> errorMissingPrim (envGuts tenv) n Nothing
+        _ -> errorMissingPrim (envGuts tenv) n [] Nothing
 
 
 -------------------------------------------------------------------------------
@@ -87,7 +87,6 @@ convertPolytypicPrim kenv _tenv n tsArg
          |  [t] <- tsArg
          -> return $ getPrim n t
 
-
         -- Store Primops
         D.NameOpConcrete (D.OpConcreteNext m)
          |  [tA, tK] <- tsArg, tA == D.tFloat 32, m == 4
@@ -96,7 +95,6 @@ convertPolytypicPrim kenv _tenv n tsArg
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK')
 
-
          |  [tA, tK] <- tsArg
          ,  elem m [1, 4]
          -> do  let (x, t) = getPrim n tA
@@ -104,6 +102,12 @@ convertPolytypicPrim kenv _tenv n tsArg
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK' )
 
+        D.NameOpStore (D.OpStoreWriteVector m)
+         |  [tA] <- tsArg, tA == D.tFloat 32, m == 4
+         -> do  return  $ prim_writeVectorFloatX4 prims
+                
+
+         
         D.NameOpStore _
          | t : _ <- tsArg
          -> return $ getPrim n t
@@ -111,7 +115,7 @@ convertPolytypicPrim kenv _tenv n tsArg
         -- ERROR: This isn't a primitive name,
         --        or we don't have an implementation for it,
         --        or the function `isPolytypicPrimName` tells lies.
-        _  -> errorMissingPrim (envGuts kenv) n Nothing
+        _  -> errorMissingPrim (envGuts kenv) n tsArg Nothing
 
 
 -- | Check whether the function with this name must be handled polytypically. 
@@ -157,13 +161,14 @@ isPolytypicPrimName n
         , D.NameOpStore         D.OpStoreNewVector
         , D.NameOpStore         (D.OpStoreReadVector  1)
         , D.NameOpStore         (D.OpStoreWriteVector 1)
+        , D.NameOpStore         (D.OpStoreWriteVector 4)
         , D.NameOpStore         D.OpStoreSliceVector ]
 
         
 
 -- | Complain that we couldn't find a primitive that we needed.
-errorMissingPrim :: G.ModGuts -> D.Name -> Maybe String -> a
-errorMissingPrim _guts _n (Just str)
+errorMissingPrim :: G.ModGuts -> D.Name -> [D.Type D.Name] -> Maybe String -> a
+errorMissingPrim _guts _n _tsArgs (Just str)
  = error $ unlines
  $ map ("        " ++)
         [ ""
@@ -185,13 +190,14 @@ errorMissingPrim _guts _n (Just str)
         , "" ]
 
 
-errorMissingPrim _guts n Nothing
+errorMissingPrim _guts n tsArgs Nothing
  = error $ unlines
  $ map ("        " ++)
         [ ""
         , "repa-plugin:"
         , " No Haskell symbol name for Disciple Core Flow primitive:"
         , "  '" ++ show n ++ "'"
+        , "  type arguments = " ++ show tsArgs
         , ""
         , " Please report this problem on the Repa bug tracker,"
         , "   or complain about it on the Repa mailing list."

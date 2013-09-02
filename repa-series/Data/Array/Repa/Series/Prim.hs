@@ -96,7 +96,7 @@ data Primitives
 
   , prim_newVectorFloat         :: Word# -> World -> (# World, Vector Float #)
   , prim_readVectorFloat        :: Vector Float -> Word# -> World -> (# World, Float# #)
-  , prim_writeVectorFloat       :: Vector Float -> Word# -> Float# -> World -> World
+  , prim_writeVectorFloat       :: Vector Float -> Word# -> Float#   -> World -> World
   , prim_sliceVectorFloat       :: Word# -> Vector Float -> World -> (# World, Vector Float #)
 
   , prim_nextFloat              :: forall k
@@ -107,6 +107,8 @@ data Primitives
                                 .  Series (Down4 k) Float -> Word#
                                 -> World -> (# World, FloatX4# #)
 
+  , prim_writeVectorFloatX4     :: Vector Float -> Word# -> FloatX4# -> World -> World
+  
     -- Double ------------------------------------------------
   , prim_newRefDouble           :: Double#    -> World -> (# World, Ref Double #) 
   , prim_readRefDouble          :: Ref Double -> World -> (# World, Double# #)
@@ -124,6 +126,8 @@ data Primitives
   , prim_next2Double            :: forall k
                                 .  Series (Down2 k) Float -> Word#
                                 -> World -> (# World, DoubleX2# #)
+
+  , prim_writeVectorDoubleX2    :: Vector Double -> Word# -> DoubleX2# -> World -> World
   }
 
 
@@ -190,7 +194,9 @@ primitives
   , prim_sliceVectorFloat       = repa_sliceVectorFloat
 
   , prim_nextFloat              = repa_nextFloat
+  
   , prim_next4Float             = repa_next4Float
+  , prim_writeVectorFloatX4     = \vec ix val -> unwrapIO_ (writeFloatX4 vec ix val)
 
     -- Double --------------------------------------
   , prim_newRefDouble           = repa_newRefDouble
@@ -204,5 +210,7 @@ primitives
 
   , prim_nextDouble             = repa_nextDouble
   , prim_next2Double            = repa_next2Double
+
+  , prim_writeVectorDoubleX2    = \vec ix val -> unwrapIO_ (writeDoubleX2 vec ix val)
   }
 

@@ -40,7 +40,7 @@ repa_newVectorFloat
         :: Word#  
         -> World -> (# World, Vector Float #)
 repa_newVectorFloat len    
-        = unwrapIO' (V.new len)
+        = unwrapIO' (V.new' len)
 {-# INLINE repa_newVectorFloat #-}
 
 

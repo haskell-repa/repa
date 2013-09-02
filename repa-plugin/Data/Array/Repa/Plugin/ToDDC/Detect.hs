@@ -125,14 +125,6 @@ instance Detect (Exp a) where
 
          _ -> return $ XLam b' x'
 
-  -- Detect reduce
-  | XApp{}                              <- xx
-  , Just  (XVar uReduce, [xTK, xTA, _xD, xRef, xF, xZ, xS])
-                                        <- takeXApps xx
-  , UName (FatName _ (NameVar vReduce)) <- uReduce
-  , isPrefixOf "reduce_" vReduce
-  = do  args'   <- mapM detect [xTK, xTA, xRef, xF, xZ, xS]
-        return  $ xApps (xOpSeries OpSeriesReduce) args'
 
   -- Detect map
   | XApp{}                              <- xx
@@ -143,6 +135,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xS]
         return  $ xApps (xOpSeries (OpSeriesMap 1)) args'
 
+
   -- Detect map2
   | XApp{}                              <- xx
   , Just  (XVar uMap,  [xTK, xTA, xTB, xTC, _xD1, _xD2, _xD3, xF, xS1, xS2 ])
@@ -151,6 +144,7 @@ instance Detect (Exp a) where
   , isPrefixOf "map2_" vMap
   = do  args'   <- mapM detect [xTK, xTA, xTB, xTC, xF, xS1, xS2]
         return  $ xApps (xOpSeries (OpSeriesMap 2)) args'
+
 
   -- Detect pack
   | XApp{}                              <- xx
@@ -161,6 +155,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK1, xTK2, xTA, xSel, xF]
         return  $ xApps (xOpSeries OpSeriesPack) args'
 
+
   -- Detect mkSel
   | XApp{}                              <- xx
   , Just  (XVar u,    [xTK, xTA, xFlags, xWorker])
@@ -170,6 +165,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect [xTK, xTA, xFlags, xWorker]
         return  $ xApps (xOpSeries (OpSeriesMkSel 1)) args'
 
+  
   -- Detect n-tuples
   | XApp{}                              <- xx
   , Just  (XVar uTuple,  args)          <- takeXApps xx
@@ -185,6 +181,26 @@ instance Detect (Exp a) where
         return  $ xApps (XCon $ mkDaConAlg (NameDaConFlow tuple) ty)
                         args'
 
+  -- Detect reduce
+  | XApp{}                              <- xx
+  , Just  (XVar uReduce, [xTK, xTA, _xD, xRef, xF, xZ, xS])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vReduce)) <- uReduce
+  , isPrefixOf "reduce_" vReduce
+  = do  args'   <- mapM detect [xTK, xTA, xRef, xF, xZ, xS]
+        return  $ xApps (xOpSeries OpSeriesReduce) args'
+
+
+  -- Detect fill
+  | XApp{}                              <- xx
+  , Just (XVar uFill,  [xTK, xTA, _, xV, xS])
+                                        <- takeXApps xx
+  , UName (FatName _ (NameVar vFill))   <- uFill
+  , isPrefixOf "fill_" vFill
+  = do  args'   <- mapM detect [xTK, xTA, xV, xS]
+        return  $ xApps (xOpSeries OpSeriesFill) args'
+
+  
   -- Detect process joins.
   | XApp{}                              <- xx
   , Just (XVar uJoin, args )            <- takeXApps xx
@@ -193,6 +209,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect args
         return  $ xApps (xOpSeries (OpSeriesJoin)) args'
 
+  
   -- Inject type arguments for arithmetic ops.
   --   In the Core code, arithmetic operations are expressed as monomorphic
   --   dictionary methods, which we convert to polytypic DDC primops.
@@ -201,6 +218,7 @@ instance Detect (Exp a) where
   = do  collect nD' nG
         return  $ xApps (XVar (UPrim nD' tPrim)) [XType tArg]
 
+  
   -- Strip boxing constructors from literal values.
   | XApp (XVar (UName (FatName _ (NameCon str1)))) x2 <- xx
   ,   isPrefixOf "I#_" str1 
@@ -208,6 +226,7 @@ instance Detect (Exp a) where
    || isPrefixOf "F#_" str1 
    || isPrefixOf "D#_" str1
   = detect x2
+  
   
   -- Boilerplate traversal.
   | otherwise

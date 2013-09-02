@@ -1,6 +1,8 @@
 module Data.Array.Repa.Series
         ( -- * Rates
           RateNat (..)
+        , rateNatOfInt
+
         , Down4   (..)
         , Tail4   (..)
 
@@ -22,6 +24,8 @@ module Data.Array.Repa.Series
         , pjoin, (%)
         , runProcess
         , runProcess2
+        , runProcess3
+        , runProcess4
 
           -- * Series combinators
         , map
@@ -29,6 +33,7 @@ module Data.Array.Repa.Series
         , pack
 
           -- * Process constructors
+        , fill
         , reduce
 
           -- * Primitives used by the Repa plugin

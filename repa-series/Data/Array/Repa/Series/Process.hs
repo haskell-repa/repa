@@ -4,8 +4,11 @@ module Data.Array.Repa.Series.Process
         , makeProcess
         , pjoin, (%)
         , runProcess
-        , runProcess2)
+        , runProcess2
+        , runProcess3
+        , runProcess4)
 where
+import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Series
 import Data.Array.Repa.Series.Vector
 import Data.Array.Repa.Series.Prim.Utils
@@ -37,8 +40,6 @@ pjoin (Process a1) (Process a2)
 infixl %
 (%) = pjoin
 {-# INLINE (%) #-}
-
-
 
 
 -------------------------------------------------------------------------------
@@ -83,3 +84,66 @@ runProcess2 v1 v2 f
  | otherwise
  = return False
 {-# INLINE [1] runProcess2 #-}
+
+
+-- | Evaluate a series process,
+--   feeding it three unboxed vectors of the same length.
+runProcess3
+ ::               (Prim a,       Prim b,     Prim c)
+ =>              Vector a   -> Vector b   -> Vector c
+ -> (forall k. Series k a -> Series k b -> Series k c -> Process)  
+                        -- ^ worker function
+ -> IO Bool
+
+runProcess3 v1 v2 v3 f
+ | l1 <- V.length v1
+ , l2 <- V.length v2, eqWord# l1 l2
+ , l3 <- V.length v3, eqWord# l2 l3
+ = do   u1      <- V.toPrimitive v1
+        u2      <- V.toPrimitive v2
+        u3      <- V.toPrimitive v3
+        let (Process go) 
+                = f (Series (int2Word# 0#) l1 u1) 
+                    (Series (int2Word# 0#) l2 u2)
+                    (Series (int2Word# 0#) l3 u3)
+        x       <- go
+        return  True
+
+ | otherwise
+ = return False
+{-# INLINE [1] runProcess3 #-}
+
+
+-- | Evaluate a series process,
+--   feeding it three unboxed vectors of the same length.
+runProcess4
+ ::           (Prim a,       Prim b,     Prim c,  Prim d)
+ =>          Vector a   -> Vector b   -> Vector c   -> Vector d
+ -> (forall k. RateNat k 
+        -> Series k a -> Series k b -> Series k c -> Series k d -> Process)  
+                        -- ^ worker function
+ -> IO Bool
+
+runProcess4 v1 v2 v3 v4 f
+ | l1 <- V.length v1
+ , l2 <- V.length v2, eqWord# l1 l2
+ , l3 <- V.length v3, eqWord# l2 l3
+ , l4 <- V.length v4, eqWord# l3 l4
+ = do   u1      <- V.toPrimitive v1
+        u2      <- V.toPrimitive v2
+        u3      <- V.toPrimitive v3
+        u4      <- V.toPrimitive v4
+        let (Process go) 
+                = f (RateNat (V.length v1))
+                    (Series (int2Word# 0#) l1 u1) 
+                    (Series (int2Word# 0#) l2 u2)
+                    (Series (int2Word# 0#) l3 u3)
+                    (Series (int2Word# 0#) l4 u4)
+        x       <- go
+        return  True
+
+ | otherwise
+ = return False
+{-# INLINE [1] runProcess4 #-}
+
+
