@@ -44,6 +44,7 @@ data Primitives
         , prim_tail4            :: (G.CoreExpr, G.Type)
 
           -- Loop combinators.
+        , prim_makeProcess      :: (G.CoreExpr, G.Type)
         , prim_loop             :: (G.CoreExpr, G.Type)
         , prim_guard            :: (G.CoreExpr, G.Type)
         , prim_split4           :: (G.CoreExpr, G.Type)
@@ -214,8 +215,9 @@ makeTable v
                 , prim_rateOfSeries     = get "prim_rateOfSeries" 
                 , prim_down4            = get "prim_down4"
                 , prim_tail4            = get "prim_tail4"
-                
+
                 -- Control
+                , prim_makeProcess      = get "prim_makeProcess"
                 , prim_loop             = get "prim_loop"
                 , prim_guard            = get "prim_guard"
                 , prim_split4           = get "prim_split4"
@@ -336,6 +338,7 @@ allExternalNames
 
  ++     [ "prim_next4Float"]
  ++     [ "prim_next2Double"]
+ ++     [ "prim_makeProcess"]
 
  ++     (map snd external_Int)
  ++     (map snd external_Word)

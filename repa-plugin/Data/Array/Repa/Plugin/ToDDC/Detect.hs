@@ -125,15 +125,6 @@ instance Detect (Exp a) where
 
          _ -> return $ XLam b' x'
 
-  -- Detect create
-  | XApp{}                              <- xx
-  , Just  (XVar u,     [xTK, xTA, _xD, xS]) 
-                                        <- takeXApps xx
-  , UName (FatName _ (NameVar v))       <- u
-  , isPrefixOf "toVector_" v
-  = do  args'   <- mapM detect [xTK, xTA, xS]
-        return  $ xApps (xOpSeries OpSeriesCreate) args'
-
   -- Detect reduce
   | XApp{}                              <- xx
   , Just  (XVar uReduce, [xTK, xTA, _xD, xRef, xF, xZ, xS])
@@ -142,24 +133,6 @@ instance Detect (Exp a) where
   , isPrefixOf "reduce_" vReduce
   = do  args'   <- mapM detect [xTK, xTA, xRef, xF, xZ, xS]
         return  $ xApps (xOpSeries OpSeriesReduce) args'
-
-  -- Detect fold
-  | XApp{}                              <- xx
-  , Just  (XVar uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    
-                                        <- takeXApps xx
-  , UName (FatName _ (NameVar vFold))   <- uFold
-  , isPrefixOf "fold_" vFold
-  = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $ xApps (xOpSeries OpSeriesFold) args'
-
-  -- Detect foldIndex
-  | XApp{}                              <- xx
-  , Just  (XVar uFold, [xTK, xTA, xTB, _xD, xF, xZ, xS])    
-                                        <- takeXApps xx
-  , UName (FatName _ (NameVar vFold))   <- uFold
-  , isPrefixOf "foldIndex_" vFold
-  = do  args'   <- mapM detect [xTK, xTA, xTB, xF, xZ, xS]
-        return  $ xApps (xOpSeries OpSeriesFoldIndex) args'
 
   -- Detect map
   | XApp{}                              <- xx
@@ -211,6 +184,14 @@ instance Detect (Exp a) where
             ty    = typeDaConFlow tuple
         return  $ xApps (XCon $ mkDaConAlg (NameDaConFlow tuple) ty)
                         args'
+
+  -- Detect process joins.
+  | XApp{}                              <- xx
+  , Just (XVar uJoin, args )            <- takeXApps xx
+  , UName (FatName _ (NameVar v))       <- uJoin
+  , isPrefixOf "%_" v
+  = do  args'   <- mapM detect args
+        return  $ xApps (xOpSeries (OpSeriesJoin)) args'
 
   -- Inject type arguments for arithmetic ops.
   --   In the Core code, arithmetic operations are expressed as monomorphic

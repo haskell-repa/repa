@@ -1,12 +1,14 @@
 
 module Data.Array.Repa.Series.Process
         ( Process (..)
-        , with, (%)
+        , makeProcess
+        , pjoin, (%)
         , runProcess
         , runProcess2)
 where
 import Data.Array.Repa.Series.Series
 import Data.Array.Repa.Series.Vector
+import Data.Array.Repa.Series.Prim.Utils
 import Data.Vector.Primitive                    (Prim)
 import qualified Data.Vector.Primitive          as P
 import qualified Data.Array.Repa.Series.Vector  as V
@@ -19,16 +21,24 @@ data Process
         = Process (IO ())
 
 
+makeProcess :: (World -> World) -> Process
+makeProcess f
+ = Process $ wrapIO1 (\w -> (# f w, () #))
+{-# INLINE [0] makeProcess #-}
+
+
 -- | Combine two processes.
-with :: Process -> Process -> Process
-with (Process a1) (Process a2)
+pjoin :: Process -> Process -> Process
+pjoin (Process a1) (Process a2)
  = Process (a1 >> a2)
-{-# INLINE [1] with #-}
+{-# INLINE [1] pjoin #-}
 
 
 infixl %
-(%) = with
+(%) = pjoin
 {-# INLINE (%) #-}
+
+
 
 
 -------------------------------------------------------------------------------

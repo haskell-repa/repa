@@ -16,19 +16,24 @@ repa_primitives =  R.primitives
 
 ---------------------------------------------------------------------
 main
- = do   v1      <- V.fromPrimitive $ P.enumFromN (1 :: Float) 100
-        let rn  =  RateNat (int2Word# 100#)
+ = do   v1      <- V.fromPrimitive $ P.enumFromN (1 :: Float) 10
+        let rn  =  RateNat (int2Word# 10#)
 
         r1      <- Ref.new 666
-        R.runProcess v1 (lower_rreduce rn r1)
+        r2      <- Ref.new 777
+        R.runProcess v1 (lower_rreduce rn r1 r2)
         x1      <- Ref.read r1
-        print x1
+        x2      <- Ref.read r2
+        print (x1, x2)
 
 
 -- Double reduce fusion.
 --  Computation of both reductions is interleaved.
-lower_rreduce :: RateNat k -> Ref Float -> Series k Float -> Process
-lower_rreduce _ ref1 s
+lower_rreduce 
+        :: RateNat k 
+        -> Ref Float -> Ref Float
+        -> Series k Float -> Process
+lower_rreduce _ ref1 ref2 s
  =      R.reduce ref1 (+) 0 s 
  %      R.reduce ref2 (*) 1 s
 {-# NOINLINE lower_rreduce #-}

@@ -14,9 +14,7 @@ import qualified Type                   as G
 import qualified TypeRep                as G
 import qualified TysPrim                as G
 import qualified TysWiredIn             as G
-import qualified MkId                   as G
 import qualified UniqSupply             as G
-import Control.Monad
 
 
 -- | Make a wrapper to call a lowered version of a function from the original
@@ -40,14 +38,20 @@ wrapLowered prims tOrig tLowered vsParam vLowered
                 xBody   <- wrapLowered prims tOrig' tLowered' vsParam' vLowered
                 return  $  G.Lam vOrig xBody
 
-        -- RealWorld handling.
-        --   If the type of the lowered function says it needs the RealWorld token,
-        --   then just give it one. This effectively unsafePerformIOs it.
-        | G.FunTy    tLowered1  tLowered2   <- tLowered
-        , G.TyConApp tcState _              <- tLowered1
+        -- When we get to the (World -> World) functional result then wrap it
+        --   back up as a series process. We're done.
+        | G.FunTy    tLowered1  _       <- tLowered
+        , G.TyConApp tcState _          <- tLowered1
         , tcState == G.statePrimTyCon
-        = do    let vsParam'    = Right (G.Var G.realWorldPrimId) : vsParam
-                wrapLowered prims tOrig tLowered2 vsParam' vLowered
+        = do    
+                -- Arguments to pass to the lowered function.
+                let xsArg       = map   (either (G.Type . G.TyVarTy) id) 
+                                        vsParam
+
+                -- Actual call to the lowered function.
+                let xLowered    = foldl G.App (G.Var vLowered) $ reverse xsArg
+
+                return $ G.App (fst $ prim_makeProcess prims) xLowered 
 
         -- Decend into functions.
         --  Bind the argument with a new var so we can pass it to the lowered
@@ -64,85 +68,7 @@ wrapLowered prims tOrig tLowered vsParam vLowered
         -- We've decended though all the foralls and lambdas and now need
         -- to call the actual lowered function, and marshall its result.
         | otherwise
-        = do    -- Arguments to pass to the lowered function.
-                let xsArg       = map   (either (G.Type . G.TyVarTy) id) 
-                                        vsParam
-
-                -- Actual call to the lowered function.
-                let xLowered    = foldl G.App (G.Var vLowered) $ reverse xsArg
-
-                callLowered prims tOrig tLowered xLowered
-
-
--- | Make the call site for the lowered function.
-callLowered
-        :: Primitives
-        -> G.Type               -- ^ Type of result for original unlowered version.
-        -> G.Type               -- ^ Type of result for lowered version.
-        -> G.CoreExpr           -- ^ Exp that calls the lowered version.
-        -> G.UniqSM G.CoreExpr
-
-callLowered prims tOrig tLowered xLowered
-
-        | G.TyConApp tcState _          <- tLowered
-        , tcState == G.statePrimTyCon
-        = do    
-                vScrut  <- newDummyVar "scrut"  tLowered
-                return  $ G.Case xLowered vScrut tOrig 
-                                [ ( G.DEFAULT, []
-                                   , G.Var (G.dataConWorkId G.unitDataCon)) ]
-
-                
-        -- Assume this function returns a (# World#, ts.. #)               -- TODO: check this.
-        | G.TyConApp _ (_tWorld : tsVal)  <- tLowered
-        = do
-                vScrut  <- newDummyVar "scrut"  tLowered
-                vWorld  <- newDummyVar "world"  G.realWorldStatePrimTy
-                vsVal   <- zipWithM (\i t -> newDummyVar ("val" ++ show i) t)
-                                [0 :: Int ..] tsVal
-
-                -- Unwrap the actual result value.
-                let tOrigVal     = tOrig
-                let tsLoweredVal = tsVal
-                xResult         <- unwrapResultBits prims 
-                                        tOrigVal 
-                                        tsLoweredVal 
-                                        (map G.Var vsVal)
-
-                return  $ G.Case xLowered vScrut tOrig 
-                                [ (G.DataAlt (G.tupleCon G.UnboxedTuple (1 + length tsVal))
-                                        , (vWorld : vsVal)
-                                        , xResult) ]
-
-        | otherwise
-        = error "repa-plugin.Wrap.callLowered: no match"
-
-
-unwrapResultBits
-        :: Primitives
-        -> G.Type               -- ^ Type of result for original version.
-        -> [G.Type]             -- ^ Types of arguments lowered arguments
-        -> [G.CoreExpr]         -- ^ Types of components
-        -> G.UniqSM G.CoreExpr
-
-unwrapResultBits prims tOrig tsBits xsBits
-        | [tBit]                <- tsBits
-        , [xBit]                <- xsBits
-        = repackExp prims tOrig tBit xBit 
-
-        | G.TyConApp tcTup tsOrig <- tOrig
-        , n                       <- length tsOrig
-        , G.tupleTyCon G.BoxedTuple n   == tcTup
-        = do    
-                xsResult        <- mapM (\(tOrig', tLowered, xBit) 
-                                        -> repackExp prims tOrig' tLowered xBit)
-                                $  zip3 tsOrig tsBits xsBits
-
-                return $ G.mkConApp (G.tupleCon G.BoxedTuple n)
-                                    (map G.Type tsOrig ++ xsResult)
-
-        | otherwise
-        = error "unwrapResultBits: failed"
+        = error "wrapLowered: didn't find the IO action"
 
 
 -- Repack ---------------------------------------------------------------------

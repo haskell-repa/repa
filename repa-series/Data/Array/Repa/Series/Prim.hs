@@ -10,6 +10,7 @@ module Data.Array.Repa.Series.Prim
         , primitives )
 where
 import Data.Array.Repa.Series.Rate
+import Data.Array.Repa.Series.Process
 import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Ref       as Ref
@@ -40,6 +41,8 @@ data Primitives
   , prim_tail4          :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
 
     -- Control --------------------------------------------
+  , prim_makeProcess            :: (World -> World) -> Process
+
   , prim_loop                   :: Word#  -> (Word# -> World -> World)
                                 -> World -> World
 
@@ -139,9 +142,10 @@ primitives
   , prim_rateOfSeries           = S.rateOfSeries
   , prim_down4                  = down4
   , prim_tail4                  = tail4
+  , prim_natOfRateNat           = rateOfRateNat
 
     -- Control ---------------------------------
-  , prim_natOfRateNat           = rateOfRateNat
+  , prim_makeProcess            = makeProcess
   , prim_loop                   = repa_loop
   , prim_guard                  = repa_guard
   , prim_split4                 = repa_split4

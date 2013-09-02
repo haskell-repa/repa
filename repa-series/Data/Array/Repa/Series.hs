@@ -19,7 +19,7 @@ module Data.Array.Repa.Series
 
           -- * Processes
         , Process       (..)
-        , with, (%)
+        , pjoin, (%)
         , runProcess
         , runProcess2
 

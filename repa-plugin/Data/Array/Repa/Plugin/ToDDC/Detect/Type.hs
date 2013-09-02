@@ -74,6 +74,10 @@ instance Detect Bound where
          -> makePrim g' (NameTyConFlow (TyConFlowSel 1))
                         (kRate `kFun` kRate `kFun` kData)
 
+         | Just g'      <- matchPrim "Process_" n
+         -> makePrim g' (NameTyConFlow TyConFlowProcess)
+                        kData
+
          -- N-tuples: (,)_ etc. Holds one more than the number of commas
          | Just (str, g')       <- stringPrim n
          , '(':rest             <- str
