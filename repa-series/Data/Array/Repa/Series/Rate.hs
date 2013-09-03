@@ -20,16 +20,18 @@ data RateNat k
         = RateNat Word#
 
 
+-- | Take the rate of a `RateNat`.
 rateOfRateNat :: RateNat k -> Word#
 rateOfRateNat (RateNat len) 
         = len
-{-# INLINE rateOfRateNat #-}
+{-# INLINE [1] rateOfRateNat #-}
 
 
+-- | Wrap an Int into a `RateNat`.
 rateNatOfInt  :: Int -> RateNat k
 rateNatOfInt (I# i)
         = RateNat (int2Word# i)
-{-# INLINE rateNatOfInt #-}
+{-# INLINE [1] rateNatOfInt #-}
 
 
 -- Represents the quotient of a rate divided by the multiplier.

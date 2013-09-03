@@ -23,114 +23,102 @@ import Data.Array.Repa.Series.Prim.Double
 import GHC.Exts
 import GHC.Types
 
-type WW_        = World -> World
-type WW a       = World -> (# World, a #)
-
 
 -- | Primitives needed by the repa-plugin.
 data Primitives
   = Primitives
   { -- Types ----------------------------------------------
-    prim_Series         :: forall k a. Series k a
-  , prim_Vector         :: forall a.   Vector a
-  , prim_Ref            :: forall a.   Ref a
-  , prim_Down4          :: forall k.   Down4 k
-  , prim_Tail4          :: forall k.   Tail4 k
+    prim_Series                 :: forall k a. Series k a
+  , prim_Vector                 :: forall a.   Vector a
+  , prim_Ref                    :: forall a.   Ref a
+  , prim_Down4                  :: forall k.   Down4 k
+  , prim_Tail4                  :: forall k.   Tail4 k
 
     -- Series ---------------------------------------------
-  , prim_natOfRateNat   :: forall k.   RateNat k  -> Word#
-  , prim_rateOfSeries   :: forall k a. Series k a -> RateNat k
-  , prim_down4          :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
-  , prim_tail4          :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
+  , prim_natOfRateNat           :: forall k.   RateNat k  -> Word#
+  , prim_rateOfSeries           :: forall k a. Series k a -> RateNat k
+  , prim_down4                  :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
+  , prim_tail4                  :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
 
     -- Control --------------------------------------------
-  , prim_makeProcess            :: (World -> World) -> Process
+  , prim_makeProcess            :: (W -> W) -> Process
 
-  , prim_loop                   :: Word#  -> (Word# -> World -> World)
-                                -> World -> World
+  , prim_loop                   :: Word#  -> (Word# -> W -> W)           
+                                -> W -> W
 
-  , prim_guard                  :: Ref Word -> Bool
-                                -> (Word# -> World -> World)
-                                -> World -> World
+  , prim_guard                  :: Ref Word -> Bool -> (Word# -> W -> W) 
+                                -> W -> W
 
   , prim_split4                 :: forall k
                                 .  RateNat k
-                                -> (RateNat (Down4 k) -> World -> World)
-                                -> (RateNat (Tail4 k) -> World -> World)
-                                -> World -> World
+                                -> (RateNat (Down4 k) -> W -> W)
+                                -> (RateNat (Tail4 k) -> W -> W)
+                                -> W -> W
 
     -- Int ------------------------------------------------
-  , prim_newRefInt              :: Int#    -> World -> (# World, Ref Int #) 
-  , prim_readRefInt             :: Ref Int -> World -> (# World, Int# #)
-  , prim_writeRefInt            :: Ref Int -> Int#  -> World -> World
+  , prim_newRefInt              :: Int#                                 -> W -> (# W, Ref Int #)
+  , prim_readRefInt             :: Ref Int                              -> W -> (# W, Int# #)
+  , prim_writeRefInt            :: Ref Int -> Int#                      -> W -> W
 
-  , prim_newVectorInt           :: Word# -> World -> (# World, Vector Int #)
-  , prim_readVectorInt          :: Vector Int -> Word# -> World -> (# World, Int# #)
-  , prim_writeVectorInt         :: Vector Int -> Word# -> Int# -> World -> World
-  , prim_sliceVectorInt         :: Word# -> Vector Int -> World -> (# World, Vector Int #)
+  , prim_newVectorInt           :: Word#                                -> W -> (# W, Vector Int #)
+  , prim_readVectorInt          :: Vector Int -> Word#                  -> W -> (# W, Int# #)
+  , prim_writeVectorInt         :: Vector Int -> Word# -> Int#          -> W -> W
+  , prim_sliceVectorInt         :: Word# -> Vector Int                  -> W -> (# W, Vector Int #)
 
   , prim_nextInt                :: forall k
-                                .  Series k Int -> Word#
-                                -> World -> (# World, Int# #)
+                                .  Series k Int -> Word#                -> W -> (# W, Int# #)
 
     -- Word ------------------------------------------------
-  , prim_newRefWord             :: Word#    -> World -> (# World, Ref Word #) 
-  , prim_readRefWord            :: Ref Word -> World -> (# World, Word# #)
-  , prim_writeRefWord           :: Ref Word -> Word#  -> World -> World
+  , prim_newRefWord             :: Word#                                -> W -> (# W, Ref Word  #)
+  , prim_readRefWord            :: Ref Word                             -> W -> (# W, Word# #)
+  , prim_writeRefWord           :: Ref Word -> Word#                    -> W -> W
 
-  , prim_newVectorWord          :: Word# -> World -> (# World, Vector Word #)
-  , prim_readVectorWord         :: Vector Word -> Word# -> World -> (# World, Word# #)
-  , prim_writeVectorWord        :: Vector Word -> Word# -> Word# -> World -> World
-  , prim_sliceVectorWord        :: Word# -> Vector Word -> World -> (# World, Vector Word #)
+  , prim_newVectorWord          :: Word#                                -> W -> (# W, Vector Word #)
+  , prim_readVectorWord         :: Vector Word -> Word#                 -> W -> (# W, Word# #)
+  , prim_writeVectorWord        :: Vector Word -> Word# -> Word#        -> W -> W
+  , prim_sliceVectorWord        :: Word# -> Vector Word                 -> W -> (# W, Vector Word #)
 
   , prim_nextWord               :: forall k
-                                .  Series k Word -> Word#
-                                -> World -> (# World, Word# #)
+                                .  Series k Word -> Word#               -> W -> (# W, Word# #)
 
     -- Float ------------------------------------------------
+  , prim_newRefFloat            :: Float#                               -> W -> (# W, Ref Float #)
+  , prim_readRefFloat           :: Ref Float                            -> W -> (# W, Float# #)
+  , prim_writeRefFloat          :: Ref Float -> Float#                  -> W -> W
+
+  , prim_newVectorFloat         :: Word#                                -> W -> (# W, Vector Float #)
+  , prim_readVectorFloat        :: Vector Float -> Word#                -> W -> (# W, Float# #)
+  , prim_writeVectorFloat       :: Vector Float -> Word# -> Float#      -> W -> W
+  , prim_writeVectorFloatX4     :: Vector Float -> Word# -> FloatX4#    -> W -> W
+  , prim_sliceVectorFloat       :: Word# -> Vector Float                -> W -> (# W, Vector Float #)
+
+  , prim_nextFloat              :: forall k
+                                .  Series k Float -> Word#              -> W -> (# W, Float# #)
+
+  , prim_next4Float             :: forall k
+                                .  Series (Down4 k) Float -> Word#      -> W -> (# W, FloatX4# #)
+
   , prim_projFloatX4_0          :: FloatX4# -> Float#
   , prim_projFloatX4_1          :: FloatX4# -> Float#
   , prim_projFloatX4_2          :: FloatX4# -> Float#
   , prim_projFloatX4_3          :: FloatX4# -> Float#
 
-  , prim_newRefFloat            :: Float#    -> World -> (# World, Ref Float #) 
-  , prim_readRefFloat           :: Ref Float -> World -> (# World, Float# #)
-  , prim_writeRefFloat          :: Ref Float -> Float#  -> World -> World
-
-  , prim_newVectorFloat         :: Word# -> World -> (# World, Vector Float #)
-  , prim_readVectorFloat        :: Vector Float -> Word# -> World -> (# World, Float# #)
-  , prim_writeVectorFloat       :: Vector Float -> Word# -> Float#   -> World -> World
-  , prim_sliceVectorFloat       :: Word# -> Vector Float -> World -> (# World, Vector Float #)
-
-  , prim_nextFloat              :: forall k
-                                .  Series k Float -> Word#
-                                -> World -> (# World, Float# #)
-
-  , prim_next4Float             :: forall k
-                                .  Series (Down4 k) Float -> Word#
-                                -> World -> (# World, FloatX4# #)
-
-  , prim_writeVectorFloatX4     :: Vector Float -> Word# -> FloatX4# -> World -> World
-  
     -- Double ------------------------------------------------
-  , prim_newRefDouble           :: Double#    -> World -> (# World, Ref Double #) 
-  , prim_readRefDouble          :: Ref Double -> World -> (# World, Double# #)
-  , prim_writeRefDouble         :: Ref Double -> Double#  -> World -> World
+  , prim_newRefDouble           :: Double#                              -> W -> (# W, Ref Double #)
+  , prim_readRefDouble          :: Ref Double                           -> W -> (# W, Double# #)
+  , prim_writeRefDouble         :: Ref Double -> Double#                -> W -> W
 
-  , prim_newVectorDouble        :: Word# -> World -> (# World, Vector Double #)
-  , prim_readVectorDouble       :: Vector Double -> Word# -> World -> (# World, Double# #)
-  , prim_writeVectorDouble      :: Vector Double -> Word# -> Double# -> World -> World
-  , prim_sliceVectorDouble      :: Word# -> Vector Double -> World -> (# World, Vector Double #)
+  , prim_newVectorDouble        :: Word#                                -> W -> (# W, Vector Double #)
+  , prim_readVectorDouble       :: Vector Double -> Word#               -> W -> (# W, Double# #)
+  , prim_writeVectorDouble      :: Vector Double -> Word# -> Double#    -> W -> W
+  , prim_writeVectorDoubleX2    :: Vector Double -> Word# -> DoubleX2#  -> W -> W
+  , prim_sliceVectorDouble      :: Word# -> Vector Double               -> W -> (# W, Vector Double #)
 
   , prim_nextDouble             :: forall k
-                                .  Series k Double -> Word#
-                                -> World -> (# World, Double# #)
+                                .  Series k Double -> Word#             -> W -> (# W, Double# #)
 
   , prim_next2Double            :: forall k
-                                .  Series (Down2 k) Float -> Word#
-                                -> World -> (# World, DoubleX2# #)
-
-  , prim_writeVectorDoubleX2    :: Vector Double -> Word# -> DoubleX2# -> World -> World
+                                .  Series (Down2 k) Float -> Word#      -> W -> (# W, DoubleX2# #)
   }
 
 
@@ -182,11 +170,6 @@ primitives
   , prim_nextWord               = repa_nextWord
 
     -- Float --------------------------------------
-  , prim_projFloatX4_0          = \x -> case unpackFloatX4# x of { (# f, _, _, _ #) -> f }
-  , prim_projFloatX4_1          = \x -> case unpackFloatX4# x of { (# _, f, _, _ #) -> f }
-  , prim_projFloatX4_2          = \x -> case unpackFloatX4# x of { (# _, _, f, _ #) -> f }
-  , prim_projFloatX4_3          = \x -> case unpackFloatX4# x of { (# _, _, _, f #) -> f }
-
   , prim_newRefFloat            = repa_newRefFloat
   , prim_readRefFloat           = repa_readRefFloat
   , prim_writeRefFloat          = repa_writeRefFloat
@@ -194,12 +177,16 @@ primitives
   , prim_newVectorFloat         = repa_newVectorFloat
   , prim_readVectorFloat        = repa_readVectorFloat
   , prim_writeVectorFloat       = repa_writeVectorFloat
+  , prim_writeVectorFloatX4     = \vec ix val -> unwrapIO_ (writeFloatX4 vec ix val)
   , prim_sliceVectorFloat       = repa_sliceVectorFloat
 
   , prim_nextFloat              = repa_nextFloat
-  
   , prim_next4Float             = repa_next4Float
-  , prim_writeVectorFloatX4     = \vec ix val -> unwrapIO_ (writeFloatX4 vec ix val)
+
+  , prim_projFloatX4_0          = \x -> case unpackFloatX4# x of { (# f, _, _, _ #) -> f }
+  , prim_projFloatX4_1          = \x -> case unpackFloatX4# x of { (# _, f, _, _ #) -> f }
+  , prim_projFloatX4_2          = \x -> case unpackFloatX4# x of { (# _, _, f, _ #) -> f }
+  , prim_projFloatX4_3          = \x -> case unpackFloatX4# x of { (# _, _, _, f #) -> f }
 
     -- Double --------------------------------------
   , prim_newRefDouble           = repa_newRefDouble
@@ -209,11 +196,10 @@ primitives
   , prim_newVectorDouble        = repa_newVectorDouble
   , prim_readVectorDouble       = repa_readVectorDouble
   , prim_writeVectorDouble      = repa_writeVectorDouble
+  , prim_writeVectorDoubleX2    = \vec ix val -> unwrapIO_ (writeDoubleX2 vec ix val)
   , prim_sliceVectorDouble      = repa_sliceVectorDouble
 
   , prim_nextDouble             = repa_nextDouble
   , prim_next2Double            = repa_next2Double
-
-  , prim_writeVectorDoubleX2    = \vec ix val -> unwrapIO_ (writeDoubleX2 vec ix val)
   }
 

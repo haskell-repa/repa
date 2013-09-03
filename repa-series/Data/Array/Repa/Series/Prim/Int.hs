@@ -9,59 +9,58 @@ import GHC.Exts
 import GHC.Types
 
 
--- Ref
-repa_newRefInt          :: Int# -> World -> (# World, Ref Int #)
+-- Ref ------------------------------------------------------------------------
+repa_newRefInt          :: Int# -> W -> (# W, Ref Int #)
 repa_newRefInt x        = unwrapIO' (Ref.new (I# x))
-{-# INLINE repa_newRefInt #-}
+{-# INLINE [1] repa_newRefInt #-}
 
 
-repa_readRefInt         :: Ref Int -> World -> (# World, Int# #)
+repa_readRefInt         :: Ref Int -> W -> (# W, Int# #)
 repa_readRefInt ref
  = case Ref.read ref of
         IO f -> \world
              -> case f world of
                         (# world', I# i #) -> (# world', i #)
-{-# INLINE repa_readRefInt #-}
+{-# INLINE [1] repa_readRefInt #-}
 
 
-repa_writeRefInt        :: Ref Int -> Int# -> World -> World
+repa_writeRefInt        :: Ref Int -> Int# -> W -> W
 repa_writeRefInt ref val = unwrapIO_ (Ref.write ref (I# val))
-{-# INLINE repa_writeRefInt #-}
+{-# INLINE [1] repa_writeRefInt #-}
 
 
--- Vector
-repa_newVectorInt       :: Word#  -> World -> (# World, Vector Int #)
+-- Vector ---------------------------------------------------------------------
+repa_newVectorInt       :: Word#  -> W -> (# W, Vector Int #)
 repa_newVectorInt len    = unwrapIO' (V.new' len)
-{-# INLINE repa_newVectorInt #-}
+{-# INLINE [1] repa_newVectorInt #-}
 
 
-repa_readVectorInt      :: Vector Int -> Word# -> World -> (# World, Int# #)
+repa_readVectorInt      :: Vector Int -> Word# -> W -> (# W, Int# #)
 repa_readVectorInt vec ix
  = case V.read vec ix of
         IO f -> \world 
              -> case f world of
                         (# world', I# i #) -> (# world', i #)
-{-# INLINE repa_readVectorInt #-}
+{-# INLINE [1] repa_readVectorInt #-}
 
 
-repa_writeVectorInt     :: Vector Int -> Word# -> Int# -> World -> World
+repa_writeVectorInt     :: Vector Int -> Word# -> Int# -> W -> W
 repa_writeVectorInt vec ix val   
         = unwrapIO_ (V.write vec ix (I# val))
-{-# INLINE repa_writeVectorInt #-}
+{-# INLINE [1] repa_writeVectorInt #-}
 
 
-repa_sliceVectorInt     :: Word# -> Vector Int -> World -> (# World, Vector Int #)
+repa_sliceVectorInt     :: Word# -> Vector Int -> W -> (# W, Vector Int #)
 repa_sliceVectorInt len vec   
         = unwrapIO' (V.take len vec)
-{-# INLINE repa_sliceVectorInt #-}
+{-# INLINE [1] repa_sliceVectorInt #-}
 
 
--- Series
--- | Get the next element of a series.
-repa_nextInt    :: Series k Int -> Word# -> World -> (# World, Int# #)
+-- Series ---------------------------------------------------------------------
+repa_nextInt    :: Series k Int -> Word# -> W -> (# W, Int# #)
 repa_nextInt s ix world
  = case S.index s ix of
         I# i    -> (# world, i #)
-{-# INLINE repa_nextInt #-}
+{-# INLINE [1] repa_nextInt #-}
 
 

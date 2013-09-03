@@ -10,12 +10,10 @@ import GHC.Exts
 import GHC.Types
 import Debug.Trace
 
+
 -- Loop combinators -----------------------------------------------------------
 -- | Primitive stateful loop combinator.
-repa_loop
-        :: Word#  
-        -> (Word# -> World -> World) -> World -> World
-
+repa_loop       :: Word# -> (Word# -> W -> W) -> W -> W
 repa_loop len worker world0
  = go (int2Word# 0#) world0
  where  
@@ -25,15 +23,11 @@ repa_loop len worker world0
 
          | world' <- worker ix world
          = go (plusWord# ix (int2Word# 1#)) world'
-{-# INLINE repa_loop #-}
+{-# INLINE [1] repa_loop #-}
 
 
 -- | Guard an inner context with a flag.
-repa_guard
-        :: Ref Word -> Bool
-        -> (Word# -> World -> World)
-        -> World -> World
-
+repa_guard      :: Ref Word -> Bool -> (Word# -> W -> W) -> W -> W
 repa_guard ref flag worker w0
  | False        <- flag
  = w0
@@ -42,16 +36,16 @@ repa_guard ref flag worker w0
  , w2           <- repa_writeRefWord ref (plusWord# ix (int2Word# 1#)) w1
  , w3           <- worker ix w2
  = w3
-{-# INLINE repa_guard #-}
+{-# INLINE [1] repa_guard #-}
 
 
 -- | Process 4-element chunks with one function, and the rest with some other.
-repa_split4  
+repa_split4     
         :: forall k
         .  RateNat k 
-        -> (RateNat (Down4 k) -> World -> World)
-        -> (RateNat (Tail4 k) -> World -> World)
-        -> World -> World
+        -> (RateNat (Down4 k) -> W -> W)
+        -> (RateNat (Tail4 k) -> W -> W)
+        -> W -> W
 
 repa_split4 (RateNat len) goDown4 goTail4 w0
  | chunks       <- len `quotWord#` (int2Word# 4#)
@@ -59,5 +53,5 @@ repa_split4 (RateNat len) goDown4 goTail4 w0
  , w1           <- goDown4 (RateNat chunks) w0
  , w2           <- goTail4 (RateNat leftover) w1
  = w2
-{-# INLINE repa_split4 #-}
+{-# INLINE [1] repa_split4 #-}
 

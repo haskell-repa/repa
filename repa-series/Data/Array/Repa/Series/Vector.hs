@@ -44,7 +44,7 @@ instance (Prim a, Show a) => Show (Vector a) where
 length :: Vector a -> Word#
 length vec
         = vectorLength vec
-{-# INLINE length #-}
+{-# INLINE [1] length #-}
 
 
 
@@ -53,27 +53,27 @@ new'  :: Prim a => Word# -> IO (Vector a)
 new' len
  = do   vec     <- PM.new (I# (word2Int# len))
         return  $ Vector len vec
-{-# INLINE new' #-}
+{-# INLINE [1] new' #-}
 
 
 new :: Prim a => Int -> IO (Vector a)
 new (I# len)
         = new' (int2Word# len)
-{-# INLINE new #-}
+{-# INLINE [1] new #-}
 
 
 -- | Read a value from a vector.
 read :: Prim a => Vector a -> Word# -> IO a
 read vec ix
         = PM.unsafeRead (vectorData vec) (I# (word2Int# ix))
-{-# INLINE read #-}
+{-# INLINE [1] read #-}
 
 
 -- | Write a value into a vector.
 write :: Prim a => Vector a -> Word# -> a -> IO ()
 write vec ix val
         = PM.unsafeWrite (vectorData vec) (I# (word2Int# ix)) val
-{-# INLINE write #-}
+{-# INLINE [1] write #-}
 
 
 -- | Write a packed FloatX4 into a `Vector`
@@ -84,7 +84,7 @@ writeFloatX4 v ix val
  = wrapIO_ (writeFloatX4Array# mba 
                         (start +# ((word2Int# ix) *# 4#))
                         val)
-{-# INLINE writeFloatX4 #-}
+{-# INLINE [1] writeFloatX4 #-}
 
 
 -- | Write a packed DoubleX2 into a `Vector`
@@ -95,7 +95,7 @@ writeDoubleX2 v ix val
  = wrapIO_ (writeDoubleX2Array# mba 
                         (start +# ((word2Int# ix) *# 4#))
                         val)
-{-# INLINE writeDoubleX2 #-}
+{-# INLINE [1] writeDoubleX2 #-}
 
 
 -- | Take the first n elements of a vector
@@ -103,7 +103,7 @@ take :: Prim a => Word# -> Vector a -> IO (Vector a)
 take len (Vector _ mvec)
  = do   return  $ Vector len 
                 $ PM.unsafeTake (I# (word2Int# len)) mvec
-{-# INLINE take #-}
+{-# INLINE [1] take #-}
 
 
 -- | O(1). Unsafely convert from an Primitive vector.
@@ -114,7 +114,7 @@ fromPrimitive vec
  = do   let !(I# len)   =  P.length vec
         mvec            <- P.unsafeThaw vec
         return $ Vector (int2Word# len) mvec
-{-# INLINE fromPrimitive #-}
+{-# INLINE [1] fromPrimitive #-}
 
 
 -- | O(1). Unsafely convert to an Primitive vector.
@@ -123,5 +123,5 @@ fromPrimitive vec
 toPrimitive :: Prim a => Vector a -> IO (P.Vector a)
 toPrimitive (Vector _ mvec)
  =      P.unsafeFreeze mvec
-{-# INLINE toPrimitive #-}
+{-# INLINE [1] toPrimitive #-}
 

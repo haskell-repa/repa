@@ -24,10 +24,11 @@ data Process
         = Process (IO ())
 
 
+-- | Wrap a World to World function into a process.
 makeProcess :: (World -> World) -> Process
 makeProcess f
  = Process $ wrapIO1 (\w -> (# f w, () #))
-{-# INLINE [0] makeProcess #-}
+{-# INLINE [1] makeProcess #-}
 
 
 -- | Combine two processes.
@@ -40,6 +41,7 @@ pjoin (Process a1) (Process a2)
 infixl %
 (%) = pjoin
 {-# INLINE (%) #-}
+--  INLINE here needs to happen before lowering to expose the pjoin name.
 
 
 -------------------------------------------------------------------------------
