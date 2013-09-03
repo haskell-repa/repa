@@ -51,14 +51,15 @@ infixl %
 runProcess
  :: Prim a
  => Vector a 
- -> (forall k. Series k a -> Process)  
+ -> (forall k. RateNat k -> Series k a -> Process)  
                         -- ^ worker function
  -> IO ()
 
 runProcess v1 f
  | l1  <- V.length v1
  = do   u1      <- V.toPrimitive v1
-        let (Process go) = f (Series (int2Word# 0#) l1 u1)
+        let rn          = RateNat l1
+            Process go  = f rn (Series (int2Word# 0#) l1 u1)
         go
 {-# INLINE [1] runProcess #-}
 
@@ -68,7 +69,7 @@ runProcess v1 f
 runProcess2 
  ::               (Prim a,       Prim b)
  =>              Vector a   -> Vector b
- -> (forall k. Series k a -> Series k b -> Process)  
+ -> (forall k. RateNat k -> Series k a -> Series k b -> Process)  
                         -- ^ worker function
  -> IO Bool
 
@@ -77,8 +78,10 @@ runProcess2 v1 v2 f
  , l2 <- V.length v2, eqWord# l1 l2
  = do   u1      <- V.toPrimitive v1
         u2      <- V.toPrimitive v2
-        let (Process go) 
-                = f (Series (int2Word# 0#) l1 u1) 
+        let rn  = RateNat l1
+            Process go
+                = f rn
+                    (Series (int2Word# 0#) l1 u1) 
                     (Series (int2Word# 0#) l2 u2)
         x       <- go
         return  True
@@ -93,7 +96,7 @@ runProcess2 v1 v2 f
 runProcess3
  ::               (Prim a,       Prim b,     Prim c)
  =>              Vector a   -> Vector b   -> Vector c
- -> (forall k. Series k a -> Series k b -> Series k c -> Process)  
+ -> (forall k. RateNat k -> Series k a -> Series k b -> Series k c -> Process)  
                         -- ^ worker function
  -> IO Bool
 
@@ -104,8 +107,10 @@ runProcess3 v1 v2 v3 f
  = do   u1      <- V.toPrimitive v1
         u2      <- V.toPrimitive v2
         u3      <- V.toPrimitive v3
-        let (Process go) 
-                = f (Series (int2Word# 0#) l1 u1) 
+        let rn  = RateNat l1
+            Process go
+                = f rn
+                    (Series (int2Word# 0#) l1 u1) 
                     (Series (int2Word# 0#) l2 u2)
                     (Series (int2Word# 0#) l3 u3)
         x       <- go
@@ -122,7 +127,7 @@ runProcess4
  ::           (Prim a,       Prim b,     Prim c,  Prim d)
  =>          Vector a   -> Vector b   -> Vector c   -> Vector d
  -> (forall k. RateNat k 
-        -> Series k a -> Series k b -> Series k c -> Series k d -> Process)  
+            -> Series k a -> Series k b -> Series k c -> Series k d -> Process)  
                         -- ^ worker function
  -> IO Bool
 
@@ -135,8 +140,9 @@ runProcess4 v1 v2 v3 v4 f
         u2      <- V.toPrimitive v2
         u3      <- V.toPrimitive v3
         u4      <- V.toPrimitive v4
-        let (Process go) 
-                = f (RateNat (V.length v1))
+        let rn  = RateNat l1
+            Process go
+                = f rn
                     (Series (int2Word# 0#) l1 u1) 
                     (Series (int2Word# 0#) l2 u2)
                     (Series (int2Word# 0#) l3 u3)

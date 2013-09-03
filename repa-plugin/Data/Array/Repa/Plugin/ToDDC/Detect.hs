@@ -1,6 +1,8 @@
 
 module Data.Array.Repa.Plugin.ToDDC.Detect
-        (detectModule)
+        ( detectModule
+        , Detect (..)
+        , zeroState)
 where
 import Data.Array.Repa.Plugin.FatName
 import Data.Array.Repa.Plugin.ToDDC.Detect.Base

@@ -2,11 +2,13 @@
 module Data.Array.Repa.Plugin.ToDDC.Convert
         (convertModGuts)
 where
+import qualified Data.Array.Repa.Plugin.ToDDC.Detect    as Detect
 import Data.Array.Repa.Plugin.ToDDC.Convert.Base
 import Data.Array.Repa.Plugin.ToDDC.Convert.Type
 import Data.Array.Repa.Plugin.ToDDC.Convert.Var
 import Data.Array.Repa.Plugin.FatName
 import Control.Monad
+import Control.Monad.State.Strict
 import Data.Either
 import Data.List
 import           Data.Map                 (Map)
@@ -131,27 +133,31 @@ convertTopBind bnd
                 return  $  D.LRec bxs'
 
 
-
--- | Convert a single top-level binding.
---   The binding must be named "lower_something"
+-- | If some top-level binding returns a Process then convert it to DDC core
+--   in preparation for lowering.
 convertBinding 
         :: (G.CoreBndr, G.CoreExpr)
         -> Either Fail (D.Bind FatName, D.Exp () FatName)
 
 convertBinding (b, x)
- = do   n       <- convertVarName b
-        case n of
-         D.NameVar str
-           | isPrefixOf "lower" str
-           -> do x'      <- convertExpr x
-                 fn'     <- convertFatName b
-                 t'      <- convertVarType b
-                 return  $ (D.BName fn' t', x')
+ -- We don't want the primitive functions that we generate outselves.
+ | not (isPrefixOf "prim_" (stringOfGhcName $ G.varName b))
 
-           | otherwise
-           -> Left FailNotMarked
+ -- See if the binding builds a process.
+ , Right tB_conv<- convertType (G.varType b)
+ , tB           <- evalState (Detect.detect tB_conv) Detect.zeroState
+ , (_, tResult) <- D.takeTFunArgResult $ D.eraseTForalls tB
+ , Just (D.NameTyConFlow D.TyConFlowProcess, _)  <- D.takePrimTyConApps tResult
 
-         _ -> Left (FailDodgyTopLevelBindingName n)
+ -- Convert the right of the binding.
+ = do   x'      <- convertExpr x
+        fn'     <- convertFatName b
+        t'      <- convertVarType b
+        return  $ (D.BName fn' t', x')
+
+ -- This binding wasn't for us.
+ | otherwise
+ = Left FailNotMarked
 
 
 -- Expr -----------------------------------------------------------------------
