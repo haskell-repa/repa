@@ -53,6 +53,12 @@ repa_writeVectorFloat vec ix val
 {-# INLINE [1] repa_writeVectorFloat #-}
 
 
+repa_writeVectorFloatX4 :: Vector Float -> Word# -> FloatX4# -> W -> W
+repa_writeVectorFloatX4 vec ix val
+        = unwrapIO_ (writeFloatX4 vec ix val)
+{-# INLINE [1] repa_writeVectorFloatX4 #-}
+
+
 repa_sliceVectorFloat   :: Word# -> Vector Float -> W -> (# W, Vector Float #)
 repa_sliceVectorFloat len vec   
         = unwrapIO' (V.take len vec)

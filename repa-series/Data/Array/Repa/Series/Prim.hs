@@ -177,7 +177,7 @@ primitives
   , prim_newVectorFloat         = repa_newVectorFloat
   , prim_readVectorFloat        = repa_readVectorFloat
   , prim_writeVectorFloat       = repa_writeVectorFloat
-  , prim_writeVectorFloatX4     = \vec ix val -> unwrapIO_ (writeFloatX4 vec ix val)
+  , prim_writeVectorFloatX4     = repa_writeVectorFloatX4
   , prim_sliceVectorFloat       = repa_sliceVectorFloat
 
   , prim_nextFloat              = repa_nextFloat
@@ -196,7 +196,7 @@ primitives
   , prim_newVectorDouble        = repa_newVectorDouble
   , prim_readVectorDouble       = repa_readVectorDouble
   , prim_writeVectorDouble      = repa_writeVectorDouble
-  , prim_writeVectorDoubleX2    = \vec ix val -> unwrapIO_ (writeDoubleX2 vec ix val)
+  , prim_writeVectorDoubleX2    = repa_writeVectorDoubleX2
   , prim_sliceVectorDouble      = repa_sliceVectorDouble
 
   , prim_nextDouble             = repa_nextDouble

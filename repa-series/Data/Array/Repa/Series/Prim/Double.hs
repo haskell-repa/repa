@@ -49,6 +49,12 @@ repa_writeVectorDouble vec ix val
 {-# INLINE [1] repa_writeVectorDouble #-}
 
 
+repa_writeVectorDoubleX2 :: Vector Double -> Word# -> DoubleX2# -> W -> W
+repa_writeVectorDoubleX2 vec ix val
+        = unwrapIO_ (writeDoubleX2 vec ix val)
+{-# INLINE [1] repa_writeVectorDoubleX2 #-}
+
+
 repa_sliceVectorDouble  :: Word# -> Vector Double -> W -> (# W, Vector Double #)
 repa_sliceVectorDouble len vec   
         = unwrapIO' (V.take len vec)
