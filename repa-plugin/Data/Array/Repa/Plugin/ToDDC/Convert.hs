@@ -261,7 +261,7 @@ convertAlt (con, bs, x)
                 let fat   = FatName (GhcNameTyCon $ G.promoteDataCon dc) nm
 
                 -- It must be algebraic, since we are casing on it.
-                let pat   = D.PData (D.mkDaConAlg fat ty) binds
+                let pat   = D.PData (D.DaConPrim fat ty) binds
                 return $ D.AAlt pat x'
 
          G.LitAlt _ 

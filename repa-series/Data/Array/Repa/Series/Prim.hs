@@ -23,6 +23,9 @@ import Data.Array.Repa.Series.Prim.Double
 import GHC.Exts
 import GHC.Types
 
+type WW_        = World -> World
+type WW a       = World -> (# World, a #)
+
 
 -- | Primitives needed by the repa-plugin.
 data Primitives

@@ -201,8 +201,8 @@ convertExp kenv tenv xx
         -- When we produce unboxed tuple we always want to preserve
         -- the unboxed versions of element types.
         D.XApp _ x1 x2
-         | (D.XCon _ (D.DaCon dn _ _), args)                   <- D.takeXApps1 x1 x2
-         , D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple n)) <- dn
+         | (D.XCon _ dc, args)                  <- D.takeXApps1 x1 x2
+         , D.DaConPrim (D.NameDaConFlow (D.DaConFlowTuple n)) _   <- dc
 
          -- The first n arguments are type parameters, the rest are values
          , (tyxs, vals) <- splitAt n args
@@ -227,31 +227,31 @@ convertExp kenv tenv xx
                         , tRes )
 
         -- Data constructors.                           
-        D.XCon _ (D.DaCon dn _ _)
-         -> case dn of                                          -- TODO: shift into Prim module.
+        D.XCon _ dc
+         -> case dc of                                          -- TODO: shift into Prim module.
                 -- Unit constructor.
                 D.DaConUnit
                  -> return ( G.Var (G.dataConWorkId G.unitDataCon)
                            , G.unitTy )
 
                 -- Int# literal
-                D.DaConNamed (D.NameLitInt i)
+                D.DaConPrim (D.NameLitInt i) _
                  -> return ( G.Lit (G.MachInt i)
                            , G.intPrimTy)
 
                 -- Nat# literal
                 -- Disciple unsigned Nat#s just get squashed onto GHC Int#s.
-                D.DaConNamed (D.NameLitNat i)
+                D.DaConPrim (D.NameLitNat i) _
                  -> return ( G.Lit (G.MachWord i)
                            , G.wordPrimTy)
 
                 -- Float32# literal
-                D.DaConNamed (D.NameLitFloat r 32)
+                D.DaConPrim (D.NameLitFloat r 32) _
                  -> return ( G.Lit (G.MachFloat r)
                            , G.floatPrimTy)
 
                 -- Float64# literal
-                D.DaConNamed (D.NameLitFloat r 64)
+                D.DaConPrim (D.NameLitFloat r 64) _
                  -> return ( G.Lit (G.MachDouble r)
                            , G.doublePrimTy)
 
@@ -392,9 +392,8 @@ convertExp kenv tenv xx
 
         -- Case expressions over n-tuples                       -- TODO: make generic
         D.XCase _ xScrut 
-                 [ D.AAlt (D.PData dacon binders) x1]
-         | D.DaCon dn _ _                                      <- dacon
-         , D.DaConNamed (D.NameDaConFlow (D.DaConFlowTuple n)) <- dn
+                 [ D.AAlt (D.PData dc binders) x1]
+         | D.DaConPrim (D.NameDaConFlow (D.DaConFlowTuple n)) _ <- dc
          , length binders == n
          -> do  
                 (xScrut', tScrut')  <- convertExp kenv tenv xScrut
@@ -417,10 +416,8 @@ convertExp kenv tenv xx
         D.XCase _ xScrut 
                  [ D.AAlt (D.PData dc1 []) x1,
                    D.AAlt (D.PData dc2 []) x2 ]
-         | D.DaCon dn1 _ _                    <- dc1
-         , D.DaConNamed (D.NameLitBool False) == dn1
-         , D.DaCon dn2 _ _                    <- dc2
-         , D.DaConNamed (D.NameLitBool True)  == dn2
+         | D.DaConPrim (D.NameLitBool False) _ <- dc1
+         , D.DaConPrim (D.NameLitBool True)  _ <- dc2
          -> do  
                 (xScrut', tScrut')  <- convertExp kenv tenv xScrut
                 vScrut'             <- newDummyVar "scrut" tScrut'
@@ -466,24 +463,21 @@ convertAlt kenv tenv aalt
 
  -- Alternative matching an Int.
  |  D.AAlt (D.PData dc []) x            <- aalt
- ,  D.DaCon dn _ _                      <- dc
- ,  D.DaConNamed (D.NameLitInt i)       <- dn
+ ,  D.DaConPrim (D.NameLitInt i) _      <- dc
  =  do  (x', t')        <- convertExp kenv tenv x
         return  ( ( G.LitAlt (G.MachInt i), [], x')
                 , t')
 
  -- Alternative matching an Nat.
  |  D.AAlt (D.PData dc []) x            <- aalt
- ,  D.DaCon dn _ _                      <- dc
- ,  D.DaConNamed (D.NameLitNat i)       <- dn
+ ,  D.DaConPrim (D.NameLitNat i) _      <- dc
  =  do  (x', t')        <- convertExp kenv tenv x
         return  ( ( G.LitAlt (G.MachWord i), [], x')
                 , t')
 
  -- Alternative matching a Bool
  |  D.AAlt (D.PData dc []) x            <- aalt
- ,  D.DaCon dn _ _                      <- dc
- ,  D.DaConNamed (D.NameLitBool flag)   <- dn
+ ,  D.DaConPrim (D.NameLitBool flag) _  <- dc
  =  do  (x', t')        <- convertExp kenv tenv x
         let altcon = case flag of
                         True    -> G.LitAlt (G.MachInt 1)

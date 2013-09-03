@@ -73,37 +73,34 @@ detectMap  m
 
 -- DaCon ----------------------------------------------------------------------
 instance Detect DaCon where
- detect (DaCon dcn t isAlg)
-  = do  dcn'    <- detect dcn
-        t'      <- detect t
-        return  $  DaCon dcn' t' isAlg
-
-
-instance Detect DaConName where
- detect dcn
-  = case dcn of
-        DaConUnit       
+ detect dc
+  = case dc of
+        DaConUnit
          -> return DaConUnit
 
+        DaConPrim (FatName _g d) t
+         -> do  t'      <- detect t
+                return  $  DaConPrim d t'
+
         -- Booleans
-        DaConNamed (FatName g d@(NameCon v))
+        DaConBound (FatName g d@(NameCon v))
          | isPrefixOf "True_" v
          -> do  collect d g
-                return $ DaConNamed (NameLitBool True)
+                return $ DaConBound (NameLitBool True)
 
-        DaConNamed (FatName g d@(NameCon v))
+        DaConBound (FatName g d@(NameCon v))
          | isPrefixOf "False_" v
          -> do  collect d g
-                return $ DaConNamed (NameLitBool False)
+                return $ DaConBound (NameLitBool False)
                                                         
-        DaConNamed (FatName g d@(NameVar v))    -- TODO This should have been a NameCon
+        DaConBound (FatName g d@(NameVar v))    -- TODO This should have been a NameCon
          | isPrefixOf "(,)_" v
          -> do  collect d g
-                return $ DaConNamed (NameDaConFlow (DaConFlowTuple 2))
+                return $ DaConBound (NameDaConFlow (DaConFlowTuple 2))
 
-        DaConNamed (FatName g d)
+        DaConBound (FatName g d)
          -> do  collect d g
-                return $ DaConNamed d
+                return $ DaConBound d
 
 
 -- Exp ------------------------------------------------------------------------
@@ -178,7 +175,7 @@ instance Detect (Exp a) where
   = do  args'   <- mapM detect args
         let tuple = DaConFlowTuple size
             ty    = typeDaConFlow tuple
-        return  $ xApps (XCon $ mkDaConAlg (NameDaConFlow tuple) ty)
+        return  $ xApps (XCon $ DaConPrim (NameDaConFlow tuple) ty)
                         args'
 
   -- Detect reduce

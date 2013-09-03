@@ -79,19 +79,19 @@ convertLiteral lit
  = case lit of
         G.MachInt i 
          -> let fn = FatName (GhcNameLiteral lit) (D.NameLitInt i)
-            in  return $ D.mkDaConAlg fn tIntU'
+            in  return $ D.DaConPrim fn tIntU'
 
         G.MachWord w
          -> let fn = FatName (GhcNameLiteral lit) (D.NameLitNat w)
-            in  return $ D.mkDaConAlg fn tNatU'
+            in  return $ D.DaConPrim fn tNatU'
 
         G.MachFloat r
          -> let fn = FatName (GhcNameLiteral lit) (D.NameLitFloat r 32)
-            in  return $ D.mkDaConAlg fn tFloat32U'
+            in  return $ D.DaConPrim fn tFloat32U'
 
         G.MachDouble r
          -> let fn = FatName (GhcNameLiteral lit) (D.NameLitFloat r 64)
-            in  return $ D.mkDaConAlg fn tFloat64U'
+            in  return $ D.DaConPrim fn tFloat64U'
 
         _ -> Left (FailUnhandledLiteral lit)
 
