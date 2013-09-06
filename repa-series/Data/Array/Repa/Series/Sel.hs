@@ -23,7 +23,7 @@ mkSel1  :: Series k1 Word8
         -> (forall k2. Sel1 k1 k2 -> a)
         -> a
 
-mkSel1 (Series _ len vec) worker
+mkSel1 (Series _ len _ _ vec) worker
  = worker       $ Sel1
                 { sel1Length    = len
                 , sel1Flags     = vec }

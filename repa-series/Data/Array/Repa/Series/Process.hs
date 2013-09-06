@@ -57,9 +57,9 @@ runProcess
 
 runProcess v1 f
  | l1  <- V.length v1
- = do   u1      <- V.toPrimitive v1
+ = do   s1      <- unsafeFromVector v1
         let rn          = RateNat l1
-            Process go  = f rn (Series (int2Word# 0#) l1 u1)
+            Process go  = f rn s1
         go
 {-# INLINE [1] runProcess #-}
 
@@ -76,13 +76,10 @@ runProcess2
 runProcess2 v1 v2 f
  | l1 <- V.length v1
  , l2 <- V.length v2, eqWord# l1 l2
- = do   u1      <- V.toPrimitive v1
-        u2      <- V.toPrimitive v2
-        let rn  = RateNat l1
-            Process go
-                = f rn
-                    (Series (int2Word# 0#) l1 u1) 
-                    (Series (int2Word# 0#) l2 u2)
+ = do   s1      <- unsafeFromVector v1
+        s2      <- unsafeFromVector v2
+        let rn          = RateNat l1
+            Process go  = f rn s1 s2
         x       <- go
         return  True
 
@@ -104,15 +101,11 @@ runProcess3 v1 v2 v3 f
  | l1 <- V.length v1
  , l2 <- V.length v2, eqWord# l1 l2
  , l3 <- V.length v3, eqWord# l2 l3
- = do   u1      <- V.toPrimitive v1
-        u2      <- V.toPrimitive v2
-        u3      <- V.toPrimitive v3
-        let rn  = RateNat l1
-            Process go
-                = f rn
-                    (Series (int2Word# 0#) l1 u1) 
-                    (Series (int2Word# 0#) l2 u2)
-                    (Series (int2Word# 0#) l3 u3)
+ = do   s1      <- unsafeFromVector v1
+        s2      <- unsafeFromVector v2
+        s3      <- unsafeFromVector v3
+        let rn          = RateNat l1
+            Process go  = f rn s1 s2 s3
         x       <- go
         return  True
 
@@ -136,17 +129,12 @@ runProcess4 v1 v2 v3 v4 f
  , l2 <- V.length v2, eqWord# l1 l2
  , l3 <- V.length v3, eqWord# l2 l3
  , l4 <- V.length v4, eqWord# l3 l4
- = do   u1      <- V.toPrimitive v1
-        u2      <- V.toPrimitive v2
-        u3      <- V.toPrimitive v3
-        u4      <- V.toPrimitive v4
-        let rn  = RateNat l1
-            Process go
-                = f rn
-                    (Series (int2Word# 0#) l1 u1) 
-                    (Series (int2Word# 0#) l2 u2)
-                    (Series (int2Word# 0#) l3 u3)
-                    (Series (int2Word# 0#) l4 u4)
+ = do   s1      <- unsafeFromVector v1
+        s2      <- unsafeFromVector v2
+        s3      <- unsafeFromVector v3
+        s4      <- unsafeFromVector v4
+        let rn          = RateNat l1
+            Process go  = f rn s1 s2 s3 s4
         x       <- go
         return  True
 

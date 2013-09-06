@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Series.Vector
-        ( Vector
+        ( Vector        (..)
         , length
         , new, new'
         , read

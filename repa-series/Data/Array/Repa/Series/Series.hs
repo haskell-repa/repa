@@ -8,7 +8,8 @@ module Data.Array.Repa.Series.Series
         , toVector
         , rateOfSeries
         , down4
-        , tail4)
+        , tail4
+        , unsafeFromVector)
 where
 import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Vector            (Vector)
@@ -33,13 +34,15 @@ import Debug.Trace
 --
 data Series k a
         = Series 
-        { seriesStart   :: Word#
-        , seriesLength  :: Word#
-        , seriesVector  :: !(P.Vector a) }  
+        { seriesStart           :: Word#
+        , seriesLength          :: Word#
+        , seriesMBA_start       :: Word#
+        , seriesMBA             :: MutableByteArray# RealWorld
+        , seriesVector          :: !(P.Vector a) }  
 
 -- | Take the length of a series.
 length :: Series k a -> Word#
-length (Series start len d) = len
+length (Series start len _ _ d) = len
 {-# INLINE [1] length #-}
 
 
@@ -52,16 +55,16 @@ rateOfSeries s
 
 -- | Window a series to the initial range of 4 elements.
 down4 :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
-down4 r (Series start len vec)        
-        = Series start len vec
+down4 r (Series start len mba_start mba vec)        
+       = Series start len mba_start mba vec
 {-# INLINE [1] down4 #-}
 
 
 -- | Window a series to the ending elements.
 tail4 :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
-tail4 r (Series start len vec)        
+tail4 r (Series start len mba_start mba vec)        
         = Series (quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#))
-                 len vec
+                 len mba_start mba vec
 {-# INLINE [1] tail4 #-}
 
 
@@ -76,12 +79,14 @@ index s ix
 -- | Retrieve a packed FloatX4 from a `Series`.
 indexFloatX4  :: Series (Down4 k) Float -> Word# -> FloatX4#
 indexFloatX4 s ix
- | P.MVector (I# start) (I# _) (MutableByteArray mba)
-                <- unsafePerformIO (P.unsafeThaw (seriesVector s))
- , (# _, f4 #)  <- readFloatX4Array# mba 
-                        (start +# (word2Int# (seriesStart s)) +# ((word2Int# ix) *# 4#))
-                        realWorld#
- = f4
+ = let  !mba            = seriesMBA s
+        !offset         = word2Int#
+                        ( plusWord# (seriesMBA_start s)
+                        ( plusWord# (seriesStart s)
+                                    (timesWord# ix (int2Word# 4#))))
+
+        (# _, f4 #)     = readFloatX4Array# mba offset realWorld#
+   in   f4
 {-# INLINE [1] indexFloatX4 #-}
 
 
@@ -94,8 +99,23 @@ indexDoubleX2 s ix
 
 -- | Convert a series to a vector, discarding the rate information.
 toVector :: Prim a => Series k a -> Vector a
-toVector (Series _ _ vec) 
+toVector s
  = unsafePerformIO
- $ do   V.fromPrimitive vec
+ $ do   V.fromPrimitive (seriesVector s)
 {-# INLINE [1] toVector #-}
+
+
+-- | Unsafely convert a vector to a series of an arbitrary rate.
+--   
+--   The rate variable in the result is arbitrary,
+--   so a series created this way may not have the same length as others
+--   of the same rate.
+unsafeFromVector :: Prim a => Vector a -> IO (Series k a)
+unsafeFromVector (V.Vector len mv)
+ = do   let !pv@(P.MVector (I# start) (I# _) (MutableByteArray mba))
+                = mv
+        v       <- P.unsafeFreeze mv
+        return $ Series (int2Word# 0#) len (int2Word# start) mba v
+{-# NOINLINE unsafeFromVector #-}
+
 

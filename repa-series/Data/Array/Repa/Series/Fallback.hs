@@ -34,9 +34,9 @@ import System.IO.Unsafe
 map     :: forall k a b. (Prim a, Prim b)
         => (a -> b) -> Series k a -> Series k b
 
-map f (S.Series start len vec)
- = S.Series start len (P.map f vec)
-{-# INLINE [0] map #-}
+map _ _
+ = error "repa-series: fallback map is broken"
+{-# NOINLINE map #-}
 
 
 -- | Like `zipWith`, but for equal-length series
@@ -44,9 +44,9 @@ map2    :: forall k a b c. (Prim a, Prim b, Prim c)
         => (a -> b -> c) -> Series k a -> Series k b
         -> Series k c
 
-map2 f (S.Series start len vec1) (S.Series _ _len vec2)
- = S.Series start len (P.zipWith f vec1 vec2)
-{-# INLINE [0] map2 #-}
+map2 _ _ _ 
+ = error "repa-series: fallback map2 is broken"
+{-# NOINLINE map2 #-}
 
 
 -- | Pack elements of a series using a selector.
@@ -54,7 +54,7 @@ pack    :: forall k1 k2 a. Prim a
         => Sel1 k1 k2 -> Series k1 a -> Series k2 a
 
 pack _ _
- = error "repa-series: Fallback.pack is broken"
+ = error "repa-series: fallback pack is broken"
 {-# NOINLINE pack #-}
 
 
@@ -64,7 +64,7 @@ fill    :: forall k a. Prim a
         => Vector a -> Series k a -> Process
 
 fill vec s
- = error "repa-series: Fallback fill is broken"
+ = error "repa-series: fallback fill is broken"
 {-# NOINLINE fill #-}
 
 
