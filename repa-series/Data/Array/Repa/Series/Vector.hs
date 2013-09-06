@@ -21,7 +21,7 @@ import qualified Data.Vector.Primitive.Mutable  as PM
 import System.IO.Unsafe
 import GHC.Exts
 import Prelude  hiding (length, read, take)
-
+import Debug.Trace
 
 -- | Abstract mutable vector.
 -- 
@@ -72,29 +72,29 @@ read vec ix
 -- | Write a value into a vector.
 write :: Prim a => Vector a -> Word# -> a -> IO ()
 write vec ix val
-        = PM.unsafeWrite (vectorData vec) (I# (word2Int# ix)) val
+ = let  !offset = word2Int# ix
+   in   PM.unsafeWrite (vectorData vec) (I# offset) val
 {-# INLINE [1] write #-}
 
 
 -- | Write a packed FloatX4 into a `Vector`
 writeFloatX4  :: Vector Float -> Word# -> FloatX4# -> IO ()
 writeFloatX4 v ix val
- | P.MVector (I# start) (I# _) (MutableByteArray mba) 
-                <- vectorData v
- = wrapIO_ (writeFloatX4Array# mba 
-                        (start +# ((word2Int# ix) *# 4#))
-                        val)
+ = let  !(P.MVector (I# start) (I# _) (MutableByteArray mba))
+                = vectorData v
+
+        !offset = start +# (word2Int# ix)
+   in   wrapIO_ (writeFloatX4Array# mba offset val)
 {-# INLINE [1] writeFloatX4 #-}
 
 
 -- | Write a packed DoubleX2 into a `Vector`
 writeDoubleX2  :: Vector Double -> Word# -> DoubleX2# -> IO ()
 writeDoubleX2 v ix val
- | P.MVector (I# start) (I# _) (MutableByteArray mba) 
-                <- vectorData v
- = wrapIO_ (writeDoubleX2Array# mba 
-                        (start +# ((word2Int# ix) *# 4#))
-                        val)
+ = let  !(P.MVector (I# start) (I# _) (MutableByteArray mba))
+                = vectorData v
+        !offset = start +# (word2Int# ix)
+   in   wrapIO_ (writeDoubleX2Array# mba offset val)
 {-# INLINE [1] writeDoubleX2 #-}
 
 

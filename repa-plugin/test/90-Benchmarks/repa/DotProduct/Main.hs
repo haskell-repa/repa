@@ -30,9 +30,9 @@ main
         y1 <- V.fromPrimitive $ P.enumFromN 1 sz
         x2 <- V.fromPrimitive $ P.enumFromN 1 sz
         y2 <- V.fromPrimitive $ P.enumFromN 1 sz
-	x1 `seq` y1 `seq` x2 `seq` y2 `seq` return ()
+	v1 `seq` x1 `seq` y1 `seq` x2 `seq` y2 `seq` return ()
 
-        (p1,t)  <- time 
+        (p1, t) <- time 
                 $ do    True    <- R.runProcess4 x1 y1 x2 y2 (lower_dotp v1)
                         p1      <- V.toPrimitive v1
                         p1 `seq` return p1
