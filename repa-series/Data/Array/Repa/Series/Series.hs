@@ -65,14 +65,15 @@ rateOfSeries s  = RateNat (seriesLength s)
 {-# INLINE [1] rateOfSeries #-}
 
 
--- | Window a series to the initial range of 4 elements.                -- TODO: set length.
+-- | Window a series to the initial range of 4 elements.
 down4 :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
 down4 r (Series len start baStart ba vec)        
-       = Series len start baStart ba vec
+ = let  !len'   = minusWord# len (remWord# len (int2Word# 4#))
+   in   Series len' start baStart ba vec
 {-# INLINE [1] down4 #-}
 
 
--- | Window a series to the ending elements.                            -- TODO: also window vec
+-- | Window a series to the ending elements.
 tail4 :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
 tail4 r (Series len start baStart ba vec)        
  = let  !start' = quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#)
@@ -88,7 +89,7 @@ index s ix
 {-# INLINE [1] index #-}
 
 
--- | Retrieve a packed FloatX4 from a `Series`.
+-- | Retrieve a packed FloatX4# from a `Series`.
 indexFloatX4  :: Series (Down4 k) Float -> Word# -> FloatX4#
 indexFloatX4 s ix
  = let  !ba             = seriesByteArray s
@@ -100,10 +101,15 @@ indexFloatX4 s ix
 {-# INLINE [1] indexFloatX4 #-}
 
 
--- | Retrieve a packed DoubleX2 from a `Series`.
+-- | Retrieve a packed DoubleX2# from a `Series`.
 indexDoubleX2 :: Series (Down2 k) Float -> Word# -> DoubleX2#
 indexDoubleX2 s ix
-        = doubleToDoubleX2# (int2Double# 5#)                    -- TODO: fixme
+ = let  !ba             = seriesByteArray s
+        !offset         = word2Int#
+                        ( plusWord# (seriesByteArrayStart s)
+                        ( plusWord# (seriesStart s)
+                                    (timesWord# ix (int2Word# 8#))))
+   in   indexDoubleX2Array# ba offset 
 {-# INLINE [1] indexDoubleX2 #-}
 
 
