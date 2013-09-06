@@ -37,6 +37,7 @@ convertPrim _kenv tenv n
         D.NameOpConcrete (D.OpConcreteTail 4)       -> return $ prim_tail4 prims
         D.NameOpControl   D.OpControlGuard          -> return $ prim_guard prims
         D.NameOpControl  (D.OpControlSplit 4)       -> return $ prim_split4 prims
+        D.NameOpStore (D.OpStoreTailVector 4)       -> return $ prim_tailVector4 prims
 
         -- ERROR: This isn't a primtive name,
         --        or we don't have an implementation for it.

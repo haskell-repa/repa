@@ -3,6 +3,7 @@ module Data.Array.Repa.Series.Vector
         ( Vector        (..)
         , length
         , new, new'
+        , tail4
         , read
         , write
         , writeFloatX4
@@ -13,6 +14,7 @@ module Data.Array.Repa.Series.Vector
         , fromPrimitive
         , toPrimitive)
 where
+import Data.Array.Repa.Series.Rate
 import Data.Array.Repa.Series.Prim.Utils
 import Data.Primitive.ByteArray
 import Data.Vector.Primitive                    (Prim)
@@ -20,8 +22,9 @@ import qualified Data.Vector.Primitive          as P
 import qualified Data.Vector.Primitive.Mutable  as PM
 import System.IO.Unsafe
 import GHC.Exts
-import Prelude  hiding (length, read, take)
+import Prelude  hiding (length, read, take, tail)
 import Debug.Trace
+
 
 -- | Abstract mutable vector.
 -- 
@@ -30,6 +33,7 @@ import Debug.Trace
 data Vector a
         = Vector
         { vectorLength  :: Word#
+        , vectorStart   :: Word#
         , vectorData    :: !(PM.IOVector a) }
 
 
@@ -47,12 +51,11 @@ length vec
 {-# INLINE [1] length #-}
 
 
-
 -- | Create a new vector of the given length.
 new'  :: Prim a => Word# -> IO (Vector a)
 new' len
  = do   vec     <- PM.new (I# (word2Int# len))
-        return  $ Vector len vec
+        return  $ Vector len (int2Word# 0#) vec
 {-# INLINE [1] new' #-}
 
 
@@ -62,22 +65,33 @@ new (I# len)
 {-# INLINE [1] new #-}
 
 
+-- | Select the tail of a vector.
+tail4 :: RateNat (Tail4 k) -> Vector a -> Vector a
+tail4 _ (Vector len start vec)
+ = let  !start' = quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#)
+   in   Vector len start' vec
+{-# INLINE [1] tail4 #-} 
+
+
 -- | Read a value from a vector.
 read :: Prim a => Vector a -> Word# -> IO a
 read vec ix
-        = PM.unsafeRead (vectorData vec) (I# (word2Int# ix))
+ = let  !offset = word2Int# (plusWord# (vectorStart vec) ix)
+   in   PM.unsafeRead (vectorData vec) (I# offset)
 {-# INLINE [1] read #-}
 
 
 -- | Write a value into a vector.
 write :: Prim a => Vector a -> Word# -> a -> IO ()
 write vec ix val
- = let  !offset = word2Int# ix
+ = let  !offset = word2Int# (plusWord# (vectorStart vec) ix)
    in   PM.unsafeWrite (vectorData vec) (I# offset) val
 {-# INLINE [1] write #-}
 
 
 -- | Write a packed FloatX4 into a `Vector`
+--
+--   You promise that the vectorStart field is zero.
 writeFloatX4  :: Vector Float -> Word# -> FloatX4# -> IO ()
 writeFloatX4 v ix val
  = let  !(P.MVector (I# start) (I# _) (MutableByteArray mba))
@@ -89,6 +103,8 @@ writeFloatX4 v ix val
 
 
 -- | Write a packed DoubleX2 into a `Vector`
+--
+--   You promise that the vectorStart field is zero.
 writeDoubleX2  :: Vector Double -> Word# -> DoubleX2# -> IO ()
 writeDoubleX2 v ix val
  = let  !(P.MVector (I# start) (I# _) (MutableByteArray mba))
@@ -100,8 +116,8 @@ writeDoubleX2 v ix val
 
 -- | Take the first n elements of a vector
 take :: Prim a => Word# -> Vector a -> IO (Vector a)
-take len (Vector _ mvec)
- = do   return  $ Vector len 
+take len (Vector _ start mvec)
+ = do   return  $ Vector len start
                 $ PM.unsafeTake (I# (word2Int# len)) mvec
 {-# INLINE [1] take #-}
 
@@ -113,7 +129,7 @@ fromPrimitive :: Prim a => P.Vector a -> IO (Vector a)
 fromPrimitive vec
  = do   let !(I# len)   =  P.length vec
         mvec            <- P.unsafeThaw vec
-        return $ Vector (int2Word# len) mvec
+        return $ Vector (int2Word# len) (int2Word# 0#) mvec
 {-# INLINE [1] fromPrimitive #-}
 
 
@@ -121,7 +137,7 @@ fromPrimitive vec
 --
 --   You promise not to modify the source vector again.
 toPrimitive :: Prim a => Vector a -> IO (P.Vector a)
-toPrimitive (Vector _ mvec)
+toPrimitive (Vector _ _ mvec)
  =      P.unsafeFreeze mvec
 {-# INLINE [1] toPrimitive #-}
 

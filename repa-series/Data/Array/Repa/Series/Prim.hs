@@ -40,6 +40,9 @@ data Primitives
   , prim_down4                  :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
   , prim_tail4                  :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
 
+    -- Vector ---------------------------------------------
+  , prim_tailVector4            :: forall k a. RateNat (Tail4 k) -> Vector a   -> Vector a
+
     -- Control --------------------------------------------
   , prim_makeProcess            :: (W -> W) -> Process
 
@@ -136,8 +139,12 @@ primitives
     -- Series ----------------------------------
   , prim_rateOfSeries           = S.rateOfSeries
   , prim_down4                  = down4
-  , prim_tail4                  = tail4
+  , prim_tail4                  = S.tail4
   , prim_natOfRateNat           = rateOfRateNat
+
+    -- Vector ----------------------------------
+  , prim_tailVector4            = V.tail4
+
 
     -- Control ---------------------------------
   , prim_makeProcess            = makeProcess

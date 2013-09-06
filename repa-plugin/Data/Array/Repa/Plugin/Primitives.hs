@@ -43,6 +43,9 @@ data Primitives
         , prim_down4                    :: (G.CoreExpr, G.Type)
         , prim_tail4                    :: (G.CoreExpr, G.Type)
 
+          -- Vector
+        , prim_tailVector4              :: (G.CoreExpr, G.Type)
+
           -- Loop combinators.
         , prim_makeProcess              :: (G.CoreExpr, G.Type)
         , prim_loop                     :: (G.CoreExpr, G.Type)
@@ -206,35 +209,38 @@ makeTable v
         
         let table      
                 = Primitives
-                { prim_Series           = tySeries
-                , prim_Vector           = tyVector
-                , prim_Ref              = tyRef
-                , prim_Down4            = tyDown4
-                , prim_Tail4            = tyTail4
+                { prim_Series                   = tySeries
+                , prim_Vector                   = tyVector
+                , prim_Ref                      = tyRef
+                , prim_Down4                    = tyDown4
+                , prim_Tail4                    = tyTail4
 
                 -- Series
-                , prim_natOfRateNat     = get "prim_natOfRateNat"
-                , prim_rateOfSeries     = get "prim_rateOfSeries" 
-                , prim_down4            = get "prim_down4"
-                , prim_tail4            = get "prim_tail4"
+                , prim_natOfRateNat             = get "prim_natOfRateNat"
+                , prim_rateOfSeries             = get "prim_rateOfSeries" 
+                , prim_down4                    = get "prim_down4"
+                , prim_tail4                    = get "prim_tail4"
+
+                -- Vector
+                , prim_tailVector4              = get "prim_tailVector4"
 
                 -- Control
-                , prim_makeProcess      = get "prim_makeProcess"
-                , prim_loop             = get "prim_loop"
-                , prim_guard            = get "prim_guard"
-                , prim_split4           = get "prim_split4"
+                , prim_makeProcess              = get "prim_makeProcess"
+                , prim_loop                     = get "prim_loop"
+                , prim_guard                    = get "prim_guard"
+                , prim_split4                   = get "prim_split4"
 
                 -- Float4
-                , prim_next4Float         = get "prim_next4Float"
-                , prim_writeVectorFloatX4 = get "prim_writeVectorFloatX4"
-                , prim_projFloatX4_0      = get "prim_projFloatX4_0"
-                , prim_projFloatX4_1      = get "prim_projFloatX4_1"
-                , prim_projFloatX4_2      = get "prim_projFloatX4_2"
-                , prim_projFloatX4_3      = get "prim_projFloatX4_3"
+                , prim_next4Float               = get "prim_next4Float"
+                , prim_writeVectorFloatX4       = get "prim_writeVectorFloatX4"
+                , prim_projFloatX4_0            = get "prim_projFloatX4_0"
+                , prim_projFloatX4_1            = get "prim_projFloatX4_1"
+                , prim_projFloatX4_2            = get "prim_projFloatX4_2"
+                , prim_projFloatX4_3            = get "prim_projFloatX4_3"
 
                 -- Double2
-                , prim_next2Double         = get "prim_next2Double"
-                , prim_writeVectorDoubleX2 = get "prim_writeVectorDoubleX2"
+                , prim_next2Double              = get "prim_next2Double"
+                , prim_writeVectorDoubleX2      = get "prim_writeVectorDoubleX2"
 
                 -- Primitives per base type
                 , prim_baseInt          = buildOpMap sels bakedin_Int     external_Int
@@ -368,7 +374,8 @@ external_series
  =      [ (NameOpConcrete OpConcreteRateOfSeries,   "prim_rateOfSeries") 
         , (NameOpConcrete OpConcreteNatOfRateNat,   "prim_natOfRateNat")
         , (NameOpConcrete (OpConcreteDown 4),       "prim_down4")
-        , (NameOpConcrete (OpConcreteTail 4),       "prim_tail4") ]
+        , (NameOpConcrete (OpConcreteTail 4),       "prim_tail4") 
+        , (NameOpStore    (OpStoreTailVector 4),    "prim_tailVector4") ]
 
 
 -- External scalar operators --------------------------------------------------
