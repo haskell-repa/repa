@@ -24,6 +24,7 @@ import qualified Data.Vector.Primitive.Mutable  as PM
 import Prelude hiding (length)
 import Debug.Trace
 
+
 -- | A `Series` is a source of element data that is tagged by rate variable,
 --   which is a type level version of its length.
 --
@@ -34,37 +35,48 @@ import Debug.Trace
 --
 data Series k a
         = Series 
-        { seriesStart           :: Word#
-        , seriesLength          :: Word#
-        , seriesMBA_start       :: Word#
-        , seriesMBA             :: MutableByteArray# RealWorld
+        { -- | Total length of the series.
+          seriesLength          :: Word#
+
+          -- | Starting point in the series, 
+          --   ignore this many elements from the front.
+        , seriesStart           :: Word#
+
+          -- | Starting offset in bytes for series data in the byte array.
+        , seriesByteArrayStart  :: Word#
+
+          -- | Byte array holding series data.
+        , seriesByteArray       :: ByteArray#
+
+          -- | Byte array wrapped into a primitive vector,
+          --   for ease of access.
         , seriesVector          :: !(P.Vector a) }  
+
 
 -- | Take the length of a series.
 length :: Series k a -> Word#
-length (Series start len _ _ d) = len
+length s        = seriesLength s
 {-# INLINE [1] length #-}
 
 
 -- | Get the Rate / Length of a series.
 rateOfSeries :: Series k a -> RateNat k
-rateOfSeries s
- = RateNat (seriesLength s)
+rateOfSeries s  = RateNat (seriesLength s)
 {-# INLINE [1] rateOfSeries #-}
 
 
--- | Window a series to the initial range of 4 elements.
+-- | Window a series to the initial range of 4 elements.                -- TODO: set length.
 down4 :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
-down4 r (Series start len mba_start mba vec)        
-       = Series start len mba_start mba vec
+down4 r (Series len start baStart ba vec)        
+       = Series len start baStart ba vec
 {-# INLINE [1] down4 #-}
 
 
--- | Window a series to the ending elements.
+-- | Window a series to the ending elements.                            -- TODO: also window vec
 tail4 :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
-tail4 r (Series start len mba_start mba vec)        
-        = Series (quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#))
-                 len mba_start mba vec
+tail4 r (Series len start baStart ba vec)        
+ = let  !start' = quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#)
+   in   Series len start' baStart ba vec
 {-# INLINE [1] tail4 #-}
 
 
@@ -79,14 +91,12 @@ index s ix
 -- | Retrieve a packed FloatX4 from a `Series`.
 indexFloatX4  :: Series (Down4 k) Float -> Word# -> FloatX4#
 indexFloatX4 s ix
- = let  !mba            = seriesMBA s
+ = let  !ba             = seriesByteArray s
         !offset         = word2Int#
-                        ( plusWord# (seriesMBA_start s)
+                        ( plusWord# (seriesByteArrayStart s)
                         ( plusWord# (seriesStart s)
                                     (timesWord# ix (int2Word# 4#))))
-
-        (# _, f4 #)     = readFloatX4Array# mba offset realWorld#
-   in   f4
+   in   indexFloatX4Array# ba offset
 {-# INLINE [1] indexFloatX4 #-}
 
 
@@ -112,10 +122,11 @@ toVector s
 --   of the same rate.
 unsafeFromVector :: Prim a => Vector a -> IO (Series k a)
 unsafeFromVector (V.Vector len mv)
- = do   let !pv@(P.MVector (I# start) (I# _) (MutableByteArray mba))
-                = mv
-        v       <- P.unsafeFreeze mv
-        return $ Series (int2Word# 0#) len (int2Word# start) mba v
+ = do   let !pv@(P.MVector (I# baStart) (I# _) (MutableByteArray mba))
+                        = mv
+        v               <- P.unsafeFreeze mv
+        let (# _, ba #) =  unsafeFreezeByteArray# mba realWorld# 
+        return $ Series len (int2Word# 0#) (int2Word# baStart) ba v
 {-# NOINLINE unsafeFromVector #-}
 
 

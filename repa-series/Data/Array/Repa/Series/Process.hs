@@ -48,6 +48,9 @@ infixl %
 -- | Evaluate a series process, feeding it an unboxed vector.
 --
 --   The rate variable @k@ represents the length of the series.
+--
+--   You promise that the process does not write to any of the vectors
+--   that it reads from.
 runProcess
  :: Prim a
  => Vector a 
@@ -66,6 +69,9 @@ runProcess v1 f
 
 -- | Evaluate a series process,
 --   feeding it two unboxed vectors of the same length.
+--
+--   You promise that the process does not write to any of the vectors
+--   that it reads from.
 runProcess2 
  ::               (Prim a,       Prim b)
  =>              Vector a   -> Vector b
@@ -90,6 +96,9 @@ runProcess2 v1 v2 f
 
 -- | Evaluate a series process,
 --   feeding it three unboxed vectors of the same length.
+--
+--   You promise that the process does not write to any of the vectors
+--   that it reads from.
 runProcess3
  ::               (Prim a,       Prim b,     Prim c)
  =>              Vector a   -> Vector b   -> Vector c
@@ -116,6 +125,9 @@ runProcess3 v1 v2 v3 f
 
 -- | Evaluate a series process,
 --   feeding it three unboxed vectors of the same length.
+--
+--   You promise that the process does not write to any of the vectors
+--   that it reads from.
 runProcess4
  ::           (Prim a,       Prim b,     Prim c,  Prim d)
  =>          Vector a   -> Vector b   -> Vector c   -> Vector d
