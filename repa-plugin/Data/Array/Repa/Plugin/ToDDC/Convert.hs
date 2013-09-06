@@ -15,19 +15,19 @@ import           Data.Map                 (Map)
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
 
-import qualified DDC.Core.Exp            as D
-import qualified DDC.Core.Module         as D
-import qualified DDC.Core.Compounds      as D
-import qualified DDC.Core.Flow           as D
-import qualified DDC.Core.Collect        as D
-import qualified DDC.Type.Env            as D
+import qualified DDC.Core.Exp           as D
+import qualified DDC.Core.Module        as D
+import qualified DDC.Core.Compounds     as D
+import qualified DDC.Core.Flow          as D
+import qualified DDC.Core.Collect       as D
+import qualified DDC.Type.Env           as D
 
-import qualified CoreSyn                 as G
-import qualified DataCon                 as G
-import qualified HscTypes                as G
-import qualified TyCon                   as G
-import qualified Type                    as G
-import qualified Var                     as G
+import qualified CoreSyn                as G
+import qualified DataCon                as G
+import qualified HscTypes               as G
+import qualified TyCon                  as G
+import qualified Type                   as G
+import qualified Var                    as G
 
 import qualified OccName                as OccName
 import qualified Name                   as Name
@@ -243,7 +243,7 @@ convertExpr xx
 
 
         -- Type arguments.
-        G.Type t        -> liftM D.XType (convertType t)
+        G.Type t        -> liftM (D.XType ()) (convertType t)
 
 
         -- Cannot convert coercions.

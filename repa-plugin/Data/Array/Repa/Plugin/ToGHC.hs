@@ -177,8 +177,8 @@ convertExp kenv tenv xx
         -- Build an inline case-expression to project the element we want.
         D.XApp{}
          | Just ( D.NameOpSeries (D.OpSeriesProj arity ix)
-                , xsArg)                   <- D.takeXPrimApps xx
-         , tsA          <- [ t | D.XType t <- take arity xsArg ]
+                , xsArg)                     <- D.takeXPrimApps xx
+         , tsA          <- [ t | D.XType _ t <- take arity xsArg ]
          , length tsA == arity
          , Just xScrut  <- xsArg `index` arity
          -> do  
@@ -292,17 +292,17 @@ convertExp kenv tenv xx
         -- Application of a polytypic primitive.
         -- In GHC core, functions cannot be polymorphic in unlifted primitive
         -- types. We convert most of the DDC polymorphic prims in a uniform way.
-        D.XApp _ (D.XApp _ (D.XVar _ (D.UPrim n _)) (D.XType t1)) (D.XType t2)
+        D.XApp _ (D.XApp _ (D.XVar _ (D.UPrim n _)) (D.XType _ t1)) (D.XType _ t2)
          |  isPolytypicPrimName n
          ->     convertPolytypicPrim kenv tenv n [t1, t2]
 
-        D.XApp _ (D.XVar _ (D.UPrim n _)) (D.XType t)
+        D.XApp _ (D.XVar _ (D.UPrim n _)) (D.XType _ t)
          |  isPolytypicPrimName n
          ->     convertPolytypicPrim kenv tenv n [t]
 
 
         -- Value/Type applications.
-        D.XApp _ x1 (D.XType t2)
+        D.XApp _ x1 (D.XType _ t2)
          -> do  (x1', t1')      <- convertExp        kenv tenv x1
                 t2'             <- convertType_boxed kenv t2
 
