@@ -17,6 +17,7 @@ import qualified Type           as G
 import qualified MkId           as G
 import qualified PrimOp         as G
 import qualified Var            as G
+import qualified CmmType        as G
 import qualified OccName        as Occ
 import qualified Name           as Name
 
@@ -306,12 +307,12 @@ bakedin_Float32
         , (NamePrimArith PrimArithLt,   G.mkPrimOpId G.FloatLtOp) 
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.FloatLeOp) 
 
-        , (NamePrimVec  (PrimVecNeg 4), G.mkPrimOpId G.FloatX4NegOp)
-        , (NamePrimVec  (PrimVecAdd 4), G.mkPrimOpId G.FloatX4AddOp)
-        , (NamePrimVec  (PrimVecSub 4), G.mkPrimOpId G.FloatX4SubOp)
-        , (NamePrimVec  (PrimVecMul 4), G.mkPrimOpId G.FloatX4MulOp)
-        , (NamePrimVec  (PrimVecDiv 4), G.mkPrimOpId G.FloatX4DivOp)
-        , (NamePrimVec  (PrimVecRep 4), G.mkPrimOpId G.FloatToFloatX4Op) ]
+        , (NamePrimVec (PrimVecNeg 4),  G.mkPrimOpId (G.VecNegOp G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecAdd 4),  G.mkPrimOpId (G.VecAddOp G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecSub 4),  G.mkPrimOpId (G.VecSubOp G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecMul 4),  G.mkPrimOpId (G.VecMulOp G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecDiv 4),  G.mkPrimOpId (G.VecDivOp G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecRep 4),  G.mkPrimOpId (G.VecBroadcastOp G.FloatVec 4 G.W32)) ]
 
 
 bakedin_Float64 :: [(Name, G.Id)]

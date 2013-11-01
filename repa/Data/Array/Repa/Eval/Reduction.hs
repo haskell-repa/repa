@@ -26,7 +26,9 @@ foldS !vec get c !r !n
 
     {-# INLINE iter #-}
     iter !sh !sz 
-     | sh >=# end = return ()
+     | 1# <- sh >=# end 
+     = return ()
+
      | otherwise 
      = do let !next = sz +# n
           M.unsafeWrite vec (I# sh) (reduceAny get c r sz next)
@@ -56,9 +58,9 @@ foldP vec f c !r (I# n)
     {-# INLINE split #-}
     split !ix 
      = let !ix' = ix *# step
-       in  if len <# ix' 
-                then len
-                else ix'
+       in  case len <# ix' of
+             0# -> ix'
+             _  -> len
 
     {-# INLINE fill #-}
     fill !start !end 
@@ -66,7 +68,9 @@ foldP vec f c !r (I# n)
      where
         {-# INLINE iter #-}
         iter !sh !sz 
-         | sh >=# end = return ()
+         | 1# <- sh >=# end 
+         = return ()
+
          | otherwise 
          = do   let !next = sz +# n
                 M.unsafeWrite vec (I# sh) (reduce f c r (I# sz) (I# next))
@@ -148,8 +152,8 @@ reduceAny f c !r !start !end
  where
    {-# INLINE iter #-}
    iter !i !z 
-    | i >=# end  = z 
-    | otherwise  = iter (i +# 1#) (f i `c` z)
+    | 1# <- i >=# end  = z 
+    | otherwise        = iter (i +# 1#) (f i `c` z)
 
 
 {-# INLINE [0] reduceInt #-}
@@ -165,8 +169,8 @@ reduceInt f c !r !start !end
  where
    {-# INLINE iter #-}
    iter !i !z 
-    | i >=# end  = z 
-    | otherwise  = iter (i +# 1#) (f i `c` z)
+    | 1# <- i >=# end   = z 
+    | otherwise         = iter (i +# 1#) (f i `c` z)
 
 
 {-# INLINE [0] reduceFloat #-}
@@ -182,8 +186,8 @@ reduceFloat f c !r !start !end
  where
    {-# INLINE iter #-}
    iter !i !z 
-    | i >=# end  = z 
-    | otherwise  = iter (i +# 1#) (f i `c` z)
+    | 1# <- i >=# end   = z 
+    | otherwise         = iter (i +# 1#) (f i `c` z)
 
 
 {-# INLINE [0] reduceDouble #-}
@@ -199,8 +203,8 @@ reduceDouble f c !r !start !end
  where
    {-# INLINE iter #-}
    iter !i !z 
-    | i >=# end  = z 
-    | otherwise  = iter (i +# 1#) (f i `c` z)
+    | 1# <- i >=# end   = z 
+    | otherwise         = iter (i +# 1#) (f i `c` z)
 
 
 {-# INLINE unboxInt #-}

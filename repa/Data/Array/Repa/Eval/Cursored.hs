@@ -11,7 +11,7 @@ import Data.Array.Repa.Shape
 import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Gang
 import GHC.Base
-import Prelude                          as P
+
 
 -- Non-cursored interface -----------------------------------------------------
 -- | Fill a block in a rank-2 array in parallel.
@@ -115,8 +115,8 @@ fillCursoredBlock2P
 	-- Get the starting pixel of a column in the image.
 	{-# INLINE colIx #-}
 	colIx !ix
-	 | ix <# colChunkSlack = x0 +# (ix *# (colChunkLen +# 1#))
-	 | otherwise	       = x0 +# (ix *# colChunkLen) +# colChunkSlack
+	 | 1# <- ix <# colChunkSlack = x0 +# (ix *# (colChunkLen +# 1#))
+	 | otherwise	             = x0 +# (ix *# colChunkLen) +# colChunkSlack
 
 	-- Give one column to each thread
 	{-# INLINE fillBlock #-}
@@ -168,14 +168,14 @@ fillCursoredBlock2S
 
         {-# INLINE fillBlock #-}
 	fillBlock !y
-	 | y >=# y1	= return ()
+	 | 1# <- y >=# y1      = return ()
 	 | otherwise
 	 = do	fillLine4 x0
 		fillBlock (y +# 1#)
 
 	 where	{-# INLINE fillLine4 #-}
 		fillLine4 !x
- 	   	 | x +# 4# >=# x1 	= fillLine1 x
+ 	   	 | 1# <- x +# 4# >=# x  = fillLine1 x
 	   	 | otherwise
 	   	 = do   -- Compute each source cursor based on the previous one so that
 			-- the variable live ranges in the generated code are shorter.
@@ -209,9 +209,9 @@ fillCursoredBlock2S
 
 		{-# INLINE fillLine1 #-}
 		fillLine1 !x
- 	   	 | x >=# x1		= return ()
+ 	   	 | 1# <- x >=# x1 = return ()
 	   	 | otherwise
-	   	 = do	let val0     = (getElem $ makeCursor (Z :. (I# y) :. (I# x)))
+	   	 = do	let val0  = (getElem $ makeCursor (Z :. (I# y) :. (I# x)))
                         write (I# (x +# (y *# imageWidth))) val0
 			fillLine1 (x +# 1#)
 

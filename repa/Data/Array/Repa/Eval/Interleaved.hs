@@ -40,8 +40,11 @@ fillInterleavedP !(I# len) write getElem
 
         -- How many elements to compute with this thread.
         elemsForThread thread
-         | thread <# chunkLenSlack = chunkLenBase +# 1#
-         | otherwise               = chunkLenBase
+         | 1# <- thread <# chunkLenSlack
+         = chunkLenBase +# 1#
+
+         | otherwise
+         = chunkLenBase
         {-# INLINE elemsForThread #-}
 
         -- Evaluate the elements of a single chunk.
@@ -49,7 +52,9 @@ fillInterleavedP !(I# len) write getElem
          = go ix0 count0
          where
           go !ix !count
-             | count <=# 0# = return ()
+             | 1# <- count <=# 0# 
+             = return ()
+
              | otherwise
              = do write (I# ix) (getElem (I# ix))
                   go (ix +# step) (count -# 1#)

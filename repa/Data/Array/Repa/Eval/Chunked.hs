@@ -27,7 +27,9 @@ fillLinearS
 fillLinearS !(I# len) write getElem
  = fill 0#
  where	fill !ix
-	 | ix >=# len	= return ()
+	 | 1# <- ix >=# len
+         = return ()
+
 	 | otherwise
 	 = do	write (I# ix) (getElem (I# ix))
 		fill (ix +# 1#)
@@ -63,14 +65,18 @@ fillBlock2S
 
         {-# INLINE fillBlock #-}
         fillBlock !y !ix
-         | y >=# y1     = return ()
+         | 1# <- y >=# y1
+         = return ()
+
          | otherwise
          = do   fillLine1 x0 ix
                 fillBlock (y +# 1#) (ix +# imageWidth)
 
          where  {-# INLINE fillLine1 #-}
                 fillLine1 !x !ix'
-                 | x >=# x1             = return ()
+                 | 1# <- x >=# x1
+                 = return ()
+
                  | otherwise
                  = do   write (I# ix') (getElem (Z :. (I# y) :. (I# x)))
                         fillLine1 (x +# 1#) (ix' +# 1#)
@@ -107,13 +113,18 @@ fillChunkedP !(I# len) write getElem
 
 	{-# INLINE splitIx #-}
 	splitIx thread
-	 | thread <# chunkLeftover = thread *# (chunkLen +# 1#)
-	 | otherwise	 	   = thread *# chunkLen  +# chunkLeftover
+	 | 1# <- thread <# chunkLeftover 
+         = thread *# (chunkLen +# 1#)
+
+	 | otherwise	
+         = thread *# chunkLen  +# chunkLeftover
 
 	-- Evaluate the elements of a single chunk.
 	{-# INLINE fill #-}
 	fill !ix !end
-	 | ix >=# end		= return ()
+	 | 1# <- ix >=# end	
+         = return ()
+
 	 | otherwise
 	 = do	write (I# ix) (getElem (I# ix))
 		fill (ix +# 1#) end
@@ -153,8 +164,8 @@ fillChunkedIOP !(I# len) write mkGetElem
 
 	{-# INLINE splitIx #-}
 	splitIx thread
-	 | thread <# chunkLeftover = thread *# (chunkLen +# 1#)
-	 | otherwise		   = thread *# chunkLen  +# chunkLeftover
+	 | 1# <- thread <# chunkLeftover = thread *# (chunkLen +# 1#)
+	 | otherwise		         = thread *# chunkLen  +# chunkLeftover
 
         -- Given the threadId, starting and ending indices. 
         --      Make a function to get each element for this chunk
@@ -170,7 +181,9 @@ fillChunkedIOP !(I# len) write mkGetElem
 	fill !getElem !ix0 !end
 	 = go ix0 
 	 where  go !ix
-	         | ix >=# end	= return ()
+	         | 1# <- ix >=# end
+                 = return ()
+
  	         | otherwise
 	         = do	x       <- getElem (I# ix)
 	                write (I# ix) x

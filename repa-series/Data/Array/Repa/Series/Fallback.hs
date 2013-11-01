@@ -88,7 +88,7 @@ foldSeries
 foldSeries f z !source
  = go (int2Word# 0#) z
  where  go !ix !acc
-         | geWord# ix (S.length source)
+         | 1# <- geWord# ix (S.length source)
          = acc
 
          | otherwise

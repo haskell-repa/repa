@@ -190,8 +190,8 @@ unsafeAppStencilCursor2_const shift
                 {-# NOINLINE getData' #-}
                 getData' :: Int# -> Int# -> a
                 getData' !x !y
-                 |   x <# 0# || x >=# aWidth
-                  || y <# 0# || y >=# aHeight
+                 | 1# <-   (x <# 0#) `orI#` (x >=# aWidth)
+                    `orI#` (y <# 0#) `orI#` (y >=# aHeight)
                  = fixed
 
                  | otherwise
@@ -239,15 +239,15 @@ unsafeAppStencilCursor2_clamp shift
                 {-# NOINLINE wrapLoadX #-}
 		wrapLoadX :: Int# -> Int# -> a
 		wrapLoadX !x !y
-		 | x <# 0#	= wrapLoadY 0#      	   y
-		 | x >=# aWidth	= wrapLoadY (aWidth -# 1#) y
+		 | 1# <- x <# 0#	= wrapLoadY 0#      	   y
+		 | 1# <- x >=# aWidth	= wrapLoadY (aWidth -# 1#) y
 		 | otherwise    = wrapLoadY x y
 
 		{-# NOINLINE wrapLoadY #-}
 		wrapLoadY :: Int# -> Int# -> a
 		wrapLoadY !x !y
-		 | y <#  0#	 = loadXY x 0#
-		 | y >=# aHeight = loadXY x (aHeight -# 1#)
+		 | 1# <- y <#  0#	= loadXY x 0#
+		 | 1# <- y >=# aHeight  = loadXY x (aHeight -# 1#)
 		 | otherwise     = loadXY x y
 
 		{-# INLINE loadXY #-}

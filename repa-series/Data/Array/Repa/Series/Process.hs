@@ -81,7 +81,7 @@ runProcess2
 
 runProcess2 v1 v2 f
  | l1 <- V.length v1
- , l2 <- V.length v2, eqWord# l1 l2
+ , l2 <- V.length v2, 1# <- eqWord# l1 l2 
  = do   s1      <- unsafeFromVector v1
         s2      <- unsafeFromVector v2
         let rn          = RateNat l1
@@ -108,8 +108,8 @@ runProcess3
 
 runProcess3 v1 v2 v3 f
  | l1 <- V.length v1
- , l2 <- V.length v2, eqWord# l1 l2
- , l3 <- V.length v3, eqWord# l2 l3
+ , l2 <- V.length v2, 1# <- eqWord# l1 l2
+ , l3 <- V.length v3, 1# <- eqWord# l2 l3
  = do   s1      <- unsafeFromVector v1
         s2      <- unsafeFromVector v2
         s3      <- unsafeFromVector v3
@@ -138,9 +138,9 @@ runProcess4
 
 runProcess4 v1 v2 v3 v4 f
  | l1 <- V.length v1
- , l2 <- V.length v2, eqWord# l1 l2
- , l3 <- V.length v3, eqWord# l2 l3
- , l4 <- V.length v4, eqWord# l3 l4
+ , l2 <- V.length v2, 1# <- eqWord# l1 l2
+ , l3 <- V.length v3, 1# <- eqWord# l2 l3
+ , l4 <- V.length v4, 1# <- eqWord# l3 l4
  = do   s1      <- unsafeFromVector v1
         s2      <- unsafeFromVector v2
         s3      <- unsafeFromVector v3

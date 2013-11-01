@@ -18,7 +18,7 @@ repa_loop len worker world0
  = go (int2Word# 0#) world0
  where  
         go ix world
-         | geWord# ix len           
+         | 1# <- geWord# ix len           
          = world
 
          | world' <- worker ix world
