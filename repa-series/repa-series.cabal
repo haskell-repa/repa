@@ -34,7 +34,7 @@ Library
         base       >= 4.6 && < 4.8,
         ghc        >= 7.5 && < 7.9,
         vector     >= 0.9 && < 0.11,
-        primitive  == 0.4.*,
+        primitive  >= 0.4 && < 0.6,
         ghc-prim   >= 0.3
 
   Default-Language:
