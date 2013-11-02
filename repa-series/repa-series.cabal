@@ -7,7 +7,7 @@ Build-Type:     Simple
 Author:         The DPH Team
 Maintainer:     Ben Lippmeier <benl@ouroborus.net>
 Category:       Data Structures
-Synopsis:       Series Expressionss API
+Synopsis:       Series Expressions API
 Description:   
         Series expression API for writing programs subjected to the
         Data Flow Fusion performed by the repa-plugin.
@@ -49,3 +49,4 @@ Library
 
   GHC-Options:
         -fllvm
+        -mavx2

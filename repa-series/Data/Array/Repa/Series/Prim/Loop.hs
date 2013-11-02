@@ -55,3 +55,20 @@ repa_split4 (RateNat len) goDown4 goTail4 w0
  = w2
 {-# INLINE [1] repa_split4 #-}
 
+
+-- | Process 8-element chunks with one function, and the rest with some other.
+repa_split8     
+        :: forall k
+        .  RateNat k 
+        -> (RateNat (Down8 k) -> W -> W)
+        -> (RateNat (Tail8 k) -> W -> W)
+        -> W -> W
+
+repa_split8 (RateNat len) goDown8 goTail8 w0
+ | chunks       <- len `quotWord#` (int2Word# 8#)
+ , leftover     <- len `remWord#`  (int2Word# 8#)
+ , w1           <- goDown8 (RateNat chunks) w0
+ , w2           <- goTail8 (RateNat leftover) w1
+ = w2
+{-# INLINE [1] repa_split8 #-}
+

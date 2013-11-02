@@ -2,13 +2,13 @@
 module Data.Array.Repa.Series.Series
         ( Series (..)
         , index
-        , indexFloatX4
-        , indexDoubleX2
+        , indexFloatX4,  indexFloatX8
+        , indexDoubleX2, indexDoubleX4
         , length
         , toVector
         , rateOfSeries
-        , down4
-        , tail4
+        , down4,        down8
+        , tail4,        tail8
         , unsafeFromVector)
 where
 import Data.Array.Repa.Series.Rate
@@ -62,6 +62,7 @@ rateOfSeries s  = RateNat (seriesLength s)
 {-# INLINE [1] rateOfSeries #-}
 
 
+-- down -----------------------------------------------------------------------
 -- | Window a series to the initial range of 4 elements.
 down4 :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
 down4 r (Series len start ba vec)        
@@ -70,6 +71,15 @@ down4 r (Series len start ba vec)
 {-# INLINE [1] down4 #-}
 
 
+-- | Window a series to the initial range of 8 elements.
+down8 :: forall k a. RateNat (Down8 k) -> Series k a -> Series (Down8 k) a
+down8 r (Series len start ba vec)        
+ = let  !len'   = minusWord# len (remWord# len (int2Word# 8#))
+   in   Series len' start ba vec
+{-# INLINE [1] down8 #-}
+
+
+-- tail -----------------------------------------------------------------------
 -- | Window a series to the ending elements.
 tail4 :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
 tail4 r (Series len start ba vec)        
@@ -78,6 +88,15 @@ tail4 r (Series len start ba vec)
 {-# INLINE [1] tail4 #-}
 
 
+-- | Window a series to the ending elements.
+tail8 :: forall k a. RateNat (Tail8 k) -> Series k a -> Series (Tail8 k) a
+tail8 r (Series len start ba vec)        
+ = let  !start' = quotWord# len (int2Word# 8#) `timesWord#` (int2Word# 8#)
+   in   Series len start' ba vec
+{-# INLINE [1] tail8 #-}
+
+
+-- index ----------------------------------------------------------------------
 -- | Index into a series.
 index :: Prim a => Series k a -> Word# -> a
 index s ix
@@ -95,6 +114,15 @@ indexFloatX4 s ix
 {-# INLINE [1] indexFloatX4 #-}
 
 
+-- | Retrieve a packed FloatX8# from a `Series`.
+indexFloatX8  :: Series (Down8 k) Float -> Word# -> FloatX8#
+indexFloatX8 s ix
+ = let  !ba             = seriesByteArray s
+        !offset         = word2Int# (plusWord# (seriesStart s) ix)
+   in   indexFloatX8Array# ba offset
+{-# INLINE [1] indexFloatX8 #-}
+
+
 -- | Retrieve a packed DoubleX2# from a `Series`.
 indexDoubleX2 :: Series (Down2 k) Float -> Word# -> DoubleX2#
 indexDoubleX2 s ix
@@ -104,6 +132,16 @@ indexDoubleX2 s ix
 {-# INLINE [1] indexDoubleX2 #-}
 
 
+-- | Retrieve a packed DoubleX4# from a `Series`.
+indexDoubleX4 :: Series (Down4 k) Float -> Word# -> DoubleX4#
+indexDoubleX4 s ix
+ = let  !ba             = seriesByteArray s
+        !offset         = word2Int# (plusWord# (seriesStart s) ix)
+   in   indexDoubleX4Array# ba offset 
+{-# INLINE [1] indexDoubleX4 #-}
+
+
+-- to/from vector -------------------------------------------------------------
 -- | Convert a series to a vector, discarding the rate information.
 toVector :: Prim a => Series k a -> Vector a
 toVector !s
@@ -127,5 +165,4 @@ unsafeFromVector (V.Vector len start mv)
          $ error "unsafeFromVector: vector has non-zero prim starting offset"
         return $ Series len start ba v
 {-# NOINLINE unsafeFromVector #-}
-
 

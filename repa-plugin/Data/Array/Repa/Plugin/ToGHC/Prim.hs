@@ -33,11 +33,20 @@ convertPrim _kenv tenv n
    in case n of
         D.NameOpConcrete  D.OpConcreteRateOfSeries  -> return $ prim_rateOfSeries prims
         D.NameOpConcrete  D.OpConcreteNatOfRateNat  -> return $ prim_natOfRateNat prims
-        D.NameOpConcrete (D.OpConcreteDown 4)       -> return $ prim_down4 prims
-        D.NameOpConcrete (D.OpConcreteTail 4)       -> return $ prim_tail4 prims
+
         D.NameOpControl   D.OpControlGuard          -> return $ prim_guard prims
+
+        D.NameOpConcrete (D.OpConcreteDown 4)       -> return $ prim_down4 prims
+        D.NameOpConcrete (D.OpConcreteDown 8)       -> return $ prim_down8 prims
+
+        D.NameOpConcrete (D.OpConcreteTail 4)       -> return $ prim_tail4 prims
+        D.NameOpConcrete (D.OpConcreteTail 8)       -> return $ prim_tail8 prims
+
         D.NameOpControl  (D.OpControlSplit 4)       -> return $ prim_split4 prims
+        D.NameOpControl  (D.OpControlSplit 8)       -> return $ prim_split8 prims
+
         D.NameOpStore (D.OpStoreTailVector 4)       -> return $ prim_tailVector4 prims
+        D.NameOpStore (D.OpStoreTailVector 8)       -> return $ prim_tailVector8 prims
 
         -- ERROR: This isn't a primtive name,
         --        or we don't have an implementation for it.
@@ -84,6 +93,19 @@ convertPolytypicPrim kenv _tenv n tsArg
                 3       -> return $ prim_projFloatX4_3 prims
                 _       -> error "repa-plugin.convertPolytypicPrim: vec proj float failed."
 
+        D.NamePrimVec (D.PrimVecProj 8 ix)
+         |  [t]  <- tsArg,      t == D.tFloat 32
+         -> case ix of
+                0       -> return $ prim_projFloatX8_0 prims
+                1       -> return $ prim_projFloatX8_1 prims
+                2       -> return $ prim_projFloatX8_2 prims
+                3       -> return $ prim_projFloatX8_3 prims
+                4       -> return $ prim_projFloatX8_4 prims
+                5       -> return $ prim_projFloatX8_5 prims
+                6       -> return $ prim_projFloatX8_6 prims
+                7       -> return $ prim_projFloatX8_7 prims
+                _       -> error "repa-plugin.convertPolytypicPrim: vec proj float failed."
+
         D.NamePrimVec _
          |  [t] <- tsArg
          -> return $ getPrim n t
@@ -96,8 +118,14 @@ convertPolytypicPrim kenv _tenv n tsArg
                 return  ( G.App x (G.Type tK')
                         , G.applyTy t tK')
 
+         |  [tA, tK] <- tsArg, tA == D.tFloat 32, m == 8
+         -> do  let (x, t) = prim_next8Float prims
+                tK'     <- convertType kenv tK
+                return  ( G.App x (G.Type tK')
+                        , G.applyTy t tK')
+
          |  [tA, tK] <- tsArg
-         ,  elem m [1, 4]
+         ,  elem m [1, 4, 8]
          -> do  let (x, t) = getPrim n tA
                 tK'     <- convertType kenv tK
                 return  ( G.App x (G.Type tK')
@@ -106,9 +134,11 @@ convertPolytypicPrim kenv _tenv n tsArg
         D.NameOpStore (D.OpStoreWriteVector m)
          |  [tA] <- tsArg, tA == D.tFloat 32, m == 4
          -> do  return  $ prim_writeVectorFloatX4 prims
-                
 
-         
+        D.NameOpStore (D.OpStoreWriteVector m)
+         |  [tA] <- tsArg, tA == D.tFloat 32, m == 8
+         -> do  return  $ prim_writeVectorFloatX8 prims
+                         
         D.NameOpStore _
          | t : _ <- tsArg
          -> return $ getPrim n t
@@ -123,49 +153,22 @@ convertPolytypicPrim kenv _tenv n tsArg
 --   This needs to match all the names handled by `convertPolytypicPrim` above.
 isPolytypicPrimName :: D.Name -> Bool
 isPolytypicPrimName n
- = elem n       
-        [ D.NamePrimArith       D.PrimArithAdd
-        , D.NamePrimArith       D.PrimArithSub
-        , D.NamePrimArith       D.PrimArithMul
-        , D.NamePrimArith       D.PrimArithDiv
-        , D.NamePrimArith       D.PrimArithMod
-        , D.NamePrimArith       D.PrimArithRem
-        , D.NamePrimArith       D.PrimArithEq
-        , D.NamePrimArith       D.PrimArithNeq
-        , D.NamePrimArith       D.PrimArithGt
-        , D.NamePrimArith       D.PrimArithGe
-        , D.NamePrimArith       D.PrimArithLt
-        , D.NamePrimArith       D.PrimArithLe
+ | D.NamePrimArith _                            <- n    = True
+ | D.NamePrimVec _                              <- n    = True
+ | D.NameOpConcrete (D.OpConcreteNext _)        <- n    = True
+ | D.NameOpControl   D.OpControlLoopN           <- n    = True
 
-        , D.NamePrimVec         (D.PrimVecNeg     4)
-        , D.NamePrimVec         (D.PrimVecAdd     4)
-        , D.NamePrimVec         (D.PrimVecSub     4)
-        , D.NamePrimVec         (D.PrimVecMul     4)
-        , D.NamePrimVec         (D.PrimVecDiv     4)
-        , D.NamePrimVec         (D.PrimVecRep     4)
-        , D.NamePrimVec         (D.PrimVecPack    4)
-        , D.NamePrimVec         (D.PrimVecProj    4 0) 
-        , D.NamePrimVec         (D.PrimVecProj    4 1) 
-        , D.NamePrimVec         (D.PrimVecProj    4 2) 
-        , D.NamePrimVec         (D.PrimVecProj    4 3) 
-        , D.NamePrimVec         (D.PrimVecGather  4)
-        , D.NamePrimVec         (D.PrimVecScatter 4)
+ | D.NameOpStore D.OpStoreNew                   <- n    = True
+ | D.NameOpStore D.OpStoreRead                  <- n    = True
+ | D.NameOpStore D.OpStoreWrite                 <- n    = True
 
-        , D.NameOpConcrete      (D.OpConcreteNext 1)
-        , D.NameOpConcrete      (D.OpConcreteNext 4)
+ | D.NameOpStore D.OpStoreNewVector             <- n    = True
+ | D.NameOpStore (D.OpStoreReadVector  _)       <- n    = True
+ | D.NameOpStore (D.OpStoreWriteVector _)       <- n    = True
+ | D.NameOpStore D.OpStoreSliceVector           <- n    = True
 
-        , D.NameOpControl       D.OpControlLoopN
+ | otherwise                                            = False
 
-        , D.NameOpStore         D.OpStoreNew
-        , D.NameOpStore         D.OpStoreRead
-        , D.NameOpStore         D.OpStoreWrite
-        , D.NameOpStore         D.OpStoreNewVector
-        , D.NameOpStore         (D.OpStoreReadVector  1)
-        , D.NameOpStore         (D.OpStoreWriteVector 1)
-        , D.NameOpStore         (D.OpStoreWriteVector 4)
-        , D.NameOpStore         D.OpStoreSliceVector ]
-
-        
 
 -- | Complain that we couldn't find a primitive that we needed.
 errorMissingPrim :: G.ModGuts -> D.Name -> [D.Type D.Name] -> Maybe String -> a

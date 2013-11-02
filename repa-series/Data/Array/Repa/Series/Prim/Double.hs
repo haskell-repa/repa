@@ -55,6 +55,12 @@ repa_writeVectorDoubleX2 vec ix val
 {-# INLINE [1] repa_writeVectorDoubleX2 #-}
 
 
+repa_writeVectorDoubleX4 :: Vector Double -> Word# -> DoubleX4# -> W -> W
+repa_writeVectorDoubleX4 vec ix val
+        = unwrapIO_ (writeDoubleX4 vec ix val)
+{-# INLINE [1] repa_writeVectorDoubleX4 #-}
+
+
 repa_sliceVectorDouble  :: Word# -> Vector Double -> W -> (# W, Vector Double #)
 repa_sliceVectorDouble len vec   
         = unwrapIO' (V.take len vec)
@@ -74,3 +80,11 @@ repa_next2Double s ix world
  = case S.indexDoubleX2 s ix of
         d2      -> (# world, d2 #)
 {-# INLINE [1] repa_next2Double #-}
+
+
+repa_next4Double        :: Series (Down4 k) Float -> Word# -> W -> (# W, DoubleX4# #)
+repa_next4Double s ix world
+ = case S.indexDoubleX4 s ix of
+        d2      -> (# world, d2 #)
+{-# INLINE [1] repa_next4Double #-}
+

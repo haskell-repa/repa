@@ -32,16 +32,21 @@ data Primitives
   , prim_Vector                 :: forall a.   Vector a
   , prim_Ref                    :: forall a.   Ref a
   , prim_Down4                  :: forall k.   Down4 k
+  , prim_Down8                  :: forall k.   Down8 k
   , prim_Tail4                  :: forall k.   Tail4 k
+  , prim_Tail8                  :: forall k.   Tail8 k
 
     -- Series ---------------------------------------------
   , prim_natOfRateNat           :: forall k.   RateNat k  -> Word#
   , prim_rateOfSeries           :: forall k a. Series k a -> RateNat k
   , prim_down4                  :: forall k a. RateNat (Down4 k) -> Series k a -> Series (Down4 k) a
+  , prim_down8                  :: forall k a. RateNat (Down8 k) -> Series k a -> Series (Down8 k) a
   , prim_tail4                  :: forall k a. RateNat (Tail4 k) -> Series k a -> Series (Tail4 k) a
+  , prim_tail8                  :: forall k a. RateNat (Tail8 k) -> Series k a -> Series (Tail8 k) a
 
     -- Vector ---------------------------------------------
   , prim_tailVector4            :: forall k a. RateNat (Tail4 k) -> Vector a   -> Vector a
+  , prim_tailVector8            :: forall k a. RateNat (Tail8 k) -> Vector a   -> Vector a
 
     -- Control --------------------------------------------
   , prim_makeProcess            :: (W -> W) -> Process
@@ -56,6 +61,12 @@ data Primitives
                                 .  RateNat k
                                 -> (RateNat (Down4 k) -> W -> W)
                                 -> (RateNat (Tail4 k) -> W -> W)
+                                -> W -> W
+
+  , prim_split8                 :: forall k
+                                .  RateNat k
+                                -> (RateNat (Down8 k) -> W -> W)
+                                -> (RateNat (Tail8 k) -> W -> W)
                                 -> W -> W
 
     -- Int ------------------------------------------------
@@ -93,6 +104,7 @@ data Primitives
   , prim_readVectorFloat        :: Vector Float -> Word#                -> W -> (# W, Float# #)
   , prim_writeVectorFloat       :: Vector Float -> Word# -> Float#      -> W -> W
   , prim_writeVectorFloatX4     :: Vector Float -> Word# -> FloatX4#    -> W -> W
+  , prim_writeVectorFloatX8     :: Vector Float -> Word# -> FloatX8#    -> W -> W
   , prim_sliceVectorFloat       :: Word# -> Vector Float                -> W -> (# W, Vector Float #)
 
   , prim_nextFloat              :: forall k
@@ -101,10 +113,22 @@ data Primitives
   , prim_next4Float             :: forall k
                                 .  Series (Down4 k) Float -> Word#      -> W -> (# W, FloatX4# #)
 
+  , prim_next8Float             :: forall k
+                                .  Series (Down8 k) Float -> Word#      -> W -> (# W, FloatX8# #)
+
   , prim_projFloatX4_0          :: FloatX4# -> Float#
   , prim_projFloatX4_1          :: FloatX4# -> Float#
   , prim_projFloatX4_2          :: FloatX4# -> Float#
   , prim_projFloatX4_3          :: FloatX4# -> Float#
+
+  , prim_projFloatX8_0          :: FloatX8# -> Float#
+  , prim_projFloatX8_1          :: FloatX8# -> Float#
+  , prim_projFloatX8_2          :: FloatX8# -> Float#
+  , prim_projFloatX8_3          :: FloatX8# -> Float#
+  , prim_projFloatX8_4          :: FloatX8# -> Float#
+  , prim_projFloatX8_5          :: FloatX8# -> Float#
+  , prim_projFloatX8_6          :: FloatX8# -> Float#
+  , prim_projFloatX8_7          :: FloatX8# -> Float#
 
     -- Double ------------------------------------------------
   , prim_newRefDouble           :: Double#                              -> W -> (# W, Ref Double #)
@@ -115,6 +139,7 @@ data Primitives
   , prim_readVectorDouble       :: Vector Double -> Word#               -> W -> (# W, Double# #)
   , prim_writeVectorDouble      :: Vector Double -> Word# -> Double#    -> W -> W
   , prim_writeVectorDoubleX2    :: Vector Double -> Word# -> DoubleX2#  -> W -> W
+  , prim_writeVectorDoubleX4    :: Vector Double -> Word# -> DoubleX4#  -> W -> W
   , prim_sliceVectorDouble      :: Word# -> Vector Double               -> W -> (# W, Vector Double #)
 
   , prim_nextDouble             :: forall k
@@ -122,6 +147,9 @@ data Primitives
 
   , prim_next2Double            :: forall k
                                 .  Series (Down2 k) Float -> Word#      -> W -> (# W, DoubleX2# #)
+
+  , prim_next4Double            :: forall k
+                                .  Series (Down4 k) Float -> Word#      -> W -> (# W, DoubleX4# #)
   }
 
 
@@ -133,24 +161,29 @@ primitives
   , prim_Vector = error "repa-series.primitives: you can't touch this."
   , prim_Ref    = error "repa-series.primitives: you can't touch this."
   , prim_Down4  = error "repa-series.primitives: you can't touch this."
+  , prim_Down8  = error "repa-series.primitives: you can't touch this."
   , prim_Tail4  = error "repa-series.primitives: you can't touch this."
+  , prim_Tail8  = error "repa-series.primitives: you can't touch this."
 
 
     -- Series ----------------------------------
   , prim_rateOfSeries           = S.rateOfSeries
   , prim_down4                  = down4
+  , prim_down8                  = down8
   , prim_tail4                  = S.tail4
+  , prim_tail8                  = S.tail8
   , prim_natOfRateNat           = rateOfRateNat
 
     -- Vector ----------------------------------
   , prim_tailVector4            = V.tail4
-
+  , prim_tailVector8            = V.tail8
 
     -- Control ---------------------------------
   , prim_makeProcess            = makeProcess
   , prim_loop                   = repa_loop
   , prim_guard                  = repa_guard
   , prim_split4                 = repa_split4
+  , prim_split8                 = repa_split8
 
     -- Int --------------------------------------
   , prim_newRefInt              = repa_newRefInt
@@ -185,15 +218,26 @@ primitives
   , prim_readVectorFloat        = repa_readVectorFloat
   , prim_writeVectorFloat       = repa_writeVectorFloat
   , prim_writeVectorFloatX4     = repa_writeVectorFloatX4
+  , prim_writeVectorFloatX8     = repa_writeVectorFloatX8
   , prim_sliceVectorFloat       = repa_sliceVectorFloat
 
   , prim_nextFloat              = repa_nextFloat
   , prim_next4Float             = repa_next4Float
+  , prim_next8Float             = repa_next8Float
 
   , prim_projFloatX4_0          = \x -> case unpackFloatX4# x of { (# f, _, _, _ #) -> f }
   , prim_projFloatX4_1          = \x -> case unpackFloatX4# x of { (# _, f, _, _ #) -> f }
   , prim_projFloatX4_2          = \x -> case unpackFloatX4# x of { (# _, _, f, _ #) -> f }
   , prim_projFloatX4_3          = \x -> case unpackFloatX4# x of { (# _, _, _, f #) -> f }
+
+  , prim_projFloatX8_0          = \x -> case unpackFloatX8# x of { (# f, _, _, _, _, _, _, _ #) -> f }
+  , prim_projFloatX8_1          = \x -> case unpackFloatX8# x of { (# _, f, _, _, _, _, _, _ #) -> f }
+  , prim_projFloatX8_2          = \x -> case unpackFloatX8# x of { (# _, _, f, _, _, _, _, _ #) -> f }
+  , prim_projFloatX8_3          = \x -> case unpackFloatX8# x of { (# _, _, _, f, _, _, _, _ #) -> f }
+  , prim_projFloatX8_4          = \x -> case unpackFloatX8# x of { (# _, _, _, _, f, _, _, _ #) -> f }
+  , prim_projFloatX8_5          = \x -> case unpackFloatX8# x of { (# _, _, _, _, _, f, _, _ #) -> f }
+  , prim_projFloatX8_6          = \x -> case unpackFloatX8# x of { (# _, _, _, _, _, _, f, _ #) -> f }
+  , prim_projFloatX8_7          = \x -> case unpackFloatX8# x of { (# _, _, _, _, _, _, _, f #) -> f }
 
     -- Double --------------------------------------
   , prim_newRefDouble           = repa_newRefDouble
@@ -204,9 +248,11 @@ primitives
   , prim_readVectorDouble       = repa_readVectorDouble
   , prim_writeVectorDouble      = repa_writeVectorDouble
   , prim_writeVectorDoubleX2    = repa_writeVectorDoubleX2
+  , prim_writeVectorDoubleX4    = repa_writeVectorDoubleX4
   , prim_sliceVectorDouble      = repa_sliceVectorDouble
 
   , prim_nextDouble             = repa_nextDouble
   , prim_next2Double            = repa_next2Double
+  , prim_next4Double            = repa_next4Double
   }
 

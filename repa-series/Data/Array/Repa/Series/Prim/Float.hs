@@ -59,6 +59,12 @@ repa_writeVectorFloatX4 vec ix val
 {-# INLINE [1] repa_writeVectorFloatX4 #-}
 
 
+repa_writeVectorFloatX8 :: Vector Float -> Word# -> FloatX8# -> W -> W
+repa_writeVectorFloatX8 vec ix val
+        = unwrapIO_ (writeFloatX8 vec ix val)
+{-# INLINE [1] repa_writeVectorFloatX8 #-}
+
+
 repa_sliceVectorFloat   :: Word# -> Vector Float -> W -> (# W, Vector Float #)
 repa_sliceVectorFloat len vec   
         = unwrapIO' (V.take len vec)
@@ -78,4 +84,11 @@ repa_next4Float s ix world
  = case S.indexFloatX4 s ix of
         f4      -> (# world, f4 #)
 {-# INLINE [1] repa_next4Float #-}
+
+
+repa_next8Float         :: Series (Down8 k) Float -> Word# -> W -> (# W, FloatX8# #)
+repa_next8Float s ix world
+ = case S.indexFloatX8 s ix of
+        f8      -> (# world, f8 #)
+{-# INLINE [1] repa_next8Float #-}
 

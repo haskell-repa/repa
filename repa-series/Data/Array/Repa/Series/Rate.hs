@@ -4,8 +4,8 @@ module Data.Array.Repa.Series.Rate
         , rateOfRateNat
         , rateNatOfInt
 
-        , Down2 (..),   Down4 (..)    
-        , Tail2 (..),   Tail4 (..))
+        , Down2 (..),   Down4 (..),     Down8(..)
+        , Tail2 (..),   Tail4 (..),     Tail8(..))
 where
 import GHC.Exts
 
@@ -38,6 +38,7 @@ rateNatOfInt (I# i)
 -- Should be treated abstractly by client code.
 data Down2 k
 data Down4 k
+data Down8 k
 
 
 -- | Represents the remainder of a rate divided by the multiplier.
@@ -49,5 +50,6 @@ data Down4 k
 --
 data Tail2 k
 data Tail4 k
+data Tail8 k
 
 

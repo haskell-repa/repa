@@ -36,34 +36,56 @@ data Primitives
         , prim_Vector                   :: !G.Type
         , prim_Ref                      :: !G.Type
         , prim_Down4                    :: !G.Type
+        , prim_Down8                    :: !G.Type
         , prim_Tail4                    :: !G.Type
+        , prim_Tail8                    :: !G.Type
 
           -- Series
         , prim_natOfRateNat             :: (G.CoreExpr, G.Type)
         , prim_rateOfSeries             :: (G.CoreExpr, G.Type)
         , prim_down4                    :: (G.CoreExpr, G.Type)
+        , prim_down8                    :: (G.CoreExpr, G.Type)
         , prim_tail4                    :: (G.CoreExpr, G.Type)
+        , prim_tail8                    :: (G.CoreExpr, G.Type)
 
           -- Vector
         , prim_tailVector4              :: (G.CoreExpr, G.Type)
+        , prim_tailVector8              :: (G.CoreExpr, G.Type)
 
           -- Loop combinators.
         , prim_makeProcess              :: (G.CoreExpr, G.Type)
         , prim_loop                     :: (G.CoreExpr, G.Type)
         , prim_guard                    :: (G.CoreExpr, G.Type)
         , prim_split4                   :: (G.CoreExpr, G.Type)
+        , prim_split8                   :: (G.CoreExpr, G.Type)
 
           -- Float4
         , prim_next4Float               :: (G.CoreExpr, G.Type)
+        , prim_next8Float               :: (G.CoreExpr, G.Type)
+
         , prim_writeVectorFloatX4       :: (G.CoreExpr, G.Type)
+        , prim_writeVectorFloatX8       :: (G.CoreExpr, G.Type)
+
         , prim_projFloatX4_0            :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_1            :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_2            :: (G.CoreExpr, G.Type)
         , prim_projFloatX4_3            :: (G.CoreExpr, G.Type)
 
+        , prim_projFloatX8_0            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_1            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_2            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_3            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_4            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_5            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_6            :: (G.CoreExpr, G.Type)
+        , prim_projFloatX8_7            :: (G.CoreExpr, G.Type)
+
          -- Double2
         , prim_next2Double              :: (G.CoreExpr, G.Type)
+        , prim_next4Double              :: (G.CoreExpr, G.Type)
+
         , prim_writeVectorDoubleX2      :: (G.CoreExpr, G.Type)
+        , prim_writeVectorDoubleX4      :: (G.CoreExpr, G.Type)
 
           -- Primitives per base type.
         , prim_baseInt                  :: Map Name (G.CoreExpr, G.Type)
@@ -200,7 +222,9 @@ makeTable v
         let tyVector    = getTy "prim_Vector"
         let tyRef       = getTy "prim_Ref"
         let tyDown4     = getTy "prim_Down4"
+        let tyDown8     = getTy "prim_Down8"
         let tyTail4     = getTy "prim_Tail4"
+        let tyTail8     = getTy "prim_Tail8"
 
 
         -- Build table of selectors for all the external operators.
@@ -214,34 +238,56 @@ makeTable v
                 , prim_Vector                   = tyVector
                 , prim_Ref                      = tyRef
                 , prim_Down4                    = tyDown4
+                , prim_Down8                    = tyDown8
                 , prim_Tail4                    = tyTail4
+                , prim_Tail8                    = tyTail8
 
                 -- Series
                 , prim_natOfRateNat             = get "prim_natOfRateNat"
                 , prim_rateOfSeries             = get "prim_rateOfSeries" 
                 , prim_down4                    = get "prim_down4"
+                , prim_down8                    = get "prim_down8"
                 , prim_tail4                    = get "prim_tail4"
+                , prim_tail8                    = get "prim_tail8"
 
                 -- Vector
                 , prim_tailVector4              = get "prim_tailVector4"
+                , prim_tailVector8              = get "prim_tailVector8"
 
                 -- Control
                 , prim_makeProcess              = get "prim_makeProcess"
                 , prim_loop                     = get "prim_loop"
                 , prim_guard                    = get "prim_guard"
                 , prim_split4                   = get "prim_split4"
+                , prim_split8                   = get "prim_split8"
 
                 -- Float4
                 , prim_next4Float               = get "prim_next4Float"
+                , prim_next8Float               = get "prim_next8Float"
+
                 , prim_writeVectorFloatX4       = get "prim_writeVectorFloatX4"
+                , prim_writeVectorFloatX8       = get "prim_writeVectorFloatX8"
+
                 , prim_projFloatX4_0            = get "prim_projFloatX4_0"
                 , prim_projFloatX4_1            = get "prim_projFloatX4_1"
                 , prim_projFloatX4_2            = get "prim_projFloatX4_2"
                 , prim_projFloatX4_3            = get "prim_projFloatX4_3"
 
+                , prim_projFloatX8_0            = get "prim_projFloatX8_0"
+                , prim_projFloatX8_1            = get "prim_projFloatX8_1"
+                , prim_projFloatX8_2            = get "prim_projFloatX8_2"
+                , prim_projFloatX8_3            = get "prim_projFloatX8_3"
+                , prim_projFloatX8_4            = get "prim_projFloatX8_4"
+                , prim_projFloatX8_5            = get "prim_projFloatX8_5"
+                , prim_projFloatX8_6            = get "prim_projFloatX8_6"
+                , prim_projFloatX8_7            = get "prim_projFloatX8_7"
+
                 -- Double2
                 , prim_next2Double              = get "prim_next2Double"
+                , prim_next4Double              = get "prim_next4Double"
+
                 , prim_writeVectorDoubleX2      = get "prim_writeVectorDoubleX2"
+                , prim_writeVectorDoubleX4      = get "prim_writeVectorDoubleX4"
 
                 -- Primitives per base type
                 , prim_baseInt          = buildOpMap sels bakedin_Int     external_Int
@@ -307,12 +353,19 @@ bakedin_Float32
         , (NamePrimArith PrimArithLt,   G.mkPrimOpId G.FloatLtOp) 
         , (NamePrimArith PrimArithLe,   G.mkPrimOpId G.FloatLeOp) 
 
-        , (NamePrimVec (PrimVecNeg 4),  G.mkPrimOpId (G.VecNegOp G.FloatVec 4 G.W32))
-        , (NamePrimVec (PrimVecAdd 4),  G.mkPrimOpId (G.VecAddOp G.FloatVec 4 G.W32))
-        , (NamePrimVec (PrimVecSub 4),  G.mkPrimOpId (G.VecSubOp G.FloatVec 4 G.W32))
-        , (NamePrimVec (PrimVecMul 4),  G.mkPrimOpId (G.VecMulOp G.FloatVec 4 G.W32))
-        , (NamePrimVec (PrimVecDiv 4),  G.mkPrimOpId (G.VecDivOp G.FloatVec 4 G.W32))
-        , (NamePrimVec (PrimVecRep 4),  G.mkPrimOpId (G.VecBroadcastOp G.FloatVec 4 G.W32)) ]
+        , (NamePrimVec (PrimVecNeg 4),  G.mkPrimOpId (G.VecNegOp       G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecAdd 4),  G.mkPrimOpId (G.VecAddOp       G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecSub 4),  G.mkPrimOpId (G.VecSubOp       G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecMul 4),  G.mkPrimOpId (G.VecMulOp       G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecDiv 4),  G.mkPrimOpId (G.VecDivOp       G.FloatVec 4 G.W32))
+        , (NamePrimVec (PrimVecRep 4),  G.mkPrimOpId (G.VecBroadcastOp G.FloatVec 4 G.W32)) 
+
+        , (NamePrimVec (PrimVecNeg 8),  G.mkPrimOpId (G.VecNegOp       G.FloatVec 8 G.W32))
+        , (NamePrimVec (PrimVecAdd 8),  G.mkPrimOpId (G.VecAddOp       G.FloatVec 8 G.W32))
+        , (NamePrimVec (PrimVecSub 8),  G.mkPrimOpId (G.VecSubOp       G.FloatVec 8 G.W32))
+        , (NamePrimVec (PrimVecMul 8),  G.mkPrimOpId (G.VecMulOp       G.FloatVec 8 G.W32))
+        , (NamePrimVec (PrimVecDiv 8),  G.mkPrimOpId (G.VecDivOp       G.FloatVec 8 G.W32))
+        , (NamePrimVec (PrimVecRep 8),  G.mkPrimOpId (G.VecBroadcastOp G.FloatVec 8 G.W32)) ]
 
 
 bakedin_Float64 :: [(Name, G.Id)]
@@ -347,11 +400,25 @@ allExternalNames
  ++     [ "prim_projFloatX4_2" ]         
  ++     [ "prim_projFloatX4_3" ]         
 
+ ++     [ "prim_projFloatX8_0" ]         
+ ++     [ "prim_projFloatX8_1" ]         
+ ++     [ "prim_projFloatX8_2" ]         
+ ++     [ "prim_projFloatX8_3" ]         
+ ++     [ "prim_projFloatX8_4" ]         
+ ++     [ "prim_projFloatX8_5" ]         
+ ++     [ "prim_projFloatX8_6" ]         
+ ++     [ "prim_projFloatX8_7" ]         
+
  ++     [ "prim_next4Float"
-        , "prim_writeVectorFloatX4" ]
+        , "prim_next8Float"
+        , "prim_writeVectorFloatX4" 
+        , "prim_writeVectorFloatX8" ]
+
  
  ++     [ "prim_next2Double"
-        , "prim_writeVectorDoubleX2" ]
+        , "prim_next4Double"
+        , "prim_writeVectorDoubleX2"
+        , "prim_writeVectorDoubleX4" ]
  
  ++     [ "prim_makeProcess"]
 
@@ -366,7 +433,9 @@ external_control :: [(Name, String)]
 external_control
  =      [ (NameOpControl OpControlLoop,         "prim_loop")
         , (NameOpControl OpControlGuard,        "prim_guard") 
-        , (NameOpControl OpControlGuard,        "prim_split4") ]
+        , (NameOpControl (OpControlSplit 4),    "prim_split4") 
+        , (NameOpControl (OpControlSplit 8),    "prim_split8") 
+        ]
 
 
 -- | Name of series primitives.
@@ -375,8 +444,12 @@ external_series
  =      [ (NameOpConcrete OpConcreteRateOfSeries,   "prim_rateOfSeries") 
         , (NameOpConcrete OpConcreteNatOfRateNat,   "prim_natOfRateNat")
         , (NameOpConcrete (OpConcreteDown 4),       "prim_down4")
+        , (NameOpConcrete (OpConcreteDown 8),       "prim_down8")
         , (NameOpConcrete (OpConcreteTail 4),       "prim_tail4") 
-        , (NameOpStore    (OpStoreTailVector 4),    "prim_tailVector4") ]
+        , (NameOpConcrete (OpConcreteTail 8),       "prim_tail8") 
+        , (NameOpStore    (OpStoreTailVector 4),    "prim_tailVector4") 
+        , (NameOpStore    (OpStoreTailVector 8),    "prim_tailVector8") 
+        ]
 
 
 -- External scalar operators --------------------------------------------------

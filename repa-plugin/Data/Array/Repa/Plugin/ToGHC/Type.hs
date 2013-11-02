@@ -72,7 +72,7 @@ convertType kenv tt
         D.TCon (D.TyConBound (D.UPrim (D.NameKiConFlow D.KiConFlowRate) _) _)
          -> return $ G.liftedTypeKind
 
-        -- Down4
+        -- Down4, Down8
         D.TApp{}
          | Just (D.NameTyConFlow (D.TyConFlowDown 4), [tK])
                 <- D.takePrimTyConApps tt
@@ -80,12 +80,24 @@ convertType kenv tt
                 return  $ G.applyTys (prim_Down4 (envPrimitives kenv))
                                      [tK']
 
-        -- Tail4
+         | Just (D.NameTyConFlow (D.TyConFlowDown 8), [tK])
+                <- D.takePrimTyConApps tt
+         -> do  tK'     <- convertType kenv tK
+                return  $ G.applyTys (prim_Down8 (envPrimitives kenv))
+                                     [tK']
+
+        -- Tail4, Tail8
         D.TApp{}
          | Just (D.NameTyConFlow (D.TyConFlowTail 4), [tK])
                 <- D.takePrimTyConApps tt
          -> do  tK'     <- convertType kenv tK
                 return  $ G.applyTys (prim_Tail4 (envPrimitives kenv))
+                                     [tK']
+
+         | Just (D.NameTyConFlow (D.TyConFlowTail 8), [tK])
+                <- D.takePrimTyConApps tt
+         -> do  tK'     <- convertType kenv tK
+                return  $ G.applyTys (prim_Tail8 (envPrimitives kenv))
                                      [tK']
 
         -- DDC[Vector# a] => GHC[Vector# {Lifted a}]
@@ -214,6 +226,10 @@ convertTyConApp _prims names tc tsArgs' tsArgs_b'
         D.TyConBound (D.UPrim (D.NamePrimTyCon (D.PrimTyConVec 4)) _) _
          |  [tElem]  <- tsArgs', G.eqType tElem G.floatPrimTy
          -> G.floatX4PrimTy
+
+        D.TyConBound (D.UPrim (D.NamePrimTyCon (D.PrimTyConVec 8)) _) _
+         |  [tElem]  <- tsArgs', G.eqType tElem G.floatPrimTy
+         -> G.floatX8PrimTy
 
         -- User-defined types: use boxed arguments
         D.TyConBound (D.UName n) _

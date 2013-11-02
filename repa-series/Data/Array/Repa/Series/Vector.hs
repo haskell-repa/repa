@@ -3,11 +3,11 @@ module Data.Array.Repa.Series.Vector
         ( Vector        (..)
         , length
         , new, new'
-        , tail4
+        , tail4, tail8
         , read
         , write
-        , writeFloatX4
-        , writeDoubleX2
+        , writeFloatX4,   writeFloatX8
+        , writeDoubleX2,  writeDoubleX4
         , take
 
           -- * Conversions
@@ -65,6 +65,7 @@ new (I# len)
 {-# INLINE [1] new #-}
 
 
+-- tail -----------------------------------------------------------------------
 -- | Select the tail of a vector.
 tail4 :: RateNat (Tail4 k) -> Vector a -> Vector a
 tail4 _ (Vector len start vec)
@@ -73,6 +74,15 @@ tail4 _ (Vector len start vec)
 {-# INLINE [1] tail4 #-} 
 
 
+-- | Select the tail of a vector.
+tail8 :: RateNat (Tail8 k) -> Vector a -> Vector a
+tail8 _ (Vector len start vec)
+ = let  !start' = quotWord# len (int2Word# 8#) `timesWord#` (int2Word# 8#)
+   in   Vector len start' vec
+{-# INLINE [1] tail8 #-} 
+
+
+-- read -----------------------------------------------------------------------
 -- | Read a value from a vector.
 read :: Prim a => Vector a -> Word# -> IO a
 read vec ix
@@ -81,6 +91,7 @@ read vec ix
 {-# INLINE [1] read #-}
 
 
+-- write ----------------------------------------------------------------------
 -- | Write a value into a vector.
 write :: Prim a => Vector a -> Word# -> a -> IO ()
 write vec ix val
@@ -102,6 +113,19 @@ writeFloatX4 v ix val
 {-# INLINE [1] writeFloatX4 #-}
 
 
+-- | Write a packed FloatX8 into a `Vector`
+--
+--   You promise that the vectorStart field is zero.
+writeFloatX8  :: Vector Float -> Word# -> FloatX8# -> IO ()
+writeFloatX8 v ix val
+ = let  !(P.MVector (I# start) (I# _) (MutableByteArray mba))
+                = vectorData v
+
+        !offset = start +# (word2Int# ix)
+   in   wrapIO_ (writeFloatX8Array# mba offset val)
+{-# INLINE [1] writeFloatX8 #-}
+
+
 -- | Write a packed DoubleX2 into a `Vector`
 --
 --   You promise that the vectorStart field is zero.
@@ -114,6 +138,19 @@ writeDoubleX2 v ix val
 {-# INLINE [1] writeDoubleX2 #-}
 
 
+-- | Write a packed DoubleX4 into a `Vector`
+--
+--   You promise that the vectorStart field is zero.
+writeDoubleX4  :: Vector Double -> Word# -> DoubleX4# -> IO ()
+writeDoubleX4 v ix val
+ = let  !(P.MVector (I# start) (I# _) (MutableByteArray mba))
+                = vectorData v
+        !offset = start +# (word2Int# ix)
+   in   wrapIO_ (writeDoubleX4Array# mba offset val)
+{-# INLINE [1] writeDoubleX4 #-}
+
+
+-- take -----------------------------------------------------------------------
 -- | Take the first n elements of a vector
 take :: Prim a => Word# -> Vector a -> IO (Vector a)
 take len (Vector _ start mvec)
@@ -122,6 +159,7 @@ take len (Vector _ start mvec)
 {-# INLINE [1] take #-}
 
 
+-- to/from primitive ----------------------------------------------------------
 -- | O(1). Unsafely convert from an Primitive vector.
 --
 --   You promise not to access the source vector again.
