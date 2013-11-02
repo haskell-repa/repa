@@ -106,10 +106,10 @@ indexDoubleX2 s ix
 
 -- | Convert a series to a vector, discarding the rate information.
 toVector :: Prim a => Series k a -> Vector a
-toVector s
+toVector !s
  = unsafePerformIO
  $ do   V.fromPrimitive (seriesVector s)
-{-# INLINE [1] toVector #-}
+{-# NOINLINE toVector #-}
 
 
 -- | Unsafely convert a vector to a series of an arbitrary rate.

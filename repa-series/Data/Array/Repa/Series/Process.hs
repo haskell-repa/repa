@@ -28,14 +28,14 @@ data Process
 makeProcess :: (World -> World) -> Process
 makeProcess f
  = Process $ wrapIO1 (\w -> (# f w, () #))
-{-# INLINE [1] makeProcess #-}
+{-# NOINLINE makeProcess #-}
 
 
 -- | Combine two processes.
 pjoin :: Process -> Process -> Process
 pjoin (Process a1) (Process a2)
  = Process (a1 >> a2)
-{-# INLINE [1] pjoin #-}
+{-# NOINLINE pjoin #-}
 
 
 infixl %

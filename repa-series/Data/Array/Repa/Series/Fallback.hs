@@ -34,8 +34,10 @@ import System.IO.Unsafe
 map     :: forall k a b. (Prim a, Prim b)
         => (a -> b) -> Series k a -> Series k b
 
-map _ _
- = error "repa-series: fallback map is broken"
+map !_ !_
+ = unsafePerformIO
+ $ do   putStrLn "map!"
+        return (error "repa-series: fallback map is broken")
 {-# NOINLINE map #-}
 
 
@@ -44,8 +46,10 @@ map2    :: forall k a b c. (Prim a, Prim b, Prim c)
         => (a -> b -> c) -> Series k a -> Series k b
         -> Series k c
 
-map2 _ _ _ 
- = error "repa-series: fallback map2 is broken"
+map2 !_ !_ !_
+ = unsafePerformIO
+ $ do   putStrLn "map2!"
+        return (error "repa-series: fallback map2 is broken")
 {-# NOINLINE map2 #-}
 
 
@@ -53,8 +57,10 @@ map2 _ _ _
 pack    :: forall k1 k2 a. Prim a
         => Sel1 k1 k2 -> Series k1 a -> Series k2 a
 
-pack _ _
- = error "repa-series: fallback pack is broken"
+pack !_ !_
+ = unsafePerformIO
+ $ do   putStrLn "pack!"
+        return (error "repa-series: fallback pack is broken")
 {-# NOINLINE pack #-}
 
 
@@ -63,8 +69,10 @@ pack _ _
 fill    :: forall k a. Prim a
         => Vector a -> Series k a -> Process
 
-fill vec s
- = error "repa-series: fallback fill is broken"
+fill !_ !_
+ = Process
+ $ do   putStrLn "fill!"
+        return ()
 {-# NOINLINE fill #-}
 
 
@@ -72,12 +80,13 @@ fill vec s
 reduce  :: forall k a. Prim a
         => Ref a -> (a -> a -> a) -> a -> Series k a -> Process
 
-reduce ref f z s
+reduce !ref !f !z !s
  = Process
- $ do   let !x  = foldSeries f z s
+ $ do   putStrLn "reduce!"
+        let !x  = foldSeries f z s
         v       <- Ref.read ref
         Ref.write ref (f v x)
-{-# INLINE [0] reduce #-}
+{-# NOINLINE reduce #-}
 
 
 -- | Combine all elements of a series with an associative operator.
@@ -94,5 +103,5 @@ foldSeries f z !source
          | otherwise
          = let  x = S.index source ix
            in   go (plusWord# ix (int2Word# 1#)) (f acc x)
-{-# INLINE [0] foldSeries #-}
+{-# NOINLINE foldSeries #-}
 
