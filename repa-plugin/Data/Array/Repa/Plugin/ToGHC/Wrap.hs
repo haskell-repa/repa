@@ -123,6 +123,22 @@ repackExp prims tOrig tResult xOrig
                 return  $ G.Case xOrig vScrut tOrig
                         [ (G.DataAlt G.wordDataCon, [v], G.Var v)]
 
+        -- Unwrap Floats
+        | G.TyConApp tcFloatU []  <- tOrig,      tcFloatU == G.floatPrimTyCon
+        , G.TyConApp tcFloat  []  <- tResult,    tcFloat  == G.floatTyCon
+        = do    vScrut  <- newDummyVar "scrut" tResult
+                v       <- newDummyVar "v"     tOrig
+                return  $ G.Case xOrig vScrut tOrig
+                        [ (G.DataAlt G.floatDataCon, [v], G.Var v)]
+
+        -- Unwrap Doubles
+        | G.TyConApp tcDoubleU []  <- tOrig,      tcDoubleU == G.doublePrimTyCon
+        , G.TyConApp tcDouble  []  <- tResult,    tcDouble  == G.doubleTyCon
+        = do    vScrut  <- newDummyVar "scrut" tResult
+                v       <- newDummyVar "v"     tOrig
+                return  $ G.Case xOrig vScrut tOrig
+                        [ (G.DataAlt G.doubleDataCon, [v], G.Var v)]
+
 
         -- Boxed Tuples -> Unboxed Tuples -------
         | G.TyConApp tcTup tins          <- tOrig
