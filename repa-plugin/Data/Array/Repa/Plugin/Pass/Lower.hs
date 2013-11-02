@@ -156,12 +156,17 @@ passLower options name guts0
 
 
         -- Lower ------------------------------------------
-        let mm_lowered_fail
-                | elem "vector" options
-                = Flow.lowerModule Flow.defaultConfigVector mm_prep
+        let lifting
+                | elem "lift8" options  = Flow.Lifting 8
+                | elem "lift4" options  = Flow.Lifting 4
+                | otherwise             = Flow.Lifting 4
 
-                | otherwise
-                = Flow.lowerModule Flow.defaultConfigScalar mm_prep
+        let method
+                | elem "vector" options = Flow.MethodVector lifting
+                | otherwise             = Flow.MethodScalar
+
+        let mm_lowered_fail
+                = Flow.lowerModule (Flow.Config method) mm_prep
 
         -- TODO: do something sensibler if we can't lower the code.
         let mm_lowered
