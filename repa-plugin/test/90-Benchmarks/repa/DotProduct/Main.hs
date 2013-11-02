@@ -11,7 +11,6 @@ import System.Environment
 
 import System.CPUTime
 import System.Time
-import Debug.Trace
 
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
@@ -33,7 +32,7 @@ main
 	v1 `seq` x1 `seq` y1 `seq` x2 `seq` y2 `seq` return ()
 
         (p1, t) <- time 
-                $ do    True    <- R.runProcess4 x1 y1 x2 y2 (lower_dotp v1)
+                $ do    True    <- R.runProcess4 x1 y1 x2 y2 (dotp v1)
                         p1      <- V.toPrimitive v1
                         p1 `seq` return p1
 
@@ -41,7 +40,7 @@ main
         print (P.head p1, P.length p1)
 
 
-lower_dotp 
+dotp 
         :: forall k
         .  R.Vector Float
         -> RateNat k
@@ -49,6 +48,5 @@ lower_dotp
         -> R.Series k Float -> R.Series k Float
         -> Process
 
-lower_dotp v1 _ x1 y1 x2 y2
+dotp v1 _ x1 y1 x2 y2
  = R.fill v1 (R.map2 (+) (R.map2 (*) x1 x2) (R.map2 (*) y1 y2))
-
