@@ -38,7 +38,8 @@ convertVarName var
         = convertName (G.varName var)
 
 
--- | Convert a DDC name from a GHC name.
+-- | Convert a DDC name from a GHC name
+--   We append the GHC uniq to the end to avoid name clashes on the DDC side.
 convertName :: Name.Name -> Either Fail D.Name
 convertName name
  = let  baseName = OccName.occNameString

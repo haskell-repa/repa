@@ -14,6 +14,7 @@ import qualified Kind                   as G
 import qualified TyCon                  as G
 import qualified Var                    as G
 
+
 -- Bind -----------------------------------------------------------------------
 instance Detect Bind where
  detect b
@@ -35,19 +36,19 @@ instance Detect Bound where
 
          -- Primitive type constructors.
          | Just g'      <- matchPrim "Bool_" n
-         -> makePrim g' (NamePrimTyCon PrimTyConBool)           kData
+         -> makePrim g' (NamePrimTyCon PrimTyConBool)       kData
 
          | Just g'      <- matchPrim "Int_" n
-         -> makePrim g' (NamePrimTyCon PrimTyConInt)            kData
+         -> makePrim g' (NamePrimTyCon PrimTyConInt)        kData
 
          | Just g'      <- matchPrim "Word_" n
-         -> makePrim g' (NamePrimTyCon PrimTyConNat)            kData
+         -> makePrim g' (NamePrimTyCon PrimTyConNat)        kData
 
          | Just g'      <- matchPrim "Float_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 32))     kData
+         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 32)) kData
 
          | Just g'      <- matchPrim "Double_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 64))     kData
+         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 64)) kData
 
          -- RateNats
          | Just g'      <- matchPrim "RateNat_" n
@@ -100,6 +101,8 @@ instance Detect Bound where
                 return  $ UPrim d t'
 
 
+-- | If some FatName matches the given string then return the associated GhcName.
+matchPrim :: String -> FatName -> Maybe GhcName
 matchPrim str n
  | Just (str', g)      <- stringPrim n
  , isPrefixOf str str'  = Just g
@@ -107,6 +110,8 @@ matchPrim str n
  | otherwise            = Nothing
 
 
+-- | Get the raw String name and the GhcName from a FatName.
+stringPrim :: FatName -> Maybe (String, GhcName)
 stringPrim n
  | FatName g (NameVar str') <- n
  = Just (str', g)
@@ -117,6 +122,14 @@ stringPrim n
  | otherwise
  = Nothing
 
+
+-- | Remember that some GhcName maps to this DDC Name, 
+--   and return a DDC bound for it.
+makePrim 
+        :: GhcName 
+        -> Name 
+        -> Type Name 
+        -> State DetectS (Bound Name)
 
 makePrim g d t
  = do   collect d g

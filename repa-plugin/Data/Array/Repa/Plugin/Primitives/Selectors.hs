@@ -6,7 +6,6 @@ where
 import Data.Array.Repa.Plugin.ToGHC.Var
 import Data.List
 import Control.Monad
-
 import qualified CoreSyn        as G
 import qualified MkCore         as G
 import qualified DataCon        as G
@@ -15,12 +14,12 @@ import qualified Type           as G
 import qualified Var            as G
 import qualified OccName        as Occ
 import qualified Name           as Name
-
 import UniqSupply               as G
 
 
 -------------------------------------------------------------------------------
 -- | Make the selector table.
+--   These select primitive functions from the top-level primitive table.
 makeSelectors
         :: G.Var                -- ^ Core variable bound to our primitive table.
         -> [String]             -- ^ Names of all the primitives.

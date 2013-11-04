@@ -12,7 +12,7 @@ import Data.List
 -- | Get the name, instance type, and type scheme for one of GHC's
 --   primitive arithmetic operators. 
 --
---   Done by string matching on the GHC symbol name.
+--   Done by dodgy string matching on the GHC symbol name.
 --
 matchPrimArith 
         :: String 

@@ -161,7 +161,7 @@ convertBinding (b, x)
 
 
 -- Expr -----------------------------------------------------------------------
--- | Slurp an expression.
+-- | Slurp a GHC expression into a DDC expression.
 convertExpr :: G.CoreExpr 
             -> Either Fail (D.Exp () FatName)
 
@@ -228,23 +228,18 @@ convertExpr xx
                 x'      <- convertExpr    x
                 alts'   <- mapM convertAlt alts
 
-                -- Case
                 return $ D.XLet  () (D.LLet (D.BName b' t') x')
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
-
 
         -- We can't represent type casts,
         -- so just drop them on the floor.
         G.Cast x _      -> convertExpr x                        
 
-
         -- Just ditch tick nodes, we probably don't need them.
         G.Tick _ x      -> convertExpr x
 
-
         -- Type arguments.
         G.Type t        -> liftM (D.XType ()) (convertType t)
-
 
         -- Cannot convert coercions.
         G.Coercion{}    -> Left FailNoCoercions

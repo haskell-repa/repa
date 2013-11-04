@@ -27,6 +27,17 @@ import qualified Data.Set       as Set
 import Data.List
 
 
+-- | Detect primitive operators in a module.
+--
+--   In the input program, special functions like 'map' and 'reduce' are
+--   taken to be defined in an imported module, but for the lowering transform
+--   we treat those as primitive operators.
+--   
+--   The detect phase takes a module using `FatNames` that contain the
+--   corresponding GHC name, as well as a DDC name that just represents all
+---  names as strings. We produce a new module with special names like
+--   'map' and 'reduce' represented by their concrete primops.
+--
 detectModule 
         :: Module  () FatName 
         -> (Module () Name, Map Name GhcName)
