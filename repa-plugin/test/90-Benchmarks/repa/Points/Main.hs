@@ -21,7 +21,7 @@ main
  = do   args <- getArgs
         let sz = case args of
                    [szStr] -> (Prelude.read szStr :: Int)
-                   _       -> error "Usage: simplebench <size>"
+                   _       -> error "Usage: eatPoints <size>"
 
         v0      <- (V.new sz :: IO (V.Vector Float))
         v1      <- V.fromPrimitive $ P.enumFromN 0 sz

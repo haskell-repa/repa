@@ -40,8 +40,7 @@ main
         print (P.head p1, P.length p1)
 
 
-dotp 
-        :: forall k
+dotp    :: forall k
         .  R.Vector Float
         -> RateNat k
         -> R.Series k Float -> R.Series k Float

@@ -26,7 +26,7 @@ main
         o2      <- (V.new sz :: IO (V.Vector Float))
         i1 `seq` o1 `seq` o2 `seq` return ()
 
-        ((), t) <- time $ runProcess i1 (lower_mapmap o1 o2)
+        ((), t) <- time $ runProcess i1 (mapmap o1 o2)
         o1'     <- V.toPrimitive o1
         o2'     <- V.toPrimitive o2
 
@@ -34,17 +34,17 @@ main
         print (P.head o1', P.length o1', P.head o2', P.length o2')
 
 
-lower_mapmap  :: forall k
+mapmap  :: forall k
         .  R.Vector Float -> R.Vector Float
         -> RateNat k
         -> R.Series k Float 
         -> Process
 
-lower_mapmap o1 o2 _ xs
+mapmap o1 o2 _ xs
  = let xs' = R.map (\x -> x * 2)  xs
        ys  = R.map (\x -> x + 50) xs'
        zs  = R.map (\x -> x - 50) xs'
    in  
         R.fill o1 ys
      %  R.fill o2 zs
-{-# NOINLINE lower_mapmap #-}
+{-# NOINLINE mapmap #-}
