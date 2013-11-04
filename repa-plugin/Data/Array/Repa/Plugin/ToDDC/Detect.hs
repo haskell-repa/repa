@@ -224,7 +224,7 @@ instance Detect (Exp a) where
   --   In the Core code, arithmetic operations are expressed as monomorphic
   --   dictionary methods, which we convert to polytypic DDC primops.
   | XVar (UName (FatName nG (NameVar str)))    <- xx
-  , Just (nD', tArg, tPrim)  <- matchPrimArith str
+  , Just (nD', tArg, tPrim)  <- detectPrimArithName str
   = do  collect nD' nG
         return  $ xApps (XVar (UPrim nD' tPrim)) [XType tArg]
 

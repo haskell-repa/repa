@@ -36,9 +36,8 @@ convertKind tt
                 t2'     <- convertKind t2
                 return  $ D.kFun t1' t2'
 
-        | G.isLiftedTypeKind tt         = return D.kData
-        | G.isUnliftedTypeKind tt       = return D.kData
-        | otherwise                     = Left (FailUnhandledKind tt)
+        | otherwise     
+        = return D.kData
 
 
 -- TyCon ----------------------------------------------------------------------

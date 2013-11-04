@@ -6,6 +6,7 @@ import DDC.Core.Flow
 import DDC.Core.Flow.Compounds
 import Data.Array.Repa.Plugin.FatName
 import Data.Array.Repa.Plugin.ToDDC.Detect.Base
+import Data.Array.Repa.Plugin.ToDDC.Detect.Prim
 import Control.Monad.State.Strict
 import qualified DDC.Type.Sum   as Sum
 import Data.List
@@ -32,108 +33,31 @@ instance Detect Bind where
 instance Detect Bound where
  detect u
   = case u of
-        UName n@(FatName g d)
-
-         -- Primitive type constructors.
-         | Just g'      <- matchPrim "Bool_" n
-         -> makePrim g' (NamePrimTyCon PrimTyConBool)       kData
-
-         | Just g'      <- matchPrim "Int_" n
-         -> makePrim g' (NamePrimTyCon PrimTyConInt)        kData
-
-         | Just g'      <- matchPrim "Word_" n
-         -> makePrim g' (NamePrimTyCon PrimTyConNat)        kData
-
-         | Just g'      <- matchPrim "Float_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 32)) kData
-
-         | Just g'      <- matchPrim "Double_" n
-         -> makePrim g' (NamePrimTyCon (PrimTyConFloat 64)) kData
-
-         -- RateNats
-         | Just g'      <- matchPrim "RateNat_" n
-         -> makePrim g' (NameTyConFlow TyConFlowRateNat)
-                        (kRate `kFun` kData)
-
-         -- Vectors, series and selectors.
-         | Just g'      <- matchPrim "Vector_" n
-         -- Find ghc's kind for the var
-         -- Only if it's a data type, not a Constraint?
-         , not $ returnsConstraintKind g'
-         -> makePrim g' (NameTyConFlow TyConFlowVector)    
-                        (kData `kFun` kData)
-
-         | Just g'      <- matchPrim "Ref_" n
-         -> makePrim g' (NameTyConFlow TyConFlowRef)
-                        (kData `kFun` kData)
-
-         | Just g'      <- matchPrim "Series_" n
-         -> makePrim g' (NameTyConFlow TyConFlowSeries) 
-                        (kRate `kFun` kData `kFun` kData)
-
-         | Just g'      <- matchPrim "Sel1_" n
-         -> makePrim g' (NameTyConFlow (TyConFlowSel 1))
-                        (kRate `kFun` kRate `kFun` kData)
-
-         | Just g'      <- matchPrim "Process_" n
-         -> makePrim g' (NameTyConFlow TyConFlowProcess)
-                        kData
-
-         -- N-tuples: (,)_ etc. Holds one more than the number of commas
-         | Just (str, g')       <- stringPrim n
-         , '(':rest             <- str
-         , (commas,aftercommas) <- span (==',') rest
-         , isPrefixOf ")_" aftercommas
-         , size                 <- length commas + 1
-         -> do   let k = foldr kFun kData (replicate size kData)
-                 makePrim g' (NameTyConFlow (TyConFlowTuple size)) k
-
-         | otherwise
-         -> do  collect d g
-                return  $ UName d
-
+        -- De-bruijn indices.
         UIx ix
          -> return $ UIx ix
 
+        -- Primitives that we've already detected.
         UPrim (FatName g d) t
          -> do  collect d g
                 t'      <- detect t
                 return  $ UPrim d t'
 
+        -- Detect a name with a special meaning to us.
+        UName n@(FatName g d)
+         -- Type constructor names,
+         --  we need to check whether the constructor name returns a constraint
+         --  kind in case there are type classes in scope that have the same
+         --  names as our built-in types -- like 'Vector'
+         | Just (str, g') <- stringPrim n
+         , Just (dn, ki)  <- detectPrimTyConName str
+         , not $ returnsConstraintKind g'
+         -> do  collect dn g'
+                return  $ UPrim dn ki
 
--- | If some FatName matches the given string then return the associated GhcName.
-matchPrim :: String -> FatName -> Maybe GhcName
-matchPrim str n
- | Just (str', g)      <- stringPrim n
- , isPrefixOf str str'  = Just g
-
- | otherwise            = Nothing
-
-
--- | Get the raw String name and the GhcName from a FatName.
-stringPrim :: FatName -> Maybe (String, GhcName)
-stringPrim n
- | FatName g (NameVar str') <- n
- = Just (str', g)
-
- | FatName g (NameCon str') <- n
- = Just (str', g)
-
- | otherwise
- = Nothing
-
-
--- | Remember that some GhcName maps to this DDC Name, 
---   and return a DDC bound for it.
-makePrim 
-        :: GhcName 
-        -> Name 
-        -> Type Name 
-        -> State DetectS (Bound Name)
-
-makePrim g d t
- = do   collect d g
-        return  $ UPrim d t
+         | otherwise
+         -> do  collect d g
+                return  $ UName d
 
 
 returnsConstraintKind :: GhcName -> Bool
@@ -168,6 +92,9 @@ instance Detect TyCon where
                  UPrim _ k2  -> return $ TyConBound u' k2
                  _           -> return $ TyConBound u' k'
 
+        TyConExists ix k   
+         -> do  k'      <- detect k
+                return  $ TyConExists ix k'
 
 
 -- Type ------------------------------------------------------------------------
@@ -237,4 +164,27 @@ instance Detect Type where
          -> do  k       <- detect $ Sum.kindOfSum ts
                 tss'    <- liftM (Sum.fromList k) $ mapM detect $ Sum.toList ts
                 return  $  TSum tss'
+
+
+-------------------------------------------------------------------------------
+-- | If some FatName matches the given string then return the associated GhcName.
+matchPrim :: String -> FatName -> Maybe GhcName
+matchPrim str n
+ | Just (str', g)      <- stringPrim n
+ , isPrefixOf str str'  = Just g
+
+ | otherwise            = Nothing
+
+
+-- | Get the raw String name and the GhcName from a FatName.
+stringPrim :: FatName -> Maybe (String, GhcName)
+stringPrim n
+ | FatName g (NameVar str') <- n
+ = Just (str', g)
+
+ | FatName g (NameCon str') <- n
+ = Just (str', g)
+
+ | otherwise
+ = Nothing
 

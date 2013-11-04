@@ -7,7 +7,6 @@ import qualified DDC.Core.Flow          as D
 
 import qualified Literal                as G
 import qualified Var                    as G
-import qualified Kind                   as G
 import qualified OccName                as Occ
 import qualified Name                   as Name
 
@@ -16,9 +15,6 @@ data Fail
         -- Atomic Failures ------------
         -- | Top level binding was not marked for conversion.
         = FailNotMarked
-
-        -- | Cannot convert kind.
-        | FailUnhandledKind G.Kind
 
         -- | Cannot convert numeric type literals.
         | FailNoNumericTypeLiterals
@@ -52,9 +48,6 @@ data Fail
 instance Pretty Fail where
  ppr FailNotMarked
   = text "Top level binding not marked for conversion."
-
- ppr (FailUnhandledKind _)
-  = text "Unhandled GHC kind"
 
  ppr FailNoNumericTypeLiterals
   = text "Cannot convert numeric type literals."

@@ -231,11 +231,11 @@ convertExpr xx
                 return $ D.XLet  () (D.LLet (D.BName b' t') x')
                        $ D.XCase () (D.XVar () (D.UName b')) alts'
 
-        -- We can't represent type casts,
-        -- so just drop them on the floor.
-        G.Cast x _      -> convertExpr x                        
+        -- Ditch type casts, we can't represent them in the target language.
+        G.Cast{}        -> Left FailNoCasts                       
 
-        -- Just ditch tick nodes, we probably don't need them.
+        -- Ditch tick nodes. 
+        -- These are just use for profiling, and we can't represent them
         G.Tick _ x      -> convertExpr x
 
         -- Type arguments.
