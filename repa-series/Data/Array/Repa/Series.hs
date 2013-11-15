@@ -48,3 +48,37 @@ import Data.Array.Repa.Series.Fallback
 import Data.Array.Repa.Series.Prim
 import Data.Array.Repa.Series.Process
 import Prelude hiding (map)
+
+import Data.Primitive.Types
+import GHC.Exts
+
+
+instance Prim Bool where
+ sizeOf# _              = 1#
+ alignment# _           = 1#
+
+ indexByteArray# arr ix 
+  = isTrue# (word2Int# (indexWord8Array# arr ix))
+
+ readByteArray# marr ix world
+  = case readWord8Array# marr ix world of
+        (# world, word #) -> (# world, isTrue# (word2Int# word) #)
+
+ writeByteArray# marr ix x world
+  = writeWord8Array# marr ix (int2Word# (dataToTag# x)) world
+
+ setByteArray# marr start len val world
+  = GHC.Exts.setByteArray# marr start len (dataToTag# val) world
+
+ indexOffAddr# addr ix 
+  = isTrue# (word2Int# (indexWord8OffAddr# addr ix))
+
+ readOffAddr#  addr off world
+  = case readWord8OffAddr# addr off world of
+        (# world, word #) -> (# world, isTrue# (word2Int# word) #)
+
+ writeOffAddr# addr off x world
+  = writeWord8OffAddr# addr off (int2Word# (dataToTag# x)) world
+
+ setOffAddr#   marr start len val world
+  = error "setOffAddr[Bool] not implemented"

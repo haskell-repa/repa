@@ -3,6 +3,7 @@ module Data.Array.Repa.Series.Sel
         ( Sel1 (..)
         , mkSel1)
 where
+import Data.Array.Repa.Series.Process
 import Data.Array.Repa.Series.Vector    as V
 import Data.Array.Repa.Series.Series    as S
 import Data.Vector.Primitive            as P
@@ -15,13 +16,13 @@ import GHC.Exts
 data Sel1 k1 k2
         = Sel1
         { sel1Length    :: Word#
-        , sel1Flags     :: !(P.Vector Word8) }
+        , sel1Flags     :: !(P.Vector Bool) }
 
 
 -- | Create a new selector from a series of flags.
-mkSel1  :: Series k1 Word8
-        -> (forall k2. Sel1 k1 k2 -> a)
-        -> a
+mkSel1  :: Series k1 Bool
+        -> (forall k2. Sel1 k1 k2 -> Process)
+        -> Process
 
 mkSel1 (Series _ len _ vec) worker
  = worker       $ Sel1

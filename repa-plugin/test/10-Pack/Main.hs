@@ -1,9 +1,10 @@
-
+{-# LANGUAGE MagicHash #-}
 module Main where
 import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Vector    as V
-import qualified Data.Vector.Unboxed    as U
+import qualified Data.Vector.Primitive  as P
+import GHC.Exts
 
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
@@ -13,31 +14,30 @@ repa_primitives =  R.primitives
 
 ---------------------------------------------------------------------
 main
- = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
-       
-        print $ R.runSeries v1 lower_fffold
---      print $ R.runSeries v1 lower_even               -- BROKEN
+ = do   v       <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
+        v1      <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
+        R.runProcess v (lower_even v1)
+        print v1
+
+{-
         print $ R.runSeries v1 lower_even_sum
         print $ R.runSeries v1 lower_even_sum_2
         print $ R.runSeries v1 lower_maxx
         -- print $ R.runSeries v1 lower_partition       -- BROKEN
         -- print $ R.runSeries v1 (lower_partial 5)     -- BROKEN
-
--- Double fold fusion.
---  Computation of both reductions is interleaved.
-lower_fffold :: R.Series k Int -> (Int, Int)
-lower_fffold s
- = (R.fold (+) 0 s + R.fold (*) 1 s, R.fold (*) 1 s)
-
+-}
 
 -- | Return just the even values.
---lower_even :: Series k Int -> Vector Int              -- BROKEN: the slice result floats into 
---lower_even s1                                         -- the result and wrapResult gets confused.
--- = R.mkSel1 
---        (R.map (\x -> x `mod` 2 == 0) s1)
---        (\sel -> S.toVector (R.pack sel s1))
+lower_even 
+        :: Vector Int 
+        -> RateNat k -> R.Series k Int -> Process
+lower_even v1 _ s1
+ = R.mkSel1 
+        (R.map (\x -> x `mod` 2 == 0) s1)
+        (\sel -> R.fill v1 (R.pack sel s1))
 
 
+{-
 -- | Return the positive values, 
 --   along with the sum of all, and sum of just positive.
 lower_even_sum :: Series k Int -> (Vector Int, Int, Int)
@@ -76,10 +76,11 @@ maxx :: Int -> Int -> Int
 maxx x y
  = if x > y then x else y
 {-# INLINE [0] maxx #-}
-
+-}
 
 -- TODO: Broken!
--- DDC/Core/Flow/Transform/Schedule.hs:(104,9)-(109,50): Irrefutable pattern failed for pattern Data.Maybe.Just nest3
+-- DDC/Core/Flow/Transform/Schedule.hs:(104,9)-(109,50): 
+--   Irrefutable pattern failed for pattern Data.Maybe.Just nest3
 {-
 lower_partition :: Series k Int -> (Vector Int, Vector Int)
 lower_partition s1
