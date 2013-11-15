@@ -1,3 +1,4 @@
+
 module Main where
 import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S

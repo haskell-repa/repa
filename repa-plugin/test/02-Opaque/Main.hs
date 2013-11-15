@@ -2,7 +2,7 @@ module Main where
 import Data.Array.Repa.Series           as R
 import Data.Array.Repa.Series.Series    as S
 import Data.Array.Repa.Series.Vector    as V
-import qualified Data.Vector.Unboxed    as U
+import qualified Data.Vector.Primitive  as P
 
 ---------------------------------------------------------------------
 -- | Set the primitives used by the lowering transform.
@@ -20,19 +20,31 @@ f_opaque x = x + 1
 
 ---------------------------------------------------------------------
 main
- = do   v1      <- V.fromUnboxed $ U.enumFromN (1 :: Int) 10
-        print $ R.runSeries v1 lower_map
-        print $ R.runSeries v1 lower_map_ext
+ = do   v       <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
+
+        -------------------------------
+        putStrLn "singleMap"
+        v1      <- V.fromPrimitive $ P.replicate 10 0
+        R.runProcess v (singleMap v1)
+        print v1
+
+        -------------------------------
+        putStrLn "\nexternMap"
+        v1      <- V.fromPrimitive $ P.replicate 10 0
+        R.runProcess v (externMap v1)
+        print v1
+
 
 
 -- Map with the opaque function defined in this module
-lower_map :: R.Series k Int -> Vector Int
-lower_map s
- = S.toVector (R.map f_opaque s)
+singleMap :: Vector Int 
+          -> RateNat k -> R.Series k Int -> Process
+singleMap v _ s
+ = R.fill v (R.map f_opaque s)
 
 
 -- Map with an opaque function defined in another module
-lower_map_ext :: R.Series k Int -> Vector Int
-lower_map_ext s
- = S.toVector (R.map ([20..] !!) s)
-
+externMap :: Vector Int
+          -> RateNat k -> R.Series k Int -> Process
+externMap v _ s
+ = R.fill v (R.map ([20..] !!) s)
