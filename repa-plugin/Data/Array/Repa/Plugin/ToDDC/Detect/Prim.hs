@@ -96,7 +96,9 @@ detectPrimArithName str
         , ("$fIntegralInt_$cmod_",      (PrimArithMod,  tInt))
         , ("eqInt_",                    (PrimArithEq,   tInt))
         , ("gtInt_",                    (PrimArithGt,   tInt))
-        , ("ltInt_",                    (PrimArithLt,   tInt)) 
+        , ("geInt_",                    (PrimArithGe,   tInt))
+        , ("ltInt_",                    (PrimArithLt,   tInt))
+        , ("leInt_",                    (PrimArithLe,   tInt))
 
         -- Float
         , ("plusFloat_",                (PrimArithAdd,  tFloat 32))
@@ -104,7 +106,9 @@ detectPrimArithName str
         , ("timesFloat_",               (PrimArithMul,  tFloat 32))
         , ("eqFloat_",                  (PrimArithEq,   tFloat 32))
         , ("gtFloat_",                  (PrimArithGt,   tFloat 32))
+        , ("geFloat_",                  (PrimArithGe,   tFloat 32))
         , ("ltFloat_",                  (PrimArithLt,   tFloat 32)) 
+        , ("leFloat_",                  (PrimArithLe,   tFloat 32)) 
 
         -- Double
         , ("$fNumDouble_$c+_",          (PrimArithAdd,  tFloat 64))
@@ -112,5 +116,8 @@ detectPrimArithName str
         , ("$fNumDouble_$c*_",          (PrimArithMul,  tFloat 64))
         , ("eqDouble_",                 (PrimArithEq,   tFloat 64))
         , ("gtDouble_",                 (PrimArithGt,   tFloat 64))
-        , ("ltDouble_",                 (PrimArithLt,   tFloat 64)) ]
+        , ("geDouble_",                 (PrimArithGe,   tFloat 64))
+        , ("ltDouble_",                 (PrimArithLt,   tFloat 64)) 
+        , ("leDouble_",                 (PrimArithLe,   tFloat 64)) 
+        ]
 
