@@ -313,6 +313,7 @@ bakedin_Int
         , (NamePrimArith PrimArithSub,  G.mkPrimOpId G.IntSubOp) 
         , (NamePrimArith PrimArithMul,  G.mkPrimOpId G.IntMulOp) 
         , (NamePrimArith PrimArithDiv,  G.mkPrimOpId G.IntQuotOp) 
+        , (NamePrimArith PrimArithMod,  G.mkPrimOpId G.IntRemOp)
         , (NamePrimArith PrimArithRem,  G.mkPrimOpId G.IntRemOp) 
 
         , (NamePrimArith PrimArithEq,   G.mkPrimOpId G.IntEqOp) 

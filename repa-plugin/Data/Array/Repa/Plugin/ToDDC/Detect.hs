@@ -168,11 +168,11 @@ instance Detect (Exp a) where
 
   -- Detect mkSel
   | XApp{}                              <- xx
-  , Just  (XVar u,    [xTK, xTA, xFlags, xWorker])
+  , Just  (XVar u,    [xTK, xFlags, xWorker])
                                         <- takeXApps xx
   , UName (FatName _ (NameVar v))       <- u
   , isPrefixOf "mkSel1_" v
-  = do  args'   <- mapM detect [xTK, xTA, xFlags, xWorker]
+  = do  args'   <- mapM detect [xTK, xFlags, xWorker]
         return  $ xApps (xOpSeries (OpSeriesMkSel 1)) args'
 
   
