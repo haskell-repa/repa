@@ -274,7 +274,7 @@ instance Detect (Lets a) where
                 xs'     <- mapM detect xs
                 return  $ LRec $ zip bs' xs'
 
-        LLetRegions{}   -> error "repa-plugin.detect: LLetRegions not handled"
+        LPrivate{}      -> error "repa-plugin.detect: LPrivate not handled"
         LWithRegion{}   -> error "repa-plugin.detect: LWithRegions not handled"
 
 

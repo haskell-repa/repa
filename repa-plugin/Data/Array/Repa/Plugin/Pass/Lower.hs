@@ -263,7 +263,7 @@ checkFlowModule mm
  = let  result  = Core.checkModule 
                         (Core.configOfProfile Flow.profile)
                         mm
-   in   case result of
+   in   case fst result of
          Right mm'      -> mm'
          Left err
           -> error $ D.renderIndent $ D.indent 8 $ D.vcat
