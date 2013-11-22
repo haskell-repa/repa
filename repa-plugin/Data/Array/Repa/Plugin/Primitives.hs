@@ -471,7 +471,7 @@ external_scalarTYPE
         , (NameOpStore OpStoreNewVector,        "newVector")
         , (NameOpStore (OpStoreReadVector  1),  "readVector")
         , (NameOpStore (OpStoreWriteVector 1),  "writeVector")
-        , (NameOpStore OpStoreSliceVector,      "sliceVector") ]
+        , (NameOpStore OpStoreTruncVector,      "truncVector") ]
 
 
 -- | Primitive table names for Int operators.

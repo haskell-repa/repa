@@ -165,7 +165,7 @@ isPolytypicPrimName n
  | D.NameOpStore D.OpStoreNewVector             <- n    = True
  | D.NameOpStore (D.OpStoreReadVector  _)       <- n    = True
  | D.NameOpStore (D.OpStoreWriteVector _)       <- n    = True
- | D.NameOpStore D.OpStoreSliceVector           <- n    = True
+ | D.NameOpStore D.OpStoreTruncVector           <- n    = True
 
  | otherwise                                            = False
 

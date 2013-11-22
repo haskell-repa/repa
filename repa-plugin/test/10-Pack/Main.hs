@@ -20,7 +20,7 @@ main
         putStrLn "even"
         v       <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
         v1      <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
-        R.runProcess v (evens v1)               -- TODO: slice to final length
+        R.runProcess v (evens v1)
         print v1
 
         -------------------------------
@@ -29,7 +29,7 @@ main
         r0      <- Ref.new 0
         r1      <- Ref.new 0
         R.runProcess v (evenSum v1 r0 r1)
-        print v1                                -- TODO: slice to final length
+        print v1
         Ref.read r0 >>= print
         Ref.read r1 >>= print           
 
@@ -39,7 +39,7 @@ main
         r0      <- Ref.new 0
         r1      <- Ref.new 0
         R.runProcess v (evenSum2 v1 r0 r1)
-        print v1                                -- TODO: slice to final length
+        print v1
         Ref.read r0 >>= print
         Ref.read r1 >>= print
 
@@ -48,20 +48,20 @@ main
         v1      <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
         r0      <- Ref.new 0
         R.runProcess v (evenMax v1 r0)
-        print v1                                -- TODO: slice to final length
+        print v1
         Ref.read r0 >>= print
 
         -------------------------------
         putStrLn "\npartial"
         v1      <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
-        R.runProcess v (partial 5 v1)           -- TODO: slice to final length
+        R.runProcess v (partial 5 v1)
         print v1
 
         -------------------------------
         putStrLn "\npartitions"
         v1      <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
         v2      <- V.fromPrimitive $ P.enumFromN (1 :: Int) 10
-        R.runProcess v (partitions v1 v2)       -- TODO: slice to final length
+        R.runProcess v (partitions v1 v2)
         print v1
         print v2
 
@@ -135,7 +135,7 @@ partial limit v1 _ s1
    (\sel -> R.fill v1 (R.pack sel (R.map (* 2) s1)))
 
 
--- | Partition a vector into two parts
+-- | Partition a vector into two parts.
 partitions 
         :: Vector Int -> Vector Int
         -> RateNat k  -> R.Series k Int

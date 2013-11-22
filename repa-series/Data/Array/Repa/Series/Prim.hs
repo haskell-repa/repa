@@ -77,7 +77,7 @@ data Primitives
   , prim_newVectorInt           :: Word#                                -> W -> (# W, Vector Int #)
   , prim_readVectorInt          :: Vector Int -> Word#                  -> W -> (# W, Int# #)
   , prim_writeVectorInt         :: Vector Int -> Word# -> Int#          -> W -> W
-  , prim_sliceVectorInt         :: Word# -> Vector Int                  -> W -> (# W, Vector Int #)
+  , prim_truncVectorInt         :: Word# -> Vector Int                  -> W -> W
 
   , prim_nextInt                :: forall k
                                 .  Series k Int -> Word#                -> W -> (# W, Int# #)
@@ -90,7 +90,7 @@ data Primitives
   , prim_newVectorWord          :: Word#                                -> W -> (# W, Vector Word #)
   , prim_readVectorWord         :: Vector Word -> Word#                 -> W -> (# W, Word# #)
   , prim_writeVectorWord        :: Vector Word -> Word# -> Word#        -> W -> W
-  , prim_sliceVectorWord        :: Word# -> Vector Word                 -> W -> (# W, Vector Word #)
+  , prim_truncVectorWord        :: Word# -> Vector Word                 -> W -> W
 
   , prim_nextWord               :: forall k
                                 .  Series k Word -> Word#               -> W -> (# W, Word# #)
@@ -105,7 +105,7 @@ data Primitives
   , prim_writeVectorFloat       :: Vector Float -> Word# -> Float#      -> W -> W
   , prim_writeVectorFloatX4     :: Vector Float -> Word# -> FloatX4#    -> W -> W
   , prim_writeVectorFloatX8     :: Vector Float -> Word# -> FloatX8#    -> W -> W
-  , prim_sliceVectorFloat       :: Word# -> Vector Float                -> W -> (# W, Vector Float #)
+  , prim_truncVectorFloat       :: Word# -> Vector Float                -> W -> W
 
   , prim_nextFloat              :: forall k
                                 .  Series k Float -> Word#              -> W -> (# W, Float# #)
@@ -140,7 +140,7 @@ data Primitives
   , prim_writeVectorDouble      :: Vector Double -> Word# -> Double#    -> W -> W
   , prim_writeVectorDoubleX2    :: Vector Double -> Word# -> DoubleX2#  -> W -> W
   , prim_writeVectorDoubleX4    :: Vector Double -> Word# -> DoubleX4#  -> W -> W
-  , prim_sliceVectorDouble      :: Word# -> Vector Double               -> W -> (# W, Vector Double #)
+  , prim_truncVectorDouble      :: Word# -> Vector Double               -> W -> W
 
   , prim_nextDouble             :: forall k
                                 .  Series k Double -> Word#             -> W -> (# W, Double# #)
@@ -157,7 +157,9 @@ data Primitives
 primitives :: Primitives
 primitives
   = Primitives
-  { prim_Series = error "repa-series.primitives: you can't touch this."
+  { -- These bindings are only used as proxies to get the associated type constructor.
+    -- They don't need value level definitions.
+    prim_Series = error "repa-series.primitives: you can't touch this."
   , prim_Vector = error "repa-series.primitives: you can't touch this."
   , prim_Ref    = error "repa-series.primitives: you can't touch this."
   , prim_Down4  = error "repa-series.primitives: you can't touch this."
@@ -193,7 +195,7 @@ primitives
   , prim_newVectorInt           = repa_newVectorInt
   , prim_readVectorInt          = repa_readVectorInt
   , prim_writeVectorInt         = repa_writeVectorInt
-  , prim_sliceVectorInt         = repa_sliceVectorInt
+  , prim_truncVectorInt         = repa_truncVectorInt
 
   , prim_nextInt                = repa_nextInt
 
@@ -205,7 +207,7 @@ primitives
   , prim_newVectorWord          = repa_newVectorWord
   , prim_readVectorWord         = repa_readVectorWord
   , prim_writeVectorWord        = repa_writeVectorWord
-  , prim_sliceVectorWord        = repa_sliceVectorWord
+  , prim_truncVectorWord        = repa_truncVectorWord
 
   , prim_nextWord               = repa_nextWord
 
@@ -219,7 +221,7 @@ primitives
   , prim_writeVectorFloat       = repa_writeVectorFloat
   , prim_writeVectorFloatX4     = repa_writeVectorFloatX4
   , prim_writeVectorFloatX8     = repa_writeVectorFloatX8
-  , prim_sliceVectorFloat       = repa_sliceVectorFloat
+  , prim_truncVectorFloat       = repa_truncVectorFloat
 
   , prim_nextFloat              = repa_nextFloat
   , prim_next4Float             = repa_next4Float
@@ -249,7 +251,7 @@ primitives
   , prim_writeVectorDouble      = repa_writeVectorDouble
   , prim_writeVectorDoubleX2    = repa_writeVectorDoubleX2
   , prim_writeVectorDoubleX4    = repa_writeVectorDoubleX4
-  , prim_sliceVectorDouble      = repa_sliceVectorDouble
+  , prim_truncVectorDouble      = repa_truncVectorDouble
 
   , prim_nextDouble             = repa_nextDouble
   , prim_next2Double            = repa_next2Double

@@ -50,10 +50,10 @@ repa_writeVectorWord vec ix val
 {-# INLINE [1] repa_writeVectorWord #-}
 
 
-repa_sliceVectorWord     :: Word# -> Vector Word -> W -> (# W, Vector Word #)
-repa_sliceVectorWord len vec   
-        = unwrapIO' (V.take len vec)
-{-# INLINE [1] repa_sliceVectorWord #-}
+repa_truncVectorWord     :: Word# -> Vector Word -> W -> W
+repa_truncVectorWord len vec   
+        = unwrapIO_ (V.trunc len vec)
+{-# INLINE [1] repa_truncVectorWord #-}
 
 
 -- Series ---------------------------------------------------------------------

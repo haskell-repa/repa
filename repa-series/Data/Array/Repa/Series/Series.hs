@@ -155,14 +155,17 @@ toVector !s
 --   The rate variable in the result is arbitrary,
 --   so a series created this way may not have the same length as others
 --   of the same rate.
+--
+--   The lenTrunc field is ignored.
+--
 unsafeFromVector :: Prim a => Vector a -> IO (Series k a)
-unsafeFromVector (V.Vector len start mv)
+unsafeFromVector (V.Vector lenBuf _lenTrunc start mv)
  = do   let !pv@(P.MVector baStart (I# _) (MutableByteArray mba))
                         = mv
         v               <- P.unsafeFreeze mv
         let (# _, ba #) =  unsafeFreezeByteArray# mba realWorld# 
         when (baStart /= 0)
          $ error "unsafeFromVector: vector has non-zero prim starting offset"
-        return $ Series len start ba v
+        return $ Series lenBuf start ba v
 {-# NOINLINE unsafeFromVector #-}
 

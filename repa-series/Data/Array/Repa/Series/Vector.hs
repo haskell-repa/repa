@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Series.Vector
         ( Vector        (..)
-        , length
+        , lengthData
         , new, new'
         , tail4, tail8
         , read
@@ -9,6 +9,7 @@ module Data.Array.Repa.Series.Vector
         , writeFloatX4,   writeFloatX8
         , writeDoubleX2,  writeDoubleX4
         , take
+        , trunc
 
           -- * Conversions
         , fromPrimitive
@@ -26,36 +27,57 @@ import Prelude  hiding (length, read, take, tail)
 import Debug.Trace
 
 
--- | Abstract mutable vector.
+-- | Abstract mutable vector, used for flow fusion.
+--
+--   WARNING: These are not general purpose vectors. Their representation has 
+--   been optimised for use with flow fusion, and some functions may not behave
+--   as expected. In particular, the 'tail4/8' functions will not give sensible
+--   results after applying 'trunc'. We intend 'trunc' to be the LAST
+--   operation on a vector before extracting the underling buffer with the 
+--   toPrimitive function.
 -- 
 --   Use `fromPrimitive` and `toPrimitive` to convert to and from
 --   Data.Vector.Primitive vectors.
 data Vector a
         = Vector
-        { vectorLength  :: Word#
-        , vectorStart   :: Word#
-        , vectorData    :: !(PM.IOVector a) }
+        { -- | Physical length of the underling data buffer.
+          vectorLengthData      :: Word#
+
+          -- | Logical length of the vector,
+          --   must be smaller than the `vectorLengthData`.
+        , vectorLengthTrunc     :: !(PM.IOVector Word)
+
+          -- | Starting position in the underlying data buffer.
+        , vectorStart           :: Word#
+
+          -- | Data buffer.
+        , vectorData            :: !(PM.IOVector a) }
 
 
 instance (Prim a, Show a) => Show (Vector a) where
  show vec 
   = unsafePerformIO
-  $ do  fvec    <- P.unsafeFreeze (vectorData vec)
-        return  $ show fvec
+  $ do  pv       <- toPrimitive vec
+        return  $ show pv
 
 
--- | Take the length of a vector.
-length :: Vector a -> Word#
-length vec
-        = vectorLength vec
-{-# INLINE [1] length #-}
+-- | Get the length of the underlying data buffer.
+lengthData :: Vector a -> Word#
+lengthData vec
+        = vectorLengthData vec
+{-# INLINE [1] lengthData #-}
 
 
 -- | Create a new vector of the given length.
+--   Both the data length and trunc length are set to the given value.
 new'  :: Prim a => Word# -> IO (Vector a)
-new' len
- = do   vec     <- PM.new (I# (word2Int# len))
-        return  $ Vector len (int2Word# 0#) vec
+new' lenBuf
+ = do   vec      <- PM.new (I# (word2Int# lenBuf))
+
+        lenTrunc <- PM.new 1
+        PM.unsafeWrite lenTrunc 0 (W# lenBuf)
+
+        return  $ Vector lenBuf lenTrunc (int2Word# 0#) vec
 {-# INLINE [1] new' #-}
 
 
@@ -68,17 +90,17 @@ new (I# len)
 -- tail -----------------------------------------------------------------------
 -- | Select the tail of a vector.
 tail4 :: RateNat (Tail4 k) -> Vector a -> Vector a
-tail4 _ (Vector len start vec)
- = let  !start' = quotWord# len (int2Word# 4#) `timesWord#` (int2Word# 4#)
-   in   Vector len start' vec
+tail4 _ (Vector lenBuf lenTrunc start vec)
+ = let  !start' = quotWord# lenBuf (int2Word# 4#) `timesWord#` (int2Word# 4#)
+   in   Vector lenBuf lenTrunc start' vec
 {-# INLINE [1] tail4 #-} 
 
 
 -- | Select the tail of a vector.
 tail8 :: RateNat (Tail8 k) -> Vector a -> Vector a
-tail8 _ (Vector len start vec)
- = let  !start' = quotWord# len (int2Word# 8#) `timesWord#` (int2Word# 8#)
-   in   Vector len start' vec
+tail8 _ (Vector lenBuf lenTrunc start vec)
+ = let  !start' = quotWord# lenBuf (int2Word# 8#) `timesWord#` (int2Word# 8#)
+   in   Vector lenBuf lenTrunc start' vec
 {-# INLINE [1] tail8 #-} 
 
 
@@ -153,10 +175,24 @@ writeDoubleX4 v ix val
 -- take -----------------------------------------------------------------------
 -- | Take the first n elements of a vector
 take :: Prim a => Word# -> Vector a -> IO (Vector a)
-take len (Vector _ start mvec)
- = do   return  $ Vector len start
+take len (Vector _ lenTrunc start mvec)
+ = do   return  $ Vector len lenTrunc start
                 $ PM.unsafeTake (I# (word2Int# len)) mvec
 {-# INLINE [1] take #-}
+
+
+-- trunc ----------------------------------------------------------------------
+-- | Set the truncLength of a vector.
+--
+--   WARNING: This is intended to be the LAST operation before a toPrimitive
+--   the 'tail4/tail8' and 'take' functions may not behave as expected after
+--   doing this.
+--
+trunc :: Word# -> Vector a -> IO ()
+trunc lenNew (Vector _ lenTrunc _ _)
+ = do   
+        PM.unsafeWrite lenTrunc 0 (W# lenNew)
+{-# INLINE [1] trunc #-}
 
 
 -- to/from primitive ----------------------------------------------------------
@@ -165,9 +201,13 @@ take len (Vector _ start mvec)
 --   You promise not to access the source vector again.
 fromPrimitive :: Prim a => P.Vector a -> IO (Vector a)
 fromPrimitive vec
- = do   let !(I# len)   =  P.length vec
+ = do   let !(I# lenBuf) =  P.length vec
+
+        lenTrunc <- PM.new 1
+        PM.unsafeWrite lenTrunc 0 (W# (int2Word# lenBuf))
+
         mvec            <- P.unsafeThaw vec
-        return $ Vector (int2Word# len) (int2Word# 0#) mvec
+        return $ Vector (int2Word# lenBuf) lenTrunc (int2Word# 0#) mvec
 {-# INLINE [1] fromPrimitive #-}
 
 
@@ -175,7 +215,9 @@ fromPrimitive vec
 --
 --   You promise not to modify the source vector again.
 toPrimitive :: Prim a => Vector a -> IO (P.Vector a)
-toPrimitive (Vector _ _ mvec)
- =      P.unsafeFreeze mvec
+toPrimitive (Vector _ lenTrunc _ mvec)
+ = do   len       <- PM.unsafeRead lenTrunc 0
+        let mvec' =  PM.unsafeSlice 0 (fromIntegral len) mvec
+        P.unsafeFreeze mvec'
 {-# INLINE [1] toPrimitive #-}
 
