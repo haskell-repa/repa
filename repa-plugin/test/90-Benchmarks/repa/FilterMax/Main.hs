@@ -4,9 +4,9 @@ import Data.Array.Repa.Series                   as R
 import Data.Array.Repa.Series.Series            as S
 import Data.Array.Repa.Series.Vector            as V
 import Data.Array.Repa.IO.Timing                as R
+import Data.Array.Repa.Series.Ref               (Ref)
 import qualified Data.Array.Repa.Series.Ref     as Ref
 import qualified Data.Vector.Primitive          as P
-import Data.Array.Repa.Series.Ref               (Ref)
 import GHC.Exts
 import System.Environment
 
