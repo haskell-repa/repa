@@ -1,4 +1,5 @@
 
+# Build the standard library.
 .PHONY : all
 all : 
 	@make clean
@@ -6,6 +7,16 @@ all :
 	@make repa-io
 	@make repa-algorithms
 	@make repa-examples
+
+
+# Build the repa plugin.
+.PHONY : plugin
+plugin : 
+	@make clean
+	@make repa
+	@make repa-io
+	@make repa-series
+	@make repa-plugin
 	
 
 # == Clean ====================================================================
@@ -16,10 +27,9 @@ clean :
 	rm -Rf repa-algorithms/dist
 	rm -Rf repa-bulk/dist
 	rm -Rf repa-examples/dist
-	rm -Rf repa-flow/dist
 	rm -Rf repa-io/dist
-	rm -Rf repa-stream/dist
-	rm -Rf repa-vector/dist
+	rm -Rf repa-plugin/dist
+	rm -Rf repa-series/dist
 	@echo
 
 
@@ -28,10 +38,8 @@ clean :
 repa :
 	@echo "-- Building repa -----------------------------------------------"
 	@cd $@ ; \
-		runghc Setup.hs clean ; \
-		runghc Setup.hs configure --user ; \
-		runghc Setup.hs build ; \
-		runghc Setup.hs install
+		cabal clean ; \
+		cabal install --enable-shared --user --reinstall --force
 	@echo
 
 
@@ -39,10 +47,8 @@ repa :
 repa-io :
 	@echo "-- Building repa-io --------------------------------------------"
 	@cd $@ ; \
-		runghc Setup.hs clean ; \
-		runghc Setup.hs configure --user ; \
-		runghc Setup.hs build ; \
-		runghc Setup.hs install
+		cabal clean ; \
+		cabal install --enable-shared --user --reinstall --force
 	@echo
 
 
@@ -50,10 +56,8 @@ repa-io :
 repa-algorithms :
 	@echo "-- Building repa-algorithms ------------------------------------"
 	@cd $@ ; \
-	runghc Setup.hs clean ; \
-		runghc Setup.hs configure --user ; \
-		runghc Setup.hs build ; \
-		runghc Setup.hs install
+		cabal clean ; \
+		cabal install --enable-shared --user --reinstall --force
 	@echo
 
 
@@ -61,10 +65,26 @@ repa-algorithms :
 repa-examples :
 	@echo "-- Building repa-examples --------------------------------------"
 	@cd $@ ; \
-		runghc Setup.hs clean ; \
-		runghc Setup.hs configure --user ; \
-		runghc Setup.hs build 
+		cabal clean ; \
+		cabal install --enable-shared --user --reinstall
 	@echo 
 
+
+.PHONY : repa-series
+repa-series :
+	@echo "-- Building repa-series ----------------------------------------"
+	@cd $@ ; \
+		cabal clean ; \
+		cabal install --enable-shared --user --reinstall --force
+	@echo 
+
+
+.PHONY : repa-plugin
+repa-plugin :
+	@echo "-- Building repa-plugin ----------------------------------------"
+	@cd $@ ; \
+		cabal clean ; \
+		cabal install --enable-shared --user --reinstall --force
+	@echo 
 
 

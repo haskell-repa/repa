@@ -262,7 +262,7 @@ checkFlowModule
 checkFlowModule mm
  = let  result  = Core.checkModule 
                         (Core.configOfProfile Flow.profile)
-                        mm
+                        mm Core.Recon
    in   case fst result of
          Right mm'      -> mm'
          Left err
