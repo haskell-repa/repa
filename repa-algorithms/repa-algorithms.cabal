@@ -18,7 +18,7 @@ Synopsis:
 
 Library
   Build-Depends: 
-        base                 == 4.7.*,
+        base                 >= 4.6 && < 4.8,
         vector               == 0.10.*,
         repa                 == 3.2.*
 
