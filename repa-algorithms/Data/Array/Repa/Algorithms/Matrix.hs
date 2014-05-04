@@ -71,7 +71,7 @@ mmultS  :: Array U DIM2 Double
         -> Array U DIM2 Double
 
 mmultS arr brr
- = [arr, brr]  `deepSeqArrays` runST $
+ = [arr, brr]  `deepSeqArrays` (runST $
    do   trr     <- R.now $ transpose2S brr
         let (Z :. h1  :. _)  = extent arr
         let (Z :. _   :. w2) = extent brr
@@ -80,7 +80,7 @@ mmultS arr brr
          $ \ix   -> R.sumAllS 
                   $ R.zipWith (*)
                         (unsafeSlice arr (Any :. (row ix) :. All))
-                        (unsafeSlice trr (Any :. (col ix) :. All))
+                        (unsafeSlice trr (Any :. (col ix) :. All)))
 {-# NOINLINE mmultS #-}
 
 
