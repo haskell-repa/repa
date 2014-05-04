@@ -72,12 +72,12 @@ instance CoArbitrary Z where
 
 instance (Shape a, CoArbitrary a) 
        => CoArbitrary (a :. Int) where
-  coarbitrary (a :. b) = coarbitrary a >< coarbitrary b
+  coarbitrary (a :. b) = coarbitrary a . coarbitrary b
 
 instance (CoArbitrary sh, CoArbitrary a, Source r a, Shape sh) 
        => CoArbitrary (Array r sh a) where
   coarbitrary arr 
-        = (coarbitrary . extent $ arr) >< (coarbitrary . toList $ arr)
+        = (coarbitrary . extent $ arr) . (coarbitrary . toList $ arr)
 
 
 -- Wrappers -------------------------------------------------------------------

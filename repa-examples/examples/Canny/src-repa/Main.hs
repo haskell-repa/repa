@@ -1,4 +1,5 @@
-{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards, MagicHash, ScopedTypeVariables #-}
+{-# LANGUAGE PackageImports, BangPatterns, QuasiQuotes, PatternGuards, 
+             MagicHash, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures -fno-warn-incomplete-patterns #-}
 
 -- | Canny edge detector.
@@ -25,7 +26,7 @@ import Debug.Trace
 import GHC.Exts
 import qualified Data.Vector.Unboxed.Mutable	as VM
 import qualified Data.Vector.Unboxed		as V
-import Prelude					as P
+import qualified Prelude			as P
 import Prelude                                  hiding (compare)
 
 
