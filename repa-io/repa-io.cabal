@@ -22,7 +22,7 @@ Library
         vector               == 0.10.*,
         binary               == 0.7.*,
         old-time             == 1.1.*,
-        repa                 == 3.2.*,
+        repa                 == 3.3.*,
         bytestring           == 0.10.*,
         bmp                  == 1.2.*
 

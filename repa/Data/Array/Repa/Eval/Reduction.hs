@@ -153,7 +153,7 @@ reduceAny f c !r !start !end
    {-# INLINE iter #-}
    iter !i !z 
     | 1# <- i >=# end  = z 
-    | otherwise        = iter (i +# 1#) (f i `c` z)
+    | otherwise        = iter (i +# 1#) (z `c` f i)
 
 
 {-# INLINE [0] reduceInt #-}
@@ -170,7 +170,7 @@ reduceInt f c !r !start !end
    {-# INLINE iter #-}
    iter !i !z 
     | 1# <- i >=# end   = z 
-    | otherwise         = iter (i +# 1#) (f i `c` z)
+    | otherwise         = iter (i +# 1#) (z `c` f i)
 
 
 {-# INLINE [0] reduceFloat #-}
@@ -187,7 +187,7 @@ reduceFloat f c !r !start !end
    {-# INLINE iter #-}
    iter !i !z 
     | 1# <- i >=# end   = z 
-    | otherwise         = iter (i +# 1#) (f i `c` z)
+    | otherwise         = iter (i +# 1#) (z `c` f i)
 
 
 {-# INLINE [0] reduceDouble #-}
@@ -204,7 +204,7 @@ reduceDouble f c !r !start !end
    {-# INLINE iter #-}
    iter !i !z 
     | 1# <- i >=# end   = z 
-    | otherwise         = iter (i +# 1#) (f i `c` z)
+    | otherwise         = iter (i +# 1#) (z `c` f i)
 
 
 {-# INLINE unboxInt #-}

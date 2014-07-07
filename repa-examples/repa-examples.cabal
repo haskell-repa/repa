@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.2.5.1
+Version:             3.3.1.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -20,8 +20,8 @@ Synopsis:
 Executable repa-canny
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
@@ -37,9 +37,9 @@ Executable repa-mmult
   Build-depends: 
         base                 == 4.7.*,
         random               == 1.0.*,
-        repa                 == 3.2.5.*,
-        repa-io              == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-io              == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*
 
   Main-is: examples/MMult/src-repa/Main.hs
   other-modules: Solver
@@ -57,8 +57,8 @@ Executable repa-mmult
 Executable repa-laplace
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-io              == 3.2.5.*,
+        repa                 == 3.3.1.*,
+        repa-io              == 3.3.1.*,
         template-haskell     == 2.9.*
 
   Main-is: examples/Laplace/src-repa/Main.hs
@@ -75,9 +75,9 @@ Executable repa-laplace
 Executable repa-fft2d
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*,
-        repa-io              == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*,
+        repa-io              == 3.3.1.*
 
   Main-is: examples/FFT/FFT2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/FFT2d/src-repa .
@@ -94,9 +94,9 @@ Executable repa-fft2d
 Executable repa-fft2d-highpass
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*,
-        repa-io              == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*,
+        repa-io              == 3.3.1.*
 
   Main-is: examples/FFT/HighPass2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass2d/src-repa .
@@ -114,8 +114,8 @@ Executable repa-fft2d-highpass
 Executable repa-fft3d-highpass
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*
 
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
@@ -133,8 +133,8 @@ Executable repa-blur
   Build-depends: 
         base                 == 4.7.*,
         vector               == 0.10.*,
-        repa                 == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
@@ -151,8 +151,8 @@ Executable repa-blur
 Executable repa-sobel
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-algorithms      == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-algorithms      == 3.3.1.*
 
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
@@ -170,8 +170,8 @@ Executable repa-sobel
 Executable repa-volume
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
-        repa-io              == 3.2.5.*
+        repa                 == 3.3.1.*,
+        repa-io              == 3.3.1.*
 
   Main-is: examples/Volume/Main.hs
   ghc-options: 
@@ -186,7 +186,7 @@ Executable repa-volume
 Executable repa-unit-test
   Build-depends: 
         base                 == 4.7.*,
-        repa                 == 3.2.5.*,
+        repa                 == 3.3.1.*,
         QuickCheck           == 2.7.*
 
   Main-is: examples/UnitTesting/UnitTesting.hs
