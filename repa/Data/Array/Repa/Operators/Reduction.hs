@@ -28,7 +28,7 @@ import GHC.Exts
 --   Elements are reduced in the order of their indices, from lowest to highest.
 --   Applications of the operator are associatied arbitrarily.
 --
---   >>> let c 0 0 = 0; c 0 x = x; c x 0 = x; c x y = y
+--   >>> let c 0 x = x; c x 0 = x; c x y = y
 --   >>> let a = fromListUnboxed (Z :. 2 :. 2) [1,2,3,4] :: Array U (Z :. Int :. Int) Int
 --   >>> foldS c 0 a
 --   AUnboxed (Z :. 2) (fromList [2,4])
@@ -62,7 +62,7 @@ foldS f z arr
 --   Elements are reduced in the order of their indices, from lowest to highest.
 --   Applications of the operator are associatied arbitrarily.
 --
---   >>> let c 0 0 = 0; c 0 x = x; c x 0 = x; c x y = y
+--   >>> let c 0 x = x; c x 0 = x; c x y = y
 --   >>> let a = fromListUnboxed (Z :. 2 :. 2) [1,2,3,4] :: Array U (Z :. Int :. Int) Int
 --   >>> foldP c 0 a
 --   AUnboxed (Z :. 2) (fromList [2,4])
@@ -100,13 +100,6 @@ foldP f z arr
 --   Elements are reduced in row-major order. Applications of the operator are
 --   associated arbitrarily.
 --
---   >>> let show' 0 = ""; show' x = show x
---   >>> let read' "" = 0; read' x = read x
---   >>> let c x y = read' $ show' x Prelude.++ show' y
---   >>> let a = fromListUnboxed (Z :. 2 :. 2) [1,2,3,4] :: Array U (Z :. Int :. Int) Int
---   >>> foldAllS c 0 a
---   1234
---
 foldAllS :: (Shape sh, Source r a, Elt a, Unbox a)
 	=> (a -> a -> a)
 	-> a
@@ -133,13 +126,6 @@ foldAllS f z arr
 --
 --   Elements are reduced in row-major order. Applications of the operator are
 --   associated arbitrarily.
---
---   >>> let show' 0 = ""; show' x = show x
---   >>> let read' "" = 0; read' x = read x
---   >>> let c x y = read' $ show' x Prelude.++ show' y
---   >>> let a = fromListUnboxed (Z :. 2 :. 2) [1,2,3,4] :: Array U (Z :. Int :. Int) Int
---   >>> foldAllP c 0 a
---   1234
 --
 foldAllP 
         :: (Shape sh, Source r a, Elt a, Unbox a, Monad m)
