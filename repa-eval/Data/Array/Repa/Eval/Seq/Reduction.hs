@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Bulk.Seq.Reduction
+module Data.Array.Repa.Eval.Seq.Reduction
         ( foldAll
         , foldRange
         , foldInner)
@@ -33,7 +33,7 @@ foldInner write get c !r !end !n
  = iter 0# 0#
  where
         iter !sh !sz 
-         | sh >=# end 
+         | 1# <- sh >=# end 
          = return ()
 
          | otherwise 
@@ -60,8 +60,8 @@ foldRange
 foldRange f c !r !start !end 
  = iter start r
  where  iter !i !z 
-         | i >=# end  = z 
-         | otherwise  = iter (i +# 1#) (f i `c` z)
+         | 1# <- i >=# end  = z 
+         | otherwise        = iter (i +# 1#) (f i `c` z)
         {-# INLINE iter #-}
 {-# INLINE [0] foldRange #-}
 
@@ -76,8 +76,8 @@ foldRangeInt
 foldRangeInt f c !r !start !end 
  = iter start r
  where  iter !i !z 
-         | i >=# end  = z 
-         | otherwise  = iter (i +# 1#) (f i `c` z)
+         | 1# <- i >=# end  = z 
+         | otherwise        = iter (i +# 1#) (f i `c` z)
         {-# INLINE iter #-}
 {-# INLINE [0] foldRangeInt #-}
 
@@ -92,8 +92,8 @@ foldRangeFloat
 foldRangeFloat f c !r !start !end 
  = iter start r
  where  iter !i !z 
-         | i >=# end  = z 
-         | otherwise  = iter (i +# 1#) (f i `c` z)
+         | 1# <- i >=# end  = z 
+         | otherwise         = iter (i +# 1#) (f i `c` z)
         {-# INLINE iter #-}
 {-# INLINE [0] foldRangeFloat #-}
 
@@ -108,8 +108,8 @@ foldRangeDouble
 foldRangeDouble f c !r !start !end 
  = iter start r
  where  iter !i !z 
-         | i >=# end  = z 
-         | otherwise  = iter (i +# 1#) (f i `c` z)
+         | 1# <- i >=# end  = z 
+         | otherwise        = iter (i +# 1#) (f i `c` z)
         {-# INLINE iter #-}
 {-# INLINE [0] foldRangeDouble #-}
 

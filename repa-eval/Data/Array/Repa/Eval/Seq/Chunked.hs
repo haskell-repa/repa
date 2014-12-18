@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Bulk.Seq.Chunked
+module Data.Array.Repa.Eval.Seq.Chunked
         ( fillLinear
         , fillBlock2)
 where
@@ -20,7 +20,7 @@ fillLinear
 fillLinear write getElem len
  = fill 0#
  where  fill !ix
-         | ix >=# len   = return ()
+         | 1# <- ix >=# len   = return ()
          | otherwise
          = do   write ix (getElem ix)
                 fill (ix +# 1#)
@@ -56,14 +56,14 @@ fillBlock2
 
         {-# INLINE fillBlock #-}
         fillBlock !y !ix
-         | y >=# y1     = return ()
+         | 1# <- y >=# y1     = return ()
          | otherwise
          = do   fillLine1 x0 ix
                 fillBlock (y +# 1#) (ix +# imageWidth)
 
          where  {-# INLINE fillLine1 #-}
                 fillLine1 !x !ix'
-                 | x >=# x1             = return ()
+                 | 1# <- x >=# x1             = return ()
                  | otherwise
                  = do   write ix' (getElem x y)
                         fillLine1 (x +# 1#) (ix' +# 1#)

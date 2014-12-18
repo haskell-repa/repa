@@ -1,8 +1,8 @@
 
-module Data.Array.Repa.Bulk.Seq.Cursored
+module Data.Array.Repa.Eval.Seq.Cursored
         (fillCursoredBlock2)
 where
-import Data.Array.Repa.Bulk.Elt
+import Data.Array.Repa.Eval.Elt
 import GHC.Exts
 
 
@@ -49,13 +49,13 @@ fillCursoredBlock2
         !y1     = y0 +# h0
 
         fillBlock !y
-         | y >=# y1     = return ()
+         | 1# <- y >=# y1 = return ()
          | otherwise
          = do   fillLine4 x0
                 fillBlock (y +# 1#)
 
          where  fillLine4 !x
-                 | x +# 4# >=# x1       = fillLine1 x
+                 | 1# <- x +# 4# >=# x1 = fillLine1 x
                  | otherwise
                  = do   -- Compute each source cursor based on the previous one
                         -- so that the variable live ranges in the generated
@@ -91,7 +91,7 @@ fillCursoredBlock2
                 {-# INLINE fillLine4 #-}
                 
                 fillLine1 !x
-                 | x >=# x1       = return ()
+                 | 1# <- x >=# x1 = return ()
                  | otherwise
                  = do   let val0  = getElem $ makeCursor x y
                         write (x +# (y *# imageWidth)) val0

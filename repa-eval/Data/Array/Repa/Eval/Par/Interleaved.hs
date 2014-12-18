@@ -1,8 +1,8 @@
 
-module Data.Array.Repa.Bulk.Par.Interleaved
+module Data.Array.Repa.Eval.Par.Interleaved
         (fillInterleaved)
 where
-import Data.Array.Repa.Bulk.Gang
+import Data.Array.Repa.Eval.Gang
 import GHC.Exts
 
 
@@ -39,8 +39,8 @@ fillInterleaved gang write getElem len
 
         -- How many elements to compute with this thread.
         elemsForThread thread
-         | thread <# chunkLenSlack = chunkLenBase +# 1#
-         | otherwise               = chunkLenBase
+         | 1# <- thread <# chunkLenSlack = chunkLenBase +# 1#
+         | otherwise                     = chunkLenBase
         {-# INLINE elemsForThread #-}
 
         -- Evaluate the elements of a single chunk.
@@ -48,7 +48,7 @@ fillInterleaved gang write getElem len
          = go ix0 count0
          where
           go !ix !count
-             | count <=# 0# = return ()
+             | 1# <- count <=# 0# = return ()
              | otherwise
              = do write ix (getElem ix)
                   go (ix +# step) (count -# 1#)

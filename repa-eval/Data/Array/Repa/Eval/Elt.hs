@@ -1,6 +1,6 @@
-{-# LANGUAGE DefaultSignatures #-}
+
 -- | Values that can be stored in Repa Arrays.
-module Data.Array.Repa.Bulk.Elt
+module Data.Array.Repa.Eval.Elt
 	(Elt (..))
 where
 import GHC.Prim
@@ -57,6 +57,7 @@ class GElt f where
         -- | Generic version of gone
         gone   :: f a
 
+
 -- Generic Definition ----------------------------------------------------------
 
 instance GElt U1 where
@@ -112,237 +113,237 @@ instance (Elt a) => GElt (K1 i a) where
 
 -- Bool -----------------------------------------------------------------------
 instance Elt Bool where
- {-# INLINE touch #-}
  touch b
   = IO (\state -> case touch# b state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = False
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one  = True
+ {-# INLINE one #-}
 
 
 -- Floating -------------------------------------------------------------------
 instance Elt Float where
- {-# INLINE touch #-}
  touch (F# f)
   = IO (\state -> case touch# f state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Double where
- {-# INLINE touch #-}
  touch (D# d)
   = IO (\state -> case touch# d state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 -- Int ------------------------------------------------------------------------
 instance Elt Int where
- {-# INLINE touch #-}
  touch (I# i)
   = IO (\state -> case touch# i state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
+
 
 instance Elt Int8 where
- {-# INLINE touch #-}
  touch (I8# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Int16 where
- {-# INLINE touch #-}
  touch (I16# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Int32 where
- {-# INLINE touch #-}
  touch (I32# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Int64 where
- {-# INLINE touch #-}
  touch (I64# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 -- Word -----------------------------------------------------------------------
 instance Elt Word where
- {-# INLINE touch #-}
  touch (W# i)
   = IO (\state -> case touch# i state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Word8 where
- {-# INLINE touch #-}
  touch (W8# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Word16 where
- {-# INLINE touch #-}
  touch (W16# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Word32 where
- {-# INLINE touch #-}
  touch (W32# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 instance Elt Word64 where
- {-# INLINE touch #-}
  touch (W64# w)
   = IO (\state -> case touch# w state of
 			state' -> (# state', () #))
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = 0
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one = 1
+ {-# INLINE one #-}
 
 
 -- Tuple ----------------------------------------------------------------------
 instance (Elt a, Elt b) => Elt (a, b) where
- {-# INLINE touch #-}
  touch (a, b)
   = do	touch a
 	touch b
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = (zero, zero)
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one =  (one, one)
+ {-# INLINE one #-}
 
 
 instance (Elt a, Elt b, Elt c) => Elt (a, b, c) where
- {-# INLINE touch #-}
  touch (a, b, c)
   = do	touch a
 	touch b
 	touch c
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = (zero, zero, zero)
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one =  (one, one, one)
+ {-# INLINE one #-}
 
 
 instance (Elt a, Elt b, Elt c, Elt d) => Elt (a, b, c, d) where
- {-# INLINE touch #-}
  touch (a, b, c, d)
   = do	touch a
 	touch b
 	touch c
 	touch d
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = (zero, zero, zero, zero)
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one =  (one, one, one, one)
+ {-# INLINE one #-}
 
 
 instance (Elt a, Elt b, Elt c, Elt d, Elt e) => Elt (a, b, c, d, e) where
- {-# INLINE touch #-}
  touch (a, b, c, d, e)
   = do	touch a
 	touch b
 	touch c
 	touch d
 	touch e
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = (zero, zero, zero, zero, zero)
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one =  (one, one, one, one, one)
+ {-# INLINE one #-}
 
 
 instance (Elt a, Elt b, Elt c, Elt d, Elt e, Elt f) => Elt (a, b, c, d, e, f) where
- {-# INLINE touch #-}
  touch (a, b, c, d, e, f)
   = do	touch a
 	touch b
@@ -350,11 +351,12 @@ instance (Elt a, Elt b, Elt c, Elt d, Elt e, Elt f) => Elt (a, b, c, d, e, f) wh
 	touch d
 	touch e
 	touch f
+ {-# INLINE touch #-}
 
- {-# INLINE zero #-}
  zero = (zero, zero, zero, zero, zero, zero)
+ {-# INLINE zero #-}
 
- {-# INLINE one #-}
  one =  (one, one, one, one, one, one)
+ {-# INLINE one #-}
 
 

@@ -1,4 +1,4 @@
-Name:           repa-bulk
+Name:           repa-eval
 Version:        4.0.0.0
 License:        BSD3
 License-file:   LICENSE
@@ -18,8 +18,24 @@ Synopsis:
 
 Library
   Build-Depends: 
-        base            == 4.6.*,
+        base            == 4.7.*,
         ghc-prim        == 0.3.*
+
+  Exposed-modules:
+        Data.Array.Repa.Eval.Elt
+        Data.Array.Repa.Eval.Gang
+        Data.Array.Repa.Eval.Seq
+        Data.Array.Repa.Eval.Par
+
+  Other-modules:
+        Data.Array.Repa.Eval.Seq.Chunked
+        Data.Array.Repa.Eval.Seq.Cursored
+        Data.Array.Repa.Eval.Seq.Reduction
+
+        Data.Array.Repa.Eval.Par.Chunked
+        Data.Array.Repa.Eval.Par.Cursored
+        Data.Array.Repa.Eval.Par.Reduction
+        Data.Array.Repa.Eval.Par.Interleaved
 
   ghc-options:
         -Wall 
@@ -39,19 +55,5 @@ Library
         FlexibleInstances
         TypeOperators
         FlexibleContexts
+        DefaultSignatures
 
-  Exposed-modules:
-        Data.Array.Repa.Bulk.Elt
-        Data.Array.Repa.Bulk.Gang
-        Data.Array.Repa.Bulk.Seq
-        Data.Array.Repa.Bulk.Par
-
-  Other-modules:
-        Data.Array.Repa.Bulk.Seq.Chunked
-        Data.Array.Repa.Bulk.Seq.Cursored
-        Data.Array.Repa.Bulk.Seq.Reduction
-
-        Data.Array.Repa.Bulk.Par.Chunked
-        Data.Array.Repa.Bulk.Par.Cursored
-        Data.Array.Repa.Bulk.Par.Reduction
-        Data.Array.Repa.Bulk.Par.Interleaved

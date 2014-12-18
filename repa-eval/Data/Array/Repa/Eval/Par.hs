@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Bulk.Par
+module Data.Array.Repa.Eval.Par
         ( -- * Filling
           fillChunked
         , fillChunkedIO
@@ -11,7 +11,7 @@ module Data.Array.Repa.Bulk.Par
         , foldAll
         , foldInner)
 where
-import Data.Array.Repa.Bulk.Par.Chunked
-import Data.Array.Repa.Bulk.Par.Cursored
-import Data.Array.Repa.Bulk.Par.Interleaved
-import Data.Array.Repa.Bulk.Par.Reduction
+import Data.Array.Repa.Eval.Par.Chunked
+import Data.Array.Repa.Eval.Par.Cursored
+import Data.Array.Repa.Eval.Par.Interleaved
+import Data.Array.Repa.Eval.Par.Reduction

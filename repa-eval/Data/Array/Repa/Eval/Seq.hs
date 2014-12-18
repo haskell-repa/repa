@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Bulk.Seq
+module Data.Array.Repa.Eval.Seq
         ( -- * Filling
           fillLinear
         , fillBlock2
@@ -10,6 +10,6 @@ module Data.Array.Repa.Bulk.Seq
         , foldRange
         , foldInner)
 where
-import Data.Array.Repa.Bulk.Seq.Chunked
-import Data.Array.Repa.Bulk.Seq.Cursored
-import Data.Array.Repa.Bulk.Seq.Reduction
+import Data.Array.Repa.Eval.Seq.Chunked
+import Data.Array.Repa.Eval.Seq.Cursored
+import Data.Array.Repa.Eval.Seq.Reduction

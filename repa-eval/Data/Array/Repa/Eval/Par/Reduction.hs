@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Bulk.Par.Reduction
+module Data.Array.Repa.Eval.Par.Reduction
         ( foldAll
         , foldInner)
 where
-import Data.Array.Repa.Bulk.Gang
+import Data.Array.Repa.Eval.Gang
 import GHC.Exts
-import qualified Data.Array.Repa.Bulk.Seq.Reduction     as Seq
+import qualified Data.Array.Repa.Eval.Seq.Reduction     as Seq
 import Data.IORef
 
 
@@ -25,7 +25,7 @@ foldAll :: Gang                -- ^ Gang to run the operation on.
         -> IO a
 
 foldAll !gang f c !z !len
- | len ==# 0#   = return z
+ | 1# <- len ==# 0#   = return z
  | otherwise   
  = do   result  <- newIORef z
 
@@ -40,7 +40,9 @@ foldAll !gang f c !z !len
         split !ix   = len `foldAll_min` (ix *# step)
 
         foldAll_min x y
-         = if x <=# y then x else y
+         = case x <=# y of
+                1# -> x 
+                _  -> y
         {-# NOINLINE foldAll_min #-}
         --  NOINLINE to hide the branch from the simplifier.
 
@@ -53,7 +55,7 @@ foldAll !gang f c !z !len
         --  can cause code explosion.
 
         fill !result !start !end
-         | start >=# end = return ()
+         | 1# <- start >=# end = return ()
          | otherwise    
          = let  !x      = Seq.foldRange f c (f start) (start +# 1#) end
            in   foldAll_combine result x
@@ -84,16 +86,16 @@ foldInner gang write f c !r !len !n
 
         split !ix 
          = let !ix' = ix *# step
-           in  if len <# ix' 
-                then len
-                else ix'
+           in  case len <# ix' of
+                1# -> len
+                _  -> ix'
         {-# INLINE split #-}
 
         fill !start !end 
          = iter start (start *# n)
          where
           iter !sh !sz 
-           | sh >=# end = return ()
+           | 1# <- sh >=# end = return ()
            | otherwise 
            = do let !next = sz +# n
                 write sh (Seq.foldRange f c r sz next)

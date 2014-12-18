@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Bulk.Par.Cursored
+module Data.Array.Repa.Eval.Par.Cursored
         ( fillBlock2
         , fillCursoredBlock2)
 where
-import Data.Array.Repa.Bulk.Elt
-import Data.Array.Repa.Bulk.Gang
-import qualified Data.Array.Repa.Bulk.Seq.Cursored      as Seq
+import Data.Array.Repa.Eval.Elt
+import Data.Array.Repa.Eval.Gang
+import qualified Data.Array.Repa.Eval.Seq.Cursored      as Seq
 import GHC.Exts
 
 
@@ -110,8 +110,8 @@ fillCursoredBlock2
 
         -- Get the starting pixel of a column in the image.
         colIx !ix
-         | ix <# colChunkSlack = x0 +# (ix *# (colChunkLen +# 1#))
-         | otherwise           = x0 +# (ix *# colChunkLen) +# colChunkSlack
+         | 1# <- ix <# colChunkSlack = x0 +# (ix *# (colChunkLen +# 1#))
+         | otherwise                 = x0 +# (ix *# colChunkLen) +# colChunkSlack
         {-# INLINE colIx #-}
 
         -- Give one column to each thread

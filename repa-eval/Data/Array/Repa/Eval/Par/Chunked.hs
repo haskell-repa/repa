@@ -1,9 +1,9 @@
 
-module Data.Array.Repa.Bulk.Par.Chunked
+module Data.Array.Repa.Eval.Par.Chunked
         ( fillChunked
         , fillChunkedIO)
 where
-import Data.Array.Repa.Bulk.Gang
+import Data.Array.Repa.Eval.Gang
 import GHC.Exts
 
 -------------------------------------------------------------------------------
@@ -35,13 +35,13 @@ fillChunked gang write getElem len
         !chunkLeftover  = len `remInt#`  threads
 
         splitIx thread
-         | thread <# chunkLeftover = thread *# (chunkLen +# 1#)
-         | otherwise               = thread *# chunkLen  +# chunkLeftover
+         | 1# <- thread <# chunkLeftover = thread *# (chunkLen +# 1#)
+         | otherwise                     = thread *# chunkLen  +# chunkLeftover
         {-# INLINE splitIx #-}
 
         -- Evaluate the elements of a single chunk.
         fill !ix !end
-         | ix >=# end           = return ()
+         | 1# <- ix >=# end        = return ()
          | otherwise
          = do   write ix (getElem ix)
                 fill (ix +# 1#) end
@@ -83,8 +83,8 @@ fillChunkedIO gang write mkGetElem len
         !chunkLeftover  = len `remInt#`  threads
 
         splitIx thread
-         | thread <# chunkLeftover = thread *# (chunkLen +# 1#)
-         | otherwise               = thread *# chunkLen  +# chunkLeftover
+         | 1# <- thread <# chunkLeftover = thread *# (chunkLen +# 1#)
+         | otherwise                     = thread *# chunkLen  +# chunkLeftover
         {-# INLINE splitIx #-}
 
         -- Given the threadId, starting and ending indices. 
@@ -100,7 +100,7 @@ fillChunkedIO gang write mkGetElem len
         fill !getElem !ix0 !end
          = go ix0 
          where  go !ix
-                 | ix >=# end   = return ()
+                 | 1# <- ix >=# end   = return ()
                  | otherwise
                  = do   x       <- getElem ix
                         write ix x
