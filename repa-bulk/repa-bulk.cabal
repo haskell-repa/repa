@@ -1,4 +1,4 @@
-Name:           repa-core
+Name:           repa-bulk
 Version:        4.0.0.0
 License:        BSD3
 License-file:   LICENSE
@@ -11,23 +11,25 @@ Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
 Description:
-        Repa provides high performance, regular, multi-dimensional, shape polymorphic
-        parallel arrays. All numeric data is stored unboxed. Functions written with
-        the Repa combinators are automatically parallel provided you supply
-        +RTS -Nwhatever on the command line when running the program.
+        Bulk array representations and operators.
 
 Synopsis:
-        Core array representation and operators.
+        Bulk array representations and operators.
 
 Library
-  Build-Depends: 
+  build-Depends: 
         base            == 4.7.*,
         repa-eval       == 4.0.0.0
 
-  Exposed-modules:
+  exposed-modules:
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
         Data.Array.Repa.Index
+        Data.Array.Repa.Bulk
+
+  other-modules:
+        Data.Array.Repa.Bulk.Base
+        Data.Array.Repa.Bulk.Target
 
 
   ghc-options:
@@ -50,5 +52,6 @@ Library
         TypeFamilies
         FlexibleContexts
         DefaultSignatures
+        MultiParamTypeClasses
 
 
