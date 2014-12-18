@@ -27,9 +27,12 @@ Library
         Data.Array.Repa.Index
         Data.Array.Repa.Bulk
 
+        Data.Array.Repa.Repr.Delayed
+
   other-modules:
         Data.Array.Repa.Bulk.Base
         Data.Array.Repa.Bulk.Target
+        Data.Array.Repa.Bulk.Load
 
 
   ghc-options:
@@ -53,5 +56,6 @@ Library
         FlexibleContexts
         DefaultSignatures
         MultiParamTypeClasses
+        EmptyDataDecls
 
 
