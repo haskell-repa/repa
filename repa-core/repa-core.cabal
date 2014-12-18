@@ -1,0 +1,54 @@
+Name:           repa-core
+Version:        4.0.0.0
+License:        BSD3
+License-file:   LICENSE
+Author:         The DPH Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:
+        Repa provides high performance, regular, multi-dimensional, shape polymorphic
+        parallel arrays. All numeric data is stored unboxed. Functions written with
+        the Repa combinators are automatically parallel provided you supply
+        +RTS -Nwhatever on the command line when running the program.
+
+Synopsis:
+        Core array representation and operators.
+
+Library
+  Build-Depends: 
+        base            == 4.7.*,
+        repa-eval       == 4.0.0.0
+
+  Exposed-modules:
+        Data.Array.Repa.Shape
+        Data.Array.Repa.Slice
+        Data.Array.Repa.Index
+
+
+  ghc-options:
+        -Wall 
+        -fno-warn-missing-signatures
+        -O2
+        -fcpr-off
+        -fno-spec-constr
+        -funbox-strict-fields
+
+  extensions:
+        NoMonomorphismRestriction
+        BangPatterns
+        MagicHash
+        UnboxedTuples
+        ScopedTypeVariables
+        PatternGuards
+        FlexibleInstances
+        TypeOperators
+        TypeFamilies
+        FlexibleContexts
+        DefaultSignatures
+
+
