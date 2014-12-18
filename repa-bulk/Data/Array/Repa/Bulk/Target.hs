@@ -39,6 +39,8 @@ class Target r e where
 
 
 -- | O(n). Construct an array from a list.
+--   The `size` of the given shape must match the length of the list,
+--   else `Nothing`.
 arrayOfList :: (Shape sh, Target r e)
          => sh -> [e] -> Maybe (Array r sh e)
 arrayOfList sh xx
