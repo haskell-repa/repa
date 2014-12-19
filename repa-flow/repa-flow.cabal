@@ -21,6 +21,7 @@ Library
 
   exposed-modules:
         Data.Array.Repa.Flow
+        Data.Array.Repa.Flow.IO.File
 
   other-modules:
         Data.Array.Repa.Flow.Internals.Base

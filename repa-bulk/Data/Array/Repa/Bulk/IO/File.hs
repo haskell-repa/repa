@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.IO.File
+module Data.Array.Repa.Bulk.IO.File
         ( hGetArrayUF
         , hPutArrayUF)
 where

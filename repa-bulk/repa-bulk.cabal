@@ -26,7 +26,9 @@ Library
         Data.Array.Repa.Shape
         Data.Array.Repa.Slice
         Data.Array.Repa.Index
+
         Data.Array.Repa.Bulk
+        Data.Array.Repa.Bulk.IO.File
 
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.Unboxed
@@ -35,7 +37,6 @@ Library
         Data.Array.Repa.Repr.Unsafe.Nested
         Data.Array.Repa.Repr.Unsafe.Foreign
 
-        Data.Array.Repa.IO.File
 
   other-modules:
         Data.Array.Repa.Bulk.Base
