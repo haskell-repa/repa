@@ -12,7 +12,6 @@ import Data.Array.Repa.Index
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
-import System.IO.Unsafe
 import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 import Control.Monad.Primitive
 

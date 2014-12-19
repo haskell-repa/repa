@@ -2,14 +2,16 @@
 module Data.Array.Repa.Repr.Unboxed
         ( U, U.Unbox
         , Array (..)
-        , fromListU
+        , fromListU,    vfromListU
         , fromVectorU
         , toVectorU)
 where
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Window
 import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
@@ -51,6 +53,13 @@ deriving instance (Read sh, Read e, U.Unbox e)
         => Read (Array U sh e)
 
 
+-- Window -----------------------------------------------------------------------------------------
+instance U.Unbox a => Window U DIM1 a where
+ window (Z :. start) (Z :. len) (UArray _sh vec)
+        = UArray (Z :. len) (U.slice start len vec)
+ {-# INLINE window #-}
+
+
 -- Target -----------------------------------------------------------------------------------------
 instance U.Unbox e => Target U e where
  data Buffer U e 
@@ -80,21 +89,23 @@ instance U.Unbox e => Target U e where
 
 
 -- Conversions ------------------------------------------------------------------------------------
--- | O(n). Convert a list to an unboxed vector array.
--- 
---   * This is an alias for `fromList` with a more specific type.
---
-fromListU
-        :: (Shape sh, U.Unbox a)
-        => sh -> [a] -> Maybe (Array U sh a)
-fromListU = fromList
+-- | O(n). Alias for `fromList` with a more specific type.
+fromListU   :: (Shape sh, U.Unbox a)
+            => sh -> [a] -> Maybe (Array U sh a)
+fromListU   = fromList
 {-# INLINE [1] fromListU #-}
 
 
+-- | O(n). Alias for `vfromList` with a more specific type.
+vfromListU   :: U.Unbox a
+            => [a] -> Vector U a
+vfromListU   = vfromList
+{-# INLINE [1] vfromListU #-}
+
+
 -- | O(1). Wrap an unboxed vector as an array.
-fromVectorU
-        :: (Shape sh, U.Unbox e)
-        => sh -> U.Vector e -> Array U sh e
+fromVectorU :: (Shape sh, U.Unbox e)
+            => sh -> U.Vector e -> Array U sh e
 fromVectorU sh vec
         = UArray sh vec
 {-# INLINE [1] fromVectorU #-}

@@ -14,7 +14,7 @@ module Data.Array.Repa.Bulk
         , LoadRange (..)
 
           -- * Conversion
-        , fromList
+        , fromList, vfromList
         , toList
         , toLists
         , toListss
@@ -33,9 +33,16 @@ module Data.Array.Repa.Bulk
         , windowed
         , entire
 
+          -- ** Nested arrays
+        , UN
+        , fromLists
+        , fromListss
+        , segment
+        , segmentOn
+
           -- ** Unboxed arrays
         , U
-        , fromListU
+        , fromListU,    vfromListU
         , fromVectorU
         , toVectorU
 
@@ -51,6 +58,7 @@ import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Window
 import Data.Array.Repa.Repr.Unboxed
+import Data.Array.Repa.Repr.Unsafe.Nested
 import Prelude hiding (reverse)
 
 

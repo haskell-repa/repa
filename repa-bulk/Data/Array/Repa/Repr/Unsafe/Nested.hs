@@ -3,13 +3,19 @@ module Data.Array.Repa.Repr.Unsafe.Nested
         ( UN, U.Unbox
         , Array (..)
         , fromLists
-        , fromListss)
+        , fromListss
+        , segment
+        , segmentOn)
 where
-import Data.Array.Repa.Bulk
+import Data.Array.Repa.Bulk.Base
+import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Window
-import Prelude                                  as P
-import qualified Data.Vector.Unboxed            as U
+import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
+import Prelude                                          as P
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Array.Repa.Vector.Unboxed         as U
 
 
 ---------------------------------------------------------------------------------------------------
@@ -96,4 +102,34 @@ fromListss xs
          $ elems
 {-# INLINE [1] fromListss #-}
 
+
+---------------------------------------------------------------------------------------------------
+-- | Given predicates which detect the start and end of a segment, 
+--   split an array into the indicated segments.
+segment :: (U.Unbox a, Bulk r DIM1 a)
+        => (a -> Bool)  -> (a -> Bool)          
+        -> Vector r a    -> Vector UN (Vector r a)  
+
+segment pStart pEnd !arr
+ = let  (starts, lens)  
+                = U.findSegments pStart pEnd 
+                $ U.generate (size (extent arr)) (\ix -> index arr (Z :. ix))
+   in   UNArray starts lens arr
+{-# INLINE [1] segment #-}
+
+
+-- | Split an array into segments, based on the given segment terminator element.
+--
+--   The result segments do not include the terminator.
+--  
+--   @segmentOn ' ' "fresh fried fish" = ["fresh", "fried", "fish"]@
+--
+segmentOn 
+        :: (Eq a, U.Unbox a, Bulk r DIM1 a)
+        => a
+        -> Vector r a    -> Vector UN (Vector r a)
+
+segmentOn !x !arr
+ = segment (const True) (== x) arr
+{-# INLINE [1] segmentOn #-}
 

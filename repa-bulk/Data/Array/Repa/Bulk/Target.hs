@@ -1,12 +1,15 @@
 
 module Data.Array.Repa.Bulk.Target
         ( Target    (..)
-        , fromList)
+        , fromList
+        , vfromList)
 where
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
 import System.IO.Unsafe
 import Control.Monad
+import Prelude                          as P
 
 
 -- Target ---------------------------------------------------------------------
@@ -49,8 +52,8 @@ class Target r e where
 -- | O(n). Construct an array from a list.
 --   The `size` of the given shape must match the length of the list,
 --   else `Nothing`.
-fromList  :: (Shape sh, Target r e)
-        => sh -> [e] -> Maybe (Array r sh e)
+fromList  :: (Shape sh, Target r a)
+          => sh -> [a] -> Maybe (Array r sh a)
 fromList sh xx
  = unsafePerformIO
  $ do   let !len = length xx
@@ -61,4 +64,14 @@ fromList sh xx
                 zipWithM_ (unsafeWriteBuffer mvec) [0..] xx
                 arr     <- unsafeFreezeBuffer sh mvec
                 return $ Just arr
-{-# INLINE [1] fromList #-}
+{-# NOINLINE fromList #-}
+
+
+-- | O(n). Construct a vector from a list.
+vfromList :: Target r a => [a] -> Vector r a
+vfromList xx
+ = let  !len     = P.length xx 
+        Just arr = fromList (Z :. len) xx
+   in   arr
+{-# NOINLINE vfromList #-}
+

@@ -43,8 +43,8 @@ type Vector r e = Array r DIM1 e
 -- | Convert an array to a list.
 toList 
         ::  Bulk r sh1 a
-        => Array r sh1 a                                -- ^ Source array.
-        -> [a]                                          -- ^ Result list.
+        => Array r sh1 a
+        -> [a]
 toList arr
  = loop_fromList [] 0
  where  !sh     = extent arr
