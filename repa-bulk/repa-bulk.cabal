@@ -35,6 +35,7 @@ Library
         Data.Array.Repa.Repr.Unsafe.Nested
         Data.Array.Repa.Repr.Unsafe.Foreign
 
+        Data.Array.Repa.IO.File
 
   other-modules:
         Data.Array.Repa.Bulk.Base
