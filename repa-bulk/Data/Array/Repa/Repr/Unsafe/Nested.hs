@@ -29,9 +29,9 @@ import qualified Data.Vector.Unboxed            as U
 --
 data UN
 
-instance Bulk r DIM1 a => Bulk UN DIM1 (Array r DIM1 a) where
+instance Bulk r DIM1 a => Bulk UN DIM1 (Vector r a) where
 
- data Array UN DIM1 (Array r DIM1 a)
+ data Array UN DIM1 (Vector r a)
         = UNArray 
                  !(U.Vector Int)         -- segment start positions.
                  !(U.Vector Int)         -- segment lengths.
@@ -58,14 +58,14 @@ instance Bulk r DIM1 a => Bulk UN DIM1 (Array r DIM1 a) where
  {-# INLINE [1] slice #-}
 
 
-deriving instance Show (Array r DIM1 a) => Show (Array UN DIM1 (Array r DIM1 a))
+deriving instance Show (Vector r a) => Show (Vector UN (Vector r a))
 
 
 -- Conversion -------------------------------------------------------------------------------------
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
         :: Target r a 
-        => [[a]] -> Array UN DIM1 (Array r DIM1 a)
+        => [[a]] -> Vector UN (Vector r a)
 fromLists xss
  = let  xs         = concat xss
         Just elems = fromList      (Z :. length xs) xs
@@ -78,7 +78,7 @@ fromLists xss
 -- | O(size src) Convert a triply nested list to a triply nested array.
 fromListss 
         :: Target r a 
-        => [[[a]]] -> Array UN DIM1 (Array UN DIM1 (Array r DIM1 a))
+        => [[[a]]] -> Vector UN (Vector UN (Vector r a))
 fromListss xs
  = let  xs1        = concat xs
         xs2        = concat xs1
@@ -100,15 +100,12 @@ fromListss xs
 --   This is a constant time operation, provided the starts and lengths
 --   arrays can also be unpacked in constant time.
 --
-slicesUU :: Array UU DIM1 Int         -- ^ Segment starting positions.
-         -> Array UU DIM1 Int         -- ^ Segment lengths.
-         -> Array r  DIM1 a           -- ^ Array elements.
-         -> Array UN DIM1 (Array r DIM1 a)
+slicesUU :: Vector UU Int               -- ^ Segment starting positions.
+         -> Vector UU Int               -- ^ Segment lengths.
+         -> Vector r  a                 -- ^ Array elements.
+         -> Vector UN (Vector r a)
 
 slicesUU (UUArray _ starts) (UUArray _ lens) !elems
  = UNArray starts lens elems
 {-# INLINE [1] slicesUU #-}
-
-
-
 

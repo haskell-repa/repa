@@ -2,6 +2,7 @@
 module Data.Array.Repa.Bulk
         ( -- * Bulk arrays
           Bulk (..)
+        , Vector
         , (!)
 
           -- * Array construction

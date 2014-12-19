@@ -1,12 +1,14 @@
 
 module Data.Array.Repa.Bulk.Base
         ( Bulk (..)
+        , Vector
         , (!)
         , toList
         , toLists
         , toListss)
 where
 import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
 
 
 -- Bulk -------------------------------------------------------------------------------------------
@@ -41,6 +43,10 @@ class Shape sh => Bulk r sh e where
 -- | O(1). Alias for `index`
 (!) :: Bulk r sh a => Array r sh a -> sh -> a
 (!) = index
+
+
+-- | Vectors are 1-dimensional arrays.
+type Vector r e = Array r DIM1 e
 
 
 -- Conversion -------------------------------------------------------------------------------------
