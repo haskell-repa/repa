@@ -1,7 +1,7 @@
 
 module Data.Array.Repa.Bulk.Target
         ( Target    (..)
-        , arrayOfList)
+        , fromList)
 where
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Shape
@@ -41,9 +41,9 @@ class Target r e where
 -- | O(n). Construct an array from a list.
 --   The `size` of the given shape must match the length of the list,
 --   else `Nothing`.
-arrayOfList :: (Shape sh, Target r e)
-         => sh -> [e] -> Maybe (Array r sh e)
-arrayOfList sh xx
+fromList  :: (Shape sh, Target r e)
+        => sh -> [e] -> Maybe (Array r sh e)
+fromList sh xx
  = unsafePerformIO
  $ do   let !len = length xx
         if   len /= size sh
@@ -53,4 +53,4 @@ arrayOfList sh xx
                 zipWithM_ (unsafeWriteBuffer mvec) [0..] xx
                 arr     <- unsafeFreezeBuffer sh mvec
                 return $ Just arr
-{-# NOINLINE arrayOfList #-}
+{-# INLINE [1] fromList #-}

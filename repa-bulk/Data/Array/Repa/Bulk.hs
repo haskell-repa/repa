@@ -10,10 +10,10 @@ module Data.Array.Repa.Bulk
         , LoadRange (..)
 
           -- * Conversion
-        , arrayOfList
-        , listOfArray
-        , listOfArrays
-        , listOfArrayss)
+        , fromList
+        , toList
+        , toLists
+        , toListss)
 where
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Bulk.Target

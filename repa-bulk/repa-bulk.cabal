@@ -19,6 +19,7 @@ Synopsis:
 Library
   build-Depends: 
         base            == 4.7.*,
+        vector          == 0.10.*,
         repa-eval       == 4.0.0.0
 
   exposed-modules:
@@ -28,6 +29,9 @@ Library
         Data.Array.Repa.Bulk
 
         Data.Array.Repa.Repr.Delayed
+        Data.Array.Repa.Repr.Unboxed
+
+        Data.Array.Repa.Repr.Unsafe.Unboxed
 
   other-modules:
         Data.Array.Repa.Bulk.Base
@@ -57,5 +61,6 @@ Library
         DefaultSignatures
         MultiParamTypeClasses
         EmptyDataDecls
+        StandaloneDeriving
 
 

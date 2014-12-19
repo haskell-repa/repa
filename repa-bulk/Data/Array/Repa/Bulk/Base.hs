@@ -2,9 +2,9 @@
 module Data.Array.Repa.Bulk.Base
         ( Bulk (..)
         , (!)
-        , listOfArray
-        , listOfArrays
-        , listOfArrayss)
+        , toList
+        , toLists
+        , toListss)
 where
 import Data.Array.Repa.Shape
 
@@ -45,40 +45,42 @@ class Bulk r e where
 
 -- Conversion -------------------------------------------------------------------------------------
 -- | Convert an array to a list.
-listOfArray 
+toList 
         :: (Shape sh1, Bulk r a)
         => Array r sh1 a                                -- ^ Source array.
         -> [a]                                          -- ^ Result list.
-listOfArray arr
- = loop_listOfArray [] 0
+toList arr
+ = loop_fromList [] 0
  where  !len    = size (extent arr)
-        loop_listOfArray !acc !ix
+        loop_fromList !acc !ix
          | ix >= len    = reverse acc
-         | otherwise    = loop_listOfArray (arr `linearIndex` ix : acc) (ix + 1)
-{-# INLINE [1] listOfArray #-}
+         | otherwise    = loop_fromList (arr `linearIndex` ix : acc) (ix + 1)
+{-# INLINE [1] toList #-}
 
 
 -- | Convert a nested array to some lists.
-listOfArrays 
+toLists
         :: ( Shape sh2, Bulk r1 (Array r2 sh2 a)
            , Shape sh1, Bulk r2 a)
         => Array r1 sh1 (Array r2 sh2 a)                -- ^ Source array.
         -> [[a]]                                        -- ^ Result list.
 
-listOfArrays arr
- = let  arr'    = listOfArray arr
-   in   map listOfArray arr'
-{-# INLINE [1] listOfArrays #-}
+toLists arr
+ = let  ll'    =  toList arr
+   in   map toList ll'
+{-# INLINE [1] toLists #-}
+
 
 -- | Convert a triply nested array to a triply nested list.
-listOfArrayss
+toListss
         :: ( Shape sh3, Bulk r1 (Array r2 sh2 (Array r3 sh3 a))
            , Shape sh2, Bulk r2 (Array r3 sh3 a)
            , Shape sh1, Bulk r3 a)
         => Array r1 sh1 (Array r2 sh2 (Array r3 sh3 a)) -- ^ Source array.
         -> [[[a]]]                                      -- ^ Result list.
 
-listOfArrayss arr
- = let  arr'    = listOfArrays arr
-   in   map (map listOfArray) arr'
-{-# INLINE [1] listOfArrayss #-}
+toListss arr
+ = let  ll'    = toLists arr
+   in   map (map toList) ll'
+{-# INLINE [1] toListss #-}
+
