@@ -22,7 +22,7 @@ import qualified Data.Array.Repa.Eval.Seq       as Seq
 data D
 
 -- | Compute elements of a delayed array.
-instance Bulk D a where
+instance Shape sh => Bulk D sh a where
  data Array D sh a
         = ADelayed  
                 !sh 
@@ -96,8 +96,8 @@ fromFunction sh f
 -- | O(1). Produce the extent of an array, and a function to retrieve an
 --   arbitrary element.
 toFunction 
-        :: (Shape sh, Bulk r1 a)
-        => Array r1 sh a -> (sh, sh -> a)
+        :: Bulk r sh a
+        => Array r sh a -> (sh, sh -> a)
 toFunction arr
  = case delay arr of
         ADelayed sh f -> (sh, f)
@@ -109,7 +109,7 @@ toFunction arr
 --   indices to elements, so consumers don't need to worry about
 --   what the previous representation was.
 --
-delay   :: Shape sh => Bulk r e
+delay   :: Bulk  r sh e
         => Array r sh e -> Array D sh e
 delay arr = ADelayed (extent arr) (index arr)
 {-# INLINE [1] delay #-}

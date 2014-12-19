@@ -28,7 +28,7 @@ import Control.Monad
 data UU
 
 -- | Read elements from an unboxed vector array.
-instance U.Unbox a => Bulk UU a where
+instance (Shape sh, U.Unbox a) => Bulk UU sh a where
  data Array UU sh a
         = UUArray !sh !(U.Vector a)
 

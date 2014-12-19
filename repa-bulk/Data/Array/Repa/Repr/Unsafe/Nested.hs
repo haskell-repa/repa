@@ -1,15 +1,17 @@
 
 module Data.Array.Repa.Repr.Unsafe.Nested
         ( UN, U.Unbox
-        , Array (..))
+        , Array (..)
+        , fromLists
+        , fromListss
+        , slicesUU)
 where
 import Data.Array.Repa.Bulk
-import Data.Array.Repa.Shape
 import Data.Array.Repa.Index
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Unsafe.Unboxed
+import Prelude                                  as P
 import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
-import Control.Monad
 
 
 ---------------------------------------------------------------------------------------------------
@@ -27,7 +29,7 @@ import Control.Monad
 --
 data UN
 
-instance Bulk r a => Bulk UN (Array r DIM1 a) where
+instance Bulk r DIM1 a => Bulk UN DIM1 (Array r DIM1 a) where
 
  data Array UN DIM1 (Array r DIM1 a)
         = UNArray 
@@ -40,8 +42,14 @@ instance Bulk r a => Bulk UN (Array r DIM1 a) where
  {-# INLINE [1] extent #-}
 
  index  (UNArray starts lengths elems) (Z :. ix)
-  = slice  (Z :. (starts `U.unsafeIndex` ix)) (Z :. (lengths `U.unsafeIndex` ix)) elems
+  = slice  (Z :. (starts  `U.unsafeIndex` ix)) 
+           (Z :. (lengths `U.unsafeIndex` ix)) 
+           elems
  {-# INLINE [1] index #-}
+
+ linearIndex arr ix
+  = index arr (Z :. ix)
+ {-# INLINE [1] linearIndex #-}
 
  slice  (Z :. start) (Z :. len) (UNArray starts lengths elems)
   = UNArray (U.unsafeSlice start len starts)
@@ -51,3 +59,56 @@ instance Bulk r a => Bulk UN (Array r DIM1 a) where
 
 
 deriving instance Show (Array r DIM1 a) => Show (Array UN DIM1 (Array r DIM1 a))
+
+
+-- Conversion -------------------------------------------------------------------------------------
+-- | O(size src) Convert some lists to a nested array.
+fromLists 
+        :: Target r a 
+        => [[a]] -> Array UN DIM1 (Array r DIM1 a)
+fromLists xss
+ = let  xs         = concat xss
+        Just elems = fromList      (Z :. length xs) xs
+        lengths    = U.fromList    $ map P.length xss
+        starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
+   in   UNArray starts lengths elems
+{-# INLINE [1] fromLists #-}
+        
+
+-- | O(size src) Convert a triply nested list to a triply nested array.
+fromListss 
+        :: Target r a 
+        => [[[a]]] -> Array UN DIM1 (Array UN DIM1 (Array r DIM1 a))
+fromListss xs
+ = let  xs1        = concat xs
+        xs2        = concat xs1
+        Just elems = fromList (Z :. length xs2) xs2
+        
+        lengths1   = U.fromList   $ map P.length xs
+        starts1    = U.unsafeInit $ U.scanl (+) 0 lengths1
+
+        lengths2   = U.fromList   $ map P.length xs1
+        starts2    = U.unsafeInit $ U.scanl (+) 0 lengths2
+
+   in   UNArray starts1 lengths1 (UNArray starts2 lengths2 elems)
+{-# INLINE [1] fromListss #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Produce a nested array by taking slices from some array of elements.
+--   
+--   This is a constant time operation, provided the starts and lengths
+--   arrays can also be unpacked in constant time.
+--
+slicesUU :: Array UU DIM1 Int         -- ^ Segment starting positions.
+         -> Array UU DIM1 Int         -- ^ Segment lengths.
+         -> Array r  DIM1 a           -- ^ Array elements.
+         -> Array UN DIM1 (Array r DIM1 a)
+
+slicesUU (UUArray _ starts) (UUArray _ lens) !elems
+ = UNArray starts lens elems
+{-# INLINE [1] slicesUU #-}
+
+
+
+

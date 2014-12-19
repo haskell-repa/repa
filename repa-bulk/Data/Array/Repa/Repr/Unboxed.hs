@@ -25,7 +25,7 @@ import Control.Monad
 --
 data U
 
-instance U.Unbox a => Bulk U a where
+instance (U.Unbox a, Shape sh) => Bulk U sh a where
  data Array U sh a
         = UArray !sh !(U.Vector a)
 
