@@ -32,6 +32,8 @@ Library
         Data.Array.Repa.Repr.Unboxed
 
         Data.Array.Repa.Repr.Unsafe.Unboxed
+        Data.Array.Repa.Repr.Unsafe.Nested
+
 
   other-modules:
         Data.Array.Repa.Bulk.Base
