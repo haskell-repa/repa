@@ -19,20 +19,18 @@ data UF
 
 instance (Shape sh, Storable a) => Bulk UF sh a where
  data Array UF sh a
-        = UFArray !sh !Int !(ForeignPtr a)
+        = UFArray !sh !(ForeignPtr a)
 
- linearIndex (UFArray _ _ fptr) ix
-        = unsafePerformIO 
-        $ withForeignPtr fptr
-        $ \ptr -> peekElemOff ptr ix
- {-# INLINE linearIndex #-}
- 
- extent (UFArray sh _ _)
+ extent (UFArray sh _)
         = sh
  {-# INLINE extent #-}
 
- slice = error "UF slice not finished"
-
+ index (UFArray sh fptr) ix
+        = unsafePerformIO 
+        $ withForeignPtr fptr
+        $ \ptr -> peekElemOff ptr (toIndex sh ix)
+ {-# INLINE index #-}
+ 
  
 -- Target ---------------------------------------------------------------------
 instance Storable a => Target UF a where
@@ -41,11 +39,11 @@ instance Storable a => Target UF a where
 
  unsafeNewBuffer len
   = do  let (proxy :: a) = undefined
-        ptr              <- mallocBytes (sizeOf proxy * len)
-        _                <- peek ptr  `asTypeOf` return proxy
+        ptr     <- mallocBytes (sizeOf proxy * len)
+        _       <- peek ptr  `asTypeOf` return proxy
         
-        fptr             <- newForeignPtr finalizerFree ptr
-        return           $ UFBuffer len fptr
+        fptr    <- newForeignPtr finalizerFree ptr
+        return  $ UFBuffer len fptr
  {-# INLINE unsafeNewBuffer #-}
 
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
@@ -54,8 +52,8 @@ instance Storable a => Target UF a where
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
  {-# INLINE unsafeWriteBuffer #-}
 
- unsafeFreezeBuffer !sh (UFBuffer len fptr)
-  =     return  $ UFArray sh len fptr
+ unsafeFreezeBuffer !sh (UFBuffer _len fptr)
+  =     return  $ UFArray sh fptr
  {-# INLINE unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer = error "UF slice not finished"
@@ -71,13 +69,13 @@ fromForeignPtrUF
         :: Shape sh
         => sh -> ForeignPtr e -> Array UF sh e
 fromForeignPtrUF !sh !fptr
-        = UFArray sh (size sh) fptr
+        = UFArray sh fptr
 {-# INLINE fromForeignPtrUF #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
 toForeignPtrUF :: Array UF sh e -> ForeignPtr e
-toForeignPtrUF (UFArray _ _ fptr)
+toForeignPtrUF (UFArray _ fptr)
         = fptr
 {-# INLINE toForeignPtrUF #-}
 

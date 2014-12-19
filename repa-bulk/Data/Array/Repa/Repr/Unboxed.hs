@@ -26,18 +26,20 @@ data U
 
 instance (U.Unbox a, Shape sh) => Bulk U sh a where
  data Array U sh a
-        = UArray !sh !(U.Vector a)
+        = UArray 
+        { uarrayShape     :: !sh
+        , uarrayVector    :: !(U.Vector a) }
 
- linearIndex (UArray _ vec) ix
-        = vec U.! ix
- {-# INLINE linearIndex #-}
+ index  (UArray sh vec) ix
+        | not $ inShapeRange zeroDim sh ix
+        = error "repa-bulk.index[U] out of range"
 
- extent (UArray sh _)
-        = sh
+        | otherwise
+        = vec U.! (toIndex sh ix)
+
+ extent arr
+        = uarrayShape arr
  {-# INLINE extent #-}
-
- slice = error "U slice not finished"
- {-# NOINLINE slice #-}
 
 
 deriving instance (Show sh, Show e, U.Unbox e)
@@ -62,7 +64,7 @@ instance U.Unbox e => Target U e where
 
  unsafeSliceBuffer start len (UBuffer mvec)
   = do  let mvec'  = UM.unsafeSlice start len mvec
-        return $ UBuffer mvec'
+        return  $  UBuffer mvec'
  {-# INLINE unsafeSliceBuffer #-}
 
  unsafeFreezeBuffer sh (UBuffer mvec)     

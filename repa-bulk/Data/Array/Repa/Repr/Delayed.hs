@@ -33,16 +33,8 @@ instance Shape sh => Bulk D sh a where
  index       (ADelayed _  f) ix  = f ix
  {-# INLINE index #-}
 
- linearIndex (ADelayed sh f) ix  = f (fromIndex sh ix)
- {-# INLINE linearIndex #-}
-
  extent (ADelayed sh _)          = sh
  {-# INLINE extent #-}
-
- slice  shFrom sh' (ADelayed _sh f)
-  = ADelayed sh' f'
-  where f' ix = f (addDim shFrom ix )
- {-# INLINE slice #-}
 
 
 -- Load -------------------------------------------------------------------------------------------

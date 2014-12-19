@@ -32,12 +32,14 @@ class Target r e where
  --   UNSAFE: The given starting position and length must be within the bounds
  --   of the of the source buffer, but this is not checked.
  unsafeSliceBuffer  :: Int -> Int -> Buffer r e -> IO (Buffer r e)
+        -- TODO: cannot use existing load functions on a windowed buffer,
+        --  because we lose the linear indexing.
 
  -- | O(1). Freeze a mutable buffer into an immutable Repa array.
  --
  --   UNSAFE: If the buffer is mutated further then the result of reading from
  --           the returned array will be non-deterministic.
- unsafeFreezeBuffer :: sh  -> Buffer r e -> IO (Array r sh e)
+ unsafeFreezeBuffer :: Shape sh => sh  -> Buffer r e -> IO (Array r sh e)
 
  -- | Ensure the array is still live at this point.
  --   Sometimes needed when the mutable buffer is a ForeignPtr with a finalizer.

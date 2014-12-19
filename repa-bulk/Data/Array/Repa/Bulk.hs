@@ -63,7 +63,7 @@ findIndex p !vec
         loop_findIndex !ix
          | ix >= len    = Nothing
          | otherwise    
-         = let  !x      = vec `linearIndex` ix
+         = let  !x      = vec `index` (Z :. ix)
            in   if p x  then Just ix
                         else loop_findIndex (ix + 1)
         {-# INLINE [0] loop_findIndex #-}

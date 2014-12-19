@@ -11,7 +11,7 @@ class Unsafe r1 r2 where
  unsafe :: Array r1 sh a -> Array r2 sh a
 
 instance Unsafe F UF where
- unsafe (FArray sh len fptr) = (UFArray sh len fptr)
+ unsafe (FArray sh fptr) = (UFArray sh fptr)
  {-# INLINE unsafe #-}
 
 instance Unsafe U UU where

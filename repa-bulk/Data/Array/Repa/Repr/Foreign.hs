@@ -1,6 +1,6 @@
 
 module Data.Array.Repa.Repr.Foreign
-        ( F, Array (..)
+        ( F, Array (..), Buffer (..)
         , fromForeignPtr, toForeignPtr)
 where
 import Data.Array.Repa.Bulk.Target
@@ -19,37 +19,35 @@ data F
 
 instance (Shape sh, Storable a) => Bulk F sh a where
  data Array F sh a
-        = FArray !sh !Int !(ForeignPtr a)
+        = FArray !sh !(ForeignPtr a)
 
- linearIndex (FArray _ len fptr) ix
-        | ix < len
-        = unsafePerformIO 
-        $ withForeignPtr fptr
-        $ \ptr -> peekElemOff ptr ix
-
-        | otherwise
-        = error "repa-flow.linearIndex[F]: index out of bounds"
- {-# INLINE linearIndex #-}
- 
- extent (FArray sh _ _)
+ extent (FArray sh _)
         = sh
  {-# INLINE extent #-}
 
- slice = error "UF slice not finished"
+ index (FArray sh fptr) ix
+        | not $ inShapeRange zeroDim sh ix
+        = error "repa-bulk.index[F]: out of range"
 
- 
+        | otherwise
+        = unsafePerformIO 
+        $ withForeignPtr fptr
+        $ \ptr -> peekElemOff ptr (toIndex sh ix)
+ {-# INLINE index #-}
+
+
 -- Target ---------------------------------------------------------------------
 instance Storable a => Target F a where
  data Buffer F a
-  = FBuffer !Int !(ForeignPtr a)
+        = FBuffer !Int !(ForeignPtr a)
 
  unsafeNewBuffer len
   = do  let (proxy :: a) = undefined
-        ptr              <- mallocBytes (sizeOf proxy * len)
-        _                <- peek ptr  `asTypeOf` return proxy
+        ptr     <- mallocBytes (sizeOf proxy * len)
+        _       <- peek ptr  `asTypeOf` return proxy
         
-        fptr             <- newForeignPtr finalizerFree ptr
-        return           $ FBuffer len fptr
+        fptr    <- newForeignPtr finalizerFree ptr
+        return  $ FBuffer len fptr
  {-# INLINE unsafeNewBuffer #-}
 
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
@@ -58,8 +56,8 @@ instance Storable a => Target F a where
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
  {-# INLINE unsafeWriteBuffer #-}
 
- unsafeFreezeBuffer !sh (FBuffer len fptr)
-  =     return  $ FArray sh len fptr
+ unsafeFreezeBuffer !sh (FBuffer _len fptr)
+  =     return  $ FArray sh fptr
  {-# INLINE unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer = error "UF slice not finished"
@@ -75,12 +73,12 @@ fromForeignPtr
         :: Shape sh
         => sh -> ForeignPtr e -> Array F sh e
 fromForeignPtr !sh !fptr
-        = FArray sh (size sh) fptr
+        = FArray sh fptr
 {-# INLINE fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
 toForeignPtr :: Array F sh e -> ForeignPtr e
-toForeignPtr (FArray _ _ fptr)
+toForeignPtr (FArray _ fptr)
         = fptr
 {-# INLINE toForeignPtr #-}

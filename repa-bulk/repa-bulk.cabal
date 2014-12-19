@@ -31,6 +31,7 @@ Library
         Data.Array.Repa.Bulk.IO.File
 
         Data.Array.Repa.Repr.Delayed
+        Data.Array.Repa.Repr.Window
         Data.Array.Repa.Repr.Unboxed
         Data.Array.Repa.Repr.Foreign
 

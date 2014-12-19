@@ -21,24 +21,14 @@ class Shape sh => Bulk r sh e where
  --   one of `DIM1`, `DIM2` ... for @sh@.
  data Array r sh e
 
- -- | O(1). Take the extent (size) of an array.
+ -- | Take the extent (size) of an array.
  extent         :: Array r sh e -> sh
 
- -- | O(1). Shape polymorphic indexing.
+ -- | Shape polymorphic indexing.
  --
  --   The safety of this indexing operator depends on the array representation.
  index          :: Array r sh e -> sh -> e
- index arr ix   = arr `linearIndex`       toIndex (extent arr) ix
- {-# INLINE index #-}
 
- -- | O(1). Linear indexing into underlying, row-major, array representation.
- --
- --   The safety of this indexing operator depends on the array representation.
- linearIndex    :: Array r sh e -> Int -> e
-
- -- | O(1). Restrict an array to a rectangular subrange, 
- --         given a new starting position and extent.
- slice          :: sh -> sh -> Array r sh e -> Array r sh e
 
 -- | O(1). Alias for `index`
 (!) :: Bulk r sh a => Array r sh a -> sh -> a
@@ -57,10 +47,13 @@ toList
         -> [a]                                          -- ^ Result list.
 toList arr
  = loop_fromList [] 0
- where  !len    = size (extent arr)
+ where  !sh     = extent arr
+        !len    = size sh
         loop_fromList !acc !ix
          | ix >= len    = reverse acc
-         | otherwise    = loop_fromList (arr `linearIndex` ix : acc) (ix + 1)
+         | otherwise    
+         = loop_fromList (arr `index` (fromIndex sh ix) : acc) 
+                         (ix + 1)
 {-# INLINE [1] toList #-}
 
 

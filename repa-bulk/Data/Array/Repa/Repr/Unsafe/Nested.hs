@@ -7,6 +7,7 @@ module Data.Array.Repa.Repr.Unsafe.Nested
 where
 import Data.Array.Repa.Bulk
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Window
 import Prelude                                  as P
 import qualified Data.Vector.Unboxed            as U
 
@@ -26,7 +27,9 @@ import qualified Data.Vector.Unboxed            as U
 --
 data UN
 
-instance Bulk r DIM1 a => Bulk UN DIM1 (Vector r a) where
+instance ( Bulk   r DIM1 a 
+         , Window r DIM1)
+      => Bulk UN DIM1 (Vector r a) where
 
  data Array UN DIM1 (Vector r a)
         = UNArray 
@@ -38,21 +41,13 @@ instance Bulk r DIM1 a => Bulk UN DIM1 (Vector r a) where
         = Z :. U.length starts
  {-# INLINE [1] extent #-}
 
+
  index  (UNArray starts lengths elems) (Z :. ix)
-  = slice  (Z :. (starts  `U.unsafeIndex` ix)) 
+  = window (Z :. (starts  `U.unsafeIndex` ix)) 
            (Z :. (lengths `U.unsafeIndex` ix)) 
            elems
  {-# INLINE [1] index #-}
 
- linearIndex arr ix
-  = index arr (Z :. ix)
- {-# INLINE [1] linearIndex #-}
-
- slice  (Z :. start) (Z :. len) (UNArray starts lengths elems)
-  = UNArray (U.unsafeSlice start len starts)
-            (U.unsafeSlice start len lengths)
-            elems
- {-# INLINE [1] slice #-}
 
 
 deriving instance Show (Vector r a) => Show (Vector UN (Vector r a))
@@ -87,7 +82,9 @@ fromListss xs
         lengths2   = U.fromList   $ map P.length xs1
         starts2    = U.unsafeInit $ U.scanl (+) 0 lengths2
 
-   in   UNArray starts1 lengths1 (UNArray starts2 lengths2 elems)
+   in   UNArray    starts1 lengths1 
+         $ UNArray starts2 lengths2 
+         $ elems
 {-# INLINE [1] fromListss #-}
 
 

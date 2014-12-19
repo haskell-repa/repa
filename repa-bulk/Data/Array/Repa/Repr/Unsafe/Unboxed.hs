@@ -33,16 +33,13 @@ instance (Shape sh, U.Unbox a) => Bulk UU sh a where
  data Array UU sh a
         = UUArray !sh !(U.Vector a)
 
- linearIndex (UUArray _ vec) ix
-        = vec `U.unsafeIndex` ix
- {-# INLINE linearIndex #-}
-
  extent (UUArray sh _)
         = sh
  {-# INLINE extent #-}
 
- slice = error "UU slice not finished"
- {-# NOINLINE slice #-}
+ index (UUArray sh vec) ix   
+        = vec `U.unsafeIndex` (toIndex sh ix)
+ {-# INLINE index #-}
 
 
 deriving instance (Show sh, Show e, U.Unbox e)
