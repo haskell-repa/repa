@@ -4,8 +4,9 @@ module Data.Array.Repa.Repr.Unsafe.Nested
         , Array (..)
         , fromLists
         , fromListss
-        , segment
-        , segmentOn)
+        , trims
+        , segment, segmentOn
+        , dice,    diceOn)
 where
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Bulk.Target
@@ -16,7 +17,7 @@ import Data.Array.Repa.Index
 import Prelude                                          as P
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Array.Repa.Vector.Unboxed         as U
-
+import Prelude  hiding (concat)
 
 ---------------------------------------------------------------------------------------------------
 -- | Nested array represented as a flat array of elements, and a segment
@@ -104,17 +105,41 @@ fromListss xs
 
 
 ---------------------------------------------------------------------------------------------------
+-- | For each sub-array, if the last element matches the given predicate
+--   then trim it off.
+trims   :: Bulk r DIM1 a
+        => (a -> Bool)
+        -> Vector UN (Vector r a)
+        -> Vector UN (Vector r a)
+
+trims pTrim (UNArray starts lengths elems)
+ = let
+        ftrim start len 
+         | len == 0     = 0
+         | pTrim (elems `index` (Z :. start + len - 1)) 
+                        = len - 1
+         | otherwise    = len
+
+        lengths'        = U.zipWith ftrim starts lengths
+   in   UNArray starts lengths' elems
+{-# INLINE [1] trims #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Given predicates which detect the start and end of a segment, 
 --   split an array into the indicated segments.
 segment :: (U.Unbox a, Bulk r DIM1 a)
         => (a -> Bool)  -> (a -> Bool)          
         -> Vector r a    -> Vector UN (Vector r a)  
 
-segment pStart pEnd !arr
- = let  (starts, lens)  
+segment pStart pEnd !elems
+ = let  len     = size (extent elems)
+        (starts, lens)  
                 = U.findSegments pStart pEnd 
-                $ U.generate (size (extent arr)) (\ix -> index arr (Z :. ix))
-   in   UNArray starts lens arr
+                $ U.generate len (\ix -> index elems (Z :. ix))
+
+        arr     = UNArray starts lens elems
+   in   trims pEnd arr
 {-# INLINE [1] segment #-}
 
 
@@ -132,4 +157,46 @@ segmentOn
 segmentOn !x !arr
  = segment (const True) (== x) arr
 {-# INLINE [1] segmentOn #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Like `segment`, but cut the source array twice.
+--   TODO: dies with empty lines on end.
+dice    :: (U.Unbox a, Bulk r DIM1 a, Window r DIM1 a)
+        => (a -> Bool) -> (a -> Bool)         
+        -> (a -> Bool) -> (a -> Bool)
+        -> Vector r a
+        -> Vector UN (Vector UN (Vector r a))
+
+dice pStart1 pEnd1 pStart2 pEnd2 !arr
+ = let  lenArr           = size (extent arr)
+        (starts1, lens1) = U.findSegments pStart1 pEnd1 
+                         $ U.generate lenArr (\ix -> index arr (Z :. ix))
+
+        ahead arr1       = index arr1 (ix1 0)
+        alast arr1       = index arr1 (ix1 (size (extent arr1) - 1))
+        pStart2' arr     = pStart2 $ ahead arr
+        pEnd2'   arr     = pEnd2   $ alast arr
+        lenArrInner      = U.length starts1
+        arrInner         = UNArray starts1 lens1 arr
+        (starts2, lens2) = U.findSegmentsFrom pStart2' pEnd2'
+                                lenArrInner
+                                (\ix -> index arrInner (Z :. ix))
+
+        pEndBoth x       = pEnd1 x || pEnd2 x
+        arrInner'        = trims pEndBoth arrInner
+
+   in   UNArray starts2 lens2 arrInner'
+{-# INLINE [1] dice #-}
+
+
+diceOn  :: (U.Unbox a, Eq a, Bulk r DIM1 a, Window r DIM1 a)
+        => a -> a
+        -> Vector r a    -> Vector UN (Vector UN (Vector r a))
+
+diceOn !xEndWord !xEndLine !arr
+ =      dice    (const True) (\x -> x == xEndWord || x == xEndLine)
+                (const True) (\x -> x == xEndLine)
+                arr
+{-# INLINE [1] diceOn #-}
 

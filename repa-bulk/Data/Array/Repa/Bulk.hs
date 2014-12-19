@@ -37,8 +37,8 @@ module Data.Array.Repa.Bulk
         , UN
         , fromLists
         , fromListss
-        , segment
-        , segmentOn
+        , segment,      segmentOn
+        , dice,         diceOn
 
           -- ** Unboxed arrays
         , U
