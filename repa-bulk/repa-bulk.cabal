@@ -33,6 +33,7 @@ Library
 
         Data.Array.Repa.Repr.Unsafe.Unboxed
         Data.Array.Repa.Repr.Unsafe.Nested
+        Data.Array.Repa.Repr.Unsafe.Foreign
 
 
   other-modules:

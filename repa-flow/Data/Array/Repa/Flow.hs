@@ -30,8 +30,8 @@ module Data.Array.Repa.Flow
         , unchunk_i
         , unchunk_o)
 where
-import Data.Array.Repa.Flow.Base
-import Data.Array.Repa.Flow.Eval
-import Data.Array.Repa.Flow.List
-import Data.Array.Repa.Flow.Operator
-import Data.Array.Repa.Flow.Chunk
+import Data.Array.Repa.Flow.Internals.Base
+import Data.Array.Repa.Flow.Internals.Eval
+import Data.Array.Repa.Flow.Internals.List
+import Data.Array.Repa.Flow.Internals.Operator
+import Data.Array.Repa.Flow.Internals.Chunk

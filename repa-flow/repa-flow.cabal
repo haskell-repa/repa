@@ -23,11 +23,11 @@ Library
         Data.Array.Repa.Flow
 
   other-modules:
-        Data.Array.Repa.Flow.Base
-        Data.Array.Repa.Flow.List
-        Data.Array.Repa.Flow.Eval
-        Data.Array.Repa.Flow.Operator
-        Data.Array.Repa.Flow.Chunk
+        Data.Array.Repa.Flow.Internals.Base
+        Data.Array.Repa.Flow.Internals.List
+        Data.Array.Repa.Flow.Internals.Eval
+        Data.Array.Repa.Flow.Internals.Operator
+        Data.Array.Repa.Flow.Internals.Chunk
 
   ghc-options:
         -Wall 

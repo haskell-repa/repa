@@ -1,10 +1,10 @@
 
-module Data.Array.Repa.Flow.List
+module Data.Array.Repa.Flow.Internals.List
         ( fromList
         , toList
         , takeList)
 where
-import Data.Array.Repa.Flow.Base
+import Data.Array.Repa.Flow.Internals.Base
 import Data.IORef
 
 
