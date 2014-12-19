@@ -2,13 +2,15 @@
 module Data.Array.Repa.Repr.Unsafe.Unboxed
         ( UU, U.Unbox
         , Array (..)
-        , fromListUU
+        , fromListUU,   fromListsUU,    fromListssUU
         , fromVectorUU
-        , toVectorUU)
+        , toVectorUU
+        , slicesUU)
 where
 import Data.Array.Repa.Bulk
 import Data.Array.Repa.Shape
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Unsafe.Nested
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
@@ -75,7 +77,7 @@ instance U.Unbox e => Target UU e where
 
 
 -- Conversions ------------------------------------------------------------------------------------
--- | O(n). Convert a list to an unboxed vector array.
+-- | O(size src). Convert a list to an unboxed vector array.
 -- 
 --   * This is an alias for `fromList` with a more specific type.
 --
@@ -84,6 +86,28 @@ fromListUU
         => sh -> [a] -> Maybe (Array UU sh a)
 fromListUU = fromList
 {-# INLINE [1] fromListUU #-}
+
+
+-- | O(size src). Convert some lists to a nested array.
+-- 
+--   * This is an alias for `fromLists` with a more specific type.
+--
+fromListsUU
+        :: U.Unbox a
+        => [[a]] -> Vector UN (Vector UU a)
+fromListsUU = fromLists
+{-# INLINE [1] fromListsUU #-}
+
+
+-- | O(size src). Convert a triply nested list to a nested array
+-- 
+--   * This is an alias for `fromListss` with a more specific type.
+--
+fromListssUU
+        :: U.Unbox a
+        => [[[a]]] -> Vector UN (Vector UN (Vector UU a))
+fromListssUU = fromListss
+{-# INLINE [1] fromListssUU #-}
 
 
 -- | O(1). Wrap an unboxed vector as an array.
@@ -102,3 +126,19 @@ toVectorUU
 toVectorUU (UUArray _ vec)
         = vec
 {-# INLINE [1] toVectorUU #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Produce a nested array by taking slices from some array of elements.
+--   
+--   This is a constant time operation, provided the starts and lengths
+--   arrays can also be unpacked in constant time.
+--
+slicesUU :: Vector UU Int               -- ^ Segment starting positions.
+         -> Vector UU Int               -- ^ Segment lengths.
+         -> Vector r  a                 -- ^ Array elements.
+         -> Vector UN (Vector r a)
+
+slicesUU (UUArray _ starts) (UUArray _ lens) !elems
+ = UNArray starts lens elems
+{-# INLINE [1] slicesUU #-}

@@ -3,13 +3,11 @@ module Data.Array.Repa.Repr.Unsafe.Nested
         ( UN, U.Unbox
         , Array (..)
         , fromLists
-        , fromListss
-        , slicesUU)
+        , fromListss)
 where
 import Data.Array.Repa.Bulk
 import Data.Array.Repa.Index
 import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.Unsafe.Unboxed
 import Prelude                                  as P
 import qualified Data.Vector.Unboxed            as U
 
@@ -93,19 +91,4 @@ fromListss xs
    in   UNArray starts1 lengths1 (UNArray starts2 lengths2 elems)
 {-# INLINE [1] fromListss #-}
 
-
----------------------------------------------------------------------------------------------------
--- | Produce a nested array by taking slices from some array of elements.
---   
---   This is a constant time operation, provided the starts and lengths
---   arrays can also be unpacked in constant time.
---
-slicesUU :: Vector UU Int               -- ^ Segment starting positions.
-         -> Vector UU Int               -- ^ Segment lengths.
-         -> Vector r  a                 -- ^ Array elements.
-         -> Vector UN (Vector r a)
-
-slicesUU (UUArray _ starts) (UUArray _ lens) !elems
- = UNArray starts lens elems
-{-# INLINE [1] slicesUU #-}
 
