@@ -19,12 +19,19 @@ module Data.Array.Repa.Bulk
         , toLists
         , toListss
 
+
           -- * Concrete Array Representations
           -- ** Delayed representation
         , D
         , fromFunction
         , toFunction
         , delay 
+
+          -- ** Windowed arrays
+        , W
+        , Window    (..)
+        , windowed
+        , entire
 
           -- * Operators
         , reverse
@@ -36,6 +43,7 @@ import Data.Array.Repa.Bulk.Load
 import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Window
 import Prelude hiding (reverse)
 
 

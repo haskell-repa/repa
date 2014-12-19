@@ -8,6 +8,7 @@ module Data.Array.Repa.Repr.Unsafe.Unboxed
         , slicesUU)
 where
 import Data.Array.Repa.Bulk
+import Data.Array.Repa.Repr.Window
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Unsafe.Nested
 import qualified Data.Vector.Unboxed            as U
@@ -47,6 +48,13 @@ deriving instance (Show sh, Show e, U.Unbox e)
 
 deriving instance (Read sh, Read e, U.Unbox e)
         => Read (Array UU sh e)
+
+
+-- Window -----------------------------------------------------------------------------------------
+instance U.Unbox a => Window UU DIM1 a where
+ window (Z :. start) (Z :. len) (UUArray _sh vec)
+        = UUArray (Z :. len) (U.slice start len vec)
+ {-# INLINE window #-}
 
 
 -- Target -----------------------------------------------------------------------------------------

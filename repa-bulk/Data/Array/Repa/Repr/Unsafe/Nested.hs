@@ -28,7 +28,7 @@ import qualified Data.Vector.Unboxed            as U
 data UN
 
 instance ( Bulk   r DIM1 a 
-         , Window r DIM1)
+         , Window r DIM1 a)
       => Bulk UN DIM1 (Vector r a) where
 
  data Array UN DIM1 (Vector r a)
@@ -51,6 +51,15 @@ instance ( Bulk   r DIM1 a
 
 
 deriving instance Show (Vector r a) => Show (Vector UN (Vector r a))
+
+
+-- Window -----------------------------------------------------------------------------------------
+instance Window UN DIM1 (Vector r a) where
+ window (Z :. start) (Z :. len) (UNArray starts lengths elems)
+        = UNArray (U.unsafeSlice start len starts)
+                  (U.unsafeSlice start len lengths)
+                  elems
+ {-# INLINE window #-}
 
 
 -- Conversion -------------------------------------------------------------------------------------

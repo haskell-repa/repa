@@ -41,7 +41,7 @@ windowed start shape arr
 {-# INLINE [1] windowed #-}
 
 
--- | Wrap a window 
+-- | Wrap a window around an existing array that encompases the entire array.
 entire :: Bulk r sh a => Array r sh a -> Array (W r) sh a
 entire arr
         = WArray zeroDim (extent arr) arr
@@ -52,10 +52,10 @@ entire arr
 
 -- | Class of array representations that can be windowed directly.
 --   The underlying representation can encode the window.
-class Shape sh => Window r sh where
+class Shape sh => Window r sh a where
  window :: sh -> sh -> Array r sh a -> Array r sh a
 
-instance Shape sh => Window (W r) sh where
+instance Shape sh => Window (W r) sh a where
  window start _shape (WArray wStart wShape arr)
         = WArray (addDim wStart start) wShape arr
  {-# INLINE window #-}
