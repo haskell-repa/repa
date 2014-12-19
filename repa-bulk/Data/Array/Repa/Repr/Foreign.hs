@@ -6,7 +6,9 @@ where
 import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Repr.Window
 import Data.Array.Repa.Shape
+import Data.Array.Repa.Index
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
@@ -19,21 +21,28 @@ data F
 
 instance (Shape sh, Storable a) => Bulk F sh a where
  data Array F sh a
-        = FArray !sh !(ForeignPtr a)
+        = FArray !sh !Int !(ForeignPtr a)
 
- extent (FArray sh _)
+ extent (FArray sh _ _)
         = sh
  {-# INLINE extent #-}
 
- index (FArray sh fptr) ix
+ index (FArray sh offset fptr) ix
         | not $ inShapeRange zeroDim sh ix
         = error "repa-bulk.index[F]: out of range"
 
         | otherwise
         = unsafePerformIO 
         $ withForeignPtr fptr
-        $ \ptr -> peekElemOff ptr (toIndex sh ix)
+        $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
  {-# INLINE index #-}
+
+
+-- Window ---------------------------------------------------------------------
+instance Window F DIM1 a where
+ window (Z :. start) sh' (FArray sh offset ptr)
+        = FArray sh' (offset + start) ptr
+ {-# INLINE window #-}
 
 
 -- Target ---------------------------------------------------------------------
@@ -57,7 +66,7 @@ instance Storable a => Target F a where
  {-# INLINE unsafeWriteBuffer #-}
 
  unsafeFreezeBuffer !sh (FBuffer _len fptr)
-  =     return  $ FArray sh fptr
+  =     return  $ FArray sh 0 fptr
  {-# INLINE unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer = error "UF slice not finished"
@@ -73,12 +82,12 @@ fromForeignPtr
         :: Shape sh
         => sh -> ForeignPtr e -> Array F sh e
 fromForeignPtr !sh !fptr
-        = FArray sh fptr
+        = FArray sh 0 fptr
 {-# INLINE fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
 toForeignPtr :: Array F sh e -> ForeignPtr e
-toForeignPtr (FArray _ fptr)
+toForeignPtr (FArray _ _ fptr)
         = fptr
 {-# INLINE toForeignPtr #-}

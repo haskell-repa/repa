@@ -1,7 +1,6 @@
 
 module Data.Array.Repa.Repr.Unsafe.Foreign
-        ( UF, Array (..)
-        , fromForeignPtrUF, toForeignPtrUF)
+        (UF, Array (..))
 where
 import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Bulk.Base
@@ -19,16 +18,16 @@ data UF
 
 instance (Shape sh, Storable a) => Bulk UF sh a where
  data Array UF sh a
-        = UFArray !sh !(ForeignPtr a)
+        = UFArray !sh !Int !(ForeignPtr a)
 
- extent (UFArray sh _)
+ extent (UFArray sh _ _)
         = sh
  {-# INLINE extent #-}
 
- index (UFArray sh fptr) ix
+ index (UFArray sh offset fptr) ix
         = unsafePerformIO 
         $ withForeignPtr fptr
-        $ \ptr -> peekElemOff ptr (toIndex sh ix)
+        $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
  {-# INLINE index #-}
  
  
@@ -53,7 +52,7 @@ instance Storable a => Target UF a where
  {-# INLINE unsafeWriteBuffer #-}
 
  unsafeFreezeBuffer !sh (UFBuffer _len fptr)
-  =     return  $ UFArray sh fptr
+  =     return  $ UFArray sh 0 fptr
  {-# INLINE unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer = error "UF slice not finished"
@@ -61,22 +60,3 @@ instance Storable a => Target UF a where
  touchBuffer (UFBuffer _ fptr)
   = touchForeignPtr fptr
  {-# INLINE touchBuffer #-}
-
-
--- Conversions ----------------------------------------------------------------
--- | O(1). Wrap a `ForeignPtr` as an array.
-fromForeignPtrUF
-        :: Shape sh
-        => sh -> ForeignPtr e -> Array UF sh e
-fromForeignPtrUF !sh !fptr
-        = UFArray sh fptr
-{-# INLINE fromForeignPtrUF #-}
-
-
--- | O(1). Unpack a `ForeignPtr` from an array.
-toForeignPtrUF :: Array UF sh e -> ForeignPtr e
-toForeignPtrUF (UFArray _ fptr)
-        = fptr
-{-# INLINE toForeignPtrUF #-}
-
-

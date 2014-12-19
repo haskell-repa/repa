@@ -103,7 +103,7 @@ hSourceRecordsF h len pSep aFail
                  Just ixSplit
                   -> do let lenSplit    = size (extent arr) - ixSplit
                         hSeek h RelativeSeek (fromIntegral $ negate lenSplit)
-                        let arr'        = slice (Z :. 0) (Z :. lenSplit) arr
+                        let arr'        = window (Z :. 0) (Z :. lenSplit) arr
                         eat arr'
         {-# INLINE pull_hSourceRecordsF #-}
 

@@ -33,15 +33,16 @@ hGetArrayF h len
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
 hGetArrayPreF :: Handle -> Int -> Vector F Word8 -> IO (Vector F Word8)
-hGetArrayPreF h len (FArray shPre fptrPre)
+hGetArrayPreF h len (FArray shPre offset fptrPre)
  = F.withForeignPtr fptrPre
- $ \ptrPre -> do   
+ $ \ptrPre' -> do   
+        let ptrPre      = F.plusPtr ptrPre' offset
         let lenPre      = size shPre
         ptrBuf :: F.Ptr Word8 <- F.mallocBytes (lenPre + len)
         F.copyBytes ptrBuf ptrPre lenPre
-        lenRead               <- hGetBuf h (F.plusPtr ptrBuf lenPre) len
+        lenRead         <- hGetBuf h (F.plusPtr ptrBuf lenPre) len
         let bytesTotal  = lenPre + lenRead
-        fptrBuf               <- F.newForeignPtr F.finalizerFree ptrBuf
+        fptrBuf         <- F.newForeignPtr F.finalizerFree ptrBuf
         return  $ fromForeignPtr (Z :. bytesTotal) fptrBuf
 {-# NOINLINE hGetArrayPreF #-}
 
@@ -52,8 +53,9 @@ hGetArrayPreF h len (FArray shPre fptrPre)
 --     without copying it through the GHC heap.
 --
 hPutArrayF :: Handle -> Vector F Word8 -> IO ()
-hPutArrayF h (FArray shPre fptr)
+hPutArrayF h (FArray shPre offset fptr)
  = F.withForeignPtr fptr
- $ \ptr -> do
+ $ \ptr' -> do
+        let ptr         = F.plusPtr ptr offset
         hPutBuf h ptr (size shPre)
 {-# NOINLINE hPutArrayF #-}
