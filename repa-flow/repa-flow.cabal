@@ -1,0 +1,44 @@
+Name:           repa-flow
+Version:        4.0.0.0
+License:        BSD3
+License-file:   LICENSE
+Author:         The DPH Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:    Incremental data flows.
+Synopsis:       Incremental data flows.
+
+Library
+  build-Depends: 
+        base            == 4.7.*,
+        vector          == 0.10.*,
+        repa-bulk       == 4.0.0.0
+
+  exposed-modules:
+        Data.Array.Repa.Flow
+
+  other-modules:
+        Data.Array.Repa.Flow.Base
+        Data.Array.Repa.Flow.List
+        Data.Array.Repa.Flow.Eval
+        Data.Array.Repa.Flow.Operator
+
+  ghc-options:
+        -Wall 
+        -fno-warn-missing-signatures
+        -O2
+        -fcpr-off
+        -fno-spec-constr
+        -funbox-strict-fields
+
+  extensions:
+        NoMonomorphismRestriction
+        BangPatterns
+        MagicHash
+
+
