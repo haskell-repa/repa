@@ -14,7 +14,7 @@ import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import System.IO.Unsafe
 import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
-
+import Control.Monad.Primitive
 
 -- | Arrays represented as foreign buffers in the C heap.
 data F
@@ -32,7 +32,7 @@ instance (Shape sh, Storable a) => Bulk F sh a where
         = error "repa-bulk.index[F]: out of range"
 
         | otherwise
-        = unsafePerformIO 
+        = unsafeInlineIO 
         $ withForeignPtr fptr
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
  {-# INLINE index #-}
