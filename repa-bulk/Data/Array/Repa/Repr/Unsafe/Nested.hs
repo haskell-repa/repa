@@ -6,7 +6,6 @@ module Data.Array.Repa.Repr.Unsafe.Nested
         , fromListss)
 where
 import Data.Array.Repa.Bulk
-import Data.Array.Repa.Index
 import Data.Array.Repa.Repr.Delayed
 import Prelude                                  as P
 import qualified Data.Vector.Unboxed            as U

@@ -27,6 +27,7 @@ Library
         Data.Array.Repa.Flow.List
         Data.Array.Repa.Flow.Eval
         Data.Array.Repa.Flow.Operator
+        Data.Array.Repa.Flow.Chunk
 
   ghc-options:
         -Wall 
@@ -40,5 +41,6 @@ Library
         NoMonomorphismRestriction
         BangPatterns
         MagicHash
+        FlexibleContexts
 
 

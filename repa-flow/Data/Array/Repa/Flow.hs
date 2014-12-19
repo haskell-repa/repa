@@ -23,9 +23,15 @@ module Data.Array.Repa.Flow
         , groups_i
         , pack_ii
         , folds_ii
-        , trigger_o)
+        , trigger_o
+
+        -- * Chunking
+        , chunk_i
+        , unchunk_i
+        , unchunk_o)
 where
 import Data.Array.Repa.Flow.Base
 import Data.Array.Repa.Flow.Eval
 import Data.Array.Repa.Flow.List
 import Data.Array.Repa.Flow.Operator
+import Data.Array.Repa.Flow.Chunk

@@ -7,7 +7,6 @@ module Data.Array.Repa.Repr.Unboxed
         , toVectorU)
 where
 import Data.Array.Repa.Bulk
-import Data.Array.Repa.Shape
 import Data.Array.Repa.Repr.Delayed
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
@@ -60,6 +59,11 @@ instance U.Unbox e => Target U e where
  unsafeWriteBuffer (UBuffer mvec) ix
   = UM.unsafeWrite mvec ix
  {-# INLINE unsafeWriteBuffer #-}
+
+ unsafeSliceBuffer start len (UBuffer mvec)
+  = do  let mvec'  = UM.unsafeSlice start len mvec
+        return $ UBuffer mvec'
+ {-# INLINE unsafeSliceBuffer #-}
 
  unsafeFreezeBuffer sh (UBuffer mvec)     
   = do  vec     <- U.unsafeFreeze mvec

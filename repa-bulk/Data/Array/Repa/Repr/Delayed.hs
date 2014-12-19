@@ -5,8 +5,6 @@ module Data.Array.Repa.Repr.Delayed
         , delay)
 where
 import Data.Array.Repa.Bulk
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
 import Data.Array.Repa.Eval.Elt
 import Debug.Trace
 import GHC.Exts

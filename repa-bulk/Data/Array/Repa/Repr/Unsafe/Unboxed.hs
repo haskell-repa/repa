@@ -8,7 +8,6 @@ module Data.Array.Repa.Repr.Unsafe.Unboxed
         , slicesUU)
 where
 import Data.Array.Repa.Bulk
-import Data.Array.Repa.Shape
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Unsafe.Nested
 import qualified Data.Vector.Unboxed            as U
@@ -70,6 +69,11 @@ instance U.Unbox e => Target UU e where
   = do  vec     <- U.unsafeFreeze mvec
         return  $  UUArray sh vec
  {-# INLINE unsafeFreezeBuffer #-}
+
+ unsafeSliceBuffer start len (UUBuffer mvec)
+  = do  let mvec'  = UM.unsafeSlice start len mvec
+        return $ UUBuffer mvec'
+ {-# INLINE unsafeSliceBuffer #-}
 
  touchBuffer _ 
   = return ()

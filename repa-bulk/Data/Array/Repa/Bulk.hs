@@ -1,7 +1,10 @@
 
 module Data.Array.Repa.Bulk
-        ( -- * Bulk arrays
-          Bulk (..)
+        ( module Data.Array.Repa.Shape
+        , module Data.Array.Repa.Index
+
+          -- * Bulk arrays
+        , Bulk (..)
         , Vector
         , (!)
 
@@ -16,8 +19,10 @@ module Data.Array.Repa.Bulk
         , toLists
         , toListss)
 where
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Bulk.Load
+import Data.Array.Repa.Bulk.Target
+import Data.Array.Repa.Bulk.Base
+import Data.Array.Repa.Index
+import Data.Array.Repa.Shape
 
 

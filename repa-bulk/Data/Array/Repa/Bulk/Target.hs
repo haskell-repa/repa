@@ -27,7 +27,13 @@ class Target r e where
  --   UNSAFE: The index bounds are not checked.
  unsafeWriteBuffer  :: Buffer r e -> Int -> e -> IO ()
 
- -- | Freeze a mutable buffer into an immutable Repa array.
+ -- | O(1). Yield a slice of the buffer without copying.
+ --
+ --   UNSAFE: The given starting position and length must be within the bounds
+ --   of the of the source buffer, but this is not checked.
+ unsafeSliceBuffer  :: Int -> Int -> Buffer r e -> IO (Buffer r e)
+
+ -- | O(1). Freeze a mutable buffer into an immutable Repa array.
  --
  --   UNSAFE: If the buffer is mutated further then the result of reading from
  --           the returned array will be non-deterministic.
