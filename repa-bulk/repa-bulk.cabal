@@ -32,10 +32,12 @@ Library
 
         Data.Array.Repa.Repr.Delayed
         Data.Array.Repa.Repr.Unboxed
+        Data.Array.Repa.Repr.Foreign
 
         Data.Array.Repa.Repr.Unsafe.Unboxed
         Data.Array.Repa.Repr.Unsafe.Nested
         Data.Array.Repa.Repr.Unsafe.Foreign
+        Data.Array.Repa.Repr.Unsafe
 
 
   other-modules:

@@ -16,8 +16,8 @@ import Data.Word
 --   All chunks have the same size, except possibly the last one.
 --
 --   TODO: close file when finished.
-fileSourceBytesUF :: FilePath -> Int -> IO (Source (Vector UF Word8))
-fileSourceBytesUF filePath len
+fileSourceBytesF :: FilePath -> Int -> IO (Source (Vector F Word8))
+fileSourceBytesF filePath len
  = do   h       <- openBinaryFile filePath ReadMode
         hSourceBytesUF h len 
 {-# INLINE [2] fileSourceBytesUF #-}
@@ -27,8 +27,8 @@ fileSourceBytesUF filePath len
 --
 --   All chunks have the same size, except possibly the last one.
 --
-hSourceBytesUF :: Handle -> Int -> IO (Source (Vector UF Word8))
-hSourceBytesUF h len
+hSourceBytesF :: Handle -> Int -> IO (Source (Vector F Word8))
+hSourceBytesF h len
  = return $ Source pull_hSource
  where
         pull_hSource eat eject
@@ -45,17 +45,17 @@ hSourceBytesUF h len
 --
 --   TODO: close file when finished.
 --
-fileSinkBytesUF
+fileSinkBytesF
         :: FilePath -> IO (Sink (Vector UF Word8))
 
-fileSinkBytesUF filePath
+fileSinkBytesF filePath
  = do   h       <- openBinaryFile filePath WriteMode
         hSinkBytesUF h
 
 
 -- | Write chunks of data to the given file handle.
-hSinkBytesUF :: Handle -> IO (Sink (Vector UF Word8))
-hSinkBytesUF !h
+hSinkBytesF :: Handle -> IO (Sink (Vector F Word8))
+hSinkBytesF !h
  = do   let push_hSinkBytesUF !chunk
                 = hPutArrayUF h chunk
             {-# NOINLINE push_hSinkBytesUF #-}

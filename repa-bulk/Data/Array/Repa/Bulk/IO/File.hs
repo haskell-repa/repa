@@ -1,9 +1,9 @@
 
 module Data.Array.Repa.Bulk.IO.File
-        ( hGetArrayUF
-        , hPutArrayUF)
+        ( hGetArrayF
+        , hPutArrayF)
 where
-import Data.Array.Repa.Repr.Unsafe.Foreign
+import Data.Array.Repa.Repr.Foreign
 import Data.Array.Repa.Bulk
 import Foreign.Ptr
 import Foreign.ForeignPtr
@@ -13,20 +13,26 @@ import Data.Word
 
 
 -- | Get data from a file, up to the given number of bytes.
-hGetArrayUF :: Handle -> Int -> IO (Vector UF Word8)
-hGetArrayUF h len
+-- 
+--   Data read from the file ends up in foreign memory, 
+--   which can then be used without copying it into the GHC heap.
+hGetArrayF :: Handle -> Int -> IO (Vector F Word8)
+hGetArrayF h len
  = do
         buf :: Ptr Word8 <- mallocBytes len
         bytesRead        <- hGetBuf h buf len
         fptr             <- newForeignPtr finalizerFree buf
-        return  $ fromForeignPtrUF (Z :. bytesRead) fptr
-{-# NOINLINE hGetArrayUF #-}
+        return  $ fromForeignPtr (Z :. bytesRead) fptr
+{-# NOINLINE hGetArrayF #-}
 
 
 -- | Write data into a file.
-hPutArrayUF :: Handle -> Vector UF Word8 -> IO ()
-hPutArrayUF h (UFArray _ len fptr)
+--
+--   Data is written to file directly from foreign memory,
+--   without copying it through the GHC heap.
+hPutArrayF :: Handle -> Vector F Word8 -> IO ()
+hPutArrayF h (FArray _ len fptr)
  = withForeignPtr fptr
  $ \ptr -> do
         hPutBuf h ptr len
-{-# NOINLINE hPutArrayUF #-}
+{-# NOINLINE hPutArrayF #-}
