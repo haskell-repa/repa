@@ -15,7 +15,7 @@ import Data.Array.Repa.Bulk.IO.File
 import Data.Array.Repa.Bulk                     as R
 import System.IO
 import Data.Word
-
+import Data.Char
 
 -- Source -----------------------------------------------------------------------------------------
 -- | Read chunks of data of the given size from a file.
@@ -96,14 +96,16 @@ hSourceRecordsF h len pSep aFail
                 arr      <- hGetArrayF h len
 
                 -- Find the end of the last record in the file.
-                let !mIxSplit = findIndex pSep (R.reverse arr)
+                let !mLenSlack  = findIndex pSep (R.reverse arr)
 
-                case mIxSplit of
+                case mLenSlack of
                  Nothing        -> aFail
-                 Just ixSplit
-                  -> do let lenSplit    = size (extent arr) - ixSplit
-                        hSeek h RelativeSeek (fromIntegral $ negate lenSplit)
-                        let arr'        = window (Z :. 0) (Z :. lenSplit) arr
+                 Just lenSlack
+                  -> do let !lenArr     = size (extent arr)
+                        let !ixSplit    = lenArr - lenSlack
+
+                        hSeek h RelativeSeek (fromIntegral $ negate lenSlack)
+                        let arr'        = window (Z :. 0) (Z :. ixSplit) arr
                         eat arr'
         {-# INLINE pull_hSourceRecordsF #-}
 

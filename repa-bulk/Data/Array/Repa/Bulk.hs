@@ -33,6 +33,12 @@ module Data.Array.Repa.Bulk
         , windowed
         , entire
 
+          -- ** Unboxed arrays
+        , U
+        , fromListU
+        , fromVectorU
+        , toVectorU
+
           -- * Operators
         , reverse
         , findIndex)
@@ -44,6 +50,7 @@ import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Bulk.Base
 import Data.Array.Repa.Repr.Delayed
 import Data.Array.Repa.Repr.Window
+import Data.Array.Repa.Repr.Unboxed
 import Prelude hiding (reverse)
 
 
@@ -53,7 +60,7 @@ reverse   :: Bulk r DIM1 a
 
 reverse !vec
  = let  !len           = size (extent vec)
-        get (Z :. ix)  = vec `index` (Z :. len - ix)
+        get (Z :. ix)  = vec `index` (Z :. len - ix - 1)
    in   fromFunction (extent vec) get
 {-# INLINE [2] reverse #-}
 

@@ -6,8 +6,10 @@ module Data.Array.Repa.Repr.Unboxed
         , fromVectorU
         , toVectorU)
 where
-import Data.Array.Repa.Bulk
+import Data.Array.Repa.Bulk.Base
+import Data.Array.Repa.Bulk.Target
 import Data.Array.Repa.Repr.Delayed
+import Data.Array.Repa.Shape
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad

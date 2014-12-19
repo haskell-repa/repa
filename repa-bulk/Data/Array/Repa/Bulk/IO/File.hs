@@ -56,6 +56,6 @@ hPutArrayF :: Handle -> Vector F Word8 -> IO ()
 hPutArrayF h (FArray shPre offset fptr)
  = F.withForeignPtr fptr
  $ \ptr' -> do
-        let ptr         = F.plusPtr ptr offset
+        let ptr         = F.plusPtr ptr' offset
         hPutBuf h ptr (size shPre)
 {-# NOINLINE hPutArrayF #-}
