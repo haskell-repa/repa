@@ -13,17 +13,26 @@ module Data.Repa.Array
         ,       ix1,  ix2,  ix3,  ix4,  ix5
 
           -- * Array Representations
-          -- ** Unboxed arrays
-        , U
-        , fromListU,    vfromListU
-        , fromVectorU
-        , toVectorU
-
           -- ** Delayed arrays
         , D
         , fromFunction
         , toFunction
         , delay 
+        , compute
+
+          -- ** Unboxed arrays
+        , U
+        , fromListU,    vfromListU
+        , fromVectorU
+        , toVectorU
+        , computeU
+
+          -- ** Boxed arrays
+        , B
+        , fromListB,    vfromListB
+        , fromVectorB
+        , toVectorB
+        , computeB
 
           -- ** Windowed arrays
         , W
@@ -52,6 +61,9 @@ module Data.Repa.Array
           --   array is computed on demand.
         , reverse
 
+          -- ** Mapping
+        , map, zipWith
+
           -- ** Splitting
           -- | Splitting operators compute a segment descriptor which describes
           --   how the elements in the source should be arranged into sub-arrays.
@@ -65,17 +77,23 @@ module Data.Repa.Array
           -- ** Sloshing
           -- | Sloshing operators copy array elements into a different arrangement, 
           --   but do not create new element values.
-        , ragspose3)
+        , ragspose3
+        , concat
+        , concat3)
 where
-import Data.Repa.Array.Delayed
-import Data.Repa.Array.Window
-import Data.Repa.Array.Unboxed
-import Data.Repa.Array.Unsafe.Nested
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
-import Data.Repa.Array.Internals.Target
-import Data.Repa.Array.Internals.Bulk
-import Prelude hiding (reverse, length)
+import Data.Repa.Eval.Array                     as R
+import Data.Repa.Array.Delayed                  as R
+import Data.Repa.Array.Window                   as R
+import Data.Repa.Array.Unboxed                  as R
+import Data.Repa.Array.Boxed                    as R
+import Data.Repa.Array.Unsafe.Nested            as R
+import Data.Repa.Array.Internals.Shape          as R
+import Data.Repa.Array.Internals.Index          as R
+import Data.Repa.Array.Internals.Target         as R
+import Data.Repa.Array.Internals.Bulk           as R
+import System.IO.Unsafe
+import qualified Data.Vector.Unboxed            as U
+import Prelude hiding (reverse, length, map, zipWith, concat)
 
 
 -- | O(1). View the elements of a vector in reverse order.
@@ -109,4 +127,43 @@ findIndex p !vec
 
 {-# INLINE [2] findIndex #-}
 
+
+-- Concat ---------------------------------------------------------------------
+-- | O(len result) Concatenate nested vectors.
+concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a)
+        => Vector r1 (Vector r2 a) -> Vector r3 a
+concat vs
+ | R.length vs == 0
+ = R.vfromList []
+
+ | otherwise
+ = unsafePerformIO
+ $ do   let !lens  = toVectorU $ compute
+                   $ R.map R.length vs
+        let !len   = U.sum lens
+
+        buf     <- unsafeNewBuffer len
+
+        let !iLenY = U.length lens
+
+        let loop !iO !iY !row !iX !iLenX
+             | iX >= iLenX
+             = if iY >= iLenY - 1
+                then return ()
+                else let iY'    = iY + 1
+                         row'   = vs `index` (Z :. iY')
+                         iLenX' = R.length row'
+                     in  loop iO iY' row' 0 iLenX'
+
+             | otherwise
+             = do let x = row `index` (Z :. iX)
+                  unsafeWriteBuffer buf iO x
+                  loop (iO + 1) iY row (iX + 1) iLenX
+
+        let !row0   = vs `index` (Z :. 0)
+        let !iLenX0 = R.length row0
+        loop 0 0 row0 0 iLenX0
+
+        unsafeFreezeBuffer (Z :. len) buf
+{-# INLINE [2] concat #-}
 

@@ -7,7 +7,8 @@ module Data.Repa.Array.Unsafe.Nested
         , trims
         , segment, segmentOn
         , dice,    diceOn
-        , ragspose3)
+        , ragspose3
+        , concat3)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -29,7 +30,7 @@ import Prelude  hiding (concat)
 --
 --   With a nested type like:
 --   @Array UN (Array UN (Array UU Int))@, the concrete representation consists
---   of four flat unboxed vectors: two for each of the segment descriptors
+--   of five flat unboxed vectors: two for each of the segment descriptors
 --   associated with each level of nesting, and one unboxed vector to hold
 --   all the integer elements.
 --
@@ -43,9 +44,9 @@ instance ( Bulk   r DIM1 a
 
  data Array UN DIM1 (Vector r a)
         = UNArray 
-                 !(U.Vector Int)         -- segment start positions.
-                 !(U.Vector Int)         -- segment lengths.
-                 !(Array r DIM1 a)       -- data values
+                 !(U.Vector Int)        -- segment start positions.
+                 !(U.Vector Int)        -- segment lengths.
+                 !(Array r DIM1 a)      -- data values
 
  extent (UNArray starts _lengths _elems)
         = Z :. U.length starts
@@ -80,7 +81,7 @@ fromLists
 fromLists xss
  = let  xs         = concat xss
         Just elems = fromList      (Z :. P.length xs) xs
-        lengths    = U.fromList    $ map P.length xss
+        lengths    = U.fromList    $ P.map P.length xss
         starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
    in   UNArray starts lengths elems
 {-# INLINE [1] fromLists #-}
@@ -95,10 +96,10 @@ fromListss xs
         xs2        = concat xs1
         Just elems = fromList (Z :. P.length xs2) xs2
         
-        lengths1   = U.fromList   $ map P.length xs
+        lengths1   = U.fromList   $ P.map P.length xs
         starts1    = U.unsafeInit $ U.scanl (+) 0 lengths1
 
-        lengths2   = U.fromList   $ map P.length xs1
+        lengths2   = U.fromList   $ P.map P.length xs1
         starts2    = U.unsafeInit $ U.scanl (+) 0 lengths2
 
    in   UNArray    starts1 lengths1 
@@ -214,10 +215,8 @@ diceOn !xEndWord !xEndLine !arr
 ---------------------------------------------------------------------------------------------------
 -- | Ragged transpose of a triply nested array.
 -- 
---   * When you have a triply nested array, using this version over the
---     plan `ragspose` function is more efficient. The operation can be 
---     performed entirely on the segment descriptors, without
---     needing to create new sub-arrays.
+--   * This version is more efficient than plain `ragspose` as the operation
+--     is done entirely on the segment descriptors of the nested arrays.
 --
 ragspose3 :: Vector UN (Vector UN (Vector r a)) -> Vector UN (Vector UN (Vector r a))
 ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
@@ -235,5 +234,27 @@ ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
 --  NOINLINE Because the operation is entirely on the segment descriptor.
 --           This function won't fuse with anything externally, 
 --           and it does not need to be specialiased.
+
+
+---------------------------------------------------------------------------------------------------
+-- | Concatenate triply nested vectors, producing a doubly nested vector.
+--
+--   * This version is more efficient than plain `concat` as the operation
+--     is done entirely on the segment descriptors of the nested arrays.
+--
+concat3 :: Vector UN (Vector UN (Vector r a)) 
+        -> Vector UN (Vector r a)
+
+concat3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
+ = let
+        starts2'        = U.extract (U.unsafeIndex starts2)
+                        $ U.zip starts1 lengths1
+
+        lengths2'       = U.extract (U.unsafeIndex lengths2)
+                        $ U.zip starts1 lengths1
+
+   in   UNArray starts2' lengths2' elems
+{-# INLINE [1] concat3 #-}
+
 
 

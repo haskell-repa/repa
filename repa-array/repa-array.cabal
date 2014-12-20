@@ -29,6 +29,7 @@ Library
         Data.Repa.Array.Unsafe.Foreign
         Data.Repa.Array.Unsafe.Nested
         Data.Repa.Array.Unsafe.Unboxed
+        Data.Repa.Array.Boxed
         Data.Repa.Array.Delayed
         Data.Repa.Array.Foreign
         Data.Repa.Array.Unboxed
@@ -50,7 +51,7 @@ Library
 
 
   ghc-options:
-        -Wall 
+        -Wall -fno-warn-missing-signatures
         -O2
         -fcpr-off
         -funbox-strict-fields

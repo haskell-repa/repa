@@ -25,10 +25,14 @@ fileSinksBytesF filePaths
 --   TODO: check arity of handles match sinks.
 hsSinksBytesF :: [Handle] -> IO (Sinks (Vector F Word8))
 hsSinksBytesF hs
- = return $ Sinks (P.length hs) push_hsSinksBytesF eject_hsSinksBytesF
+ = return $ Sinks (Just $ P.length hs) push_hsSinksBytesF eject_hsSinksBytesF
  where
         push_hsSinksBytesF !ix !chunk
-                = hPutArrayF (hs !! ix) chunk
+         | ix >= P.length hs
+         = error $ "hsSinkBytesF out of range" ++ show (ix, P.length hs)
+
+         | otherwise
+         = hPutArrayF (hs !! ix) chunk
         {-# INLINE push_hsSinksBytesF #-}
 
         eject_hsSinksBytesF _ 

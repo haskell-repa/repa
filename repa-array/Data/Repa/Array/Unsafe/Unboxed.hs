@@ -5,8 +5,10 @@ module Data.Repa.Array.Unsafe.Unboxed
         , fromListUU,   fromListsUU,    fromListssUU
         , fromVectorUU
         , toVectorUU
+        , computeUU
         , slicesUU)
 where
+import Data.Repa.Eval.Array
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Unsafe.Nested
@@ -138,6 +140,13 @@ toVectorUU
 toVectorUU (UUArray _ vec)
         = vec
 {-# INLINE [1] toVectorUU #-}
+
+
+-- | Like `compute` but with a more specific type.
+computeUU :: (Load r1 sh a, U.Unbox a)
+        => Array r1 sh a -> Array UU sh a
+computeUU = compute
+{-# INLINE [1] computeUU #-}
 
 
 ---------------------------------------------------------------------------------------------------

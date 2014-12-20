@@ -2,7 +2,8 @@
 module Data.Repa.Stream.Segment
         ( findSegmentsS
         , startLengthsOfSegsS
-        , unsafeRatchetS)
+        , unsafeRatchetS
+        , extractS)
 where
 import Data.IORef
 import Data.Vector.Fusion.Stream.Monadic                (Stream(..), Step(..))
@@ -165,5 +166,37 @@ unsafeRatchetS mvStarts vMax rmvLens
                 let vmLens' = UM.unsafeSlice 0 oSeg vmLens
                 writeIORef rmvLens vmLens'
                 return Done
+        {-# INLINE_INNER ostep #-}
+{-# INLINE_STREAM unsafeRatchetS #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Extract.
+--   TODO: extract intersperse from some other vector.
+extractS
+        :: Monad m
+        => (Int -> a)
+        -> Stream m (Int, Int)  -- Stream of segment starts and lengths.
+        -> Stream m a           -- Stream of vector data.
+
+extractS get (Stream istep si0 _)
+ = Stream ostep (si0, Nothing) S.Unknown
+ where
+        -- Start a new segment.
+        ostep (si, Nothing)
+         =  istep si >>= \m
+         -> case m of
+                Yield (iStart, iLen) si' 
+                           -> return $ Skip (si', Just (iStart, iStart + iLen))
+                Skip  si'  -> return $ Skip (si', Nothing)
+                Done       -> return $ Done
+
+        -- Emit data from a segment.
+        ostep (si, Just (iPos, iTop))
+         | iPos >= iTop    =  return $ Skip  (si, Nothing)
+         | otherwise       =  return $ Yield (get iPos) (si, Just (iPos + 1, iTop))
+        {-# INLINE_INNER ostep #-}
+{-# INLINE_STREAM extractS #-}
+
 
 

@@ -4,8 +4,10 @@ module Data.Repa.Array.Unboxed
         , Array (..)
         , fromListU,    vfromListU
         , fromVectorU
-        , toVectorU)
+        , toVectorU
+        , computeU)
 where
+import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Internals.Bulk
@@ -116,5 +118,12 @@ toVectorU
 toVectorU (UArray _ vec)
         = vec
 {-# INLINE [1] toVectorU #-}
+
+
+-- | Like `compute` but with a more specific type.
+computeU :: (Load r1 sh a, U.Unbox a)
+        => Array r1 sh a -> Array U sh a
+computeU = compute
+{-# INLINE [1] computeU #-}
 
 

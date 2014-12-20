@@ -2,9 +2,11 @@
 module Data.Repa.Vector.Unboxed
         ( findSegments
         , findSegmentsFrom
-        , ratchet)
+        , ratchet
+        , extract)
 where
 import Data.Repa.Stream.Segment
+import Data.Vector.Unboxed                              (Unbox)
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
@@ -98,5 +100,13 @@ ratchet vStartsMax
         vLens'     <- G.unsafeFreeze mvLens'
         return (vStarts', vLens')
 
+
+---------------------------------------------------------------------------------------------------
+-- | Extraction.
+extract :: Unbox a 
+        => (Int -> a) -> U.Vector (Int, Int) -> U.Vector a
+extract get vStartLen
+ = G.unstream $ extractS get (G.stream vStartLen)
+{-# INLINE_STREAM extract #-}
 
 
