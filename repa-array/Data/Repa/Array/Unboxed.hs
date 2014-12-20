@@ -2,16 +2,13 @@
 module Data.Repa.Array.Unboxed
         ( U, U.Unbox
         , Array (..)
-        , fromListU,    vfromListU
-        , fromVectorU
-        , toVectorU
-        , computeU)
+        , fromVectorU, toVectorU
+        , unboxed)
 where
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Shape
 import Data.Repa.Array.Internals.Index
 import qualified Data.Vector.Unboxed            as U
@@ -19,7 +16,7 @@ import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Unboxed arrays are represented as unboxed vectors.
 --
 --   The implementation uses @Data.Vector.Unboxed@ which is based on type
@@ -46,11 +43,14 @@ instance (Shape sh, U.Unbox a) => Bulk U sh a where
  {-# INLINE extent #-}
 
 
-deriving instance (Show sh, Show e, U.Unbox e)
-        => Show (Array U sh e)
+deriving instance (Show sh, Show e, U.Unbox e) => Show (Array U sh e)
+deriving instance (Read sh, Read e, U.Unbox e) => Read (Array U sh e)
 
-deriving instance (Read sh, Read e, U.Unbox e)
-        => Read (Array U sh e)
+-- | Constrain an array to have an unboxed representation,
+--   eg with @unboxed (compute arr)@
+unboxed :: Array U sh a -> Array U sh a
+unboxed = id
+{-# INLINE unboxed #-}
 
 
 -- Window -----------------------------------------------------------------------------------------
@@ -89,20 +89,6 @@ instance U.Unbox e => Target U e where
 
 
 -- Conversions ------------------------------------------------------------------------------------
--- | O(n). Alias for `fromList` with a more specific type.
-fromListU   :: (Shape sh, U.Unbox a)
-            => sh -> [a] -> Maybe (Array U sh a)
-fromListU   = fromList
-{-# INLINE [1] fromListU #-}
-
-
--- | O(n). Alias for `vfromList` with a more specific type.
-vfromListU   :: U.Unbox a
-            => [a] -> Vector U a
-vfromListU   = vfromList
-{-# INLINE [1] vfromListU #-}
-
-
 -- | O(1). Wrap an unboxed vector as an array.
 fromVectorU :: (Shape sh, U.Unbox e)
             => sh -> U.Vector e -> Array U sh e
@@ -118,12 +104,4 @@ toVectorU
 toVectorU (UArray _ vec)
         = vec
 {-# INLINE [1] toVectorU #-}
-
-
--- | Like `compute` but with a more specific type.
-computeU :: (Load r1 sh a, U.Unbox a)
-        => Array r1 sh a -> Array U sh a
-computeU = compute
-{-# INLINE [1] computeU #-}
-
 

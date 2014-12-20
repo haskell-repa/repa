@@ -18,21 +18,15 @@ module Data.Repa.Array
         , fromFunction
         , toFunction
         , delay 
-        , compute
-
-          -- ** Unboxed arrays
-        , U
-        , fromListU,    vfromListU
-        , fromVectorU
-        , toVectorU
-        , computeU
+        , computeS
 
           -- ** Boxed arrays
-        , B
-        , fromListB,    vfromListB
-        , fromVectorB
-        , toVectorB
-        , computeB
+        , B, boxed
+        , fromVectorB, toVectorB
+
+          -- ** Unboxed arrays
+        , U, unboxed
+        , fromVectorU, toVectorU
 
           -- ** Windowed arrays
         , W
@@ -138,8 +132,7 @@ concat vs
 
  | otherwise
  = unsafePerformIO
- $ do   let !lens  = toVectorU $ compute
-                   $ R.map R.length vs
+ $ do   let !lens  = toVectorU $ computeS $ R.map R.length vs
         let !len   = U.sum lens
 
         buf     <- unsafeNewBuffer len

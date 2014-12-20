@@ -2,16 +2,13 @@
 module Data.Repa.Array.Boxed
         ( B
         , Array (..)
-        , fromListB,    vfromListB
-        , fromVectorB
-        , toVectorB
-        , computeB)
+        , boxed
+        , fromVectorB, toVectorB)
 where
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Shape
 import Data.Repa.Array.Internals.Index
 import qualified Data.Vector                    as V
@@ -19,7 +16,7 @@ import qualified Data.Vector.Mutable            as VM
 import Control.Monad
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Arrays of boxed elements.
 -- 
 --   This representation should only be used when your element type doesn't
@@ -43,22 +40,25 @@ instance Shape sh => Bulk B sh a where
  extent (BArray sh _) = sh
  {-# INLINE extent #-}
 
-
-deriving instance (Show sh, Show a)
-        => Show (Array B sh a)
-
-deriving instance (Read sh, Read a)
-        => Read (Array B sh a)
+deriving instance (Show sh, Show a) => Show (Array B sh a)
+deriving instance (Read sh, Read a) => Read (Array B sh a)
 
 
--- Window -----------------------------------------------------------------------------------------
+-- | Constrain an array to have a boxed representation,
+--   eg with @boxed (compute arr)@ 
+boxed :: Array B sh a -> Array B sh a
+boxed = id
+{-# INLINE boxed #-}
+
+
+-- Window ---------------------------------------------------------------------
 instance Window B DIM1 a where
  window (Z :. start) (Z :. len) (BArray _sh vec)
         = BArray (Z :. len) (V.slice start len vec)
  {-# INLINE window #-}
 
 
--- Target -----------------------------------------------------------------------------------------
+-- Target ---------------------------------------------------------------------
 instance Target B a where
  data Buffer B a 
   = BBuffer (VM.IOVector a)
@@ -86,20 +86,7 @@ instance Target B a where
  {-# INLINE touchBuffer #-}
 
 
--- Conversions ------------------------------------------------------------------------------------
--- | O(n). Alias for `fromList` with a more specific type.
-fromListB   :: Shape sh
-            => sh -> [a] -> Maybe (Array B sh a)
-fromListB   = fromList
-{-# INLINE [1] fromListB #-}
-
-
--- | O(n). Alias for `vfromList` with a more specific type.
-vfromListB   :: [a] -> Vector B a
-vfromListB   = vfromList
-{-# INLINE [1] vfromListB #-}
-
-
+-- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a boxed vector as an array.
 fromVectorB :: Shape sh
             => sh -> V.Vector e -> Array B sh e
@@ -113,11 +100,3 @@ toVectorB :: Array B sh e -> V.Vector e
 toVectorB (BArray _ vec)
         = vec
 {-# INLINE [1] toVectorB #-}
-
-
--- | Like `compute` but with a more specific type.
-computeB :: Load r1 sh a
-         => Array r1 sh a -> Array B sh a
-computeB = compute
-{-# INLINE [1] computeB #-}
-

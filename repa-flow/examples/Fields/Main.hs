@@ -48,10 +48,9 @@ pfields fileIn
 
         -- Concatenate the fields in each column.
         sColumnsC' :: Source (Vector B (Vector F Word8))
-                   <- map_i  (R.compute . R.map R.concat) sColumns'
+                   <- map_i  (R.computeS . R.map R.concat) sColumns'
 
-{-
-        sColumnsC  <- watch_i sColumnsC'
+{-      sColumnsC  <- watch_i sColumnsC'
                    $  \c -> putStrLn 
                           $ show $ P.map (P.map (chr . fromIntegral))
                           $ R.toLists c
