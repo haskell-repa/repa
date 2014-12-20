@@ -6,7 +6,8 @@ module Data.Repa.Array.Unsafe.Nested
         , fromListss
         , trims
         , segment, segmentOn
-        , dice,    diceOn)
+        , dice,    diceOn
+        , ragspose3)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -208,4 +209,29 @@ diceOn !xEndWord !xEndLine !arr
                 (const True) (\x -> x == xEndLine)
                 arr
 {-# INLINE [1] diceOn #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Ragged transpose of a triply nested array.
+-- 
+--   * When you have a triply nested array, using this version over the
+--     plan `ragspose` function is more efficient. The operation can be 
+--     performed entirely on the segment descriptors, without
+--     needing to create new sub-arrays.
+--
+ragspose3 :: Vector UN (Vector UN (Vector r a)) -> Vector UN (Vector UN (Vector r a))
+ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
+ = let  
+        startStops1       = U.zipWith (\s l -> (s, s + l)) starts1 lengths1
+        (ixs', lengths1') = U.ratchet startStops1
+
+        starts2'          = U.map (U.unsafeIndex starts2)  ixs'
+        lengths2'         = U.map (U.unsafeIndex lengths2) ixs'
+
+        starts1'          = U.unsafeInit $ U.scanl (+) 0 lengths1'
+
+   in   UNArray starts1' lengths1' (UNArray starts2' lengths2' elems)
+{-# INLINE [1] ragspose3 #-}
+
+
 

@@ -7,9 +7,11 @@ where
 import Data.Repa.Stream.Segment
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import qualified Data.Vector.Generic                    as G
 import qualified Data.Vector.Generic.Mutable            as GM
 import System.IO.Unsafe
+import Data.IORef
 
 #include "vector.h"
 
@@ -65,24 +67,36 @@ findSegmentsFrom pStart pEnd len get
 --   where we increase each of the starting values to the stopping values in
 --   a round-robin order. 
 --
---   @ratchet [(10,14), (20,25), (30,32), (40, 46)]
---     =  [10,20,30,40
---        ,11,21,31,41
---        ,12,22,32,42
---        ,13,23   ,43
---        ,14,24   ,44
---           ,25   ,45
---                 ,46]@
+--   @ratchet [(10,15), (20,26), (30,33), (40, 47)]
+--     =  [10,20,30,40          -- 4
+--        ,11,21,31,41          -- 4
+--        ,12,22,32,42          -- 4
+--        ,13,23   ,43          -- 3
+--        ,14,24   ,44          -- 3
+--           ,25   ,45          -- 2
+--                 ,46]         -- 1@
 --
 --
-ratchet :: U.Vector (Int, Int) -> U.Vector Int
+ratchet :: U.Vector (Int, Int) -> (U.Vector Int, U.Vector Int)
 ratchet vStartsMax 
  = unsafePerformIO
  $ do   
+        -- Make buffers for the start values and unpack the max values.
         let (vStarts, vMax) = U.unzip vStartsMax
-        mvec    <- U.thaw vStarts
-        mvec'   <- GM.munstream $ unsafeRatchetS mvec vMax
-        G.unsafeFreeze mvec'
+        mvStarts   <- U.thaw vStarts
+
+        -- Make a vector for the output lengths.
+        mvLens     <- UM.new (U.length vStartsMax)
+        rmvLens    <- newIORef mvLens
+
+        -- Run the computation
+        mvStarts'  <- GM.munstream $ unsafeRatchetS mvStarts vMax rmvLens
+
+        -- Read back the output segment lengths and freeze everything.
+        mvLens'    <- readIORef rmvLens
+        vStarts'   <- G.unsafeFreeze mvStarts'
+        vLens'     <- G.unsafeFreeze mvLens'
+        return (vStarts', vLens')
 
 
 

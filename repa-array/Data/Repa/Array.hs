@@ -60,9 +60,12 @@ module Data.Repa.Array
         , dice,         diceOn
 
           -- ** Searching
-        , findIndex)
+        , findIndex
 
-
+          -- ** Sloshing
+          -- | Sloshing operators copy array elements into a different arrangement, 
+          --   but do not create new element values.
+        , ragspose3)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window

@@ -4,6 +4,7 @@ module Data.Repa.Stream.Segment
         , startLengthsOfSegsS
         , unsafeRatchetS)
 where
+import Data.IORef
 import Data.Vector.Fusion.Stream.Monadic                (Stream(..), Step(..))
 import qualified Data.Vector.Generic                    as G
 import qualified Data.Vector.Generic.Mutable            as GM
@@ -89,6 +90,7 @@ startLengthsOfSegsS (Stream istep s sz)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM startLengthsOfSegsS #-}
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Interleaved `enumFromTo`. 
 --
@@ -96,14 +98,14 @@ startLengthsOfSegsS (Stream istep s sz)
 --   produce an stream where we increase each of the starting values to 
 --   the stopping values in a round-robin order. 
 --
---   @unsafeRatchetS [10,20,30,40] [14,25,32,46]
---  =  [10,20,30,40
---     ,11,21,31,41
---     ,12,22,32,42
---     ,13,23   ,43
---     ,14,24   ,44
---        ,25   ,45
---              ,46]@
+--   @unsafeRatchetS [10,20,30,40] [15,26,33,47]
+--  =  [10,20,30,40       -- 4
+--     ,11,21,31,41       -- 4
+--     ,12,22,32,42       -- 4
+--     ,13,23   ,43       -- 3
+--     ,14,24   ,44       -- 3
+--        ,25   ,45       -- 2
+--              ,46]@     -- 1
 --
 --   The function takes the starting values in a mutable vector and 
 --   updates it during computation. Computation proceeds by making passes
@@ -114,27 +116,54 @@ startLengthsOfSegsS (Stream istep s sz)
 --           but this is not checked.
 --
 unsafeRatchetS 
-        :: UM.IOVector Int
-        ->  U.Vector   Int
+        :: UM.IOVector Int              -- ^ Starting values.
+        ->  U.Vector   Int              -- ^ Ending values
+        -> IORef (UM.IOVector Int)      -- ^ Vector holding segment lengths.
         -> Stream IO   Int
 
-unsafeRatchetS mvStarts vMax
- = Stream ostep (0, False) S.Unknown
+unsafeRatchetS mvStarts vMax rmvLens
+ = Stream ostep (0, Nothing, 0, 0) S.Unknown
  where
         !iSegMax = GM.length mvStarts - 1
 
-        ostep (iSeg, bProgress)
+        ostep (iSeg, mvmLens, oSeg, oLen)
          | iSeg <= iSegMax
          = do   iVal      <- GM.unsafeRead mvStarts iSeg
                 let iNext = vMax `G.unsafeIndex` iSeg
-                if  iVal > iNext
-                 then   return $ Skip          (iSeg + 1, bProgress)
+                if  iVal >= iNext
+                 then   return $ Skip       (iSeg + 1, mvmLens, oSeg, oLen)
                  else do
                         GM.unsafeWrite mvStarts iSeg (iVal + 1)
-                        return $ Yield iVal    (iSeg + 1, True)
+                        return $ Yield iVal (iSeg + 1, mvmLens, oSeg, oLen + 1)
+
+         -- We're at the end of an output segment, 
+         -- so write the output length into the lengths vector.
+         | oLen > 0
+         = do   -- Get the current output vector.
+                vmLens  <- case mvmLens of
+                                Nothing     -> readIORef rmvLens
+                                Just vmLens -> return $ vmLens
+
+                -- If the output vector is full then we need to grow it.
+                let !oSegLen = UM.length vmLens
+                if oSeg >= oSegLen
+                 then do
+                        vmLens' <- UM.unsafeGrow vmLens (UM.length vmLens)
+                        writeIORef rmvLens vmLens'
+                        UM.unsafeWrite vmLens' oSeg oLen
+                        return $ Skip (0, Just vmLens', oSeg + 1, 0)
+
+                 else do
+                        UM.write vmLens  oSeg oLen
+                        return $ Skip (0, Just vmLens,  oSeg + 1, 0)
 
          | otherwise
-         = if bProgress
-                then return $ Skip (0, False)
-                else return $ Done
+         = do   vmLens  <- case mvmLens of
+                                Nothing     -> readIORef rmvLens
+                                Just vmLens -> return $ vmLens
+
+                let vmLens' = UM.unsafeSlice 0 oSeg vmLens
+                writeIORef rmvLens vmLens'
+                return Done
+
 
