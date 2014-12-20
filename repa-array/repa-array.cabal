@@ -38,6 +38,8 @@ Library
 
         Data.Repa.Eval.Array
 
+        Data.Repa.IO.Array
+
   other-modules:
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Index
@@ -49,10 +51,8 @@ Library
 
   ghc-options:
         -Wall 
-        -fno-warn-missing-signatures
         -O2
         -fcpr-off
-        -fno-spec-constr
         -funbox-strict-fields
 
   extensions:

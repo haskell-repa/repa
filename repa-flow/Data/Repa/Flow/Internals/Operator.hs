@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Flow.Internals.Operator
+module Data.Repa.Flow.Internals.Operator
         ( repeat_i
         , replicate_i
         , map_i,        map_o
@@ -13,8 +13,8 @@ module Data.Array.Repa.Flow.Internals.Operator
         , folds_ii
         , trigger_o)
 where
-import Data.Array.Repa.Flow.Internals.List
-import Data.Array.Repa.Flow.Internals.Base
+import Data.Repa.Flow.Internals.List
+import Data.Repa.Flow.Internals.Base
 import Control.Monad
 import Data.IORef
 import Prelude          hiding (length)

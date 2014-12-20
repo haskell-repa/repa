@@ -17,27 +17,26 @@ Library
   build-Depends: 
         base            == 4.7.*,
         vector          == 0.10.*,
-        repa-bulk       == 4.0.0.0,
-        repa-stream     == 4.0.0.0
+        repa-stream     == 4.0.0.0,
+        repa-array      == 4.0.0.0
 
   exposed-modules:
-        Data.Array.Repa.Flow
-        Data.Array.Repa.Flow.IO.File
+        Data.Repa.Flow
+        Data.Repa.IO.Flow
 
   other-modules:
-        Data.Array.Repa.Flow.Internals.Base
-        Data.Array.Repa.Flow.Internals.List
-        Data.Array.Repa.Flow.Internals.Eval
-        Data.Array.Repa.Flow.Internals.Operator
-        Data.Array.Repa.Flow.Internals.Chunk
+        Data.Repa.Flow.Internals.Base
+        Data.Repa.Flow.Internals.List
+        Data.Repa.Flow.Internals.Eval
+        Data.Repa.Flow.Internals.Operator
+        Data.Repa.Flow.Internals.Chunk
 
   ghc-options:
         -Wall 
-        -fno-warn-missing-signatures
         -O2
         -fcpr-off
-        -fno-spec-constr
         -funbox-strict-fields
+        -fno-warn-missing-signatures
 
   extensions:
         NoMonomorphismRestriction

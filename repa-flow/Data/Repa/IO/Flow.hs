@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Flow.IO.File
+module Data.Repa.IO.Flow
         ( -- * Sourcing Bytes
           fileSourceBytesF,     hSourceBytesF
 
@@ -9,10 +9,10 @@ module Data.Array.Repa.Flow.IO.File
           -- * Sinking Bytes
         , fileSinkBytesF,       hSinkBytesF)
 where
-import Data.Array.Repa.Flow.Internals.Base
-import Data.Array.Repa.Repr.Foreign
-import Data.Array.Repa.Bulk.IO.File
-import Data.Array.Repa.Bulk                     as R
+import Data.Repa.Flow.Internals.Base
+import Data.Repa.IO.Array
+import Data.Repa.Array.Foreign          as R
+import Data.Repa.Array                  as R
 import System.IO
 import Data.Word
 import Data.Char

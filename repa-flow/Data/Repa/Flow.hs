@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Flow
+module Data.Repa.Flow
         ( Source (..)
         , Sink   (..)
 
@@ -30,8 +30,8 @@ module Data.Array.Repa.Flow
         , unchunk_i
         , unchunk_o)
 where
-import Data.Array.Repa.Flow.Internals.Base
-import Data.Array.Repa.Flow.Internals.Eval
-import Data.Array.Repa.Flow.Internals.List
-import Data.Array.Repa.Flow.Internals.Operator
-import Data.Array.Repa.Flow.Internals.Chunk
+import Data.Repa.Flow.Internals.Base
+import Data.Repa.Flow.Internals.Eval
+import Data.Repa.Flow.Internals.List
+import Data.Repa.Flow.Internals.Operator
+import Data.Repa.Flow.Internals.Chunk
