@@ -1,10 +1,10 @@
 
-module Data.Array.Repa.Bulk.IO.File
+module Data.Repa.IO.File
         ( hGetArrayF,   hGetArrayPreF
         , hPutArrayF)
 where
-import Data.Array.Repa.Repr.Foreign
-import Data.Array.Repa.Bulk
+import Data.Repa.Array.Foreign
+import Data.Repa.Array.Internals.Bulk
 import qualified Foreign.Ptr            as F
 import qualified Foreign.ForeignPtr     as F
 import qualified Foreign.Marshal.Alloc  as F

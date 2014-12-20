@@ -1,14 +1,14 @@
 
-module Data.Array.Repa.Repr.Delayed
+module Data.Repa.Array.Delayed
         ( D, Array(..)
         , fromFunction, toFunction
         , delay)
 where
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Bulk.Load
-import Data.Array.Repa.Bulk.Target
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
+import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Internals.Load
+import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Index
 import Data.Array.Repa.Eval.Elt
 import Debug.Trace
 import GHC.Exts
@@ -23,7 +23,7 @@ import qualified Data.Array.Repa.Eval.Seq       as Seq
 --   is recomputed.
 data D
 
--- | Compute elements of a delayed array.
+-- | Delayed arrays.
 instance Shape sh => Bulk D sh a where
  data Array D sh a
         = ADelayed  

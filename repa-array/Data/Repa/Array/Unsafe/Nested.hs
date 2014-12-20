@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Repr.Unsafe.Nested
+module Data.Repa.Array.Unsafe.Nested
         ( UN, U.Unbox
         , Array (..)
         , fromLists
@@ -8,12 +8,12 @@ module Data.Array.Repa.Repr.Unsafe.Nested
         , segment, segmentOn
         , dice,    diceOn)
 where
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Bulk.Target
-import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.Window
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
+import Data.Repa.Array.Delayed
+import Data.Repa.Array.Window
+import Data.Repa.Array.Internals.Bulk                   as R
+import Data.Repa.Array.Internals.Target                 as R
+import Data.Repa.Array.Internals.Shape                  as R
+import Data.Repa.Array.Internals.Index                  as R
 import Prelude                                          as P
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Array.Repa.Vector.Unboxed         as U
@@ -34,6 +34,8 @@ import Prelude  hiding (concat)
 --
 data UN
 
+
+-- | Unsafe Nested arrays.
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)
       => Bulk UN DIM1 (Vector r a) where
@@ -76,7 +78,7 @@ fromLists
         => [[a]] -> Vector UN (Vector r a)
 fromLists xss
  = let  xs         = concat xss
-        Just elems = fromList      (Z :. length xs) xs
+        Just elems = fromList      (Z :. P.length xs) xs
         lengths    = U.fromList    $ map P.length xss
         starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
    in   UNArray starts lengths elems
@@ -90,7 +92,7 @@ fromListss
 fromListss xs
  = let  xs1        = concat xs
         xs2        = concat xs1
-        Just elems = fromList (Z :. length xs2) xs2
+        Just elems = fromList (Z :. P.length xs2) xs2
         
         lengths1   = U.fromList   $ map P.length xs
         starts1    = U.unsafeInit $ U.scanl (+) 0 lengths1
@@ -126,8 +128,8 @@ trims pTrim (UNArray starts lengths elems)
 
 
 ---------------------------------------------------------------------------------------------------
--- | Given predicates which detect the start and end of a segment, 
---   split an array into the indicated segments.
+-- | O(len src). Given predicates which detect the start and end of a segment, 
+--   split an vector into the indicated segments.
 segment :: (U.Unbox a, Bulk r DIM1 a)
         => (a -> Bool)  -> (a -> Bool)          
         -> Vector r a    -> Vector UN (Vector r a)  
@@ -143,7 +145,7 @@ segment pStart pEnd !elems
 {-# INLINE [1] segment #-}
 
 
--- | Split an array into segments, based on the given segment terminator element.
+-- | O(len src). Given a terminating value, split an vector into segments.
 --
 --   The result segments do not include the terminator.
 --  
@@ -160,7 +162,7 @@ segmentOn !x !arr
 
 
 ---------------------------------------------------------------------------------------------------
--- | Like `segment`, but cut the source array twice.
+-- | O(len src). Like `segment`, but cut the source array twice.
 --   TODO: dies with empty lines on end.
 dice    :: (U.Unbox a, Bulk r DIM1 a, Window r DIM1 a)
         => (a -> Bool) -> (a -> Bool)         
@@ -175,8 +177,8 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 
         ahead arr1       = index arr1 (ix1 0)
         alast arr1       = index arr1 (ix1 (size (extent arr1) - 1))
-        pStart2' arr     = pStart2 $ ahead arr
-        pEnd2'   arr     = pEnd2   $ alast arr
+        pStart2' arr'    = pStart2 $ ahead arr'
+        pEnd2'   arr'    = pEnd2   $ alast arr'
         lenArrInner      = U.length starts1
         arrInner         = UNArray starts1 lens1 arr
         (starts2, lens2) = U.findSegmentsFrom pStart2' pEnd2'
@@ -190,6 +192,13 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 {-# INLINE [1] dice #-}
 
 
+-- | O(len src). Given field and row terminating values, 
+--   split an array into rows and fields.
+--
+--   * Example: if you have a vector of characters that contains
+--
+--   @diceOn '\t' '\n' arr ... TODO@
+--
 diceOn  :: (U.Unbox a, Eq a, Bulk r DIM1 a, Window r DIM1 a)
         => a -> a
         -> Vector r a    -> Vector UN (Vector UN (Vector r a))

@@ -1,19 +1,20 @@
 
-module Data.Array.Repa.Bulk.Base
+module Data.Repa.Array.Internals.Bulk
         ( Bulk (..)
         , Vector
         , (!)
+        , length
         , toList
         , toLists
         , toListss)
 where
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
-
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Index
+import Prelude hiding (length)
 
 -- Bulk -------------------------------------------------------------------------------------------
--- | Class of array representations that we can read elements from
---   in a random access manner.
+-- | Class of shape polymorphic array representations that we can read elements
+--   from in a random access manner.
 class Shape sh => Bulk r sh e where
 
  -- | Arrays with a representation tag, shape, and element type.
@@ -21,22 +22,33 @@ class Shape sh => Bulk r sh e where
  --   one of `DIM1`, `DIM2` ... for @sh@.
  data Array r sh e
 
- -- | Take the extent (size) of an array.
+ -- | O(1). Take the extent of an array.
  extent         :: Array r sh e -> sh
 
- -- | Shape polymorphic indexing.
+ -- | O(1). Get an element from an array.
  --
  --   The safety of this indexing operator depends on the array representation.
  index          :: Array r sh e -> sh -> e
 
 
+-- | Vectors are 1-dimensional arrays.
+type Vector r e = Array r DIM1 e
+
+
 -- | O(1). Alias for `index`
 (!) :: Bulk r sh a => Array r sh a -> sh -> a
 (!) = index
+{-# INLINE [1] (!) #-}
 
 
--- | Vectors are 1-dimensional arrays.
-type Vector r e = Array r DIM1 e
+-- | O(1). Get the length of a vector.
+--
+--   This is the same as `extent`, but specialised to `Vector`.
+length :: Bulk r DIM1 a => Vector r a -> Int
+length !arr
+ = case extent arr of
+        Z :. len        -> len
+{-# INLINE [1] length #-}
 
 
 -- Conversion -------------------------------------------------------------------------------------

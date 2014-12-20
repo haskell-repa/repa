@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Bulk.Load
+module Data.Repa.Array.Internals.Load
         ( Load      (..)
         , LoadRange (..))
 where
+import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Internals.Bulk
 import Data.Array.Repa.Eval.Gang
-import Data.Array.Repa.Bulk.Target
-import Data.Array.Repa.Bulk.Base
 
 
 -- Load -------------------------------------------------------------------------------------------

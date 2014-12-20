@@ -1,17 +1,17 @@
 
-module Data.Array.Repa.Repr.Unboxed
+module Data.Repa.Array.Unboxed
         ( U, U.Unbox
         , Array (..)
         , fromListU,    vfromListU
         , fromVectorU
         , toVectorU)
 where
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Bulk.Target
-import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.Window
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
+import Data.Repa.Array.Delayed
+import Data.Repa.Array.Window
+import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Index
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
@@ -28,11 +28,10 @@ import Control.Monad
 --
 data U
 
-instance (U.Unbox a, Shape sh) => Bulk U sh a where
+-- | Unboxed arrays.
+instance (Shape sh, U.Unbox a) => Bulk U sh a where
  data Array U sh a
-        = UArray 
-        { uarrayShape     :: !sh
-        , uarrayVector    :: !(U.Vector a) }
+        = UArray sh !(U.Vector a)
 
  index  (UArray sh vec) ix
         | not $ inShapeRange zeroDim sh ix
@@ -41,8 +40,7 @@ instance (U.Unbox a, Shape sh) => Bulk U sh a where
         | otherwise
         = vec U.! (toIndex sh ix)
 
- extent arr
-        = uarrayShape arr
+ extent (UArray sh _) = sh
  {-# INLINE extent #-}
 
 

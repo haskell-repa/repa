@@ -1,14 +1,14 @@
 
-module Data.Array.Repa.Repr.Foreign
+module Data.Repa.Array.Foreign
         ( F, Array (..), Buffer (..)
         , fromForeignPtr, toForeignPtr)
 where
-import Data.Array.Repa.Bulk.Target
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.Window
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
+import Data.Repa.Array.Delayed
+import Data.Repa.Array.Window
+import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Index
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
@@ -18,6 +18,7 @@ import Control.Monad.Primitive
 -- | Arrays represented as foreign buffers in the C heap.
 data F
 
+-- | Foreign arrays.
 instance (Shape sh, Storable a) => Bulk F sh a where
  data Array F sh a
         = FArray !sh !Int !(ForeignPtr a)

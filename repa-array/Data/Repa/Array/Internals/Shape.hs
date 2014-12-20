@@ -1,6 +1,6 @@
 
 -- | Class of types that can be used as array shapes and indices.
-module Data.Array.Repa.Shape
+module Data.Repa.Array.Internals.Shape
 	( Shape(..)
         , inShape
         , showShape )
@@ -27,23 +27,15 @@ class Eq sh => Shape sh where
 	-- | Get the total number of elements in an array with this shape.
 	size	:: sh -> Int
 
-	-- | Convert an index into its equivalent flat, linear, row-major version.
-	toIndex :: sh	-- ^ Shape of the array.
-		-> sh 	-- ^ Index into the array.
-		-> Int
+	-- | Given an array shape and shape polymorphic index, yield a linear index
+        --   into a flat, row-major representation.
+	toIndex   :: sh -> sh -> Int
 
-	-- | Inverse of `toIndex`.
-	fromIndex
-		:: sh 	-- ^ Shape of the array.
-		-> Int 	-- ^ Index into linear representation.
-		-> sh
+	-- | Given an array shape and linear index, yield the shape polymorphic index.
+	fromIndex :: sh -> Int -> sh
 
-	-- | Check whether an index is within a given shape.
-	inShapeRange
-		:: sh 	-- ^ Start index for range.
-		-> sh 	-- ^ Final index for range.
-		-> sh 	-- ^ Index to check for.
-		-> Bool
+	-- | Given a starting and ending index, check if some index is with that range.
+	inShapeRange :: sh -> sh -> sh -> Bool
 
 	-- | Convert a shape into its list of dimensions.
 	listOfShape	:: sh -> [Int]
@@ -52,13 +44,8 @@ class Eq sh => Shape sh where
 	shapeOfList	:: [Int] -> Maybe sh
 
 
--- | Check whether an index is a part of a given shape.
-inShape :: forall sh
-	.  Shape sh
-	=> sh 		-- ^ Shape of the array.
-	-> sh		-- ^ Index.
-	-> Bool
-
+-- | Given an array shape and index, check whether the index is in the shape.
+inShape ::  Shape sh => sh -> sh -> Bool
 inShape sh ix
 	= inShapeRange zeroDim sh ix
 {-# INLINE inShape #-}

@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Repr.Unsafe.Unboxed
+module Data.Repa.Array.Unsafe.Unboxed
         ( UU, U.Unbox
         , Array (..)
         , fromListUU,   fromListsUU,    fromListssUU
@@ -7,10 +7,13 @@ module Data.Array.Repa.Repr.Unsafe.Unboxed
         , toVectorUU
         , slicesUU)
 where
-import Data.Array.Repa.Bulk
-import Data.Array.Repa.Repr.Window
-import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Repr.Unsafe.Nested
+import Data.Repa.Array.Window
+import Data.Repa.Array.Delayed
+import Data.Repa.Array.Unsafe.Nested
+import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Index
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
@@ -29,7 +32,7 @@ import Control.Monad
 --
 data UU
 
--- | Read elements from an unboxed vector array.
+-- | Unsafe Unboxed arrays.
 instance (Shape sh, U.Unbox a) => Bulk UU sh a where
  data Array UU sh a
         = UUArray !sh !(U.Vector a)

@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Repr.Unsafe.Foreign
+module Data.Repa.Array.Unsafe.Foreign
         (UF, Array (..))
 where
-import Data.Array.Repa.Bulk.Target
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Repr.Delayed
-import Data.Array.Repa.Shape
+import Data.Repa.Array.Delayed
+import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Internals.Shape
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
@@ -16,6 +16,7 @@ import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 -- | Arrays represented as foreign buffers in the C heap.
 data UF
 
+-- | Unsafe Foreign arrays.
 instance (Shape sh, Storable a) => Bulk UF sh a where
  data Array UF sh a
         = UFArray !sh !Int !(ForeignPtr a)

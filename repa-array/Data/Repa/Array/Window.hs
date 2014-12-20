@@ -1,26 +1,24 @@
 
-module Data.Array.Repa.Repr.Window
+module Data.Repa.Array.Window
         ( W
         , Array  (..)
         , Window (..)
         , windowed
         , entire)
 where
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Shape
+import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Internals.Shape
 
 
 -- Windows ----------------------------------------------------------------------------------------
 data W r
 
+-- | Windowed arrays.
 instance Bulk r sh a 
       => Bulk (W r) sh a where
 
  data Array (W r) sh a
-        = WArray
-        { warrayStart   :: sh
-        , warrayShape   :: sh
-        , warrayBuffer  :: Array r sh a }
+        = WArray !sh !sh !(Array r sh a)
 
  extent (WArray _ sh _) = sh
  {-# INLINE [1] extent #-}

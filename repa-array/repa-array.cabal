@@ -1,4 +1,4 @@
-Name:           repa-bulk
+Name:           repa-array
 Version:        4.0.0.0
 License:        BSD3
 License-file:   LICENSE
@@ -26,28 +26,25 @@ Library
 
 
   exposed-modules:
-        Data.Array.Repa.Shape
-        Data.Array.Repa.Slice
-        Data.Array.Repa.Index
+        Data.Repa.Array.Unsafe.Foreign
+        Data.Repa.Array.Unsafe.Nested
+        Data.Repa.Array.Unsafe.Unboxed
+        Data.Repa.Array.Delayed
+        Data.Repa.Array.Foreign
+        Data.Repa.Array.Unboxed
+        Data.Repa.Array.Unsafe
+        Data.Repa.Array.Window
+        Data.Repa.Array
 
-        Data.Array.Repa.Bulk
-        Data.Array.Repa.Bulk.IO.File
-
-        Data.Array.Repa.Repr.Delayed
-        Data.Array.Repa.Repr.Window
-        Data.Array.Repa.Repr.Unboxed
-        Data.Array.Repa.Repr.Foreign
-
-        Data.Array.Repa.Repr.Unsafe.Unboxed
-        Data.Array.Repa.Repr.Unsafe.Nested
-        Data.Array.Repa.Repr.Unsafe.Foreign
-        Data.Array.Repa.Repr.Unsafe
-
+        Data.Repa.Eval.Array
 
   other-modules:
-        Data.Array.Repa.Bulk.Base
-        Data.Array.Repa.Bulk.Target
-        Data.Array.Repa.Bulk.Load
+        Data.Repa.Array.Internals.Bulk
+        Data.Repa.Array.Internals.Index
+        Data.Repa.Array.Internals.Load
+        Data.Repa.Array.Internals.Shape
+        Data.Repa.Array.Internals.Slice
+        Data.Repa.Array.Internals.Target
 
 
   ghc-options:

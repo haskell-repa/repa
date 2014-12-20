@@ -1,12 +1,12 @@
 
-module Data.Array.Repa.Bulk.Target
+module Data.Repa.Array.Internals.Target
         ( Target    (..)
         , fromList
         , vfromList)
 where
-import Data.Array.Repa.Bulk.Base
-import Data.Array.Repa.Shape
-import Data.Array.Repa.Index
+import Data.Repa.Array.Internals.Bulk   as R
+import Data.Repa.Array.Internals.Shape  as R
+import Data.Repa.Array.Internals.Index  as R
 import System.IO.Unsafe
 import Control.Monad
 import Prelude                          as P
@@ -49,14 +49,14 @@ class Target r e where
  touchBuffer        :: Buffer r e -> IO ()
 
 
--- | O(n). Construct an array from a list.
---   The `size` of the given shape must match the length of the list,
---   else `Nothing`.
+-- | O(length src). Construct an array from a list of elements, and give it the
+--   provided shape. The `size` of the provided shape must match the
+--   length of the list, else `Nothing`.
 fromList  :: (Shape sh, Target r a)
           => sh -> [a] -> Maybe (Array r sh a)
 fromList sh xx
  = unsafePerformIO
- $ do   let !len = length xx
+ $ do   let !len = P.length xx
         if   len /= size sh
          then return Nothing
          else do
@@ -67,7 +67,7 @@ fromList sh xx
 {-# NOINLINE fromList #-}
 
 
--- | O(n). Construct a vector from a list.
+-- | O(length src). Construct a vector from a list.
 vfromList :: Target r a => [a] -> Vector r a
 vfromList xx
  = let  !len     = P.length xx 

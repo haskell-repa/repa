@@ -1,6 +1,6 @@
 
 -- | Index types.
-module Data.Array.Repa.Index
+module Data.Repa.Array.Internals.Index
 	(
 	-- * Index types
 	  Z	(..)
@@ -10,7 +10,7 @@ module Data.Array.Repa.Index
 	, DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
         ,       ix1,  ix2,  ix3,  ix4,  ix5)
 where
-import Data.Array.Repa.Shape
+import Data.Repa.Array.Internals.Shape
 import GHC.Base 		(quotInt, remInt)
 
 
