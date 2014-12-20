@@ -1,9 +1,9 @@
 {-# LANGUAGE CPP #-}
-module Data.Array.Repa.Vector.Unboxed
+module Data.Repa.Vector.Unboxed
         ( findSegments
         , findSegmentsFrom)
 where
-import Data.Array.Repa.Stream.Segment
+import Data.Repa.Stream.Segment
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Generic                    as G

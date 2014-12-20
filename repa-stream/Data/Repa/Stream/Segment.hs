@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module Data.Array.Repa.Stream.Segment
+module Data.Repa.Stream.Segment
         ( findSegmentsS
         , startLengthsOfSegsS)
 where

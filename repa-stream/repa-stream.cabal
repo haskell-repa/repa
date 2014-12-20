@@ -19,9 +19,9 @@ Library
         vector          == 0.10.*
 
   exposed-modules:
-        Data.Array.Repa.Vector.Unboxed
+        Data.Repa.Vector.Unboxed
 
-        Data.Array.Repa.Stream.Segment
+        Data.Repa.Stream.Segment
 
   ghc-options:
         -Wall 
