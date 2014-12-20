@@ -15,7 +15,7 @@ import Data.Repa.Array.Foreign          as R
 import Data.Repa.Array                  as R
 import System.IO
 import Data.Word
-import Data.Char
+
 
 -- Source -----------------------------------------------------------------------------------------
 -- | Read chunks of data of the given size from a file.
@@ -108,7 +108,6 @@ hSourceRecordsF h len pSep aFail
                         let arr'        = window (Z :. 0) (Z :. ixSplit) arr
                         eat arr'
         {-# INLINE pull_hSourceRecordsF #-}
-
 {-# INLINE [2] hSourceRecordsF #-}
 
 
@@ -123,7 +122,9 @@ fileSinkBytesF
 fileSinkBytesF filePath
  = do   h       <- openBinaryFile filePath WriteMode
         hSinkBytesF h
-{-# INLINE [2] fileSinkBytesF #-}
+{-# NOINLINE fileSinkBytesF #-}
+--  NOINLINE because the chunks should be big enough to not require fusion,
+--           and we don't want to release the code for 'openBinaryFile'.
 
 
 -- | Write chunks of data to the given file handle.

@@ -22,7 +22,11 @@ Library
 
   exposed-modules:
         Data.Repa.Flow
+        Data.Repa.Flows
+
         Data.Repa.IO.Flow
+        Data.Repa.IO.Flows
+
 
   other-modules:
         Data.Repa.Flow.Internals.Base
@@ -30,6 +34,10 @@ Library
         Data.Repa.Flow.Internals.Eval
         Data.Repa.Flow.Internals.Operator
         Data.Repa.Flow.Internals.Chunk
+
+        Data.Repa.Flows.Internals.Base
+        Data.Repa.Flows.Internals.Operator
+
 
   ghc-options:
         -Wall 
