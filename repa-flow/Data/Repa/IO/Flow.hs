@@ -1,13 +1,13 @@
 
 module Data.Repa.IO.Flow
         ( -- * Sourcing Bytes
-          fileSourceBytesF,     hSourceBytesF
+          fileSourceBytes,     hSourceBytes
 
           -- * Sourcing Records
-        , fileSourceRecordsF,   hSourceRecordsF
+        , fileSourceRecords,   hSourceRecords
 
           -- * Sinking Bytes
-        , fileSinkBytesF,       hSinkBytesF)
+        , fileSinkBytes,       hSinkBytes)
 where
 import Data.Repa.Flow.Internals.Base
 import Data.Repa.IO.Array
@@ -24,26 +24,26 @@ import Data.Word
 --   * All chunks have the same size, except possibly the last one.
 --
 --   TODO: close file when finished.
-fileSourceBytesF :: FilePath -> Int -> IO (Source (Vector F Word8))
-fileSourceBytesF filePath len
+fileSourceBytes :: FilePath -> Int -> IO (Source (Vector F Word8))
+fileSourceBytes filePath len
  = do   h       <- openBinaryFile filePath ReadMode
-        hSourceBytesF h len 
-{-# INLINE [2] fileSourceBytesF #-}
+        hSourceBytes h len 
+{-# INLINE [2] fileSourceBytes #-}
 
 
--- | Like `fileSourceBytesF`, but taking an existing file handle.
-hSourceBytesF :: Handle -> Int -> IO (Source (Vector F Word8))
-hSourceBytesF h len
+-- | Like `fileSourceBytes`, but taking an existing file handle.
+hSourceBytes :: Handle -> Int -> IO (Source (Vector F Word8))
+hSourceBytes h len
  = return $ Source pull_hSource
  where
         pull_hSource eat eject
          = do eof <- hIsEOF h
               if eof 
                then     eject
-               else do  !chunk  <- hGetArrayF h len
+               else do  !chunk  <- hGetArray h len
                         eat chunk
         {-# INLINE pull_hSource #-}
-{-# INLINE [2] hSourceBytesF #-}
+{-# INLINE [2] hSourceBytes #-}
 
 
 -- | Read complete records of data from a file, up to the given size in bytes.
@@ -62,28 +62,28 @@ hSourceBytesF h len
 -- 
 --   TODO: close file when done.
 --
-fileSourceRecordsF 
+fileSourceRecords 
         :: FilePath 
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> IO (Source (Vector F Word8))
 
-fileSourceRecordsF filePath len pSep aFail
+fileSourceRecords filePath len pSep aFail
  = do   h       <- openBinaryFile filePath ReadMode
-        hSourceRecordsF h len pSep aFail
-{-# INLINE [2] fileSourceRecordsF #-}
+        hSourceRecords h len pSep aFail
+{-# INLINE [2] fileSourceRecords #-}
 
 
--- | Like `fileSourceRecordsF`, but taking an existing file handle.
-hSourceRecordsF 
+-- | Like `fileSourceRecords`, but taking an existing file handle.
+hSourceRecords 
         :: Handle 
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> IO (Source (Vector F Word8))
 
-hSourceRecordsF h len pSep aFail
+hSourceRecords h len pSep aFail
  = return $ Source pull_hSourceRecordsF
  where  pull_hSourceRecordsF eat eject
          = hIsEOF h >>= \eof
@@ -93,7 +93,7 @@ hSourceRecordsF h len pSep aFail
 
              -- Read a new chunk from the file.
              else do
-                arr      <- hGetArrayF h len
+                arr      <- hGetArray h len
 
                 -- Find the end of the last record in the file.
                 let !mLenSlack  = findIndex pSep (R.reverse arr)
@@ -108,7 +108,7 @@ hSourceRecordsF h len pSep aFail
                         let arr'        = window (Z :. 0) (Z :. ixSplit) arr
                         eat arr'
         {-# INLINE pull_hSourceRecordsF #-}
-{-# INLINE [2] hSourceRecordsF #-}
+{-# INLINE [2] hSourceRecords #-}
 
 
 -- Sink -------------------------------------------------------------------------------------------
@@ -116,22 +116,22 @@ hSourceRecordsF h len pSep aFail
 --
 --   TODO: close file when finished.
 --
-fileSinkBytesF
+fileSinkBytes
         :: FilePath -> IO (Sink (Vector F Word8))
 
-fileSinkBytesF filePath
+fileSinkBytes filePath
  = do   h       <- openBinaryFile filePath WriteMode
-        hSinkBytesF h
-{-# NOINLINE fileSinkBytesF #-}
+        hSinkBytes h
+{-# NOINLINE fileSinkBytes #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
 
 
 -- | Write chunks of data to the given file handle.
-hSinkBytesF :: Handle -> IO (Sink (Vector F Word8))
-hSinkBytesF !h
+hSinkBytes :: Handle -> IO (Sink (Vector F Word8))
+hSinkBytes !h
  = do   let push_hSinkBytesF !chunk
-                = hPutArrayF h chunk
+                = hPutArray h chunk
             {-# NOINLINE push_hSinkBytesF #-}
 
         let eject_hSinkBytesF
@@ -139,6 +139,6 @@ hSinkBytesF !h
             {-# INLINE eject_hSinkBytesF #-}
 
         return  $ Sink push_hSinkBytesF eject_hSinkBytesF
-{-# INLINE [2] hSinkBytesF #-}
+{-# INLINE [2] hSinkBytes #-}
 
 

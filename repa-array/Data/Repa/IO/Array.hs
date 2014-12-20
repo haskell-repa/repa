@@ -1,7 +1,7 @@
 
 module Data.Repa.IO.Array
-        ( hGetArrayF,   hGetArrayPreF
-        , hPutArrayF)
+        ( hGetArray,   hGetArrayPre
+        , hPutArray)
 where
 import Data.Repa.Array.Foreign
 import Data.Repa.Array.Internals.Bulk
@@ -19,14 +19,14 @@ import Data.Word
 -- 
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
-hGetArrayF :: Handle -> Int -> IO (Vector F Word8)
-hGetArrayF h len
+hGetArray :: Handle -> Int -> IO (Vector F Word8)
+hGetArray h len
  = do
         buf :: F.Ptr Word8 <- F.mallocBytes len
         bytesRead          <- hGetBuf h buf len
         fptr               <- F.newForeignPtr F.finalizerFree buf
         return  $ fromForeignPtr (Z :. bytesRead) fptr
-{-# NOINLINE hGetArrayF #-}
+{-# NOINLINE hGetArray #-}
 
 
 -- | Get data from a file, up to the given number of bytes, also 
@@ -34,8 +34,8 @@ hGetArrayF h len
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
-hGetArrayPreF :: Handle -> Int -> Vector F Word8 -> IO (Vector F Word8)
-hGetArrayPreF h len (FArray shPre offset fptrPre)
+hGetArrayPre :: Handle -> Int -> Vector F Word8 -> IO (Vector F Word8)
+hGetArrayPre h len (FArray shPre offset fptrPre)
  = F.withForeignPtr fptrPre
  $ \ptrPre' -> do   
         let ptrPre      = F.plusPtr ptrPre' offset
@@ -46,7 +46,7 @@ hGetArrayPreF h len (FArray shPre offset fptrPre)
         let bytesTotal  = lenPre + lenRead
         fptrBuf         <- F.newForeignPtr F.finalizerFree ptrBuf
         return  $ fromForeignPtr (Z :. bytesTotal) fptrBuf
-{-# NOINLINE hGetArrayPreF #-}
+{-# NOINLINE hGetArrayPre #-}
 
 
 -- | Write data into a file.
@@ -54,10 +54,10 @@ hGetArrayPreF h len (FArray shPre offset fptrPre)
 --   * Data is written to file directly from foreign memory,
 --     without copying it through the GHC heap.
 --
-hPutArrayF :: Handle -> Vector F Word8 -> IO ()
-hPutArrayF h (FArray shPre offset fptr)
+hPutArray :: Handle -> Vector F Word8 -> IO ()
+hPutArray h (FArray shPre offset fptr)
  = F.withForeignPtr fptr
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset
         hPutBuf h ptr (size shPre)
-{-# NOINLINE hPutArrayF #-}
+{-# NOINLINE hPutArray #-}

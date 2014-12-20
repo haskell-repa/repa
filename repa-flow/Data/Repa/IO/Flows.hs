@@ -1,7 +1,7 @@
 
 module Data.Repa.IO.Flows
         ( -- * Sinking Bytes
-          fileSinksBytesF,      hsSinksBytesF)
+          fileSinksBytes,      hsSinksBytes)
 where
 import Data.Repa.Flows.Internals.Base
 import Data.Repa.IO.Array
@@ -13,18 +13,18 @@ import Data.Word
 
 
 -- | Initialise some file sinks.
-fileSinksBytesF :: [FilePath] -> IO (Sinks (Vector F Word8))
-fileSinksBytesF filePaths
+fileSinksBytes :: [FilePath] -> IO (Sinks (Vector F Word8))
+fileSinksBytes filePaths
  = do   hs      <- mapM (flip openBinaryFile WriteMode) filePaths
-        hsSinksBytesF hs
-{-# NOINLINE fileSinksBytesF #-}
+        hsSinksBytes hs
+{-# NOINLINE fileSinksBytes #-}
 
 
 -- | Write chunks of data to the given file handles.
 --
 --   TODO: check arity of handles match sinks.
-hsSinksBytesF :: [Handle] -> IO (Sinks (Vector F Word8))
-hsSinksBytesF hs
+hsSinksBytes :: [Handle] -> IO (Sinks (Vector F Word8))
+hsSinksBytes hs
  = return $ Sinks (Just $ P.length hs) push_hsSinksBytesF eject_hsSinksBytesF
  where
         push_hsSinksBytesF !ix !chunk
@@ -32,12 +32,12 @@ hsSinksBytesF hs
          = error $ "hsSinkBytesF out of range" ++ show (ix, P.length hs)
 
          | otherwise
-         = hPutArrayF (hs !! ix) chunk
+         = hPutArray (hs !! ix) chunk
         {-# INLINE push_hsSinksBytesF #-}
 
         eject_hsSinksBytesF _ 
                 = return ()
         {-# INLINE eject_hsSinksBytesF #-}
-{-# INLINE [2] hsSinksBytesF #-}
+{-# INLINE [2] hsSinksBytes #-}
 
 

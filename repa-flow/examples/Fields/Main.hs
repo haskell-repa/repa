@@ -33,7 +33,7 @@ pfields fileIn
 
         -- Stream chunks of data from the input file,
         -- where the chunks end cleanly at record boundaries.
-        sIn        <- fileSourceRecordsF 
+        sIn        <- fileSourceRecords 
                         fileIn (64 * 1024) (== nl)
                         (error "over long line")
  
@@ -58,7 +58,7 @@ pfields fileIn
 -}
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut   <- fileSinksBytesF filesOut
+        ooOut   <- fileSinksBytes filesOut
         putStrLn $ show filesOut
 
         -- Chunks are distributed into each of the output files.
