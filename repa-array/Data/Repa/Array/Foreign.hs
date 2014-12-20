@@ -28,8 +28,8 @@ instance (Shape sh, Storable a) => Bulk F sh a where
  {-# INLINE extent #-}
 
  index (FArray sh offset fptr) ix
-        | not $ inShapeRange zeroDim sh ix
-        = error "repa-bulk.index[F]: out of range"
+--        | not $ inShapeRange zeroDim sh ix                    -- TODO: indexing
+--        = error "repa-bulk.index[F]: out of range"
 
         | otherwise
         = unsafeInlineIO 

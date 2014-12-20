@@ -71,5 +71,6 @@ Library
         MultiParamTypeClasses
         EmptyDataDecls
         StandaloneDeriving
+        FunctionalDependencies
 
 

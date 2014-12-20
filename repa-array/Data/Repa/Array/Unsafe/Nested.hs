@@ -118,7 +118,7 @@ trims   :: Bulk r DIM1 a
 
 trims pTrim (UNArray starts lengths elems)
  = let
-        ftrim start len 
+        ftrim !start !len 
          | len == 0     = 0
          | pTrim (elems `index` (Z :. start + len - 1)) 
                         = len - 1

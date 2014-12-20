@@ -73,7 +73,8 @@ module Data.Repa.Array
           --   but do not create new element values.
         , ragspose3
         , concat
-        , concat3)
+        , concat3
+        , intercalate)
 where
 import Data.Repa.Eval.Array                     as R
 import Data.Repa.Array.Delayed                  as R
@@ -87,7 +88,12 @@ import Data.Repa.Array.Internals.Target         as R
 import Data.Repa.Array.Internals.Bulk           as R
 import System.IO.Unsafe
 import qualified Data.Vector.Unboxed            as U
-import Prelude hiding (reverse, length, map, zipWith, concat)
+import Prelude  hiding (reverse, length, map, zipWith, concat)
+import GHC.Exts hiding (fromList, toList)
+
+import Data.Repa.Array.Foreign                  as R
+import Foreign.ForeignPtr
+import qualified Data.Vector.Fusion.Stream.Monadic as V
 
 
 -- | O(1). View the elements of a vector in reverse order.
@@ -107,17 +113,17 @@ findIndex :: Bulk r DIM1 a
           => (a -> Bool) -> Vector r a -> Maybe Int
 
 findIndex p !vec
- = loop_findIndex 0
+ = loop_findIndex V.SPEC 0
  where  
         !len    = size (extent vec)
 
-        loop_findIndex !ix
+        loop_findIndex !sPEC !ix
          | ix >= len    = Nothing
          | otherwise    
          = let  !x      = vec `index` (Z :. ix)
            in   if p x  then Just ix
-                        else loop_findIndex (ix + 1)
-        {-# INLINE [0] loop_findIndex #-}
+                        else loop_findIndex sPEC (ix + 1)
+        {-# INLINE_INNER #-}
 
 {-# INLINE [2] findIndex #-}
 
@@ -134,29 +140,101 @@ concat vs
  = unsafePerformIO
  $ do   let !lens  = toVectorU $ computeS $ R.map R.length vs
         let !len   = U.sum lens
-
-        buf     <- unsafeNewBuffer len
-
+        !buf       <- unsafeNewBuffer len
         let !iLenY = U.length lens
 
-        let loop !iO !iY !row !iX !iLenX
+        let loop_concat !iO !iY !row !iX !iLenX
              | iX >= iLenX
              = if iY >= iLenY - 1
                 then return ()
                 else let iY'    = iY + 1
                          row'   = vs `index` (Z :. iY')
                          iLenX' = R.length row'
-                     in  loop iO iY' row' 0 iLenX'
+                     in  loop_concat iO iY' row' 0 iLenX'
 
              | otherwise
              = do let x = row `index` (Z :. iX)
                   unsafeWriteBuffer buf iO x
-                  loop (iO + 1) iY row (iX + 1) iLenX
+                  loop_concat (iO + 1) iY row (iX + 1) iLenX
+            {-# INLINE loop_concat #-}
 
         let !row0   = vs `index` (Z :. 0)
         let !iLenX0 = R.length row0
-        loop 0 0 row0 0 iLenX0
+        loop_concat 0 0 row0 0 iLenX0
 
         unsafeFreezeBuffer (Z :. len) buf
 {-# INLINE [2] concat #-}
+
+
+class Unpack1 a t | a -> t where
+ unpack :: a -> t
+ repack :: a -> t -> a
+
+instance Unpack1 (Array F DIM1 a) (Int, Int, ForeignPtr a) where
+ unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
+ repack _ (len, offset, fptr)           = FArray (Z :. len) offset fptr
+
+
+-- Intercalate ----------------------------------------------------------------
+-- O(len result) Insert the separator array between the elements of
+-- the second and concatenate the result.
+intercalate 
+        :: ( Bulk r0 DIM1 a
+           , Bulk r1 DIM1 (Vector r2 a)
+           , Bulk r2 DIM1 a, Unpack1 (Vector r2 a) t
+           , Target r3 a)
+        => Vector r0 a 
+        -> Vector r1 (Vector r2 a)
+        -> Vector r3 a
+
+intercalate !is !vs
+ | R.length vs == 0
+ = R.vfromList []
+
+ | otherwise
+ = unsafePerformIO
+ $ do   let !lens       = toVectorU $ computeS $ R.map R.length vs
+        let !(I# len)   = U.sum lens + U.length lens * R.length is
+        !buf            <- unsafeNewBuffer (I# len)
+        let !(I# iLenY) = U.length lens
+        let !(I# iLenI) = R.length is
+        let !iI         = is `index` (Z :. 0)
+
+        let !row0       = vs `index` (Z :. 0)
+
+        let loop_intercalate !sPEC !iO !iY !row !iX !iLenX
+             | 1# <- iX >=# iLenX
+             = case iY >=# iLenY -# 1# of
+                1# -> return ()
+                _  -> do
+--                 I# iO'           <- loop_intercalate_inject iO 0#
+
+                 -- TODO: repair arbitrary length separators
+                 unsafeWriteBuffer buf (I# iO) iI
+                 let !iO'         = iO +# 1#
+
+                 let !iY'         = iY +# 1#
+                 let !row'        = vs `index` (Z :. I# iY')
+                 let !(I# iLenX') = R.length row'
+                 loop_intercalate sPEC iO' iY' (unpack row') 0# iLenX'
+
+             | otherwise
+             = do let x = (repack row0 row) `index` (Z :. I# iX)
+                  unsafeWriteBuffer buf (I# iO) x
+                  loop_intercalate sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
+            {-# INLINE_INNER loop_intercalate #-}
+
+            loop_intercalate_inject !sPEC !iO !n
+             | 1# <- n >=# iLenI = return (I# iO)
+             | otherwise
+             = do let x = is `index` (Z :. I# n)
+                  unsafeWriteBuffer buf (I# iO) x
+                  loop_intercalate_inject sPEC(iO +# 1#) (n +# 1#)
+            {-# INLINE_INNER loop_intercalate_inject #-}
+
+        let !(I# iLenX0) = R.length row0
+        loop_intercalate V.SPEC 0# 0# (unpack row0) 0# iLenX0
+
+        unsafeFreezeBuffer (Z :. (I# len)) buf
+{-# INLINE [2] intercalate #-}
 

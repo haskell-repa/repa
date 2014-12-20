@@ -9,6 +9,7 @@ import Data.Repa.Flow.Internals.Base
 import Data.Repa.Flows.Internals.Base
 import Data.Repa.Array
 import Prelude hiding (length)
+import qualified Data.Vector.Fusion.Stream.Monadic as V
 
 
 -------------------------------------------------------------------------------
@@ -48,7 +49,8 @@ distributes_o
 distributes_o (Sinks mnSinks push eject) spill
  = do   
         let push_distributes !xs
-             = let nx = length xs
+             = loop_distributes 0
+             where !nx = length xs
                    loop_distributes !i
                     | i >= nx
                     = return ()
@@ -61,11 +63,13 @@ distributes_o (Sinks mnSinks push eject) spill
                     | otherwise  
                     = do push i (index xs (Z :. i))
                          loop_distributes (i + 1)
-               in loop_distributes 0
+                   {-# INLINE_INNER loop_distributes #-}
+
             {-# INLINE push_distributes #-}
 
         let eject_distributes
-              = let loop_distributes !i
+              = loop_distributes 0
+              where loop_distributes !i
                      | Nothing     <- mnSinks
                      = return ()
 
@@ -76,8 +80,8 @@ distributes_o (Sinks mnSinks push eject) spill
                      | otherwise 
                      = do eject i
                           loop_distributes (i + 1)
+                     {-# INLINE_INNER loop_distributes #-}
 
-                in  loop_distributes 0
             {-# INLINE eject_distributes #-}
 
         return $ Sink push_distributes eject_distributes
