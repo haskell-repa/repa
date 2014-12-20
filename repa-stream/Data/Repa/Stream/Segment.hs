@@ -1,13 +1,19 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Stream.Segment
         ( findSegmentsS
-        , startLengthsOfSegsS)
+        , startLengthsOfSegsS
+        , unsafeRatchetS)
 where
 import Data.Vector.Fusion.Stream.Monadic                (Stream(..), Step(..))
+import qualified Data.Vector.Generic                    as G
+import qualified Data.Vector.Generic.Mutable            as GM
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Unboxed.Mutable            as UM
 import qualified Data.Vector.Fusion.Stream.Size         as S
 
 #include "vector.h"
 
+---------------------------------------------------------------------------------------------------
 -- | Given predicates that detect the beginning and end of some interesting
 --   segment of information, scan through a vector looking for when these
 --   segments begin and end.
@@ -53,6 +59,7 @@ findSegmentsS pStart pEnd iEnd (Stream istep s sz)
 {-# INLINE_STREAM findSegmentsS #-}
 
 
+---------------------------------------------------------------------------------------------------
 -- | Given a stream of starting and ending indices for some segments,
 --   convert it to a stream of starting indices and segment lengths.
 startLengthsOfSegsS
@@ -81,4 +88,53 @@ startLengthsOfSegsS (Stream istep s sz)
                Done         -> return $ Yield (iStart, iEnd - iStart)     (si,  False, Nothing)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM startLengthsOfSegsS #-}
+
+---------------------------------------------------------------------------------------------------
+-- | Interleaved `enumFromTo`. 
+--
+--   Given a vector of starting values, and a vector of stopping values, 
+--   produce an stream where we increase each of the starting values to 
+--   the stopping values in a round-robin order. 
+--
+--   @unsafeRatchetS [10,20,30,40] [14,25,32,46]
+--  =  [10,20,30,40
+--     ,11,21,31,41
+--     ,12,22,32,42
+--     ,13,23   ,43
+--     ,14,24   ,44
+--        ,25   ,45
+--              ,46]@
+--
+--   The function takes the starting values in a mutable vector and 
+--   updates it during computation. Computation proceeds by making passes
+--   through the mutable vector and updating the starting values until
+--   they match the stopping values. 
+--
+--   UNSAFE: Both input vectors must have the same length, 
+--           but this is not checked.
+--
+unsafeRatchetS 
+        :: UM.IOVector Int
+        ->  U.Vector   Int
+        -> Stream IO   Int
+
+unsafeRatchetS mvStarts vMax
+ = Stream ostep (0, False) S.Unknown
+ where
+        !iSegMax = GM.length mvStarts - 1
+
+        ostep (iSeg, bProgress)
+         | iSeg <= iSegMax
+         = do   iVal      <- GM.unsafeRead mvStarts iSeg
+                let iNext = vMax `G.unsafeIndex` iSeg
+                if  iVal > iNext
+                 then   return $ Skip          (iSeg + 1, bProgress)
+                 else do
+                        GM.unsafeWrite mvStarts iSeg (iVal + 1)
+                        return $ Yield iVal    (iSeg + 1, True)
+
+         | otherwise
+         = if bProgress
+                then return $ Skip (0, False)
+                else return $ Done
 

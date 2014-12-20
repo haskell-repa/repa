@@ -16,7 +16,7 @@ import Data.Repa.Array.Internals.Shape                  as R
 import Data.Repa.Array.Internals.Index                  as R
 import Prelude                                          as P
 import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Array.Repa.Vector.Unboxed         as U
+import qualified Data.Repa.Vector.Unboxed               as U
 import Prelude  hiding (concat)
 
 ---------------------------------------------------------------------------------------------------
