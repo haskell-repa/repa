@@ -1,5 +1,5 @@
 
-module Data.Repa.Flow.Internals.Base
+module Data.Repa.Flow.Simple.Base
         ( Source (..)
         , Sink   (..))
 where

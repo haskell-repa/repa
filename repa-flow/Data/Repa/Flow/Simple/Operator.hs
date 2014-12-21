@@ -1,5 +1,5 @@
 
-module Data.Repa.Flow.Internals.Operator
+module Data.Repa.Flow.Simple.Operator
         ( repeat_i
         , replicate_i
         , map_i,        map_o
@@ -17,8 +17,8 @@ module Data.Repa.Flow.Internals.Operator
         , discard_o
         , ignore_o)
 where
-import Data.Repa.Flow.Internals.List
-import Data.Repa.Flow.Internals.Base
+import Data.Repa.Flow.Simple.List
+import Data.Repa.Flow.Simple.Base
 import Control.Monad
 import Data.IORef
 import Prelude          hiding (length)

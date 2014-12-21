@@ -1,5 +1,5 @@
 
-module Data.Repa.Flows.Internals.Base
+module Data.Repa.Flow.Gang.Base
         ( Sources (..), isWideSource
         , Sinks   (..), isWideSink)
 where
@@ -48,3 +48,4 @@ isWideSource (Sources ma _)     = isNothing ma
 isWideSink   :: Sinks a -> Bool
 isWideSink   (Sinks ma _ _)     = isNothing ma
 {-# INLINE isWideSink #-}
+

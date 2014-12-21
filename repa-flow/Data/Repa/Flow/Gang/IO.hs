@@ -1,9 +1,9 @@
 
-module Data.Repa.IO.Flows
+module Data.Repa.Flow.Gang.IO
         ( -- * Sinking Bytes
           fileSinksBytes,      hsSinksBytes)
 where
-import Data.Repa.Flows.Internals.Base
+import Data.Repa.Flow.Gang.Base
 import Data.Repa.IO.Array
 import Data.Repa.Array.Foreign          as R
 import Data.Repa.Array                  as R

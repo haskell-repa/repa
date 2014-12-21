@@ -1,6 +1,6 @@
 
 -- | Everything flows.
-module Data.Repa.Flows
+module Data.Repa.Flow.Gang
         ( Sources (..)
         , Sinks   (..)
         , isWideSource
@@ -17,7 +17,7 @@ module Data.Repa.Flows
         -- ** Discarding
         , discards_o)
 where
-import Data.Repa.Flows.Internals.Base
-import Data.Repa.Flows.Internals.Operator
+import Data.Repa.Flow.Gang.Base
+import Data.Repa.Flow.Gang.Operator
 
 

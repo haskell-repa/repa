@@ -1,5 +1,5 @@
 
-module Data.Repa.Flow
+module Data.Repa.Flow.Simple
         ( Source (..)
         , Sink   (..)
 
@@ -36,10 +36,16 @@ module Data.Repa.Flow
 
         -- * Ignorance
         , discard_o
-        , ignore_o)
+        , ignore_o
+
+        -- * IO
+        , fileSourceBytes,   hSourceBytes
+        , fileSinkBytes,     hSinkBytes
+        , fileSourceRecords, hSourceRecords)
 where
-import Data.Repa.Flow.Internals.Base
-import Data.Repa.Flow.Internals.Eval
-import Data.Repa.Flow.Internals.List
-import Data.Repa.Flow.Internals.Operator
-import Data.Repa.Flow.Internals.Chunk
+import Data.Repa.Flow.Simple.Base
+import Data.Repa.Flow.Simple.Eval
+import Data.Repa.Flow.Simple.List
+import Data.Repa.Flow.Simple.Operator
+import Data.Repa.Flow.Simple.Chunk
+import Data.Repa.Flow.Simple.IO

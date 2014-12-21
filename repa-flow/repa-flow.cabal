@@ -21,22 +21,21 @@ Library
         repa-array      == 4.0.0.0
 
   exposed-modules:
-        Data.Repa.Flow
-        Data.Repa.Flows
-
-        Data.Repa.IO.Flow
-        Data.Repa.IO.Flows
+        Data.Repa.Flow.Simple
+        Data.Repa.Flow.Gang
 
 
   other-modules:
-        Data.Repa.Flow.Internals.Base
-        Data.Repa.Flow.Internals.List
-        Data.Repa.Flow.Internals.Eval
-        Data.Repa.Flow.Internals.Operator
-        Data.Repa.Flow.Internals.Chunk
+        Data.Repa.Flow.Simple.Base
+        Data.Repa.Flow.Simple.Chunk
+        Data.Repa.Flow.Simple.Eval
+        Data.Repa.Flow.Simple.IO
+        Data.Repa.Flow.Simple.List
+        Data.Repa.Flow.Simple.Operator
 
-        Data.Repa.Flows.Internals.Base
-        Data.Repa.Flows.Internals.Operator
+        Data.Repa.Flow.Gang.Base
+        Data.Repa.Flow.Gang.IO
+        Data.Repa.Flow.Gang.Operator
 
 
   ghc-options:

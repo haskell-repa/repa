@@ -1,12 +1,12 @@
 
-module Data.Repa.Flows.Internals.Operator
+module Data.Repa.Flow.Gang.Operator
         ( maps_i
         , distributes_o
         , ddistributes_o
         , discards_o)
 where
-import Data.Repa.Flow.Internals.Base
-import Data.Repa.Flows.Internals.Base
+import Data.Repa.Flow.Simple.Base
+import Data.Repa.Flow.Gang.Base
 import Data.Repa.Array
 import Prelude hiding (length)
 import qualified Data.Vector.Fusion.Stream.Monadic as V

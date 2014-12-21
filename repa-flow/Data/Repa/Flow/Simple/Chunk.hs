@@ -1,9 +1,9 @@
 
-module Data.Repa.Flow.Internals.Chunk
+module Data.Repa.Flow.Simple.Chunk
         ( chunk_i
         , unchunk_i,    unchunk_o)
 where
-import Data.Repa.Flow.Internals.Base
+import Data.Repa.Flow.Simple.Base
 import Data.Repa.Array
 import Data.Repa.Eval.Array
 import Data.IORef

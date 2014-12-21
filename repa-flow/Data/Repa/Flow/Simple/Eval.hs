@@ -1,8 +1,8 @@
 
-module Data.Repa.Flow.Internals.Eval
+module Data.Repa.Flow.Simple.Eval
         (drain)
 where
-import Data.Repa.Flow.Internals.Base
+import Data.Repa.Flow.Simple.Base
 
 
 -- | Pull all available values from the source and push them to the sink.
