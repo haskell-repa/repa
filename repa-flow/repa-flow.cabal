@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
-Description:    Incremental data flows.
-Synopsis:       Incremental data flows.
+Description:    Data-parallel data flows.
+Synopsis:       Data-parallel data flows.
 
 Library
   build-Depends: 
@@ -21,21 +21,15 @@ Library
         repa-array      == 4.0.0.0
 
   exposed-modules:
+        Data.Repa.Flow.Generic
         Data.Repa.Flow.Simple
-        Data.Repa.Flow.Gang
-
 
   other-modules:
-        Data.Repa.Flow.Simple.Base
-        Data.Repa.Flow.Simple.Chunk
-        Data.Repa.Flow.Simple.Eval
-        Data.Repa.Flow.Simple.IO
-        Data.Repa.Flow.Simple.List
-        Data.Repa.Flow.Simple.Operator
+        Data.Repa.Flow.Generic.Base
+        Data.Repa.Flow.Generic.Operator
 
-        Data.Repa.Flow.Gang.Base
-        Data.Repa.Flow.Gang.IO
-        Data.Repa.Flow.Gang.Operator
+        Data.Repa.Flow.Simple.Base
+        Data.Repa.Flow.Simple.Operator
 
 
   ghc-options:
@@ -51,4 +45,7 @@ Library
         MagicHash
         FlexibleContexts
         PatternGuards
+        TypeFamilies
+        MultiParamTypeClasses
+        FlexibleInstances
 

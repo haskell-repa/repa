@@ -1,26 +1,32 @@
 
 module Data.Repa.Flow.Simple.Base
         ( Source (..)
-        , Sink   (..))
+        , Sink   (..)
+        , Convert (..))
 where
-
--- | An abstract source of values.
---   We can pull values from this without knowing where they come from.
-data Source a
-        = Source
-        { -- | Function to pull a new value from the source.
-          ---  It is given a function to apply when elements are available,
-          --   an action to invoke when we've hit the end of the flow.
-          sourcePull    :: (a -> IO ()) -> IO () -> IO () }
+import qualified Data.Repa.Flow.Generic as G
 
 
--- | An abstract sink of values.
---   We can push values into this without knowing where they're going.
-data Sink a
-        = Sink
-        { -- | Push a new element into the sink.
-          sinkPush      :: a -> IO () 
+data Source m e
+        = Source !(G.Sources () m e)
 
-          --   Indicate that we've pushed all available elements
-          --   the sink should pass all contained information down stream.
-        , sinkEject     :: IO () }
+data Sink   m e
+        = Sink   !(G.Sinks   () m e)
+
+
+class Convert a b where
+ convert :: a -> b
+
+instance Convert (G.Sources () m e) (Source m e) where
+ convert s = Source s
+
+instance Convert (Source m e) (G.Sources () m e) where
+ convert g = case g of Source s -> s
+
+instance Convert (G.Sinks  () m e) (Sink   m e)  where
+ convert s = Sink   s
+
+instance Convert (Sink   m e) (G.Sinks   () m e) where
+ convert g = case g of Sink s  -> s
+
+

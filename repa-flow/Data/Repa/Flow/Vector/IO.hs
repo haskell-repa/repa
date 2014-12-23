@@ -13,7 +13,7 @@ import Data.Word
 
 
 -- | Initialise some file sinks.
-fileSinksBytes :: [FilePath] -> IO (Sinks (Vector F Word8))
+fileSinksBytes :: [FilePath] -> IO (Sinks IO (Vector F Word8))
 fileSinksBytes filePaths
  = do   hs      <- mapM (flip openBinaryFile WriteMode) filePaths
         hsSinksBytes hs
@@ -23,7 +23,7 @@ fileSinksBytes filePaths
 -- | Write chunks of data to the given file handles.
 --
 --   TODO: check arity of handles match sinks.
-hsSinksBytes :: [Handle] -> IO (Sinks (Vector F Word8))
+hsSinksBytes :: [Handle] -> IO (Sinks IO (Vector F Word8))
 hsSinksBytes hs
  = return $ Sinks (Just $ P.length hs) push_hsSinksBytesF eject_hsSinksBytesF
  where

@@ -13,7 +13,7 @@ import Data.IORef
 -- | Take elements from a flow and pack them into chunks of the given
 --   maximum length.
 chunk_i :: Target r a
-        => Int -> Source a -> IO (Source (Vector r a))
+        => Int -> Source IO a -> IO (Source IO (Vector r a))
 
 chunk_i !maxLen (Source pullX)
  = return $ Source pull
@@ -74,7 +74,7 @@ chunk_i !maxLen (Source pullX)
 -- Unchunk ----------------------------------------------------------------------------------------
 -- | Take a flow of chunks and flatten it into a flow of tge individual elements.
 unchunk_i :: Bulk r DIM1 a
-          => Source (Vector r a) -> IO (Source a)
+          => Source IO (Vector r a) -> IO (Source IO a)
 
 unchunk_i (Source pullC)
  = do   
@@ -147,8 +147,9 @@ unchunk_i (Source pullC)
 --   When a chunk it pushed to the result sink then all its elements are
 --   pushed to the argument sink. 
 --
-unchunk_o :: Bulk r DIM1 e
-          => Sink e -> IO (Sink (Vector r e))
+unchunk_o :: Monad m
+          => Bulk r DIM1 e
+          => Sink m e -> m (Sink m (Vector r e))
 
 unchunk_o (Sink pushX ejectX)
  = return $ Sink push_unchunk eject_unchunk

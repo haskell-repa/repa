@@ -3,6 +3,11 @@ module Data.Repa.Flow.Simple
         ( Source (..)
         , Sink   (..)
 
+        -- *
+        , repeat_i
+        , replicate_i)
+
+{-
         -- * Evaluation
         , drain
 
@@ -11,9 +16,6 @@ module Data.Repa.Flow.Simple
         , toList
         , takeList
 
-        -- ** Flow operators
-        , repeat_i
-        , replicate_i
         , map_i,        map_o
         , dup_oo,       dup_io,         dup_oi
         , connect_i
@@ -41,11 +43,15 @@ module Data.Repa.Flow.Simple
         -- * IO
         , fileSourceBytes,   hSourceBytes
         , fileSinkBytes,     hSinkBytes
-        , fileSourceRecords, hSourceRecords)
+        , fileSourceRecords, hSourceRecords -}
 where
 import Data.Repa.Flow.Simple.Base
+import Data.Repa.Flow.Simple.Operator
+
+{-
 import Data.Repa.Flow.Simple.Eval
 import Data.Repa.Flow.Simple.List
 import Data.Repa.Flow.Simple.Operator
 import Data.Repa.Flow.Simple.Chunk
 import Data.Repa.Flow.Simple.IO
+-}

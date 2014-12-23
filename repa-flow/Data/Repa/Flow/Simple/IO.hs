@@ -24,7 +24,7 @@ import Data.Word
 --   * All chunks have the same size, except possibly the last one.
 --
 --   TODO: close file when finished.
-fileSourceBytes :: FilePath -> Int -> IO (Source (Vector F Word8))
+fileSourceBytes :: FilePath -> Int -> IO (Source IO (Vector F Word8))
 fileSourceBytes filePath len
  = do   h       <- openBinaryFile filePath ReadMode
         hSourceBytes h len 
@@ -32,7 +32,7 @@ fileSourceBytes filePath len
 
 
 -- | Like `fileSourceBytes`, but taking an existing file handle.
-hSourceBytes :: Handle -> Int -> IO (Source (Vector F Word8))
+hSourceBytes :: Handle -> Int -> IO (Source IO (Vector F Word8))
 hSourceBytes h len
  = return $ Source pull_hSource
  where
@@ -67,7 +67,7 @@ fileSourceRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Source (Vector F Word8))
+        -> IO (Source IO (Vector F Word8))
 
 fileSourceRecords filePath len pSep aFail
  = do   h       <- openBinaryFile filePath ReadMode
@@ -81,7 +81,7 @@ hSourceRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Source (Vector F Word8))
+        -> IO (Source IO (Vector F Word8))
 
 hSourceRecords h len pSep aFail
  = return $ Source pull_hSourceRecordsF
@@ -117,7 +117,7 @@ hSourceRecords h len pSep aFail
 --   TODO: close file when finished.
 --
 fileSinkBytes
-        :: FilePath -> IO (Sink (Vector F Word8))
+        :: FilePath -> IO (Sink IO (Vector F Word8))
 
 fileSinkBytes filePath
  = do   h       <- openBinaryFile filePath WriteMode
@@ -128,7 +128,7 @@ fileSinkBytes filePath
 
 
 -- | Write chunks of data to the given file handle.
-hSinkBytes :: Handle -> IO (Sink (Vector F Word8))
+hSinkBytes :: Handle -> IO (Sink IO (Vector F Word8))
 hSinkBytes !h
  = do   let push_hSinkBytesF !chunk
                 = hPutArray h chunk

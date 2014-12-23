@@ -6,7 +6,7 @@ import Data.Repa.Flow.Simple.Base
 
 
 -- | Pull all available values from the source and push them to the sink.
-drain :: Source a -> Sink a -> IO ()
+drain :: Monad m => Source m a -> Sink m a -> m ()
 drain (Source ipull) (Sink opush oeject)
  = loop_drain
  where 

@@ -9,7 +9,7 @@ import Data.IORef
 
 
 -- | Produce a flow from a list.
-fromList :: [a] -> IO (Source a)
+fromList :: [a] -> IO (Source IO a)
 fromList xx0
  = do
         ref     <- newIORef xx0
@@ -27,7 +27,7 @@ fromList xx0
 
 
 -- | Drain a flow into a list.
-toList  :: Source a -> IO [a]
+toList  :: Source IO a -> IO [a]
 toList (Source pullX)
  = do   
         ref     <- newIORef []
@@ -48,7 +48,7 @@ toList (Source pullX)
 
 
 -- | Drain the given number of elements into a list.
-takeList :: Int -> Source a -> IO [a]
+takeList :: Int -> Source IO a -> IO [a]
 takeList n (Source pullX)
  = do   
         ref     <- newIORef []

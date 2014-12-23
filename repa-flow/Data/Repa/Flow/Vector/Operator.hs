@@ -1,9 +1,7 @@
 
-module Data.Repa.Flow.Gang.Operator
-        ( maps_i
-        , distributes_o
+module Data.Repa.Flow.
+        ( distributes_o
         , ddistributes_o
-        , discards_o)
 where
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.Gang.Base
@@ -11,25 +9,6 @@ import Data.Repa.Array
 import Prelude hiding (length)
 import qualified Data.Vector.Fusion.Stream.Monadic as V
 
-
--------------------------------------------------------------------------------
--- | Apply a function to every element pulled from some sources, 
---   producing some new sources.
-maps_i :: (a -> b) -> Sources a -> IO (Sources b)
-maps_i f (Sources n pullsA)
- = return $ Sources n pullsB_map
- where  
-        pullsB_map eat eject
-         = pullsA eat_a eject_a
-         where  
-                eat_a i v = eat i (f v)
-                {-# INLINE eat_a #-}
-
-                eject_a i = eject i
-                {-# INLINE eject_a #-}
-
-        {-# INLINE [1] pullsB_map #-}
-{-# INLINE [2] maps_i #-}
 
 
 -------------------------------------------------------------------------------
@@ -41,10 +20,10 @@ maps_i f (Sources n pullsA)
 --
 distributes_o 
         :: Bulk r DIM1 a 
-        => Sinks a              -- ^ Sinks to push elements into.
+        => Sinks IO a           -- ^ Sinks to push elements into.
         -> ((Int, a) -> IO ())  -- ^ Spill action, given the spilled element
                                 --   along with its index in the array.
-        -> IO (Sink (Vector r a))
+        -> IO (Sink IO (Vector r a))
 
 distributes_o (Sinks mnSinks push eject) spill
  = do   
@@ -91,21 +70,10 @@ distributes_o (Sinks mnSinks push eject) spill
 -- | Like `distributes_o` but drop spilled elements on the floor.
 ddistributes_o
         :: Bulk r DIM1 a
-        => Sinks a
-        -> IO (Sink (Vector r a))
+        => Sinks IO a
+        -> IO (Sink IO (Vector r a))
 
 ddistributes_o sinks 
         = distributes_o sinks (\_ -> return ())
 {-# INLINE [2] ddistributes_o #-}
-
-
--- Discard --------------------------------------------------------------------
--- | A wide sink that drops all data on the floor.
-discards_o :: IO (Sinks a)
-discards_o
- = do   let push_discards !_ !_ = return ()
-        let eject_discards _    = return ()
-        return $ Sinks Nothing push_discards eject_discards
-{-# INLINE [2] discards_o #-}
-
 
