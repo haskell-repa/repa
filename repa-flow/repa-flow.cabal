@@ -23,6 +23,7 @@ Library
   exposed-modules:
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Simple
+        Data.Repa.Flow.States
 
   other-modules:
         Data.Repa.Flow.Generic.Base
@@ -48,4 +49,8 @@ Library
         TypeFamilies
         MultiParamTypeClasses
         FlexibleInstances
+        ScopedTypeVariables
+        FunctionalDependencies
+
+        
 

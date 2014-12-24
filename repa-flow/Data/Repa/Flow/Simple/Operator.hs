@@ -1,12 +1,12 @@
 
 module Data.Repa.Flow.Simple.Operator
         ( repeat_i
-        , replicate_i)
-
-{-
+        , replicate_i
         , map_i,        map_o
         , dup_oo,       dup_io,         dup_oi
-        , connect_i
+        , connect_i)
+
+{-
         , head_i
         , peek_i
         , pre_i
@@ -22,8 +22,8 @@ module Data.Repa.Flow.Simple.Operator
 where
 import Data.Repa.Flow.Simple.Base
 import Control.Monad
-import Data.Repa.Flow.Generic                           (States(..))
-import qualified Data.Repa.Flow.Generic.Operator        as G
+import Data.Repa.Flow.Generic                   (States(..))
+import qualified Data.Repa.Flow.Generic         as G
 
 {-
 import Data.Repa.Flow.Simple.List
@@ -34,53 +34,47 @@ import GHC.Exts         hiding (toList)
 import qualified Prelude        as P
 -}
 
--- Repeat ---------------------------------------------------------------------
+-- Constructors ---------------------------------------------------------------
 -- | Produce an flow that always produces the same value.
 repeat_i :: Monad m => a -> m (Source m a)
 repeat_i x
-        = liftM convert (G.repeat_i () (const x))
+        = liftM wrap $ G.repeat_i () (const x)
 {-# INLINE [2] repeat_i #-}
 
 
--- Replicate ------------------------------------------------------------------
 -- | Produce a flow of the given length that always produces the same value.
 replicate_i 
         :: States () m Int
         => Int -> a -> m (Source m a)
 replicate_i n x 
-        = liftM convert (G.replicate_i () n (const x))
+        = liftM wrap $ G.replicate_i () n (const x)
 {-# INLINE [2] replicate_i #-}
 
 
+-- Mapping --------------------------------------------------------------------
+map_i     :: Monad m => (a -> b) -> Source m a -> m (Source m b)
+map_i f s = liftM wrap $ G.map_i (\() x -> f x) $ unwrap s
+
+map_o     :: Monad m => (a -> b) -> Sink   m b -> m (Sink   m a)
+map_o f s = liftM wrap $ G.map_o (\() x -> f x) $ unwrap s
+
+
+-- Connecting -----------------------------------------------------------------
+dup_oo    :: Monad m => Sink m a   -> Sink m a -> m (Sink m a)
+dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
+
+dup_io    :: Monad m => Source m a -> Sink m a -> m (Source m a)
+dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
+
+dup_oi    :: Monad m => Sink m a   -> Source m a -> m (Source m a)
+dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
+
+connect_i :: States  () m (Maybe a)
+          => Source m a -> m (Source m a, Source m a)
+connect_i i1 = liftM wrap2 $ G.connect_i (unwrap i1)
+
+
 {-
-
--- Head -----------------------------------------------------------------------
--- | Split the given number of elements from the head of a source 
---   returning those elements in a list, and producing a new source 
---   for the rest.
-head_i :: Int -> Source IO a -> IO ([a], Source IO a)
-head_i n s0
- = do   
-        (s1, s2) <- connect_i s0
-        xs       <- takeList n s1
-        return   (xs, s2)
-
-{-# INLINE [2] head_i #-}
-
-
--- Peek -----------------------------------------------------------------------
--- | Peek at the given number of elements in the stream, 
---   returning a result stream that still produces them all.
-peek_i :: Int -> Source IO a -> IO ([a], Source IO a)
-peek_i n s0
- = do
-        (s1, s2) <- connect_i s0
-        xs       <- takeList n s1
-        s3       <- pre_i xs s2
-        return   (xs, s3)
-{-# NOINLINE peek_i #-}
-
-
 
 -- Prepend ----------------------------------------------------------------------
 -- | Prepent some more elements into the front of an argument source,

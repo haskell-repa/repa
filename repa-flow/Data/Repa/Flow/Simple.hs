@@ -5,7 +5,10 @@ module Data.Repa.Flow.Simple
 
         -- *
         , repeat_i
-        , replicate_i)
+        , replicate_i
+        , map_i,        map_o
+        , dup_oo,       dup_io,         dup_oi
+        , connect_i)
 
 {-
         -- * Evaluation
@@ -16,8 +19,6 @@ module Data.Repa.Flow.Simple
         , toList
         , takeList
 
-        , map_i,        map_o
-        , dup_oo,       dup_io,         dup_oi
         , connect_i
         , pre_i        
         , head_i
