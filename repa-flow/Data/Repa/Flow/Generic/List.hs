@@ -7,17 +7,17 @@ import Data.Repa.Flow.Generic.Base
 
 -- | Given an arity and a list of elements, yield sources that each produce
 --   all the elements.
-fromList :: (States i m [a], Monad m) 
+fromList :: (States i m (Box [a]), Monad m) 
          => i -> [a] -> m (Sources i m a)
 fromList n xx0
  = do
-        refs    <- newRefs n xx0
+        refs    <- newRefs n (Box xx0)
 
         let pull_fromList i eat eject
-             = do xx      <- readRefs refs i
+             = do Box xx  <- readRefs refs i
                   case xx of
                    []     -> eject
-                   x : xs -> do writeRefs refs i xs
+                   x : xs -> do writeRefs refs i (Box xs)
                                 eat x
             {-# INLINE pull_fromList #-}
 
@@ -26,11 +26,11 @@ fromList n xx0
 
 
 -- | Drain a single source into a list.
-toList1  :: (States i m [a], Monad m) 
+toList1  :: (States i m (Box [a]), Monad m) 
          => Sources i m a -> Ix i -> m [a]
 toList1 (Sources n pullX) i
  = do   
-        refs    <- newRefs n []
+        refs    <- newRefs n (Box [])
 
         let loop_toList !acc
              = pullX i eat_toList eject_toList
@@ -39,10 +39,11 @@ toList1 (Sources n pullX) i
                      = loop_toList (x : acc)
 
                    eject_toList 
-                     = writeRefs refs i (reverse acc)
+                     = writeRefs refs i (Box $ reverse acc)
 
         loop_toList []
-        readRefs refs i
+        Box xx  <- readRefs refs i
+        return xx
 {-# INLINE [2] toList1 #-}
 
 {-

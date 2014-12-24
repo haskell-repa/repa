@@ -175,7 +175,7 @@ connect_i (Sources n pullX)
         return ( Sources n pull_splitAt
                , Sources n pull_splitAt )
 
-{-# INILNE [2] connect_i #-}
+{-# INLINE [2] connect_i #-}
 
 
 -- Head -----------------------------------------------------------------------
