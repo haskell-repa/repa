@@ -27,7 +27,7 @@ module Data.Repa.Flow.Simple.Operator
 where
 import Data.Repa.Flow.Simple.Base
 import Control.Monad
-import Data.Repa.Flow.Generic                   (States(..))
+import Data.Repa.Flow.States                    (States (..))
 import qualified Data.Repa.Flow.Generic         as G
 
 {-
@@ -41,7 +41,8 @@ import qualified Prelude        as P
 
 -- Constructors ---------------------------------------------------------------
 -- | Yield a source that always produces the same value.
-repeat_i :: Monad m => a -> m (Source m a)
+repeat_i :: States () m
+         => a -> m (Source m a)
 repeat_i x
         = liftM wrap $ G.repeat_i () (const x)
 {-# INLINE [2] repeat_i #-}
@@ -49,7 +50,7 @@ repeat_i x
 
 -- | Yield a source of the given length that always produces the same value.
 replicate_i 
-        :: States () m Int
+        :: States () m
         => Int -> a -> m (Source m a)
 replicate_i n x 
         = liftM wrap $ G.replicate_i () n (const x)
@@ -59,13 +60,13 @@ replicate_i n x
 -- Mapping --------------------------------------------------------------------
 -- | Apply a function to every element pulled from some source, 
 --   producing a new source.
-map_i     :: Monad m => (a -> b) -> Source m a -> m (Source m b)
+map_i     :: States () m => (a -> b) -> Source m a -> m (Source m b)
 map_i f s = liftM wrap $ G.map_i (\G.UIx x -> f x) $ unwrap s
 
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
-map_o     :: Monad m => (a -> b) -> Sink   m b -> m (Sink   m a)
+map_o     :: States () m => (a -> b) -> Sink   m b -> m (Sink   m a)
 map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
 
 
@@ -75,7 +76,7 @@ map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
 --   Given two argument sinks, yield a result sink.
 --   Pushing to the result sink causes the same element to be pushed to both
 --   argument sinks. 
-dup_oo    :: Monad m => Sink m a   -> Sink m a -> m (Sink m a)
+dup_oo    :: States () m => Sink m a   -> Sink m a -> m (Sink m a)
 dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
 
 
@@ -85,7 +86,7 @@ dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
 --   Pulling an element from the result source pulls from the argument source,
 --   and pushes that element to the sink, as well as returning it via the
 --   result source.
-dup_io    :: Monad m => Source m a -> Sink m a -> m (Source m a)
+dup_io    :: States () m => Source m a -> Sink m a -> m (Source m a)
 dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
 
 
@@ -93,7 +94,7 @@ dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
 --
 --   Like `dup_io` but with the arguments flipped.
 --
-dup_oi    :: Monad m => Sink m a   -> Source m a -> m (Source m a)
+dup_oi    :: States () m => Sink m a   -> Source m a -> m (Source m a)
 dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
 
 
@@ -102,38 +103,13 @@ dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
 --   Pulling from either result source pulls from the argument source.
 --   Each result source only gets the elements pulled at the time, 
 --   so if one side pulls all the elements the other side won't get any.
-connect_i :: States  () m (Maybe a)
+connect_i :: States () m
           => Source m a -> m (Source m a, Source m a)
 connect_i i1 = liftM wrap2 $ G.connect_i (unwrap i1)
 
 
 {-
 
--- Prepend ----------------------------------------------------------------------
--- | Prepent some more elements into the front of an argument source,
---   producing a result source.
---
---   The results source returns the new elements, then the ones from
---   the argument source.
-pre_i :: [a] -> Source IO a -> IO (Source IO a)
-pre_i xs (Source pullX)
- = do   
-        let !len  = P.length xs
-        ref       <- newIORef 0
-
-        let pull_stuff eat eject
-             = do ix <- readIORef ref
-                  if ix < len
-
-                   then do writeIORef ref (ix + 1)
-                           eat (xs !! ix)
-
-                   else do writeIORef ref (ix + 1)
-                           pullX eat eject
-
-        return (Source pull_stuff)
-
-{-# INLINE [2] pre_i #-}
 
 
 

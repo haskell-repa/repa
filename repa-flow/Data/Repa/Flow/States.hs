@@ -1,13 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Flow.States
-        ( Index  (..), Ix   (..)
-        , States (..), Refs (..)
-        , Box    (..))
+        ( Index   (..), Ix   (..)
+        , States  (..), Refs (..))
 where
 import Control.Monad
-import Data.Vector.Unboxed                      (Unbox)
 import qualified Data.Vector.Mutable            as VM
-import qualified Data.Vector.Unboxed.Mutable    as UM
 
 
 -------------------------------------------------------------------------------
@@ -78,13 +75,10 @@ instance Index Int where
 
 
 -------------------------------------------------------------------------------
--- | An collection of state values, indexed by a value of type @i@.
-class (Index i, Monad m) => States i m a where
-
+class (Index i, Monad m) => States i m where
 
  -- | A collection of mutable references.
  data Refs i m a
-
 
  -- | Allocate a new state of the given arity, also returning an index to the
  --   first element of the collection.
@@ -97,70 +91,29 @@ class (Index i, Monad m) => States i m a where
  writeRefs :: Refs i m a -> Ix i -> a -> m ()
 
 
--------------------------------------------------------------------------------
-instance States Int m a 
-      => States ()  m a where
- data Refs () m a           = URefs !(Refs Int m a)
+instance States Int IO where
+ data Refs Int IO a                     = Refs !(VM.IOVector a)
+ newRefs   !n !x                        = liftM Refs $ unsafeNewWithVM n x
+ readRefs  (Refs !refs) (IIx !i _)      = VM.unsafeRead  refs i
+ writeRefs (Refs !refs) (IIx !i _) !x   = VM.unsafeWrite refs i x
+ {-# INLINE newRefs #-}
+ {-# INLINE readRefs #-}
+ {-# INLINE writeRefs #-}
 
- newRefs _ x                
+
+instance States Int m => States () m  where
+
+ data Refs () m a                       = URefs !(Refs Int m a)
+
+ newRefs _ !x                
   = do  refs    <- newRefs  (1 :: Int) x
         return  $ URefs refs
  {-# INLINE newRefs #-}
 
- readRefs  (URefs refs) _   = readRefs  refs (zero 1)
- writeRefs (URefs refs) _ x = writeRefs refs (zero 1) x
+ readRefs  (URefs !refs) _              = readRefs  refs (zero 1)
+ writeRefs (URefs !refs) _ !x           = writeRefs refs (zero 1) x
  {-# INLINE readRefs #-}
  {-# INLINE writeRefs #-}
-
--------------------------------------------------------------------------------
--- | Data type to indicate that a state value is explicitly boxed.
-data Box a = Box !a
-
-instance States Int IO (Box a) where
- data Refs Int IO (Box a)              = BRefs !(VM.IOVector a)
- newRefs n (Box x)                     = liftM BRefs $ unsafeNewWithVM n x
- readRefs  (BRefs v) (IIx i _)         = liftM Box   $ VM.unsafeRead v i
- writeRefs (BRefs v) (IIx i _) (Box x) = VM.unsafeWrite v i x
- {-# INLINE newRefs #-}
- {-# INLINE readRefs #-}
- {-# INLINE writeRefs #-}
-
-
--------------------------------------------------------------------------------
-instance States Int IO Int where
- data Refs Int IO Int                  = IRefs !(UM.IOVector Int) 
- newRefs n x                           = liftM IRefs $ unsafeNewWithUM n x
- readRefs  (IRefs v) (IIx i _)         = UM.unsafeRead v i
- writeRefs (IRefs v) (IIx i _) x       = UM.unsafeWrite v i x
- {-# INLINE newRefs #-}
- {-# INLINE readRefs #-}
- {-# INLINE writeRefs #-}
-
-
--------------------------------------------------------------------------------
-instance (States i m a, States i m b)
-      =>  States i m (a, b) where
- data Refs i m (a, b)            
-  = RefsT2 !(Refs i m a) !(Refs i m b)
-
- newRefs n (x1, x2)   
-  = do  refs1   <- newRefs n x1
-        refs2   <- newRefs n x2
-        return  $ RefsT2 refs1 refs2
- {-# INLINE newRefs #-}
-
- readRefs  (RefsT2 r1 r2) ix
-  = do  x1      <- readRefs r1 ix
-        x2      <- readRefs r2 ix
-        return  (x1, x2)
- {-# INLINE readRefs #-}
-
- writeRefs (RefsT2 ra rb) ix (x1, x2) 
-  = do  writeRefs ra ix x1
-        writeRefs rb ix x2
- {-# INLINE writeRefs #-}
-
-
 
 
 -------------------------------------------------------------------------------
@@ -178,21 +131,4 @@ unsafeNewWithVM n x
         loop_newRefs 0
         return vec
 {-# INLINE unsafeNewWithVM #-}
-
-
-unsafeNewWithUM :: Unbox a => Int -> a -> IO (UM.IOVector a)
-unsafeNewWithUM n x
- = do   vec     <- UM.unsafeNew n
-
-        let loop_newRefs !i
-             | i >= n    = return ()
-             | otherwise 
-             = do UM.unsafeWrite vec i x
-                  loop_newRefs (i + 1)
-            {-# INLINE loop_newRefs #-}
-
-        loop_newRefs 0
-        return vec
-{-# INLINE unsafeNewWithUM #-}
-
 

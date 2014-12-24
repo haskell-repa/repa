@@ -31,6 +31,7 @@ Library
         Data.Repa.Flow.Generic.Operator
 
         Data.Repa.Flow.Simple.Base
+        Data.Repa.Flow.Simple.List
         Data.Repa.Flow.Simple.Operator
 
 

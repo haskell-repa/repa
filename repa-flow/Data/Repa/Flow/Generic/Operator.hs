@@ -1,17 +1,28 @@
 
 module Data.Repa.Flow.Generic.Operator
-        ( repeat_i
+        ( -- * Constructors
+          repeat_i
         , replicate_i
+        , prepend_i
+
+          -- * Mapping
         , map_i,        map_o
+
+          -- * Connecting
         , dup_oo,       dup_io,         dup_oi
-        , connect_i)
+        , connect_i
+
+          -- * Splitting
+        , head_i)
 where
+import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Flow.States
 
 
--- Repeat ---------------------------------------------------------------------
+-- Constructors ---------------------------------------------------------------
 -- | Yield sources that always produce the same value.
-repeat_i :: Monad m 
+repeat_i :: States i m
          => i -> (Ix i -> a) 
          -> m (Sources i m a)
 repeat_i n f
@@ -22,10 +33,9 @@ repeat_i n f
 {-# INLINE [2] repeat_i #-}
 
 
--- Replicate ------------------------------------------------------------------
 -- | Yield sources of the given length that always produce the same value.
 replicate_i 
-        :: States i m Int
+        :: States i m
         => i -> Int -> (Ix i -> a) 
         -> m (Sources i m a)
 
@@ -43,10 +53,31 @@ replicate_i n len f
 {-# INLINE [2] replicate_i #-}
 
 
+-- | Prepend some more elements into the front of the sources.
+prepend_i :: States i m
+          => [a] -> Sources i m a -> m (Sources i m a)
+prepend_i xs (Sources n pullX)
+ = do   
+        refs    <- newRefs n xs
+
+        let pull_prepend i eat eject
+             = do xs'   <- readRefs refs i
+                  case xs' of
+                   x : xs'' -> do 
+                         writeRefs refs i xs''
+                         eat x
+
+                   [] -> pullX i eat eject
+            {-# INLINE pull_prepend #-}
+
+        return (Sources n pull_prepend)
+{-# INLINE [2] prepend_i #-}
+
+
 -- Mapping --------------------------------------------------------------------
 -- | Apply a function to every element pulled from some sources, 
 --   producing some new sources.
-map_i   :: Monad m 
+map_i   :: States i m 
         => (Ix i -> a -> b) -> Sources i m a -> m (Sources i m b)
 map_i f (Sources n pullsA)
  = return $ Sources n pullsB_map
@@ -66,7 +97,7 @@ map_i f (Sources n pullsA)
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
-map_o   :: Monad m 
+map_o   :: States i m
         => (Ix i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
 map_o f (Sinks n pushB ejectB)
  = return $ Sinks n pushA_map ejectA_map
@@ -79,13 +110,13 @@ map_o f (Sinks n pushB ejectB)
 {-# INLINE [2] map_o #-}
 
 
--- Dup ------------------------------------------------------------------------
+-- Connect --------------------------------------------------------------------
 -- | Send the same data to two consumers.
 --
 --   Given two argument sinks, yield a result sink.
 --   Pushing to the result sink causes the same element to be pushed to both
 --   argument sinks. 
-dup_oo  :: (Ord i, Monad m) 
+dup_oo  :: States i m
         => Sinks i m a -> Sinks i m a -> m (Sinks i m a)
 dup_oo (Sinks n1 push1 eject1) (Sinks n2 push2 eject2)
  = return $ Sinks (min n1 n2) push_dup eject_dup
@@ -105,7 +136,7 @@ dup_oo (Sinks n1 push1 eject1) (Sinks n2 push2 eject2)
 --   and pushes that element to the sink, as well as returning it via the
 --   result source.
 --   
-dup_io  :: (Ord i, Monad m)
+dup_io  :: States i m
         => Sources i m a -> Sinks i m a -> m (Sources i m a)
 dup_io (Sources n1 pull1) (Sinks n2 push2 eject2)
  = return $ Sources (min n1 n2) pull_dup
@@ -127,13 +158,12 @@ dup_io (Sources n1 pull1) (Sinks n2 push2 eject2)
 --
 --   Like `dup_io` but with the arguments flipped.
 --
-dup_oi  :: (Ord i, Monad m)
+dup_oi  :: States i m
         => Sinks i m a -> Sources i m a -> m (Sources i m a)
 dup_oi sink1 source2 = dup_io source2 sink1
 {-# INLINE [2] dup_oi #-}
 
 
--------------------------------------------------------------------------------
 -- | Connect an argument source to two result sources.
 --
 --   Pulling from either result source pulls from the argument source.
@@ -141,7 +171,7 @@ dup_oi sink1 source2 = dup_io source2 sink1
 --   so if one side pulls all the elements the other side won't get any.
 --
 connect_i 
-        :: States  i m (Maybe a)
+        :: States  i m
         => Sources i m a -> m (Sources i m a, Sources i m a)
 
 connect_i (Sources n pullX)
@@ -178,23 +208,23 @@ connect_i (Sources n pullX)
 {-# INLINE [2] connect_i #-}
 
 
--- Head -----------------------------------------------------------------------
-{-
+-- Splitting ------------------------------------------------------------------
 -- | Split the given number of elements from the head of a source 
 --   returning those elements in a list, and producing a new source 
 --   for the rest.
-head_i :: i -> Int -> Sources i m a -> m ([a], Sources i m a)
-head_i i n s0
+head_i  :: States i m
+        => Int -> Sources i m a -> Ix i -> m ([a], Sources i m a)
+head_i len s0 i
  = do   
         (s1, s2) <- connect_i s0
-        xs       <- takeList n s1
+        xs       <- takeList1 len s1 i
         return   (xs, s2)
-
 {-# INLINE [2] head_i #-}
--}
+
+
+
 
 {-
--- Peek -----------------------------------------------------------------------
 -- | Peek at the given number of elements in the stream, 
 --   returning a result stream that still produces them all.
 peek_i :: Int -> Source IO a -> IO ([a], Source IO a)
@@ -206,5 +236,4 @@ peek_i n s0
         return   (xs, s3)
 {-# NOINLINE peek_i #-}
 -}
-
 

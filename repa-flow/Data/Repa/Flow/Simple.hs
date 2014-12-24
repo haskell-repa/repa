@@ -4,6 +4,11 @@ module Data.Repa.Flow.Simple
         , Source (..)
         , Sink   (..)
 
+        -- * Conversions
+        , fromList
+        , toList
+        , takeList
+
         -- * Flow Operators
         -- ** Constructors
         , repeat_i
@@ -20,12 +25,6 @@ module Data.Repa.Flow.Simple
         -- * Evaluation
         , drain
 
-        -- * Conversions
-        , fromList
-        , toList
-        , takeList
-
-        , connect_i
         , pre_i        
         , head_i
         , peek_i
@@ -54,12 +53,11 @@ module Data.Repa.Flow.Simple
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base
+import Data.Repa.Flow.Simple.List
 import Data.Repa.Flow.Simple.Operator
 
 {-
 import Data.Repa.Flow.Simple.Eval
-import Data.Repa.Flow.Simple.List
-import Data.Repa.Flow.Simple.Operator
 import Data.Repa.Flow.Simple.Chunk
 import Data.Repa.Flow.Simple.IO
 -}
