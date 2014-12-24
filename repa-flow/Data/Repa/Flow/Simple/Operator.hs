@@ -1,8 +1,13 @@
 
 module Data.Repa.Flow.Simple.Operator
-        ( repeat_i
+        ( -- * Constructors
+          repeat_i
         , replicate_i
+
+          -- * Mapping
         , map_i,        map_o
+
+          -- * Connecting
         , dup_oo,       dup_io,         dup_oi
         , connect_i)
 
@@ -35,14 +40,14 @@ import qualified Prelude        as P
 -}
 
 -- Constructors ---------------------------------------------------------------
--- | Produce an flow that always produces the same value.
+-- | Yield a source that always produces the same value.
 repeat_i :: Monad m => a -> m (Source m a)
 repeat_i x
         = liftM wrap $ G.repeat_i () (const x)
 {-# INLINE [2] repeat_i #-}
 
 
--- | Produce a flow of the given length that always produces the same value.
+-- | Yield a source of the given length that always produces the same value.
 replicate_i 
         :: States () m Int
         => Int -> a -> m (Source m a)
@@ -52,23 +57,51 @@ replicate_i n x
 
 
 -- Mapping --------------------------------------------------------------------
+-- | Apply a function to every element pulled from some source, 
+--   producing a new source.
 map_i     :: Monad m => (a -> b) -> Source m a -> m (Source m b)
-map_i f s = liftM wrap $ G.map_i (\() x -> f x) $ unwrap s
+map_i f s = liftM wrap $ G.map_i (\G.UIx x -> f x) $ unwrap s
 
+
+-- | Apply a function to every element pushed to some sink,
+--   producing a new sink.
 map_o     :: Monad m => (a -> b) -> Sink   m b -> m (Sink   m a)
-map_o f s = liftM wrap $ G.map_o (\() x -> f x) $ unwrap s
+map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
 
 
 -- Connecting -----------------------------------------------------------------
+-- | Send the same data to two consumers.
+--
+--   Given two argument sinks, yield a result sink.
+--   Pushing to the result sink causes the same element to be pushed to both
+--   argument sinks. 
 dup_oo    :: Monad m => Sink m a   -> Sink m a -> m (Sink m a)
 dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
 
+
+-- | Send the same data to two consumers.
+--  
+--   Given an argument source and argument sink, yield a result source.
+--   Pulling an element from the result source pulls from the argument source,
+--   and pushes that element to the sink, as well as returning it via the
+--   result source.
 dup_io    :: Monad m => Source m a -> Sink m a -> m (Source m a)
 dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
 
+
+-- | Send the same data to two consumers.
+--
+--   Like `dup_io` but with the arguments flipped.
+--
 dup_oi    :: Monad m => Sink m a   -> Source m a -> m (Source m a)
 dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
 
+
+-- | Connect an argument source to two result sources.
+--
+--   Pulling from either result source pulls from the argument source.
+--   Each result source only gets the elements pulled at the time, 
+--   so if one side pulls all the elements the other side won't get any.
 connect_i :: States  () m (Maybe a)
           => Source m a -> m (Source m a, Source m a)
 connect_i i1 = liftM wrap2 $ G.connect_i (unwrap i1)

@@ -1,12 +1,18 @@
 
 module Data.Repa.Flow.Simple
-        ( Source (..)
+        ( module Data.Repa.Flow.States
+        , Source (..)
         , Sink   (..)
 
-        -- *
+        -- * Flow Operators
+        -- ** Constructors
         , repeat_i
         , replicate_i
+
+        -- ** Mapping
         , map_i,        map_o
+
+        -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
         , connect_i)
 
@@ -46,6 +52,7 @@ module Data.Repa.Flow.Simple
         , fileSinkBytes,     hSinkBytes
         , fileSourceRecords, hSourceRecords -}
 where
+import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.Simple.Operator
 

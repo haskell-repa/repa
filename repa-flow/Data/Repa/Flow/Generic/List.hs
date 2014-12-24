@@ -1,47 +1,51 @@
 
 module Data.Repa.Flow.Generic.List
-        (fromList, toList, takeList)
+        (fromList, toList1) -- , toList, takeList)
+where
+import Data.Repa.Flow.Generic.Base
 
 
--- | Produce a flow from a list.
-fromList :: [a] -> IO (Source IO a)
-fromList xx0
+-- | Given an arity and a list of elements, yield sources that each produce
+--   all the elements.
+fromList :: (States i m [a], Monad m) 
+         => i -> [a] -> m (Sources i m a)
+fromList n xx0
  = do
-        ref     <- newIORef xx0
+        refs    <- newRefs n xx0
 
-        let pullX eat eject
-             = do xx      <- readIORef ref
+        let pull_fromList i eat eject
+             = do xx      <- readRefs refs i
                   case xx of
                    []     -> eject
-                   x : xs -> do writeIORef ref xs
+                   x : xs -> do writeRefs refs i xs
                                 eat x
-            {-# INLINE pullX #-}
+            {-# INLINE pull_fromList #-}
 
-        return $ Source pullX
+        return  $ Sources n pull_fromList
 {-# INLINE [2] fromList #-}
 
 
--- | Drain a flow into a list.
-toList  :: Source IO a -> IO [a]
-toList (Source pullX)
+-- | Drain a single source into a list.
+toList1  :: (States i m [a], Monad m) 
+         => Sources i m a -> Ix i -> m [a]
+toList1 (Sources n pullX) i
  = do   
-        ref     <- newIORef []
+        refs    <- newRefs n []
 
-        let loop_toList acc
-             =  pullX eat_toList eject_toList
+        let loop_toList !acc
+             = pullX i eat_toList eject_toList
 
              where eat_toList x
                      = loop_toList (x : acc)
 
                    eject_toList 
-                     = writeIORef ref (reverse acc)
+                     = writeRefs refs i (reverse acc)
 
         loop_toList []
-        readIORef ref
+        readRefs refs i
+{-# INLINE [2] toList1 #-}
 
-{-# INLINE [2] toList #-}
-
-
+{-
 -- | Drain the given number of elements into a list.
 takeList :: Int -> Source IO a -> IO [a]
 takeList n (Source pullX)
@@ -64,3 +68,4 @@ takeList n (Source pullX)
         return  $ reverse list
 
 
+-}

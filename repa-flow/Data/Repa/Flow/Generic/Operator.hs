@@ -12,7 +12,7 @@ import Data.Repa.Flow.Generic.Base
 -- Repeat ---------------------------------------------------------------------
 -- | Yield sources that always produce the same value.
 repeat_i :: Monad m 
-         => i -> (i -> a) 
+         => i -> (Ix i -> a) 
          -> m (Sources i m a)
 repeat_i n f
  = return $ Sources n pull_repeat
@@ -26,14 +26,14 @@ repeat_i n f
 -- | Yield sources of the given length that always produce the same value.
 replicate_i 
         :: States i m Int
-        => i -> Int -> (i -> a) 
+        => i -> Int -> (Ix i -> a) 
         -> m (Sources i m a)
 
 replicate_i n len f
  = do   
-        grid    <- newRefs n 0
+        refs   <- newRefs n 0
         let pull_replicate i eat eject
-             = do !n' <- readRefs grid i
+             = do !n' <- readRefs refs i
                   if n' >= len
                    then eject
                    else eat (f i)
@@ -47,7 +47,7 @@ replicate_i n len f
 -- | Apply a function to every element pulled from some sources, 
 --   producing some new sources.
 map_i   :: Monad m 
-        => (i -> a -> b) -> Sources i m a -> m (Sources i m b)
+        => (Ix i -> a -> b) -> Sources i m a -> m (Sources i m b)
 map_i f (Sources n pullsA)
  = return $ Sources n pullsB_map
  where  
@@ -64,10 +64,10 @@ map_i f (Sources n pullsA)
 {-# INLINE [2] map_i #-}
 
 
--- | Apply a function to every element pushed to some stream sink,
---   producing a new stream sink.
+-- | Apply a function to every element pushed to some sink,
+--   producing a new sink.
 map_o   :: Monad m 
-        => (i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
+        => (Ix i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
 map_o f (Sinks n pushB ejectB)
  = return $ Sinks n pushA_map ejectA_map
  where  
@@ -146,7 +146,7 @@ connect_i
 
 connect_i (Sources n pullX)
  = do   
-        grid    <- newRefs n Nothing
+        refs    <- newRefs n Nothing
 
         -- IMPORTANT: the pump function is set to NOINLINE so that pullX 
         -- will not be inlined into both consumers. We do not want to 
@@ -156,17 +156,17 @@ connect_i (Sources n pullX)
         let pump_connect i
              = pullX i pump_eat pump_eject
              where
-                pump_eat !x = writeRefs grid i (Just x)
+                pump_eat !x = writeRefs refs i (Just x)
                 {-# INLINE pump_eat #-}
 
                 pump_eject
-                 = writeRefs grid i Nothing
+                 = writeRefs refs i Nothing
                 {-# INLINE pump_eject #-}
             {-# NOINLINE pump_connect #-}
 
         let pull_splitAt i eat eject
              = do pump_connect i
-                  mx <- readRefs grid i
+                  mx <- readRefs refs i
                   case mx of
                    Just x    -> eat x
                    Nothing   -> eject

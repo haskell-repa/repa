@@ -5,14 +5,24 @@ module Data.Repa.Flow.Generic
         , Sources       (..)
         , Sinks         (..)
 
-        -- * Operators
+        -- * Conversion
+        , fromList
+        , toList1
+
+        -- * Flow Operators
+        -- ** Constructors
         , repeat_i
         , replicate_i
+
+        -- ** Mapping
         , map_i,        map_o
+
+        -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
         , connect_i)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Operator
 
