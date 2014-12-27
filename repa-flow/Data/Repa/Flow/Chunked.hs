@@ -36,8 +36,8 @@ map_i f s0 = G.map_i (\_ c -> A.computeS $ A.map f c) s0
 
 
 -- | Map a function over elements pushed into a sink.
-map_o   :: (Flow i m r2 a, A.Target r1 b)
-        => (a -> b) -> Sinks i m r1 b -> m (Sinks i m r2 a)
+map_o   :: (Flow i m r1 a, A.Target r2 b)
+        => (a -> b) -> Sinks i m r2 b -> m (Sinks i m r1 a)
 map_o f s0 = G.map_o (\_ c -> A.computeS $ A.map f c) s0
 {-# INLINE [2] map_o #-}
 
@@ -51,7 +51,7 @@ mapc_i = G.map_i
 
 
 -- | Map a function over elements pushed to a sink, a chunk at a time.
-mapc_o  :: (Flow i m r1 b, A.Target r2 b)
+mapc_o  :: (Flow i m r1 a, A.Target r2 b)
         => (G.Ix i -> Vector r1 a -> Vector r2 b)
         -> Sinks i m r2 b -> m (Sinks i m r1 a)
 mapc_o = G.map_o
