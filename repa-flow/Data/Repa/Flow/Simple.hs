@@ -44,27 +44,9 @@ module Data.Repa.Flow.Simple
         , ignore_o
         , discard_o)
 
-{-
-        -- * Evaluation
-        , drain
-
-        -- * Chunking
-        , chunk_i
-        , unchunk_i
-        , unchunk_o
-
-        -- * IO
-        , fileSourceBytes,   hSourceBytes
-        , fileSinkBytes,     hSinkBytes
-        , fileSourceRecords, hSourceRecords -}
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.Simple.List
 import Data.Repa.Flow.Simple.Operator
 
-{-
-import Data.Repa.Flow.Simple.Eval
-import Data.Repa.Flow.Simple.Chunk
-import Data.Repa.Flow.Simple.IO
--}

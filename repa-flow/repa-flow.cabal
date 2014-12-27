@@ -25,6 +25,7 @@ Library
         Data.Repa.Flow.Generic.IO
 
         Data.Repa.Flow.Simple
+        Data.Repa.Flow.Simple.IO
 
         Data.Repa.Flow.States
 
