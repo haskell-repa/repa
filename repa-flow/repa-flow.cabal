@@ -23,6 +23,7 @@ Library
   exposed-modules:
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.IO
+        Data.Repa.Flow.Generic.Vector
 
         Data.Repa.Flow.Simple
         Data.Repa.Flow.Simple.IO
