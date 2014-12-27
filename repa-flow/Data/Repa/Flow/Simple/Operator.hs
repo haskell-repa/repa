@@ -35,7 +35,6 @@ module Data.Repa.Flow.Simple.Operator
         , ignore_o)
 where
 import Data.Repa.Flow.Simple.Base
-import Control.Monad
 import Data.Repa.Flow.States                    (States (..))
 import qualified Data.Repa.Flow.Generic         as G
 
@@ -44,8 +43,8 @@ import qualified Data.Repa.Flow.Generic         as G
 -- | Yield a source that always produces the same value.
 repeat_i :: States () m
          => a -> m (Source m a)
-repeat_i x
-        = liftM wrap $ G.repeat_i () (const x)
+repeat_i x 
+        = G.repeat_i () (const x)
 {-# INLINE [2] repeat_i #-}
 
 
@@ -54,15 +53,14 @@ replicate_i
         :: States () m
         => Int -> a -> m (Source m a)
 replicate_i n x 
-        = liftM wrap $ G.replicate_i () n (const x)
+        = G.replicate_i () n (const x)
 {-# INLINE [2] replicate_i #-}
 
 
 -- | Prepend some more elements to the front of a source.
 prepend_i :: States () m
           => [a] -> Source m a -> m (Source m a)
-prepend_i xs s0
-        = liftM wrap $ G.prepend_i xs (unwrap s0)
+prepend_i = G.prepend_i
 {-# INLINE [2] prepend_i #-}
 
 
@@ -70,14 +68,14 @@ prepend_i xs s0
 -- | Apply a function to every element pulled from some source, 
 --   producing a new source.
 map_i     :: States () m => (a -> b) -> Source m a -> m (Source m b)
-map_i f s = liftM wrap $ G.map_i (\G.UIx x -> f x) $ unwrap s
+map_i f s =  G.map_i (\G.UIx x -> f x) s
 {-# INLINE [2] map_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
 map_o     :: States () m => (a -> b) -> Sink   m b -> m (Sink   m a)
-map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
+map_o f s = G.map_o (\G.UIx x -> f x) s
 {-# INLINE [2] map_o #-}
 
 
@@ -88,7 +86,7 @@ map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
 --   Pushing to the result sink causes the same element to be pushed to both
 --   argument sinks. 
 dup_oo    :: States () m => Sink m a   -> Sink m a -> m (Sink m a)
-dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
+dup_oo    =  G.dup_oo
 {-# INLINE [2] dup_oo #-}
 
 
@@ -99,7 +97,7 @@ dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
 --   and pushes that element to the sink, as well as returning it via the
 --   result source.
 dup_io    :: States () m => Source m a -> Sink m a -> m (Source m a)
-dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
+dup_io    =  G.dup_io
 {-# INLINE [2] dup_io #-}
 
 
@@ -108,7 +106,7 @@ dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
 --   Like `dup_io` but with the arguments flipped.
 --
 dup_oi    :: States () m => Sink m a   -> Source m a -> m (Source m a)
-dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
+dup_oi    =  G.dup_oi
 {-# INLINE [2] dup_oi #-}
 
 
@@ -119,7 +117,7 @@ dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
 --   so if one side pulls all the elements the other side won't get any.
 connect_i :: States () m
           => Source m a -> m (Source m a, Source m a)
-connect_i i1 = liftM wrap2 $ G.connect_i (unwrap i1)
+connect_i = G.connect_i
 {-# INLINE [2] connect_i #-}
 
 
@@ -131,8 +129,7 @@ head_i  :: States () m
         => Int -> Source m a -> m ([a], Source m a)
 
 head_i len s0 
- = do   (xs, s1)  <- G.head_i len (unwrap s0) G.UIx
-        return  (xs, wrap s1)
+        = G.head_i len s0 G.UIx
 {-# INLINE [2] head_i #-}
 
 
@@ -141,10 +138,10 @@ head_i len s0
 peek_i  :: States () m 
         => Int -> Source m a -> m ([a], Source m a)
 peek_i n s0
- = do   (s1, s2) <- G.connect_i (unwrap s0)
+ = do   (s1, s2) <- G.connect_i s0
         xs       <- G.takeList1 n s1 G.UIx
         s3       <- G.prepend_i xs s2
-        return   (xs, wrap s3)
+        return   (xs, s3)
 {-# INLINE [2] peek_i #-}
 
 
@@ -156,7 +153,7 @@ peek_i n s0
 --
 groups_i :: (Monad m, Eq a)
          => Source m a -> m (Source m Int)
-groups_i s0   = liftM wrap $ G.groups_i (unwrap s0)
+groups_i = G.groups_i 
 {-# INLINE [2] groups_i #-}
 
 
@@ -166,7 +163,7 @@ groups_i s0   = liftM wrap $ G.groups_i (unwrap s0)
 --   is the length of the shorter of the two inputs.
 pack_ii  :: Monad m
          => Source m Bool -> Source m a -> m (Source m a)
-pack_ii s0 s1 = liftM wrap $ G.pack_ii (unwrap s0) (unwrap s1)
+pack_ii s0 s1 = G.pack_ii s0 s1
 {-# INLINE [2] pack_ii #-}
 
 
@@ -176,8 +173,7 @@ folds_ii :: Monad m
          => (a -> a -> a)    -> a
          -> Source m Int  -> Source m a 
          -> m (Source m a)
-folds_ii f z s0 s1 
-        = liftM wrap $ G.folds_ii f z (unwrap s0) (unwrap s1)
+folds_ii f z s0 s1 = G.folds_ii f z s0 s1
 {-# INLINE [2] folds_ii #-}
 
 
@@ -187,8 +183,7 @@ folds_ii f z s0 s1
 watch_i :: Monad m 
         => (a -> m ()) 
         -> Source m a  -> m (Source m a)
-watch_i f s0
-        = liftM wrap $ G.watch_i (\_ x -> f x) (unwrap s0)
+watch_i f s0 = G.watch_i (\_ x -> f x) s0
 {-# INLINE [2] watch_i #-}
 
 
@@ -196,15 +191,14 @@ watch_i f s0
 watch_o :: Monad m 
         => (a -> m ())
         -> Sink m a -> m (Sink m a)
-watch_o f s0 
-        = liftM wrap $ G.watch_o (\_ x -> f x) (unwrap s0)
+watch_o f s0 = G.watch_o (\_ x -> f x) s0
 {-# INLINE [2] watch_o #-}
 
 
 -- | Like `watch` but doesn't pass elements to another sink.
 trigger_o :: Monad m 
           => (a -> m ()) -> m (Sink m a)
-trigger_o f = liftM wrap $ G.trigger_o () (\_ x -> f x)
+trigger_o f  = G.trigger_o () (\_ x -> f x)
 {-# INLINE [2] trigger_o #-}
 
 
@@ -215,7 +209,7 @@ trigger_o f = liftM wrap $ G.trigger_o () (\_ x -> f x)
 --   discarded. Haskell debugging thunks attached to the elements will be demanded.
 discard_o :: Monad m 
           => m (Sink m a)
-discard_o = liftM wrap $ G.discard_o ()
+discard_o = G.discard_o ()
 {-# INLINE [2] discard_o #-}
 
 
@@ -225,6 +219,6 @@ discard_o = liftM wrap $ G.discard_o ()
 --   Haskell tracing thinks attached to the elements will *not* be demanded.
 ignore_o  :: Monad m 
           => m (Sink m a)
-ignore_o = liftM wrap $ G.ignore_o ()
+ignore_o = G.ignore_o ()
 {-# INLINE [2] ignore_o #-}
 

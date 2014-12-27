@@ -1,8 +1,8 @@
 
 module Data.Repa.Flow.Simple
         ( module Data.Repa.Flow.States
-        , Source (..)
-        , Sink   (..)
+        , Source
+        , Sink
 
           -- * Conversions
         , fromList
