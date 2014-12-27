@@ -21,6 +21,8 @@ Library
         repa-array      == 4.0.0.0
 
   exposed-modules:
+        Data.Repa.Flow.Chunked
+
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.IO
         Data.Repa.Flow.Generic.Vector
