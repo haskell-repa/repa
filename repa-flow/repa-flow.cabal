@@ -22,10 +22,10 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Chunked
+        Data.Repa.Flow.Chunked.IO
 
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.IO
-        Data.Repa.Flow.Generic.Vector
 
         Data.Repa.Flow.Simple
         Data.Repa.Flow.Simple.IO
@@ -33,14 +33,18 @@ Library
         Data.Repa.Flow.States
 
   other-modules:
+        Data.Repa.Flow.Chunked.Base
+        Data.Repa.Flow.Chunked.Operator
+
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.List
         Data.Repa.Flow.Generic.Operator
+        Data.Repa.Flow.Generic.Vector
+        Data.Repa.Flow.Generic.Eval
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List
         Data.Repa.Flow.Simple.Operator
-
 
   ghc-options:
         -Wall 
@@ -60,6 +64,7 @@ Library
         FlexibleInstances
         ScopedTypeVariables
         FunctionalDependencies
+        ConstraintKinds
 
         
 

@@ -11,13 +11,17 @@ module Data.Repa.Flow.Generic
         , takeList1
 
           -- * Flow Operators
+          -- ** Projection
+        , project_i
+        , project_o
+
           -- ** Constructors
         , repeat_i
         , replicate_i
         , prepend_i
 
           -- ** Mapping
-        , map_i,        map_o
+        , smap_i,       smap_o
 
           -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
@@ -42,11 +46,20 @@ module Data.Repa.Flow.Generic
 
           -- ** Ignorance
         , discard_o
-        , ignore_o)
+        , ignore_o
+
+          -- * Vector Flow Operators
+        , distributes_o
+        , ddistributes_o
+
+          -- * Evaluation
+        , drain)
 
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Operator
+import Data.Repa.Flow.Generic.Vector
+import Data.Repa.Flow.Generic.Eval
 

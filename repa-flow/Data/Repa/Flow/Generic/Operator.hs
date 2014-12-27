@@ -1,12 +1,16 @@
 
 module Data.Repa.Flow.Generic.Operator
-        ( -- * Constructors
-          repeat_i
+        ( -- * Projection
+          project_i
+        , project_o
+
+          -- * Constructors
+        , repeat_i
         , replicate_i
         , prepend_i
 
           -- * Mapping
-        , map_i,        map_o
+        , smap_i,       smap_o
 
           -- * Connecting
         , dup_oo,       dup_io,         dup_oi
@@ -36,6 +40,28 @@ where
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
 import GHC.Exts
+
+
+-- Projection -----------------------------------------------------------------
+-- | Project out a single stream source from a bundle.
+project_i :: (Index i, Monad m)
+          => Ix i -> Sources i m a -> m (Sources () m a)
+project_i ix (Sources _ pull)
+ = return $ Sources () pull_project
+ where  pull_project _ eat eject
+         = pull ix eat eject
+{-# INLINE [2] project_i #-}
+
+
+-- | Project out a single stream source from a bundle.
+project_o :: (Index i, Monad m)
+          => Ix i -> Sinks i m a -> m (Sinks () m a)
+project_o ix (Sinks _ push eject)
+ = return $ Sinks () push_project eject_project
+ where
+        push_project _ v = push  ix v
+        eject_project _  = eject ix
+{-# INLINE [2] project_o #-}
 
 
 -- Constructors ---------------------------------------------------------------
@@ -94,10 +120,11 @@ prepend_i xs (Sources n pullX)
 
 -- Mapping --------------------------------------------------------------------
 -- | Apply a function to every element pulled from some sources, 
---   producing some new sources.
-map_i   :: Monad m
+--   producing some new sources. The worker function is also given
+--   the stream index.
+smap_i  :: Monad m
         => (Ix i -> a -> b) -> Sources i m a -> m (Sources i m b)
-map_i f (Sources n pullsA)
+smap_i f (Sources n pullsA)
  = return $ Sources n pullsB_map
  where  
         pullsB_map i eat eject
@@ -110,14 +137,15 @@ map_i f (Sources n pullsA)
                 {-# INLINE eject_a #-}
 
         {-# INLINE [1] pullsB_map #-}
-{-# INLINE [2] map_i #-}
+{-# INLINE [2] smap_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
---   producing a new sink.
-map_o   :: Monad m
+--   producing a new sink. The worker function is also given
+--   the stream index.
+smap_o   :: Monad m
         => (Ix i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
-map_o f (Sinks n pushB ejectB)
+smap_o f (Sinks n pushB ejectB)
  = return $ Sinks n pushA_map ejectA_map
  where  
         pushA_map i a   = pushB  i (f i a)
@@ -125,7 +153,7 @@ map_o f (Sinks n pushB ejectB)
 
         ejectA_map i    = ejectB i
         {-# INLINE ejectA_map #-}
-{-# INLINE [2] map_o #-}
+{-# INLINE [2] smap_o #-}
 
 
 

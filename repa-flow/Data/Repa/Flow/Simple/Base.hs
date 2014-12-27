@@ -13,7 +13,7 @@ type Source m e = G.Sources () m e
 type Sink   m e = G.Sinks   () m e
 
 
--- Wrapping -----------------------------------------------------------------------------
+-- Wrapping -------------------------------------------------------------------
 wrapI_i  :: G.Sources Int m e -> Maybe (Source m e)
 wrapI_i (G.Sources n pullX)
  | n /= 1       = Nothing

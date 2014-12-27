@@ -41,12 +41,22 @@ module Data.Repa.Flow.Simple
         , trigger_o
 
           -- ** Ignorance
+        , discard_o
         , ignore_o
-        , discard_o)
+
+          -- ** Evaluation
+        , drain)
 
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.Simple.List
 import Data.Repa.Flow.Simple.Operator
+import qualified Data.Repa.Flow.Generic.Eval    as G
 
+
+-- | Pull all available values from the source and push them to the sink.
+drain   :: Monad m
+        => Source m a -> Sink m a -> m ()
+drain = G.drain
+{-# INLINE [2] drain #-}

@@ -68,14 +68,14 @@ prepend_i = G.prepend_i
 -- | Apply a function to every element pulled from some source, 
 --   producing a new source.
 map_i     :: States () m => (a -> b) -> Source m a -> m (Source m b)
-map_i f s =  G.map_i (\G.UIx x -> f x) s
+map_i f s =  G.smap_i (\G.UIx x -> f x) s
 {-# INLINE [2] map_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
 map_o     :: States () m => (a -> b) -> Sink   m b -> m (Sink   m a)
-map_o f s = G.map_o (\G.UIx x -> f x) s
+map_o f s = G.smap_o (\G.UIx x -> f x) s
 {-# INLINE [2] map_o #-}
 
 

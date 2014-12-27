@@ -36,3 +36,5 @@ data Sinks   i m e
 
           -- | Signal that no more elements will ever be available for this sink.
         , sinkEject     :: Ix i -> m () }
+
+
