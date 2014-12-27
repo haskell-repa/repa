@@ -22,7 +22,10 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Generic
+        Data.Repa.Flow.Generic.IO
+
         Data.Repa.Flow.Simple
+
         Data.Repa.Flow.States
 
   other-modules:
