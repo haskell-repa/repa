@@ -24,7 +24,17 @@ module Data.Repa.Flow.Generic
         , connect_i
 
         -- ** Splitting
-        , head_i)
+        , head_i
+
+        -- ** Watching
+        , watch_i
+        , watch_o
+        , trigger_o
+
+        -- ** Discard and Ignore
+        , discard_o
+        , ignore_o)
+
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base

@@ -109,6 +109,16 @@ connect_i i1 = liftM wrap2 $ G.connect_i (unwrap i1)
 
 
 {-
+-- | Peek at the given number of elements in the stream, 
+--   returning a result stream that still produces them all.
+peek_i :: Int -> Source IO a -> IO ([a], Source IO a)
+peek_i n s0
+ = do
+        (s1, s2) <- connect_i s0
+        xs       <- takeList n s1
+        s3       <- pre_i xs s2
+        return   (xs, s3)
+{-# NOINLINE peek_i #-}
 
 
 
@@ -218,66 +228,4 @@ folds_ii f z (Source pullLen) (Source pullX)
         {-# INLINE [1] pull_folds #-}
 {-# INLINE [2] folds_ii #-}
 
-
--- Watch ----------------------------------------------------------------------
--- | Pass elements to the provided action as they are pulled from the source.
-watch_i :: Monad m => Source m a -> (a -> m ()) -> m (Source m a)
-watch_i (Source pullX) f
- = return $ Source pull_watch
- where  
-        pull_watch eat eject
-         = pullX eat_watch eject_watch
-         where
-                eat_watch x     = f x >> eat x
-                eject_watch     = eject
-        {-# INLINE [1] pull_watch #-}
-{-# INLINE [2] watch_i #-}
-
-
--- | Pass elements to the provided action as they are pushed into the sink.
-watch_o :: Monad m => Sink m a ->  (a -> m ())  -> m (Sink m a)
-watch_o (Sink push eject) f
- = return $ Sink push_watch eject_watch
- where
-        push_watch x    = f x >> push x
-        eject_watch     = eject
-{-# INLINE [2] watch_o #-}
-
-
--- | Like `watch` but doesn't pass elements to another sink.
-trigger_o :: Monad m => (a -> m ()) -> m (Sink m a)
-trigger_o f
- = discard_o >>= flip watch_o f
-{-# INLINE [2] trigger_o #-}
-
-
--- Discard --------------------------------------------------------------------
--- | A sink that drops all data on the floor.
---
---   This sink is strict in the elements, so they are demanded before being
---   discarded. Haskell debugging thunks attached to the elements will be demanded.
-discard_o :: Monad m => m (Sink m a)
-discard_o
- = return $ Sink push_discard eject_discard
- where  
-        -- IMPORTANT: push_discard should be strict in the element so that
-        -- and Haskell tracing thunks attached to it are evaluated.
-        -- We *discard* the elements, but don't completely ignore them.
-        push_discard !_ = return ()
-        eject_discard   = return ()
-{-# INLINE [2] discard_o #-}
-
-
--- Ignore ---------------------------------------------------------------------
--- | A sink that ignores all incoming elements.
---
---   This sink is non-strict in the elements. 
---   Haskell tracing thinks attached to the elements will *not* be demanded.
-ignore_o :: Monad m => m (Sink m a)
-ignore_o
- = return $ Sink push_ignore eject_ignore
- where
-        push_ignore _   = return ()
-        eject_ignore    = return ()
-{-# INLINE [2] ignore_o #-}
 -}
