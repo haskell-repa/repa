@@ -10,6 +10,7 @@ import Data.Repa.Flow.States                    (States)
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.States          as S
 
+
 -- | Given an arity and a list of elements, yield a source that produces
 --   all the elements.
 fromList :: States () m

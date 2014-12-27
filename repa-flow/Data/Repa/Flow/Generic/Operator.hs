@@ -15,17 +15,27 @@ module Data.Repa.Flow.Generic.Operator
           -- * Splitting
         , head_i
 
+          -- * Grouping
+        , groups_i
+
+          -- * Packing
+        , pack_ii
+
+          -- * Folding
+        , folds_ii
+
           -- * Watching
         , watch_i
         , watch_o
         , trigger_o
 
-          -- * Discard and Ignore
+          -- * Ignorance
         , discard_o
         , ignore_o)
 where
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
+import GHC.Exts
 
 
 -- Constructors ---------------------------------------------------------------
@@ -219,7 +229,7 @@ connect_i (Sources n pullX)
 
 -- Splitting ------------------------------------------------------------------
 -- | Split the given number of elements from the head of a source 
---   returning those elements in a list, and producing a new source 
+--   returning those elements in a list, and yielding a new source 
 --   for the rest.
 head_i  :: States i m
         => Int -> Sources i m a -> Ix i -> m ([a], Sources i m a)
@@ -230,6 +240,109 @@ head_i len s0 i
         return   (xs, s2)
 {-# INLINE [2] head_i #-}
 
+
+-- Groups ---------------------------------------------------------------------
+-- | From a stream of values which has consecutive runs of idential values,
+--   produce a stream of the lengths of these runs.
+-- 
+--   Example: groups [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
+--
+groups_i 
+        :: (Ord i, Monad m, Eq a)
+        => Sources i m a -> m (Sources i m Int)
+
+groups_i (Sources n pullV)
+ = return $ Sources n pull_n
+ where  
+        -- Pull a whole run from the source, so that we can produce.
+        -- the output element. 
+        pull_n i eat eject
+         = loop_groups Nothing 1#
+         where 
+                loop_groups !mx !count
+                 = pullV i eat_v eject_v
+                 where  eat_v v
+                         = case mx of
+                            -- This is the first element that we've read from
+                            -- the source.
+                            Nothing -> loop_groups (Just v) count
+
+                            -- See if the next element is the same as the one
+                            -- we read previously
+                            Just x  -> if x == v
+                                        then loop_groups (Just x) (count +# 1#)
+                                        else eat (I# count)  
+                                        -- TODO: ** STORE PULLED VALUE FOR LATER
+                        {-# INLINE eat_v #-}
+
+                        eject_v 
+                         = case mx of
+                            -- We've already written our last count, 
+                            -- and there are no more elements in the source.
+                            Nothing -> eject
+
+                            -- There are no more elements in the source,
+                            -- so emit the final count
+                            Just _  -> eat (I# count)
+                        {-# INLINE eject_v #-}
+        {-# INLINE [1] pull_n #-}
+{-# INLINE [2] groups_i #-}
+
+
+-- Pack -----------------------------------------------------------------------
+-- | Given a stream of flags and a stream of values, produce a new stream
+--   of values where the corresponding flag was True. The length of the result
+--   is the length of the shorter of the two inputs.
+pack_ii :: (Ord i, Monad m)
+        => Sources i m Bool -> Sources i m a -> m (Sources i m a)
+
+pack_ii (Sources nF pullF) (Sources nX pullX)
+ = return $ Sources (min nF nX) pull_pack
+ where   
+        pull_pack i eat eject
+         = pullF i eat_f eject_f
+         where eat_f f        = pack_x f
+               eject_f        = eject
+
+               pack_x f
+                = pullX i eat_x eject_x
+                where eat_x x = if f then eat x
+                                     else pull_pack i eat eject
+
+                      eject_x = eject
+               {-# INLINE [1] pack_x #-}
+        {-# INLINE [1] pull_pack #-}
+{-# INLINE [2] pack_ii #-}
+
+
+-- Folds ----------------------------------------------------------------------
+-- | Segmented fold. 
+folds_ii 
+        :: (Ord i, Monad m)
+        => (a -> a -> a) -> a
+        -> Sources i m Int 
+        -> Sources i m a 
+        -> m (Sources i m a)
+
+folds_ii f z (Sources nL pullLen)
+             (Sources nX pullX)
+ = return $   Sources (min nL nX) pull_folds
+ where  
+        pull_folds i eat eject
+         = pullLen i eat_len eject_len
+         where 
+               eat_len (I# len) = loop_folds len z
+               eject_len        = eject
+                   
+               loop_folds !c !acc
+                | tagToEnum# (c ==# 0#) = eat acc
+                | otherwise
+                = pullX i eat_x eject_x
+                where 
+                      eat_x x = loop_folds (c -# 1#) (f acc x)
+                      eject_x = eject
+        {-# INLINE [1] pull_folds #-}
+{-# INLINE [2] folds_ii #-}
 
 
 -- Watch ----------------------------------------------------------------------
@@ -302,5 +415,4 @@ ignore_o n
         push_ignore  _ _   = return ()
         eject_ignore _     = return ()
 {-# INLINE [2] ignore_o #-}
-
 

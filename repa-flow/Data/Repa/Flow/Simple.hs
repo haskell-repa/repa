@@ -4,47 +4,54 @@ module Data.Repa.Flow.Simple
         , Source (..)
         , Sink   (..)
 
-        -- * Conversions
+          -- * Conversions
         , fromList
         , toList
         , takeList
 
-        -- * Flow Operators
-        -- ** Constructors
+          -- * Flow Operators
+          -- ** Constructors
         , repeat_i
         , replicate_i
+        , prepend_i
 
-        -- ** Mapping
+          -- ** Mapping
         , map_i,        map_o
 
-        -- ** Connecting
+          -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
-        , connect_i)
+        , connect_i
+
+          -- ** Splitting
+        , head_i
+        , peek_i
+
+          -- ** Grouping
+        , groups_i
+
+          -- ** Packing
+        , pack_ii
+
+          -- ** Folding
+        , folds_ii
+
+          -- ** Watching
+        , watch_i
+        , watch_o
+        , trigger_o
+
+          -- ** Ignorance
+        , ignore_o
+        , discard_o)
 
 {-
         -- * Evaluation
         , drain
 
-        , pre_i        
-        , head_i
-        , peek_i
-        , groups_i
-        , pack_ii
-        , folds_ii
-
-        -- * Watching and Triggering
-        , watch_i
-        , watch_o
-        , trigger_o
-
         -- * Chunking
         , chunk_i
         , unchunk_i
         , unchunk_o
-
-        -- * Ignorance
-        , discard_o
-        , ignore_o
 
         -- * IO
         , fileSourceBytes,   hSourceBytes

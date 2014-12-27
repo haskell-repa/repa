@@ -5,33 +5,42 @@ module Data.Repa.Flow.Generic
         , Sources       (..)
         , Sinks         (..)
 
-        -- * Conversion
+          -- * Conversion
         , fromList
         , toList1
         , takeList1
 
-        -- * Flow Operators
-        -- ** Constructors
+          -- * Flow Operators
+          -- ** Constructors
         , repeat_i
         , replicate_i
         , prepend_i
 
-        -- ** Mapping
+          -- ** Mapping
         , map_i,        map_o
 
-        -- ** Connecting
+          -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
         , connect_i
 
-        -- ** Splitting
+          -- ** Splitting
         , head_i
 
-        -- ** Watching
+          -- ** Grouping
+        , groups_i
+
+          -- ** Packing
+        , pack_ii
+
+          -- ** Folding
+        , folds_ii
+
+          -- ** Watching
         , watch_i
         , watch_o
         , trigger_o
 
-        -- ** Discard and Ignore
+          -- ** Ignorance
         , discard_o
         , ignore_o)
 

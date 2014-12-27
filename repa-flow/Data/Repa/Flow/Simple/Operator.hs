@@ -3,41 +3,42 @@ module Data.Repa.Flow.Simple.Operator
         ( -- * Constructors
           repeat_i
         , replicate_i
+        , prepend_i
 
           -- * Mapping
         , map_i,        map_o
 
           -- * Connecting
         , dup_oo,       dup_io,         dup_oi
-        , connect_i)
+        , connect_i
 
-{-
+          -- * Splitting
         , head_i
         , peek_i
-        , pre_i
+
+          -- * Grouping
         , groups_i
+
+          -- * Packing
         , pack_ii
+
+          -- * Folding
         , folds_ii
+
+          -- * Watching
         , watch_i
         , watch_o
         , trigger_o
+
+          -- * Ignorance
         , discard_o
-        , ignore_o
--}
+        , ignore_o)
 where
 import Data.Repa.Flow.Simple.Base
 import Control.Monad
 import Data.Repa.Flow.States                    (States (..))
 import qualified Data.Repa.Flow.Generic         as G
 
-{-
-import Data.Repa.Flow.Simple.List
-import Data.Repa.Flow.Simple.Base
-import Control.Monad
-import Prelude          hiding (length)
-import GHC.Exts         hiding (toList)
-import qualified Prelude        as P
--}
 
 -- Constructors ---------------------------------------------------------------
 -- | Yield a source that always produces the same value.
@@ -57,17 +58,27 @@ replicate_i n x
 {-# INLINE [2] replicate_i #-}
 
 
+-- | Prepend some more elements to the front of a source.
+prepend_i :: States () m
+          => [a] -> Source m a -> m (Source m a)
+prepend_i xs s0
+        = liftM wrap $ G.prepend_i xs (unwrap s0)
+{-# INLINE [2] prepend_i #-}
+
+
 -- Mapping --------------------------------------------------------------------
 -- | Apply a function to every element pulled from some source, 
 --   producing a new source.
 map_i     :: States () m => (a -> b) -> Source m a -> m (Source m b)
 map_i f s = liftM wrap $ G.map_i (\G.UIx x -> f x) $ unwrap s
+{-# INLINE [2] map_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
 map_o     :: States () m => (a -> b) -> Sink   m b -> m (Sink   m a)
 map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
+{-# INLINE [2] map_o #-}
 
 
 -- Connecting -----------------------------------------------------------------
@@ -78,6 +89,7 @@ map_o f s = liftM wrap $ G.map_o (\G.UIx x -> f x) $ unwrap s
 --   argument sinks. 
 dup_oo    :: States () m => Sink m a   -> Sink m a -> m (Sink m a)
 dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
+{-# INLINE [2] dup_oo #-}
 
 
 -- | Send the same data to two consumers.
@@ -88,6 +100,7 @@ dup_oo o1 o2 = liftM wrap $ G.dup_oo (unwrap o1) (unwrap o2)
 --   result source.
 dup_io    :: States () m => Source m a -> Sink m a -> m (Source m a)
 dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
+{-# INLINE [2] dup_io #-}
 
 
 -- | Send the same data to two consumers.
@@ -96,6 +109,7 @@ dup_io i1 o2 = liftM wrap $ G.dup_io (unwrap i1) (unwrap o2)
 --
 dup_oi    :: States () m => Sink m a   -> Source m a -> m (Source m a)
 dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
+{-# INLINE [2] dup_oi #-}
 
 
 -- | Connect an argument source to two result sources.
@@ -106,126 +120,111 @@ dup_oi o1 i2 = liftM wrap $ G.dup_oi (unwrap o1) (unwrap i2)
 connect_i :: States () m
           => Source m a -> m (Source m a, Source m a)
 connect_i i1 = liftM wrap2 $ G.connect_i (unwrap i1)
+{-# INLINE [2] connect_i #-}
 
 
-{-
+-- Splitting ------------------------------------------------------------------
+-- | Split the given number of elements from the head of a source,
+--   returning those elements in a list, and yielding a new source
+--   for the rest.
+head_i  :: States () m
+        => Int -> Source m a -> m ([a], Source m a)
+
+head_i len s0 
+ = do   (xs, s1)  <- G.head_i len (unwrap s0) G.UIx
+        return  (xs, wrap s1)
+{-# INLINE [2] head_i #-}
+
+
 -- | Peek at the given number of elements in the stream, 
 --   returning a result stream that still produces them all.
-peek_i :: Int -> Source IO a -> IO ([a], Source IO a)
+peek_i  :: States () m 
+        => Int -> Source m a -> m ([a], Source m a)
 peek_i n s0
- = do
-        (s1, s2) <- connect_i s0
-        xs       <- takeList n s1
-        s3       <- pre_i xs s2
-        return   (xs, s3)
-{-# NOINLINE peek_i #-}
+ = do   (s1, s2) <- G.connect_i (unwrap s0)
+        xs       <- G.takeList1 n s1 G.UIx
+        s3       <- G.prepend_i xs s2
+        return   (xs, wrap s3)
+{-# INLINE [2] peek_i #-}
 
 
-
-
--- Groups ---------------------------------------------------------------------
+-- Grouping -------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
 -- 
 --   Example: groups [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
 --
-groups_i 
-        :: (Show a, Eq a) 
-        => Source IO a -> IO (Source IO Int)
-
-groups_i (Source pullV)
- = return $ Source pull_n
- where  
-        -- Pull a whole run from the source, so that we can produce.
-        -- the output element. 
-        pull_n eat eject
-         = loop_groups Nothing 1#
-         where 
-                loop_groups !mx !count
-                 = pullV eat_v eject_v
-                 where  eat_v v
-                         = case mx of
-                            -- This is the first element that we've read from
-                            -- the source.
-                            Nothing -> loop_groups (Just v) count
-
-                            -- See if the next element is the same as the one
-                            -- we read previously
-                            Just x  -> if x == v
-                                        then loop_groups (Just x) (count +# 1#)
-                                        else eat (I# count)  -- TODO: ** STORE PULLED VALUE FOR LATER
-                        {-# INLINE eat_v #-}
-
-                        eject_v 
-                         = case mx of
-                            -- We've already written our last count, 
-                            -- and there are no more elements in the source.
-                            Nothing -> eject
-
-                            -- There are no more elements in the source,
-                            -- so emit the final count
-                            Just _  -> eat (I# count)
-                        {-# INLINE eject_v #-}
-
-        {-# INLINE [1] pull_n #-}
-
+groups_i :: (Monad m, Eq a)
+         => Source m a -> m (Source m Int)
+groups_i s0   = liftM wrap $ G.groups_i (unwrap s0)
 {-# INLINE [2] groups_i #-}
 
 
--- Pack -----------------------------------------------------------------------
+-- Packing --------------------------------------------------------------------
 -- | Given a stream of flags and a stream of values, produce a new stream
 --   of values where the corresponding flag was True. The length of the result
 --   is the length of the shorter of the two inputs.
-pack_ii :: Source s Bool -> Source s a -> IO (Source s a)
-pack_ii (Source pullF) (Source pullX)
- = return $ Source pull_pack
- where   
-        pull_pack eat eject
-         = pullF eat_f eject_f
-         where eat_f f        = pack_x f
-               eject_f        = eject
-
-               pack_x f
-                = pullX eat_x eject_x
-                where eat_x x = if f then eat x
-                                     else pull_pack eat eject
-
-                      eject_x = eject
-               {-# INLINE [1] pack_x #-}
-
-        {-# INLINE [1] pull_pack #-}
-
+pack_ii  :: Monad m
+         => Source m Bool -> Source m a -> m (Source m a)
+pack_ii s0 s1 = liftM wrap $ G.pack_ii (unwrap s0) (unwrap s1)
 {-# INLINE [2] pack_ii #-}
 
 
--- Folds ----------------------------------------------------------------------
+-- Folding --------------------------------------------------------------------
 -- | Segmented fold. 
-folds_ii 
-        :: Monad m
-        => (a -> a -> a) 
-        -> a
-        -> Source m Int 
-        -> Source m a 
-        -> m (Source m a)
-
-folds_ii f z (Source pullLen) (Source pullX)
- = return $ Source pull_folds
- where  
-        pull_folds eat eject
-         = pullLen eat_len eject_len
-         where 
-               eat_len (I# len) = loop_folds len z
-               eject_len        = eject
-                   
-               loop_folds !n !acc
-                | tagToEnum# (n ==# 0#) = eat acc
-                | otherwise
-                = pullX eat_x eject_x
-                where 
-                      eat_x x = loop_folds (n -# 1#) (f acc x)
-                      eject_x = eject
-
-        {-# INLINE [1] pull_folds #-}
+folds_ii :: Monad m
+         => (a -> a -> a)    -> a
+         -> Source m Int  -> Source m a 
+         -> m (Source m a)
+folds_ii f z s0 s1 
+        = liftM wrap $ G.folds_ii f z (unwrap s0) (unwrap s1)
 {-# INLINE [2] folds_ii #-}
 
--}
+
+-- Watching -------------------------------------------------------------------
+-- | Apply a monadic function to every element pulled from a source
+--   producing a new source.
+watch_i :: Monad m 
+        => (a -> m ()) 
+        -> Source m a  -> m (Source m a)
+watch_i f s0
+        = liftM wrap $ G.watch_i (\_ x -> f x) (unwrap s0)
+{-# INLINE [2] watch_i #-}
+
+
+-- | Pass elements to the provided action as they are pushed to the sink.
+watch_o :: Monad m 
+        => (a -> m ())
+        -> Sink m a -> m (Sink m a)
+watch_o f s0 
+        = liftM wrap $ G.watch_o (\_ x -> f x) (unwrap s0)
+{-# INLINE [2] watch_o #-}
+
+
+-- | Like `watch` but doesn't pass elements to another sink.
+trigger_o :: Monad m 
+          => (a -> m ()) -> m (Sink m a)
+trigger_o f = liftM wrap $ G.trigger_o () (\_ x -> f x)
+{-# INLINE [2] trigger_o #-}
+
+
+-- Ignorance ------------------------------------------------------------------
+-- | A sink that drops all data on the floor.
+--
+--   This sink is strict in the elements, so they are demanded before being
+--   discarded. Haskell debugging thunks attached to the elements will be demanded.
+discard_o :: Monad m 
+          => m (Sink m a)
+discard_o = liftM wrap $ G.discard_o ()
+{-# INLINE [2] discard_o #-}
+
+
+-- | A sink that ignores all incoming elements.
+--
+--   This sink is non-strict in the elements. 
+--   Haskell tracing thinks attached to the elements will *not* be demanded.
+ignore_o  :: Monad m 
+          => m (Sink m a)
+ignore_o = liftM wrap $ G.ignore_o ()
+{-# INLINE [2] ignore_o #-}
+
