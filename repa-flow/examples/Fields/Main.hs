@@ -31,44 +31,42 @@ pfields fileIn
         let !nt  = fromIntegral $ ord '\t'
         let !(fl  :: Vector F Word8) = R.vfromList [nl]
 
-        -- Stream chunks of data from the input file,
-        -- where the chunks end cleanly at record boundaries.
+        -- Stream chunks of data from the input file, where the chunks end
+        -- cleanly at line boundaries. 
+        -- Error out if we read a whole chunk that does not contain
+        -- end-of-line characters.
         sIn     ::  Sources () IO F Word8
                 <-  G.project_i (zero 1)
                 =<< fileSourcesRecords 
-                        [fileIn] 256 (== nl)
-                        (error "over long line")
+                        [fileIn] (64 * 1024) (== nl)
+                        (error "Found an over-long line")
  
         -- Dice the chunks of data into arrays of lines and fields.
         let isWhite c = c == nl || c == nr || c == nt
             {-# INLINE isWhite #-}
 
-        sFields    <- mapChunks_i (R.maps (R.trimEnds isWhite) . diceOn nt nl) sIn
+        sFields   <- mapChunks_i (R.maps (R.trimEnds isWhite) . diceOn nt nl) sIn
 
         -- Do a ragged transpose the chunks, so we get a columnar representation.
-        sColumns   <- mapChunks_i ragspose3 sFields
+        sColumns  <- mapChunks_i ragspose3 sFields
 
         -- Concatenate the fields in each column.
         sColumnsC :: Sources () IO B (Vector F Word8)
-                   <- mapChunks_i (R.computeS . R.map (R.concatWith fl)) sColumns
-
-{-
-        sColumnsC' <- watch_i (\_ c -> 
-                        putStrLn $ "chunk " 
-                                 ++ (show $ (P.map (P.map (chr . fromIntegral))
-                                          $ R.toLists c))) sColumnsC
--}
+                  <- mapChunks_i (R.computeS . R.map (R.concatWith fl)) sColumns
 
         -- Peek at the first chunk to see how many columns we have.
         ([k1], sColumnsC) <- S.peek_i 1 sColumnsC
-        let cols   = R.length k1
+        let cols  = R.length k1
 
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut      <- fileSinksBytes filesOut
+        ooOut     <- fileSinksBytes filesOut
 
         -- Chunks are distributed into each of the output files.
-        oOut       <- G.distributes_o ooOut (error "spilled field")
+        -- Error out if we find a row that has more fields than the first
+        -- one did.
+        oOut      <- G.distributes_o ooOut 
+                        (error "spilled field")
 
         -- Drain all the input chunks into the output files.
         drain sColumnsC oOut
