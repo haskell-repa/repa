@@ -65,7 +65,7 @@ module Data.Repa.Array
           --   The elements of the source array are not copied.
         , segment,      segmentOn
         , dice,         diceOn
-        , trimEnds
+        , trims,        trimStarts,     trimEnds
 
           -- ** Searching
         , findIndex

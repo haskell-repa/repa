@@ -41,19 +41,23 @@ pfields fileIn
  
         -- Dice the chunks of data into arrays of lines and fields.
         let isWhite c = c == nl || c == nr || c == nt
+            {-# INLINE isWhite #-}
+
         sFields    <- mapChunks_i (R.maps (R.trimEnds isWhite) . diceOn nt nl) sIn
 
         -- Do a ragged transpose the chunks, so we get a columnar representation.
         sColumns   <- mapChunks_i ragspose3 sFields
 
         -- Concatenate the fields in each column.
-        sColumnsC' :: Sources () IO B (Vector F Word8)
+        sColumnsC :: Sources () IO B (Vector F Word8)
                    <- mapChunks_i (R.computeS . R.map (R.concatWith fl)) sColumns
 
-        sColumnsC  <- watch_i (\_ c -> 
+{-
+        sColumnsC' <- watch_i (\_ c -> 
                         putStrLn $ "chunk " 
                                  ++ (show $ (P.map (P.map (chr . fromIntegral))
-                                          $ R.toLists c))) sColumnsC'
+                                          $ R.toLists c))) sColumnsC
+-}
 
         -- Peek at the first chunk to see how many columns we have.
         ([k1], sColumnsC) <- S.peek_i 1 sColumnsC

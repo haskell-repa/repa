@@ -2,13 +2,27 @@
 module Data.Repa.Array.Unsafe.Nested
         ( UN, U.Unbox
         , Array (..)
+
+        -- * Conversion
         , fromLists
         , fromListss
+
+        -- * Mapping
         , maps
+
+        -- * Concatenation
         , concats
+
+        -- * Splitting
         , segment, segmentOn
         , dice,    diceOn
+
+        -- * Trimming
+        , trims
         , trimEnds
+        , trimStarts
+
+        -- * Transpose
         , ragspose3)
 where
 import Data.Repa.Array.Delayed
@@ -226,8 +240,38 @@ diceOn !xEndWord !xEndLine !arr
 
 
 ---------------------------------------------------------------------------------------------------
--- | For each sub-array, if the last element matches the given predicate
---   then trim it off.
+-- | For each segment of a nested vector, trim elements off the start
+--   and end of the segment that match the given predicate.
+trims   :: Bulk r DIM1 a
+        => (a -> Bool)
+        -> Vector UN (Vector r a)
+        -> Vector UN (Vector r a)
+
+trims pTrim (UNArray starts lengths elems)
+ = let
+        loop_trimEnds !start !len 
+         | len == 0     = (start, len)
+         | pTrim (elems `index` (Z :. start + len - 1)) 
+                        = loop_trimEnds   start (len - 1)
+         | otherwise    = loop_trimStarts start len
+        {-# INLINE loop_trimEnds #-}
+
+        loop_trimStarts !start !len 
+         | len == 0     = (start, len)
+         | pTrim (elems `index` (Z :. start + len - 1)) 
+                        = loop_trimStarts (start + 1) (len - 1)
+         | otherwise    = (start, len)
+        {-# INLINE loop_trimStarts #-}
+
+        (starts', lengths')
+                = U.unzip $ U.zipWith loop_trimEnds starts lengths
+
+   in   UNArray starts' lengths' elems
+{-# INLINE [1] trims #-}
+
+
+-- | For each segment of a nested vector, trim elements off the end of 
+--   the segment that match the given predicate.
 trimEnds :: Bulk r DIM1 a
          => (a -> Bool)
          -> Vector UN (Vector r a)
@@ -235,15 +279,40 @@ trimEnds :: Bulk r DIM1 a
 
 trimEnds pTrim (UNArray starts lengths elems)
  = let
-        ftrim !start !len 
+        loop_trimEnds !start !len 
          | len == 0     = 0
          | pTrim (elems `index` (Z :. start + len - 1)) 
-                        = len - 1
+                        = loop_trimEnds start (len - 1)
          | otherwise    = len
+        {-# INLINE loop_trimEnds #-}
 
-        lengths'        = U.zipWith ftrim starts lengths
+        lengths'        = U.zipWith loop_trimEnds starts lengths
+
    in   UNArray starts lengths' elems
 {-# INLINE [1] trimEnds #-}
+
+
+-- | For each segment of a nested vector, trim elements off the start of
+--   the segment that match the given predicate.
+trimStarts :: Bulk r DIM1 a
+           => (a -> Bool)
+           -> Vector UN (Vector r a)
+           -> Vector UN (Vector r a)
+
+trimStarts pTrim (UNArray starts lengths elems)
+ = let
+        loop_trimStarts !start !len 
+         | len == 0     = (start, len)
+         | pTrim (elems `index` (Z :. start + len - 1)) 
+                        = loop_trimStarts (start + 1) (len - 1)
+         | otherwise    = (start, len)
+        {-# INLINE loop_trimStarts #-}
+
+        (starts', lengths')
+                = U.unzip $ U.zipWith loop_trimStarts starts lengths
+
+   in   UNArray starts' lengths' elems
+{-# INLINE [1] trimStarts #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -270,6 +339,4 @@ ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
 --  NOINLINE Because the operation is entirely on the segment descriptor.
 --           This function won't fuse with anything externally, 
 --           and it does not need to be specialiased.
-
-
 
