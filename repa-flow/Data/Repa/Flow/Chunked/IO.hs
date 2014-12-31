@@ -1,9 +1,10 @@
 
 -- | Input and Output for Chunked Flows.
 --
---   All functions in this module are re-exports of the ones from
+--   Most functions in this module are re-exports of the ones from
 --   "Data.Repa.Flow.Generic.IO", but using the `Sources` and `Sinks`
 --   type synonyms for chunked flows.
+--
 module Data.Repa.Flow.Chunked.IO
         ( -- * Sourcing Bytes
           fileSourcesBytes,     hSourcesBytes

@@ -1,3 +1,4 @@
+
 module Data.Repa.Flow.Chunked.Base
         ( Sources, Sinks
         , Flow)
@@ -9,6 +10,7 @@ import qualified Data.Repa.Flow.Generic   as G
 -- | A bundle of sources, where the elements are chunked into arrays.
 type Sources i m r e
         = G.Sources i m (A.Vector r e)
+
 
 -- | A bundle of sinks,   where the elements are chunked into arrays.
 type Sinks   i m r e

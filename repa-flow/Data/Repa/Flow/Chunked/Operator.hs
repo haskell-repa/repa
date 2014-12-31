@@ -1,4 +1,10 @@
 
+-- | Operators for chunked flows.
+--
+--   Most functions in this module are re-exports of the ones from
+--   "Data.Repa.Flow.Generic.IO", but using the `Sources` and `Sinks`
+--   type synonyms for chunked flows.
+--
 module Data.Repa.Flow.Chunked.Operator
         ( map_i,        map_o
         , mapChunks_i,  mapChunks_o

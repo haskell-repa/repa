@@ -10,6 +10,10 @@ module Data.Repa.Flow.Generic
         , toList1
         , takeList1
 
+          -- * Finalizers
+        , finalize_i
+        , finalize_o
+
           -- * Flow Operators
           -- ** Projection
         , project_i
