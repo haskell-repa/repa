@@ -22,6 +22,8 @@ Library
   exposed-modules:
         Data.Repa.Vector.Unboxed
         Data.Repa.Stream.Segment
+        Data.Repa.Stream.Ratchet
+        Data.Repa.Stream.Extract        
 
   ghc-options:
         -Wall 

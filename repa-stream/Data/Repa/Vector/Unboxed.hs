@@ -5,6 +5,8 @@ module Data.Repa.Vector.Unboxed
         , ratchet
         , extract)
 where
+import Data.Repa.Stream.Extract
+import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
 import Data.Vector.Unboxed                              (Unbox)
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
