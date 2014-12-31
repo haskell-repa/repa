@@ -74,6 +74,7 @@ module Data.Repa.Array
         , ragspose3
         , concat
         , concat3
+        , concatWith
         , intercalate)
 where
 import Data.Repa.Eval.Array                     as R
@@ -166,25 +167,92 @@ concat vs
 {-# INLINE [2] concat #-}
 
 
-class Unpack1 a t | a -> t where
- unpack :: a -> t
- repack :: a -> t -> a
+-- O(len result) Concatenate the elements of some nested vector,
+-- inserting a copy of the provided separator array between each element.
+concatWith
+        :: ( Bulk r0 DIM1 a
+           , Bulk r1 DIM1 (Vector r2 a)
+           , Bulk r2 DIM1 a, Unpack1 (Vector r2 a) t
+           , Target r3 a)
+        => Vector r0 a                  -- ^ Separator array.
+        -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
+        -> Vector r3 a
 
-instance Unpack1 (Array F DIM1 a) (Int, Int, ForeignPtr a) where
- unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
- repack _ (len, offset, fptr)           = FArray (Z :. len) offset fptr
+concatWith !is !vs
+ | R.length vs == 0
+ = R.vfromList []
+
+ | otherwise
+ = unsafePerformIO
+ $ do   
+        -- Lengths of the source vectors.
+        let !lens       = toVectorU $ computeS $ R.map R.length vs
+
+        -- Length of the final result vector.
+        let !(I# len)   = U.sum lens
+                        + U.length lens * R.length is
+
+        -- New buffer for the result vector.
+        !buf            <- unsafeNewBuffer (I# len)
+        let !(I# iLenY) = U.length lens
+        let !(I# iLenI) = R.length is
+        let !row0       = vs `index` (Z :. 0)
+
+        let loop_concatWith !sPEC !iO !iY !row !iX !iLenX
+             -- We've finished copying one of the source elements.
+             | 1# <- iX >=# iLenX
+             = case iY >=# iLenY -# 1# of
+
+                -- We've finished all of the source elements.
+                1# -> do
+                 _      <- loop_concatWith_inject sPEC iO 0#
+                 return ()
+
+                -- We've finished one of the source elements, but it wasn't
+                -- the last one. Inject the separator array then copy the 
+                -- next element.
+                _  -> do
+
+                 -- TODO: We're probably getting an unboxing an reboxing
+                 --       here. Check the fused code.
+                 I# iO' <- loop_concatWith_inject sPEC iO 0#
+                 let !iY'         = iY +# 1#
+                 let !row'        = vs `index` (Z :. I# iY')
+                 let !(I# iLenX') = R.length row'
+                 loop_concatWith sPEC iO' iY' (unpack row') 0# iLenX'
+
+             -- Keep copying a source element.
+             | otherwise
+             = do let x = (repack row0 row) `index` (Z :. I# iX)
+                  unsafeWriteBuffer buf (I# iO) x
+                  loop_concatWith sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
+            {-# INLINE_INNER loop_concatwith #-}
+
+            -- Inject the separator array.
+            loop_concatWith_inject !sPEC !iO !n
+             | 1# <- n >=# iLenI = return (I# iO)
+             | otherwise
+             = do let x = is `index` (Z :. I# n)
+                  unsafeWriteBuffer buf (I# iO) x
+                  loop_concatWith_inject sPEC (iO +# 1#) (n +# 1#)
+            {-# INLINE_INNER loop_concatWith_inject #-}
+
+        let !(I# iLenX0) = R.length row0
+        loop_concatWith V.SPEC 0# 0# (unpack row0) 0# iLenX0
+        unsafeFreezeBuffer (Z :. (I# len)) buf
+{-# INLINE [2] concatWith #-}
 
 
 -- Intercalate ----------------------------------------------------------------
--- O(len result) Insert the separator array between the elements of
+-- O(len result) Insert a copy of the separator array between the elements of
 -- the second and concatenate the result.
 intercalate 
         :: ( Bulk r0 DIM1 a
            , Bulk r1 DIM1 (Vector r2 a)
            , Bulk r2 DIM1 a, Unpack1 (Vector r2 a) t
            , Target r3 a)
-        => Vector r0 a 
-        -> Vector r1 (Vector r2 a)
+        => Vector r0 a                  -- ^ Separator array.
+        -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
         -> Vector r3 a
 
 intercalate !is !vs
@@ -193,48 +261,74 @@ intercalate !is !vs
 
  | otherwise
  = unsafePerformIO
- $ do   let !lens       = toVectorU $ computeS $ R.map R.length vs
-        let !(I# len)   = U.sum lens + U.length lens * R.length is
+ $ do   
+        -- Lengths of the source vectors.
+        let !lens       = toVectorU $ computeS $ R.map R.length vs
+
+        -- Length of the final result vector.
+        let !(I# len)   = U.sum lens
+                        + (U.length lens - 1) * R.length is
+
+        -- New buffer for the result vector.
         !buf            <- unsafeNewBuffer (I# len)
         let !(I# iLenY) = U.length lens
         let !(I# iLenI) = R.length is
-        let !iI         = is `index` (Z :. 0)
-
         let !row0       = vs `index` (Z :. 0)
 
         let loop_intercalate !sPEC !iO !iY !row !iX !iLenX
+             -- We've finished copying one of the source elements.
              | 1# <- iX >=# iLenX
              = case iY >=# iLenY -# 1# of
+
+                -- We've finished all of the source elements.
                 1# -> return ()
+
+                -- We've finished one of the source elements, but it wasn't
+                -- the last one. Inject the separator array then copy the 
+                -- next element.
                 _  -> do
---                 I# iO'           <- loop_intercalate_inject iO 0#
 
-                 -- TODO: repair arbitrary length separators
-                 unsafeWriteBuffer buf (I# iO) iI
-                 let !iO'         = iO +# 1#
-
+                 -- TODO: We're probably getting an unboxing an reboxing
+                 --       here. Check the fused code.
+                 I# iO'           <- loop_intercalate_inject sPEC iO 0#
                  let !iY'         = iY +# 1#
                  let !row'        = vs `index` (Z :. I# iY')
                  let !(I# iLenX') = R.length row'
                  loop_intercalate sPEC iO' iY' (unpack row') 0# iLenX'
 
+             -- Keep copying a source element.
              | otherwise
              = do let x = (repack row0 row) `index` (Z :. I# iX)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_intercalate sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
             {-# INLINE_INNER loop_intercalate #-}
 
+            -- Inject the separator array.
             loop_intercalate_inject !sPEC !iO !n
              | 1# <- n >=# iLenI = return (I# iO)
              | otherwise
              = do let x = is `index` (Z :. I# n)
                   unsafeWriteBuffer buf (I# iO) x
-                  loop_intercalate_inject sPEC(iO +# 1#) (n +# 1#)
+                  loop_intercalate_inject sPEC (iO +# 1#) (n +# 1#)
             {-# INLINE_INNER loop_intercalate_inject #-}
 
         let !(I# iLenX0) = R.length row0
         loop_intercalate V.SPEC 0# 0# (unpack row0) 0# iLenX0
-
         unsafeFreezeBuffer (Z :. (I# len)) buf
 {-# INLINE [2] intercalate #-}
+
+
+-------------------------------------------------------------------------------
+-- | Unpack the pieces of a structure into a tuple.
+--
+--   This is used in a low-level fusion optimisation to ensure that
+--   intermediate values are unboxed.
+--
+class Unpack1 a t | a -> t where
+ unpack :: a -> t
+ repack :: a -> t -> a
+
+instance Unpack1 (Array F DIM1 a) (Int, Int, ForeignPtr a) where
+ unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
+ repack _ (len, offset, fptr)           = FArray (Z :. len) offset fptr
 
