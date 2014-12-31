@@ -9,6 +9,10 @@ module Data.Repa.Flow.Simple
         , toList
         , takeList
 
+          -- * Finalizers
+        , finalize_i
+        , finalize_o
+
           -- * Flow Operators
           -- ** Constructors
         , repeat_i

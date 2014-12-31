@@ -4,7 +4,12 @@ module Data.Repa.Flow.Chunked
         , Sources, Sinks
         , Flow
 
-          -- * Mapping
+          -- * Finalizers
+        , finalize_i
+        , finalize_o
+
+          -- * Flow Operators
+          -- ** Mapping
         , map_i,        map_o
         , mapChunks_i,  mapChunks_o
         , smapChunks_i, smapChunks_o

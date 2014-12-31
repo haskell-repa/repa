@@ -44,7 +44,7 @@ data Sinks   i m e
         , sinkEject     :: Ix i -> m () }
 
 
-----------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Attach a finalizer to bundle of sources.
 --
 --   For each stream in the bundle, the finalizer will be called the first
@@ -85,7 +85,7 @@ finalize_i f (Sources n pull)
 --   time that stream is ejected. 
 --
 --   The provided finalizer will be run after any finalizers already
---   attached to the source.
+--   attached to the sink.
 --
 finalize_o
         :: States i m
