@@ -6,16 +6,16 @@ module Data.Repa.Stream.Segment
         , extractS)
 where
 import Data.IORef
-import Data.Vector.Fusion.Stream.Monadic                (Stream(..), Step(..))
-import qualified Data.Vector.Generic                    as G
-import qualified Data.Vector.Generic.Mutable            as GM
-import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector.Unboxed.Mutable            as UM
-import qualified Data.Vector.Fusion.Stream.Size         as S
+import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
+import qualified Data.Vector.Generic             as G
+import qualified Data.Vector.Generic.Mutable     as GM
+import qualified Data.Vector.Unboxed             as U
+import qualified Data.Vector.Unboxed.Mutable     as UM
+import qualified Data.Vector.Fusion.Stream.Size  as S
 
 #include "vector.h"
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Given predicates that detect the beginning and end of some interesting
 --   segment of information, scan through a vector looking for when these
 --   segments begin and end.
@@ -39,12 +39,21 @@ findSegmentsS pStart pEnd iEnd (Stream istep s sz)
          = do m <- istep si
               case m of
                 Yield (i, x) si'
-                 | pStart x  -> if pEnd x 
-                                        then return $ Yield (i, i) (si', f, Nothing)
-                                        else return $ Skip (si', f, Just i)
+                 | pStart x  
+                 -> if pEnd x 
+                        -- Segment started and ended on the same element.
+                        then return $ Yield (i, i) (si', f, Nothing)
+
+                        -- Segment has started on this element.
+                        else return $ Skip (si', f, Just i)
+
+                 -- Still looking for the starting element.
                  | otherwise -> return $ Skip (si', f, n)
 
+                -- We didn't get an element this time.
                 Skip  si'    -> return $ Skip (si', f, n)
+
+                -- Found end of imput.
                 Done         -> return $ Done
 
         -- We're in a segment,    so look for ending element.
@@ -52,18 +61,30 @@ findSegmentsS pStart pEnd iEnd (Stream istep s sz)
          = do m <- istep si
               case m of
                 Yield (i, x) si'
-                 | pEnd  x   -> return $ Yield (iStart, i)    (si', f, Nothing)
+                 -- Segment ended here.
+                 | pEnd  x   -> return $ Yield (iStart, i)    
+                                               (si', f, Nothing)
+
+                 -- Still looking for the ending element.
                  | otherwise -> return $ Skip  (si', f, j)
 
+                -- We didn't get an element this time.
                 Skip si'     -> return $ Skip  (si', f, j)
-                Done         -> return $ Yield (iStart, iEnd) (si, False, Nothing)
+
+                -- Found end of input during a segment.
+                Done         -> return $ Yield (iStart, iEnd) 
+                                               (si, False, Nothing)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM findSegmentsS #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Given a stream of starting and ending indices for some segments,
 --   convert it to a stream of starting indices and segment lengths.
+--
+--   * The ending indices must be after the starting indices, 
+--     otherwise the result will contain negative lengths.
+--
 startLengthsOfSegsS
         :: Monad m
         => Stream m (Int, Int)  -- ^ Start and end indices.
@@ -85,14 +106,18 @@ startLengthsOfSegsS (Stream istep s sz)
         ostep (si, f, j@(Just (iStart, iEnd)))
          = do m <- istep si
               case m of
-               Yield  x si' -> return $ Yield (iStart, iEnd - iStart + 1) (si', f,     Just x)
+               Yield  x si' -> return $ Yield (iStart, iEnd - iStart + 1) 
+                                              (si', f,     Just x)
+
                Skip   si'   -> return $ Skip  (si', f, j)
-               Done         -> return $ Yield (iStart, iEnd - iStart)     (si,  False, Nothing)
+
+               Done         -> return $ Yield (iStart, iEnd - iStart + 1) 
+                                              (si,  False, Nothing)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM startLengthsOfSegsS #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Interleaved `enumFromTo`. 
 --
 --   Given a vector of starting values, and a vector of stopping values, 
@@ -170,7 +195,7 @@ unsafeRatchetS mvStarts vMax rmvLens
 {-# INLINE_STREAM unsafeRatchetS #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Extract.
 --   TODO: extract intersperse from some other vector.
 extractS
@@ -187,16 +212,15 @@ extractS get (Stream istep si0 _)
          =  istep si >>= \m
          -> case m of
                 Yield (iStart, iLen) si' 
-                           -> return $ Skip (si', Just (iStart, iStart + iLen))
-                Skip  si'  -> return $ Skip (si', Nothing)
-                Done       -> return $ Done
+                          -> return $ Skip (si', Just (iStart, iStart + iLen))
+                Skip  si' -> return $ Skip (si', Nothing)
+                Done      -> return $ Done
 
         -- Emit data from a segment.
         ostep (si, Just (iPos, iTop))
-         | iPos >= iTop    =  return $ Skip  (si, Nothing)
-         | otherwise       =  return $ Yield (get iPos) (si, Just (iPos + 1, iTop))
+         | iPos >= iTop   =  return $ Skip  (si, Nothing)
+         | otherwise      =  return $ Yield (get iPos) 
+                                            (si, Just (iPos + 1, iTop))
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM extractS #-}
-
-
 

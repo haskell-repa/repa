@@ -23,6 +23,10 @@ import Data.IORef
 --   segment of information, scan through a vector looking for when these
 --   segments begin and end. Return vectors of the segment starting positions
 --   and lengths.
+--
+--   * As each segment must end on a element where the ending predicate returns
+--     True, the miniumum segment length returned is 1.
+--
 findSegments 
         :: U.Unbox a 
         => (a -> Bool)          -- ^ Predicate to check for start of segment.
@@ -34,7 +38,7 @@ findSegments pStart pEnd src
         = U.unzip
         $ G.unstream
         $ startLengthsOfSegsS
-        $ findSegmentsS pStart pEnd (U.length src)
+        $ findSegmentsS pStart pEnd (U.length src - 1)
         $ S.indexed 
         $ G.stream src
 {-# INLINE_STREAM findSegments #-}
@@ -56,7 +60,7 @@ findSegmentsFrom pStart pEnd len get
         = U.unzip
         $ G.unstream
         $ startLengthsOfSegsS
-        $ findSegmentsS pStart pEnd len
+        $ findSegmentsS pStart pEnd (len - 1)
         $ S.map         (\ix -> (ix, get ix))
         $ S.enumFromStepN 0 1 len
 {-# INLINE_STREAM findSegmentsFrom #-}

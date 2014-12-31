@@ -163,8 +163,10 @@ concats (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
 -- | O(len src). Given predicates which detect the start and end of a segment, 
 --   split an vector into the indicated segments.
 segment :: (U.Unbox a, Bulk r DIM1 a)
-        => (a -> Bool)  -> (a -> Bool)          
-        -> Vector r a    -> Vector UN (Vector r a)  
+        => (a -> Bool)  -- ^ Detect the start of a segment.
+        -> (a -> Bool)  -- ^ Detect the end of a segment.
+        -> Vector r a   -- ^ Vector to segment.
+        -> Vector UN (Vector r a)  
 
 segment pStart pEnd !elems
  = let  len     = size (extent elems)
@@ -184,8 +186,9 @@ segment pStart pEnd !elems
 --
 segmentOn 
         :: (Eq a, U.Unbox a, Bulk r DIM1 a)
-        => a
-        -> Vector r a    -> Vector UN (Vector r a)
+        => a            -- ^ Terminating element for segments.
+        -> Vector r a   -- ^ Vector to segment.
+        -> Vector UN (Vector r a)
 
 segmentOn !x !arr
  = segment (const True) (== x) arr
@@ -194,29 +197,34 @@ segmentOn !x !arr
 
 ---------------------------------------------------------------------------------------------------
 -- | O(len src). Like `segment`, but cut the source array twice.
---   TODO: dies with empty lines on end.
 dice    :: (U.Unbox a, Bulk r DIM1 a, Window r DIM1 a)
-        => (a -> Bool) -> (a -> Bool)         
-        -> (a -> Bool) -> (a -> Bool)
-        -> Vector r a
+        => (a -> Bool)  -- ^ Detect the start of an inner segment.
+        -> (a -> Bool)  -- ^ Detect the end   of an inner segment.
+        -> (a -> Bool)  -- ^ Detect the start of an outer segment.
+        -> (a -> Bool)  -- ^ Detect the end   of an outer segment.
+        -> Vector r a   -- ^ Vector to dice.
         -> Vector UN (Vector UN (Vector r a))
 
 dice pStart1 pEnd1 pStart2 pEnd2 !arr
  = let  lenArr           = size (extent arr)
+
+        -- Do the inner segmentation.
         (starts1, lens1) = U.findSegments pStart1 pEnd1 
                          $ U.generate lenArr (\ix -> index arr (Z :. ix))
 
-        ahead arr1       = index arr1 (ix1 0)
-        alast arr1       = index arr1 (ix1 (size (extent arr1) - 1))
-        pStart2' arr'    = pStart2 $ ahead arr'
-        pEnd2'   arr'    = pEnd2   $ alast arr'
-        lenArrInner      = U.length starts1
-        arrInner         = UNArray starts1 lens1 arr
+        -- To do the outer segmentation we want to check if the first
+        -- and last characters in each of the inner segments match
+        -- the predicates.
+        pStart2' arr'    = pStart2 $ index arr' (ix1 0)
+        pEnd2'   arr'    = pEnd2   $ index arr' (ix1 (size (extent arr') - 1))
+
+        -- Do the outer segmentation.
+        !lenArrInner     = U.length starts1
+        !arrInner        = UNArray starts1 lens1 arr
         (starts2, lens2) = U.findSegmentsFrom pStart2' pEnd2'
                                 lenArrInner
                                 (\ix -> index arrInner (Z :. ix))
 
-        pEndBoth x       = pEnd1 x || pEnd2 x
    in   UNArray starts2 lens2 arrInner
 {-# INLINE [1] dice #-}
 
@@ -224,13 +232,20 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 -- | O(len src). Given field and row terminating values, 
 --   split an array into rows and fields.
 --
---   * Example: if you have a vector of characters that contains
+-- @ 
+--   toListss $ diceOn '\t' '\n' 
+--            $ (vfromList "12\\t34\\t56\\n78\\t\\t9\\n\\t00" :: Vector B Char)
+--    = [["12\\t","34\\t","56\\n"],["78\\t","\\t","9\\n"],["\\t", "00"]]
+-- @
 --
---   @diceOn '\t' '\n' arr ... TODO@
---
+--   If you don't want the terminating values in the result then use 
+--   `trimEnds` to trim them off.
+-- 
 diceOn  :: (U.Unbox a, Eq a, Bulk r DIM1 a, Window r DIM1 a)
-        => a -> a
-        -> Vector r a    -> Vector UN (Vector UN (Vector r a))
+        => a            -- ^ Terminating element for inner segments.
+        -> a            -- ^ Terminating element for outer segments.
+        -> Vector r a   -- ^ Vector to dice.
+        -> Vector UN (Vector UN (Vector r a))
 
 diceOn !xEndWord !xEndLine !arr
  =      dice    (const True) (\x -> x == xEndWord || x == xEndLine)
