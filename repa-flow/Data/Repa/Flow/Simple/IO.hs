@@ -19,12 +19,13 @@ import qualified Data.Repa.Flow.Generic.IO      as G
 
 
 -- Source Bytes -----------------------------------------------------------------------------------
--- | Read data from some files, using the given chunk length.
+-- | Read data from a file, using the given chunk length.
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 --
---   TODO: close file when finished.
+--   The file will be closed the first time the consumer tries to pull an element
+--   from the associated stream when no more are available.
 --
 fileSourceBytes 
         :: FilePath  -> Int 
@@ -66,7 +67,8 @@ hSourceBytes h len
 --   * All chunks have the same size, except possibly the last one.
 --   * The provided file handle must support seeking, else you'll get an exception.
 -- 
---   TODO: close file when done.
+--   The file will be closed the first time the consumer tries to pull an element
+--   from the associated stream when no more are available.
 --
 fileSourceRecords 
         :: FilePath             -- ^ File paths.
@@ -101,7 +103,7 @@ hSourceRecords h len pSep aFail
 -- Sinking Bytes ----------------------------------------------------------------------------------
 -- | Write chunks of data to the given files.
 --
---   TODO: close file when finished.
+--   The file will be closed when the associated stream is ejected.
 --
 fileSinkBytes
         :: FilePath 

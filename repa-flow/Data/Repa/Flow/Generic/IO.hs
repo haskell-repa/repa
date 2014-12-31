@@ -24,7 +24,8 @@ import Prelude                          as P
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 --
---   TODO: close file when finished.
+--   Each file will be closed the first time the consumer tries to pull an element
+--   from the associated stream when no more are available.
 --
 fileSourcesBytes 
         :: [FilePath] -> Int 
@@ -32,7 +33,8 @@ fileSourcesBytes
 
 fileSourcesBytes filePaths len
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
-        hSourcesBytes hs len 
+        s0      <- hSourcesBytes hs len
+        finalize_i (\(IIx i _) -> hClose (hs !! i)) s0
 {-# NOINLINE fileSourcesBytes #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
@@ -75,7 +77,8 @@ hSourcesBytes hs len
 --   * All chunks have the same size, except possibly the last one.
 --   * The provided file handle must support seeking, else you'll get an exception.
 -- 
---   TODO: close file when done.
+--   Each file will be closed the first time the consumer tries to pull an element
+--   from the associated stream when no more are available.
 --
 fileSourcesRecords 
         :: [FilePath]           -- ^ File paths.
@@ -86,7 +89,9 @@ fileSourcesRecords
 
 fileSourcesRecords filePaths len pSep aFail
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
-        hSourcesRecords hs len pSep aFail
+        s0      <- hSourcesRecords hs len pSep aFail
+        finalize_i (\(IIx i _) -> hClose (hs !! i)) s0
+
 {-# NOINLINE fileSourcesRecords #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
@@ -137,14 +142,16 @@ hSourcesRecords hs len pSep aFail
 -- Sink Bytes -------------------------------------------------------------------------------------
 -- | Write chunks of data to the given files.
 --
---   TODO: close file when finished.
+--   Each file will be closed when the associated stream is ejected.
 --
 fileSinksBytes
         :: [FilePath] -> IO (Sinks Int IO (Vector F Word8))
 
 fileSinksBytes filePaths
  = do   hs      <- mapM (flip openBinaryFile WriteMode) filePaths
-        hSinksBytes hs
+        o0      <- hSinksBytes hs
+        finalize_o (\(IIx i _) -> hClose (hs !! i)) o0
+
 {-# NOINLINE fileSinksBytes #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
