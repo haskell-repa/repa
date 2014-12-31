@@ -57,6 +57,7 @@ wrapI_i (G.Sources n pullX)
  | otherwise    
  = let  pullX' _ eat eject 
          = pullX (G.IIx 0 1) eat eject 
+        {-# INLINE pullX' #-}
    in   Just $ G.Sources () pullX'
 {-# INLINE wrapI_i #-}
 

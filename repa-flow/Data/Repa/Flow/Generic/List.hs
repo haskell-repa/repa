@@ -37,6 +37,7 @@ toList1 (Sources n pullX) i
         let loop_toList !acc     = pullX i eat_toList eject_toList
              where eat_toList x  = loop_toList (x : acc)
                    eject_toList  = writeRefs refs i (reverse acc)
+            {-# INLINE loop_toList #-}
 
         loop_toList []
         xx      <- readRefs refs i
@@ -56,6 +57,7 @@ takeList1 len (Sources n pullX) i
              | otherwise         = pullX i eat_toList eject_toList
              where eat_toList x  = loop_toList (ix + 1) (x : acc)
                    eject_toList  = writeRefs refs i (reverse acc)
+            {-# INLINE loop_toList #-}
 
         loop_toList 0 []
         xx  <- readRefs refs i

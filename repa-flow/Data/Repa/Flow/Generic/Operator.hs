@@ -313,6 +313,7 @@ groups_i (Sources n pullV)
                             -- so emit the final count
                             Just _  -> eat (I# count)
                         {-# INLINE eject_v #-}
+                {-# INLINE loop_groups #-}
         {-# INLINE [1] pull_n #-}
 {-# INLINE [2] groups_i #-}
 
@@ -369,6 +370,7 @@ folds_ii f z (Sources nL pullLen)
                 where 
                       eat_x x = loop_folds (c -# 1#) (f acc x)
                       eject_x = eject
+               {-# INLINE loop_folds #-} 
         {-# INLINE [1] pull_folds #-}
 {-# INLINE [2] folds_ii #-}
 

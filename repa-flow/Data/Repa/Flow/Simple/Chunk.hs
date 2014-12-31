@@ -135,7 +135,8 @@ unchunk_i (Source pullC)
 
                       let !x  = index chunk (Z :. ix)
                       eat x
-                {-# INLINE [1] pullElem #-}
+                {-# INLINE pullElem #-}
+            {-# INLINE pullX #-}
 
         return $ Source pullX
 {-# INLINE [2] unchunk_i #-}
