@@ -35,30 +35,29 @@ pfields fileIn
         sIn     ::  Sources () IO F Word8
                 <-  G.project_i (zero 1)
                 =<< fileSourcesRecords 
-                        [fileIn] (64 * 1024) (== nl)
+                        [fileIn] 256 (== nl)
                         (error "over long line")
  
         -- Dice the chunks of data into arrays of lines and fields.
-        sFields    <- mapChunks_i (diceOn nt nl) sIn
+        sFields'   <- mapChunks_i (diceOn nt nl) sIn
 
         -- Do a ragged transpose the chunks, so we get a columnar representation.
         sColumns   <- mapChunks_i ragspose3 sFields
 
-        -- Peek at the first chunk to see how many columns we have.
-        ([k1], sColumns') <- S.peek_i 1 sColumns
-        let cols   = R.length k1
-
         -- Concatenate the fields in each column.
         sColumnsC  :: Sources () IO B (Vector F Word8)
-                   <- mapChunks_i (R.computeS . R.map (R.intercalate fl)) sColumns'
+                   <- mapChunks_i (R.computeS . R.map (R.intercalate fl)) sColumns
+
+        -- Peek at the first chunk to see how many columns we have.
+        ([k1], sColumnsC) <- S.peek_i 1 sColumnsC
+        let cols   = R.length k1
 
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut   <- fileSinksBytes filesOut
-        putStrLn $ show filesOut
+        ooOut      <- fileSinksBytes filesOut
 
         -- Chunks are distributed into each of the output files.
-        oOut    <- G.distributes_o ooOut (error "spilled field")
+        oOut       <- G.distributes_o ooOut (error "spilled field")
 
         -- Drain all the input chunks into the output files.
         drain sColumnsC oOut

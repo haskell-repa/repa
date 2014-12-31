@@ -14,6 +14,14 @@ module Data.Repa.Flow.Chunked
         , mapChunks_i,  mapChunks_o
         , smapChunks_i, smapChunks_o
 
+          -- ** Watching
+        , watch_i,      watch_o
+        , trigger_o
+
+          -- ** Ignorance
+        , discard_o
+        , ignore_o
+
           -- * Evaluation
         , drain)
 where

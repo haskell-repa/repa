@@ -6,9 +6,18 @@
 --   type synonyms for chunked flows.
 --
 module Data.Repa.Flow.Chunked.Operator
-        ( map_i,        map_o
+        ( -- * Mapping
+          map_i,        map_o
         , mapChunks_i,  mapChunks_o
-        , smapChunks_i, smapChunks_o)
+        , smapChunks_i, smapChunks_o
+
+          -- * Watching
+        , watch_i,      watch_o
+        , trigger_o
+
+          -- * Ignorance
+        , discard_o
+        , ignore_o)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Array                    as A
@@ -70,3 +79,53 @@ smapChunks_o
         -> Sinks i m r2 b -> m (Sinks i m r1 a)
 smapChunks_o = G.smap_o
 {-# INLINE [2] smapChunks_o #-}
+
+
+-- Watch ----------------------------------------------------------------------
+-- | Apply a monadic function to every chunk pulled from some sources,
+--   producing some new sources.
+watch_i :: Flow i m r a
+        => (G.Ix i -> Vector r a -> m ()) 
+        -> Sources i m r a  -> m (Sources i m r a)
+watch_i = G.watch_i
+{-# INLINE [2] watch_i #-}
+
+
+-- | Pass chunks to the provided action as they are pushed into the sink.
+watch_o :: Flow i m r a
+        => (G.Ix i -> Vector r a -> m ())
+        -> Sinks i m r a ->  m (Sinks i m r a)
+
+watch_o = G.watch_o
+{-# INLINE [2] watch_o #-}
+
+
+-- | Like `watch` but doesn't pass elements to another sink.
+trigger_o :: Flow i m r a
+          => i -> (G.Ix i -> Vector r a -> m ()) -> m (Sinks i m r a)
+trigger_o = G.trigger_o
+{-# INLINE [2] trigger_o #-}
+
+
+-- Discard --------------------------------------------------------------------
+-- | A sink that drops all data on the floor.
+--
+--   This sink is strict in the *chunks*, so they are demanded before being
+--   discarded. Haskell debugging thunks attached to the chunks will be
+--   demanded, but thunks attached to elements may not be -- depending on
+--   whether the chunk representation is strict in the elements.
+--
+discard_o :: Monad m => i -> m (Sinks i m r a)
+discard_o = G.discard_o
+{-# INLINE [2] discard_o #-}
+
+
+-- | A sink that ignores all incoming data.
+--
+--   This sink is non-strict in the chunks. 
+--   Haskell tracing thunks attached to the chunks will *not* be demanded.
+--
+ignore_o :: Monad m => i -> m (Sinks i m r a)
+ignore_o  = G.ignore_o
+{-# INLINE [2] ignore_o #-}
+

@@ -420,6 +420,7 @@ trigger_o i f
 --
 --   This sink is strict in the elements, so they are demanded before being
 --   discarded. Haskell debugging thunks attached to the elements will be demanded.
+--
 discard_o :: Monad m 
           => i -> m (Sinks i m a)
 discard_o n
@@ -433,10 +434,11 @@ discard_o n
 {-# INLINE [2] discard_o #-}
 
 
--- | A sink that ignores all incoming elements.
+-- | A sink that ignores all incoming data.
 --
 --   This sink is non-strict in the elements. 
---   Haskell tracing thinks attached to the elements will *not* be demanded.
+--   Haskell tracing thunks attached to the elements will *not* be demanded.
+--
 ignore_o  :: Monad m 
           => i -> m (Sinks i m a)
 ignore_o n
