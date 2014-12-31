@@ -57,6 +57,7 @@ module Data.Repa.Array
 
           -- ** Mapping
         , map, zipWith
+        , maps
 
           -- ** Splitting
           -- | Splitting operators compute a segment descriptor which describes
@@ -64,6 +65,7 @@ module Data.Repa.Array
           --   The elements of the source array are not copied.
         , segment,      segmentOn
         , dice,         diceOn
+        , trimEnds
 
           -- ** Searching
         , findIndex
@@ -73,7 +75,7 @@ module Data.Repa.Array
           --   but do not create new element values.
         , ragspose3
         , concat
-        , concat3
+        , concats
         , concatWith
         , intercalate)
 where

@@ -27,6 +27,7 @@ pfields fileIn
         -- Rows are separated by new lines, 
         -- fields are separated by tabs.
         let !nl  = fromIntegral $ ord '\n'
+        let !nr  = fromIntegral $ ord '\r'
         let !nt  = fromIntegral $ ord '\t'
         let !(fl  :: Vector F Word8) = R.vfromList [nl]
 
@@ -39,7 +40,8 @@ pfields fileIn
                         (error "over long line")
  
         -- Dice the chunks of data into arrays of lines and fields.
-        sFields    <- mapChunks_i (diceOn nt nl) sIn
+        let isWhite c = c == nl || c == nr || c == nt
+        sFields    <- mapChunks_i (R.maps (R.trimEnds isWhite) . diceOn nt nl) sIn
 
         -- Do a ragged transpose the chunks, so we get a columnar representation.
         sColumns   <- mapChunks_i ragspose3 sFields

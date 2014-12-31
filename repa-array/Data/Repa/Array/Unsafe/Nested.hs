@@ -4,11 +4,12 @@ module Data.Repa.Array.Unsafe.Nested
         , Array (..)
         , fromLists
         , fromListss
-        , trims
+        , maps
+        , concats
         , segment, segmentOn
         , dice,    diceOn
-        , ragspose3
-        , concat3)
+        , trimEnds
+        , ragspose3)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -109,24 +110,39 @@ fromListss xs
 
 
 ---------------------------------------------------------------------------------------------------
--- | For each sub-array, if the last element matches the given predicate
---   then trim it off.
-trims   :: Bulk r DIM1 a
-        => (a -> Bool)
-        -> Vector UN (Vector r a)
+-- | Apply a function to the segments of a triply nested array.
+maps    :: (Vector UN (Vector r1 a) -> Vector UN (Vector r2 a))
+        -> Vector UN (Vector UN (Vector r1 a))
+        -> Vector UN (Vector UN (Vector r2 a))
+
+maps f (UNArray starts lengths elems)
+ = UNArray starts lengths (f elems)
+{-# INLINE [1] maps #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Segmented concatenation.
+--   Concatenate triply nested vector, producing a doubly nested vector.
+--
+--   Example: @concats [[[10 11 12] [20 21]] [[30 31] [40] [50]]]
+--                   = [ [10 11 12   20 21]   [30 31   40   50] ]@
+--
+--   * This version is more efficient than plain `concat` as the operation
+--     is done entirely on the segment descriptors of the nested arrays.
+--
+concats :: Vector UN (Vector UN (Vector r a)) 
         -> Vector UN (Vector r a)
 
-trims pTrim (UNArray starts lengths elems)
+concats (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
  = let
-        ftrim !start !len 
-         | len == 0     = 0
-         | pTrim (elems `index` (Z :. start + len - 1)) 
-                        = len - 1
-         | otherwise    = len
+        starts2'        = U.extract (U.unsafeIndex starts2)
+                        $ U.zip starts1 lengths1
 
-        lengths'        = U.zipWith ftrim starts lengths
-   in   UNArray starts lengths' elems
-{-# INLINE [1] trims #-}
+        lengths2'       = U.extract (U.unsafeIndex lengths2)
+                        $ U.zip starts1 lengths1
+
+   in   UNArray starts2' lengths2' elems
+{-# INLINE [1] concats #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -142,8 +158,7 @@ segment pStart pEnd !elems
                 = U.findSegments pStart pEnd 
                 $ U.generate len (\ix -> index elems (Z :. ix))
 
-        arr     = UNArray starts lens elems
-   in   trims pEnd arr
+   in   UNArray starts lens elems
 {-# INLINE [1] segment #-}
 
 
@@ -188,9 +203,7 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
                                 (\ix -> index arrInner (Z :. ix))
 
         pEndBoth x       = pEnd1 x || pEnd2 x
-        arrInner'        = trims pEndBoth arrInner
-
-   in   UNArray starts2 lens2 arrInner'
+   in   UNArray starts2 lens2 arrInner
 {-# INLINE [1] dice #-}
 
 
@@ -213,12 +226,35 @@ diceOn !xEndWord !xEndLine !arr
 
 
 ---------------------------------------------------------------------------------------------------
+-- | For each sub-array, if the last element matches the given predicate
+--   then trim it off.
+trimEnds :: Bulk r DIM1 a
+         => (a -> Bool)
+         -> Vector UN (Vector r a)
+         -> Vector UN (Vector r a)
+
+trimEnds pTrim (UNArray starts lengths elems)
+ = let
+        ftrim !start !len 
+         | len == 0     = 0
+         | pTrim (elems `index` (Z :. start + len - 1)) 
+                        = len - 1
+         | otherwise    = len
+
+        lengths'        = U.zipWith ftrim starts lengths
+   in   UNArray starts lengths' elems
+{-# INLINE [1] trimEnds #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Ragged transpose of a triply nested array.
 -- 
 --   * This version is more efficient than plain `ragspose` as the operation
 --     is done entirely on the segment descriptors of the nested arrays.
 --
-ragspose3 :: Vector UN (Vector UN (Vector r a)) -> Vector UN (Vector UN (Vector r a))
+ragspose3 :: Vector UN (Vector UN (Vector r a)) 
+          -> Vector UN (Vector UN (Vector r a))
+
 ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
  = let  
         startStops1       = U.zipWith (\s l -> (s, s + l)) starts1 lengths1
@@ -234,27 +270,6 @@ ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
 --  NOINLINE Because the operation is entirely on the segment descriptor.
 --           This function won't fuse with anything externally, 
 --           and it does not need to be specialiased.
-
-
----------------------------------------------------------------------------------------------------
--- | Concatenate triply nested vectors, producing a doubly nested vector.
---
---   * This version is more efficient than plain `concat` as the operation
---     is done entirely on the segment descriptors of the nested arrays.
---
-concat3 :: Vector UN (Vector UN (Vector r a)) 
-        -> Vector UN (Vector r a)
-
-concat3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
- = let
-        starts2'        = U.extract (U.unsafeIndex starts2)
-                        $ U.zip starts1 lengths1
-
-        lengths2'       = U.extract (U.unsafeIndex lengths2)
-                        $ U.zip starts1 lengths1
-
-   in   UNArray starts2' lengths2' elems
-{-# INLINE [1] concat3 #-}
 
 
 
