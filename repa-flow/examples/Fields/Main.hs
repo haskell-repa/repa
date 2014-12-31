@@ -2,28 +2,33 @@
 {-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
 import Data.Repa.Flow.Chunked
 import Data.Repa.Flow.Chunked.IO        
+import System.Environment
+import System.IO
+import Control.Monad
+import Data.Char
+import Data.Word
 import qualified Data.Repa.Flow.Simple          as S
 import qualified Data.Repa.Flow.Generic         as G
 import Data.Repa.Array                          as R
 import Data.Repa.Array.Foreign                  as R
 import Prelude                                  as P
-import System.Environment
-import Data.Char
-import Data.Word
 
 
 main :: IO ()
 main 
  = do   args    <- getArgs
-        case args of
-         [fileIn] -> pfields fileIn
-         _ -> putStrLn $ unlines
-                [ "Usage: flow-fields <source_file>"]
+        config  <- parseArgs args configZero
+        pFields config
 
-
-pfields :: FilePath -> IO ()
-pfields fileIn
+pFields :: Config -> IO ()
+pFields config
  = do   
+        -- Open the file and drop the requested number of lines from
+        -- the front of it.
+        let Just fileIn = configFileIn config
+        hIn     <- openFile fileIn ReadMode
+        _       <- mapM (\_ -> hGetLine hIn) [1 .. configDrop config]
+
         -- Rows are separated by new lines, 
         -- fields are separated by tabs.
         let !nl  = fromIntegral $ ord '\n'
@@ -37,8 +42,9 @@ pfields fileIn
         -- end-of-line characters.
         sIn     ::  Sources () IO F Word8
                 <-  G.project_i (zero 1)
-                =<< fileSourcesRecords 
-                        [fileIn] (64 * 1024) (== nl)
+                =<< finalize_i (\_ -> hClose hIn)
+                =<< hSourcesRecords [hIn]
+                        (64 * 1024) (== nl)
                         (error "Found an over-long line")
  
         -- Dice the chunks of data into arrays of lines and fields.
@@ -70,4 +76,36 @@ pfields fileIn
 
         -- Drain all the input chunks into the output files.
         drain sColumnsC oOut
+
+
+---------------------------------------------------------------------------------------------------
+data Config
+        = Config
+        { configDrop    :: Int 
+        , configFileIn  :: Maybe FilePath }
+
+configZero
+        = Config
+        { configDrop    = 0
+        , configFileIn  = Nothing }
+
+parseArgs :: [String] -> Config -> IO Config
+parseArgs [] config 
+        = return config
+
+parseArgs args config
+ | "-drop" : sn : rest <- args
+ , all isDigit sn
+ = parseArgs rest $ config { configDrop = read sn }
+
+ | [filePath] <- args
+ = return $ config { configFileIn = Just filePath }
+
+ | otherwise
+ = error $ unlines
+ [ "Usage: flow-fields [OPTIONS] <source_file>"
+ , "Split a TSV file into separate files, one for each column."
+ , ""
+ , " -drop (n :: Nat)   Drop n lines from the front of the input file." ]
+
 
