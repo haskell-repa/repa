@@ -4,10 +4,6 @@ module Data.Repa.Stream.Extract
 where
 import Data.IORef
 import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
-import qualified Data.Vector.Generic             as G
-import qualified Data.Vector.Generic.Mutable     as GM
-import qualified Data.Vector.Unboxed             as U
-import qualified Data.Vector.Unboxed.Mutable     as UM
 import qualified Data.Vector.Fusion.Stream.Size  as S
 
 #include "vector.h"

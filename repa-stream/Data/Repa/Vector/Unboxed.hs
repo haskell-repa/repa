@@ -1,6 +1,10 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Vector.Unboxed
-        ( findSegments
+        ( -- * Chain
+          munchain
+        , groupBy
+
+        , findSegments
         , findSegmentsFrom
         , ratchet
         , extract)
@@ -8,16 +12,48 @@ where
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
+
+import qualified Data.Repa.Chain.Group                  as C
+import qualified Data.Repa.Chain.Base                   as C
+
 import Data.Vector.Unboxed                              (Unbox)
-import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
 import qualified Data.Vector.Generic                    as G
 import qualified Data.Vector.Generic.Mutable            as GM
+import qualified Data.Vector.Fusion.Stream.Monadic      as S
+
+import Control.Monad.ST
+import Control.Monad.Primitive
 import System.IO.Unsafe
 import Data.IORef
 
 #include "vector.h"
+
+---------------------------------------------------------------------------------------------------
+-- | Compute a monadic chain, producing a vector of elements.
+munchain :: (PrimMonad m, Unbox a)
+         => (C.MChain m a c, c) -> m (U.Vector a,    c)
+munchain (chain, c)
+ = do   (mvec, c') <- C.munchain (chain, c)
+        vec        <- U.unsafeFreeze mvec
+        return (vec, c')
+{-# INLINE_STREAM munchain #-}
+
+
+groupBy :: Unbox a
+        => (a -> a -> Bool)
+        -> (U.Vector a,   ((), Maybe (a, Int)))
+        -> (U.Vector Int, ((), Maybe (a, Int)))
+
+groupBy f (vec, c)
+ = runST $ munchain 
+         ( C.liftChain 
+                $ C.groupByC f
+                $ C.chainOfStream ()
+                $ G.stream vec
+         , c)
+{-# INLINE_STREAM groupBy #-}
 
 
 ---------------------------------------------------------------------------------------------------

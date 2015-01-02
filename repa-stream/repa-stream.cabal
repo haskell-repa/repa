@@ -20,10 +20,13 @@ Library
         primitive       == 0.5.4.0
 
   exposed-modules:
+        Data.Repa.Chain.Base
+        Data.Repa.Chain.Group
+
         Data.Repa.Vector.Unboxed
         Data.Repa.Stream.Segment
         Data.Repa.Stream.Ratchet
-        Data.Repa.Stream.Extract        
+        Data.Repa.Stream.Extract
 
   ghc-options:
         -Wall 
@@ -35,6 +38,7 @@ Library
 
   extensions:
         NoMonomorphismRestriction
+        ExistentialQuantification
         BangPatterns
         FlexibleContexts
 
