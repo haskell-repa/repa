@@ -33,9 +33,9 @@ import Data.IORef
 ---------------------------------------------------------------------------------------------------
 -- | Compute a monadic chain, producing a vector of elements.
 munchain :: (PrimMonad m, Unbox a)
-         => (C.MChain m a c, c) -> m (U.Vector a,    c)
-munchain (chain, c)
- = do   (mvec, c') <- C.munchain (chain, c)
+         => C.MChain m a c -> m (U.Vector a,    c)
+munchain chain
+ = do   (mvec, c') <- C.munchain chain
         vec        <- U.unsafeFreeze mvec
         return (vec, c')
 {-# INLINE_STREAM munchain #-}
@@ -43,16 +43,18 @@ munchain (chain, c)
 
 groupBy :: Unbox a
         => (a -> a -> Bool)
-        -> (U.Vector a,   ((), Maybe (a, Int)))
-        -> (U.Vector Int, ((), Maybe (a, Int)))
+        -> (U.Vector a,   Maybe (a, Int))
+        -> (U.Vector Int, Maybe (a, Int))
 
 groupBy f (vec, c)
- = runST $ munchain 
-         ( C.liftChain 
-                $ C.groupByC f
-                $ C.chainOfStream ()
-                $ G.stream vec
-         , c)
+ = (vec', snd c')
+ where (vec', c') 
+         = runST $ munchain 
+                 $ C.liftChain 
+                 $ C.resume     ((), c)
+                 $ C.groupByC f
+                 $ C.fromStream ()
+                 $ G.stream vec
 {-# INLINE_STREAM groupBy #-}
 
 
@@ -141,6 +143,7 @@ ratchet vStartsMax
         vStarts'   <- G.unsafeFreeze mvStarts'
         vLens'     <- G.unsafeFreeze mvLens'
         return (vStarts', vLens')
+{-# INLINE_STREAM ratchet #-}
 
 
 ---------------------------------------------------------------------------------------------------
