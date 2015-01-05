@@ -38,6 +38,7 @@ Library
         Data.Repa.Array
 
         Data.Repa.Eval.Array
+        Data.Repa.Eval.Chain
 
         Data.Repa.IO.Array
 

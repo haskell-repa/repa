@@ -12,6 +12,7 @@ import Data.Repa.Array.Internals.Index
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
+import Foreign.Marshal.Utils
 import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 import Control.Monad.Primitive
 
@@ -64,6 +65,17 @@ instance Storable a => Target F a where
  unsafeWriteBuffer (FBuffer _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
  {-# INLINE unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer (FBuffer len fptr) bump
+  =  withForeignPtr fptr $ \ptr 
+  -> do let (proxy :: a) = undefined
+        let len'         = len + bump
+        let bytes'       = sizeOf proxy * len'
+        ptr'            <- mallocBytes bytes'
+        copyBytes ptr' ptr bytes'
+        fptr'   <- newForeignPtr finalizerFree ptr'
+        return  $ FBuffer len' fptr'
+ {-# INLINE unsafeGrowBuffer #-}
 
  unsafeFreezeBuffer !sh (FBuffer _len fptr)
   =     return  $ FArray sh 0 fptr

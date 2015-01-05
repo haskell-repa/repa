@@ -107,6 +107,26 @@ trigger_o = G.trigger_o
 {-# INLINE [2] trigger_o #-}
 
 
+-- Grouping -------------------------------------------------------------------
+-- | From a stream of values which has consecutive runs of idential values,
+--   produce a stream of the lengths of these runs.
+-- 
+--   Example: groupBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
+--
+{-
+groupBy_i 
+        :: Flow i m r a
+        => Sources i m r a -> m (Source i m r a)
+groupBy_i 
+ = do   refs    <- newRefs n Nothing
+
+        let pull_groupBy i eat eject
+             = do xs'   <- readRefs refs i
+-}
+
+
+
+
 -- Discard --------------------------------------------------------------------
 -- | A sink that drops all data on the floor.
 --

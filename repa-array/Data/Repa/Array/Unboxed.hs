@@ -73,6 +73,11 @@ instance U.Unbox e => Target U e where
   = UM.unsafeWrite mvec ix
  {-# INLINE unsafeWriteBuffer #-}
 
+ unsafeGrowBuffer (UBuffer mvec) bump
+  = do  mvec'   <- UM.unsafeGrow mvec bump
+        return  $ UBuffer mvec'
+ {-# INLINE unsafeGrowBuffer #-}
+
  unsafeSliceBuffer start len (UBuffer mvec)
   = do  let mvec'  = UM.unsafeSlice start len mvec
         return  $  UBuffer mvec'

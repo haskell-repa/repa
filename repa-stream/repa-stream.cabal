@@ -20,13 +20,17 @@ Library
         primitive       == 0.5.4.0
 
   exposed-modules:
+        Data.Repa.Chain
+        Data.Repa.Stream
+        Data.Repa.Vector.Unboxed
+
+  other-modules:
         Data.Repa.Chain.Base
         Data.Repa.Chain.Group
 
-        Data.Repa.Vector.Unboxed
-        Data.Repa.Stream.Segment
-        Data.Repa.Stream.Ratchet
         Data.Repa.Stream.Extract
+        Data.Repa.Stream.Ratchet
+        Data.Repa.Stream.Segment
 
   ghc-options:
         -Wall 

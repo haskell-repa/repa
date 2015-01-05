@@ -9,6 +9,7 @@ import Data.Repa.Array.Internals.Shape
 import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
+import Foreign.Marshal.Utils
 import System.IO.Unsafe
 import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 
@@ -51,6 +52,17 @@ instance Storable a => Target UF a where
  unsafeWriteBuffer (UFBuffer _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
  {-# INLINE unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer (UFBuffer len fptr) bump
+  =  withForeignPtr fptr $ \ptr 
+  -> do let (proxy :: a) = undefined
+        let len'         = len + bump
+        let bytes'       = sizeOf proxy * len'
+        ptr'            <- mallocBytes bytes'
+        copyBytes ptr' ptr bytes'
+        fptr'   <- newForeignPtr finalizerFree ptr'
+        return  $ UFBuffer len' fptr'
+ {-# INLINE unsafeGrowBuffer #-}
 
  unsafeFreezeBuffer !sh (UFBuffer _len fptr)
   =     return  $ UFArray sh 0 fptr

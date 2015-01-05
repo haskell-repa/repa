@@ -71,6 +71,11 @@ instance Target B a where
   = VM.unsafeWrite mvec ix
  {-# INLINE unsafeWriteBuffer #-}
 
+ unsafeGrowBuffer (BBuffer mvec) bump
+  = do  mvec'   <- VM.unsafeGrow mvec bump
+        return  $ BBuffer mvec'
+ {-# INLINE unsafeGrowBuffer #-}
+
  unsafeSliceBuffer start len (BBuffer mvec)
   = do  let mvec'  = VM.unsafeSlice start len mvec
         return  $  BBuffer mvec'

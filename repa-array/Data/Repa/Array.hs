@@ -1,4 +1,4 @@
-
+{-# LANGUAGE CPP #-}
 module Data.Repa.Array
         ( -- * Arrays and Vectors
           Bulk      (..)
@@ -98,6 +98,7 @@ import Data.Repa.Array.Foreign                  as R
 import Foreign.ForeignPtr
 import qualified Data.Vector.Fusion.Stream.Monadic as V
 
+#include "vector.h"
 
 -- | O(1). View the elements of a vector in reverse order.
 reverse   :: Bulk r DIM1 a
@@ -126,7 +127,7 @@ findIndex p !vec
          = let  !x      = vec `index` (Z :. ix)
            in   if p x  then Just ix
                         else loop_findIndex sPEC (ix + 1)
-        {-# INLINE_INNER #-}
+        {-# INLINE_INNER loop_findIndex #-}
 
 {-# INLINE [2] findIndex #-}
 
@@ -228,7 +229,7 @@ concatWith !is !vs
              = do let x = (repack row0 row) `index` (Z :. I# iX)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_concatWith sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
-            {-# INLINE_INNER loop_concatwith #-}
+            {-# INLINE_INNER loop_concatWith #-}
 
             -- Inject the separator array.
             loop_concatWith_inject !sPEC !iO !n

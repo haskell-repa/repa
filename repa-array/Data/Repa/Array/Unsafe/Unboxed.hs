@@ -73,6 +73,11 @@ instance U.Unbox e => Target UU e where
   = UM.unsafeWrite mvec ix
  {-# INLINE unsafeWriteBuffer #-}
 
+ unsafeGrowBuffer (UUBuffer mvec) bump
+  = do  mvec'   <- UM.unsafeGrow mvec bump
+        return  $ UUBuffer mvec'
+ {-# INLINE unsafeGrowBuffer #-}
+
  unsafeFreezeBuffer sh (UUBuffer mvec)     
   = do  vec     <- U.unsafeFreeze mvec
         return  $  UUArray sh vec

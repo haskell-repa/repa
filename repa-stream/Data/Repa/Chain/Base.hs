@@ -4,8 +4,8 @@ module Data.Repa.Chain.Base
         , MChain (..), Chain
         , liftChain
         , resume
-        , fromStream
-        , munchain)
+        , chainOfStream
+        , unchainToMVector)
 where
 import Control.Monad.Primitive
 import Data.Vector.Generic.Mutable                      (MVector)
@@ -16,9 +16,9 @@ import qualified Data.Vector.Fusion.Util                as S
 
 #include "vector.h"
 
--- | A Chain is similar to a Stream as used in stream fusion, except that
---   the Done step yields a continuation value so that the stream function
---   can be resumed when more source data is available.
+-- | A Monadic Chain is similar to a Monadic Stream as used in stream fusion,
+--   except that the Done step yields a continuation value which allows a chain
+--   computation to be resumed when more source data is available.
 --
 --   Chain operations could instead be implemented with a combination of 
 --   scan-left and filtering, but expressing with a modified stepper data 
@@ -26,15 +26,25 @@ import qualified Data.Vector.Fusion.Util                as S
 --
 data MChain m a c
         = forall s. Chain 
-        { mchainSize     :: S.Size 
+        { -- | Expected size of the output.
+          mchainSize     :: S.Size 
+
+          -- | Step the chain computation.
         , mchainStep     :: s -> m (Step s a c)
+
+          -- | Internal state used during computation.
         , mchainState    :: s 
+
+          -- | Convert a continuation value to a new starting state.
         , mchainStart    :: c -> s }
 
+
+-- | Result of a chain computation step.
 data Step s a c
         = Yield a s     -- ^ A new element and a new seed.
         | Skip    s     -- ^ Just a new seed.
-        | Done    c     -- ^ End of chunk, yield a continuation value. 
+        | Done    c     -- ^ Signal end of input, and yield a continuation value. 
+                        --   so this computation can be resumed.
 
 
 -- | The type of pure chains.
@@ -56,11 +66,11 @@ resume c (Chain sz step _s start)
 {-# INLINE_STREAM resume #-}
 
 
--- | Convert a Stream to a Chain that just yields unit when it's done.
-fromStream
+-- | Convert a stream to a chain that yields unit when it's done.
+chainOfStream
         :: Monad m 
         => c -> S.Stream m a -> MChain m a c
-fromStream c (S.Stream istep s0 sz)
+chainOfStream c (S.Stream istep s0 sz)
  = Chain sz ostep s0 (const s0)
  where
         ostep si
@@ -70,27 +80,28 @@ fromStream c (S.Stream istep s0 sz)
                 S.Skip    si'   -> return $ Skip    si'
                 S.Done          -> return $ Done c
         {-# INLINE_INNER ostep #-}
-{-# INLINE_STREAM fromStream #-}
+{-# INLINE_STREAM chainOfStream #-}
 
 
 -------------------------------------------------------------------------------
 -- | Compute a chain into a mutable vector.
-munchain :: (PrimMonad m, MVector v a)
-         => MChain m a c
-         -> m (v (PrimState m) a, c)
+unchainToMVector
+        :: (PrimMonad m, MVector v a)
+        => MChain m a c
+        -> m (v (PrimState m) a, c)
 
-munchain (Chain sz step s0 _start)
+unchainToMVector (Chain sz step s0 _start)
  = case sz of
-        S.Exact i       -> munchain_max     i  step s0
-        S.Max i         -> munchain_max     i  step s0
-        S.Unknown       -> munchain_unknown 32 step s0
-{-# INLINE_STREAM munchain #-}
+        S.Exact i       -> unchainToMVector_max     i  step s0
+        S.Max i         -> unchainToMVector_max     i  step s0
+        S.Unknown       -> unchainToMVector_unknown 32 step s0
+{-# INLINE_STREAM unchainToMVector #-}
 
 
 -- unchain when we known the maximum size of the vector.
-munchain_max nMax step s0
+unchainToMVector_max nMax step s0
  =  GM.unsafeNew nMax >>= \vec
- -> let go sPEC i s
+ -> let go !sPEC !i !s
          =  step s >>= \m
          -> case m of
                 Yield e s'    
@@ -102,12 +113,13 @@ munchain_max nMax step s0
         {-# INLINE_INNER go #-}
 
     in  go S.SPEC 0 s0
-{-# INLINE_STREAM munchain_max #-}
+{-# INLINE_STREAM unchainToMVector_max #-}
+
 
 -- unchain when we don't know the maximum size of the vector.
-munchain_unknown nStart step s0
+unchainToMVector_unknown nStart step s0
  =  GM.unsafeNew nStart >>= \vec0
- -> let go sPEC vec i n s
+ -> let go !sPEC !vec !i !n !s
          =  step s >>= \m
          -> case m of
                 Yield e s'
@@ -125,5 +137,5 @@ munchain_unknown nStart step s0
         {-# INLINE_INNER go #-}
 
     in go S.SPEC vec0 0 nStart s0
-{-# INLINE_STREAM munchain_unknown #-}
+{-# INLINE_STREAM unchainToMVector_unknown #-}
 

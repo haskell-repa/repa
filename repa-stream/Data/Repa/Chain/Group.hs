@@ -5,11 +5,15 @@ where
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
 
+#include "vector.h"
 
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
 -- 
---   Example: groupByS [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
+-- @
+--  groupByC (==) [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
+--             = ([3, 2, 1], Just (\'d\', 2))
+-- @
 --
 groupByC :: (a -> a -> Bool)    -- ^ Comparison function for elements.
          -> Chain a c           -- ^ Input stream of elements.

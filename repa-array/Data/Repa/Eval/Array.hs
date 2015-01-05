@@ -18,7 +18,7 @@ import System.IO.Unsafe
 
 -- | Sequential computation of array elements.
 computeS :: (Load r1 sh e, Target r2 e)
-        => Array r1 sh e -> Array r2 sh e
+         => Array r1 sh e -> Array r2 sh e
 computeS arr1
  = unsafePerformIO
  $ do   mvec2   <- unsafeNewBuffer (size $ extent arr1) 

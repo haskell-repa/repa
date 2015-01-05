@@ -12,20 +12,27 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 
 #include "vector.h"
 
+
 -- | Interleaved `enumFromTo`. 
 --
 --   Given a vector of starting values, and a vector of stopping values, 
---   produce an stream where we increase each of the starting values to 
---   the stopping values in a round-robin order. 
+--   produce an stream of elements where we increase each of the starting
+--   values to the stopping values in a round-robin order. Also produce a
+--   vector of result segment lengths.
 --
---   @unsafeRatchetS [10,20,30,40] [15,26,33,47]
+-- @
+--  unsafeRatchetS [10,20,30,40] [15,26,33,47]
 --  =  [10,20,30,40       -- 4
 --     ,11,21,31,41       -- 4
 --     ,12,22,32,42       -- 4
 --     ,13,23   ,43       -- 3
 --     ,14,24   ,44       -- 3
 --        ,25   ,45       -- 2
---              ,46]@     -- 1
+--              ,46]      -- 1
+--
+--         ^^^^             ^^^
+--       Elements         Lengths
+-- @
 --
 --   The function takes the starting values in a mutable vector and 
 --   updates it during computation. Computation proceeds by making passes
@@ -36,7 +43,7 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --           but this is not checked.
 --
 unsafeRatchetS 
-        :: UM.IOVector Int              -- ^ Starting values.
+        :: UM.IOVector Int              -- ^ Starting values. Overwritten duing computation.
         ->  U.Vector   Int              -- ^ Ending values
         -> IORef (UM.IOVector Int)      -- ^ Vector holding segment lengths.
         -> Stream IO   Int

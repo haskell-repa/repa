@@ -30,6 +30,10 @@ class Target r e where
  --   UNSAFE: The index bounds are not checked.
  unsafeWriteBuffer  :: Buffer r e -> Int -> e -> IO ()
 
+ -- | O(n). Copy the contents of a buffer that is larger by the given
+ --   number of elements.
+ unsafeGrowBuffer   :: Buffer r e -> Int -> IO (Buffer r e)
+ 
  -- | O(1). Yield a slice of the buffer without copying.
  --
  --   UNSAFE: The given starting position and length must be within the bounds
