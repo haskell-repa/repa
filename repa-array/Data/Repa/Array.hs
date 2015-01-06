@@ -80,7 +80,7 @@ module Data.Repa.Array
         , intercalate
 
           -- ** Grouping
-        , groupBy)
+        , groupsBy)
 where
 import Data.Repa.Eval.Array                             as R
 import Data.Repa.Array.Delayed                          as R

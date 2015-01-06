@@ -21,6 +21,7 @@ Library
         base            == 4.7.*,
         primitive       == 0.5.*,
         vector          == 0.10.*,
+        bytestring      == 0.10.*,
         repa-eval       == 4.0.0.0,
         repa-stream     == 4.0.0.0
 

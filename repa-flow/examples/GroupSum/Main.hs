@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
 -- | Sum up segments of doubles according to a segment descriptor file.
 --   The number of values written to the output is equal to the number
 --   of segments defined by the segments file.
@@ -21,13 +21,15 @@ module Main where
 import Convert
 import Data.Repa.Flow.Chunked
 import Data.Repa.Flow.Chunked.IO
-import Data.Repa.Array                  as R
-import Data.Repa.Array.Foreign          as R
+import Data.Repa.Array                  as A
+import Data.Repa.Array.Foreign          as A
+import Data.Repa.Array.Unsafe.Nested    as A
+import Data.Repa.Array.Unsafe.Unboxed   as A
 import Data.Char
 import Data.Word
 import System.Environment
 import qualified Data.Repa.Flow.Generic as G
-
+import Prelude                          as P
 
 main :: IO ()
 main 
@@ -46,12 +48,24 @@ pGroupSum fileInSegs fileInVals fileOutSums
         let !nl  = fromIntegral $ ord '\n'
 
         -- Group the input segment file to get segment lengths.
-        isegs    <-  G.project_i (zero 1)
-                 =<< fileSourcesRecords [fileInSegs] (64 * 1024) (== nl) 
-                        (error "over long line in segs file")
-        isegLens <- groups_i isegs
+        iSegCols  <-  G.project_i (zero 1)
+                  =<< fileSourcesRecords [fileInSegs] (64 * 1024) (== nl) 
+                                (error "over long line in segs file")
 
+        iSegElems <- mapChunks_i (A.segmentOn nl) iSegCols
 
+        iSegLens  :: Sources () IO UU Int 
+                  <- groupsBy_i eqVectorF iSegElems
+
+        i0        <- watch_i (\_ arr -> putStrLn 
+                                         $ show 
+                                         $ A.toList arr) 
+                             iSegLens
+
+        oDiscard  <-  discard_o ()
+        drain i0 oDiscard
+
+{-
         -- Read floating point values from input file.
         let !nl  = fromIntegral $ ord '\n'
         let !nr  = fromIntegral $ ord '\r'
@@ -62,7 +76,7 @@ pGroupSum fileInSegs fileInVals fileOutSums
         istrings <-  mapChunks_i (R.trimEnds isWhite)
                  =<< G.project_i (zero 1)
                  =<< fileSourcesRecords [fileInVals] (64 * 1024) (== nl)
-                        (error "over lone line in vals file")
+                        (error "over long line in vals file")
 
         ivals    <- map_i readDouble istrings
 
@@ -80,3 +94,4 @@ pGroupSum fileInSegs fileInVals fileOutSums
         -- Drain sums into the output.
         drain isums ofloat
 
+-}

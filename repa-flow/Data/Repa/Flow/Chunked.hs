@@ -23,7 +23,7 @@ module Data.Repa.Flow.Chunked
         , head_i
 
           -- ** Grouping
-        , groupBy_i
+        , groupsBy_i
 
           -- ** Watching
         , watch_i,      watch_o

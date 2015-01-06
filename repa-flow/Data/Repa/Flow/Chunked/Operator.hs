@@ -12,7 +12,7 @@ module Data.Repa.Flow.Chunked.Operator
         , smapChunks_i, smapChunks_o
 
           -- * Grouping
-        , groupBy_i
+        , groupsBy_i
 
           -- * Watching
         , watch_i,      watch_o
@@ -88,7 +88,7 @@ smapChunks_o = G.smap_o
 -- Watch ----------------------------------------------------------------------
 -- | Apply a monadic function to every chunk pulled from some sources,
 --   producing some new sources.
-watch_i :: Flow i m r a
+watch_i :: Monad m
         => (G.Ix i -> Vector r a -> m ()) 
         -> Sources i m r a  -> m (Sources i m r a)
 watch_i = G.watch_i
@@ -96,7 +96,7 @@ watch_i = G.watch_i
 
 
 -- | Pass chunks to the provided action as they are pushed into the sink.
-watch_o :: Flow i m r a
+watch_o :: Monad m
         => (G.Ix i -> Vector r a -> m ())
         -> Sinks i m r a ->  m (Sinks i m r a)
 
@@ -105,7 +105,7 @@ watch_o = G.watch_o
 
 
 -- | Like `watch` but doesn't pass elements to another sink.
-trigger_o :: Flow i m r a
+trigger_o :: Monad m
           => i -> (G.Ix i -> Vector r a -> m ()) -> m (Sinks i m r a)
 trigger_o = G.trigger_o
 {-# INLINE [2] trigger_o #-}
@@ -116,46 +116,46 @@ trigger_o = G.trigger_o
 --   produce a stream of the lengths of these runs.
 --
 -- @  
---   groupBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
+--   groupsBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
 -- @
 -- 
-groupBy_i 
-        :: (Flow i m r a, Target r Int)
+groupsBy_i 
+        :: (Flow i m r1 a, Target r2 Int)
         => (a -> a -> Bool)
-        -> Sources i m r a 
-        -> m (Sources i m r Int)
+        -> Sources i m r1 a 
+        -> m (Sources i m r2 Int)
 
-groupBy_i f (G.Sources n pull_chunk)
+groupsBy_i f (G.Sources n pull_chunk)
  = do   
         refs    <- newRefs n Nothing
 
-        let pull_groupBy i eat eject
-             = pull_chunk i eat_groupBy eject_groupBy
+        let pull_groupsBy i eat eject
+             = pull_chunk i eat_groupsBy eject_groupsBy
              where 
                    -- Processing a chunk from the a source stream, 
                    -- using the current state we have for that stream.
-                   eat_groupBy chunk
+                   eat_groupsBy chunk
                     = do state <- readRefs refs i
-                         let (groups, state') = A.groupBy f (chunk, state)
+                         let (groups, state') = A.groupsBy f (chunk, state)
                          writeRefs refs i state'
                          eat groups
-                   {-# INLINE eat_groupBy #-}
+                   {-# INLINE eat_groupsBy #-}
 
                    -- When there are no more chunks of source data we still
                    -- need to pass on the last count we have stored in the
                    -- state.
-                   eject_groupBy 
+                   eject_groupsBy 
                     = do state <- readRefs refs i
                          case state of
                           Nothing         -> eject
                           Just (_, count) 
                            -> do writeRefs refs i Nothing
                                  eat (A.vfromList [count])
-                   {-# INLINE eject_groupBy #-}
-            {-# INLINE pull_groupBy #-}
+                   {-# INLINE eject_groupsBy #-}
+            {-# INLINE pull_groupsBy #-}
 
-        return $ G.Sources n pull_groupBy
-{-# INLINE [2] groupBy_i #-}
+        return $ G.Sources n pull_groupsBy
+{-# INLINE [2] groupsBy_i #-}
 
 
 -- Discard --------------------------------------------------------------------

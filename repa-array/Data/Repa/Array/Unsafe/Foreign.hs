@@ -1,13 +1,14 @@
 
 module Data.Repa.Array.Unsafe.Foreign
-        (UF, Array (..))
+        ( UF, Array (..))
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Shape
-import Foreign.Storable
+import Foreign.Ptr
 import Foreign.ForeignPtr
+import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils
 import System.IO.Unsafe
@@ -36,7 +37,15 @@ instance (Shape sh, Storable a) => Bulk UF sh a where
 -- Target ---------------------------------------------------------------------
 instance Storable a => Target UF a where
  data Buffer UF a
-  = UFBuffer !Int !(ForeignPtr a)
+        = UFBuffer
+        { -- | Starting position of data, in elements.
+          _ufBufferStart :: !Int
+
+          -- | Length of buffer, in elements.
+        , _ufBufferLen   :: !Int 
+
+          -- | Pointer to buffer data.
+        , _ufBufferFPtr  :: !(ForeignPtr a) }
 
  unsafeNewBuffer len
   = do  let (proxy :: a) = undefined
@@ -44,32 +53,39 @@ instance Storable a => Target UF a where
         _       <- peek ptr  `asTypeOf` return proxy
         
         fptr    <- newForeignPtr finalizerFree ptr
-        return  $ UFBuffer len fptr
+        return  $ UFBuffer 0 len fptr
  {-# INLINE unsafeNewBuffer #-}
 
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
  -- to touch it after the last use, otherwise the finaliser might run too early.
- unsafeWriteBuffer (UFBuffer _ fptr) !ix !x
-  = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) ix x
+ unsafeWriteBuffer (UFBuffer start _ fptr) !ix !x
+  = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) (start + ix) x
  {-# INLINE unsafeWriteBuffer #-}
 
- unsafeGrowBuffer (UFBuffer len fptr) bump
+ unsafeGrowBuffer (UFBuffer start len fptr) bump
   =  withForeignPtr fptr $ \ptr 
   -> do let (proxy :: a) = undefined
         let len'         = len + bump
-        let bytes'       = sizeOf proxy * len'
-        ptr'            <- mallocBytes bytes'
-        copyBytes ptr' ptr bytes'
+        let bytesLen'    = sizeOf proxy * len'
+        let bytesStart   = sizeOf proxy * start
+
+        ptr'            <- mallocBytes bytesLen'
+        copyBytes ptr' (plusPtr ptr bytesStart) bytesLen'
+
         fptr'   <- newForeignPtr finalizerFree ptr'
-        return  $ UFBuffer len' fptr'
+        return  $ UFBuffer 0 len' fptr'
  {-# INLINE unsafeGrowBuffer #-}
 
- unsafeFreezeBuffer !sh (UFBuffer _len fptr)
-  =     return  $ UFArray sh 0 fptr
+ unsafeFreezeBuffer !sh (UFBuffer start _len fptr)
+  =     return  $ UFArray sh start fptr
  {-# INLINE unsafeFreezeBuffer #-}
 
- unsafeSliceBuffer = error "UF slice not finished"
+ unsafeSliceBuffer start' len (UFBuffer start _len fptr)
+  =     return  $ UFBuffer (start + start') len fptr
+ {-# INLINE unsafeSliceBuffer #-}
 
- touchBuffer (UFBuffer _ fptr)
+ touchBuffer (UFBuffer _ _ fptr)
   = touchForeignPtr fptr
  {-# INLINE touchBuffer #-}
+
+

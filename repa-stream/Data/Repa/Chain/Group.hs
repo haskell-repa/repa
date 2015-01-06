@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Chain.Group
-        (groupByC)
+        (groupsByC)
 where
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
@@ -11,15 +11,15 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --   produce a stream of the lengths of these runs.
 -- 
 -- @
---  groupByC (==) [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
+--  groupsByC (==) [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
 --             = ([3, 2, 1], Just (\'d\', 2))
 -- @
 --
-groupByC :: (a -> a -> Bool)    -- ^ Comparison function for elements.
+groupsByC :: (a -> a -> Bool)    -- ^ Comparison function for elements.
          -> Chain a c           -- ^ Input stream of elements.
          -> Chain Int (c, Maybe (a, Int))
 
-groupByC f (Chain sz  istep s0 iresume)
+groupsByC f (Chain sz  istep s0 iresume)
  = Chain (S.toMax sz) ostep (s0, Nothing) oresume
  where
         oresume (c, m) 
@@ -44,4 +44,4 @@ groupByC f (Chain sz  istep s0 iresume)
                 Done di'        -> return $ Done    (di', r)
         {-# INLINE_INNER ostep #-}
 
-{-# INLINE_STREAM groupByC #-}
+{-# INLINE_STREAM groupsByC #-}

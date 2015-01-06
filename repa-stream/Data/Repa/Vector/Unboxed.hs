@@ -6,7 +6,7 @@ module Data.Repa.Vector.Unboxed
           -- * Operators
         , findSegments
         , findSegmentsFrom
-        , groupBy
+        , groupsBy
         , ratchet
         , extract)
 where
@@ -45,25 +45,25 @@ unchainToVector chain
 --   produce a stream of the lengths of these runs.
 -- 
 -- @
---  groupBy (==) [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
+--  groupsBy (==) [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
 --            = ([3, 2, 1], Just (\'d\', 2))
 -- @
 --
-groupBy :: Unbox a
+groupsBy :: Unbox a
         => (a -> a -> Bool)               -- ^ Comparison function.
         -> (U.Vector a,   Maybe (a, Int)) -- ^ Input values and starting state.
         -> (U.Vector Int, Maybe (a, Int)) -- ^ Segment lengths and ending state.
 
-groupBy f (vec, c)
+groupsBy f (vec, c)
  = (vec', snd c')
  where (vec', c') 
          = runST $ unchainToVector 
                  $ C.liftChain 
                  $ C.resume     ((), c)
-                 $ C.groupByC f
+                 $ C.groupsByC f
                  $ C.chainOfStream ()
                  $ G.stream vec
-{-# INLINE_STREAM groupBy #-}
+{-# INLINE_STREAM groupsBy #-}
 
 
 ---------------------------------------------------------------------------------------------------

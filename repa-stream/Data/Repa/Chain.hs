@@ -9,7 +9,7 @@ module Data.Repa.Chain
         , unchainToMVector
 
         -- * Grouping
-        , groupByC)
+        , groupsByC)
 where
 import Data.Repa.Chain.Base
 import Data.Repa.Chain.Group
