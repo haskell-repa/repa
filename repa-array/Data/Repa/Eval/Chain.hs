@@ -18,7 +18,7 @@ import System.IO.Unsafe
 #include "vector.h"
 
 
--- | Compute a `Chain` into an `Array`.
+-- | Compute the elements of a `Chain`, writing them into a new array `Array`.
 --
 --   Chain computation is naturally sequential, so there can only be a
 --   sequential version of this function.

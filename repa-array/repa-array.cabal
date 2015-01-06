@@ -43,6 +43,8 @@ Library
         Data.Repa.IO.Array
 
   other-modules:
+        Data.Repa.Array.Internals.Operator.Concat
+
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Index
         Data.Repa.Array.Internals.Load
