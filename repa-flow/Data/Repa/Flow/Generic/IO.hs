@@ -7,15 +7,31 @@ module Data.Repa.Flow.Generic.IO
         , fileSourcesRecords,   hSourcesRecords
 
           -- * Sinking Bytes
-        , fileSinksBytes,       hSinksBytes)
+        , fileSinksBytes,       hSinksBytes
+
+          -- * Conversion
+          -- | Read and Show `Double`s for a reasonable runtime cost.
+        , readDouble
+        , showDouble
+        , showDoubleFixed)
 where
+import Data.ByteString.Char8                            (ByteString)
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Array.Foreign                          as R
+import Data.Repa.Array                                  as R
 import Data.Repa.IO.Array
 import System.IO
+import Control.Monad.Primitive
 import Data.Word
-import Data.Repa.Array.Foreign          as R
-import Data.Repa.Array                  as R
-import Prelude                          as P
+import GHC.Ptr
+import Prelude                                          as P
+
+import qualified Foreign.ForeignPtr                     as F
+import qualified Foreign.Storable                       as F
+import qualified Foreign.Marshal.Alloc                  as F
+import qualified Foreign.Marshal.Utils                  as F
+import qualified Data.ByteString.Internal               as BSI
+import qualified Data.Double.Conversion.ByteString      as DC
 
 
 -- Source Bytes -----------------------------------------------------------------------------------
@@ -173,9 +189,6 @@ hSinksBytes !hs
 
 
 -- Source Doubles ---------------------------------------------------------------------------------
-
-
-
 -- | Read a Bytestring as a Double.
 --   The standard 'read' function is tragically slow, so shell out and use
 --   the C strtod function instead.

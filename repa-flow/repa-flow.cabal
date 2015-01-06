@@ -15,10 +15,14 @@ Synopsis:       Data-parallel data flows.
 
 Library
   build-Depends: 
-        base            == 4.7.*,
-        vector          == 0.10.*,
-        repa-stream     == 4.0.0.0,
-        repa-array      == 4.0.0.0
+        base                    == 4.7.*,
+        vector                  == 0.10.*,
+        bytestring              == 0.10.*,
+        primitive               == 0.5.4.*,
+        double-conversion       == 2.0.*,
+        containers              == 0.5.*,
+        repa-stream             == 4.0.0.0,
+        repa-array              == 4.0.0.0
 
   exposed-modules:
         Data.Repa.Flow.Chunked
@@ -65,6 +69,8 @@ Library
         ScopedTypeVariables
         FunctionalDependencies
         ConstraintKinds
+        ForeignFunctionInterface
+        StandaloneDeriving
 
         
 

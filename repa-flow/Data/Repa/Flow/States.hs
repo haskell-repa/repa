@@ -8,7 +8,7 @@ import qualified Data.Vector.Mutable            as VM
 
 
 -------------------------------------------------------------------------------
-class Ord i => Index i where
+class (Ord i, Eq i, Eq (Ix i)) => Index i where
  -- | An index into the collection of states. 
  -- 
  --   The representation also carries the size of the collection, 
@@ -48,6 +48,9 @@ instance Index () where
  check _ _  = Just UIx
  {-# INLINE check #-}
 
+deriving instance Eq   (Ix ())
+deriving instance Show (Ix ())
+
 
 -- | Integer indices.
 instance Index Int where
@@ -72,6 +75,9 @@ instance Index Int where
   | i >= n      = Nothing
   | otherwise   = Just $ IIx i n
  {-# INLINE check #-}
+
+deriving instance Eq   (Ix Int)
+deriving instance Show (Ix Int)
 
 
 -------------------------------------------------------------------------------

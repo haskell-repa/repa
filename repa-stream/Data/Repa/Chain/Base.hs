@@ -125,7 +125,7 @@ unchainToMVector_unknown nStart step s0
                 Yield e s'
                  | i >= n       
                  -> do  vec'    <- GM.unsafeGrow vec n
-                        GM.unsafeWrite vec i e
+                        GM.unsafeWrite vec' i e
                         go sPEC vec' (i + 1) (n + n) s'
 
                  | otherwise

@@ -74,7 +74,7 @@ unchainToVectorIO_unknown nStart step s0
                 Yield e s'
                  | i >= n       
                  -> do  vec'    <- unsafeGrowBuffer vec n
-                        unsafeWriteBuffer vec i e
+                        unsafeWriteBuffer vec' i e
                         go_unchainIO_unknown sPEC vec' (i + 1) (n + n) s'
 
                  | otherwise

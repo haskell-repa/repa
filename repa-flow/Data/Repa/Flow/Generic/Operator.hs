@@ -7,7 +7,7 @@ module Data.Repa.Flow.Generic.Operator
           -- * Constructors
         , repeat_i
         , replicate_i
-        , prepend_i
+        , prepend_i,    prependOn_i
 
           -- * Mapping
         , smap_i,       smap_o
@@ -97,7 +97,7 @@ replicate_i n len f
 {-# INLINE [2] replicate_i #-}
 
 
--- | Prepend some more elements into the front of the sources.
+-- | Prepend some more elements into the front of some sources.
 prepend_i :: States i m
           => [a] -> Sources i m a -> m (Sources i m a)
 prepend_i xs (Sources n pullX)
@@ -116,6 +116,33 @@ prepend_i xs (Sources n pullX)
 
         return (Sources n pull_prepend)
 {-# INLINE [2] prepend_i #-}
+
+
+-- | Like `prepend_i` but only prepend the elements to the streams
+--   that match the given predicate.
+prependOn_i 
+        :: States i m
+        => (Ix i -> Bool) -> [a] -> Sources i m a -> m (Sources i m a)
+prependOn_i p xs (Sources n pullX)
+ = do   
+        refs    <- newRefs n xs
+
+        let pull_prependOn i eat eject
+             | p i
+             = do xs'   <- readRefs refs i
+                  case xs' of
+                   x : xs'' -> do 
+                         writeRefs refs i xs''
+                         eat x
+
+                   [] -> pullX i eat eject
+
+             | otherwise
+             = pullX i eat eject
+            {-# INLINE pull_prependOn #-}
+
+        return (Sources n pull_prependOn)
+{-# INLINE [2] prependOn_i #-}
 
 
 -- Mapping --------------------------------------------------------------------

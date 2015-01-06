@@ -22,7 +22,7 @@ module Data.Repa.Flow.Generic
           -- ** Constructors
         , repeat_i
         , replicate_i
-        , prepend_i
+        , prepend_i,    prependOn_i
 
           -- ** Mapping
         , smap_i,       smap_o

@@ -11,6 +11,9 @@ module Data.Repa.Flow.Chunked.Operator
         , mapChunks_i,  mapChunks_o
         , smapChunks_i, smapChunks_o
 
+          -- * Grouping
+        , groupBy_i
+
           -- * Watching
         , watch_i,      watch_o
         , trigger_o
@@ -20,6 +23,7 @@ module Data.Repa.Flow.Chunked.Operator
         , ignore_o)
 where
 import Data.Repa.Flow.Chunked.Base
+import Data.Repa.Flow.States
 import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
@@ -110,21 +114,48 @@ trigger_o = G.trigger_o
 -- Grouping -------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
--- 
---   Example: groupBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
 --
-{-
+-- @  
+--   groupBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
+-- @
+-- 
 groupBy_i 
-        :: Flow i m r a
-        => Sources i m r a -> m (Source i m r a)
-groupBy_i 
- = do   refs    <- newRefs n Nothing
+        :: (Flow i m r a, Target r Int)
+        => (a -> a -> Bool)
+        -> Sources i m r a 
+        -> m (Sources i m r Int)
+
+groupBy_i f (G.Sources n pull_chunk)
+ = do   
+        refs    <- newRefs n Nothing
 
         let pull_groupBy i eat eject
-             = do xs'   <- readRefs refs i
--}
+             = pull_chunk i eat_groupBy eject_groupBy
+             where 
+                   -- Processing a chunk from the a source stream, 
+                   -- using the current state we have for that stream.
+                   eat_groupBy chunk
+                    = do state <- readRefs refs i
+                         let (groups, state') = A.groupBy f (chunk, state)
+                         writeRefs refs i state'
+                         eat groups
+                   {-# INLINE eat_groupBy #-}
 
+                   -- When there are no more chunks of source data we still
+                   -- need to pass on the last count we have stored in the
+                   -- state.
+                   eject_groupBy 
+                    = do state <- readRefs refs i
+                         case state of
+                          Nothing         -> eject
+                          Just (_, count) 
+                           -> do writeRefs refs i Nothing
+                                 eat (A.vfromList [count])
+                   {-# INLINE eject_groupBy #-}
+            {-# INLINE pull_groupBy #-}
 
+        return $ G.Sources n pull_groupBy
+{-# INLINE [2] groupBy_i #-}
 
 
 -- Discard --------------------------------------------------------------------

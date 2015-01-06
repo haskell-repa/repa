@@ -4,6 +4,11 @@ module Data.Repa.Flow.Chunked
         , Sources, Sinks
         , Flow
 
+          -- * Conversion
+        , fromList_i
+        , fromLists_i
+        , toList1_i,    toLists1_i
+
           -- * Finalizers
         , finalize_i
         , finalize_o
@@ -13,6 +18,12 @@ module Data.Repa.Flow.Chunked
         , map_i,        map_o
         , mapChunks_i,  mapChunks_o
         , smapChunks_i, smapChunks_o
+
+          -- ** Splitting
+        , head_i
+
+          -- ** Grouping
+        , groupBy_i
 
           -- ** Watching
         , watch_i,      watch_o
