@@ -1,20 +1,16 @@
 {-# LANGUAGE CPP #-}
 
--- | Evaluation of `Chain`s into bulk array.s
+-- | Evaluation of `Chain`s into bulk array.
 module Data.Repa.Eval.Chain
         (unchainToVector)
 where
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
 import Data.Repa.Array.Internals.Index                  as R
-
 import Data.Repa.Chain                                  as C
-
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
-
 import System.IO.Unsafe
-
 #include "vector.h"
 
 

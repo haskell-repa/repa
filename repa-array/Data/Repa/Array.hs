@@ -77,9 +77,11 @@ module Data.Repa.Array
         , concat
         , concats
         , concatWith
-        , intercalate)
+        , intercalate
+
+          -- ** Grouping
+        , groupBy)
 where
-import Data.Repa.Array.Internals.Operator.Concat        as R
 import Data.Repa.Eval.Array                             as R
 import Data.Repa.Array.Delayed                          as R
 import Data.Repa.Array.Window                           as R
@@ -90,6 +92,8 @@ import Data.Repa.Array.Internals.Shape                  as R
 import Data.Repa.Array.Internals.Index                  as R
 import Data.Repa.Array.Internals.Target                 as R
 import Data.Repa.Array.Internals.Bulk                   as R
+import Data.Repa.Array.Internals.Operator.Concat        as R
+import Data.Repa.Array.Internals.Operator.Group         as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
 
@@ -126,7 +130,4 @@ findIndex p !vec
         {-# INLINE_INNER loop_findIndex #-}
 
 {-# INLINE [2] findIndex #-}
-
-
-
 

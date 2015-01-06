@@ -39,11 +39,13 @@ Library
 
         Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
+        Data.Repa.Eval.Stream
 
         Data.Repa.IO.Array
 
   other-modules:
         Data.Repa.Array.Internals.Operator.Concat
+        Data.Repa.Array.Internals.Operator.Group
 
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Index
