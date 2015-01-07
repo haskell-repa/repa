@@ -8,8 +8,11 @@ module Data.Repa.Chain
         , chainOfStream
         , unchainToMVector
 
+        -- * Scanning
+        , scanMaybeC
+
         -- * Grouping
         , groupsByC)
 where
 import Data.Repa.Chain.Base
-import Data.Repa.Chain.Group
+import Data.Repa.Chain.Scan

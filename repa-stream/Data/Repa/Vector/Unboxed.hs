@@ -4,9 +4,10 @@ module Data.Repa.Vector.Unboxed
           unchainToVector
 
           -- * Operators
+        , scanMaybe
+        , groupsBy
         , findSegments
         , findSegmentsFrom
-        , groupsBy
         , ratchet
         , extract)
 where
@@ -41,28 +42,46 @@ unchainToVector chain
 {-# INLINE_STREAM unchainToVector #-}
 
 
+---------------------------------------------------------------------------------------------------
+-- | Perform a left-to-right scan through an input vector, maintaining
+--   a state value between each element.
+scanMaybe 
+        :: (Unbox a, Unbox b)
+        => (k -> a -> (k, Maybe b))
+        -> k
+        ->  U.Vector a
+        -> (U.Vector b, k)
+
+scanMaybe f k0 vec0
+ = (vec1, snd k1)
+ where (vec1, k1)
+        = runST $ unchainToVector    $ C.liftChain 
+                $ C.scanMaybeC f k0  $ C.chainOfStream () $ G.stream vec0
+{-# INLINE_STREAM scanMaybe #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
 -- 
 -- @
---  groupsBy (==) [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
---            = ([3, 2, 1], Just (\'d\', 2))
+--  groupsBy (==) (Just ('a', 4)) 
+--                [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
+--   => ([('a', 7), ('b', 2), ('c', 1)], Just (\'d\', 2))
 -- @
 --
-groupsBy :: Unbox a
-        => (a -> a -> Bool)               -- ^ Comparison function.
-        -> (U.Vector a,   Maybe (a, Int)) -- ^ Input values and starting state.
-        -> (U.Vector Int, Maybe (a, Int)) -- ^ Segment lengths and ending state.
+groupsBy
+        :: Unbox a
+        => (a -> a -> Bool)             -- ^ Comparison function.
+        -> Maybe (a, Int)               -- ^ Starting element and count.
+        ->  U.Vector a                  -- ^ Input elements.
+        -> (U.Vector (a, Int), Maybe (a, Int))
 
-groupsBy f (vec, c)
- = (vec', snd c')
- where (vec', c') 
-         = runST $ unchainToVector 
-                 $ C.liftChain 
-                 $ C.resume     ((), c)
-                 $ C.groupsByC f
-                 $ C.chainOfStream ()
-                 $ G.stream vec
+groupsBy f !c !vec0
+ = (vec1, snd k1)
+ where  (vec1, k1)
+         = runST $ unchainToVector  $ C.liftChain 
+                 $ C.groupsByC f c  $ C.chainOfStream () $ G.stream vec0
 {-# INLINE_STREAM groupsBy #-}
 
 
