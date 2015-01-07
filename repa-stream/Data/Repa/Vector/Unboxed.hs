@@ -31,7 +31,7 @@ import Data.IORef
 
 #include "vector.h"
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Compute a monadic chain, producing a vector of elements.
 unchainToVector :: (PrimMonad m, Unbox a)
          => C.MChain m a c -> m (U.Vector a,    c)
@@ -42,7 +42,7 @@ unchainToVector chain
 {-# INLINE_STREAM unchainToVector #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Perform a left-to-right scan through an input vector, maintaining
 --   a state value between each element.
 scanMaybe 
@@ -60,7 +60,7 @@ scanMaybe f k0 vec0
 {-# INLINE_STREAM scanMaybe #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
 -- 
@@ -85,7 +85,7 @@ groupsBy f !c !vec0
 {-# INLINE_STREAM groupsBy #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Given predicates that detect the beginning and end of some interesting
 --   segment of information, scan through a vector looking for when these
 --   segments begin and end. Return vectors of the segment starting positions
@@ -111,7 +111,7 @@ findSegments pStart pEnd src
 {-# INLINE_STREAM findSegments #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Given predicates that detect the beginning and end of some interesting
 --   segment of information, scan through a vector looking for when these
 --   segments begin and end. Return vectors of the segment starting positions
@@ -133,7 +133,7 @@ findSegmentsFrom pStart pEnd len get
 {-# INLINE_STREAM findSegmentsFrom #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Interleaved `enumFromTo`. 
 --
 --   Given a vector of starting values, and a vector of stopping values, 
@@ -179,7 +179,7 @@ ratchet vStartsMax
 {-# INLINE_STREAM ratchet #-}
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Extract segments from some source array and concatenate them.
 -- 
 -- @

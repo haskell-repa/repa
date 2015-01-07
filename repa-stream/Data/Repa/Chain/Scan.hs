@@ -66,3 +66,4 @@ groupsByC f !s !vec
                  | otherwise -> (Just (y, 1),     Just (x, n))
         {-# INLINE work_groupsByC #-}
 {-# INLINE_STREAM groupsByC #-}
+

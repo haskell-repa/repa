@@ -116,14 +116,15 @@ trigger_o = G.trigger_o
 --   produce a stream of the lengths of these runs.
 --
 -- @  
---   groupsBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
+--   groupsBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] 
+--    => [3, 2, 3, 1]
 -- @
 -- 
 groupsBy_i 
-        :: (Flow i m r1 a, Target r2 Int)
+        :: (Flow i m r1 a, Target r2 (a, Int))
         => (a -> a -> Bool)
-        -> Sources i m r1 a 
-        -> m (Sources i m r2 Int)
+        ->    Sources i m r1 a 
+        -> m (Sources i m r2 (a, Int))
 
 groupsBy_i f (G.Sources n pull_chunk)
  = do   
@@ -136,9 +137,9 @@ groupsBy_i f (G.Sources n pull_chunk)
                    -- using the current state we have for that stream.
                    eat_groupsBy chunk
                     = do state <- readRefs refs i
-                         let (groups, state') = A.groupsBy f (chunk, state)
+                         let (segs, state') = A.groupsBy f state chunk
                          writeRefs refs i state'
-                         eat groups
+                         eat segs
                    {-# INLINE eat_groupsBy #-}
 
                    -- When there are no more chunks of source data we still
@@ -148,9 +149,9 @@ groupsBy_i f (G.Sources n pull_chunk)
                     = do state <- readRefs refs i
                          case state of
                           Nothing         -> eject
-                          Just (_, count) 
+                          Just seg
                            -> do writeRefs refs i Nothing
-                                 eat (A.vfromList [count])
+                                 eat (A.vfromList [seg])
                    {-# INLINE eject_groupsBy #-}
             {-# INLINE pull_groupsBy #-}
 
