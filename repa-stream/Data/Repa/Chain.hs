@@ -16,8 +16,11 @@ module Data.Repa.Chain
 
         -- * Weaving
         , weaveC, Weave, Turn (..), Move(..), move
-        , foldsC)
+
+        -- * Folding
+        , foldsC, Folds(..), packFolds)
 where
 import Data.Repa.Chain.Base
 import Data.Repa.Chain.Scan
 import Data.Repa.Chain.Weave
+import Data.Repa.Chain.Folds

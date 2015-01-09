@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Vector.Unboxed
         ( -- * Conversion
-          unchainToVector
+          chainOfVector
+        , unchainToVectorIO
+        , unchainToVectorM
 
           -- * Operators
         , scanMaybe
@@ -9,7 +11,10 @@ module Data.Repa.Vector.Unboxed
         , findSegments
         , findSegmentsFrom
         , ratchet
-        , extract)
+        , extract
+
+          -- ** Folds
+        , foldsT, C.Folds(..))
 where
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
@@ -32,14 +37,29 @@ import Data.IORef
 #include "vector.h"
 
 -------------------------------------------------------------------------------
+chainOfVector     
+        :: (Monad m, Unbox a)
+        => U.Vector a -> C.MChain m Int a
+chainOfVector
+ = C.chainOfVector
+
+unchainToVectorIO 
+        :: Unbox a 
+        => C.MChain IO s a -> (U.Vector a, s)
+unchainToVectorIO chain
+ = unsafePerformIO $ unchainToVectorM chain
+{-# INLINE_STREAM unchainToVectorIO #-}
+
+
 -- | Compute a monadic chain, producing a vector of elements.
-unchainToVector :: (PrimMonad m, Unbox a)
-         => C.MChain m s a -> m (U.Vector a, s)
-unchainToVector chain
+unchainToVectorM
+        :: (PrimMonad m, Unbox a)
+        => C.MChain m s a  -> m (U.Vector a, s)
+unchainToVectorM chain
  = do   (mvec, c') <- C.unchainToMVector chain
         vec        <- U.unsafeFreeze mvec
         return (vec, c')
-{-# INLINE_STREAM unchainToVector #-}
+{-# INLINE_STREAM unchainToVectorM #-}
 
 
 -------------------------------------------------------------------------------
@@ -58,7 +78,7 @@ scanMaybe f k0 vec0
         f' s x = return $ f s x
 
         (vec1, k1)
-         = runST $ unchainToVector     $ C.liftChain 
+         = runST $ unchainToVectorM    $ C.liftChain 
                  $ C.scanMaybeC f' k0  $ C.chainOfVector vec0
 
 
@@ -88,7 +108,7 @@ groupsBy f !c !vec0
         f' x y = return $ f x y
 
         (vec1, k1)
-         = runST $ unchainToVector  $ C.liftChain 
+         = runST $ unchainToVectorM $ C.liftChain 
                  $ C.groupsByC f' c $ C.chainOfVector vec0
 {-# INLINE_STREAM groupsBy #-}
 
@@ -206,4 +226,34 @@ extract get vStartLen
  = G.unstream $ extractS get (G.stream vStartLen)
 {-# INLINE_STREAM extract #-}
 
+
+-------------------------------------------------------------------------------
+-- | Segmented fold over vectors of segment lengths and input values.
+--
+--   The total lengths of all segments need not match the length of the
+--   input elements vector. The returned `C.Folds` state can be inspected
+--   to determine whether all segments were completely folded, or the 
+--   vector of segment lengths or elements was too short relative to the
+--   other.
+--
+foldsT  :: (Unbox a, Unbox b)
+        => (a -> b -> b)        -- ^ Worker function.
+        -> b                    -- ^ Initial state for each segment.
+        -> U.Vector Int         -- ^ Segment lengths.
+        -> U.Vector a           -- ^ Elements.
+        -> (U.Vector b, C.Folds Int Int a b)
+
+foldsT f z vLens vVals
+ = let  
+        f' x y = return $ f x y
+        {-# INLINE f' #-}
+
+        (vResults, state) 
+          = runST $ unchainToVectorM 
+                  $ C.foldsC f' z 
+                        (chainOfVector vLens)
+                        (chainOfVector vVals)
+
+   in   (vResults, C.packFolds state)
+{-# INLINE_STREAM foldsT #-}
 

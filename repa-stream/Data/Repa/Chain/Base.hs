@@ -74,8 +74,8 @@ resume s' (Chain sz _s step)
 -------------------------------------------------------------------------------
 -- | Produce a chain from a generic vector.
 chainOfVector 
-        :: GV.Vector v a
-        => v a -> Chain Int a
+        :: (Monad m, GV.Vector v a)
+        => v a -> MChain m Int a
 
 chainOfVector vec
  = Chain (S.Exact len) 0 step

@@ -80,7 +80,10 @@ module Data.Repa.Array
         , intercalate
 
           -- ** Grouping
-        , groupsBy)
+        , groupsBy
+
+          -- ** Folding
+        , folds)
 where
 import Data.Repa.Eval.Array                             as R
 import Data.Repa.Array.Delayed                          as R
@@ -94,6 +97,7 @@ import Data.Repa.Array.Internals.Target                 as R
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Operator.Concat        as R
 import Data.Repa.Array.Internals.Operator.Group         as R
+import Data.Repa.Array.Internals.Operator.Fold          as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
 

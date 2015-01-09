@@ -27,6 +27,8 @@ Library
   other-modules:
         Data.Repa.Chain.Base
         Data.Repa.Chain.Scan
+        Data.Repa.Chain.Weave
+        Data.Repa.Chain.Folds
 
         Data.Repa.Stream.Extract
         Data.Repa.Stream.Ratchet

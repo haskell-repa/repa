@@ -1,55 +1,22 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Chain.Weave
-        ( Move  (..), move
-        , Turn  (..)
+        ( weaveC
         , Weave (..)
-        , weaveC
-
-        , foldsC)
+        , Turn  (..)
+        , Move  (..), move)
 where
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "vector.h"
 
 
--- | What to do after considering two input elements.
-data Turn s a
-        = Give  a s Move
-        | Next    s Move
-        | Finish  s
-
-
--- | How to move the input chains after considering to input elements.
-data Move
-        = MoveLeft
-        | MoveRight
-        | MoveBoth
-        | MoveNone
-
-
--- | Internal state of a weave.
-data Weave s1 a1 s2 a2 k
-        = Weave
-        { _state1       :: !s1
-        , _elem1        :: !(Maybe a1)
-        , _state2       :: !s2
-        , _elem2        :: !(Maybe a2)
-        , _here         :: !k }
-
-
--- | Apply a `Move` instruction to a weave state.
-move    :: k -> Move 
-        -> Weave s1 a1 s2 a2 k -> Weave s1 a1 s2 a2 k
-move k' mm ss
- = case mm of
-        MoveLeft        -> ss { _here = k', _elem1 = Nothing }
-        MoveRight       -> ss { _here = k', _elem2 = Nothing }
-        MoveBoth        -> ss { _here = k', _elem1 = Nothing, _elem2 = Nothing }
-        MoveNone        -> ss { _here = k' }
-{-# INLINE move #-}
-
-
--- | Weave two chains.
+-- | A weave is a generalized merge of two input chains.
+--
+--   The worker function takes the current state, values from the 
+--   left and right input chains, and produces a `Turn` which 
+--   describes any output at that point, as well as how the input
+--   chains should be advanced.
+--
 weaveC  :: Monad m
         => (k -> aL -> aR -> m (Turn k aX))
         -> k
@@ -66,16 +33,16 @@ weaveC f ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
             (Nothing, _)
              -> step1 s1 >>= \r1
              -> case r1 of
-                 Yield x1 s1' -> return $ Skip ss { _state1 = s1', _elem1 = Just x1 }
-                 Skip  s1'    -> return $ Skip ss { _state1 = s1' }
-                 Done  s1'    -> return $ Done ss { _state1 = s1', _elem1 = Nothing }
+                 Yield x1 sL' -> return $ Skip ss { _stateL = sL', _elemL = Just x1 }
+                 Skip  sL'    -> return $ Skip ss { _stateL = sL' }
+                 Done  sL'    -> return $ Done ss { _stateL = sL', _elemL = Nothing }
 
             (_, Nothing)
              -> step2 s2 >>= \r2
              -> case r2 of
-                 Yield x2 s2' -> return $ Skip ss { _state2 = s2', _elem2 = Just x2 }
-                 Skip  s2'    -> return $ Skip ss { _state2 = s2' }
-                 Done  s2'    -> return $ Done ss { _state2 = s2', _elem2 = Nothing }
+                 Yield x2 sR' -> return $ Skip ss { _stateR = sR', _elemR = Just x2 }
+                 Skip  sR'    -> return $ Skip ss { _stateR = sR' }
+                 Done  sR'    -> return $ Done ss { _stateR = sR', _elemR = Nothing }
 
             (Just x1, Just x2)
              -> f k x1 x2 >>= \t
@@ -87,25 +54,51 @@ weaveC f ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
 {-# INLINE_STREAM weaveC #-}
 
 
-foldsC  :: Monad m
-        => (a -> b -> m b)
-        -> b
-        -> MChain m sLen Int
-        -> MChain m sVal a
-        -> MChain m (Weave sLen Int sVal a (Maybe Int, b)) b
+-- | Internal state of a weave.
+data Weave sL aL sR aR k
+        = Weave
+        { -- | State of the left input chain.
+          _stateL       :: !sL
 
-foldsC f z cLens cVals 
- = weaveC work (Nothing, z) cLens cVals
- where  
-        work (mLen, acc) xLen xVal 
-         = case mLen of
-            Nothing      -> return $ Next (Just xLen, acc) MoveNone
-            Just len
-             | len == 0  -> return $ Give acc (Nothing, z) MoveBoth
-             | otherwise 
-             -> f xVal acc >>= \r
-             -> return $ Next (mLen, r) MoveRight
-        {-# INLINE work #-}
-{-# INLINE_STREAM foldsC #-}
+          -- | Current value loaded from the left input.
+        , _elemL        :: !(Maybe aL)
 
+          -- | State of the right input chain.
+        , _stateR       :: !sR
+
+          -- | Current value loaded from the right input.
+        , _elemR        :: !(Maybe aR)
+
+          -- | Worker state at this point in the weave.
+        , _here         :: !k }
+        deriving Show
+
+
+-- | What to do after considering two input elements.
+data Turn k a
+        = Give  a k Move        -- ^ Give an element and a new state.
+        | Next    k Move        -- ^ Move to the next input.
+        | Finish  k             -- ^ Weave is finished for now.
+        deriving Show
+
+
+-- | How to move the input chains after considering to input elements.
+data Move
+        = MoveLeft
+        | MoveRight
+        | MoveBoth
+        | MoveNone
+        deriving Show
+
+
+-- | Apply a `Move` instruction to a weave state.
+move    :: k -> Move 
+        -> Weave s1 a1 s2 a2 k -> Weave s1 a1 s2 a2 k
+move k' mm ss
+ = case mm of
+        MoveLeft        -> ss { _here = k', _elemL = Nothing }
+        MoveRight       -> ss { _here = k', _elemR = Nothing }
+        MoveBoth        -> ss { _here = k', _elemL = Nothing, _elemR = Nothing }
+        MoveNone        -> ss { _here = k' }
+{-# INLINE move #-}
 
