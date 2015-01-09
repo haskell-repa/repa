@@ -5,7 +5,6 @@ module Data.Repa.Chain.Scan
 where
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
-
 #include "vector.h"
 
 

@@ -12,7 +12,12 @@ module Data.Repa.Chain
         , scanMaybeC
 
         -- * Grouping
-        , groupsByC)
+        , groupsByC
+
+        -- * Weaving
+        , weaveC, Weave, Turn (..), Move(..), move
+        , foldsC)
 where
 import Data.Repa.Chain.Base
 import Data.Repa.Chain.Scan
+import Data.Repa.Chain.Weave
