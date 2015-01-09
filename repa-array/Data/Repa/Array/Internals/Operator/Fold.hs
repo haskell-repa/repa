@@ -19,20 +19,21 @@ import qualified Data.Repa.Chain                as C
 --
 folds   :: (Bulk r1 DIM1 Int, Bulk r2 DIM1 a, Target r3 b)
         => (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state for each segment.
+        -> b                    -- ^ Initial state when folding first segment.
+        -> b                    -- ^ Initial state when folding rest of segments.
         ->  Vector r1 Int       -- ^ Segment lengths.
         ->  Vector r2 a         -- ^ Elements.
         -> (Vector r3 b, C.Folds Int Int a b)
 
-folds f z vLens vVals
+folds f z0 zN vLens vVals
  = (vResults, C.packFolds state)
  where
         f' x y = return $ f x y
         {-# INLINE f' #-}
 
         (vResults, state) 
-          =  R.unchainToVector $ C.liftChain
-          $  C.foldsC f' z 
+          = R.unchainToVector $ C.liftChain
+          $ C.foldsC f' z0 zN
                 (R.chainOfVector vLens)
                 (R.chainOfVector vVals)
 {-# INLINE [2] folds #-}
