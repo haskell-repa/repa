@@ -10,31 +10,30 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 
 
 -------------------------------------------------------------------------------
--- | Perform a left-to-right scan through an input vector, maintaining
---   a state value between each element.
+-- | Perform a left-to-right scan through an input vector, maintaining a state
+--   value between each element. For each element of input we may or may not
+--   produce an element of output.
 scanMaybeC 
-        :: (k -> a -> (k, Maybe b))
-        -> k
-        -> Chain a  c
-        -> Chain b (c, k)
+        :: Monad m
+        => (k -> a -> m (k, Maybe b))
+        ->  k                   
+        -> MChain m s      a
+        -> MChain m (s, k) b
 
-scanMaybeC f k0 (Chain sz istep s0 istart)
- = Chain (S.toMax sz) ostep (s0, k0) ostart
+scanMaybeC f k0 (Chain sz s0 istep)
+ = Chain (S.toMax sz) (s0, k0) ostep
  where
-        ostart (c1, k1) 
-         = (istart c1, k1)
-        {-# INLINE_INNER ostart #-}
+        ostep  (s1, k1)
+         =  istep s1 >>= \rs
+         -> case rs of
+                Yield x s2      
+                 -> f k1 x >>= \rk
+                 -> case rk of
+                        (k2, Nothing) -> return $ Skip    (s2, k2)
+                        (k2, Just y)  -> return $ Yield y (s2, k2)
 
-        ostep  (c1, k1)
-         =  istep c1 >>= \r
-         -> case r of
-                Yield x c2      
-                 -> case f k1 x of
-                        (k2, Nothing) -> return $ Skip    (c2, k2)
-                        (k2, Just y)  -> return $ Yield y (c2, k2)
-
-                Skip c2               -> return $ Skip    (c2, k1)
-                Done c2               -> return $ Done    (c2, k1)
+                Skip s2               -> return $ Skip    (s2, k1)
+                Done s2               -> return $ Done    (s2, k1)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM scanMaybeC #-}
 
@@ -50,20 +49,25 @@ scanMaybeC f k0 (Chain sz istep s0 istart)
 -- @
 --
 groupsByC
-        :: (a -> a -> Bool)     -- ^ Comparison function.
+        :: Monad m
+        => (a -> a -> m Bool)   -- ^ Comparison function.
         -> Maybe (a, Int)       -- ^ Starting element and count.
-        -> Chain  a  c          -- ^ Input elements.
-        -> Chain (a, Int) 
-                 (c, Maybe (a, Int))
-
+        -> MChain m  s a         -- ^ Input elements.
+        -> MChain m (s, Maybe (a, Int)) (a, Int) 
+                 
 groupsByC f !s !vec
  = scanMaybeC work_groupsByC s vec
- where  work_groupsByC !acc !y
+ where  
+        work_groupsByC !acc !y
          = case acc of
-                Nothing      -> (Just (y, 1),     Nothing)
+                Nothing      
+                 -> return $ (Just (y, 1),     Nothing)
+
                 Just (x, n)
-                 | f x y     -> (Just (x, n + 1), Nothing)
-                 | otherwise -> (Just (y, 1),     Just (x, n))
+                 -> f x y >>= \rk
+                 -> if rk 
+                        then return (Just (x, n + 1), Nothing)
+                        else return (Just (y, 1),     Just (x, n))
         {-# INLINE work_groupsByC #-}
 {-# INLINE_STREAM groupsByC #-}
 

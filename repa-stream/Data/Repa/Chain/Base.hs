@@ -4,47 +4,52 @@ module Data.Repa.Chain.Base
         , MChain (..), Chain
         , liftChain
         , resume
-        , chainOfStream
+        , chainOfVector
         , unchainToMVector)
 where
 import Control.Monad.Primitive
 import Data.Vector.Generic.Mutable                      (MVector)
+import qualified Data.Vector.Generic                    as GV
 import qualified Data.Vector.Generic.Mutable            as GM
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import qualified Data.Vector.Fusion.Util                as S
-
 #include "vector.h"
 
+
 -- | A Monadic Chain is similar to a Monadic Stream as used in stream fusion,
---   except that the Done step yields a continuation value which allows a chain
---   computation to be resumed when more source data is available.
+--   except that the internal state is visible in its type. This allows the
+--   computation to be paused and resumed at a later point.
 --
 --   Chain operations could instead be implemented with a combination of 
 --   scan-left and filtering, but expressing with a modified stepper data 
 --   type tends to be easier.
 --
-data MChain m a c
-        = forall s. Chain 
+data MChain m s a
+        = Chain 
         { -- | Expected size of the output.
           mchainSize     :: S.Size 
 
-          -- | Step the chain computation.
-        , mchainStep     :: s -> m (Step s a c)
-
-          -- | Internal state used during computation.
+          -- | Starting state.
         , mchainState    :: s 
 
-          -- | Convert a continuation value to a new starting state.
-        , mchainStart    :: c -> s }
+          -- | Step the chain computation.
+        , mchainStep     :: s -> m (Step s a) }
 
 
 -- | Result of a chain computation step.
-data Step s a c
-        = Yield a s     -- ^ A new element and a new seed.
-        | Skip    s     -- ^ Just a new seed.
-        | Done    c     -- ^ Signal end of input, and yield a continuation value. 
-                        --   so this computation can be resumed.
+data Step s a
+
+        -- | Yield an output value and a new seed.
+        = Yield a s
+
+        -- | Provide just a new seed.
+        | Skip    s
+
+        -- | Signal end of output because the computation has finished.
+        --   This alternative should be used for chain generators like
+        --   `replicate`, where the output has a fixed length.
+        | Done    s     
 
 
 -- | The type of pure chains.
@@ -52,59 +57,64 @@ type Chain = MChain S.Id
 
 
 -- | Convert a pure chain to a monadic chain.
-liftChain :: Monad m => Chain a c -> MChain m a c
-liftChain (Chain sz step s start)
-        = Chain sz (return . S.unId . step) s start
+liftChain :: Monad m => Chain s a -> MChain m s a
+liftChain (Chain sz s step)
+        = Chain sz s (return . S.unId . step)
 {-# INLINE_STREAM liftChain #-}
 
 
 -- | Resume a chain computation from a previous state.
 resume  :: Monad m 
-        => c -> MChain m a c -> MChain m a c
-resume c (Chain sz step _s start)
- = Chain sz step (start c) start
+        => s -> MChain m s a -> MChain m s a
+resume s' (Chain sz _s step)
+ = Chain sz s' step
 {-# INLINE_STREAM resume #-}
 
 
--- | Convert a stream to a chain that yields unit when it's done.
-chainOfStream
-        :: Monad m 
-        => c -> S.Stream m a -> MChain m a c
-chainOfStream c (S.Stream istep s0 sz)
- = Chain sz ostep s0 (const s0)
+-------------------------------------------------------------------------------
+-- | Produce a chain from a generic vector.
+chainOfVector 
+        :: GV.Vector v a
+        => v a -> Chain Int a
+
+chainOfVector vec
+ = Chain (S.Exact len) 0 step
  where
-        ostep si
-         =  istep si >>= \m
-         -> case m of
-                S.Yield e si'   -> return $ Yield e si'
-                S.Skip    si'   -> return $ Skip    si'
-                S.Done          -> return $ Done c
-        {-# INLINE_INNER ostep #-}
-{-# INLINE_STREAM chainOfStream #-}
+        !len  = GV.length vec
+
+        step !i
+         | i >= len
+         = return $ Done  i
+
+         | otherwise    
+         = return $ Yield (GV.unsafeIndex vec i) (i + 1)
+        {-# INLINE_INNER step #-}
+{-# INLINE_STREAM chainOfVector #-}
 
 
 -------------------------------------------------------------------------------
 -- | Compute a chain into a mutable vector.
 unchainToMVector
         :: (PrimMonad m, MVector v a)
-        => MChain m a c
-        -> m (v (PrimState m) a, c)
+        => MChain m s a
+        -> m (v (PrimState m) a, s)
 
-unchainToMVector (Chain sz step s0 _start)
+unchainToMVector (Chain sz s0 step)
  = case sz of
-        S.Exact i       -> unchainToMVector_max     i  step s0
-        S.Max i         -> unchainToMVector_max     i  step s0
-        S.Unknown       -> unchainToMVector_unknown 32 step s0
+        S.Exact i       -> unchainToMVector_max     i  s0 step
+        S.Max i         -> unchainToMVector_max     i  s0 step
+        S.Unknown       -> unchainToMVector_unknown 32 s0 step
 {-# INLINE_STREAM unchainToMVector #-}
 
 
 -- unchain when we known the maximum size of the vector.
-unchainToMVector_max nMax step s0
+unchainToMVector_max nMax s0 step 
  =  GM.unsafeNew nMax >>= \vec
- -> let go !sPEC !i !s
+ -> let 
+        go !sPEC !i !s
          =  step s >>= \m
          -> case m of
-                Yield e s'    
+                Yield e s'
                  -> do  GM.unsafeWrite vec i e
                         go sPEC (i + 1) s'
 
@@ -117,9 +127,10 @@ unchainToMVector_max nMax step s0
 
 
 -- unchain when we don't know the maximum size of the vector.
-unchainToMVector_unknown nStart step s0
+unchainToMVector_unknown nStart s0 step
  =  GM.unsafeNew nStart >>= \vec0
- -> let go !sPEC !vec !i !n !s
+ -> let 
+        go !sPEC !vec !i !n !s
          =  step s >>= \m
          -> case m of
                 Yield e s'

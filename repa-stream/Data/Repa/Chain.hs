@@ -5,7 +5,7 @@ module Data.Repa.Chain
         , Step   (..)
         , liftChain
         , resume
-        , chainOfStream
+        , chainOfVector
         , unchainToMVector
 
         -- * Scanning

@@ -5,7 +5,6 @@ where
 import Data.Repa.Array.Internals.Bulk           as R
 import Data.Repa.Array.Internals.Target         as R
 import Data.Repa.Array.Internals.Index          as R
-import Data.Repa.Eval.Stream                    as R
 import Data.Repa.Eval.Chain                     as R
 import qualified Data.Repa.Chain                as C
 
@@ -27,7 +26,11 @@ groupsBy :: (Bulk r1 DIM1 a, Target r2 (a, Int))
 
 groupsBy f !c !vec0
  = (vec1, snd k1)
- where  (vec1, k1)
+ where  
+        f' x y = return $ f x y
+        {-# INLINE f' #-}
+
+        (vec1, k1)
          = R.unchainToVector $ C.liftChain
-         $ C.groupsByC f c   $ C.chainOfStream () $ R.stream vec0
+         $ C.groupsByC f' c  $ R.chainOfVector vec0
 {-# INLINE [2] groupsBy #-}

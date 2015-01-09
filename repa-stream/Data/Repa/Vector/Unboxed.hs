@@ -34,7 +34,7 @@ import Data.IORef
 -------------------------------------------------------------------------------
 -- | Compute a monadic chain, producing a vector of elements.
 unchainToVector :: (PrimMonad m, Unbox a)
-         => C.MChain m a c -> m (U.Vector a,    c)
+         => C.MChain m s a -> m (U.Vector a, s)
 unchainToVector chain
  = do   (mvec, c') <- C.unchainToMVector chain
         vec        <- U.unsafeFreeze mvec
@@ -47,16 +47,21 @@ unchainToVector chain
 --   a state value between each element.
 scanMaybe 
         :: (Unbox a, Unbox b)
-        => (k -> a -> (k, Maybe b))
-        -> k
-        ->  U.Vector a
-        -> (U.Vector b, k)
+        => (s -> a -> (s, Maybe b)) 
+        ->  s
+        ->  U.Vector a 
+        -> (U.Vector b, s)
 
 scanMaybe f k0 vec0
  = (vec1, snd k1)
- where (vec1, k1)
-        = runST $ unchainToVector    $ C.liftChain 
-                $ C.scanMaybeC f k0  $ C.chainOfStream () $ G.stream vec0
+ where  
+        f' s x = return $ f s x
+
+        (vec1, k1)
+         = runST $ unchainToVector     $ C.liftChain 
+                 $ C.scanMaybeC f' k0  $ C.chainOfVector vec0
+
+
 {-# INLINE_STREAM scanMaybe #-}
 
 
@@ -79,9 +84,12 @@ groupsBy
 
 groupsBy f !c !vec0
  = (vec1, snd k1)
- where  (vec1, k1)
+ where  
+        f' x y = return $ f x y
+
+        (vec1, k1)
          = runST $ unchainToVector  $ C.liftChain 
-                 $ C.groupsByC f c  $ C.chainOfStream () $ G.stream vec0
+                 $ C.groupsByC f' c $ C.chainOfVector vec0
 {-# INLINE_STREAM groupsBy #-}
 
 
