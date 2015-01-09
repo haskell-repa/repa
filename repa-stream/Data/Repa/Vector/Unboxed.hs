@@ -238,20 +238,20 @@ extract get vStartLen
 --
 foldsT  :: (Unbox a, Unbox b)
         => (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding first segment.
-        -> b                    -- ^ Initial state when folding rest of segments.
+        -> b                    -- ^ Initial state when folding segments.
+        -> Maybe (Int, b)       -- ^ Length and initial state for first segment.
         -> U.Vector Int         -- ^ Segment lengths.
         -> U.Vector a           -- ^ Elements.
         -> (U.Vector b, C.Folds Int Int a b)
 
-foldsT f z0 zN vLens vVals
+foldsT f zN s0 vLens vVals
  = let  
         f' x y = return $ f x y
         {-# INLINE f' #-}
 
         (vResults, state) 
           = runST $ unchainToVectorM 
-                  $ C.foldsC f' z0 zN 
+                  $ C.foldsC f' zN s0
                         (chainOfVector vLens)
                         (chainOfVector vVals)
 

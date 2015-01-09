@@ -17,27 +17,26 @@ import Data.Repa.Chain.Weave
 --
 foldsC  :: Monad m
         => (a -> b -> m b)      -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding first segment.
         -> b                    -- ^ Initial state when folding rest of segments.
+        -> Maybe (Int, b)       -- ^ Length and initial state for first segment.
         -> MChain m sLen Int    -- ^ Segment lengths.
         -> MChain m sVal a      -- ^ Input data to fold.
-        -> MChain m (Weave sLen Int sVal a (Maybe Int, b)) b
+        -> MChain m (Weave sLen Int sVal a (Maybe (Int, b))) b
 
-foldsC f z0 zN cLens cVals 
- = weaveC work (Nothing, z0) cLens cVals
+foldsC    f zN s0 cLens cVals 
+ = weaveC work s0 cLens cVals
  where  
-        work (mLen, acc) !xLen !xVal 
-         = case mLen of
+        work !ms !xLen !xVal 
+         = case ms of
             Nothing      
-             -> return $ Next (Just xLen, acc) MoveNone
+             ->    return $ Next (Just (xLen, zN)) MoveNone
 
-            Just len
-             | len == 0  
-             -> return $ Give acc (Nothing, zN)    MoveLeft
-
-             | otherwise 
-             -> do r  <- f xVal acc
-                   return $ Next (Just (len - 1), r) MoveRight
+            Just (len, acc)
+             -> len `seq` acc `seq`
+                if len == 0  
+                 then return $ Give acc Nothing MoveLeft
+                 else do r  <- f xVal acc
+                         return $ Next (Just (len - 1, r))  MoveRight
         {-# INLINE work #-}
 {-# INLINE_STREAM foldsC #-}
 
@@ -57,20 +56,19 @@ data Folds sLens sVals a b
           -- | Current value being processed.
         , foldsValsCur          :: Maybe a
 
-          -- | Length of current segment.
-        , foldsSegAcc           :: Maybe Int
-
-          -- | Accumulator for current segment.
-        , foldsValAcc           :: b }
+          -- | Number of elements remaining to fold in the current
+          --   segment, and current accumulator, or Nothing if we're
+          --   not in a segment.
+        , foldsSegAcc           :: Maybe (Int, b) }
         deriving Show
 
 
 -- | Pack the weave state of a folds operation into a `Folds` record, 
 --   which has better field names.
-packFolds :: Weave sLens Int sVals a (Maybe Int, b)
+packFolds :: Weave sLens Int sVals a (Maybe (Int, b))
           -> Folds sLens sVals a b
 
-packFolds (Weave stateL elemL stateR elemR (mLen, acc))
-        = (Folds stateL elemL stateR elemR mLen acc)
+packFolds (Weave stateL elemL stateR elemR mLenAcc)
+        = (Folds stateL elemL stateR elemR mLenAcc)
 {-# INLINE packFolds #-}
 

@@ -122,18 +122,20 @@ trigger_o = G.trigger_o
 -- 
 groupsBy_i 
         :: (Flow i m r1 a, Target r2 (a, Int))
-        => (a -> a -> Bool)
+        => (a -> a -> Bool)     -- ^ Comparison function to decide whether
+                                --   successive values should be grouped.
         ->    Sources i m r1 a 
         -> m (Sources i m r2 (a, Int))
 
 groupsBy_i f (G.Sources n pull_chunk)
  = do   
+        -- Refs to hold partial counts between chunks.
         refs    <- newRefs n Nothing
 
         let pull_groupsBy i eat eject
              = pull_chunk i eat_groupsBy eject_groupsBy
              where 
-                   -- Processing a chunk from the a source stream, 
+                   -- Process a chunk from the a source stream, 
                    -- using the current state we have for that stream.
                    eat_groupsBy chunk
                     = do state <- readRefs refs i
@@ -157,6 +159,8 @@ groupsBy_i f (G.Sources n pull_chunk)
 
         return $ G.Sources n pull_groupsBy
 {-# INLINE [2] groupsBy_i #-}
+
+
 
 
 -- Discard --------------------------------------------------------------------

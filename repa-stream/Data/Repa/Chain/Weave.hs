@@ -76,9 +76,9 @@ data Weave sL aL sR aR k
 
 -- | What to do after considering two input elements.
 data Turn k a
-        = Give  a k Move        -- ^ Give an element and a new state.
-        | Next    k Move        -- ^ Move to the next input.
-        | Finish  k             -- ^ Weave is finished for now.
+        = Give  !a !k !Move     -- ^ Give an element and a new state.
+        | Next     !k !Move     -- ^ Move to the next input.
+        | Finish   !k           -- ^ Weave is finished for now.
         deriving Show
 
 
