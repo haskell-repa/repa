@@ -30,6 +30,7 @@ folds_i :: forall i m r1 r2 r3 a b
 folds_i f z (G.Sources nLens pullLens)
             (G.Sources nVals pullVals)
  = do
+        -- Arity of the result bundle is the minimum of the two inputs.
         let nFolds = min nLens nVals
 
         -- Refs to hold partial fold states between chunks.
