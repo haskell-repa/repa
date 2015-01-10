@@ -26,6 +26,8 @@ Library
         Data.Repa.Vector.Generic
         Data.Repa.Vector.Unboxed
 
+        Data.Repa.Fusion.Option
+
   other-modules:
         Data.Repa.Chain.Base
         Data.Repa.Chain.Scan

@@ -3,12 +3,13 @@ module Data.Repa.Chain.Weave
         ( weaveC
         , Weave (..)
         , Turn  (..)
-        , Move  (..), move)
+        , Move  (..), move
+        , Option (..))
 where
+import Data.Repa.Fusion.Option
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "vector.h"
-
 
 -- | A weave is a generalized merge of two input chains.
 --
@@ -24,33 +25,34 @@ weaveC  :: Monad m
         -> Chain m sR aR                        -- ^ Right input chain.
         -> Chain m (Weave sL aL sR aR k) aX     -- ^ Result chain.
 
-weaveC f ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
+weaveC f !ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
  = Chain S.Unknown 
-          (Weave s1i Nothing s2i Nothing ki) 
+          (Weave s1i None s2i None ki) 
           step
  where
         step ss@(Weave s1 m1 s2 m2 k)
-         = case (m1, m2) of
-            (Nothing, _)
+         = s1 `seq` m1 `seq` s2 `seq` m2 `seq` k `seq`
+           case (m1, m2) of
+            (None, _)
              -> step1 s1 >>= \r1
              -> case r1 of
-                 Yield x1 sL' -> return $ Skip ss { _stateL = sL', _elemL = Just x1 }
+                 Yield x1 sL' -> return $ Skip ss { _stateL = sL', _elemL = Some x1 }
                  Skip  sL'    -> return $ Skip ss { _stateL = sL' }
-                 Done  sL'    -> return $ Done ss { _stateL = sL', _elemL = Nothing }
+                 Done  sL'    -> return $ Done ss { _stateL = sL', _elemL = None }
 
-            (_, Nothing)
+            (_, None)
              -> step2 s2 >>= \r2
              -> case r2 of
-                 Yield x2 sR' -> return $ Skip ss { _stateR = sR', _elemR = Just x2 }
+                 Yield x2 sR' -> return $ Skip ss { _stateR = sR', _elemR = Some x2 }
                  Skip  sR'    -> return $ Skip ss { _stateR = sR' }
-                 Done  sR'    -> return $ Done ss { _stateR = sR', _elemR = Nothing }
+                 Done  sR'    -> return $ Done ss { _stateR = sR', _elemR = None }
 
-            (Just x1, Just x2)
+            (Some x1, Some x2)
              -> f k x1 x2 >>= \t
              -> case t of
                  Give x k' m  -> return $ Yield x (move k' m ss)
                  Next   k' m  -> return $ Skip    (move k' m ss)
-                 Finish k'    -> return $ Done    (move k' MoveNone ss)
+                 Finish k' m  -> return $ Done    (move k' m ss)
         {-# INLINE step #-}
 {-# INLINE_STREAM weaveC #-}
 
@@ -62,13 +64,13 @@ data Weave sL aL sR aR k
           _stateL       :: !sL
 
           -- | Current value loaded from the left input.
-        , _elemL        :: !(Maybe aL)
+        , _elemL        :: !(Option aL)
 
           -- | State of the right input chain.
         , _stateR       :: !sR
 
           -- | Current value loaded from the right input.
-        , _elemR        :: !(Maybe aR)
+        , _elemR        :: !(Option aR)
 
           -- | Worker state at this point in the weave.
         , _here         :: !k }
@@ -79,7 +81,7 @@ data Weave sL aL sR aR k
 data Turn k a
         = Give  !a !k !Move     -- ^ Give an element and a new state.
         | Next     !k !Move     -- ^ Move to the next input.
-        | Finish   !k           -- ^ Weave is finished for now.
+        | Finish   !k !Move     -- ^ Weave is finished for now.
         deriving Show
 
 
@@ -94,12 +96,12 @@ data Move
 
 -- | Apply a `Move` instruction to a weave state.
 move    :: k -> Move 
-        -> Weave s1 a1 s2 a2 k -> Weave s1 a1 s2 a2 k
-move k' mm ss
+        -> Weave s1 a1 s2 a2 k -> Weave s1 a1 s2 a2 k 
+move !k' !mm !ss
  = case mm of
-        MoveLeft        -> ss { _here = k', _elemL = Nothing }
-        MoveRight       -> ss { _here = k', _elemR = Nothing }
-        MoveBoth        -> ss { _here = k', _elemL = Nothing, _elemR = Nothing }
+        MoveLeft        -> ss { _here = k', _elemL = None }
+        MoveRight       -> ss { _here = k', _elemR = None }
+        MoveBoth        -> ss { _here = k', _elemL = None, _elemR = None }
         MoveNone        -> ss { _here = k' }
 {-# INLINE move #-}
 

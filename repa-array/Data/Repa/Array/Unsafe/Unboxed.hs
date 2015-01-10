@@ -96,7 +96,7 @@ instance U.Unbox e
 
 
 instance Unpack (Buffer UU e) (UM.IOVector e) where
- unpack (UUBuffer vec) = vec
+ unpack (UUBuffer vec) = vec `seq` vec
  repack !_ !vec        = UUBuffer vec
  {-# INLINE unpack #-}
  {-# INLINE repack #-}

@@ -25,6 +25,7 @@ module Data.Repa.Vector.Unboxed
           -- ** Folding
         , folds, C.Folds(..))
 where
+import Data.Repa.Fusion.Option
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
@@ -250,7 +251,7 @@ extract get vStartLen
 folds   :: (Unbox a, Unbox b)
         => (a -> b -> b)        -- ^ Worker function to fold each segment.
         -> b                    -- ^ Initial state when folding segments.
-        -> Maybe (Int, b)       -- ^ Length and initial state for first segment.
+        -> Option2 Int b        -- ^ Length and initial state for first segment.
         -> U.Vector Int         -- ^ Segment lengths.
         -> U.Vector a           -- ^ Elements.
         -> (U.Vector b, C.Folds Int Int a b)
