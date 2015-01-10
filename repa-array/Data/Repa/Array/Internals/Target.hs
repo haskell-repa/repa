@@ -4,6 +4,7 @@ module Data.Repa.Array.Internals.Target
         , fromList
         , vfromList)
 where
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Internals.Bulk   as R
 import Data.Repa.Array.Internals.Shape  as R
 import Data.Repa.Array.Internals.Index  as R
@@ -15,7 +16,7 @@ import Prelude                          as P
 -- Target ---------------------------------------------------------------------
 -- | Class of manifest array representations that can be constructed 
 --   in a random-access manner.
-class Target r e where
+class Unpack (Buffer r e) t => Target r e t where
 
  -- | Mutable buffer for some array representation.
  data Buffer r e

@@ -43,6 +43,8 @@ Library
         Data.Repa.Eval.Chain
         Data.Repa.Eval.Stream
 
+        Data.Repa.Fusion.Unpack
+
         Data.Repa.IO.Array
 
   other-modules:

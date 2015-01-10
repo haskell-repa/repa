@@ -6,6 +6,7 @@ module Data.Repa.Array.Internals.Operator.Concat
         , concatWith
         , intercalate )
 where
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Eval.Array                     as R
 import Data.Repa.Array.Delayed                  as R
 import Data.Repa.Array.Unboxed                  as R
@@ -14,13 +15,9 @@ import Data.Repa.Array.Internals.Target         as R
 import Data.Repa.Array.Internals.Bulk           as R
 import System.IO.Unsafe
 import qualified Data.Vector.Unboxed            as U
-import Prelude  hiding (reverse, length, map, zipWith, concat)
-import GHC.Exts hiding (fromList, toList)
-
-import Data.Repa.Array.Foreign                  as R
-import Foreign.ForeignPtr
 import qualified Data.Vector.Fusion.Stream.Monadic as V
-import Prelude  hiding (concat)
+import GHC.Exts hiding (fromList, toList)
+import Prelude  hiding (reverse, length, map, zipWith, concat)
 
 #include "vector.h"
 
@@ -68,7 +65,7 @@ concat vs
 concatWith
         :: ( Bulk r0 DIM1 a
            , Bulk r1 DIM1 (Vector r2 a)
-           , Bulk r2 DIM1 a, Unpack1 (Vector r2 a) t
+           , Bulk r2 DIM1 a, Unpack (Vector r2 a) t
            , Target r3 a)
         => Vector r0 a                  -- ^ Separator array.
         -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
@@ -145,7 +142,7 @@ concatWith !is !vs
 intercalate 
         :: ( Bulk r0 DIM1 a
            , Bulk r1 DIM1 (Vector r2 a)
-           , Bulk r2 DIM1 a, Unpack1 (Vector r2 a) t
+           , Bulk r2 DIM1 a, Unpack (Vector r2 a) t
            , Target r3 a)
         => Vector r0 a                  -- ^ Separator array.
         -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
@@ -213,18 +210,4 @@ intercalate !is !vs
         unsafeFreezeBuffer (Z :. (I# len)) buf
 {-# INLINE [2] intercalate #-}
 
-
--------------------------------------------------------------------------------
--- | Unpack the pieces of a structure into a tuple.
---
---   This is used in a low-level fusion optimisation to ensure that
---   intermediate values are unboxed.
---
-class Unpack1 a t | a -> t where
- unpack :: a -> t
- repack :: a -> t -> a
-
-instance Unpack1 (Array F DIM1 a) (Int, Int, ForeignPtr a) where
- unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
- repack _ (len, offset, fptr)           = FArray (Z :. len) offset fptr
 

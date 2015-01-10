@@ -10,6 +10,7 @@ import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Shape
 import Data.Repa.Array.Internals.Index
+import Data.Repa.Fusion.Unpack
 import Foreign.Ptr
 import Foreign.Storable
 import Foreign.ForeignPtr
@@ -42,6 +43,10 @@ instance (Shape sh, Storable a) => Bulk F sh a where
         $ withForeignPtr fptr
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
  {-# INLINE index #-}
+
+instance Unpack (Array F DIM1 a) (Int, Int, ForeignPtr a) where
+ unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
+ repack _ (len, offset, fptr)           = FArray (Z :. len) offset fptr
 
 
 -- Window ---------------------------------------------------------------------
@@ -105,6 +110,10 @@ instance Storable a => Target F a where
  touchBuffer (FBuffer _ _ fptr)
   = touchForeignPtr fptr
  {-# INLINE touchBuffer #-}
+
+instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
+ unpack (FBuffer len offset fptr) = (len, offset, fptr)
+ repack _ (len, offset, fptr)     = FBuffer len offset fptr
 
 
 -- Conversions ----------------------------------------------------------------

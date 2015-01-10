@@ -6,6 +6,8 @@ import Data.Repa.Array.Delayed
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Index
+import Data.Repa.Fusion.Unpack
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Storable
@@ -33,6 +35,12 @@ instance (Shape sh, Storable a) => Bulk UF sh a where
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
  {-# INLINE index #-}
  
+
+-- Unpack ---------------------------------------------------------------------
+instance Unpack (Array UF DIM1 a) (Int, Int, ForeignPtr a) where
+ unpack (UFArray (Z :. len) offset fptr) = (len, offset, fptr)
+ repack _ (len, offset, fptr)            = UFArray (Z :. len) offset fptr
+
  
 -- Target ---------------------------------------------------------------------
 instance Storable a => Target UF a where
