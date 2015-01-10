@@ -92,21 +92,12 @@ unchainToVectorIO (Chain sz s0 step)
                     {-# INLINE go_unchainIO_max #-}
 
                 go_unchainIO_max S.SPEC 0 s0
-        {-# INLINE unchainToVectorIO_max #-}
+        {-# INLINE [1] unchainToVectorIO_max #-}
 
         -- unchain when we don't know the maximum size of the vector.
         unchainToVectorIO_unknown !nStart
          = do   !vec0   <- unsafeNewBuffer nStart
 
-                -- This consuming function has been desugared so that the recursion
-                -- is via RealWorld, rather than using a function of type IO. 
-                -- If the recursion is at IO then GHC tries to coerce to and from
-                -- IO at every recursive call, which messes up SpecConstr.
-{-}                let go_unchainIO_unknown 
-                     :: Unpack (Buffer r a) t
-                     => S.SPEC -> t -> Int -> Int -> s 
-                     -> State# RealWorld -> (# State# RealWorld, (Array r DIM1 a, s) #)
--}
                 let go_unchainIO_unknown !sPEC !uvec !i !n !s
                      = go_unchainIO_unknown1 (repack vec0 uvec) i n s
                          (\vec' i' n' s' -> go_unchainIO_unknown sPEC (unpack vec') i' n' s')
@@ -116,14 +107,14 @@ unchainToVectorIO (Chain sz s0 step)
                      =  step s >>= \r
                      -> case r of
                          Yield e s'
-                          -> e `seq` s `seq`
-                             do (vec', n') 
-                                 <- if i >= n 
-                                        then do vec' <- unsafeGrowBuffer vec n
-                                                return (vec', n + n)
-                                        else    return (vec,  n)
+                          | i >= n
+                          -> do vec'  <- unsafeGrowBuffer vec n
                                 unsafeWriteBuffer vec' i e
-                                cont vec' (i + 1) n' s
+                                cont vec' (i + 1) (n + n) s'
+
+                          | otherwise
+                          -> do unsafeWriteBuffer vec i e
+                                cont vec (i + 1)  n s'
 
                          Skip s' 
                           ->    cont vec i n s'
@@ -134,17 +125,36 @@ unchainToVectorIO (Chain sz s0 step)
                                 done (arr, s')
 
                 go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0
+        {-# INLINE [1] unchainToVectorIO_unknown #-}
 
---                IO (go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0)
-         where  
-        {-# INLINE unchainToVectorIO_unknown #-}
 {-# INLINE [2] unchainToVectorIO #-}
 
 
 
-
-
 {-
+                -- This consuming function has been desugared so that the recursion
+                -- is via RealWorld, rather than using a function of type IO. 
+                -- If the recursion is at IO then GHC tries to coerce to and from
+                -- IO at every recursive call, which messes up SpecConstr.
+{-}                let go_unchainIO_unknown 
+                     :: Unpack (Buffer r a) t
+                     => S.SPEC -> t -> Int -> Int -> s 
+                     -> State# RealWorld -> (# State# RealWorld, (Array r DIM1 a, s) #)
+-}
+
+
+--                IO (go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0)
+
+
+                          -> do (vec', n') 
+                                 <- if i >= n 
+                                        then do vec' <- unsafeGrowBuffer vec n
+                                                return (vec', n + n)
+                                        else    return (vec,  n)
+                                unsafeWriteBuffer vec' i e
+                                cont vec' (i + 1) n' s
+
+
         -- Unfolding attempt.
                     go_unchainIO_unknown !sPEC !uvec !i !n !s !w0
                      = case unIO (step s) w0 of

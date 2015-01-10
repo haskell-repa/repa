@@ -29,16 +29,18 @@ foldsC    f zN s0 cLens cVals
  where  
         work !ms !xLen !xVal 
          = case ms of
+            -- If we haven't got a current state then load the next
+            -- segment length.
             None2
-             ->    return $ Next (Some2 xLen zN) MoveNone
+             -> return $ Next (Some2 xLen zN) MoveLeft
 
             Some2 len acc
              -> if len == 0  
-                 then return $ Give acc None2 MoveLeft
+                 then return $ Give acc None2 MoveNone
                  else do r  <- f xVal acc
                          return $ Next (Some2 (len - 1) r)  MoveRight
-        {-# INLINE work #-}
-{-# INLINE_STREAM foldsC #-}
+        {-# INLINE [1] work #-}
+{-# INLINE [2] foldsC #-}
 
 
 -- | Return state of a folds operation.

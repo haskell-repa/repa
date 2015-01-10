@@ -26,7 +26,7 @@ folds   :: (Bulk r1 DIM1 Int, Bulk r2 DIM1 a, Target r3 b t)
         ->  Vector r2 a         -- ^ Elements.
         -> (Vector r3 b, C.Folds Int Int a b)
 
-folds f !z !s0 !vLens !vVals
+folds f z s0 vLens vVals
  = unsafePerformIO
  $ do   
         let f' !x !y = return $ f x y
@@ -39,4 +39,4 @@ folds f !z !s0 !vLens !vVals
                          (A.chainOfVector vVals)
 
         return (vResults, C.packFolds state)
-{-# INLINE [2] folds #-}
+{-# INLINE [3] folds #-}

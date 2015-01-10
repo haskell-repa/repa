@@ -31,8 +31,7 @@ weaveC f !ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
           step
  where
         step ss@(Weave s1 m1 s2 m2 k)
-         = s1 `seq` m1 `seq` s2 `seq` m2 `seq` k `seq`
-           case (m1, m2) of
+         = case (m1, m2) of
             (None, _)
              -> step1 s1 >>= \r1
              -> case r1 of
@@ -53,8 +52,8 @@ weaveC f !ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
                  Give x k' m  -> return $ Yield x (move k' m ss)
                  Next   k' m  -> return $ Skip    (move k' m ss)
                  Finish k' m  -> return $ Done    (move k' m ss)
-        {-# INLINE step #-}
-{-# INLINE_STREAM weaveC #-}
+        {-# INLINE [1] step #-}
+{-# INLINE [2] weaveC #-}
 
 
 -- | Internal state of a weave.
