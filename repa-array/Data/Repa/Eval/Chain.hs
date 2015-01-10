@@ -1,9 +1,10 @@
 {-# LANGUAGE CPP #-}
 
--- | Evaluation of `Chain`s into bulk array.
+-- | Evaluation of chains into bulk arrays.
 module Data.Repa.Eval.Chain
         ( chainOfVector
-        , unchainToVector)
+        , unchainToVector
+        , unchainToVectorIO)
 where
 import Data.Repa.Chain                 (Chain(..), Step(..))
 import Data.Repa.Array.Internals.Bulk                   as R
@@ -12,6 +13,7 @@ import Data.Repa.Array.Internals.Index                  as R
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
+import Control.Monad.Identity
 import System.IO.Unsafe
 #include "vector.h"
 
@@ -38,32 +40,29 @@ chainOfVector !vec
 
 
 -------------------------------------------------------------------------------
--- | Compute the elements of a `Chain`, writing them into a new array `Array`.
---
---   Chain computation is naturally sequential, so there can only be a
---   sequential version of this function.
---
+-- | Compute the elements of a pure `Chain`,
+--   writing them into a new array `Array`.
 unchainToVector
         :: Target r a
-        => Chain C.Id s a -> (Vector r a, s)
+        => Chain Identity s a -> (Vector r a, s)
 unchainToVector c
         = unsafePerformIO 
         $ unchainToVectorIO 
         $ C.liftChain c
+{-# INLINE_STREAM unchainToVector #-}
 
 
--- | Compute a `Chain` into an `Array`.
+-- | Compute the elements of an `IO` `Chain`, 
+--   writing them to a new `Array`.
 unchainToVectorIO
         :: Target r a
-        => Chain  s a -> IO (Vector r a, s)
+        => Chain IO s a -> IO (Vector r a, s)
 
-unchainToVectorIO chain
- = case C.liftChain chain of
-    Chain sz s0 step
-     -> case sz of
-         S.Exact i       -> unchainToVectorIO_max     i  s0 step 
-         S.Max i         -> unchainToVectorIO_max     i  s0 step
-         S.Unknown       -> unchainToVectorIO_unknown 32 s0 step
+unchainToVectorIO (Chain sz s0 step)
+ = case sz of
+        S.Exact i       -> unchainToVectorIO_max     i  s0 step 
+        S.Max i         -> unchainToVectorIO_max     i  s0 step
+        S.Unknown       -> unchainToVectorIO_unknown 32 s0 step
 {-# INLINE_STREAM unchainToVectorIO #-}
 
 
