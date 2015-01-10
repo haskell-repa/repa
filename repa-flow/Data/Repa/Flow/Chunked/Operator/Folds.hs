@@ -9,8 +9,6 @@ import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
 
--- TODO: handle case when there are zero segment lengths at the end of input
--- still need to produce initial accumulator when there are no more vals chunks.
 
 -- Folds ------------------------------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
@@ -21,8 +19,9 @@ import qualified Data.Repa.Flow.Generic   as G
 --   vector of segment lengths or elements was too short relative to the
 --   other.
 --
-folds_i :: forall i m r1 r2 r3 a b t
-        .  (States i m, Window r1 DIM1 Int, Window r2 DIM1 a, Target r3 b t)
+folds_i :: forall i m r1 r2 r3 a b t2 t3
+        .  ( States i m, Window r1 DIM1 Int, Window r2 DIM1 a
+           , Target r2 a t2, Target r3 b t3, Bulk r3 DIM1 b)
         => (a -> b -> b)                -- ^ Worker function.
         -> b                            -- ^ Initial state when folding each segment.
         -> Sources i m r1 Int           -- ^ Segment lengths.
@@ -36,13 +35,15 @@ folds_i f z (G.Sources nLens pullLens)
         let nFolds = min nLens nVals
 
         -- Refs to hold partial fold states between chunks.
-        refsState  <- newRefs nFolds None2
+        refsState    <- newRefs nFolds None2
 
         -- Refs to hold the current chunk of lengths data for each stream.
-        refsLens   <- newRefs nFolds Nothing
+        refsLens     <- newRefs nFolds Nothing
 
         -- Refs to hold the current chunk of vals data for each stream.
-        refsVals   <- newRefs nFolds Nothing
+        refsVals     <- newRefs nFolds Nothing
+        refsValsDone <- newRefs nFolds False
+
 
         let pull_folds :: Ix i -> (Vector r3 b -> m ()) -> m () -> m ()
             pull_folds i eat eject
@@ -52,21 +53,27 @@ folds_i f z (G.Sources nLens pullLens)
                   case (mLens, mVals) of
                    -- If we couldn't get a chunk for both sides then we can't
                    -- produce anymore results, and the merge is done.
-                   (Nothing, _)            -> eject
-                   (_,       Nothing)      -> eject 
+                   (Nothing, _)             -> eject
 
                    -- We've got a chunk for both sides, time to do some work.
                    (Just cLens, Just cVals) 
                     -> cLens `seq` cVals `seq`
                        do 
                           mState    <- readRefs refsState i
+
                           let (cResults, sFolds) 
-                                    = A.folds f z mState cLens cVals
+                                = A.folds f z mState cLens cVals
 
                           update_folds i cLens cVals sFolds
+                          valsDone <- readRefs refsValsDone i
 
-                          -- Eat the result
-                          eat cResults
+                          -- If we're not producing output while we still have
+                          -- segment lengths then we're done.
+                          if  A.length cResults == 0
+                           && A.length cLens    >= 0
+                           && valsDone
+                                then eject
+                                else eat cResults
             {-# INLINE pull_folds #-} 
 
 
@@ -108,7 +115,13 @@ folds_i f z (G.Sources nLens pullLens)
                             = writeRefs refsVals i (Just chunk)
                            {-# INLINE eatVals_folds #-}
 
-                           ejectVals_folds = return ()
+                           -- When there are no more values then shim in an 
+                           -- empty chunk so that we can keep calling A.folds
+                           -- this is needed when there are zero lengthed
+                           -- segments on the end of the stream
+                           ejectVals_folds 
+                            = do writeRefs refsVals     i (Just $ vfromList [])
+                                 writeRefs refsValsDone i True
                            {-# INLINE ejectVals_folds #-}
 
                        in do
@@ -126,8 +139,8 @@ folds_i f z (G.Sources nLens pullLens)
                   -- Remember state for the final segment.
                   writeRefs refsState i 
                    $ if _active sFolds 
-                        then None2
-                        else Some2 (_lenSeg sFolds) (_valSeg sFolds)
+                        then Some2 (_lenSeg sFolds) (_valSeg sFolds)
+                        else None2
 
                   -- Slice down the lengths chunk to just the elements
                   -- that we haven't already consumed. If we've consumed
