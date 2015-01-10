@@ -35,17 +35,19 @@ weaveC f !ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
          = case (m1, e1, m2, e2) of
             (None, False, _, _)
              -> step1 s1 >>= \r1
-             -> case r1 of
-                 Yield x1 sL' -> return $ Skip ss { _stateL = sL', _elemL = Some x1 }
-                 Skip  sL'    -> return $ Skip ss { _stateL = sL' }
-                 Done  sL'    -> return $ Skip ss { _stateL = sL', _endL  = True }
+             -> return $ Skip
+                       $ case r1 of
+                          Yield x1 sL' -> ss { _stateL = sL', _elemL = Some x1 }
+                          Skip     sL' -> ss { _stateL = sL' }
+                          Done     sL' -> ss { _stateL = sL', _endL  = True }
 
             (_, _, None, False)
              -> step2 s2 >>= \r2
-             -> case r2 of
-                 Yield x2 sR' -> return $ Skip ss { _stateR = sR', _elemR = Some x2 }
-                 Skip  sR'    -> return $ Skip ss { _stateR = sR' }
-                 Done  sR'    -> return $ Skip ss { _stateR = sR', _endR  = True }
+             -> return $ Skip
+                       $ case r2 of
+                          Yield x2 sR' -> ss { _stateR = sR', _elemR = Some x2 }
+                          Skip     sR' -> ss { _stateR = sR' }
+                          Done     sR' -> ss { _stateR = sR', _endR  = True }
             _
              -> f k m1 m2 >>= \t
              -> case t of

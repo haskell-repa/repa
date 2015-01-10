@@ -107,14 +107,13 @@ unchainToVectorIO (Chain sz s0 step)
                      =  step s >>= \r
                      -> case r of
                          Yield e s'
-                          | i >= n
-                          -> do vec'  <- unsafeGrowBuffer vec n
+                          -> do (vec', n') 
+                                 <- if i >= n 
+                                        then do vec' <- unsafeGrowBuffer vec n
+                                                return (vec', n + n)
+                                        else    return (vec,  n)
                                 unsafeWriteBuffer vec' i e
-                                cont vec' (i + 1) (n + n) s'
-
-                          | otherwise
-                          -> do unsafeWriteBuffer vec i e
-                                cont vec (i + 1)  n s'
+                                cont vec' (i + 1) n' s'
 
                          Skip s' 
                           ->    cont vec i n s'
@@ -132,53 +131,38 @@ unchainToVectorIO (Chain sz s0 step)
 
 
 {-
-                -- This consuming function has been desugared so that the recursion
-                -- is via RealWorld, rather than using a function of type IO. 
-                -- If the recursion is at IO then GHC tries to coerce to and from
-                -- IO at every recursive call, which messes up SpecConstr.
-{-}                let go_unchainIO_unknown 
-                     :: Unpack (Buffer r a) t
-                     => S.SPEC -> t -> Int -> Int -> s 
-                     -> State# RealWorld -> (# State# RealWorld, (Array r DIM1 a, s) #)
--}
+        -- This consuming function has been desugared so that the recursion
+        -- is via RealWorld, rather than using a function of type IO. 
+        -- If the recursion is at IO then GHC tries to coerce to and from
+        -- IO at every recursive call, which messes up SpecConstr.
+          let go_unchainIO_unknown 
+             :: Unpack (Buffer r a) t
+             => S.SPEC -> t -> Int -> Int -> s 
+             -> State# RealWorld -> (# State# RealWorld, (Array r DIM1 a, s) #)
 
+              go_unchainIO_unknown !sPEC !uvec !i !n !s !w0
+               = case unIO (step s) w0 of
+                  (# w1, Yield e s' #)
+                   | (# w2,  (uvec', i', n') #)
+                     <- unIO (do (vec', n') 
+                                  <- if i >= n
+                                      then do vec' <- unsafeGrowBuffer (repack vec0 uvec) n
+                                              return (vec', n + n)
+                                      else    return (repack vec0 uvec,  n)
+                                 unsafeWriteBuffer vec' i e
+                                 return (unpack vec', i + 1, n'))
+                             w1
+                   -> (go_unchainIO_unknown sPEC uvec' i' n' s') w2
 
---                IO (go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0)
-
-
-                          -> do (vec', n') 
-                                 <- if i >= n 
-                                        then do vec' <- unsafeGrowBuffer vec n
-                                                return (vec', n + n)
-                                        else    return (vec,  n)
-                                unsafeWriteBuffer vec' i e
-                                cont vec' (i + 1) n' s
-
-
-        -- Unfolding attempt.
-                    go_unchainIO_unknown !sPEC !uvec !i !n !s !w0
-                     = case unIO (step s) w0 of
-                        (# w1, Yield e s' #)
-                         | (# w2,  (uvec', i', n') #)
-                           <- unIO (do (vec', n') 
-                                        <- if i >= n
-                                            then do vec' <- unsafeGrowBuffer (repack vec0 uvec) n
-                                                    return (vec', n + n)
-                                            else    return (repack vec0 uvec,  n)
-                                       unsafeWriteBuffer vec' i e
-                                       return (unpack vec', i + 1, n'))
-                                   w1
-                         -> (go_unchainIO_unknown sPEC uvec' i' n' s') w2
-
-                        (# w1, Skip s' #)
-                         -> (go_unchainIO_unknown sPEC uvec  i  n  s') w1
+                 (# w1, Skip s' #)
+                  -> (go_unchainIO_unknown sPEC uvec  i  n  s') w1
     
-                        (# w1, Done s' #)
-                         -> (unIO $ do
-                              vec' <- unsafeSliceBuffer 0 i (repack vec0 uvec)
-                              arr  <- unsafeFreezeBuffer (Z :. i) vec'
-                              return (arr, s')) w1
-                    {-# INLINE go_unchainIO_unknown #-}
+                 (# w1, Done s' #)
+                  -> (unIO $ do
+                       vec' <- unsafeSliceBuffer 0 i (repack vec0 uvec)
+                       arr  <- unsafeFreezeBuffer (Z :. i) vec'
+                       return (arr, s')) w1
+             {-# INLINE go_unchainIO_unknown #-}
 -}
 
 
