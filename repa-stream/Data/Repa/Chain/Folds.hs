@@ -27,18 +27,23 @@ foldsC  :: Monad m
 foldsC    f zN s0 cLens cVals 
  = weaveC work s0 cLens cVals
  where  
-        work !ms !xLen !xVal 
+        work !ms !mxLen !mxVal 
          = case ms of
             -- If we haven't got a current state then load the next
             -- segment length.
             None2
-             -> return $ Next (Some2 xLen zN) MoveLeft
+             -> case mxLen of 
+                 None           -> return $ Finish ms MoveNone
+                 Some xLen      -> return $ Next (Some2 xLen zN) MoveLeft
 
             Some2 len acc
-             -> if len == 0  
-                 then return $ Give acc None2 MoveNone
-                 else do r  <- f xVal acc
-                         return $ Next (Some2 (len - 1) r)  MoveRight
+             | len == 0         -> return $ Give   acc None2 MoveNone
+             | otherwise
+             -> case mxVal of
+                 None           -> return $ Finish ms MoveNone
+                 Some xVal
+                  -> do r <- f xVal acc
+                        return  $ Next (Some2 (len - 1) r) MoveRight
         {-# INLINE [1] work #-}
 {-# INLINE [2] foldsC #-}
 
@@ -70,7 +75,7 @@ data Folds sLens sVals a b
 packFolds :: Weave sLens Int sVals a (Option2 Int b)
           -> Folds sLens sVals a b
 
-packFolds (Weave stateL elemL stateR elemR mLenAcc)
+packFolds (Weave stateL elemL _endL stateR elemR _endR mLenAcc)
         = (Folds stateL elemL stateR elemR mLenAcc)
 {-# INLINE packFolds #-}
 

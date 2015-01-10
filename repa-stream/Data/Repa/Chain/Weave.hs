@@ -19,35 +19,35 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --   chains should be advanced.
 --
 weaveC  :: Monad m
-        => (k -> aL -> aR -> m (Turn k aX))     -- ^ Worker function.
-        -> k                                    -- ^ Initial state.
-        -> Chain m sL aL                        -- ^ Left input chain.
-        -> Chain m sR aR                        -- ^ Right input chain.
+        => (k -> Option aL -> Option aR -> m (Turn k aX))     
+                                -- ^ Worker function.
+        -> k                    -- ^ Initial state.
+        -> Chain m sL aL        -- ^ Left input chain.
+        -> Chain m sR aR        -- ^ Right input chain.
         -> Chain m (Weave sL aL sR aR k) aX     -- ^ Result chain.
 
 weaveC f !ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
  = Chain S.Unknown 
-          (Weave s1i None s2i None ki) 
-          step
+         (Weave s1i None False s2i None False ki) 
+         step
  where
-        step ss@(Weave s1 m1 s2 m2 k)
-         = case (m1, m2) of
-            (None, _)
+        step ss@(Weave s1 m1 e1 s2 m2 e2 k)
+         = case (m1, e1, m2, e2) of
+            (None, False, _, _)
              -> step1 s1 >>= \r1
              -> case r1 of
                  Yield x1 sL' -> return $ Skip ss { _stateL = sL', _elemL = Some x1 }
                  Skip  sL'    -> return $ Skip ss { _stateL = sL' }
-                 Done  sL'    -> return $ Done ss { _stateL = sL', _elemL = None }
+                 Done  sL'    -> return $ Skip ss { _stateL = sL', _endL  = True }
 
-            (_, None)
+            (_, _, None, False)
              -> step2 s2 >>= \r2
              -> case r2 of
                  Yield x2 sR' -> return $ Skip ss { _stateR = sR', _elemR = Some x2 }
                  Skip  sR'    -> return $ Skip ss { _stateR = sR' }
-                 Done  sR'    -> return $ Done ss { _stateR = sR', _elemR = None }
-
-            (Some x1, Some x2)
-             -> f k x1 x2 >>= \t
+                 Done  sR'    -> return $ Skip ss { _stateR = sR', _endR  = True }
+            _
+             -> f k m1 m2 >>= \t
              -> case t of
                  Give x k' m  -> return $ Yield x (move k' m ss)
                  Next   k' m  -> return $ Skip    (move k' m ss)
@@ -65,11 +65,17 @@ data Weave sL aL sR aR k
           -- | Current value loaded from the left input.
         , _elemL        :: !(Option aL)
 
+          -- | Whether we've hit the end of the left input
+        , _endL         :: Bool
+
           -- | State of the right input chain.
         , _stateR       :: !sR
 
           -- | Current value loaded from the right input.
         , _elemR        :: !(Option aR)
+
+          -- | Whether we've hit the end of the right input.
+        , _endR         :: Bool
 
           -- | Worker state at this point in the weave.
         , _here         :: !k }

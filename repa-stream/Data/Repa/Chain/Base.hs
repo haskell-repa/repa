@@ -5,13 +5,8 @@ module Data.Repa.Chain.Base
         , liftChain
         , resumeChain)
 where
-import Data.Vector.Generic.Mutable                      (MVector)
-import qualified Data.Vector.Generic                    as GV
-import qualified Data.Vector.Generic.Mutable            as GM
-import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import Control.Monad.Identity
-import Control.Monad.Primitive
 #include "vector.h"
 
 
