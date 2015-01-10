@@ -5,7 +5,7 @@ module Data.Repa.Eval.Chain
         ( chainOfVector
         , unchainToVector)
 where
-import Data.Repa.Chain         (MChain(..), Chain, Step(..))
+import Data.Repa.Chain                 (Chain(..), Step(..))
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
 import Data.Repa.Array.Internals.Index                  as R
@@ -19,8 +19,8 @@ import System.IO.Unsafe
 -------------------------------------------------------------------------------
 -- | Produce a chain from a generic vector.
 chainOfVector 
-        :: Bulk r DIM1 a 
-        => Vector r a -> Chain Int a
+        :: (Monad m, Bulk r DIM1 a)
+        => Vector r a -> Chain m Int a
 
 chainOfVector !vec
  = Chain (S.Exact len) 0 step
@@ -45,9 +45,11 @@ chainOfVector !vec
 --
 unchainToVector
         :: Target r a
-        => Chain  s a -> (Vector r a, s)
+        => Chain C.Id s a -> (Vector r a, s)
 unchainToVector c
- = unsafePerformIO $ unchainToVectorIO c
+        = unsafePerformIO 
+        $ unchainToVectorIO 
+        $ C.liftChain c
 
 
 -- | Compute a `Chain` into an `Array`.

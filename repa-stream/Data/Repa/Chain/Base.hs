@@ -5,13 +5,13 @@ module Data.Repa.Chain.Base
         , liftChain
         , resumeChain)
 where
-import Control.Monad.Primitive
 import Data.Vector.Generic.Mutable                      (MVector)
 import qualified Data.Vector.Generic                    as GV
 import qualified Data.Vector.Generic.Mutable            as GM
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
-import qualified Data.Vector.Fusion.Util                as S
+import Control.Monad.Identity
+import Control.Monad.Primitive
 #include "vector.h"
 
 
@@ -46,9 +46,9 @@ data Step s a
 
 
 -- | Lift a pure chain to a monadic chain.
-liftChain :: Monad m => Chain S.Id s a -> Chain m s a
+liftChain :: Monad m => Chain Identity s a -> Chain m s a
 liftChain (Chain sz s step)
-        = Chain sz s (return . S.unId . step)
+        = Chain sz s (return . runIdentity . step)
 {-# INLINE_STREAM liftChain #-}
 
 
