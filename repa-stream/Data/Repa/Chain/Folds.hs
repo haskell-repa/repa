@@ -57,7 +57,7 @@ data Folds sLens sVals a b
         , foldsValsCur          :: Maybe a
 
           -- | Number of elements remaining to fold in the current
-          --   segment, and current accumulator, or Nothing if we're
+          --   segment, and current accumulator, or `Nothing` if we're
           --   not in a segment.
         , foldsSegAcc           :: Maybe (Int, b) }
         deriving Show

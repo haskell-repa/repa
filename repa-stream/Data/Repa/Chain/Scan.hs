@@ -17,7 +17,7 @@ scanMaybeC
         => (k -> a -> m (k, Maybe b))   -- ^ Worker function.
         ->  k                           -- ^ Initial state for scan.
         -> Chain m s      a             -- ^ Input elements.
-        -> Chain m (s, k) b             -- ^ Output elements.
+        -> Chain m (s, k) b             -- ^ Output elements and final state.
 
 scanMaybeC f k0 (Chain sz s0 istep)
  = Chain (S.toMax sz) (s0, k0) ostep

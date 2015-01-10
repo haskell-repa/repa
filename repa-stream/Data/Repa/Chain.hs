@@ -6,7 +6,7 @@ module Data.Repa.Chain
         , liftChain
         , resumeChain
 
-        -- * Scan operators
+        -- * Scan Operators
         -- | These have a scan-like structure, 
         --   and are implemented in terms of `scanMaybeC`.
         , scanMaybeC
@@ -14,7 +14,7 @@ module Data.Repa.Chain
         -- ** Grouping
         , groupsByC
 
-        -- * Weave operators
+        -- * Weave Operators
         -- | These have a weave-like structure, 
         --   and are implemented in terms of `weaveC`.
         , weaveC, Weave, Turn (..), Move(..), move
