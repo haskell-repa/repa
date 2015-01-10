@@ -45,7 +45,8 @@ instance (Shape sh, Storable a) => Bulk F sh a where
 
 
 -- Window ---------------------------------------------------------------------
-instance Window F DIM1 a where
+instance Storable a 
+      => Window F DIM1 a where
  window (Z :. start) sh' (FArray _ offset ptr)
         = FArray sh' (offset + start) ptr
  {-# INLINE window #-}

@@ -67,7 +67,6 @@ instance ( Bulk   r DIM1 a
         = Z :. U.length starts
  {-# INLINE [1] extent #-}
 
-
  index  (UNArray starts lengths elems) (Z :. ix)
   = window (Z :. (starts  `U.unsafeIndex` ix)) 
            (Z :. (lengths `U.unsafeIndex` ix)) 
@@ -75,12 +74,12 @@ instance ( Bulk   r DIM1 a
  {-# INLINE [1] index #-}
 
 
-
 deriving instance Show (Vector r a) => Show (Vector UN (Vector r a))
 
 
 -- Window -----------------------------------------------------------------------------------------
-instance Window UN DIM1 (Vector r a) where
+instance (Bulk r DIM1 a, Window r DIM1 a)
+      => Window UN DIM1 (Vector r a) where
  window (Z :. start) (Z :. len) (UNArray starts lengths elems)
         = UNArray (U.unsafeSlice start len starts)
                   (U.unsafeSlice start len lengths)

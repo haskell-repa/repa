@@ -50,10 +50,10 @@ entire arr
 
 -- | Class of array representations that can be windowed directly.
 --   The underlying representation can encode the window.
-class Shape sh => Window r sh a where
+class Bulk r sh a => Window r sh a where
  window :: sh -> sh -> Array r sh a -> Array r sh a
 
-instance Shape sh => Window (W r) sh a where
+instance Bulk r sh a => Window (W r) sh a where
  window start _shape (WArray wStart wShape arr)
         = WArray (addDim wStart start) wShape arr
  {-# INLINE window #-}
