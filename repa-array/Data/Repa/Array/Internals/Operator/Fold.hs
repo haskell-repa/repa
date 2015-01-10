@@ -2,12 +2,12 @@
 module Data.Repa.Array.Internals.Operator.Fold
         (folds, C.Folds(..))
 where
-import Data.Repa.Array.Internals.Bulk           as R
-import Data.Repa.Array.Internals.Target         as R
-import Data.Repa.Array.Internals.Index          as R
-import Data.Repa.Eval.Chain                     as R
+import Data.Repa.Array.Internals.Bulk           as A
+import Data.Repa.Array.Internals.Target         as A
+import Data.Repa.Array.Internals.Index          as A
+import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
-
+import System.IO.Unsafe
 
 -- | Segmented fold over vectors of segment lengths and input values.
 --
@@ -26,15 +26,14 @@ folds   :: (Bulk r1 DIM1 Int, Bulk r2 DIM1 a, Target r3 b)
         -> (Vector r3 b, C.Folds Int Int a b)
 
 folds f z s0 vLens vVals
- = (vResults, C.packFolds state)
- where
-        f' x y = return $ f x y
-        {-# INLINE f' #-}
+ = unsafePerformIO
+ $ do   
+        (vResults, state)
+                <- A.unchainToVectorIO
+                $  C.foldsC (\x y -> return $ f x y) 
+                         z s0
+                         (A.chainOfVector vLens)
+                         (A.chainOfVector vVals)
 
-        (vResults, state) 
-          = R.unchainToVector $ C.liftChain
-          $ C.foldsC f' z s0
-                (R.chainOfVector vLens)
-                (R.chainOfVector vVals)
+        return (vResults, C.packFolds state)
 {-# INLINE [2] folds #-}
-
