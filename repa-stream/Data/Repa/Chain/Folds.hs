@@ -19,9 +19,9 @@ foldsC  :: Monad m
         => (a -> b -> m b)      -- ^ Worker function.
         -> b                    -- ^ Initial state when folding rest of segments.
         -> Maybe (Int, b)       -- ^ Length and initial state for first segment.
-        -> MChain m sLen Int    -- ^ Segment lengths.
-        -> MChain m sVal a      -- ^ Input data to fold.
-        -> MChain m (Weave sLen Int sVal a (Maybe (Int, b))) b
+        -> Chain m sLen Int     -- ^ Segment lengths.
+        -> Chain m sVal a       -- ^ Input data to fold.
+        -> Chain m (Weave sLen Int sVal a (Maybe (Int, b))) b
 
 foldsC    f zN s0 cLens cVals 
  = weaveC work s0 cLens cVals

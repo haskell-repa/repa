@@ -22,6 +22,7 @@ Library
   exposed-modules:
         Data.Repa.Chain
         Data.Repa.Stream
+        Data.Repa.Vector.Generic
         Data.Repa.Vector.Unboxed
 
   other-modules:

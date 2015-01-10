@@ -2,75 +2,85 @@
 module Data.Repa.Vector.Unboxed
         ( -- * Conversion
           chainOfVector
-        , unchainToVectorIO
-        , unchainToVectorM
+        , unchainToVector
+        , unchainToMVector
 
-          -- * Operators
-        , scanMaybe
-        , groupsBy
         , findSegments
         , findSegmentsFrom
         , ratchet
         , extract
 
-          -- ** Folds
-        , foldsT, C.Folds(..))
+          -- * Scan operators
+          -- | These have a scan-like structure,
+          --   and are implemented in terms of `scanMaybe`.
+        , scanMaybe
+
+          -- ** Grouping
+        , groupsBy
+
+          -- * Weave operators
+          -- | These have a weave-like structure,
+          --   and are implemented in terms of `weave`.
+
+          -- ** Folding
+        , folds, C.Folds(..))
 where
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
-
+import Data.Vector.Unboxed                              (Unbox, Vector)
+import Data.Vector.Unboxed.Mutable                      (MVector)
+import Data.Repa.Chain                                  (Chain)
+import qualified Data.Repa.Vector.Generic               as G
 import qualified Data.Repa.Chain                        as C
-
-import Data.Vector.Unboxed                              (Unbox)
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
 import qualified Data.Vector.Generic                    as G
 import qualified Data.Vector.Generic.Mutable            as GM
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
-
 import Control.Monad.ST
 import Control.Monad.Primitive
 import System.IO.Unsafe
 import Data.IORef
-
 #include "vector.h"
 
+
 -------------------------------------------------------------------------------
-chainOfVector     
+-- | Produce a chain from a generic vector.
+chainOfVector 
         :: (Monad m, Unbox a)
-        => U.Vector a -> C.MChain m Int a
-chainOfVector
- = C.chainOfVector
-
-unchainToVectorIO 
-        :: Unbox a 
-        => C.MChain IO s a -> (U.Vector a, s)
-unchainToVectorIO chain
- = unsafePerformIO $ unchainToVectorM chain
-{-# INLINE_STREAM unchainToVectorIO #-}
+        => Vector a -> Chain m Int a
+chainOfVector = G.chainOfVector
+{-# INLINE_STREAM chainOfVector #-}
 
 
--- | Compute a monadic chain, producing a vector of elements.
-unchainToVectorM
+-- | Compute a chain into a vector.
+unchainToVector
         :: (PrimMonad m, Unbox a)
-        => C.MChain m s a  -> m (U.Vector a, s)
-unchainToVectorM chain
- = do   (mvec, c') <- C.unchainToMVector chain
-        vec        <- U.unsafeFreeze mvec
-        return (vec, c')
-{-# INLINE_STREAM unchainToVectorM #-}
+        => C.Chain m s a  -> m (Vector a, s)
+unchainToVector = G.unchainToVector
+{-# INLINE_STREAM unchainToVector #-}
+
+
+-- | Compute a chain into a mutable vector.
+unchainToMVector
+        :: (PrimMonad m, Unbox a)
+        => C.Chain m s a
+        -> m (MVector (PrimState m) a, s)
+unchainToMVector = G.unchainToMVector
+{-# INLINE_STREAM unchainToMVector #-}
 
 
 -------------------------------------------------------------------------------
--- | Perform a left-to-right scan through an input vector, maintaining
---   a state value between each element.
+-- | Perform a left-to-right scan through an input vector, maintaining a state
+--   value between each element. For each element of input we may or may not
+--   produce an element of output.
 scanMaybe 
         :: (Unbox a, Unbox b)
-        => (s -> a -> (s, Maybe b)) 
-        ->  s
-        ->  U.Vector a 
-        -> (U.Vector b, s)
+        => (s -> a -> (s, Maybe b))     -- ^ Worker function.
+        ->  s                           -- ^ Initial state for scan.
+        ->  U.Vector a                  -- ^ Input elements.
+        -> (U.Vector b, s)              -- ^ Output elements.
 
 scanMaybe f k0 vec0
  = (vec1, snd k1)
@@ -78,10 +88,8 @@ scanMaybe f k0 vec0
         f' s x = return $ f s x
 
         (vec1, k1)
-         = runST $ unchainToVectorM    $ C.liftChain 
-                 $ C.scanMaybeC f' k0  $ C.chainOfVector vec0
-
-
+         = runST $ unchainToVector     $ C.liftChain 
+                 $ C.scanMaybeC f' k0  $ chainOfVector vec0
 {-# INLINE_STREAM scanMaybe #-}
 
 
@@ -108,8 +116,8 @@ groupsBy f !c !vec0
         f' x y = return $ f x y
 
         (vec1, k1)
-         = runST $ unchainToVectorM $ C.liftChain 
-                 $ C.groupsByC f' c $ C.chainOfVector vec0
+         = runST $ unchainToVector   $ C.liftChain 
+                 $ C.groupsByC f' c  $ chainOfVector vec0
 {-# INLINE_STREAM groupsBy #-}
 
 
@@ -234,27 +242,30 @@ extract get vStartLen
 --   input elements vector. The returned `C.Folds` state can be inspected
 --   to determine whether all segments were completely folded, or the 
 --   vector of segment lengths or elements was too short relative to the
---   other.
+--   other. In the resulting state, `C.foldLensState` is the index into
+--   the lengths vector *after* the last one that was consumed. If this
+--   equals the length of the lengths vector then all segment lengths were
+--   consumed. Similarly for the elements vector.
 --
-foldsT  :: (Unbox a, Unbox b)
-        => (a -> b -> b)        -- ^ Worker function.
+folds   :: (Unbox a, Unbox b)
+        => (a -> b -> b)        -- ^ Worker function to fold each segment.
         -> b                    -- ^ Initial state when folding segments.
         -> Maybe (Int, b)       -- ^ Length and initial state for first segment.
         -> U.Vector Int         -- ^ Segment lengths.
         -> U.Vector a           -- ^ Elements.
         -> (U.Vector b, C.Folds Int Int a b)
 
-foldsT f zN s0 vLens vVals
+folds f zN s0 vLens vVals
  = let  
         f' x y = return $ f x y
         {-# INLINE f' #-}
 
         (vResults, state) 
-          = runST $ unchainToVectorM 
+          = runST $ unchainToVector
                   $ C.foldsC f' zN s0
                         (chainOfVector vLens)
                         (chainOfVector vVals)
 
    in   (vResults, C.packFolds state)
-{-# INLINE_STREAM foldsT #-}
+{-# INLINE_STREAM folds #-}
 

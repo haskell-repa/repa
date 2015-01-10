@@ -1,23 +1,25 @@
 
 module Data.Repa.Chain  
         ( -- * Chain fusion
-          MChain (..), Chain
+          Chain  (..)
         , Step   (..)
         , liftChain
-        , resume
-        , chainOfVector
-        , unchainToMVector
+        , resumeChain
 
-        -- * Scanning
+        -- * Scan operators
+        -- | These have a scan-like structure, 
+        --   and are implemented in terms of `scanMaybeC`.
         , scanMaybeC
 
-        -- * Grouping
+        -- ** Grouping
         , groupsByC
 
-        -- * Weaving
+        -- * Weave operators
+        -- | These have a weave-like structure, 
+        --   and are implemented in terms of `weaveC`.
         , weaveC, Weave, Turn (..), Move(..), move
 
-        -- * Folding
+        -- ** Folding
         , foldsC, Folds(..), packFolds)
 where
 import Data.Repa.Chain.Base

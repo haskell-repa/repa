@@ -14,10 +14,10 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --   produce an element of output.
 scanMaybeC 
         :: Monad m
-        => (k -> a -> m (k, Maybe b))
-        ->  k                   
-        -> MChain m s      a
-        -> MChain m (s, k) b
+        => (k -> a -> m (k, Maybe b))   -- ^ Worker function.
+        ->  k                           -- ^ Initial state for scan.
+        -> Chain m s      a             -- ^ Input elements.
+        -> Chain m (s, k) b             -- ^ Output elements.
 
 scanMaybeC f k0 (Chain sz s0 istep)
  = Chain (S.toMax sz) (s0, k0) ostep
@@ -49,10 +49,10 @@ scanMaybeC f k0 (Chain sz s0 istep)
 --
 groupsByC
         :: Monad m
-        => (a -> a -> m Bool)   -- ^ Comparison function.
-        -> Maybe (a, Int)       -- ^ Starting element and count.
-        -> MChain m  s a         -- ^ Input elements.
-        -> MChain m (s, Maybe (a, Int)) (a, Int) 
+        => (a -> a -> m Bool)           -- ^ Comparison function.
+        -> Maybe (a, Int)               -- ^ Starting element and count.
+        -> Chain m  s a                 -- ^ Input elements.
+        -> Chain m (s, Maybe (a, Int)) (a, Int) 
                  
 groupsByC f !s !vec
  = scanMaybeC work_groupsByC s vec

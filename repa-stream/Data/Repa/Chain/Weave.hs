@@ -18,10 +18,11 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --   chains should be advanced.
 --
 weaveC  :: Monad m
-        => (k -> aL -> aR -> m (Turn k aX))
-        -> k
-        -> MChain m sL aL -> MChain m sR aR
-        -> MChain m (Weave sL aL sR aR k) aX
+        => (k -> aL -> aR -> m (Turn k aX))     -- ^ Worker function.
+        -> k                                    -- ^ Initial state.
+        -> Chain m sL aL                        -- ^ Left input chain.
+        -> Chain m sR aR                        -- ^ Right input chain.
+        -> Chain m (Weave sL aL sR aR k) aX     -- ^ Result chain.
 
 weaveC f ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
  = Chain S.Unknown 
