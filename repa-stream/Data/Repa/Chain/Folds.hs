@@ -1,10 +1,10 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Chain.Folds
-        (foldsC, Folds (..), packFolds)
+        (foldsC, Folds (..))
 where
 import Data.Repa.Fusion.Option
 import Data.Repa.Chain.Base
-import Data.Repa.Chain.Weave
+import Data.Vector.Fusion.Stream.Size  as S
 #include "vector.h"
 
 
@@ -22,9 +22,98 @@ foldsC  :: Monad m
         -> Option2 Int b        -- ^ Length and initial state for first segment.
         -> Chain m sLen Int     -- ^ Segment lengths.
         -> Chain m sVal a       -- ^ Input data to fold.
-        -> Chain m (Weave sLen Int sVal a (Option2 Int b)) b
+        -> Chain m (Folds sLen sVal a b) b
 
-foldsC    f zN s0 cLens cVals 
+foldsC   f zN s0 
+         (Chain _szLens sLens0 stepLens) 
+         (Chain _szVals sVals0 stepVals)
+ = Chain S.Unknown (init_foldsC s0) step
+ where
+        init_foldsC s
+         = case s of
+            None2         -> Folds sLens0 sVals0 False 0   zN
+            Some2 len acc -> Folds sLens0 sVals0 True  len acc
+        {-# NOINLINE init_foldsC #-}
+        --  NOINLINE to hide the case match from the simplifier so it
+        --  doesn't unswitch it at top-level and duplicate the follow-on code.
+
+        step ss@(Folds sLens sVals active lenSeg valSeg)
+         = case active of
+            -- If we don't have a segment length we need to load the next one.
+            False
+             -> stepLens sLens >>= \rLens
+             -> case rLens of
+                 -- We got a segment length, so load it into the state and
+                 -- initialise the accumulator.
+                 Yield xLen sLens' 
+                  -> return  $ Skip   ss { _stateLens = sLens'
+                                         , _active    = True
+                                         , _lenSeg    = xLen 
+                                         , _valSeg    = zN     }
+
+                 -- Lengths input takes a step.
+                 Skip  sLens' 
+                  -> return  $ Skip   ss { _stateLens = sLens' }
+
+                 -- We're not currently folding a segment, and no more segment
+                 -- lengths are available, so we're done.
+                 Done  sLens' 
+                  -> return  $ Done   ss { _stateLens = sLens' }
+
+            -- We're currently folding a segment.
+            True
+             -- We've reached the end of the segment, so emit the result.
+             |  lenSeg == 0   
+             -> return $ Yield valSeg ss { _active    = False }
+
+             -- We still need more values for this segment.
+             |  otherwise
+             -> stepVals sVals >>= \rVals
+             -> case rVals of
+                 -- We got a new value, so accumulate it into the state.
+                 Yield xVal sVals'
+                  -> f xVal valSeg >>= \rAcc
+                  -> return $ Skip    ss { _stateVals = sVals'
+                                         , _lenSeg    = lenSeg - 1
+                                         , _valSeg    = rAcc }
+
+                 -- Vals input takes a step.
+                 Skip sVals'
+                  -> return $ Skip    ss { _stateVals = sVals' }
+
+                 -- We're in a non-zero lengthed segment, but haven't got
+                 -- all the values, so we're done for now.
+                 Done sVals'
+                  -> return $ Done    ss { _stateVals = sVals' }
+        {-# INLINE step #-}
+{-# INLINE [2] foldsC #-}
+
+
+-- | Return state of a folds operation.
+data Folds sLens sVals a b
+        = Folds 
+        { -- | State of lengths chain.
+          _stateLens        :: !sLens
+
+          -- | State of values chain.
+        , _stateVals        :: !sVals
+
+          -- | Whether we're currently in a segment.
+        , _active           :: !Bool
+
+          -- | Length of current segment.
+        , _lenSeg           :: !Int
+
+          -- | Accumulated value of current segment.
+        , _valSeg           :: !b }
+        deriving Show
+
+
+{-
+
+ -- Defining folds in terms of weave doesn't work because if all the
+ -- segment lengths are 0 then we don't want to load any values at all.
+
  = weaveC work s0 cLens cVals
  where  
         work !ms !mxLen !mxVal 
@@ -45,29 +134,6 @@ foldsC    f zN s0 cLens cVals
                   -> do r <- f xVal acc
                         return  $ Next (Some2 (len - 1) r) MoveRight
         {-# INLINE [1] work #-}
-{-# INLINE [2] foldsC #-}
-
-
--- | Return state of a folds operation.
-data Folds sLens sVals a b
-        = Folds 
-        { -- | State of lengths chain.
-          foldsLensState        :: !sLens
-
-          -- | Length of current segment.
-        , foldsLensCur          :: !(Option Int)
-
-          -- | State of values chain.
-        , foldsValsState        :: !sVals
-
-          -- | Current value being processed.
-        , foldsValsCur          :: !(Option a)
-
-          -- | Number of elements remaining to fold in the current
-          --   segment, and current accumulator, or `Nothing` if we're
-          --   not in a segment.
-        , foldsSegAcc           :: !(Option2 Int b) }
-        deriving Show
 
 
 -- | Pack the weave state of a folds operation into a `Folds` record, 
@@ -78,4 +144,4 @@ packFolds :: Weave sLens Int sVals a (Option2 Int b)
 packFolds (Weave stateL elemL _endL stateR elemR _endR mLenAcc)
         = (Folds stateL elemL stateR elemR mLenAcc)
 {-# INLINE packFolds #-}
-
+-}

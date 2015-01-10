@@ -20,7 +20,7 @@ module Data.Repa.Chain
         , weaveC, Weave, Turn (..), Move(..), move
 
         -- ** Folding
-        , foldsC, Folds(..), packFolds)
+        , foldsC, Folds(..))
 where
 import Data.Repa.Chain.Base
 import Data.Repa.Chain.Scan

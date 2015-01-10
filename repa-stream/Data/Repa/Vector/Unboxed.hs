@@ -267,6 +267,6 @@ folds f zN s0 vLens vVals
                         (chainOfVector vLens)
                         (chainOfVector vVals)
 
-   in   (vResults, C.packFolds state)
+   in   (vResults, state)
 {-# INLINE_STREAM folds #-}
 

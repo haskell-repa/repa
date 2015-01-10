@@ -30,13 +30,13 @@ data Chain m s a
 data Step s a
 
         -- | Yield an output value and a new seed.
-        = Yield a s
+        = Yield !a !s
 
         -- | Provide just a new seed.
-        | Skip    s
+        | Skip     !s
 
         -- | Signal that the computation has finished.
-        | Done    s
+        | Done     !s
         deriving Show 
 
 
