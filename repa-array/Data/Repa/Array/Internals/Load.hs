@@ -18,11 +18,11 @@ import Data.Array.Repa.Eval.Gang
 class Bulk r1 sh1 a => Load r1 sh1 a where
 
  -- | Fill an entire array sequentially.
- loadS          :: Target r2 a
+ loadS          :: Target r2 a t
                 => Array r1 sh1 a -> Buffer r2 a -> IO ()
 
  -- | Fill an entire array in parallel.
- loadP          :: Target r2 a
+ loadP          :: Target r2 a t
                 => Gang 
                 -> Array r1 sh1 a -> Buffer r2 a -> IO ()
 
@@ -33,11 +33,11 @@ class Bulk r1 sh1 a => Load r1 sh1 a where
 class Bulk r1 sh1 a => LoadRange r1 sh1 a where
 
  -- | Fill a range of an array sequentially.
- loadRangeS     :: Target r2 a
+ loadRangeS     :: Target r2 a t
                 => Array r1 sh1 a -> Buffer r2 a -> sh1 -> sh1 -> IO ()
 
  -- | Fill a range of an array in parallel.
- loadRangeP     :: Target r2 a
+ loadRangeP     :: Target r2 a t
                 => Gang 
                 -> Array r1 sh1 a -> Buffer r2 a -> sh1 -> sh1 -> IO ()
 

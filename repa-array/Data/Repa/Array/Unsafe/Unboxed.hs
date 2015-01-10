@@ -6,6 +6,7 @@ module Data.Repa.Array.Unsafe.Unboxed
         , fromVectorUU, toVectorUU
         , slicesUU)
 where
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
@@ -61,9 +62,10 @@ instance U.Unbox a => Window UU DIM1 a where
 
 
 -- Target -----------------------------------------------------------------------------------------
-instance U.Unbox e => Target UU e where
+instance U.Unbox e 
+      => Target UU e (UM.IOVector e) where
  data Buffer UU e 
-  = UUBuffer (UM.IOVector e)
+  = UUBuffer !(UM.IOVector e)
 
  unsafeNewBuffer len
   = liftM UUBuffer (UM.unsafeNew len)
@@ -92,6 +94,12 @@ instance U.Unbox e => Target UU e where
   = return ()
  {-# INLINE touchBuffer #-}
 
+
+instance Unpack (Buffer UU e) (UM.IOVector e) where
+ unpack (UUBuffer vec) = vec
+ repack !_ !vec        = UUBuffer vec
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 -- Conversions ------------------------------------------------------------------------------------
 -- | O(size src). Convert a list to an unboxed vector array.

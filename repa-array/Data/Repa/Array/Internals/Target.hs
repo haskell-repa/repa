@@ -57,7 +57,7 @@ class Unpack (Buffer r e) t => Target r e t where
 -- | O(length src). Construct an array from a list of elements, and give it the
 --   provided shape. The `size` of the provided shape must match the
 --   length of the list, else `Nothing`.
-fromList  :: (Shape sh, Target r a)
+fromList  :: (Shape sh, Target r a t)
           => sh -> [a] -> Maybe (Array r sh a)
 fromList sh xx
  = unsafePerformIO
@@ -73,7 +73,7 @@ fromList sh xx
 
 
 -- | O(length src). Construct a vector from a list.
-vfromList :: Target r a => [a] -> Vector r a
+vfromList :: Target r a t => [a] -> Vector r a
 vfromList xx
  = let  !len     = P.length xx 
         Just arr = fromList (Z :. len) xx

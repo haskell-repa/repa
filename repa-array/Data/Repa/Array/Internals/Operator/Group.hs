@@ -18,7 +18,7 @@ import qualified Data.Repa.Chain                as C
 --   => ([('a', 7), ('b', 2), ('c', 1)], Just (\'d\', 2))
 -- @
 --
-groupsBy :: (Bulk r1 DIM1 a, Target r2 (a, Int))
+groupsBy :: (Bulk r1 DIM1 a, Target r2 (a, Int) t)
          => (a -> a -> Bool)                -- ^ Comparison function.
          -> Maybe (a, Int)                  -- ^ Starting element and count.
          -> Vector  r1 a                    -- ^ Input elements.

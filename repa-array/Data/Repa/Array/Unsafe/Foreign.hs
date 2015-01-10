@@ -43,7 +43,8 @@ instance Unpack (Array UF DIM1 a) (Int, Int, ForeignPtr a) where
 
  
 -- Target ---------------------------------------------------------------------
-instance Storable a => Target UF a where
+instance Storable a 
+      => Target UF a (Int, Int, ForeignPtr a) where
  data Buffer UF a
         = UFBuffer
         { -- | Starting position of data, in elements.
@@ -97,3 +98,8 @@ instance Storable a => Target UF a where
  {-# INLINE touchBuffer #-}
 
 
+instance Unpack (Buffer UF a) (Int, Int, ForeignPtr a) where
+ unpack (UFBuffer start len fptr) = (start, len, fptr)
+ repack _ (start, len, fptr)      = UFBuffer start len fptr
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}

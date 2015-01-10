@@ -49,7 +49,7 @@ liftChain (Chain sz s step)
 -- | Compute the elements of a pure `Chain`,
 --   writing them into a new array `Array`.
 unchainToVector
-        :: Target r a
+        :: Target r a t
         => Chain S.Id s a -> (Vector r a, s)
 unchainToVector c
         = unsafePerformIO 
@@ -61,8 +61,8 @@ unchainToVector c
 -- | Compute the elements of an `IO` `Chain`, 
 --   writing them to a new `Array`.
 unchainToVectorIO
-        :: forall r a s
-        .  Target r a
+        :: forall r a t s
+        .  Target r a t
         => Chain IO s a -> IO (Vector r a, s)
 
 unchainToVectorIO (Chain sz s0 step)
@@ -135,4 +135,3 @@ unchainToVectorIO (Chain sz s0 step)
          where  
         {-# INLINE unchainToVectorIO_unknown #-}
 {-# INLINE [2] unchainToVectorIO #-}
-

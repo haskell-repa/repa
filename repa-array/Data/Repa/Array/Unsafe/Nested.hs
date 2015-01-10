@@ -90,7 +90,7 @@ instance (Bulk r DIM1 a, Window r DIM1 a)
 -- Conversion -------------------------------------------------------------------------------------
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
-        :: Target r a 
+        :: Target r a t
         => [[a]] -> Vector UN (Vector r a)
 fromLists xss
  = let  xs         = concat xss
@@ -103,7 +103,7 @@ fromLists xss
 
 -- | O(size src) Convert a triply nested list to a triply nested array.
 fromListss 
-        :: Target r a 
+        :: Target r a t
         => [[[a]]] -> Vector UN (Vector UN (Vector r a))
 fromListss xs
  = let  xs1        = concat xs

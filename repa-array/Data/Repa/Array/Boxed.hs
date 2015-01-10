@@ -5,6 +5,7 @@ module Data.Repa.Array.Boxed
         , boxed
         , fromVectorB, toVectorB)
 where
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -44,6 +45,7 @@ deriving instance (Show sh, Show a) => Show (Array B sh a)
 deriving instance (Read sh, Read a) => Read (Array B sh a)
 
 
+
 -- | Constrain an array to have a boxed representation,
 --   eg with @boxed (compute arr)@ 
 boxed :: Array B sh a -> Array B sh a
@@ -59,7 +61,7 @@ instance Window B DIM1 a where
 
 
 -- Target ---------------------------------------------------------------------
-instance Target B a where
+instance Target B a (VM.IOVector a) where
  data Buffer B a 
   = BBuffer (VM.IOVector a)
 
@@ -89,6 +91,13 @@ instance Target B a where
  touchBuffer _ 
   = return ()
  {-# INLINE touchBuffer #-}
+
+
+instance Unpack (Buffer B a) (VM.IOVector a) where
+ unpack (BBuffer vec) = vec
+ repack _ vec         = BBuffer vec
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 -- Conversions ----------------------------------------------------------------

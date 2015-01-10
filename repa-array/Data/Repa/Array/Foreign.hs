@@ -47,6 +47,8 @@ instance (Shape sh, Storable a) => Bulk F sh a where
 instance Unpack (Array F DIM1 a) (Int, Int, ForeignPtr a) where
  unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
  repack _ (len, offset, fptr)           = FArray (Z :. len) offset fptr
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 -- Window ---------------------------------------------------------------------
@@ -58,7 +60,7 @@ instance Storable a
 
 
 -- Target ---------------------------------------------------------------------
-instance Storable a => Target F a where
+instance Storable a => Target F a (Int, Int, ForeignPtr a) where
  data Buffer F a
         = FBuffer
         { -- | Starting position of data, in elements.
@@ -114,6 +116,8 @@ instance Storable a => Target F a where
 instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
  unpack (FBuffer len offset fptr) = (len, offset, fptr)
  repack _ (len, offset, fptr)     = FBuffer len offset fptr
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 -- Conversions ----------------------------------------------------------------

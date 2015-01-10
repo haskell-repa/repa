@@ -5,6 +5,7 @@ module Data.Repa.Array.Unboxed
         , fromVectorU, toVectorU
         , unboxed)
 where
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -61,9 +62,10 @@ instance U.Unbox a => Window U DIM1 a where
 
 
 -- Target -----------------------------------------------------------------------------------------
-instance U.Unbox e => Target U e where
+instance U.Unbox e 
+      => Target U e (UM.IOVector e) where
  data Buffer U e 
-  = UBuffer (UM.IOVector e)
+  = UBuffer !(UM.IOVector e)
 
  unsafeNewBuffer len
   = liftM UBuffer (UM.unsafeNew len)
@@ -91,6 +93,13 @@ instance U.Unbox e => Target U e where
  touchBuffer _ 
   = return ()
  {-# INLINE touchBuffer #-}
+
+
+instance Unpack (Buffer U e) (UM.IOVector e) where
+ unpack (UBuffer vec)  = vec
+ repack _ vec          = UBuffer vec
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 -- Conversions ------------------------------------------------------------------------------------

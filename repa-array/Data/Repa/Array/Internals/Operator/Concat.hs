@@ -24,7 +24,7 @@ import Prelude  hiding (reverse, length, map, zipWith, concat)
 
 -- Concat ---------------------------------------------------------------------
 -- | O(len result) Concatenate nested vectors.
-concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a)
+concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a t)
         => Vector r1 (Vector r2 a) -> Vector r3 a
 concat vs
  | R.length vs == 0
@@ -65,8 +65,8 @@ concat vs
 concatWith
         :: ( Bulk r0 DIM1 a
            , Bulk r1 DIM1 (Vector r2 a)
-           , Bulk r2 DIM1 a, Unpack (Vector r2 a) t
-           , Target r3 a)
+           , Bulk r2 DIM1 a, Unpack (Vector r2 a) t2
+           , Target r3 a t3)
         => Vector r0 a                  -- ^ Separator array.
         -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
         -> Vector r3 a
@@ -143,7 +143,7 @@ intercalate
         :: ( Bulk r0 DIM1 a
            , Bulk r1 DIM1 (Vector r2 a)
            , Bulk r2 DIM1 a, Unpack (Vector r2 a) t
-           , Target r3 a)
+           , Target r3 a t)
         => Vector r0 a                  -- ^ Separator array.
         -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
         -> Vector r3 a
