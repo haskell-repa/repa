@@ -10,6 +10,7 @@ import qualified Data.Repa.Chain                as C
 import Data.Repa.Fusion.Option
 import System.IO.Unsafe
 
+
 -- | Segmented fold over vectors of segment lengths and input values.
 --
 --   The total lengths of all segments need not match the length of the
@@ -32,11 +33,8 @@ folds f z s0 vLens vVals
         let f' !x !y = return $ f x y
             {-# INLINE f' #-}
 
-        (vResults, state)
-                <- A.unchainToVectorIO
-                $  C.foldsC f' z s0
-                         (A.chainOfVector vLens)
-                         (A.chainOfVector vVals)
-
-        return (vResults, C.packFolds state)
+        A.unchainToVectorIO
+         $  C.foldsC f' z s0
+                (A.chainOfVector vLens)
+                (A.chainOfVector vVals)
 {-# INLINE [3] folds #-}
