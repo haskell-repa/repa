@@ -15,7 +15,7 @@ module Data.Repa.Flow.Chunked.Operator
         , groupsBy_i
 
           -- * Folding
-        , folds_i
+        , folds_i,      FoldsWorthy
 
           -- * Watching
         , watch_i,      watch_o

@@ -1,6 +1,7 @@
 
 module Data.Repa.Flow.Chunked.Operator.Folds
-        (folds_i)
+        ( folds_i
+        , FoldsWorthy)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
@@ -9,19 +10,15 @@ import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
 
+-- | Dictionaries needed to perform a segmented fold.
+type FoldsWorthy i m r1 r2 r3 t2 t3 a b
+        = ( States i m, Window r1 DIM1 Int, Window r2 DIM1 a
+          , Bulk r3 DIM1 b, Target r2 a t2, Target r3 b t3)
 
 -- Folds ------------------------------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
---
---   The total lengths of all segments need not match the length of the
---   input elements vector. The returned `C.Folds` state can be inspected
---   to determine whether all segments were completely folded, or the 
---   vector of segment lengths or elements was too short relative to the
---   other.
---
-folds_i :: forall i m r1 r2 r3 a b t2 t3
-        .  ( States i m, Window r1 DIM1 Int, Window r2 DIM1 a
-           , Bulk r3 DIM1 b, Target r2 a t2, Target r3 b t3)
+folds_i :: forall i m r1 r2 r3 t2 t3 a b
+        .  FoldsWorthy i m r1 r2 r3 t2 t3 a b
         => (a -> b -> b)                -- ^ Worker function.
         -> b                            -- ^ Initial state when folding each segment.
         -> Sources i m r1 Int           -- ^ Segment lengths.

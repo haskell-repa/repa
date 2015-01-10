@@ -27,6 +27,7 @@ module Data.Repa.Flow.Chunked
 
           -- ** Folding
         , folds_i
+        , FoldsWorthy
 
           -- ** Watching
         , watch_i,      watch_o
