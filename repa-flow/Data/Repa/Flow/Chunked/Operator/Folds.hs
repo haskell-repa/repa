@@ -21,7 +21,7 @@ import qualified Data.Repa.Flow.Generic   as G
 --
 folds_i :: forall i m r1 r2 r3 a b t2 t3
         .  ( States i m, Window r1 DIM1 Int, Window r2 DIM1 a
-           , Target r2 a t2, Target r3 b t3, Bulk r3 DIM1 b)
+           , Bulk r3 DIM1 b, Target r2 a t2, Target r3 b t3)
         => (a -> b -> b)                -- ^ Worker function.
         -> b                            -- ^ Initial state when folding each segment.
         -> Sources i m r1 Int           -- ^ Segment lengths.
