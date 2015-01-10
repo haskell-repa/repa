@@ -35,14 +35,14 @@ import qualified Data.Repa.Flow.Generic   as G
 
 -- Mapping --------------------------------------------------------------------
 -- | Map a function over elements pulled from a source.
-map_i   :: (Flow i m r1 a, A.Target r2 b)
+map_i   :: (Flow i m r1 a, A.Target r2 b t)
         => (a -> b) -> Sources i m r1 a -> m (Sources i m r2 b)
 map_i f s0 = G.smap_i (\_ c -> A.computeS $ A.map f c) s0
 {-# INLINE [2] map_i #-}
 
 
 -- | Map a function over elements pushed into a sink.
-map_o   :: (Flow i m r1 a, A.Target r2 b)
+map_o   :: (Flow i m r1 a, A.Target r2 b t)
         => (a -> b) -> Sinks i m r2 b -> m (Sinks i m r1 a)
 map_o f s0 = G.smap_o (\_ c -> A.computeS $ A.map f c) s0
 {-# INLINE [2] map_o #-}
@@ -125,7 +125,7 @@ trigger_o = G.trigger_o
 -- @
 -- 
 groupsBy_i 
-        :: (Flow i m r1 a, Target r2 (a, Int))
+        :: (Flow i m r1 a, Target r2 (a, Int) t)
         => (a -> a -> Bool)     -- ^ Comparison function to decide whether
                                 --   successive values should be grouped.
         ->    Sources i m r1 a 

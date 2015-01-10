@@ -39,7 +39,7 @@ type Flow i m r a
 --   the elements. All elements are stuffed into a single chunk, and each 
 --   stream is given the same chunk.
 fromList_i 
-        :: (States i m, A.Target r a)
+        :: (States i m, A.Target r a t)
         => i -> [a] -> m (Sources i m r a)
 
 fromList_i n xs
@@ -50,7 +50,7 @@ fromList_i n xs
 -- | Like `fromLists_i` but take a list of lists, where each of the inner
 --   lists is packed into a single chunk.
 fromLists_i 
-        :: (States i m, A.Target r a)
+        :: (States i m, A.Target r a t)
         => i -> [[a]] -> m (Sources i m r a)
 
 fromLists_i n xs
@@ -86,7 +86,7 @@ toLists1_i sources i
 --     at least the desired number of elements. The leftover elements
 --     in the final chunk are visible in the result `Sources`.
 --
-head_i  :: (States i m, A.Bulk r DIM1 a, A.Target r a)
+head_i  :: (States i m, A.Bulk r DIM1 a, A.Target r a t)
         => Int -> Sources i m r a -> Ix i -> m ([a], Sources i m r a)
 
 head_i len s0 i

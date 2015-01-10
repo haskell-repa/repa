@@ -4,11 +4,13 @@ module Data.Repa.Flow.Chunked.Operator.Folds
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
+import Data.Repa.Fusion.Option
 import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
 
--- TODO: extract out flow framework to resuse for other weave operators.
+-- TODO: handle case when there are zero segment lengths at the end of input
+-- still need to produce initial accumulator when there are no more vals chunks.
 
 -- Folds ------------------------------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
@@ -19,13 +21,13 @@ import qualified Data.Repa.Flow.Generic   as G
 --   vector of segment lengths or elements was too short relative to the
 --   other.
 --
-folds_i :: forall i m r1 r2 r3 a b
-        .  (States i m, Window r1 DIM1 Int, Window r2 DIM1 a, Target r3 b)
-        => (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding each segment.
-        -> Sources i m r1 Int   -- ^ Segment lengths.
-        -> Sources i m r2 a     -- ^ Input elements to fold.
-        -> m (Sources i m r3 b) -- ^ Result elements.
+folds_i :: forall i m r1 r2 r3 a b t
+        .  (States i m, Window r1 DIM1 Int, Window r2 DIM1 a, Target r3 b t)
+        => (a -> b -> b)                -- ^ Worker function.
+        -> b                            -- ^ Initial state when folding each segment.
+        -> Sources i m r1 Int           -- ^ Segment lengths.
+        -> Sources i m r2 a             -- ^ Input elements to fold.
+        -> m (Sources i m r3 b)         -- ^ Result elements.
 
 folds_i f z (G.Sources nLens pullLens)
             (G.Sources nVals pullVals)
@@ -34,7 +36,7 @@ folds_i f z (G.Sources nLens pullLens)
         let nFolds = min nLens nVals
 
         -- Refs to hold partial fold states between chunks.
-        refsState  <- newRefs nFolds Nothing
+        refsState  <- newRefs nFolds None2
 
         -- Refs to hold the current chunk of lengths data for each stream.
         refsLens   <- newRefs nFolds Nothing
@@ -61,31 +63,12 @@ folds_i f z (G.Sources nLens pullLens)
                           let (cResults, sFolds) 
                                     = A.folds f z mState cLens cVals
 
-                          -- Remember state for the final segment.
-                          writeRefs refsState i (foldsSegAcc sFolds)
-
-                          -- Slice down the lengths chunk to just the elements
-                          -- that we haven't already consumed. If we've consumed
-                          -- them all then clear the chunk reference so a new one
-                          -- will be loaded the next time around.
-                          let !posLens     = foldsLensState sFolds
-                          let !nLensRemain = A.length cLens - posLens
-                          writeRefs refsLens i 
-                           $ if nLensRemain <= 0 
-                                then Nothing
-                                else Just $ A.window (Z :. posLens) (Z :. nLensRemain) cLens
-
-                          -- Likewise for the values chunk.
-                          let !posVals     = foldsValsState sFolds
-                          let !nValsRemain = A.length cVals - posVals
-                          writeRefs refsVals i
-                           $ if nValsRemain <= 0
-                                then Nothing
-                                else Just $ A.window (Z :. posVals) (Z :. nValsRemain) cVals
+                          update_folds i cLens cVals sFolds
 
                           -- Eat the result
                           eat cResults
             {-# INLINE pull_folds #-} 
+
 
             -- Load the current chunk of lengths data.
             -- If we already have one in the state then use that, 
@@ -109,7 +92,9 @@ folds_i f z (G.Sources nLens pullLens)
 
                    jc@(Just _)
                     ->     return jc
-            {-# INLINE loadChunkLens #-}
+            {-# NOINLINE loadChunkLens #-}
+            --  TODO: check this isn't hiding anything that needs to be specialised
+
 
             -- Grab the current chunk of values data.
             -- If we already have one in the state then use that,
@@ -132,7 +117,40 @@ folds_i f z (G.Sources nLens pullLens)
 
                    jc@(Just _)    
                     ->     return jc
-            {-# INLINE loadChunkVals #-}
+            {-# NOINLINE loadChunkVals #-}
+            -- TOOD: check this isn't hiding anything that needs to be specialiased.
+
+
+            update_folds i cLens cVals sFolds 
+             = do 
+                  -- Remember state for the final segment.
+                  writeRefs refsState i 
+                   $ if _active sFolds 
+                        then None2
+                        else Some2 (_lenSeg sFolds) (_valSeg sFolds)
+
+                  -- Slice down the lengths chunk to just the elements
+                  -- that we haven't already consumed. If we've consumed
+                  -- them all then clear the chunk reference so a new one
+                  -- will be loaded the next time around.
+                  let !posLens     = _stateLens sFolds
+                  let !nLensRemain = A.length cLens - posLens
+                  writeRefs refsLens i 
+                   $ if nLensRemain <= 0 
+                        then Nothing
+                        else Just $ A.window (Z :. posLens) (Z :. nLensRemain) cLens
+
+                  -- Likewise for the values chunk.
+                  let !posVals     = _stateVals sFolds
+                  let !nValsRemain = A.length cVals - posVals
+                  writeRefs refsVals i
+                   $ if nValsRemain <= 0
+                        then Nothing
+                        else Just $ A.window (Z :. posVals) (Z :. nValsRemain) cVals
+            {-# NOINLINE update_folds #-}
+            --  NOINLINE because it is only called once per chunk
+            --  and does not need to be specialised.
+
 
         return $ G.Sources nFolds pull_folds
 {-# INLINE [1] folds_i #-}
