@@ -14,6 +14,9 @@ module Data.Repa.Flow.Chunked.Operator
           -- * Grouping
         , groupsBy_i
 
+          -- * Folding
+        , folds_i
+
           -- * Watching
         , watch_i,      watch_o
         , trigger_o
@@ -22,6 +25,7 @@ module Data.Repa.Flow.Chunked.Operator
         , discard_o
         , ignore_o)
 where
+import Data.Repa.Flow.Chunked.Operator.Folds
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
 import Data.Repa.Array                    as A

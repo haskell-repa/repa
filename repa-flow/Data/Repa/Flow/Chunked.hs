@@ -25,6 +25,9 @@ module Data.Repa.Flow.Chunked
           -- ** Grouping
         , groupsBy_i
 
+          -- ** Folding
+        , folds_i
+
           -- ** Watching
         , watch_i,      watch_o
         , trigger_o

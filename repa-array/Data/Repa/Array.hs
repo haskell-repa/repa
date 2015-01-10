@@ -83,7 +83,7 @@ module Data.Repa.Array
         , groupsBy
 
           -- ** Folding
-        , folds)
+        , folds, Folds(..))
 where
 import Data.Repa.Eval.Array                             as R
 import Data.Repa.Array.Delayed                          as R

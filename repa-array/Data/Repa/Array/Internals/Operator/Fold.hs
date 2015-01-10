@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Internals.Operator.Fold
-        (folds)
+        (folds, C.Folds(..))
 where
 import Data.Repa.Array.Internals.Bulk           as R
 import Data.Repa.Array.Internals.Target         as R
@@ -19,13 +19,13 @@ import qualified Data.Repa.Chain                as C
 --
 folds   :: (Bulk r1 DIM1 Int, Bulk r2 DIM1 a, Target r3 b)
         => (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding first segment.
-        -> b                    -- ^ Initial state when folding rest of segments.
+        -> b                    -- ^ Initial state when folding segments.
+        -> Maybe (Int, b)       -- ^ Length and initial state for first segment.
         ->  Vector r1 Int       -- ^ Segment lengths.
         ->  Vector r2 a         -- ^ Elements.
         -> (Vector r3 b, C.Folds Int Int a b)
 
-folds f z0 zN vLens vVals
+folds f z s0 vLens vVals
  = (vResults, C.packFolds state)
  where
         f' x y = return $ f x y
@@ -33,7 +33,7 @@ folds f z0 zN vLens vVals
 
         (vResults, state) 
           = R.unchainToVector $ C.liftChain
-          $ C.foldsC f' z0 zN
+          $ C.foldsC f' z s0
                 (R.chainOfVector vLens)
                 (R.chainOfVector vVals)
 {-# INLINE [2] folds #-}

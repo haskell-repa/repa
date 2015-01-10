@@ -39,6 +39,7 @@ Library
   other-modules:
         Data.Repa.Flow.Chunked.Base
         Data.Repa.Flow.Chunked.Operator
+        Data.Repa.Flow.Chunked.Operator.Folds
 
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.List
