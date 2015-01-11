@@ -19,7 +19,6 @@ Library
         vector                  == 0.10.*,
         bytestring              == 0.10.*,
         primitive               == 0.5.4.*,
-        double-conversion       == 2.0.*,
         containers              == 0.5.*,
         repa-stream             == 4.0.0.0,
         repa-array              == 4.0.0.0
@@ -29,6 +28,7 @@ Library
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Simple
         Data.Repa.Flow.States
+        Data.Repa.Flow.Debug
         Data.Repa.Flow
 
   other-modules:
@@ -57,9 +57,9 @@ Library
         -fno-warn-missing-signatures
 
   extensions:
+        BangPatterns
         NoMonomorphismRestriction
         RankNTypes
-        BangPatterns
         MagicHash
         FlexibleContexts
         FlexibleInstances

@@ -88,7 +88,7 @@ toLists1_i i sources
 --     at least the desired number of elements. The leftover elements
 --     in the final chunk are visible in the result `Sources`.
 --
-head_i  :: (States i m, A.Bulk r DIM1 a, A.Target r a t)
+head_i  :: (States i m, A.Window r DIM1 a)
         => Int -> Sources i m r a -> Ix i -> m ([a], Sources i m r a)
 
 head_i len s0 i
@@ -98,28 +98,44 @@ head_i len s0 i
         let G.Sources n pull_chunk = s1
 
         -- Pull chunks from the source until we have enough elements to return.
-        refs    <- newRefs n Q.empty
-        let loop_takeList1 !has !acc
-             | has >= len        = writeRefs refs i acc
-             | otherwise         = pull_chunk i eat_toList eject_toList
-             where eat_toList x  = loop_takeList1 
-                                        (has + A.length x) 
-                                        (acc Q.>< (Q.fromList $ A.toList x))
-                   eject_toList  = writeRefs refs i acc
+        refsList  <- newRefs n Q.empty
+        refsChunk <- newRefs n Nothing
+
+        let loop_takeList1 !has !acc !mchunk
+             | has >= len        
+             = do writeRefs refsList  i acc
+                  writeRefs refsChunk i mchunk
+
+             | otherwise         
+             = pull_chunk i eat_toList eject_toList
+             where 
+                   eat_toList x  
+                    = loop_takeList1 
+                        (has + A.length x) 
+                        (acc Q.>< (Q.fromList $ A.toList x))
+                        (Just x)
+
+                   eject_toList  
+                    = do writeRefs refsList  i acc
+                         writeRefs refsChunk i mchunk
+
             {-# INLINE loop_takeList1 #-}
 
-        loop_takeList1 0 Q.empty
+        loop_takeList1 0 Q.empty Nothing
 
         -- Split off the required number of elements.
-        has     <- readRefs refs i
+        has     <- readRefs refsList  i
+        mFinal  <- readRefs refsChunk i
         let (here, rest) = Q.splitAt len has
 
         -- As we've pulled whole chunks from the input stream,
         -- we now prepend the remaining ones back on.
-        s2'     <- G.prependOn_i (\i' -> i' == i) 
-                        [A.vfromList $ Q.toList rest] 
-                        s2
+        let start  =  Q.length has - Q.length rest
+        let stash  = case mFinal of
+                        Nothing -> []
+                        Just c  -> [A.window (Z :. start) (Z :. Q.length rest) c]
 
+        s2'        <- G.prependOn_i (\i' -> i' == i) stash s2
         return  (Q.toList here, s2')
 {-# INLINE [2] head_i #-}
 

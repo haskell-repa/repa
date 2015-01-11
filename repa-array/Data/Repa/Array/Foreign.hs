@@ -2,7 +2,7 @@
 module Data.Repa.Array.Foreign
         ( F(..), Array (..), Buffer (..)
         , fromForeignPtr, toForeignPtr
-        , eqVectorF)
+        , fromByteString, toByteString)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -16,11 +16,13 @@ import Foreign.Storable
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils
-import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 import Control.Monad.Primitive
 import Data.Word
 import System.IO.Unsafe
+import Data.ByteString                          (ByteString)
+import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Internal       as BS
+import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 
 
 -------------------------------------------------------------------------------
@@ -146,32 +148,77 @@ instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
 -- | O(1). Wrap a `ForeignPtr` as an array.
 fromForeignPtr
         :: Shape sh
-        => sh -> ForeignPtr e -> Array F sh e
+        => sh -> ForeignPtr a -> Array F sh a
 fromForeignPtr !sh !fptr
         = FArray sh 0 fptr
 {-# INLINE fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
-toForeignPtr :: Array F sh e -> ForeignPtr e
+toForeignPtr :: Array F sh a -> ForeignPtr a
 toForeignPtr (FArray _ _ fptr)
         = fptr
 {-# INLINE toForeignPtr #-}
 
 
--- Comparisons ----------------------------------------------------------------
--- TODO: do Haskell-level comparison for short vectors.
-eqVectorF :: Vector F Word8 -> Vector F Word8 -> Bool
-eqVectorF (FArray (Z :. len1) offset1 fptr1)
-          (FArray (Z :. len2) offset2 fptr2)
- | len1 == len2
- =  unsafePerformIO
- $  withForeignPtr fptr1 $ \ptr1
- -> withForeignPtr fptr2 $ \ptr2
- -> do  r       <- BS.memcmp (plusPtr ptr1 offset1) 
-                             (plusPtr ptr2 offset2) len1
-        return  $ r == 0
+-- | O(1). Convert a foreign 'Vector' to a `ByteString`.
+toByteString :: Vector F Word8 -> ByteString
+toByteString (FArray (Z :. len) offset fptr)
+ = BS.PS fptr offset len
+{-# INLINE toByteString #-}
 
- | otherwise
- = False
+
+-- | O(1). Convert a `ByteString` to an foreign `Vector`.
+fromByteString :: ByteString -> Vector F Word8
+fromByteString (BS.PS fptr offset len)
+ = FArray (Z :. len) offset fptr
+{-# INLINE fromByteString #-}
+
+
+-- Comparisons ----------------------------------------------------------------
+instance Eq (Vector F Word8) where
+ (==) (FArray (Z :. len1) offset1 fptr1)
+      (FArray (Z :. len2) offset2 fptr2)
+  | len1 == len2
+  =  unsafePerformIO
+  $  withForeignPtr fptr1 $ \ptr1
+  -> withForeignPtr fptr2 $ \ptr2
+  -> do  
+        let loop_eq_VectorF ix
+             | ix >= len1       = return True
+             | otherwise        
+             = do x1 <- peekElemOff ptr1 (offset1 + ix)
+                  x2 <- peekElemOff ptr2 (offset2 + ix)
+                  if x1 == x2
+                   then loop_eq_VectorF (ix + 1)
+                   else return False
+
+        loop_eq_VectorF 0
+
+  | otherwise = False
+ {-# INLINE (==) #-}
+
+
+instance Eq (Vector F Char) where
+ (==) (FArray (Z :. len1) offset1 fptr1)
+      (FArray (Z :. len2) offset2 fptr2)
+  |  len1 == len2
+  =  unsafePerformIO
+  $  withForeignPtr fptr1 $ \(ptr1 :: Ptr Char)
+  -> withForeignPtr fptr2 $ \(ptr2 :: Ptr Char)
+  -> do  
+        let loop_eq_VectorF ix
+             | ix >= len1       = return True
+             | otherwise        
+             = do x1 <- peekElemOff ptr1 (offset1 + ix)
+                  x2 <- peekElemOff ptr2 (offset2 + ix)
+                  if x1 == x2
+                   then loop_eq_VectorF (ix + 1)
+                   else return False
+
+        loop_eq_VectorF 0
+
+  | otherwise = False
+ {-# INLINE (==) #-}
+
 

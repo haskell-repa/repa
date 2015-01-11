@@ -18,13 +18,14 @@ Synopsis:
 
 Library
   build-Depends: 
-        base            == 4.7.*,
-        primitive       == 0.5.*,
-        vector          == 0.10.*,
-        bytestring      == 0.10.*,
-        mtl             == 2.2.*,
-        repa-eval       == 4.0.0.0,
-        repa-stream     == 4.0.0.0
+        base               == 4.7.*,
+        primitive          == 0.5.*,
+        vector             == 0.10.*,
+        bytestring         == 0.10.*,
+        mtl                == 2.2.*,
+        double-conversion  == 2.0.*,
+        repa-eval          == 4.0.0.0,
+        repa-stream        == 4.0.0.0
 
 
   exposed-modules:
@@ -38,20 +39,18 @@ Library
         Data.Repa.Array.Unsafe
         Data.Repa.Array.Window
         Data.Repa.Array
-
         Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
         Data.Repa.Eval.Stream
-
         Data.Repa.Fusion.Unpack
-
         Data.Repa.IO.Array
+        Data.Repa.IO.Convert
+        Data.Repa.Nice
 
   other-modules:
         Data.Repa.Array.Internals.Operator.Concat
         Data.Repa.Array.Internals.Operator.Fold
         Data.Repa.Array.Internals.Operator.Group
-
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Index
         Data.Repa.Array.Internals.Load
@@ -67,21 +66,23 @@ Library
         -funbox-strict-fields
 
   extensions:
-        NoMonomorphismRestriction
         BangPatterns
+        NoMonomorphismRestriction
+        RankNTypes
         MagicHash
         UnboxedTuples
         ScopedTypeVariables
         PatternGuards
         FlexibleInstances
+        FlexibleContexts
         TypeOperators
         TypeFamilies
-        FlexibleContexts
         DefaultSignatures
         MultiParamTypeClasses
         EmptyDataDecls
         StandaloneDeriving
         FunctionalDependencies
         ConstraintKinds
+        ForeignFunctionInterface
 
 

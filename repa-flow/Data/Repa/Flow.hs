@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Data Parallel Data Flows.
 --
@@ -41,6 +42,7 @@ module Data.Repa.Flow
         -- | These are the representations that can be used for the 
         --   individual chunks in a flow.
         , U(..), B(..), F(..)
+        , A.Array,    A.Vector
         , A.Material, A.Bulk, A.Window, A.DIM1
 
         -- * Conversion
@@ -74,7 +76,7 @@ module Data.Repa.Flow
         , folds_i
         , FoldsWorthy
 
-        -- * IO
+        -- * Flow IO
         -- ** Sourcing bytes
         , fileSourcesBytes
         , hSourcesBytes
@@ -89,10 +91,7 @@ module Data.Repa.Flow
 
         -- ** Sinking bytes
         , hSinksBytes
-        , fileSinksBytes
-
-        -- * Debugging
-        , next)
+        , fileSinksBytes)
 where
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Foreign                  as A
@@ -225,9 +224,9 @@ map_o _ f s = C.map_o f s
 -- | Apply a function to all elements pulled from some sources,
 --   a chunk at a time.
 mapChunks_i  
-        :: r2 -> (Vector r1 a -> Vector r2 b)
+        :: (Vector r1 a -> Vector r2 b)
         -> Sources r1 a -> IO (Sources r2 b)
-mapChunks_i _ f s 
+mapChunks_i f s 
         = G.smap_i (\_ c -> f c) s
 {-# INLINE mapChunks_i #-}
 
@@ -235,9 +234,9 @@ mapChunks_i _ f s
 -- | Apply a function to all elements pushed to some sinks,
 --   a chunk at a time.
 mapChunks_o  
-        :: r2 -> (Vector r1 a -> Vector r2 b)
+        :: (Vector r1 a -> Vector r2 b)
         -> Sinks r2 b -> IO (Sinks r1 a)
-mapChunks_o _ f s 
+mapChunks_o f s 
         = G.smap_o (\_ c -> f c) s
 {-# INLINE mapChunks_o #-}
 
@@ -245,9 +244,9 @@ mapChunks_o _ f s
 -- | Like `mapChunks_i`, except that the worker function is also given
 --   the source index.
 smapChunks_i  
-        :: r2 -> (Int -> Vector r1 a -> Vector r2 b)
+        :: (Int -> Vector r1 a -> Vector r2 b)
         -> Sources r1 a -> IO (Sources r2 b)
-smapChunks_i _ f s
+smapChunks_i f s
         = G.smap_i (\(IIx i _) vec -> f i vec) s
 {-# INLINE smapChunks_i #-}
 
@@ -255,9 +254,9 @@ smapChunks_i _ f s
 -- | Like `mapChunks_o`, except that the worker function is also given
 --   the sink index.
 smapChunks_o  
-        :: r2 -> (Int -> Vector r1 a -> Vector r2 b)
+        :: (Int -> Vector r1 a -> Vector r2 b)
         -> Sinks r2 b -> IO (Sinks r1 a)
-smapChunks_o _ f k
+smapChunks_o f k
         = G.smap_o (\(IIx i _) vec -> f i vec) k
 {-# INLINE smapChunks_o #-}
 
@@ -334,7 +333,7 @@ ignore_o  = G.ignore_o
 --     at least the desired number of elements. The leftover elements
 --     in the final chunk are visible in the result `Sources`.
 --
-head_i  :: (A.Bulk r DIM1 a, A.Target r a t)
+head_i  :: A.Window r DIM1 a
         => Int -> Int -> Sources r a -> IO (Maybe ([a], Sources r a))
 head_i ix len s
  | ix >= G.sourceArity s = return Nothing
@@ -465,13 +464,16 @@ fileSourcesLines
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> IO (Sources F Char)
+        -> IO (Sources A.UN (Vector F Char))
 fileSourcesLines files nChunk fails
- =   map_i F (chr . fromIntegral) 
+ =   mapChunks_i (A.trimEnds (== nl) . A.segmentOn nl) 
+ =<< map_i  F    (chr . fromIntegral) 
  =<< G.fileSourcesRecords files nChunk isNewLine fails
  where  isNewLine   :: Word8 -> Bool
-        isNewLine x =  x == (fromIntegral $ ord '\n')
+        isNewLine x =  x == (fromIntegral $ ord nl)
         {-# INLINE isNewLine #-}
+        nl :: Char
+        !nl = '\n'
 {-# INLINE fileSourcesLines #-}
 
 
@@ -501,22 +503,4 @@ fileSinksBytes = G.fileSinksBytes
 hSinksBytes    :: [Handle]   -> IO (Sinks F Word8)
 hSinksBytes    = G.hSinksBytes
 {-# INLINE hSinksBytes #-}
-
-
--- Debugging ------------------------------------------------------------------
--- | Given a source index and a length, pull enough chunks from the source
---   to build a list of the requested length, and discard the remaining 
---   elements in the final chunk.
---  
---   * This function is intended for interactive debugging.
---     If you want to retain the rest of the final chunk then use `head_i`.
---
-next    :: (A.Bulk r DIM1 a, Target r a t)
-        => Int          -- ^ Source index.
-        -> Int          -- ^ Number of elements to show.
-        -> Sources r a
-        -> IO (Maybe [a])
-next ix len s
-        = liftM (liftM fst) $ head_i ix len s
-{-# INLINE next #-}
 
