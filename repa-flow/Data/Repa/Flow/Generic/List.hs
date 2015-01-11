@@ -29,8 +29,8 @@ fromList n xx0
 
 -- | Drain a single source into a list.
 toList1   :: States  i m
-          => Sources i m a -> Ix i -> m [a]
-toList1 (Sources n pullX) i
+          => Ix i -> Sources i m a  -> m [a]
+toList1 i (Sources n pullX)
  = do   
         refs    <- newRefs n []
 
@@ -47,8 +47,8 @@ toList1 (Sources n pullX) i
 
 -- | Drain the given number of elements from a single source into a list.
 takeList1 :: States i m
-          => Int -> Sources i m a -> Ix i -> m [a]
-takeList1 len (Sources n pullX) i
+          => Int -> Ix i -> Sources i m a  -> m [a]
+takeList1 len i (Sources n pullX)
  = do   
         refs    <- newRefs n []
 

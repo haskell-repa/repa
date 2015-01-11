@@ -21,12 +21,12 @@ fromList xx = G.fromList () xx
 -- | Drain a source into a list.
 toList   :: States () m
          => Source m a -> m [a]
-toList s =  G.toList1 s S.UIx
+toList s =  G.toList1 S.UIx s
 {-# INLINE toList #-}
 
 
 -- | Drain the given number of elements from a single source into a list.
 takeList :: States () m
          => Int -> Source m a -> m [a]
-takeList len s = G.takeList1 len s S.UIx
+takeList len s = G.takeList1 len S.UIx s 
 {-# INLINE takeList #-}

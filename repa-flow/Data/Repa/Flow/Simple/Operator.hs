@@ -139,7 +139,7 @@ peek_i  :: States () m
         => Int -> Source m a -> m ([a], Source m a)
 peek_i n s0
  = do   (s1, s2) <- G.connect_i s0
-        xs       <- G.takeList1 n s1 G.UIx
+        xs       <- G.takeList1 n G.UIx s1
         s3       <- G.prepend_i xs s2
         return   (xs, s3)
 {-# INLINE [2] peek_i #-}

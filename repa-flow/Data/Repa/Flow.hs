@@ -9,6 +9,7 @@ module Data.Repa.Flow
         -- * Representations
         -- | These are the representations that can be used for the 
         --   individual chunks in a flow.
+        , A.Bulk, A.DIM1
         , U(..), B(..), F(..)
 
         -- * Conversion
@@ -30,7 +31,10 @@ module Data.Repa.Flow
 
         -- ** Ignorance
         , discard_o
-        , ignore_o)
+        , ignore_o
+
+        -- ** Grouping
+        , groupsBy_i)
 where
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Foreign                  as A
@@ -42,7 +46,6 @@ import qualified Data.Repa.Flow.Generic         as G
 import Control.Monad
 
 import Data.Repa.Array                          (U(..), B(..))
-import Data.Repa.Array.Foreign                  (F(..))
 
 
 -- | A bundle of data sources, where the elements are chunked into arrays.
@@ -84,21 +87,21 @@ fromLists _ xss = C.fromLists_i xss
 
 -- | Drain a single source from a bundle into a list of elements.
 toList1   :: A.Bulk r DIM1 a
-          => Sources r a -> Int -> IO (Maybe [a])
-toList1 s ix  
+          => Int -> Sources r a -> IO (Maybe [a])
+toList1 ix s  
  | ix >= G.sourceArity s = return Nothing
  | otherwise             
- = liftM Just $ C.toList1_i s (IIx ix (G.sourceArity s))
+ = liftM Just $ C.toList1_i (IIx ix (G.sourceArity s)) s 
 {-# INLINE toList1 #-}
 
 
 -- | Drain a single source from a bundle into a list of chunks.
 toLists1  :: A.Bulk r DIM1 a
-          => Sources r a -> Int -> IO (Maybe [[a]])
-toLists1 s ix
+          =>  Int -> Sources r a -> IO (Maybe [[a]])
+toLists1 ix s
  | ix >= G.sourceArity s = return Nothing
  | otherwise             
- = liftM Just $ C.toLists1_i s (IIx ix (G.sourceArity s))
+ = liftM Just $ C.toLists1_i (IIx ix (G.sourceArity s)) s 
 {-# INLINE toLists1 #-}
 
 
@@ -260,6 +263,28 @@ discard_o = G.discard_o
 ignore_o :: Int -> IO (Sinks r a)
 ignore_o  = G.ignore_o
 {-# INLINE ignore_o #-}
+
+
+-- Grouping -------------------------------------------------------------------
+-- | Scan through a some sources to find runs of matching elements, 
+--   and count the lengths of those runs.
+--
+-- @  
+--   > toList1 0 =<< groupsBy_i B (==) =<< fromList B 1 "waabbbblle"
+--   Just [('w',1),('a',2),('b',4),('l',2),('e',1)]
+-- @
+-- 
+groupsBy_i
+        :: (A.Bulk r1 DIM1 a, A.Target r2 (a, Int) t2)
+        => r2                       -- ^ Representation of result chunks.
+        -> (a -> a -> Bool)         -- ^ Fn to check if consecutive elements
+                                    --   are in the same group.
+        -> Sources r1 a             -- ^ Input elements.
+        -> IO (Sources r2 (a, Int)) -- ^ Starting element and length of groups.
+groupsBy_i _ f s
+        = C.groupsBy_i f s
+{-# INLINE groupsBy_i #-}
+
 
 
 

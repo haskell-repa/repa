@@ -291,7 +291,7 @@ head_i  :: States i m
 head_i len s0 i
  = do   
         (s1, s2) <- connect_i s0
-        xs       <- takeList1 len s1 i
+        xs       <- takeList1 len i s1
         return   (xs, s2)
 {-# INLINE [2] head_i #-}
 

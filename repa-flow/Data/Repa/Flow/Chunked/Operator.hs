@@ -11,19 +11,19 @@ module Data.Repa.Flow.Chunked.Operator
         , mapChunks_i,  mapChunks_o
         , smapChunks_i, smapChunks_o
 
-          -- * Grouping
-        , groupsBy_i
-
-          -- * Folding
-        , folds_i,      FoldsWorthy
-
           -- * Watching
         , watch_i,      watch_o
         , trigger_o
 
           -- * Ignorance
         , discard_o
-        , ignore_o)
+        , ignore_o
+
+          -- * Grouping
+        , groupsBy_i
+
+          -- * Folding
+        , folds_i,      FoldsWorthy)
 where
 import Data.Repa.Flow.Chunked.Operator.Folds
 import Data.Repa.Flow.Chunked.Base
@@ -114,6 +114,30 @@ trigger_o = G.trigger_o
 {-# INLINE [2] trigger_o #-}
 
 
+-- Ignorance ------------------------------------------------------------------
+-- | A sink that ignores all incoming data.
+--
+--   This sink is non-strict in the chunks. 
+--   Haskell tracing thunks attached to the chunks will *not* be demanded.
+--
+ignore_o :: Monad m => i -> m (Sinks i m r a)
+ignore_o  = G.ignore_o
+{-# INLINE [2] ignore_o #-}
+
+
+-- | Yield a bundle of sinks of the given arity that drops all data on the
+--   floor.
+--
+--   * The sinks is strict in the *chunks*, so they are demanded before being
+--     discarded. Haskell debugging thunks attached to the chunks will be
+--     demanded, but thunks attached to elements may not be -- depending on
+--     whether the chunk representation is strict in the elements.
+--
+discard_o :: Monad m => i -> m (Sinks i m r a)
+discard_o = G.discard_o
+{-# INLINE [2] discard_o #-}
+
+
 -- Grouping -------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
@@ -162,32 +186,5 @@ groupsBy_i f (G.Sources n pull_chunk)
 
         return $ G.Sources n pull_groupsBy
 {-# INLINE [2] groupsBy_i #-}
-
-
-
-
--- Ignorance ------------------------------------------------------------------
--- | A sink that ignores all incoming data.
---
---   This sink is non-strict in the chunks. 
---   Haskell tracing thunks attached to the chunks will *not* be demanded.
---
-ignore_o :: Monad m => i -> m (Sinks i m r a)
-ignore_o  = G.ignore_o
-{-# INLINE [2] ignore_o #-}
-
-
--- | Yield a bundle of sinks of the given arity that drops all data on the
---   floor.
---
---   * The sinks is strict in the *chunks*, so they are demanded before being
---     discarded. Haskell debugging thunks attached to the chunks will be
---     demanded, but thunks attached to elements may not be -- depending on
---     whether the chunk representation is strict in the elements.
---
-discard_o :: Monad m => i -> m (Sinks i m r a)
-discard_o = G.discard_o
-{-# INLINE [2] discard_o #-}
-
 
 

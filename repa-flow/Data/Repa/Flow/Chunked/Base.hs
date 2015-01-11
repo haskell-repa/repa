@@ -63,9 +63,9 @@ fromLists_i n xs
 -- | Drain a single source into a list of elements.
 toList1_i 
         :: (States i m, A.Bulk r DIM1 a)
-        => Sources i m r a -> Ix i -> m [a]
-toList1_i sources i
- = do   chunks  <- G.toList1 sources i
+        => Ix i -> Sources i m r a  -> m [a]
+toList1_i i sources
+ = do   chunks  <- G.toList1 i sources
         return  $ P.concat $ P.map A.toList chunks
 {-# INLINE [2] toList1_i #-}
 
@@ -73,9 +73,9 @@ toList1_i sources i
 -- | Drain a single source into a list of chunks.
 toLists1_i
         :: (States i m, A.Bulk r DIM1 a)
-        => Sources i m r a -> Ix i -> m [[a]]
-toLists1_i sources i
- = do   chunks  <- G.toList1 sources i
+        => Ix i -> Sources i m r a -> m [[a]]
+toLists1_i i sources
+ = do   chunks  <- G.toList1 i sources
         return  $ P.map A.toList chunks
 {-# INLINE [2] toLists1_i #-}
 
