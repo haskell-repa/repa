@@ -20,12 +20,22 @@ module Data.Repa.Flow
 
         -- * Flow Operators
         -- ** Mapping
-        , map_i,        map_o)
+        , map_i,        map_o
+        , mapChunks_i,  mapChunks_o
+        , smapChunks_i, smapChunks_o
+
+        -- ** Watching
+        , watch_i,      watch_o
+        , trigger_o
+
+        -- ** Ignorance
+        , discard_o
+        , ignore_o)
 where
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Foreign                  as A
 import Data.Repa.Flow.States
-import Data.Repa.Array                          (DIM1)
+import Data.Repa.Array                          (DIM1, Vector)
 import qualified Data.Repa.Array                as A
 import qualified Data.Repa.Flow.Chunked         as C
 import qualified Data.Repa.Flow.Generic         as G
@@ -149,9 +159,107 @@ map_o _ f s = C.map_o f s
 {-# INLINE map_o #-}
 
 
+-- | Apply a function to all elements pulled from some sources,
+--   a chunk at a time.
+mapChunks_i  
+        :: r2 -> (Vector r1 a -> Vector r2 b)
+        -> Sources r1 a -> IO (Sources r2 b)
+mapChunks_i _ f s 
+        = G.smap_i (\_ c -> f c) s
+{-# INLINE mapChunks_i #-}
 
 
+-- | Apply a function to all elements pushed to some sinks,
+--   a chunk at a time.
+mapChunks_o  
+        :: r2 -> (Vector r1 a -> Vector r2 b)
+        -> Sinks r2 b -> IO (Sinks r1 a)
+mapChunks_o _ f s 
+        = G.smap_o (\_ c -> f c) s
+{-# INLINE mapChunks_o #-}
 
+
+-- | Like `mapChunks_i`, except that the worker function is also given
+--   the source index.
+smapChunks_i  
+        :: r2 -> (Int -> Vector r1 a -> Vector r2 b)
+        -> Sources r1 a -> IO (Sources r2 b)
+smapChunks_i _ f s
+        = G.smap_i (\(IIx i _) vec -> f i vec) s
+{-# INLINE smapChunks_i #-}
+
+
+-- | Like `mapChunks_o`, except that the worker function is also given
+--   the sink index.
+smapChunks_o  
+        :: r2 -> (Int -> Vector r1 a -> Vector r2 b)
+        -> Sinks r2 b -> IO (Sinks r1 a)
+smapChunks_o _ f k
+        = G.smap_o (\(IIx i _) vec -> f i vec) k
+{-# INLINE smapChunks_o #-}
+
+
+-- Watching -------------------------------------------------------------------
+-- | Hook a worker function to some sources, which will be passed every
+--   chunk that is pulled from each source.
+--
+--   * The worker is also passed the source index of the chunk that was pulled.
+--
+watch_i :: (Int -> Vector r a -> IO ()) 
+        -> Sources r a  -> IO (Sources r a)
+watch_i f s = G.watch_i (\(IIx i _) vec -> f i vec) s
+{-# INLINE watch_i #-}
+
+
+-- | Hook a worker function to some sinks, which will be passed every 
+--   chunk that is pushed to each sink.
+--
+--   * The worker is also passed the source index of the chunk that was pushed.
+--
+watch_o :: (Int -> Vector r a -> IO ())
+        -> Sinks r a    -> IO (Sinks r a)
+watch_o f k = G.watch_o (\(IIx i _) vec -> f i vec) k
+{-# INLINE watch_o #-}
+
+
+-- | Create a bundle of sinks of the given arity that pass incoming chunks
+--   to a worker function. 
+--
+--   * This is like `watch_o`, except that the incoming chunks are discarded
+--     after they are passed to the worker function
+--
+trigger_o :: Int -> (Int -> Vector r a -> IO ()) 
+          -> IO (Sinks r a)
+trigger_o arity f 
+        = G.trigger_o arity (\(IIx i _) vec -> f i vec)
+{-# INLINE trigger_o #-}
+
+
+-- Ignorance ------------------------------------------------------------------
+-- | Create a bundle of sinks of the given arity that drop all data on the
+--   floor.
+--
+--   * The sinks is strict in the *chunks*, so they are demanded before being
+--     discarded. 
+--   * Haskell debugging thunks attached to the chunks will be
+--     demanded, but thunks attached to elements may not be -- depending on
+--     whether the chunk representation is strict in the elements.
+--
+discard_o :: Int -> IO (Sinks r a)
+discard_o = G.discard_o
+{-# INLINE discard_o #-}
+
+
+-- | Create a bundle of sinks of the given arity that drop all data on the
+--   floor. 
+--
+--   * As opposed to `discard_o` the sinks are non-strict in the chunks.
+--   * Haskell debugging thunks attached to the chunks will *not* be 
+--     demanded.
+--
+ignore_o :: Int -> IO (Sinks r a)
+ignore_o  = G.ignore_o
+{-# INLINE ignore_o #-}
 
 
 
