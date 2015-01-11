@@ -101,7 +101,6 @@ import Data.Repa.Array                          (DIM1, Vector)
 import qualified Data.Repa.Array                as A
 import qualified Data.Repa.Flow.Chunked         as C hiding (next)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
-import qualified Data.Repa.Flow.Generic.IO      as G 
 import System.IO
 import Control.Monad
 import Data.Word

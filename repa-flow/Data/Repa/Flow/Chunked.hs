@@ -4,6 +4,9 @@ module Data.Repa.Flow.Chunked
         , Sources, Sinks
         , Flow
 
+          -- * Evaluation
+        , drain
+
           -- * Conversion
         , fromList_i
         , fromLists_i
@@ -37,13 +40,22 @@ module Data.Repa.Flow.Chunked
         , discard_o
         , ignore_o
 
-          -- * Evaluation
-        , drain)
+          -- * Flow IO
+          -- ** Sourcing Bytes
+        , fileSourcesBytes,     hSourcesBytes
+
+          -- ** Sourcing Records
+        , fileSourcesRecords,   hSourcesRecords
+
+          -- ** Sinking Bytes
+        , fileSinksBytes,       hSinksBytes)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Operator
+import Data.Repa.Flow.Chunked.IO
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic as G
+
 
 -- | Pull all available values from the sources and push them to the sinks.
 drain   :: (G.Index i, Monad m)

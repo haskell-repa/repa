@@ -4,6 +4,9 @@ module Data.Repa.Flow.Simple
         , Source
         , Sink
 
+          -- * Evaluation
+        , drain
+
           -- * Conversions
         , fromList
         , toList
@@ -48,14 +51,21 @@ module Data.Repa.Flow.Simple
         , discard_o
         , ignore_o
 
-          -- ** Evaluation
-        , drain)
+          -- * Flow IO
+        , -- ** Sourcing Bytes
+          fileSourceBytes,      hSourceBytes
 
+          -- ** Sourcing Records
+        , fileSourceRecords,    hSourceRecords
+
+          -- ** Sinking Bytes
+        , fileSinkBytes,        hSinkBytes)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.Simple.List
 import Data.Repa.Flow.Simple.Operator
+import Data.Repa.Flow.Simple.IO
 import qualified Data.Repa.Flow.Generic.Eval    as G
 
 

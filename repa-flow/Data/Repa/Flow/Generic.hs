@@ -5,6 +5,9 @@ module Data.Repa.Flow.Generic
         , Sources       (..)
         , Sinks         (..)
 
+          -- * Evaluation
+        , drain
+
           -- * Conversion
         , fromList
         , toList1
@@ -53,12 +56,28 @@ module Data.Repa.Flow.Generic
         , ignore_o
 
           -- * Vector Flow Operators
+          -- ** Distribution
         , distributes_o
         , ddistributes_o
 
-          -- * Evaluation
-        , drain)
+          -- * Flow IO
+          -- ** Sourcing Bytes
+        , fileSourcesBytes,     hSourcesBytes
 
+          -- ** Sourcing Records
+        , fileSourcesRecords,   hSourcesRecords
+
+          -- ** Sinking Bytes
+        , fileSinksBytes,       hSinksBytes
+
+          -- ** Conversion
+          -- | Read and Show `Double`s for a reasonable runtime cost.
+          -- 
+          --   The Double instances in the Prelude are lethargic.
+          --
+        , readDouble
+        , showDouble
+        , showDoubleFixed)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
@@ -66,4 +85,5 @@ import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Vector
 import Data.Repa.Flow.Generic.Eval
+import Data.Repa.Flow.Generic.IO
 
