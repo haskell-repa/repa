@@ -22,27 +22,35 @@ import Data.Word
 import System.IO.Unsafe
 import qualified Data.ByteString.Internal       as BS
 
+
+-------------------------------------------------------------------------------
 -- | Arrays represented as foreign buffers in the C heap.
 data F
 
 -- | Foreign arrays.
 instance (Shape sh, Storable a) => Bulk F sh a where
- data Array F sh a
-        = FArray !sh !Int !(ForeignPtr a)
-
- extent (FArray sh _ _)
-        = sh
- {-# INLINE extent #-}
+ data Array F sh a      = FArray !sh !Int !(ForeignPtr a)
+ extent (FArray sh _ _) = sh
 
  index (FArray sh offset fptr) ix
---        | not $ inShapeRange zeroDim sh ix                    -- TODO: indexing
+--        | not $ inShapeRange zeroDim sh ix               -- TODO: indexing bounds checks
 --        = error "repa-bulk.index[F]: out of range"
 
         | otherwise
         = unsafeInlineIO 
         $ withForeignPtr fptr
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
+ {-# INLINE extent #-}
  {-# INLINE index #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Int     #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Float   #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Double  #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word8   #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word16  #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word32  #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word64  #-}
+
+deriving instance (Show sh, Show a, Storable a) => Show (Array F sh a)
 
 instance Unpack (Array F DIM1 a) (Int, Int, ForeignPtr a) where
  unpack (FArray (Z :. len) offset fptr) = (len, offset, fptr)
@@ -52,11 +60,17 @@ instance Unpack (Array F DIM1 a) (Int, Int, ForeignPtr a) where
 
 
 -- Window ---------------------------------------------------------------------
-instance Storable a 
-      => Window F DIM1 a where
+instance Storable a => Window F DIM1 a where
  window (Z :. start) sh' (FArray _ offset ptr)
         = FArray sh' (offset + start) ptr
  {-# INLINE window #-}
+ {-# SPECIALIZE instance Window F DIM1 Int     #-}
+ {-# SPECIALIZE instance Window F DIM1 Float   #-}
+ {-# SPECIALIZE instance Window F DIM1 Double  #-}
+ {-# SPECIALIZE instance Window F DIM1 Word8   #-}
+ {-# SPECIALIZE instance Window F DIM1 Word16  #-}
+ {-# SPECIALIZE instance Window F DIM1 Word32  #-}
+ {-# SPECIALIZE instance Window F DIM1 Word64  #-}
 
 
 -- Target ---------------------------------------------------------------------
@@ -113,6 +127,15 @@ instance Storable a => Target F a (Int, Int, ForeignPtr a) where
   = touchForeignPtr fptr
  {-# INLINE touchBuffer #-}
 
+ {-# SPECIALIZE instance Target F Int    (Int, Int, ForeignPtr Int)    #-}
+ {-# SPECIALIZE instance Target F Float  (Int, Int, ForeignPtr Float)  #-}
+ {-# SPECIALIZE instance Target F Double (Int, Int, ForeignPtr Double) #-}
+ {-# SPECIALIZE instance Target F Word8  (Int, Int, ForeignPtr Word8)  #-}
+ {-# SPECIALIZE instance Target F Word16 (Int, Int, ForeignPtr Word16) #-}
+ {-# SPECIALIZE instance Target F Word32 (Int, Int, ForeignPtr Word32) #-}
+ {-# SPECIALIZE instance Target F Word64 (Int, Int, ForeignPtr Word64) #-}
+
+
 instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
  unpack (FBuffer len offset fptr) = (len, offset, fptr)
  repack _ (len, offset, fptr)     = FBuffer len offset fptr
@@ -152,5 +175,4 @@ eqVectorF (FArray (Z :. len1) offset1 fptr1)
 
  | otherwise
  = False
-
 

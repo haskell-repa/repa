@@ -47,7 +47,6 @@ entire arr
 
 
 ---------------------------------------------------------------------------------------------------
-
 -- | Class of array representations that can be windowed directly.
 --   The underlying representation can encode the window.
 class Bulk r sh a => Window r sh a where

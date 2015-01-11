@@ -51,8 +51,6 @@ import Prelude  hiding (concat)
 --
 data UN
 
-
--- | Unsafe Nested arrays.
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)
       => Bulk UN DIM1 (Vector r a) where

@@ -100,10 +100,12 @@ class (Index i, Monad m) => States i m where
 instance States Int IO where
  data Refs Int IO a                     = Refs !(VM.IOVector a)
  newRefs   !n !x                        = liftM Refs $ unsafeNewWithVM n x
+ {-# NOINLINE newRefs #-}
+
  readRefs  (Refs !refs) (IIx !i _)      = VM.unsafeRead  refs i
- writeRefs (Refs !refs) (IIx !i _) !x   = VM.unsafeWrite refs i x
- {-# INLINE newRefs #-}
  {-# INLINE readRefs #-}
+
+ writeRefs (Refs !refs) (IIx !i _) !x   = VM.unsafeWrite refs i x
  {-# INLINE writeRefs #-}
 
 
@@ -114,7 +116,7 @@ instance States Int m => States () m  where
  newRefs _ !x                
   = do  refs    <- newRefs  (1 :: Int) x
         return  $ URefs refs
- {-# INLINE newRefs #-}
+ {-# NOINLINE newRefs #-}
 
  readRefs  (URefs !refs) _              = readRefs  refs (zero 1)
  writeRefs (URefs !refs) _ !x           = writeRefs refs (zero 1) x

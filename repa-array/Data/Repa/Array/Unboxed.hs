@@ -1,9 +1,8 @@
 
 module Data.Repa.Array.Unboxed
         ( U, U.Unbox
-        , Array (..)
-        , fromVectorU, toVectorU
-        , unboxed)
+        , Array (..),  unboxed
+        , fromVectorU, toVectorU)
 where
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Eval.Array
@@ -15,6 +14,7 @@ import Data.Repa.Array.Internals.Index
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
+import Data.Word
 
 
 -------------------------------------------------------------------------------
@@ -28,11 +28,9 @@ import Control.Monad
 --
 data U
 
--- | Unboxed arrays.
 instance (Shape sh, U.Unbox a) => Bulk U sh a where
- data Array U sh a
-        = UArray sh !(U.Vector a)
-
+ data Array U sh a    = UArray sh !(U.Vector a)
+ extent (UArray sh _) = sh
  index  (UArray sh vec) ix
         | not $ inShapeRange zeroDim sh ix
         = error "repa-bulk.index[U] out of range"
@@ -40,12 +38,16 @@ instance (Shape sh, U.Unbox a) => Bulk U sh a where
         | otherwise
         = vec U.! (toIndex sh ix)
 
- extent (UArray sh _) = sh
  {-# INLINE extent #-}
+ {-# INLINE index  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Int     #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Float   #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Double  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word8   #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word16  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word32  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word64  #-}
 
-
-deriving instance (Show sh, Show e, U.Unbox e) => Show (Array U sh e)
-deriving instance (Read sh, Read e, U.Unbox e) => Read (Array U sh e)
 
 -- | Constrain an array to have an unboxed representation,
 --   eg with @unboxed (compute arr)@
@@ -53,17 +55,25 @@ unboxed :: Array U sh a -> Array U sh a
 unboxed = id
 {-# INLINE unboxed #-}
 
+deriving instance (Show sh, Show e, U.Unbox e) => Show (Array U sh e)
 
--- Window -----------------------------------------------------------------------------------------
+
+-- Window ---------------------------------------------------------------------
 instance U.Unbox a => Window U DIM1 a where
  window (Z :. start) (Z :. len) (UArray _sh vec)
         = UArray (Z :. len) (U.slice start len vec)
  {-# INLINE window #-}
+ {-# SPECIALIZE instance Window U DIM1 Int     #-}
+ {-# SPECIALIZE instance Window U DIM1 Float   #-}
+ {-# SPECIALIZE instance Window U DIM1 Double  #-}
+ {-# SPECIALIZE instance Window U DIM1 Word8   #-}
+ {-# SPECIALIZE instance Window U DIM1 Word16  #-}
+ {-# SPECIALIZE instance Window U DIM1 Word32  #-}
+ {-# SPECIALIZE instance Window U DIM1 Word64  #-}
 
 
--- Target -----------------------------------------------------------------------------------------
-instance U.Unbox e 
-      => Target U e (UM.IOVector e) where
+-- Target ---------------------------------------------------------------------
+instance U.Unbox e => Target U e (UM.IOVector e) where
  data Buffer U e 
   = UBuffer !(UM.IOVector e)
 
@@ -94,6 +104,14 @@ instance U.Unbox e
   = return ()
  {-# INLINE touchBuffer #-}
 
+ {-# SPECIALIZE instance Target U Int    (UM.IOVector Int)    #-}
+ {-# SPECIALIZE instance Target U Float  (UM.IOVector Float)  #-}
+ {-# SPECIALIZE instance Target U Double (UM.IOVector Double) #-}
+ {-# SPECIALIZE instance Target U Word8  (UM.IOVector Word8)  #-}
+ {-# SPECIALIZE instance Target U Word16 (UM.IOVector Word16) #-}
+ {-# SPECIALIZE instance Target U Word32 (UM.IOVector Word32) #-}
+ {-# SPECIALIZE instance Target U Word64 (UM.IOVector Word64) #-}
+
 
 instance Unpack (Buffer U e) (UM.IOVector e) where
  unpack (UBuffer vec)  = vec
@@ -102,7 +120,7 @@ instance Unpack (Buffer U e) (UM.IOVector e) where
  {-# INLINE repack #-}
 
 
--- Conversions ------------------------------------------------------------------------------------
+-- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
 fromVectorU :: (Shape sh, U.Unbox e)
             => sh -> U.Vector e -> Array U sh e
@@ -118,4 +136,6 @@ toVectorU
 toVectorU (UArray _ vec)
         = vec
 {-# INLINE [1] toVectorU #-}
+
+
 
