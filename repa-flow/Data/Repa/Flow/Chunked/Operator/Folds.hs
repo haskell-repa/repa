@@ -17,15 +17,15 @@ type FoldsWorthy i m r1 r2 r3 t1 t2 t3 a b
           , Target r1 Int t1,   Target r2 a t2,  Target r3 b t3, Bulk r3 DIM1 b)
 
 
--- Folds ------------------------------------------------------------------------------------------
+-- Folds ----------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
 folds_i :: forall i m r1 r2 r3 t1 t2 t3 a b
         .  FoldsWorthy i m r1 r2 r3 t1 t2 t3 a b
-        => (a -> b -> b)                -- ^ Worker function.
-        -> b                            -- ^ Initial state when folding each segment.
-        -> Sources i m r1 Int           -- ^ Segment lengths.
-        -> Sources i m r2 a             -- ^ Input elements to fold.
-        -> m (Sources i m r3 b)         -- ^ Result elements.
+        => (a -> b -> b)         -- ^ Worker function.
+        -> b                     -- ^ Initial state when folding each segment.
+        -> Sources i m r1 Int    -- ^ Segment lengths.
+        -> Sources i m r2 a      -- ^ Input elements to fold.
+        -> m (Sources i m r3 b)  -- ^ Result elements.
 
 folds_i f z sLens@(G.Sources nLens _)
             sVals@(G.Sources nVals _)
@@ -62,11 +62,14 @@ folds_i f z sLens@(G.Sources nLens _)
                           let (cResults, sFolds) 
                                 = A.folds f z mState cLens cVals
 
-                          folds_update refsState refsLens refsVals i cLens cVals sFolds
+                          folds_update 
+                                refsState refsLens refsVals i 
+                                cLens cVals sFolds
+
                           valsDone <- readRefs refsValsDone i
 
-                          -- If we're not producing output while we still have
-                          -- segment lengths then we're done.
+                          -- If we're not producing output while we still
+                          -- have segment lengths then we're done.
                           if  A.length cResults == 0
                            && A.length cLens    >= 0
                            && valsDone

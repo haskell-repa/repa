@@ -70,10 +70,12 @@ module Data.Repa.Flow
         , head_i
 
         -- ** Grouping
+        , groups_i
         , groupsBy_i
 
         -- ** Folding
         , folds_i
+        , foldGroupsBy_i
         , FoldsWorthy
 
         -- * Flow IO
@@ -347,10 +349,22 @@ head_i ix len s
 --   and count the lengths of those runs.
 --
 -- @  
--- > toList1 0 =<< groupsBy_i B (==) =<< fromList B 1 "waabbbblle"
+-- > toList1 0 =<< groups_i U =<< fromList U 1 "waabbbblle"
 -- Just [('w',1),('a',2),('b',4),('l',2),('e',1)]
 -- @
--- 
+--
+groups_i
+        :: (A.Bulk r1 DIM1 a, A.Target r2 (a, Int) t2, Eq a)
+        => r2                   -- ^ Representation of result chunks.
+        -> Sources r1 a         -- ^ Input elements.
+        -> IO (Sources r2 (a, Int)) -- ^ Starting element and length of groups.
+groups_i r s
+        = groupsBy_i r (==) s
+{-# INLINE groups_i #-}
+
+
+-- | Like `groupsBy`, but take a function to determine whether two consecutive
+--   values should be in the same group.
 groupsBy_i
         :: (A.Bulk r1 DIM1 a, A.Target r2 (a, Int) t2)
         => r2                   -- ^ Representation of result chunks.
@@ -369,9 +383,9 @@ groupsBy_i _ f s
 --   together.
 --
 -- @
--- > sLens <- fromList B 1 [1, 2, 4, 0, 1, 5 :: Int]
--- > sVals <- fromList B 1 [10, 20, 30, 40, 50, 60, 70, 80, 90 :: Int]
--- > toList1 0 =<< folds_i B (+) 0 sLens sVals
+-- > sLens <- fromList U 1 [1, 2, 4, 0, 1, 5 :: Int]
+-- > sVals <- fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90 :: Int]
+-- > toList1 0 =<< folds_i U (+) 0 sLens sVals
 -- Just [10,50,220,0,80]
 -- @
 --
@@ -380,9 +394,9 @@ groupsBy_i _ f s
 --   length segments still produce the initial value for the fold.
 --
 -- @
--- > sLens <- fromList B 1 [1, 2, 0, 0, 0 :: Int]
--- > sVals <- fromList B 1 [10, 20, 30 :: Int]
--- > toList1 0 =<< folds_i B (*) 1 sLens sVals
+-- > sLens <- fromList U 1 [1, 2, 0, 0, 0 :: Int]
+-- > sVals <- fromList U 1 [10, 20, 30 :: Int]
+-- > toList1 0 =<< folds_i U (*) 1 sLens sVals
 -- Just [10,600,1,1,1]
 -- @
 --
@@ -409,11 +423,45 @@ type FoldsWorthy r1 r2 r3 t1 t2 t3 a b
         , A.Material r3 t3 DIM1 b)
 
 
+-- | Combination of `groupsBy_i` and `folds_i`. We determine the the segment
+--   lengths while performing the folds.
+-- 
+--   Note that a SQL-like groupby aggregations can be performed using this 
+--   function, provided the data is pre-sorted on the group key. For example,
+--   we can take the average of some groups of values:
+--
+-- @
+-- > sKeys   <-  fromList U 1 "waaaabllle"
+-- > sVals   <-  fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Int]
+-- 
+-- > sResult \<-  map_i U (\\(acc, n) -\> acc / n)
+--           =\<\< foldGroups_i U (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0)
+--
+-- > toLists1 0 sResult
+-- Just [10.0,35.0,60.0,80.0,100.0]
+-- @
+--
+foldGroupsBy_i
+        :: (Bulk r1 DIM1 n, FoldsWorthy r1 r2 r3 t1 t2 t3 a b)
+        => r3                   -- ^ Result chunk representation.
+        -> (n -> n -> Bool)     -- ^ Fn to check if consecutive elements
+                                --   are in the same group.
+        -> (a -> b -> b)        -- ^ Worker function for the fold.
+        -> b                    -- ^ Initial when folding each segment.
+        -> Sources r1 n         -- ^ Names that determine groups.
+        -> Sources r2 a         -- ^ Values to fold.
+        -> IO (Sources r3 b)
+
+foldGroupsBy_i r3 pGroup f z sNames sVals
+ = do   segLens <- map_i U snd =<< groupsBy_i B pGroup sNames
+        folds_i r3 f z segLens sVals
+{-# INLINE foldGroupsBy_i #-}
+
+
 -- IO -------------------------------------------------------------------------
 -- | Read data from some files, using the given chunk length.
 --
---   * Chunk data appears in foreign memory, without copying it into the
---     GHC heap.
+--   * Chunk data appears in foreign memory, without going via the GHC heap.
 -- 
 fileSourcesBytes 
         :: [FilePath]  -> Int 
@@ -431,6 +479,10 @@ hSourcesBytes = G.hSourcesBytes
 
 
 -- | Read complete records of data from a file, using the given chunk length.
+--
+--   * The end of record character is retained in the output.
+--   * Chunk data appears in foreign memory, without going via the GHC heap.
+--
 fileSourcesRecords 
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
@@ -444,8 +496,6 @@ fileSourcesRecords = G.fileSourcesRecords
 
 -- | Like `fileSourcesRecords`, but taking existing file handles.
 --
---   * Chunk data appears in foreign memory, without copying it into the
---     GHC heap.
 -- 
 hSourcesRecords 
         :: [Handle]             -- ^ File handles.
@@ -459,6 +509,10 @@ hSourcesRecords = G.hSourcesRecords
 
 
 -- | Read complete lines of data from a text file, using the given chunk length.
+--
+--   * The trailing new-line characters are discarded.
+--   * Chunk data appears in foreign memory, without going via the GHC heap.
+--
 fileSourcesLines 
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
