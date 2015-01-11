@@ -16,7 +16,6 @@ type FoldsWorthy i m r1 r2 r3 t1 t2 t3 a b
           , Bulk   r1 DIM1 Int, Bulk   r2 DIM1 a
           , Target r1 Int t1,   Target r2 a t2,  Target r3 b t3, Bulk r3 DIM1 b)
 
--- TODO: require folded chunks to be material.
 
 -- Folds ------------------------------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.

@@ -23,6 +23,10 @@ import qualified Data.Repa.Flow.Generic.IO      as G
 
 
 -- | Read data from some files, using the given chunk length.
+--
+--   * Chunk data appears in foreign memory, without copying it into the
+--     GHC heap.
+-- 
 fileSourcesBytes 
         :: [FilePath]  -> Int 
         -> IO (Sources Int IO F Word8)

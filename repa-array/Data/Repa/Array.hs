@@ -13,6 +13,8 @@ module Data.Repa.Array
         ,       ix1,  ix2,  ix3,  ix4,  ix5
 
           -- * Array Representations
+        , Material
+
           -- ** Delayed arrays
         , D(..)
         , fromFunction
@@ -100,9 +102,20 @@ import Data.Repa.Array.Internals.Operator.Group         as R
 import Data.Repa.Array.Internals.Operator.Fold          as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
-
-
 #include "vector.h"
+
+-- | Classes supported by all material representations.
+--
+--   We can index them in a random-access manner, 
+--   window them in constant time, 
+--   and use them as targets for a computation.
+-- 
+--   In particular, delayed arrays are not material as we cannot use them
+--   as targets for a computation.
+--
+type Material r t sh a
+        = (Bulk r sh a, Window r sh a, Target r a t)
+
 
 -- | O(1). View the elements of a vector in reverse order.
 reverse   :: Bulk r DIM1 a

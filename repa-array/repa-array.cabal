@@ -82,5 +82,6 @@ Library
         EmptyDataDecls
         StandaloneDeriving
         FunctionalDependencies
+        ConstraintKinds
 
 
