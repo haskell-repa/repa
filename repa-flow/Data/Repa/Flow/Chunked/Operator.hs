@@ -37,14 +37,14 @@ import qualified Data.Repa.Flow.Generic   as G
 -- | Map a function over elements pulled from a source.
 map_i   :: (Flow i m r1 a, A.Target r2 b t)
         => (a -> b) -> Sources i m r1 a -> m (Sources i m r2 b)
-map_i f s0 = G.smap_i (\_ c -> A.computeS $ A.map f c) s0
+map_i f s0 = G.smap_i (\_ c -> A.computeS_ $ A.map f c) s0
 {-# INLINE [2] map_i #-}
 
 
 -- | Map a function over elements pushed into a sink.
 map_o   :: (Flow i m r1 a, A.Target r2 b t)
         => (a -> b) -> Sinks i m r2 b -> m (Sinks i m r1 a)
-map_o f s0 = G.smap_o (\_ c -> A.computeS $ A.map f c) s0
+map_o f s0 = G.smap_o (\_ c -> A.computeS_ $ A.map f c) s0
 {-# INLINE [2] map_o #-}
 
 

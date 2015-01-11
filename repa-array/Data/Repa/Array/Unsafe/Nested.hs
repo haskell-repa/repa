@@ -8,7 +8,7 @@ module Data.Repa.Array.Unsafe.Nested
         , fromListss
 
         -- * Mapping
-        , maps
+        , mapElems
 
         -- * Concatenation
         , concats
@@ -121,14 +121,15 @@ fromListss xs
 
 
 ---------------------------------------------------------------------------------------------------
--- | Apply a function to the segments of a triply nested array.
-maps    :: (Vector UN (Vector r1 a) -> Vector UN (Vector r2 a))
-        -> Vector UN (Vector UN (Vector r1 a))
-        -> Vector UN (Vector UN (Vector r2 a))
+-- | Apply a function to all the elements of a doubly nested array,
+--   preserving the nesting structure.
+mapElems :: (Vector r1 a -> Vector r2 b)
+         ->  Vector UN (Vector r1 a)
+         ->  Vector UN (Vector r2 b)
 
-maps f (UNArray starts lengths elems)
+mapElems f (UNArray starts lengths elems)
  = UNArray starts lengths (f elems)
-{-# INLINE [1] maps #-}
+{-# INLINE [1] mapElems #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -183,12 +184,12 @@ segment pStart pEnd !elems
 --
 segmentOn 
         :: (Eq a, U.Unbox a, Bulk r DIM1 a)
-        => a            -- ^ Terminating element for segments.
+        => (a -> Bool)  -- ^ Detect the end of a segment.
         -> Vector r a   -- ^ Vector to segment.
         -> Vector UN (Vector r a)
 
-segmentOn !x !arr
- = segment (const True) (== x) arr
+segmentOn !pEnd !arr
+ = segment (const True) pEnd arr
 {-# INLINE [1] segmentOn #-}
 
 

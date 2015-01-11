@@ -5,7 +5,7 @@ module Data.Repa.Flow.Debug
         , nnext)
 where
 import Data.Repa.Nice
-import Data.Repa.Flow
+import Data.Repa.Flow                   hiding (next)
 import qualified Data.Repa.Array        as A
 import Control.Monad
 

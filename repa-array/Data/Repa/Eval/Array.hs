@@ -7,7 +7,7 @@ module Data.Repa.Eval.Array
         , Load      (..)
         , LoadRange (..)
 
-        , computeS)
+        , computeS,     computeS_)
 where
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Load
@@ -17,11 +17,21 @@ import System.IO.Unsafe
 
 
 -- | Sequential computation of array elements.
+--
+--   * The desired result representation is specified by the first argument.
+--
 computeS :: (Load r1 sh e, Target r2 e t)
-         => Array r1 sh e -> Array r2 sh e
-computeS arr1
+         => r2 -> Array r1 sh e -> Array r2 sh e
+computeS _ arr1 = computeS_ arr1
+{-# INLINE computeS #-}
+
+
+-- | Like `computeS` but the result respresentation is implicit.
+computeS_ :: (Load r1 sh e, Target r2 e t)
+          => Array r1 sh e -> Array r2 sh e
+computeS_ arr1
  = unsafePerformIO
  $ do   mvec2   <- unsafeNewBuffer (size $ extent arr1) 
         loadS arr1 mvec2
         unsafeFreezeBuffer (extent arr1) mvec2
-{-# INLINE [2] computeS #-}
+{-# INLINE [2] computeS_ #-}

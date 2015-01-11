@@ -59,7 +59,7 @@ module Data.Repa.Array
 
           -- ** Mapping
         , map, zipWith
-        , maps
+        , mapElems
 
           -- ** Splitting
           -- | Splitting operators compute a segment descriptor which describes

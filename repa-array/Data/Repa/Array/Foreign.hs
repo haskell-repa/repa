@@ -20,7 +20,6 @@ import Control.Monad.Primitive
 import Data.Word
 import System.IO.Unsafe
 import Data.ByteString                          (ByteString)
-import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Internal       as BS
 import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 

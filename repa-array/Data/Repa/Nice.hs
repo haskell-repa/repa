@@ -4,6 +4,7 @@ module Data.Repa.Nice
 where
 import Data.Repa.Array  as A
 import Control.Monad
+import Data.Word
 import Prelude          as P
 
 
@@ -33,6 +34,22 @@ instance Nicer Double where
 
 instance Nicer Char where
  type Nice Char         = Char
+ nice x = x
+
+instance Nicer Word8 where
+ type Nice Word8        = Word8
+ nice x = x
+
+instance Nicer Word16 where
+ type Nice Word16       = Word16
+ nice x = x
+
+instance Nicer Word32 where
+ type Nice Word32       = Word32
+ nice x = x
+
+instance Nicer Word64 where
+ type Nice Word64       = Word64
  nice x = x
 
 instance Nicer a => Nicer (Maybe a) where

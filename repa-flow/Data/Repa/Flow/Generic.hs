@@ -68,16 +68,7 @@ module Data.Repa.Flow.Generic
         , fileSourcesRecords,   hSourcesRecords
 
           -- ** Sinking Bytes
-        , fileSinksBytes,       hSinksBytes
-
-          -- ** Conversion
-          -- | Read and Show `Double`s for a reasonable runtime cost.
-          -- 
-          --   The Double instances in the Prelude are lethargic.
-          --
-        , readDouble
-        , showDouble
-        , showDoubleFixed)
+        , fileSinksBytes,       hSinksBytes)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base

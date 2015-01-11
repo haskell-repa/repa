@@ -9,16 +9,15 @@ module Data.Repa.Flow.Generic.IO
           -- * Sinking Bytes
         , fileSinksBytes,       hSinksBytes)
 where
-import Data.ByteString.Char8                            (ByteString)
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Array.Unsafe.Nested                    as UN
 import Data.Repa.Array.Foreign                          as R
 import Data.Repa.Array                                  as R
 import Data.Repa.IO.Array
 import System.IO
-import Control.Monad.Primitive
 import Data.Word
-import GHC.Ptr
 import Prelude                                          as P
+
 
 -- Source Bytes -----------------------------------------------------------------------------------
 -- | Read data from some files, using the given chunk length.
@@ -87,7 +86,7 @@ fileSourcesRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Sources Int IO (Vector F Word8))
+        -> IO (Sources Int IO (Vector UN (Vector F Word8)))
 
 fileSourcesRecords filePaths len pSep aFail
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
@@ -105,7 +104,7 @@ hSourcesRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Sources Int IO (Vector F Word8))
+        -> IO (Sources Int IO (Vector UN (Vector F Word8)))
 
 hSourcesRecords hs len pSep aFail
  = return $ Sources (P.length hs) pull_hSourceRecordsF
@@ -136,7 +135,9 @@ hSourcesRecords hs len pSep aFail
                         hSeek (hs !! i) RelativeSeek (fromIntegral $ negate lenSlack)
 
                         -- Eat complete records at the start of the chunk.
-                        eat $ window (Z :. 0) (Z :. ixSplit) arr
+                        eat $ UN.segmentOn pSep
+                            $ window (Z :. 0) (Z :. ixSplit) arr
+
         {-# INLINE pull_hSourceRecordsF #-}
 {-# INLINE [2] hSourcesRecords #-}
 

@@ -93,11 +93,11 @@ module Data.Repa.Flow
         , hSinksBytes
         , fileSinksBytes)
 where
+import Data.Repa.Flow.States
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Foreign                  as A
-import Data.Repa.Flow.States                         hiding (next)
-import Data.Repa.Array                          (DIM1, Vector)
-import qualified Data.Repa.Array                as A
+import Data.Repa.Array                          as A hiding (fromList, fromLists)
+import Data.Repa.Flow.States                    as F hiding (next)
 import qualified Data.Repa.Flow.Chunked         as C hiding (next)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
@@ -437,7 +437,7 @@ fileSourcesRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> IO (Sources F Word8)
+        -> IO (Sources UN (Vector F Word8))
 fileSourcesRecords = G.fileSourcesRecords
 {-# INLINE fileSourcesRecords #-}
 
@@ -453,7 +453,7 @@ hSourcesRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> IO (Sources F Word8)
+        -> IO (Sources UN (Vector F Word8))
 hSourcesRecords = G.hSourcesRecords
 {-# INLINE hSourcesRecords #-}
 
@@ -464,16 +464,22 @@ fileSourcesLines
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> IO (Sources A.UN (Vector F Char))
+        -> IO (Sources UN (Vector F Char))
 fileSourcesLines files nChunk fails
- =   mapChunks_i (A.trimEnds (== nl) . A.segmentOn nl) 
- =<< map_i  F    (chr . fromIntegral) 
+ =   mapChunks_i chopChunk
  =<< G.fileSourcesRecords files nChunk isNewLine fails
- where  isNewLine   :: Word8 -> Bool
-        isNewLine x =  x == (fromIntegral $ ord nl)
+ where  
+        isNewLine   :: Word8 -> Bool
+        isNewLine x =  x == nl
         {-# INLINE isNewLine #-}
-        nl :: Char
-        !nl = '\n'
+  
+        chopChunk chunk
+         = A.mapElems (A.computeS_ . A.map (chr . fromIntegral)) 
+         $ A.trimEnds (== nl) chunk
+        {-# INLINE chopChunk #-}
+
+        nl :: Word8
+        !nl = fromIntegral $ ord '\n'
 {-# INLINE fileSourcesLines #-}
 
 
@@ -483,13 +489,22 @@ hSourcesLines
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> IO (Sources F Char)
+        -> IO (Sources UN (Vector F Char))
 hSourcesLines hs nChunk fails
- =   map_i F (chr . fromIntegral)
+ =   mapChunks_i chopChunk
  =<< G.hSourcesRecords hs nChunk isNewLine fails
- where  isNewLine   :: Word8 -> Bool
-        isNewLine x =  x == (fromIntegral $ ord '\n')
+ where
+        isNewLine   :: Word8 -> Bool
+        isNewLine x =  x == nl
         {-# INLINE isNewLine #-}
+  
+        chopChunk chunk
+         = A.mapElems (A.computeS_ . A.map (chr . fromIntegral)) 
+         $ A.trimEnds (== nl) chunk
+        {-# INLINE chopChunk #-}
+
+        nl :: Word8
+        !nl = fromIntegral $ ord '\n'
 {-# INLINE hSourcesLines #-}
 
 

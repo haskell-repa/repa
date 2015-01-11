@@ -18,7 +18,8 @@ where
 import Data.Repa.Flow.Chunked.Base
 import System.IO
 import Data.Word
-import Data.Repa.Array.Foreign                  as R
+import Data.Repa.Array.Foreign                  as A
+import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 
 
@@ -48,7 +49,7 @@ fileSourcesRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Sources Int IO F Word8)
+        -> IO (Sources Int IO UN (Vector F Word8))
 fileSourcesRecords = G.fileSourcesRecords
 {-# INLINE [2] fileSourcesRecords #-}
 
@@ -59,7 +60,7 @@ hSourcesRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Sources Int IO F Word8)
+        -> IO (Sources Int IO UN (Vector F Word8))
 hSourcesRecords = G.hSourcesRecords
 {-# INLINE [2] hSourcesRecords #-}
 

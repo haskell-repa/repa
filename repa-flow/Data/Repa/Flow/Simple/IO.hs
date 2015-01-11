@@ -13,8 +13,8 @@ where
 import Data.Repa.Flow.Simple.Base
 import System.IO
 import Data.Word
-import Data.Repa.Array.Foreign                  as R
-import Data.Repa.Array                          as R
+import Data.Repa.Array.Foreign                  as A
+import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 
 
@@ -75,7 +75,7 @@ fileSourceRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Source IO (Vector F Word8))
+        -> IO (Source IO (Vector UN (Vector F Word8)))
 
 fileSourceRecords path len pSep aFail
  = do   s0      <- G.fileSourcesRecords [path] len pSep aFail
@@ -90,14 +90,13 @@ hSourceRecords
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Source IO (Vector F Word8))
+        -> IO (Source IO (Vector UN (Vector F Word8)))
 
 hSourceRecords h len pSep aFail
  = do   s0      <- G.hSourcesRecords [h] len pSep aFail
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE [2] hSourceRecords #-}
-
 
 
 -- Sinking Bytes ----------------------------------------------------------------------------------

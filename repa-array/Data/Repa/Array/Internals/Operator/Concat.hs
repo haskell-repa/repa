@@ -25,14 +25,14 @@ import Prelude  hiding (reverse, length, map, zipWith, concat)
 -- Concat ---------------------------------------------------------------------
 -- | O(len result) Concatenate nested vectors.
 concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a t)
-        => Vector r1 (Vector r2 a) -> Vector r3 a
-concat vs
+        => r3 -> Vector r1 (Vector r2 a) -> Vector r3 a
+concat r3 vs
  | R.length vs == 0
  = R.vfromList []
 
  | otherwise
  = unsafePerformIO
- $ do   let !lens  = toVectorU $ computeS $ R.map R.length vs
+ $ do   let !lens  = toVectorU $ computeS U $ R.map R.length vs
         let !len   = U.sum lens
         !buf       <- unsafeNewBuffer len
         let !iLenY = U.length lens
@@ -79,7 +79,7 @@ concatWith !is !vs
  = unsafePerformIO
  $ do   
         -- Lengths of the source vectors.
-        let !lens       = toVectorU $ computeS $ R.map R.length vs
+        let !lens       = toVectorU $ computeS U $ R.map R.length vs
 
         -- Length of the final result vector.
         let !(I# len)   = U.sum lens
@@ -156,7 +156,7 @@ intercalate !is !vs
  = unsafePerformIO
  $ do   
         -- Lengths of the source vectors.
-        let !lens       = toVectorU $ computeS $ R.map R.length vs
+        let !lens       = toVectorU $ computeS U $ R.map R.length vs
 
         -- Length of the final result vector.
         let !(I# len)   = U.sum lens

@@ -8,6 +8,7 @@ module Data.Repa.IO.Convert
 where
 import Data.Repa.Array.Foreign
 import Data.Repa.Array
+import System.IO.Unsafe
 import Control.Monad.Primitive
 import Data.ByteString                                  (ByteString)
 import Data.Word
@@ -30,22 +31,22 @@ import qualified Data.Double.Conversion.ByteString      as DC
 --   
 readDouble :: Vector F Word8 -> Double
 readDouble (FArray (Z :. len) offset fptr)
- = unsafeInlineIO
+ = unsafePerformIO
  $ F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->
-   F.withForeignPtr fptr   $ \pBS  -> 
+   F.withForeignPtr fptr   $ \pIn  -> 
     do  
         -- Copy the data to our new buffer.
-        F.copyBytes pBuf (pBS `plusPtr` offset) (fromIntegral len)
+        F.copyBytes   pBuf (pIn `plusPtr` offset) (fromIntegral len)
 
         -- Poke a 0 on the end to ensure it's null terminated.
         F.pokeByteOff pBuf len (0 :: Word8)
 
         -- Call the C strtod function
-        let !d  = strtod pBS pRes
+        let !d  = strtod pBuf pRes
 
         return d
-{-# INLINE readDouble #-}
+{-# NOINLINE readDouble #-}
 
 foreign import ccall unsafe 
  strtod :: Ptr Word8 -> Ptr (Ptr Word8) -> Double
