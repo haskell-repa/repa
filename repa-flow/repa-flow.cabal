@@ -36,6 +36,8 @@ Library
 
         Data.Repa.Flow.States
 
+        Data.Repa.Flow
+
   other-modules:
         Data.Repa.Flow.Chunked.Base
         Data.Repa.Flow.Chunked.Operator
@@ -60,13 +62,14 @@ Library
 
   extensions:
         NoMonomorphismRestriction
+        RankNTypes
         BangPatterns
         MagicHash
         FlexibleContexts
+        FlexibleInstances
         PatternGuards
         TypeFamilies
         MultiParamTypeClasses
-        FlexibleInstances
         ScopedTypeVariables
         FunctionalDependencies
         ConstraintKinds

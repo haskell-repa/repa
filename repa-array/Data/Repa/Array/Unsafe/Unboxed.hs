@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Unsafe.Unboxed
-        ( UU, U.Unbox
+        ( UU(..), U.Unbox
         , Array (..),   uunboxed
 
         -- * Slicing
@@ -37,7 +37,7 @@ import Data.Word
 --
 --   UNSAFE: Indexing into this array is not bounds checked.
 --
-data UU
+data UU = UU
 
 instance (Shape sh, U.Unbox a) => Bulk UU sh a where
  data Array UU sh a        = UUArray !sh !(U.Vector a)

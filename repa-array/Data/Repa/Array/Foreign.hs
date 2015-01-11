@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Foreign
-        ( F, Array (..), Buffer (..)
+        ( F(..), Array (..), Buffer (..)
         , fromForeignPtr, toForeignPtr
         , eqVectorF)
 where
@@ -25,9 +25,8 @@ import qualified Data.ByteString.Internal       as BS
 
 -------------------------------------------------------------------------------
 -- | Arrays represented as foreign buffers in the C heap.
-data F
+data F = F
 
--- | Foreign arrays.
 instance (Shape sh, Storable a) => Bulk F sh a where
  data Array F sh a      = FArray !sh !Int !(ForeignPtr a)
  extent (FArray sh _ _) = sh

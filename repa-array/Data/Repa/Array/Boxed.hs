@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Boxed
-        ( B
+        ( B(..)
         , Array (..)
         , boxed
         , fromVectorB, toVectorB)
@@ -24,9 +24,8 @@ import Control.Monad
 --   have an Unbox instance. If it does, then use the Unboxed `U` 
 --   representation will be faster.
 --
-data B
+data B = B
 
--- | Arrays of boxed elements.
 instance Shape sh => Bulk B sh a where
  data Array B sh a
         = BArray sh !(V.Vector a)

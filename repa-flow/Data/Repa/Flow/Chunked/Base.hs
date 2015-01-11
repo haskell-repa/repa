@@ -36,8 +36,10 @@ type Flow i m r a
 
 -- Conversion -----------------------------------------------------------------
 -- | Given an arity and a list of elements, yield sources that each produce all
---   the elements. All elements are stuffed into a single chunk, and each 
---   stream is given the same chunk.
+--   the elements. 
+--
+--   * All elements are stuffed into a single chunk, and each stream is given
+--     the same chunk.
 fromList_i 
         :: (States i m, A.Target r a t)
         => i -> [a] -> m (Sources i m r a)

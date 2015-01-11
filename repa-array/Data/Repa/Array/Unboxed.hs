@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Unboxed
-        ( U, U.Unbox
+        ( U(..), U.Unbox
         , Array (..),  unboxed
         , fromVectorU, toVectorU)
 where
@@ -26,7 +26,7 @@ import Data.Word
 --   as pairs of unboxed vectors.
 --   This is the most efficient representation for numerical data.
 --
-data U
+data U = U
 
 instance (Shape sh, U.Unbox a) => Bulk U sh a where
  data Array U sh a    = UArray sh !(U.Vector a)

@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Unsafe.Foreign
-        ( UF, Array (..))
+        ( UF(..), Array (..))
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -21,7 +21,7 @@ import Data.Repa.Fusion.Unpack
 
 -------------------------------------------------------------------------------
 -- | Arrays represented as foreign buffers in the C heap.
-data UF
+data UF = UF
 
 instance (Shape sh, Storable a) => Bulk UF sh a where
  data Array UF sh a       = UFArray !sh !Int !(ForeignPtr a)

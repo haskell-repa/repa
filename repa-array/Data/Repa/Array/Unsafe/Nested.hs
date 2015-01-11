@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Unsafe.Nested
-        ( UN, U.Unbox
+        ( UN(..), U.Unbox
         , Array (..)
 
         -- * Conversion
@@ -49,7 +49,7 @@ import Prelude  hiding (concat)
 --   associated with each level of nesting, and one unboxed vector to hold
 --   all the integer elements.
 --
-data UN
+data UN = UN
 
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)

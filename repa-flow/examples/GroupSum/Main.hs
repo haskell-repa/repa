@@ -48,18 +48,20 @@ pGroupSum fileInSegs fileInVals fileOutSums
         let !nl  = fromIntegral $ ord '\n'
 
         -- Group the input segment file to get segment lengths.
-        iSegCols  <-  G.project_i (zero 1)
-                  =<< fileSourcesRecords [fileInSegs] (64 * 1024) (== nl) 
+        iSegCols   <-  G.project_i (zero 1)
+                   =<< fileSourcesRecords [fileInSegs] (64 * 1024) (== nl) 
                                 (error "over long line in segs file")
 
-        iSegElems <- mapChunks_i (A.segmentOn nl) iSegCols
+        iSegElems  <- mapChunks_i (A.segmentOn nl) iSegCols
 
-        iSegLens  :: Sources () IO UU Int 
-                  <- groupsBy_i eqVectorF iSegElems
+--        iSegGroups :: Sources () IO B (Vector F Word8, Int)
+--                   <- groupsBy_i eqVectorF iSegElems
 
-        i0        <- watch_i (\_ arr -> putStrLn 
-                                         $ show 
-                                         $ A.toList arr) 
+        iSegLens   :: Sources () IO U Int
+                   <- map_i snd =<< groupsBy_i eqVectorF iSegElems
+
+        i0        <-  watch_i (\_ arr -> putStrLn 
+                                         $ show $ A.toList arr)
                              iSegLens
 
         oDiscard  <-  discard_o ()

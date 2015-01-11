@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Delayed
-        ( D, Array(..)
+        ( D(..), Array(..)
         , fromFunction, toFunction
         , delay
         , map
@@ -26,7 +26,7 @@ import Prelude hiding (map, zipWith)
 --
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
-data D
+data D = D
 
 -- | Delayed arrays.
 instance Shape sh => Bulk D sh a where

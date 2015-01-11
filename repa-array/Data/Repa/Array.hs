@@ -14,18 +14,18 @@ module Data.Repa.Array
 
           -- * Array Representations
           -- ** Delayed arrays
-        , D
+        , D(..)
         , fromFunction
         , toFunction
         , delay 
         , computeS
 
           -- ** Boxed arrays
-        , B, boxed
+        , B(..), boxed
         , fromVectorB, toVectorB
 
           -- ** Unboxed arrays
-        , U, unboxed
+        , U(..), unboxed
         , fromVectorU, toVectorU
 
           -- ** Windowed arrays
@@ -35,7 +35,7 @@ module Data.Repa.Array
         , entire
 
           -- ** Nested arrays
-        , UN
+        , UN(..)
 
           -- * Generic Conversion
         , vfromList
