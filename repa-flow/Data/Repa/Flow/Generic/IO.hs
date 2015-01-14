@@ -19,6 +19,12 @@ import Data.Word
 import Prelude                                          as P
 
 
+lix :: [a] -> Int -> Maybe a
+lix (x : _)  0  = Just x
+lix (_ : xs) n  = lix xs (n - 1)
+lix _        _  = Nothing
+
+
 -- Source Bytes -----------------------------------------------------------------------------------
 -- | Read data from some files, using the given chunk length.
 --
@@ -35,7 +41,8 @@ fileSourcesBytes
 fileSourcesBytes filePaths len
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
         s0      <- hSourcesBytes hs len
-        finalize_i (\(IIx i _) -> hClose (hs !! i)) s0
+        finalize_i (\(IIx i _) -> let Just h = lix hs i
+                                  in  hClose h) s0
 {-# NOINLINE fileSourcesBytes #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
@@ -50,9 +57,10 @@ hSourcesBytes hs len
  = return $ Sources (P.length hs) pull_hSource
  where
         pull_hSource (IIx i _) eat eject
-         = let h  = hs !! i
-           in do eof <- hIsEOF h
-                 if eof 
+         = do print i
+              let Just h  = lix hs i
+              eof <- hIsEOF h
+              if eof 
                   then  eject
                   else do  
                         !chunk  <- hGetArray h len
@@ -91,7 +99,8 @@ fileSourcesRecords
 fileSourcesRecords filePaths len pSep aFail
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
         s0      <- hSourcesRecords hs len pSep aFail
-        finalize_i (\(IIx i _) -> hClose (hs !! i)) s0
+        finalize_i (\(IIx i _) -> let Just h = lix hs i
+                                  in  hClose h) s0
 
 {-# NOINLINE fileSourcesRecords #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
@@ -110,12 +119,13 @@ hSourcesRecords hs len pSep aFail
  = return $ Sources (P.length hs) pull_hSourceRecordsF
  where  
         pull_hSourceRecordsF (IIx i _) eat eject
-         =  hIsEOF (hs !! i) >>= \eof
-         -> if eof
-             -- We're at the end of the file.
-             then eject
+         = let Just h = lix hs i
+           in hIsEOF (hs !! i) >>= \eof ->
+            if eof
+                -- We're at the end of the file.
+                then eject
 
-             else do
+            else do
                 -- Read a new chunk from the file.
                 arr      <- hGetArray (hs !! i) len
 

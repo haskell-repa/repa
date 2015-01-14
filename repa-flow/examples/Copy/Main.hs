@@ -1,7 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-import Data.Array.Repa.Bulk
-import Data.Array.Repa.Flow
-import Data.Array.Repa.Flow.IO.File
+import Data.Repa.Flow
 import Control.Monad
 import Data.Char
 import System.Environment
@@ -21,15 +19,11 @@ main
 pcopy :: FilePath -> FilePath -> IO ()
 pcopy fileIn fileOut
  = do   
-        -- Source whole records from input file.
-        let !nl = fromIntegral $ ord '\n'
-        ifile   <- fileSourceRecordsF fileIn
-                        (1024*1024)
-                        (== nl) 
-                        (error "fark")
+        -- Source from the input file.
+        ifile   <- fileSourcesBytes [fileIn] (1024*1024)
 
         -- Sink to the output file.
-        ofile   <- fileSinkBytesF fileOut
+        ofile   <- fileSinksBytes   [fileOut]
 
         -- Drain the source into the sink.
         drain ifile ofile

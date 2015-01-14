@@ -38,6 +38,9 @@ module Data.Repa.Flow
         , Sources, Sinks
         , Flow
 
+        -- * Evaluation
+        , drain
+
         -- * Representations
         -- | These are the representations that can be used for the 
         --   individual chunks in a flow.
@@ -123,6 +126,13 @@ type Sinks   r a = C.Sinks   Int IO r a
 
 -- | Shorthand for common type classes.
 type Flow    r a = C.Flow    Int IO r a
+
+
+-- Evaluation -----------------------------------------------------------------
+-- | Pull all available values from the sources and push them to the sinks.
+drain   :: Sources r a -> Sinks r a -> IO ()
+drain = G.drain
+{-# INLINE drain #-}
 
 
 -- Conversion -----------------------------------------------------------------
@@ -350,7 +360,7 @@ head_i ix len s
 --
 -- @  
 -- > toList1 0 =<< groups_i U =<< fromList U 1 "waabbbblle"
--- Just [('w',1),('a',2),('b',4),('l',2),('e',1)]
+-- Just [(\'w\',1),(\'a\',2),(\'b\',4),(\'l\',2),(\'e\',1)]
 -- @
 --
 groups_i
@@ -400,6 +410,10 @@ groupsBy_i _ f s
 -- Just [10,600,1,1,1]
 -- @
 --
+-- TODO: change folds to shim in a segment name
+--     Sources r1 (n, Int) -> Sources r2 a -> Sources r3 (n, b)
+--     The plain fn can pass a Unit, which will have repr squashed by vector lib.
+-- 
 folds_i :: FoldsWorthy r1 r2 r3 t1 t2 t3 a b
         => r3                   -- ^ Result chunk representation.
         -> (a -> b -> b)        -- ^ Worker function.
@@ -435,7 +449,7 @@ type FoldsWorthy r1 r2 r3 t1 t2 t3 a b
 -- > sVals   <-  fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Int]
 -- 
 -- > sResult \<-  map_i U (\\(acc, n) -\> acc / n)
---           =\<\< foldGroups_i U (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0)
+--           =\<\< foldGroupsBy_i U (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0)
 --
 -- > toLists1 0 sResult
 -- Just [10.0,35.0,60.0,80.0,100.0]
