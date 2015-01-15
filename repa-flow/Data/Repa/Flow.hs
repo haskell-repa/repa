@@ -79,24 +79,7 @@ module Data.Repa.Flow
         -- ** Folding
         , folds_i
         , foldGroupsBy_i
-        , FoldsWorthy
-
-        -- * Flow IO
-        -- ** Sourcing bytes
-        , fileSourcesBytes
-        , hSourcesBytes
-
-        -- ** Sourcing records
-        , fileSourcesRecords
-        , hSourcesRecords
-
-        -- ** Sourcing lines
-        , fileSourcesLines
-        , hSourcesLines
-
-        -- ** Sinking bytes
-        , hSinksBytes
-        , fileSinksBytes)
+        , FoldsWorthy)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Eval.Array                     as A
@@ -104,10 +87,7 @@ import Data.Repa.Array.Foreign                  as A
 import Data.Repa.Array                          as A hiding (fromList, fromLists)
 import qualified Data.Repa.Flow.Chunked         as C hiding (next)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
-import System.IO
 import Control.Monad
-import Data.Word
-import Data.Char
 
 
 -- | A bundle of data sources, where the elements are chunked into arrays.
@@ -468,120 +448,4 @@ foldGroupsBy_i r3 pGroup f z sNames sVals
  = do   segLens <- map_i U snd =<< groupsBy_i B pGroup sNames
         folds_i r3 f z segLens sVals
 {-# INLINE foldGroupsBy_i #-}
-
-
--- IO -------------------------------------------------------------------------
--- | Read data from some files, using the given chunk length.
---
---   * Chunk data appears in foreign memory, without going via the GHC heap.
--- 
-fileSourcesBytes 
-        :: [FilePath]  -> Int 
-        -> IO (Sources F Word8)
-fileSourcesBytes = G.fileSourcesBytes
-{-# INLINE fileSourcesBytes #-}
-
-
--- | Like `fileSourcesBytes`, but taking existing file handles.
-hSourcesBytes 
-        :: [Handle]   -> Int 
-        -> IO (Sources F Word8)
-hSourcesBytes = G.hSourcesBytes
-{-# INLINE hSourcesBytes #-}
-
-
--- | Read complete records of data from a file, using the given chunk length.
---
---   * The end of record character is retained in the output.
---   * Chunk data appears in foreign memory, without going via the GHC heap.
---
-fileSourcesRecords 
-        :: [FilePath]           -- ^ File paths.
-        -> Int                  -- ^ Size of chunk to read in bytes.
-        -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
-        -> IO ()                -- ^ Action to perform if we can't get a
-                                --   whole record.
-        -> IO (Sources UN (Vector F Word8))
-fileSourcesRecords = G.fileSourcesRecords
-{-# INLINE fileSourcesRecords #-}
-
-
--- | Like `fileSourcesRecords`, but taking existing file handles.
---
--- 
-hSourcesRecords 
-        :: [Handle]             -- ^ File handles.
-        -> Int                  -- ^ Size of chunk to read in bytes.
-        -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
-        -> IO ()                -- ^ Action to perform if we can't get a
-                                --   whole record.
-        -> IO (Sources UN (Vector F Word8))
-hSourcesRecords = G.hSourcesRecords
-{-# INLINE hSourcesRecords #-}
-
-
--- | Read complete lines of data from a text file, using the given chunk length.
---
---   * The trailing new-line characters are discarded.
---   * Chunk data appears in foreign memory, without going via the GHC heap.
---
-fileSourcesLines 
-        :: [FilePath]           -- ^ File paths.
-        -> Int                  -- ^ Size of chunk to read in bytes.
-        -> IO ()                -- ^ Action to perform if we can't get a
-                                --   whole record.
-        -> IO (Sources UN (Vector F Char))
-fileSourcesLines files nChunk fails
- =   mapChunks_i chopChunk
- =<< G.fileSourcesRecords files nChunk isNewLine fails
- where  
-        isNewLine   :: Word8 -> Bool
-        isNewLine x =  x == nl
-        {-# INLINE isNewLine #-}
-  
-        chopChunk chunk
-         = A.mapElems (A.computeS_ . A.map (chr . fromIntegral)) 
-         $ A.trimEnds (== nl) chunk
-        {-# INLINE chopChunk #-}
-
-        nl :: Word8
-        !nl = fromIntegral $ ord '\n'
-{-# INLINE fileSourcesLines #-}
-
-
--- | Like `fileSourcesLines`, but taking existing file handles.
-hSourcesLines
-        :: [Handle]             -- ^ File handles.
-        -> Int                  -- ^ Size of chunk to read in bytes.
-        -> IO ()                -- ^ Action to perform if we can't get a
-                                --   whole record.
-        -> IO (Sources UN (Vector F Char))
-hSourcesLines hs nChunk fails
- =   mapChunks_i chopChunk
- =<< G.hSourcesRecords hs nChunk isNewLine fails
- where
-        isNewLine   :: Word8 -> Bool
-        isNewLine x =  x == nl
-        {-# INLINE isNewLine #-}
-  
-        chopChunk chunk
-         = A.mapElems (A.computeS_ . A.map (chr . fromIntegral)) 
-         $ A.trimEnds (== nl) chunk
-        {-# INLINE chopChunk #-}
-
-        nl :: Word8
-        !nl = fromIntegral $ ord '\n'
-{-# INLINE hSourcesLines #-}
-
-
--- | Write data to the given files.
-fileSinksBytes :: [FilePath] -> IO (Sinks F Word8)
-fileSinksBytes = G.fileSinksBytes
-{-# INLINE fileSinksBytes #-}
-
-
--- | Write chunks of data to the given file handles.
-hSinksBytes    :: [Handle]   -> IO (Sinks F Word8)
-hSinksBytes    = G.hSinksBytes
-{-# INLINE hSinksBytes #-}
 

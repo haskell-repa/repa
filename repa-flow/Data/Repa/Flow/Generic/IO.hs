@@ -23,47 +23,10 @@ import Data.Word
 import Prelude                                          as P
 
 
--- Source Bytes -----------------------------------------------------------------------------------
--- | Read data from some files, using the given chunk length.
---
---   * Data is read into foreign memory without copying it through the GHC heap.
---   * All chunks have the same size, except possibly the last one.
---
---   Each file will be closed the first time the consumer tries to pull an element
---   from the associated stream when no more are available.
---
-fileSourcesBytes 
-        :: [FilePath] -> Int 
-        -> IO (Sources Int IO (Vector F Word8))
-
-fileSourcesBytes filePaths len
- = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
-        s0      <- hSourcesBytes hs len
-        finalize_i (\(IIx i _) -> let Just h = lix hs i
-                                  in  hClose h) s0
-{-# NOINLINE fileSourcesBytes #-}
---  NOINLINE because the chunks should be big enough to not require fusion,
---           and we don't want to release the code for 'openBinaryFile'.
-
-
--- | Like `fileSourceBytes`, but taking existing file handles.
-hSourcesBytes 
-        :: [Handle] -> Int 
-        -> IO (Sources Int IO (Vector F Word8))
-
-hSourcesBytes hs len
- = return $ Sources (P.length hs) pull_hSource
- where
-        pull_hSource (IIx i _) eat eject
-         = do let Just h  = lix hs i
-              eof <- hIsEOF h
-              if eof 
-                  then  eject
-                  else do  
-                        !chunk  <- hGetArray h len
-                        eat chunk
-        {-# INLINE pull_hSource #-}
-{-# INLINE [2] hSourcesBytes #-}
+lix :: [a] -> Int -> Maybe a
+lix (x : _)  0  = Just x
+lix (_ : xs) n  = lix xs (n - 1)
+lix _        _  = Nothing
 
 
 -- Source Records ---------------------------------------------------------------------------------
@@ -90,7 +53,8 @@ fileSourcesRecords
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
-        -> IO ()                -- ^ Action to perform if we can't get a whole record.
+        -> IO ()                -- ^ Action to perform if we can't get a
+                                --   whole record.
         -> IO (Sources Int IO (Vector UN (Vector F Word8)))
 
 fileSourcesRecords filePaths len pSep aFail
@@ -177,6 +141,50 @@ hSourcesChunks hs len pSep aFail
                         eat $ window (Z :. 0) (Z :. ixSplit) arr
         {-# INLINE pull_hSourcesChunks #-}
 {-# INLINE [2] hSourcesChunks #-}
+
+
+-- Source Bytes -----------------------------------------------------------------------------------
+-- | Read data from some files, using the given chunk length.
+--
+--   * Data is read into foreign memory without copying it through the GHC heap.
+--   * All chunks have the same size, except possibly the last one.
+--
+--   Each file will be closed the first time the consumer tries to pull an element
+--   from the associated stream when no more are available.
+--
+fileSourcesBytes 
+        :: [FilePath] -> Int 
+        -> IO (Sources Int IO (Vector F Word8))
+
+fileSourcesBytes filePaths len
+ = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
+        s0      <- hSourcesBytes hs len
+        finalize_i (\(IIx i _) -> let Just h = lix hs i
+                                  in  hClose h) s0
+{-# NOINLINE fileSourcesBytes #-}
+--  NOINLINE because the chunks should be big enough to not require fusion,
+--           and we don't want to release the code for 'openBinaryFile'.
+
+
+-- | Like `fileSourceBytes`, but taking existing file handles.
+hSourcesBytes 
+        :: [Handle] -> Int 
+        -> IO (Sources Int IO (Vector F Word8))
+
+hSourcesBytes hs len
+ = return $ Sources (P.length hs) pull_hSource
+ where
+        pull_hSource (IIx i _) eat eject
+         = do print i
+              let Just h  = lix hs i
+              eof <- hIsEOF h
+              if eof 
+                  then  eject
+                  else do  
+                        !chunk  <- hGetArray h len
+                        eat chunk
+        {-# INLINE pull_hSource #-}
+{-# INLINE [2] hSourcesBytes #-}
 
 
 -- Sink Bytes -------------------------------------------------------------------------------------

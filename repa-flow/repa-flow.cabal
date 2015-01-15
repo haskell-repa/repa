@@ -25,10 +25,11 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Chunked
+        Data.Repa.Flow.Debug
         Data.Repa.Flow.Generic
+        Data.Repa.Flow.IO
         Data.Repa.Flow.Simple
         Data.Repa.Flow.States
-        Data.Repa.Flow.Debug
         Data.Repa.Flow
 
   other-modules:
