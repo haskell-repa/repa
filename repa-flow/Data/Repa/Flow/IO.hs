@@ -1,21 +1,21 @@
 
--- | Flow file IO.
+-- | Read and write files.
 module Data.Repa.Flow.IO
         ( -- * Sourcing records
-          fileSourcesRecords
-        , hSourcesRecords
+          sourceRecords
+        , hSourceRecords
 
           -- * Sourcing lines
-        , fileSourcesLines
-        , hSourcesLines
+        , sourceLines
+        , hSourceLines
 
           -- * Sourcing bytes
-        , fileSourcesBytes
-        , hSourcesBytes
+        , sourceBytes
+        , hSourceBytes
 
           -- * Sinking bytes
-        , hSinksBytes
-        , fileSinksBytes)
+        , sinkBytes
+        , hSinkBytes)
 where
 import Data.Repa.Flow
 import Data.Repa.Eval.Array                     as A
@@ -40,48 +40,56 @@ import Data.Char
 --   case where a large input file is malformed, as we won't try to read the
 --   whole file into memory.
 -- 
---   Each file will be closed the first time the consumer tries to pull an element
---   from the associated stream when no more are available.
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
---   * The provided file handle must support seeking, else you'll get an exception.
+--   * The provided file handle must support seeking, else you'll get an
+--     exception.
+--   * Each file is closed the first time the consumer tries to pull a
+--     record from the associated stream when no more are available.
 --
-fileSourcesRecords 
+sourceRecords 
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> IO (Sources UN (Vector F Word8))
-fileSourcesRecords = G.fileSourcesRecords
-{-# INLINE fileSourcesRecords #-}
+sourceRecords = G.fileSourcesRecords
+{-# INLINE sourceRecords #-}
 
 
--- | Like `fileSourcesRecords`, but taking existing file handles.
-hSourcesRecords 
+-- | Like `sourceRecords`, but take existing file handles.
+--
+--   * Files remain open once all data has been read.
+--
+hSourceRecords 
         :: [Handle]             --  File handles.
         -> Int                  --  Size of chunk to read in bytes.
         -> (Word8 -> Bool)      --  Detect the end of a record.        
         -> IO ()                --  Action to perform if we can't get a
                                 --   whole record.
         -> IO (Sources UN (Vector F Word8))
-hSourcesRecords = G.hSourcesRecords
-{-# INLINE hSourcesRecords #-}
+hSourceRecords = G.hSourcesRecords
+{-# INLINE hSourceRecords #-}
 
 
 -- Source Lines ---------------------------------------------------------------
 -- | Read complete lines of data from a text file, using the given chunk length.
 --
 --   * The trailing new-line characters are discarded.
---   * Chunk data appears in foreign memory, without going via the GHC heap.
+--   * Data is read into foreign memory without copying it through the GHC heap.
+--   * The provided file handle must support seeking, else you'll get an
+--     exception.
+--   * Each file is closed the first time the consumer tries to pull a line
+--     from the associated stream when no more are available.
 --
-fileSourcesLines 
+sourceLines 
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> IO (Sources UN (Vector F Char))
-fileSourcesLines files nChunk fails
+sourceLines files nChunk fails
  =   mapChunks_i chopChunk
  =<< G.fileSourcesRecords files nChunk isNewLine fails
  where  
@@ -96,17 +104,20 @@ fileSourcesLines files nChunk fails
 
         nl :: Word8
         !nl = fromIntegral $ ord '\n'
-{-# INLINE fileSourcesLines #-}
+{-# INLINE sourceLines #-}
 
 
--- | Like `fileSourcesLines`, but taking existing file handles.
-hSourcesLines
+-- | Like `sourceLines`, but take existing file handles.
+--
+--   * Files remain open once all data has been read.
+--
+hSourceLines
         :: [Handle]             --  File handles.
         -> Int                  --  Size of chunk to read in bytes.
         -> IO ()                --  Action to perform if we can't get a
                                 --   whole record.
         -> IO (Sources UN (Vector F Char))
-hSourcesLines hs nChunk fails
+hSourceLines hs nChunk fails
  =   mapChunks_i chopChunk
  =<< G.hSourcesRecords hs nChunk isNewLine fails
  where
@@ -121,35 +132,48 @@ hSourcesLines hs nChunk fails
 
         nl :: Word8
         !nl = fromIntegral $ ord '\n'
-{-# INLINE hSourcesLines #-}
+{-# INLINE hSourceLines #-}
 
 
 -- Source Bytes ---------------------------------------------------------------
 -- | Read data from some files, using the given chunk length.
-fileSourcesBytes 
+--
+--   * Each file is closed the first time the consumer tries to pull a chunk
+--     from the associated stream when no more are available.
+--
+sourceBytes
         :: [FilePath]  -> Int 
         -> IO (Sources F Word8)
-fileSourcesBytes = G.fileSourcesBytes
-{-# INLINE fileSourcesBytes #-}
+sourceBytes = G.fileSourcesBytes
+{-# INLINE sourceBytes #-}
 
 
--- | Like `fileSourcesBytes`, but taking existing file handles.
-hSourcesBytes 
+-- | Like `sourceBytes`, but take existing file handles.
+--
+--   * Files remain open after all data has been read.
+--
+hSourceBytes 
         :: [Handle]   -> Int 
         -> IO (Sources F Word8)
-hSourcesBytes = G.hSourcesBytes
-{-# INLINE hSourcesBytes #-}
+hSourceBytes = G.hSourcesBytes
+{-# INLINE hSourceBytes #-}
 
 
 -- Sink Bytes -----------------------------------------------------------------
 -- | Write data to the given files.
-fileSinksBytes :: [FilePath] -> IO (Sinks F Word8)
-fileSinksBytes = G.fileSinksBytes
-{-# INLINE fileSinksBytes #-}
+--
+--   * Ejecting the sink closes the attached file.
+--
+sinkBytes :: [FilePath] -> IO (Sinks F Word8)
+sinkBytes = G.fileSinksBytes
+{-# INLINE sinkBytes #-}
 
 
--- | Write chunks of data to the given file handles.
-hSinksBytes    :: [Handle]   -> IO (Sinks F Word8)
-hSinksBytes    = G.hSinksBytes
-{-# INLINE hSinksBytes #-}
+-- | Like `sinkBytes` but take existing file handles.
+--
+--   * Ejecting the sink closes the attached file.
+--
+hSinkBytes    :: [Handle]   -> IO (Sinks F Word8)
+hSinkBytes    = G.hSinksBytes
+{-# INLINE hSinkBytes #-}
 
