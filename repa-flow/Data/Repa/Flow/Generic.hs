@@ -61,11 +61,14 @@ module Data.Repa.Flow.Generic
         , ddistributes_o
 
           -- * Flow IO
-          -- ** Sourcing Bytes
-        , fileSourcesBytes,     hSourcesBytes
-
           -- ** Sourcing Records
         , fileSourcesRecords,   hSourcesRecords
+
+          -- ** Sourcing Chunks
+        , fileSourcesChunks,    hSourcesChunks
+
+          -- ** Sourcing Bytes
+        , fileSourcesBytes,     hSourcesBytes
 
           -- ** Sinking Bytes
         , fileSinksBytes,       hSinksBytes)

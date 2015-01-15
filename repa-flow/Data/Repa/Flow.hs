@@ -102,14 +102,12 @@ import Data.Repa.Flow.States
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Foreign                  as A
 import Data.Repa.Array                          as A hiding (fromList, fromLists)
-import Data.Repa.Flow.States                    as F hiding (next)
 import qualified Data.Repa.Flow.Chunked         as C hiding (next)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
 import Control.Monad
 import Data.Word
 import Data.Char
-import Data.Repa.Array                          (U(..), B(..))
 
 
 -- | A bundle of data sources, where the elements are chunked into arrays.
