@@ -3,8 +3,10 @@ module Data.Repa.Flow.Debug
         ( Nicer (..)
         , Tabulate (..)
         , more
-        , moren)
+        , moren
+        , moret)
 where
+import Data.Repa.Nice.Tabulate
 import Data.Repa.Nice
 import Data.Repa.Flow                   hiding (next)
 import qualified Data.Repa.Array        as A
@@ -43,18 +45,17 @@ moren ix len s
 {-# INLINE moren #-}
 
 
-{-
--- | Like `more`, but display results in tabular form.
-moret   :: (A.Window r DIM1 a, Nicer a)
+-- | Like `more`, but print results in tabular form to the console.
+moret   :: (A.Window r DIM1 a, Nicer a, Tabulate a)
         => Int          -- ^ Source index.
         -> Int          -- ^ Number of elements to show.
         -> Sources r a
-        -> IO (Maybe [Nice a])
--}
+        -> IO ()
+
+moret ix len s
+ = do   Just (vals, _)       <- head_i ix len s
+        putStrLn $ tabulate vals
+{-# NOINLINE moret #-}
 
 
-
-
-
--------------------------------------------------------------------------------
 

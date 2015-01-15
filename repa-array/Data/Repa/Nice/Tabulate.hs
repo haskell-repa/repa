@@ -1,54 +1,42 @@
-
+{-# LANGUAGE UndecidableInstances, OverlappingInstances #-}
 module Data.Repa.Nice.Tabulate
-        (Tabulate (..))
+        (tabulate)
 where
+import Data.Repa.Nice.Present   as A
 import Data.Repa.Nice.Display   as A
 import Data.Repa.Nice           as A
-import Data.Repa.Array          as A
 import Data.List                as L
 import Data.Monoid
 import Data.Maybe
 
 
-class Nicer a => Tabulate a where
- tabulate :: a -> String
+-- | Display a value in tabular form.
+tabulate :: Presentable a => a -> String
+tabulate xx
+  = let pp      = present xx
+    in case depth pp of
+        0       -> flatten pp
 
-instance Tabulate Int where
- tabulate x     = show x
+        1       -> let Just pss = strip1 pp
+                   in  tabulate1 $ map flatten pss
 
-instance Tabulate Float where
- tabulate x     = show x
+        _       -> let Just pss = strip2 pp
+                   in  tabulate2 $ map (map flatten) pss
 
-instance Tabulate Double where
- tabulate x     = show x
-
-
--- Tabulate a single vector by snowing all the values on a single line,
--- but with the same spacing.
-instance (Bulk r DIM1 a, Nicer a, Show (Nice a))
-      => Tabulate (A.Vector r a) where
- tabulate xs    
-  = let strs    = L.map (show . nice) $ A.toList xs
-        lens    = L.map L.length strs
+tabulate1 :: [String] -> String
+tabulate1 strs
+  = let lens    = L.map L.length strs
         len     = maximum lens
     in  concatMap (padR (len + 1)) strs
 
 
--- Tabulate nested arrays by showing them as matrices.
-instance ( Bulk r1 DIM1 (A.Vector r2 a)
-         , Bulk r2 DIM1 a
-         , Nicer a, Show (Nice a))
-      => Tabulate (A.Vector r1 (A.Vector r2 a)) where
- tabulate xs    
-  = let 
-        -- Convert all the fields to strings.
-        strss   = L.map (L.map (show . nice)) 
-                $ A.toLists xs
-
+tabulate2 :: [[String]] -> String
+tabulate2 strss
+ = let 
         -- Decide how to display a single column.
         displayOfCol c
                 = mconcat
-                $ mapMaybe (\line -> if c >= L.length line
+                $ mapMaybe (\line -> if c >= length line
                                         then Nothing
                                         else Just (takeDisplay (line !! c)))
                 $ strss
@@ -63,3 +51,4 @@ instance ( Bulk r1 DIM1 (A.Vector r2 a)
          = L.intercalate " " $ L.zipWith display displays line
 
     in  L.intercalate "\n" $ L.map makeLine strss
+
