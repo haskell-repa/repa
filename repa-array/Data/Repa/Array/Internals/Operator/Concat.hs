@@ -26,7 +26,7 @@ import Prelude  hiding (reverse, length, map, zipWith, concat)
 -- | O(len result) Concatenate nested vectors.
 concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a t)
         => r3 -> Vector r1 (Vector r2 a) -> Vector r3 a
-concat r3 vs
+concat _ vs
  | R.length vs == 0
  = R.vfromList []
 

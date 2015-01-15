@@ -39,13 +39,19 @@ Library
         Data.Repa.Array.Unsafe
         Data.Repa.Array.Window
         Data.Repa.Array
+
         Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
         Data.Repa.Eval.Stream
+
         Data.Repa.Fusion.Unpack
+
         Data.Repa.IO.Array
         Data.Repa.IO.Convert
+
         Data.Repa.Nice
+        Data.Repa.Nice.Display
+        Data.Repa.Nice.Tabulate
 
   other-modules:
         Data.Repa.Array.Internals.Operator.Concat

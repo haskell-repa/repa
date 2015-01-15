@@ -9,15 +9,12 @@ where
 import Data.Repa.Array.Foreign
 import Data.Repa.Array
 import System.IO.Unsafe
-import Control.Monad.Primitive
-import Data.ByteString                                  (ByteString)
 import Data.Word
 import GHC.Ptr
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
 import qualified Foreign.Marshal.Utils                  as F
-import qualified Data.ByteString.Internal               as BSI
 import qualified Data.Double.Conversion.ByteString      as DC
 
 

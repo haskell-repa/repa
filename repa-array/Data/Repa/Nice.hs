@@ -64,8 +64,14 @@ instance (Nicer a) => Nicer [a] where
  type Nice [a]          = [Nice a]
  nice xs                = P.map nice xs
 
-instance (Bulk r DIM1 a, Nicer a) => Nicer (A.Vector r a) where
+instance (Bulk r DIM1 a, Nicer a) 
+      => Nicer (A.Vector r a) where
  type Nice (Vector r a) = [Nice a]
  nice vec               = P.map nice $ toList vec
+
+
+
+
+
 
 
