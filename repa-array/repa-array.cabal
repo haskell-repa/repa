@@ -24,6 +24,7 @@ Library
         bytestring         == 0.10.*,
         mtl                == 2.2.*,
         double-conversion  == 2.0.*,
+        text               == 1.2.*,
         repa-eval          == 4.0.0.0,
         repa-stream        == 4.0.0.0
 

@@ -4,14 +4,15 @@ module Data.Repa.Nice.Tabulate
 where
 import Data.Repa.Nice.Present   as A
 import Data.Repa.Nice.Display   as A
-import Data.Repa.Nice           as A
 import Data.List                as L
+import qualified Data.Text      as T
+import Data.Text                (Text)
 import Data.Monoid
 import Data.Maybe
 
 
 -- | Display a value in tabular form.
-tabulate :: Presentable a => a -> String
+tabulate :: Presentable a => a -> Text
 tabulate xx
   = let pp      = present xx
     in case depth pp of
@@ -23,14 +24,14 @@ tabulate xx
         _       -> let Just pss = strip2 pp
                    in  tabulate2 $ map (map flatten) pss
 
-tabulate1 :: [String] -> String
+tabulate1 :: [Text] -> Text
 tabulate1 strs
-  = let lens    = L.map L.length strs
+  = let lens    = L.map T.length strs
         len     = maximum lens
-    in  concatMap (padR (len + 1)) strs
+    in  T.concat $ L.map (padR (len + 1)) strs
 
 
-tabulate2 :: [[String]] -> String
+tabulate2 :: [[Text]] -> Text
 tabulate2 strss
  = let 
         -- Decide how to display a single column.
@@ -48,7 +49,9 @@ tabulate2 strss
         displays = L.map displayOfCol [0.. nCols - 1]
 
         makeLine line
-         = L.intercalate " " $ L.zipWith display displays line
+         = T.intercalate (T.pack " ") 
+         $ L.zipWith display displays line
 
-    in  L.intercalate "\n" $ L.map makeLine strss
+    in  T.intercalate (T.pack "\n") 
+         $ L.map makeLine strss
 

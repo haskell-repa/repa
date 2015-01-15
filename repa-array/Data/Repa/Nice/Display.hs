@@ -9,7 +9,8 @@ module Data.Repa.Nice.Display
 where
 import Data.Monoid
 import Data.Char
-
+import Data.Text                (Text)
+import qualified Data.Text      as T
 
 -- | How a given value should be displayed.
 data Display
@@ -35,7 +36,7 @@ instance Monoid Display where
 
 
 -- | Display a string with the given mode.
-display :: Display -> String -> String
+display :: Display -> Text -> Text
 display (Display FormatNumeric width) str
         = padR width str
 
@@ -44,22 +45,22 @@ display (Display FormatText    width) str
 
 
 -- | Examine a string to decide how we should display it.
-takeDisplay :: String -> Display
+takeDisplay :: Text -> Display
 takeDisplay str
-        | all (\c -> isDigit c || c == '.') str
-        = Display FormatNumeric (length str)
+        | all (\c -> isDigit c || c == '.') $ T.unpack str
+        = Display FormatNumeric (T.length str)
 
         | otherwise
-        = Display FormatText    (length str)
+        = Display FormatText    (T.length str)
 
 padL n xs
- = let len = length xs
+ = let len = T.length xs
    in  if len >= n 
         then xs
-        else xs ++ replicate (n - len) ' '
+        else xs <> T.replicate (n - len) (T.pack " ")
 
 padR n xs
- = let len = length xs
+ = let len = T.length xs
    in  if len >= n 
         then xs
-        else replicate (n - len) ' ' ++ xs
+        else T.replicate (n - len) (T.pack " ") <> xs

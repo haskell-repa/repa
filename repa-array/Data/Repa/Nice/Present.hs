@@ -6,13 +6,15 @@ module Data.Repa.Nice.Present
         , strip2
         , flatten)
 where
-import Data.List
+import Data.Monoid
 import Data.Word
+import Data.Text                (Text)
+import qualified Data.Text      as T
 
 
 -- | A value, wrapped up nicely.
 data Present
-        = Atom  String          -- ^ An atomic thing.
+        = Atom  Text            -- ^ An atomic thing.
         | Many  [Present]       -- ^ Many of the same thing.
         | Some  [Present]       -- ^ Some different things.
         deriving (Eq, Show)
@@ -31,8 +33,8 @@ depth pp
 
 -- | Strip the top two layers of nesting into lists.
 strip2 :: Present -> Maybe [[Present]]
-strip2 (Many xs)
-        = mapM strip1 xs
+strip2 (Many xs) = mapM strip1 xs
+strip2 _         = Nothing
 
 
 -- | Strip the top layer of nesting into a list.
@@ -41,11 +43,14 @@ strip1 (Many xs) = Just xs
 strip1 _         = Nothing
 
 
--- | Flatten a present into a string.
-flatten :: Present -> String
+-- | Flatten a present into text
+flatten :: Present -> Text 
 flatten (Atom str) = str
-flatten (Many ps)  = "[" ++ (intercalate "," $ map flatten ps) ++ "]"
-flatten (Some ps)  = "(" ++ (intercalate "," $ map flatten ps) ++ ")"
+flatten (Many ps)  
+ = T.pack "[" <> (T.intercalate (T.pack ",") $ map flatten ps) <> T.pack "]"
+
+flatten (Some ps)  
+ = T.pack "(" <> (T.intercalate (T.pack ",") $ map flatten ps) <> T.pack ")"
 
 
 -- | Convert some value to a form presentable to the user.
@@ -57,31 +62,28 @@ class Presentable a where
  present :: a -> Present 
 
 instance Presentable Char where
- present = Atom . show
-
-instance Presentable String where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Int where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Float where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Double where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Word8 where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Word16 where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Word32 where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable Word64 where
- present = Atom . show
+ present = Atom . T.pack . show
 
 instance Presentable a 
       => Presentable [a] where

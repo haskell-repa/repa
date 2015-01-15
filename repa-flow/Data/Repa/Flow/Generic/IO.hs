@@ -216,9 +216,3 @@ hSinksBytes !hs
         return  $ Sinks (P.length hs) push_hSinkBytesF eject_hSinkBytesF
 {-# INLINE [2] hSinksBytes #-}
 
-
-lix :: [a] -> Int -> Maybe a
-lix (x : _)  0  = Just x
-lix (_ : xs) n  = lix xs (n - 1)
-lix _        _  = Nothing
-

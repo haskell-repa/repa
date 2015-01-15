@@ -2,10 +2,12 @@
 module Data.Repa.Nice
         (Nicer (..))
 where
-import Data.Repa.Array  as A
+import Data.Repa.Array          as A
 import Control.Monad
 import Data.Word
-import Prelude          as P
+import Prelude                  as P
+import Data.Text                (Text)
+import qualified Data.Text      as T
 
 
 -- | Convert some value to a nice form.
