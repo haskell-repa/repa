@@ -62,18 +62,18 @@ instance Index Int where
  {-# INLINE zero #-}
 
  next (IIx i len)
-  | i >= len    = Nothing
-  | otherwise   = Just $ IIx (i + 1) len
+  | i + 1 >= len = Nothing
+  | otherwise    = Just $ IIx (i + 1) len
  {-# INLINE next #-}
 
  like i (IIx _ len)
-  | i >= len    = Nothing
-  | otherwise   = Just $ IIx i len
+  | i >= len     = Nothing
+  | otherwise    = Just $ IIx i len
  {-# INLINE like #-}
 
  check i n
-  | i >= n      = Nothing
-  | otherwise   = Just $ IIx i n
+  | i >= n       = Nothing
+  | otherwise    = Just $ IIx i n
  {-# INLINE check #-}
 
 deriving instance Eq   (Ix Int)

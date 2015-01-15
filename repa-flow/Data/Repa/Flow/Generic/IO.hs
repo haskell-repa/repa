@@ -19,12 +19,6 @@ import Data.Word
 import Prelude                                          as P
 
 
-lix :: [a] -> Int -> Maybe a
-lix (x : _)  0  = Just x
-lix (_ : xs) n  = lix xs (n - 1)
-lix _        _  = Nothing
-
-
 -- Source Bytes -----------------------------------------------------------------------------------
 -- | Read data from some files, using the given chunk length.
 --
@@ -57,8 +51,7 @@ hSourcesBytes hs len
  = return $ Sources (P.length hs) pull_hSource
  where
         pull_hSource (IIx i _) eat eject
-         = do print i
-              let Just h  = lix hs i
+         = do let Just h  = lix hs i
               eof <- hIsEOF h
               if eof 
                   then  eject
@@ -120,7 +113,7 @@ hSourcesRecords hs len pSep aFail
  where  
         pull_hSourceRecordsF (IIx i _) eat eject
          = let Just h = lix hs i
-           in hIsEOF (hs !! i) >>= \eof ->
+           in hIsEOF h >>= \eof ->
             if eof
                 -- We're at the end of the file.
                 then eject
@@ -183,3 +176,10 @@ hSinksBytes !hs
 
         return  $ Sinks (P.length hs) push_hSinkBytesF eject_hSinkBytesF
 {-# INLINE [2] hSinksBytes #-}
+
+
+lix :: [a] -> Int -> Maybe a
+lix (x : _)  0  = Just x
+lix (_ : xs) n  = lix xs (n - 1)
+lix _        _  = Nothing
+
