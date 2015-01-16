@@ -20,7 +20,7 @@ module Data.Repa.Array
         , fromFunction
         , toFunction
         , delay 
-        , computeS
+        , computeS,     computeS_
 
           -- ** Boxed arrays
         , B(..), boxed

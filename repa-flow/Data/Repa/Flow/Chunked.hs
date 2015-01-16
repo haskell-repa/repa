@@ -43,11 +43,13 @@ module Data.Repa.Flow.Chunked
           -- * Flow IO
           -- ** Sourcing
         , G.fromFiles
-        , sourceBytes
         , sourceRecords
+        , sourceChars
+        , sourceBytes
 
           -- ** Sinking
         , G.toFiles
+        , sinkChars
         , sinkBytes)
 where
 import Data.Repa.Flow.Chunked.Base

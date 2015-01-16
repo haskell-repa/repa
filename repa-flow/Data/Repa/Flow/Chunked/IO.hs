@@ -6,8 +6,13 @@
 --   type synonyms for chunked flows.
 --
 module Data.Repa.Flow.Chunked.IO
-        ( sourceBytes
-        , sourceRecords
+        ( -- * Sourcing
+          sourceRecords
+        , sourceChars
+        , sourceBytes
+
+          -- * Sinking
+        , sinkChars
         , sinkBytes)
 where
 import Data.Repa.Flow.Chunked.Base
@@ -16,16 +21,6 @@ import Data.Word
 import Data.Repa.Array.Foreign                  as A
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
-
-
--- | Read data from some files, using the given chunk length.
---
--- | Like `sourceBytes`, but taking existing file handles.
-sourceBytes 
-        :: Int -> [Handle]
-        -> IO (Sources Int IO F Word8)
-sourceBytes = G.sourceBytes
-{-# INLINE [2] sourceBytes #-}
 
 
 -- | Like `fileSourceRecords`, but taking an existing file handle.
@@ -37,6 +32,24 @@ sourceRecords
         -> IO (Sources Int IO UN (Vector F Word8))
 sourceRecords = G.sourceRecords
 {-# INLINE [2] sourceRecords #-}
+
+
+-- | Read 8-bit ASCII characters from some files, using the given chunk length.
+sourceChars :: Int -> [Handle] -> IO (Sources Int IO F Char)
+sourceChars = G.sourceChars
+{-# INLINE [2] sourceChars #-}
+
+
+-- | Read data from some files, using the given chunk length.
+sourceBytes :: Int -> [Handle] -> IO (Sources Int IO F Word8)
+sourceBytes = G.sourceBytes
+{-# INLINE [2] sourceBytes #-}
+
+
+-- | Write 8-bit ASCII characters to the given file handles.
+sinkChars    :: [Handle] -> IO (Sinks Int IO F Char)
+sinkChars    =  G.sinkChars
+{-# INLINE [2] sinkChars #-}
 
 
 -- | Write chunks of data to the given file handles.

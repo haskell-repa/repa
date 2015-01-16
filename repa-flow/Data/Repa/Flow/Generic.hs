@@ -65,10 +65,12 @@ module Data.Repa.Flow.Generic
         , fromFiles
         , sourceRecords
         , sourceChunks
+        , sourceChars
         , sourceBytes
 
           -- ** Sinking
         , toFiles
+        , sinkChars
         , sinkBytes)
 where
 import Data.Repa.Flow.States

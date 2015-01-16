@@ -5,10 +5,12 @@ module Data.Repa.Flow.IO
           G.fromFiles
         , sourceRecords
         , sourceLines
+        , sourceChars
         , sourceBytes
 
           -- * Sinking
         , G.toFiles
+        , sinkChars
         , sinkBytes)
 where
 import Data.Repa.Flow
@@ -20,7 +22,7 @@ import Data.Word
 import Data.Char
 
 
--- Source Records -------------------------------------------------------------
+-- Sourcing ---------------------------------------------------------------------------------------
 -- | Read complete records of data form a file, into chunks of the given length.
 --   We read as many complete records as will fit into each chunk.
 --
@@ -52,8 +54,8 @@ sourceRecords = G.sourceRecords
 {-# INLINE sourceRecords #-}
 
 
--- Source Lines ---------------------------------------------------------------
 -- | Read complete lines of data from a text file, using the given chunk length.
+--   We read as many complete lines as will fit into each chunk.
 --
 --   * The trailing new-line characters are discarded.
 --   * Data is read into foreign memory without copying it through the GHC heap.
@@ -86,15 +88,26 @@ sourceLines nChunk fails hs
 {-# INLINE sourceLines #-}
 
 
--- Source Bytes ---------------------------------------------------------------
+-- | Read 8-bit ASCII characters from some files, using the given chunk length.
+sourceChars :: Int -> [Handle] -> IO (Sources F Char)
+sourceChars = G.sourceChars
+{-# INLINE sourceChars #-}
+
+
 -- | Read data from some files, using the given chunk length.
 sourceBytes :: Int -> [Handle] -> IO (Sources F Word8)
 sourceBytes = G.sourceBytes
 {-# INLINE sourceBytes #-}
 
 
--- Sink Bytes -----------------------------------------------------------------
--- | Write bytes to the given files.
+-- Sinking ----------------------------------------------------------------------------------------
+-- | Write 8-bit ASCII characters to some files.
+sinkChars :: Int -> [Handle] -> IO (Sources F Char)
+sinkChars = G.sourceChars
+{-# INLINE sinkChars #-}
+
+
+-- | Write bytes to some file.
 sinkBytes :: [Handle] -> IO (Sinks F Word8)
 sinkBytes = G.sinkBytes
 {-# INLINE sinkBytes #-}

@@ -4,18 +4,21 @@ module Data.Repa.Flow.Generic.IO
           fromFiles
         , sourceRecords
         , sourceChunks
+        , sourceChars
         , sourceBytes
 
           -- * Sinking
         , toFiles
+        , sinkChars
         , sinkBytes)
 where
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array.Unsafe.Nested                    as UN
-import Data.Repa.Array.Foreign                          as R
-import Data.Repa.Array                                  as R
+import Data.Repa.Array.Foreign                          as A
+import Data.Repa.Array                                  as A
 import Data.Repa.IO.Array
+import Data.Char
 import System.IO
 import Data.Word
 import Prelude                                          as P
@@ -27,10 +30,12 @@ lix (_ : xs) n  = lix xs (n - 1)
 lix _        _  = Nothing
 
 
+-- Sourcing ---------------------------------------------------------------------------------------
 -- | Open some files for reading and use the handles to create `Sources`.
 --
---   Each file will be closed the first time the consumer tries to pull an element
---   from the associated stream when no more are available.
+--   Finalisers are attached to the `Sources` so that each file will be 
+--   closed the first time the consumer tries to an element from the associated
+--   stream when no more are available.
 --
 fromFiles 
         :: [FilePath] 
@@ -45,22 +50,6 @@ fromFiles paths use
 {-# NOINLINE fromFiles #-}
 
 
--- | Open from files for writing and use the handles to create `Sinks`.
---
---   Each file will be closed when the attached sink is ejected.
---
-toFiles :: [FilePath] 
-        -> ([Handle] -> IO (Sinks Int IO a))
-        -> IO (Sinks Int IO a)
-
-toFiles paths use
- = do   hs      <- mapM (flip openBinaryFile WriteMode) paths
-        o0      <- use hs
-        finalize_o (\(IIx i _) -> hClose (hs !! i)) o0
-{-# NOINLINE toFiles #-}
-
-
--- Source Records ---------------------------------------------------------------------------------
 -- | Read complete records of data form a file, into chunks of the given length.
 --   We read as many complete records as will fit into each chunk.
 --
@@ -90,8 +79,7 @@ sourceRecords len pSep aFail hs
 {-# INLINE [2] sourceRecords #-}
 
 
--- Source Chunks ----------------------------------------------------------------------------------
--- | Like `hSourceRecords`, but produce all records in a single vector.
+-- | Like `sourceRecords`, but produce all records in a single vector.
 sourceChunks
         :: Int                  -- ^ Chunk length in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
@@ -114,7 +102,7 @@ sourceChunks len pSep aFail hs
                 arr      <- hGetArray (hs !! i) len
 
                 -- Find the end of the last record in the file.
-                let !mLenSlack  = findIndex pSep (R.reverse arr)
+                let !mLenSlack  = findIndex pSep (A.reverse arr)
 
                 case mLenSlack of
                  -- If we couldn't find the end of record then apply the failure action.
@@ -134,20 +122,24 @@ sourceChunks len pSep aFail hs
 {-# INLINE [2] sourceChunks #-}
 
 
--- Source Bytes -----------------------------------------------------------------------------------
+-- | Read 8-byte ASCII characters from some files, using the given chunk length.
+--
+--   * Data is read into foreign memory without copying it through the GHC heap.
+--   * All chunks have the same size, except possibly the last one.
+----
+sourceChars :: Int -> [Handle] -> IO (Sources Int IO (Vector F Char))
+sourceChars len hs
+ =   smap_i (\_ !c -> A.computeS_ $ A.map (chr . fromIntegral) c)
+ =<< sourceBytes len hs
+{-# INLINE [2] sourceChars #-}
+
+
 -- | Read data from some files, using the given chunk length.
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 --
---   Each file will be closed the first time the consumer tries to pull an element
---   from the associated stream when no more are available.
---
-sourceBytes 
-        :: Int                  -- ^ Chunk length in bytes.
-        -> [Handle]             -- ^ File handles.
-        -> IO (Sources Int IO (Vector F Word8))
-
+sourceBytes :: Int -> [Handle] -> IO (Sources Int IO (Vector F Word8))
 sourceBytes len hs
  = return $ Sources (P.length hs) pull_sourceBytes
  where
@@ -164,8 +156,32 @@ sourceBytes len hs
 {-# INLINE [2] sourceBytes #-}
 
 
--- Sink Bytes -------------------------------------------------------------------------------------
--- | Write chunks of data to the given file handles.
+-- Sinking ----------------------------------------------------------------------------------------
+-- | Open from files for writing and use the handles to create `Sinks`.
+--
+--   Finalisers are attached to the sinks so that file assocated with
+--   each stream is closed when that stream is ejected.
+--
+toFiles :: [FilePath] 
+        -> ([Handle] -> IO (Sinks Int IO a))
+        -> IO (Sinks Int IO a)
+
+toFiles paths use
+ = do   hs      <- mapM (flip openBinaryFile WriteMode) paths
+        o0      <- use hs
+        finalize_o (\(IIx i _) -> hClose (hs !! i)) o0
+{-# NOINLINE toFiles #-}
+
+
+-- | Write chunks of 8-byte ASCII characters to the given file handles.
+sinkChars :: [Handle] -> IO (Sinks Int IO (Vector F Char))
+sinkChars !hs
+ =   smap_o (\_ !c -> computeS_ $ A.map (fromIntegral . ord) c)
+ =<< sinkBytes hs
+{-# INLINE [2] sinkChars #-}
+
+
+-- | Write chunks of bytes to the given file handles.
 sinkBytes :: [Handle] -> IO (Sinks Int IO (Vector F Word8))
 sinkBytes !hs
  = do   let push_sinkBytes (IIx i _) !chunk
