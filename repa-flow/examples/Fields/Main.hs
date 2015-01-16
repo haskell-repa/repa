@@ -3,23 +3,14 @@
 import Data.Repa.Flow
 import Data.Repa.Flow.IO
 import Data.Repa.Flow.IO.TSV
-
-import System.Environment
-import System.IO
-import Control.Monad
-import Data.Char
-import Data.Word
-import qualified Data.Repa.Flow.Simple          as S
+import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic         as G
 
-import Data.Repa.Array                          as A
-import Data.Repa.Array.Foreign                  as A
-
+import Control.Monad
+import System.Environment
+import System.IO
+import Data.Char
 import Prelude                                  as P
-
-lenChunk        = 1024
-dieLong         = error "long line"
-dieFields       = error "too many fields"
 
 main :: IO ()
 main 
@@ -43,7 +34,7 @@ pFields config
         mapM_ (\_ -> hGetLine hIn) [1 .. configDrop config]
 
         -- Stream the rest of the file as TSV.
-        sIn       <- hSourceTSV [hIn] lenChunk dieLong 
+        sIn       <- sourceTSV lenChunk dieLong [hIn]
 
         -- Do a ragged transpose the chunks, to produce a 
         -- columnar representation.
@@ -51,12 +42,12 @@ pFields config
 
         -- Concatenate the fields in each column.
         let !fl   =  A.vfromList F ['\n']
-        sCat      <- mapChunks_i (A.computeS F . A.map (A.concatWith F fl)) 
+        sCat      <- mapChunks_i (A.computeS B . A.map (A.concatWith F fl))
                                  sColumns
 
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut     <- sinkBytes filesOut
+        ooOut     <- toFiles filesOut $ sinkChars
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.
@@ -97,4 +88,13 @@ parseArgs args config
  , ""
  , " -drop (n :: Nat)   Drop n lines from the front of the input file." ]
 
+
+-- | Default chunk length, in bytes.
+lenChunk        = 1024
+
+-- | Die if we find a line longer than a chunk.
+dieLong         = error "Found over-long line"
+
+-- | Die if the lines do not have the same number of fields.
+dieFields       = error "Lines do not have the same number of fields."
 

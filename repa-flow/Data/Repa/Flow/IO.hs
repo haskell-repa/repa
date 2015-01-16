@@ -102,8 +102,8 @@ sourceBytes = G.sourceBytes
 
 -- Sinking ----------------------------------------------------------------------------------------
 -- | Write 8-bit ASCII characters to some files.
-sinkChars :: Int -> [Handle] -> IO (Sources F Char)
-sinkChars = G.sourceChars
+sinkChars :: [Handle] -> IO (Sinks F Char)
+sinkChars = G.sinkChars
 {-# INLINE sinkChars #-}
 
 
