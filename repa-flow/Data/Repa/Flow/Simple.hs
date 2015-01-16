@@ -52,14 +52,14 @@ module Data.Repa.Flow.Simple
         , ignore_o
 
           -- * Flow IO
-        , -- ** Sourcing Bytes
-          sourceBytes,      hSourceBytes
+          -- ** Sourcing
+        , fromFiles
+        , sourceBytes
+        , sourceRecords
 
-          -- ** Sourcing Records
-        , sourceRecords,    hSourceRecords
-
-          -- ** Sinking Bytes
-        , sinkBytes,        hSinkBytes)
+          -- ** Sinking
+        , toFiles
+        , sinkBytes)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base

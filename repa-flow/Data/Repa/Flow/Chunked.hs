@@ -41,14 +41,14 @@ module Data.Repa.Flow.Chunked
         , ignore_o
 
           -- * Flow IO
-          -- ** Sourcing Bytes
-        , sourceBytes,     hSourceBytes
+          -- ** Sourcing
+        , G.fromFiles
+        , sourceBytes
+        , sourceRecords
 
-          -- ** Sourcing Records
-        , sourceRecords,   hSourceRecords
-
-          -- ** Sinking Bytes
-        , sinkBytes,       hSinkBytes)
+          -- ** Sinking
+        , G.toFiles
+        , sinkBytes)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Operator

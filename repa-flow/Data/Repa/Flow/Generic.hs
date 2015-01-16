@@ -61,19 +61,15 @@ module Data.Repa.Flow.Generic
         , ddistributes_o
 
           -- * Flow IO
-        , fromFiles,       toFiles
+          -- ** Sourcing
+        , fromFiles
+        , sourceRecords
+        , sourceChunks
+        , sourceBytes
 
-          -- ** Sourcing Records
-        , sourceRecords,   hSourceRecords
-
-          -- ** Sourcing Chunks
-        , sourceChunks,    hSourceChunks
-
-          -- ** Sourcing Bytes
-        , sourceBytes,     hSourceBytes
-
-          -- ** Sinking Bytes
-        , sinkBytes,       hSinkBytes)
+          -- ** Sinking
+        , toFiles
+        , sinkBytes)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base

@@ -1,7 +1,6 @@
 
 module Data.Repa.Flow.IO.TSV
-        ( sourceTSV
-        , hSourceTSV)
+        (sourceTSV)
 where
 import Data.Repa.Flow
 import Data.Repa.Array                  as A hiding (fromList, fromLists)
@@ -10,37 +9,15 @@ import System.IO
 import Data.Char
 
 
-lix :: [a] -> Int -> Maybe a
-lix (x : _)  0  = Just x
-lix (_ : xs) n  = lix xs (n - 1)
-lix _        _  = Nothing
-
-
--- | Read complete rows of data from an ASCII tab-separated-variable file.
-sourceTSV
-        :: [FilePath]           -- ^ File paths.
-        -> Int                  -- ^ Chunk length.
-        -> IO ()                -- ^ Action to perform if we find line longer
-                                --   than the chunk length.
-        -> IO (Sources UN (Vector UN (Vector F Char)))
-
-sourceTSV filePaths len aFail
- = do   hs     <- mapM (flip openBinaryFile ReadMode) filePaths
-        s0      <- hSourceTSV hs len aFail
-        finalize_i (\i -> let Just h = lix hs i
-                          in  hClose h) s0
-{-# INLINE [2] sourceTSV #-}
-
-
 -- | Like `sourceTSV` but take existing file handles.
-hSourceTSV
-        :: [Handle]             --  File paths.
-        -> Int                  --  Chunk length.
+sourceTSV
+        :: Int                  --  Chunk length.
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
+        -> [Handle]             --  File paths.
         -> IO (Sources UN (Vector UN (Vector F Char)))
 
-hSourceTSV hs nChunk aFail
+sourceTSV nChunk aFail hs
  = do
         -- Rows are separated by new lines, 
         -- fields are separated by tabs.
@@ -50,7 +27,7 @@ hSourceTSV hs nChunk aFail
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
-        sChunk  <- G.hSourceChunks hs nChunk (== nl) aFail
+        sChunk  <- G.sourceChunks nChunk (== nl) aFail hs
 
         -- Dice the chunks of data into arrays of lines and fields.
         let isWhite c = c == nl || c == nr || c == nt
@@ -74,5 +51,5 @@ hSourceTSV hs nChunk aFail
 
         return sRows
 
-{-# INLINE [2] hSourceTSV #-}
+{-# INLINE [2] sourceTSV #-}
 

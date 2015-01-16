@@ -1,16 +1,10 @@
 
 module Data.Repa.Flow.Simple.IO
-        ( -- ** Sourcing
-          -- * Bytes
-          sourceBytes,      hSourceBytes
-
-          -- * Records
-        , sourceRecords,    hSourceRecords
-
-          -- ** Sinking
-          -- * Bytes
-        , sinkBytes,        hSinkBytes)
-
+        ( G.fromFiles
+        , sourceBytes
+        , sourceRecords
+        , G.toFiles
+        , sinkBytes)
 where
 import Data.Repa.Flow.Simple.Base
 import System.IO
@@ -41,32 +35,17 @@ import qualified Data.Repa.Flow.Generic.IO      as G
 --   from the associated stream when no more are available.
 --
 sourceRecords 
-        :: FilePath             -- ^ File paths.
-        -> Int                  -- ^ Size of chunk to read in bytes.
+        :: Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
+        -> Handle               -- ^ File handle.
         -> IO (Source IO (Vector UN (Vector F Word8)))
 
-sourceRecords path len pSep aFail
- = do   s0      <- G.sourceRecords [path] len pSep aFail
+sourceRecords len pSep aFail h
+ = do   s0      <- G.sourceRecords len pSep aFail [h]
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE [2] sourceRecords #-}
-
-
--- | Like `fileSourceRecords`, but taking an existing file handle.
-hSourceRecords 
-        :: Handle               -- ^ File handles.
-        -> Int                  -- ^ Size of chunk to read in bytes.
-        -> (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> IO (Source IO (Vector UN (Vector F Word8)))
-
-hSourceRecords h len pSep aFail
- = do   s0      <- G.hSourceRecords [h] len pSep aFail
-        let Just s1 = wrapI_i s0
-        return s1
-{-# INLINE [2] hSourceRecords #-}
 
 
 -- Source Bytes -----------------------------------------------------------------------------------
@@ -79,26 +58,14 @@ hSourceRecords h len pSep aFail
 --   from the associated stream when no more are available.
 --
 sourceBytes 
-        :: FilePath  -> Int 
+        :: Int -> Handle 
         -> IO (Source IO (Vector F Word8))
 
-sourceBytes path len
- = do   s0      <- G.sourceBytes [path] len
+sourceBytes len h
+ = do   s0      <- G.sourceBytes len [h]
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE [2] sourceBytes #-}
-
-
--- | Like `fileSourceBytes`, but taking existing file handles.
-hSourceBytes 
-        :: Handle   -> Int 
-        -> IO (Source IO (Vector F Word8))
-
-hSourceBytes h len
- = do   s0      <- G.hSourceBytes [h] len
-        let Just s1 = wrapI_i s0
-        return s1
-{-# INLINE [2] hSourceBytes #-}
 
 
 
@@ -107,19 +74,10 @@ hSourceBytes h len
 --
 --   The file will be closed when the associated stream is ejected.
 --
-sinkBytes :: FilePath -> IO (Sink IO (Vector F Word8))
-sinkBytes path
- = do   s0      <- G.sinkBytes [path]
+sinkBytes :: Handle  -> IO (Sink IO (Vector F Word8))
+sinkBytes h
+ = do   s0      <- G.sinkBytes [h]
         let Just s1 = wrapI_o s0
         return s1
 {-# INLINE [2] sinkBytes #-}
-
-
--- | Write chunks of data to the given file handles.
-hSinkBytes    :: Handle   -> IO (Sink IO (Vector F Word8))
-hSinkBytes h
- = do   s0      <- G.hSinkBytes [h]
-        let Just s1 = wrapI_o s0
-        return s1
-{-# INLINE [2] hSinkBytes #-}
 
