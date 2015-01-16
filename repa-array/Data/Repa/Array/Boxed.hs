@@ -25,6 +25,9 @@ import Control.Monad
 --   representation will be faster.
 --
 data B = B
+instance Repr B where
+ repr = B
+
 
 instance Shape sh => Bulk B sh a where
  data Array B sh a

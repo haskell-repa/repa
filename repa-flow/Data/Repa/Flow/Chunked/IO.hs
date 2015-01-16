@@ -7,13 +7,13 @@
 --
 module Data.Repa.Flow.Chunked.IO
         ( -- * Sourcing Bytes
-          fileSourcesBytes,     hSourcesBytes
+          sourceBytes,          hSourceBytes
 
           -- * Sourcing Records
-        , fileSourcesRecords,   hSourcesRecords
+        , sourceRecords,        hSourceRecords
 
           -- * Sinking Bytes
-        , fileSinksBytes,       hSinksBytes)
+        , sinkBytes,            hSinkBytes)
 where
 import Data.Repa.Flow.Chunked.Base
 import System.IO
@@ -28,50 +28,50 @@ import qualified Data.Repa.Flow.Generic.IO      as G
 --   * Chunk data appears in foreign memory, without copying it into the
 --     GHC heap.
 -- 
-fileSourcesBytes 
+sourceBytes 
         :: [FilePath]  -> Int 
         -> IO (Sources Int IO F Word8)
-fileSourcesBytes = G.fileSourcesBytes
-{-# INLINE [2] fileSourcesBytes #-}
+sourceBytes = G.sourceBytes
+{-# INLINE [2] sourceBytes #-}
 
 
--- | Like `fileSourceBytes`, but taking existing file handles.
-hSourcesBytes 
+-- | Like `sourceBytes`, but taking existing file handles.
+hSourceBytes 
         :: [Handle]   -> Int 
         -> IO (Sources Int IO F Word8)
-hSourcesBytes = G.hSourcesBytes
-{-# INLINE [2] hSourcesBytes #-}
+hSourceBytes = G.hSourceBytes
+{-# INLINE [2] hSourceBytes #-}
 
 
 -- | Read complete records of data from a file, using the given chunk length.
-fileSourcesRecords 
+sourceRecords 
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> IO (Sources Int IO UN (Vector F Word8))
-fileSourcesRecords = G.fileSourcesRecords
-{-# INLINE [2] fileSourcesRecords #-}
+sourceRecords = G.sourceRecords
+{-# INLINE [2] sourceRecords #-}
 
 
 -- | Like `fileSourceRecords`, but taking an existing file handle.
-hSourcesRecords 
+hSourceRecords 
         :: [Handle]             -- ^ File handles.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> IO (Sources Int IO UN (Vector F Word8))
-hSourcesRecords = G.hSourcesRecords
-{-# INLINE [2] hSourcesRecords #-}
+hSourceRecords = G.hSourceRecords
+{-# INLINE [2] hSourceRecords #-}
 
 
 -- | Write data to the given files.
-fileSinksBytes :: [FilePath] -> IO (Sinks Int IO F Word8)
-fileSinksBytes =  G.fileSinksBytes
-{-# INLINE [2] fileSinksBytes #-}
+sinkBytes :: [FilePath] -> IO (Sinks Int IO F Word8)
+sinkBytes =  G.sinkBytes
+{-# INLINE [2] sinkBytes #-}
 
 
 -- | Write chunks of data to the given file handles.
-hSinksBytes    :: [Handle] -> IO (Sinks Int IO F Word8)
-hSinksBytes    =  G.hSinksBytes
-{-# INLINE [2] hSinksBytes #-}
+hSinkBytes    :: [Handle] -> IO (Sinks Int IO F Word8)
+hSinkBytes    =  G.hSinkBytes
+{-# INLINE [2] hSinkBytes #-}

@@ -50,7 +50,7 @@ hSourceTSV hs nChunk aFail
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
-        sChunk  <- G.hSourcesChunks hs nChunk (== nl) aFail
+        sChunk  <- G.hSourceChunks hs nChunk (== nl) aFail
 
         -- Dice the chunks of data into arrays of lines and fields.
         let isWhite c = c == nl || c == nr || c == nt

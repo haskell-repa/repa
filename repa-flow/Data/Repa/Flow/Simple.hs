@@ -53,13 +53,13 @@ module Data.Repa.Flow.Simple
 
           -- * Flow IO
         , -- ** Sourcing Bytes
-          fileSourceBytes,      hSourceBytes
+          sourceBytes,      hSourceBytes
 
           -- ** Sourcing Records
-        , fileSourceRecords,    hSourceRecords
+        , sourceRecords,    hSourceRecords
 
           -- ** Sinking Bytes
-        , fileSinkBytes,        hSinkBytes)
+        , sinkBytes,        hSinkBytes)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Simple.Base

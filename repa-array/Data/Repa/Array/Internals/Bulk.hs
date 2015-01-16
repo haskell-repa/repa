@@ -1,6 +1,7 @@
 
 module Data.Repa.Array.Internals.Bulk
-        ( Bulk (..)
+        ( Repr (..)
+        , Bulk (..)
         , Vector
         , (!)
         , length
@@ -11,6 +12,15 @@ where
 import Data.Repa.Array.Internals.Shape
 import Data.Repa.Array.Internals.Index
 import Prelude hiding (length)
+
+
+-- Repr -------------------------------------------------------------------------------------------
+-- | Class of array representation tags.
+class Repr r where
+ -- | Proxy for an array representation. The representations are singletons, 
+ --   so there is only one value of a given type. Use like  (repr :: B)
+ repr :: r
+
 
 -- Bulk -------------------------------------------------------------------------------------------
 -- | Class of shape polymorphic array representations that we can read elements

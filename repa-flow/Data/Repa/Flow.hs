@@ -122,7 +122,7 @@ drain = G.drain
 --
 fromList :: A.Target r a t
          => r -> Int -> [a] -> IO (Sources r a)
-fromList _ xs = C.fromList_i xs
+fromList r xs = C.fromList_i r xs
 {-# INLINE fromList #-}
 
 
@@ -130,7 +130,7 @@ fromList _ xs = C.fromList_i xs
 --   lists is packed into a single chunk.
 fromLists :: A.Target r a t
           => r -> Int -> [[a]] -> IO (Sources r a)
-fromLists _ xss = C.fromLists_i xss
+fromLists r xss = C.fromLists_i r xss
 {-# INLINE fromLists #-}
 
 

@@ -42,13 +42,13 @@ module Data.Repa.Flow.Chunked
 
           -- * Flow IO
           -- ** Sourcing Bytes
-        , fileSourcesBytes,     hSourcesBytes
+        , sourceBytes,     hSourceBytes
 
           -- ** Sourcing Records
-        , fileSourcesRecords,   hSourcesRecords
+        , sourceRecords,   hSourceRecords
 
           -- ** Sinking Bytes
-        , fileSinksBytes,       hSinksBytes)
+        , sinkBytes,       hSinkBytes)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Operator

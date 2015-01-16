@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Window
-        ( W
+        ( W      (..)
         , Array  (..)
         , Window (..)
         , windowed
@@ -11,7 +11,10 @@ import Data.Repa.Array.Internals.Shape
 
 
 -- Windows ----------------------------------------------------------------------------------------
-data W r
+data W r = W r
+instance Repr r => Repr (W r) where
+ repr = W repr
+
 
 -- | Windowed arrays.
 instance Bulk r sh a 

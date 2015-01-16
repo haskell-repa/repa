@@ -1,7 +1,9 @@
 
 {-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
-import Data.Repa.Flow.Chunked
-import Data.Repa.Flow.Chunked.IO        
+import Data.Repa.Flow
+import Data.Repa.Flow.IO
+import Data.Repa.Flow.IO.TSV
+
 import System.Environment
 import System.IO
 import Control.Monad
@@ -9,10 +11,15 @@ import Data.Char
 import Data.Word
 import qualified Data.Repa.Flow.Simple          as S
 import qualified Data.Repa.Flow.Generic         as G
-import Data.Repa.Array                          as R
-import Data.Repa.Array.Foreign                  as R
+
+import Data.Repa.Array                          as A
+import Data.Repa.Array.Foreign                  as A
+
 import Prelude                                  as P
 
+lenChunk        = 1024
+dieLong         = error "long line"
+dieFields       = error "too many fields"
 
 main :: IO ()
 main 
@@ -23,62 +30,44 @@ main
 pFields :: Config -> IO ()
 pFields config
  = do   
-        -- Open the file and drop the requested number of lines from
-        -- the front of it.
+        -- Open the file and look at the first line to see how many
+        -- fields there are.
         let Just fileIn = configFileIn config
-        hIn     <- openFile fileIn ReadMode
-        _       <- mapM (\_ -> hGetLine hIn) [1 .. configDrop config]
+        hIn       <- openFile fileIn ReadMode
 
-        -- Rows are separated by new lines, 
-        -- fields are separated by tabs.
-        let !nl  = fromIntegral $ ord '\n'
-        let !nr  = fromIntegral $ ord '\r'
-        let !nt  = fromIntegral $ ord '\t'
-        let !(fl  :: Vector F Word8) = R.vfromList [nl]
+        strFirst  <- hGetLine hIn
+        let cols  =  P.length $ words strFirst
+        hSeek hIn AbsoluteSeek 0
 
-        -- Stream chunks of data from the input file, where the chunks end
-        -- cleanly at line boundaries. 
-        -- Error out if we read a whole chunk that does not contain
-        -- end-of-line characters.
-        sIn     ::  Sources () IO F Word8
-                <-  G.project_i (zero 1)
-                =<< finalize_i (\_ -> hClose hIn)
-                =<< hSourcesRecords [hIn]
-                        (64 * 1024) (== nl)
-                        (error "Found an over-long line")
- 
-        -- Dice the chunks of data into arrays of lines and fields.
-        let isWhite c = c == nl || c == nr || c == nt
-            {-# INLINE isWhite #-}
+        -- Drop the requested number of lines from the front.
+        mapM_ (\_ -> hGetLine hIn) [1 .. configDrop config]
 
-        sFields   <- mapChunks_i (R.maps (R.trimEnds isWhite) . diceOn nt nl) sIn
+        -- Stream the rest of the file as TSV.
+        sIn       <- hSourceTSV [hIn] lenChunk dieLong 
 
-        -- Do a ragged transpose the chunks, so we get a columnar representation.
-        sColumns  <- mapChunks_i ragspose3 sFields
+        -- Do a ragged transpose the chunks, to produce a 
+        -- columnar representation.
+        sColumns  <- mapChunks_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        sColumnsC :: Sources () IO B (Vector F Word8)
-                  <- mapChunks_i (R.computeS . R.map (R.concatWith fl)) sColumns
-
-        -- Peek at the first chunk to see how many columns we have.
-        ([k1], sColumnsC) <- S.peek_i 1 sColumnsC
-        let cols  = R.length k1
+        let !fl   =  A.vfromList F ['\n']
+        sCat      <- mapChunks_i (A.computeS F . A.map (A.concatWith F fl)) 
+                                 sColumns
 
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut     <- fileSinksBytes filesOut
+        ooOut     <- sinkBytes filesOut
 
         -- Chunks are distributed into each of the output files.
-        -- Error out if we find a row that has more fields than the first
-        -- one did.
-        oOut      <- G.distributes_o ooOut 
-                        (error "spilled field")
+        -- Die if we find a row that has more fields than the first one.
+        oOut      <- G.distributes_o ooOut dieFields
 
         -- Drain all the input chunks into the output files.
-        drain sColumnsC oOut
+        sSingle   <- G.project_i (IIx 0 1) sCat
+        G.drain sSingle oOut
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 data Config
         = Config
         { configDrop    :: Int 

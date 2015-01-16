@@ -2,20 +2,20 @@
 -- | Read and write files.
 module Data.Repa.Flow.IO
         ( -- * Sourcing records
-          sourceRecords
-        , hSourceRecords
+          sourceRecords, hSourceRecords
 
           -- * Sourcing lines
-        , sourceLines
-        , hSourceLines
+        , sourceLines,   hSourceLines
 
           -- * Sourcing bytes
-        , sourceBytes
-        , hSourceBytes
+        , sourceBytes,   hSourceBytes
 
-          -- * Sinking bytes
-        , sinkBytes
-        , hSinkBytes)
+          -- * Sinking
+          -- | For all the sink functions, ejecting the sink closese
+          --   the attached file.
+
+          -- ** Sinking bytes
+        , sinkBytes,     hSinkBytes)
 where
 import Data.Repa.Flow
 import Data.Repa.Eval.Array                     as A
@@ -54,7 +54,7 @@ sourceRecords
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> IO (Sources UN (Vector F Word8))
-sourceRecords = G.fileSourcesRecords
+sourceRecords = G.sourceRecords
 {-# INLINE sourceRecords #-}
 
 
@@ -69,7 +69,7 @@ hSourceRecords
         -> IO ()                --  Action to perform if we can't get a
                                 --   whole record.
         -> IO (Sources UN (Vector F Word8))
-hSourceRecords = G.hSourcesRecords
+hSourceRecords = G.hSourceRecords
 {-# INLINE hSourceRecords #-}
 
 
@@ -91,7 +91,7 @@ sourceLines
         -> IO (Sources UN (Vector F Char))
 sourceLines files nChunk fails
  =   mapChunks_i chopChunk
- =<< G.fileSourcesRecords files nChunk isNewLine fails
+ =<< G.sourceRecords files nChunk isNewLine fails
  where  
         isNewLine   :: Word8 -> Bool
         isNewLine x =  x == nl
@@ -119,7 +119,7 @@ hSourceLines
         -> IO (Sources UN (Vector F Char))
 hSourceLines hs nChunk fails
  =   mapChunks_i chopChunk
- =<< G.hSourcesRecords hs nChunk isNewLine fails
+ =<< G.hSourceRecords hs nChunk isNewLine fails
  where
         isNewLine   :: Word8 -> Bool
         isNewLine x =  x == nl
@@ -141,10 +141,8 @@ hSourceLines hs nChunk fails
 --   * Each file is closed the first time the consumer tries to pull a chunk
 --     from the associated stream when no more are available.
 --
-sourceBytes
-        :: [FilePath]  -> Int 
-        -> IO (Sources F Word8)
-sourceBytes = G.fileSourcesBytes
+sourceBytes :: [FilePath]  -> Int -> IO (Sources F Word8)
+sourceBytes = G.sourceBytes
 {-# INLINE sourceBytes #-}
 
 
@@ -152,28 +150,20 @@ sourceBytes = G.fileSourcesBytes
 --
 --   * Files remain open after all data has been read.
 --
-hSourceBytes 
-        :: [Handle]   -> Int 
-        -> IO (Sources F Word8)
-hSourceBytes = G.hSourcesBytes
+hSourceBytes :: [Handle]  -> Int -> IO (Sources F Word8)
+hSourceBytes = G.hSourceBytes
 {-# INLINE hSourceBytes #-}
 
 
 -- Sink Bytes -----------------------------------------------------------------
--- | Write data to the given files.
---
---   * Ejecting the sink closes the attached file.
---
+-- | Write bytes to the given files.
 sinkBytes :: [FilePath] -> IO (Sinks F Word8)
-sinkBytes = G.fileSinksBytes
+sinkBytes = G.sinkBytes
 {-# INLINE sinkBytes #-}
 
 
 -- | Like `sinkBytes` but take existing file handles.
---
---   * Ejecting the sink closes the attached file.
---
-hSinkBytes    :: [Handle]   -> IO (Sinks F Word8)
-hSinkBytes    = G.hSinksBytes
+hSinkBytes :: [Handle]   -> IO (Sinks F Word8)
+hSinkBytes = G.hSinkBytes
 {-# INLINE hSinkBytes #-}
 

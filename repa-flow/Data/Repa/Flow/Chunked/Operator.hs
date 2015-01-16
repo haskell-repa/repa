@@ -180,7 +180,7 @@ groupsBy_i f (G.Sources n pull_chunk)
                           Nothing         -> eject
                           Just seg
                            -> do writeRefs refs i Nothing
-                                 eat (A.vfromList [seg])
+                                 eat (A.vfromList_ [seg])
                    {-# INLINE eject_groupsBy #-}
             {-# INLINE pull_groupsBy #-}
 

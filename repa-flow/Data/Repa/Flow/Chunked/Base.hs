@@ -19,6 +19,7 @@ import qualified Data.Repa.Flow.Generic         as G
 import Control.Monad
 import Prelude                                  as P
 
+
 -- | A bundle of sources, where the elements are chunked into arrays.
 type Sources i m r e
         = G.Sources i m (A.Vector r e)
@@ -42,10 +43,10 @@ type Flow i m r a
 --     the same chunk.
 fromList_i 
         :: (States i m, A.Target r a t)
-        => i -> [a] -> m (Sources i m r a)
+        => r -> i -> [a] -> m (Sources i m r a)
 
-fromList_i n xs
- = G.fromList n [A.vfromList xs]
+fromList_i _ n xs
+ = G.fromList n [A.vfromList_ xs]
 {-# INLINE [2] fromList_i #-}
 
 
@@ -53,10 +54,10 @@ fromList_i n xs
 --   lists is packed into a single chunk.
 fromLists_i 
         :: (States i m, A.Target r a t)
-        => i -> [[a]] -> m (Sources i m r a)
+        => r -> i -> [[a]] -> m (Sources i m r a)
 
-fromLists_i n xs
- = G.fromList n $ P.map A.vfromList xs
+fromLists_i _ n xs
+ = G.fromList n $ P.map A.vfromList_ xs
 {-# INLINE [2] fromLists_i #-}
 
 

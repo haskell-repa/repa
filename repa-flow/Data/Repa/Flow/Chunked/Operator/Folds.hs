@@ -137,7 +137,7 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
                 -- this is needed when there are zero lengthed
                 -- segments on the end of the stream
                 ejectVals_folds 
-                 = do writeRefs refsVals     i (Just $ vfromList [])
+                 = do writeRefs refsVals     i (Just $ vfromList_ [])
                       writeRefs refsValsDone i True
                 {-# INLINE ejectVals_folds #-}
 

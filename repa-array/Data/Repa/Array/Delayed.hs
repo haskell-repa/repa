@@ -27,6 +27,9 @@ import Prelude hiding (map, zipWith)
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
 data D = D
+instance Repr D where
+ repr = D
+
 
 -- | Delayed arrays.
 instance Shape sh => Bulk D sh a where

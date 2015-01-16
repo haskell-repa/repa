@@ -67,11 +67,12 @@ concatWith
            , Bulk r1 DIM1 (Vector r2 a)
            , Bulk r2 DIM1 a, Unpack (Vector r2 a) t2
            , Target r3 a t3)
-        => Vector r0 a                  -- ^ Separator array.
+        => r3                           -- ^ Result representation.
+        -> Vector r0 a                  -- ^ Separator array.
         -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
         -> Vector r3 a
 
-concatWith !is !vs
+concatWith _ !is !vs
  | R.length vs == 0
  = R.vfromList_ []
 
@@ -144,11 +145,12 @@ intercalate
            , Bulk r1 DIM1 (Vector r2 a)
            , Bulk r2 DIM1 a, Unpack (Vector r2 a) t
            , Target r3 a t)
-        => Vector r0 a                  -- ^ Separator array.
+        => r3
+        -> Vector r0 a                  -- ^ Separator array.
         -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
         -> Vector r3 a
 
-intercalate !is !vs
+intercalate _ !is !vs
  | R.length vs == 0
  = R.vfromList_ []
 

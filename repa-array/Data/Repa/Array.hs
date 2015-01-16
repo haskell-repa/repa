@@ -40,8 +40,8 @@ module Data.Repa.Array
         , UN(..)
 
           -- * Generic Conversion
-        , vfromList
-        , fromList
+        , vfromList,    vfromList_
+        , fromList,     fromList_
         , fromLists
         , fromListss
         

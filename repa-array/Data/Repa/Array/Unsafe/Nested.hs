@@ -50,6 +50,9 @@ import Prelude  hiding (concat)
 --   all the integer elements.
 --
 data UN = UN
+instance Repr UN where
+ repr = UN
+ 
 
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)

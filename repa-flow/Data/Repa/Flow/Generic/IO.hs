@@ -1,16 +1,16 @@
 
 module Data.Repa.Flow.Generic.IO
         ( -- * Sourcing Records
-          fileSourcesRecords,   hSourcesRecords
+          sourceRecords,   hSourceRecords
 
           -- * Sourcing Chunks
-        , fileSourcesChunks,    hSourcesChunks
+        , sourceChunks,    hSourceChunks
 
           -- * Sourcing Bytes
-        , fileSourcesBytes,     hSourcesBytes
+        , sourceBytes,     hSourceBytes
 
           -- * Sinking Bytes
-        , fileSinksBytes,       hSinksBytes)
+        , sinkBytes,       hSinkBytes)
 where
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Base
@@ -49,7 +49,7 @@ lix _        _  = Nothing
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * The provided file handle must support seeking, else you'll get an exception.
 --
-fileSourcesRecords 
+sourceRecords 
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
@@ -57,61 +57,61 @@ fileSourcesRecords
                                 --   whole record.
         -> IO (Sources Int IO (Vector UN (Vector F Word8)))
 
-fileSourcesRecords filePaths len pSep aFail
+sourceRecords filePaths len pSep aFail
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
-        s0      <- hSourcesRecords hs len pSep aFail
+        s0      <- hSourceRecords hs len pSep aFail
         finalize_i (\(IIx i _) -> let Just h = lix hs i
                                   in  hClose h) s0
-{-# NOINLINE fileSourcesRecords #-}
+{-# NOINLINE sourceRecords #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
 
 
--- | Like `fileSourceRecords`, but taking an existing file handle.
-hSourcesRecords 
+-- | Like `sourceRecords`, but taking an existing file handle.
+hSourceRecords 
         :: [Handle]             -- File handles.
         -> Int                  -- Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- Detect the end of a record.        
         -> IO ()                -- Action to perform if we can't get a whole record.
         -> IO (Sources Int IO (Vector UN (Vector F Word8)))
 
-hSourcesRecords hs len pSep aFail
+hSourceRecords hs len pSep aFail
  =   smap_i (\_ !c -> UN.segmentOn pSep c)
- =<< hSourcesChunks hs len pSep aFail
-{-# INLINE [2] hSourcesRecords #-}
+ =<< hSourceChunks hs len pSep aFail
+{-# INLINE [2] hSourceRecords #-}
 
 
 -- Source Chunks ----------------------------------------------------------------------------------
--- | Like `fileSourcesRecords`, but produce all records in a single vector.
-fileSourcesChunks
+-- | Like `sourcesRecords`, but produce all records in a single vector.
+sourceChunks
         :: [FilePath]           -- ^ File paths.
         -> Int                  -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> IO (Sources Int IO (Vector F Word8))
 
-fileSourcesChunks filePaths len pSep aFail
+sourceChunks filePaths len pSep aFail
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
-        s0      <- hSourcesChunks hs len pSep aFail
+        s0      <- hSourceChunks hs len pSep aFail
         finalize_i (\(IIx i _) -> let Just h = lix hs i
                                   in  hClose h) s0
-{-# NOINLINE fileSourcesChunks #-}
+{-# NOINLINE sourceChunks #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
 
 
--- | Like `hSourcesRecords`, but produce all records in a single vector.
-hSourcesChunks
+-- | Like `hSourceRecords`, but produce all records in a single vector.
+hSourceChunks
         :: [Handle]             -- File handles.
         -> Int                  -- Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- Detect the end of a record.        
         -> IO ()                -- Action to perform if we can't get a whole record.
         -> IO (Sources Int IO (Vector F Word8))
 
-hSourcesChunks hs len pSep aFail
- = return $ Sources (P.length hs) pull_hSourcesChunks
+hSourceChunks hs len pSep aFail
+ = return $ Sources (P.length hs) pull_hSourceChunks
  where  
-        pull_hSourcesChunks (IIx i _) eat eject
+        pull_hSourceChunks (IIx i _) eat eject
          = let Just h = lix hs i
            in hIsEOF h >>= \eof ->
             if eof
@@ -139,8 +139,8 @@ hSourcesChunks hs len pSep aFail
 
                         -- Eat complete records at the start of the chunk.
                         eat $ window (Z :. 0) (Z :. ixSplit) arr
-        {-# INLINE pull_hSourcesChunks #-}
-{-# INLINE [2] hSourcesChunks #-}
+        {-# INLINE pull_hSourceChunks #-}
+{-# INLINE [2] hSourceChunks #-}
 
 
 -- Source Bytes -----------------------------------------------------------------------------------
@@ -152,26 +152,26 @@ hSourcesChunks hs len pSep aFail
 --   Each file will be closed the first time the consumer tries to pull an element
 --   from the associated stream when no more are available.
 --
-fileSourcesBytes 
+sourceBytes 
         :: [FilePath] -> Int 
         -> IO (Sources Int IO (Vector F Word8))
 
-fileSourcesBytes filePaths len
+sourceBytes filePaths len
  = do   hs      <- mapM (flip openBinaryFile ReadMode) filePaths
-        s0      <- hSourcesBytes hs len
+        s0      <- hSourceBytes hs len
         finalize_i (\(IIx i _) -> let Just h = lix hs i
                                   in  hClose h) s0
-{-# NOINLINE fileSourcesBytes #-}
+{-# NOINLINE sourceBytes #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
 
 
 -- | Like `fileSourceBytes`, but taking existing file handles.
-hSourcesBytes 
+hSourceBytes 
         :: [Handle] -> Int 
         -> IO (Sources Int IO (Vector F Word8))
 
-hSourcesBytes hs len
+hSourceBytes hs len
  = return $ Sources (P.length hs) pull_hSource
  where
         pull_hSource (IIx i _) eat eject
@@ -184,7 +184,7 @@ hSourcesBytes hs len
                         !chunk  <- hGetArray h len
                         eat chunk
         {-# INLINE pull_hSource #-}
-{-# INLINE [2] hSourcesBytes #-}
+{-# INLINE [2] hSourceBytes #-}
 
 
 -- Sink Bytes -------------------------------------------------------------------------------------
@@ -192,27 +192,27 @@ hSourcesBytes hs len
 --
 --   Each file will be closed when the associated stream is ejected.
 --
-fileSinksBytes :: [FilePath] -> IO (Sinks Int IO (Vector F Word8))
-fileSinksBytes filePaths
+sinkBytes :: [FilePath] -> IO (Sinks Int IO (Vector F Word8))
+sinkBytes filePaths
  = do   hs      <- mapM (flip openBinaryFile WriteMode) filePaths
-        o0      <- hSinksBytes hs
+        o0      <- hSinkBytes hs
         finalize_o (\(IIx i _) -> hClose (hs !! i)) o0
-{-# NOINLINE fileSinksBytes #-}
+{-# NOINLINE sinkBytes #-}
 --  NOINLINE because the chunks should be big enough to not require fusion,
 --           and we don't want to release the code for 'openBinaryFile'.
 
 
 -- | Write chunks of data to the given file handles.
-hSinksBytes :: [Handle] -> IO (Sinks Int IO (Vector F Word8))
-hSinksBytes !hs
- = do   let push_hSinkBytesF (IIx i _) !chunk
+hSinkBytes :: [Handle] -> IO (Sinks Int IO (Vector F Word8))
+hSinkBytes !hs
+ = do   let push_hSinkBytes (IIx i _) !chunk
                 = hPutArray (hs !! i) chunk
-            {-# NOINLINE push_hSinkBytesF #-}
+            {-# NOINLINE push_hSinkBytes #-}
 
-        let eject_hSinkBytesF _
+        let eject_hSinkBytes _
                 = return ()
-            {-# INLINE eject_hSinkBytesF #-}
+            {-# INLINE eject_hSinkBytes #-}
 
-        return  $ Sinks (P.length hs) push_hSinkBytesF eject_hSinkBytesF
-{-# INLINE [2] hSinksBytes #-}
+        return  $ Sinks (P.length hs) push_hSinkBytes eject_hSinkBytes
+{-# INLINE [2] hSinkBytes #-}
 
