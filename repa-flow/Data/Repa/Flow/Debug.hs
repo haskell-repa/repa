@@ -16,6 +16,7 @@ import Data.List                        as L
 import Data.Text                        as T
 import Prelude                          as P
 
+
 -- | Given a source index and a length, pull enough chunks from the source
 --   to build a list of the requested length, and discard the remaining 
 --   elements in the final chunk.
@@ -45,14 +46,15 @@ moren ix len s
 
 
 -- | Like `more`, but print results in tabular form to the console.
-moret   :: (A.Window r DIM1 a, Nicer a, Presentable (Nice a))
+moret   :: ( A.Window r DIM1 a
+           , Nicer [a], Presentable (Nice [a]))
         => Int          -- ^ Source index.
         -> Int          -- ^ Number of elements to show.
         -> Sources r a
         -> IO ()
 
 moret ix len s
- = do   Just (vals, _)       <- head_i ix len s
+ = do   Just (vals, _) <- head_i ix len s
         putStrLn $ T.unpack $ tabulate $ nice vals
 {-# NOINLINE moret #-}
 

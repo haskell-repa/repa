@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
 module Data.Repa.Nice.Present
         ( Presentable (..)
+        , Str(..)
         , depth
         , strip1
         , strip2
@@ -10,7 +11,7 @@ import Data.Monoid
 import Data.Word
 import Data.Text                (Text)
 import qualified Data.Text      as T
-
+import Data.Repa.Nice           (Str(..))
 
 -- | A value, wrapped up nicely.
 data Present
@@ -84,6 +85,9 @@ instance Presentable Word32 where
 
 instance Presentable Word64 where
  present = Atom . T.pack . show
+
+instance Presentable Str where
+ present (Str xs) = Atom $ T.pack xs
 
 instance Presentable a 
       => Presentable [a] where
