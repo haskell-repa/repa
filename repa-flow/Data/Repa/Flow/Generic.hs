@@ -61,6 +61,8 @@ module Data.Repa.Flow.Generic
         , ddistributes_o
 
           -- * Flow IO
+        , fromFiles,       toFiles
+
           -- ** Sourcing Records
         , sourceRecords,   hSourceRecords
 

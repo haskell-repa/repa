@@ -1,7 +1,10 @@
 
 module Data.Repa.Flow.Generic.IO
-        ( -- * Sourcing Records
-          sourceRecords,   hSourceRecords
+        ( fromFiles
+        , toFiles
+
+          -- * Sourcing Records
+        , sourceRecords,   hSourceRecords
 
           -- * Sourcing Chunks
         , sourceChunks,    hSourceChunks
@@ -27,6 +30,32 @@ lix :: [a] -> Int -> Maybe a
 lix (x : _)  0  = Just x
 lix (_ : xs) n  = lix xs (n - 1)
 lix _        _  = Nothing
+
+-- Reading ---------------------------------------------------------------------------------------
+-- | Open some files for reading and use the handles to create `Sources`.
+fromFiles 
+        :: [FilePath] 
+        -> ([Handle] -> IO (Sources Int IO a))
+        -> IO (Sources Int IO a)
+
+fromFiles paths use
+ = do   hs      <- mapM (flip openBinaryFile ReadMode) paths
+        i0      <- use hs
+        finalize_i (\(IIx i _) -> let Just h = lix hs i
+                                  in  hClose h) i0
+{-# NOINLINE fromFiles #-}
+
+
+-- | Open from files for writing and use the handles to create `Sinks`.
+toFiles :: [FilePath] 
+        -> ([Handle] -> IO (Sinks Int IO a))
+        -> IO (Sinks Int IO a)
+
+toFiles paths use
+ = do   hs      <- mapM (flip openBinaryFile WriteMode) paths
+        o0      <- use hs
+        finalize_o (\(IIx i _) -> hClose (hs !! i)) o0
+{-# NOINLINE toFiles #-}
 
 
 -- Source Records ---------------------------------------------------------------------------------
