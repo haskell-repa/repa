@@ -92,7 +92,7 @@ fromLists
         => [[a]] -> Vector UN (Vector r a)
 fromLists xss
  = let  xs         = concat xss
-        Just elems = fromList      (Z :. P.length xs) xs
+        Just elems = fromList_     (Z :. P.length xs) xs
         lengths    = U.fromList    $ P.map P.length xss
         starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
    in   UNArray starts lengths elems
@@ -106,7 +106,7 @@ fromListss
 fromListss xs
  = let  xs1        = concat xs
         xs2        = concat xs1
-        Just elems = fromList (Z :. P.length xs2) xs2
+        Just elems = fromList_ (Z :. P.length xs2) xs2
         
         lengths1   = U.fromList   $ P.map P.length xs
         starts1    = U.unsafeInit $ U.scanl (+) 0 lengths1

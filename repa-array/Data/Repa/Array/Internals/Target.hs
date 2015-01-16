@@ -1,8 +1,8 @@
 
 module Data.Repa.Array.Internals.Target
-        ( Target    (..)
-        , fromList
-        , vfromList)
+        ( Target        (..)
+        , fromList,     fromList_
+        , vfromList,    vfromList_)
 where
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Internals.Bulk   as R
@@ -54,12 +54,20 @@ class Unpack (Buffer r e) t => Target r e t where
  touchBuffer        :: Buffer r e -> IO ()
 
 
--- | O(length src). Construct an array from a list of elements, and give it the
---   provided shape. The `size` of the provided shape must match the
---   length of the list, else `Nothing`.
+-------------------------------------------------------------------------------
+-- | O(length src). Construct an array from a list of elements,
+--   and give it the provided shape. The `size` of the provided shape must
+--   match the length of the list, else `Nothing`.
 fromList  :: (Shape sh, Target r a t)
+          => r -> sh -> [a] -> Maybe (Array r sh a)
+fromList _ sh xx = fromList_ sh xx
+{-# INLINE fromList #-}
+
+
+-- | Like `fromList`, but the result respresentation is implicit.
+fromList_ :: (Shape sh, Target r a t)
           => sh -> [a] -> Maybe (Array r sh a)
-fromList sh xx
+fromList_ sh xx
  = unsafePerformIO
  $ do   let !len = P.length xx
         if   len /= size sh
@@ -69,14 +77,21 @@ fromList sh xx
                 zipWithM_ (unsafeWriteBuffer mvec) [0..] xx
                 arr     <- unsafeFreezeBuffer sh mvec
                 return $ Just arr
-{-# NOINLINE fromList #-}
+{-# NOINLINE fromList_ #-}
 
 
 -- | O(length src). Construct a vector from a list.
-vfromList :: Target r a t => [a] -> Vector r a
-vfromList xx
+vfromList :: Target r a t 
+        => r -> [a] -> Vector r a
+vfromList _ xx = vfromList_ xx
+{-# INLINE vfromList #-}
+
+
+-- | Like `vfromList`, but the result representation is implicit.
+vfromList_ :: Target r a t => [a] -> Vector r a
+vfromList_ xx
  = let  !len     = P.length xx 
-        Just arr = fromList (Z :. len) xx
+        Just arr = fromList_ (Z :. len) xx
    in   arr
-{-# NOINLINE vfromList #-}
+{-# NOINLINE vfromList_ #-}
 

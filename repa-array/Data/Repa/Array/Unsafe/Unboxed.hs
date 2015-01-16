@@ -7,8 +7,7 @@ module Data.Repa.Array.Unsafe.Unboxed
         , slicesUU
 
         -- * Conversions
-        , fromVectorUU, toVectorUU
-        , fromListUU,   fromListsUU,    fromListssUU)
+        , fromVectorUU, toVectorUU)
 
 where
 import Data.Repa.Fusion.Unpack
@@ -142,39 +141,6 @@ toVectorUU
 toVectorUU (UUArray _ vec)
         = vec
 {-# INLINE [1] toVectorUU #-}
-
-
--- | O(size src). Convert a list to an unboxed vector array.
--- 
---   * This is an alias for `fromList` with a more specific type.
---
-fromListUU
-        :: (Shape sh, U.Unbox a)
-        => sh -> [a] -> Maybe (Array UU sh a)
-fromListUU = fromList
-{-# INLINE [1] fromListUU #-}
-
-
--- | O(size src). Convert some lists to a nested array.
--- 
---   * This is an alias for `fromLists` with a more specific type.
---
-fromListsUU
-        :: U.Unbox a
-        => [[a]] -> Vector UN (Vector UU a)
-fromListsUU = fromLists
-{-# INLINE [1] fromListsUU #-}
-
-
--- | O(size src). Convert a triply nested list to a nested array
--- 
---   * This is an alias for `fromListss` with a more specific type.
---
-fromListssUU
-        :: U.Unbox a
-        => [[[a]]] -> Vector UN (Vector UN (Vector UU a))
-fromListssUU = fromListss
-{-# INLINE [1] fromListssUU #-}
 
 
 -------------------------------------------------------------------------------

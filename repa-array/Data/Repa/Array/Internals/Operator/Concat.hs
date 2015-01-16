@@ -28,7 +28,7 @@ concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a t)
         => r3 -> Vector r1 (Vector r2 a) -> Vector r3 a
 concat _ vs
  | R.length vs == 0
- = R.vfromList []
+ = R.vfromList_ []
 
  | otherwise
  = unsafePerformIO
@@ -73,7 +73,7 @@ concatWith
 
 concatWith !is !vs
  | R.length vs == 0
- = R.vfromList []
+ = R.vfromList_ []
 
  | otherwise
  = unsafePerformIO
@@ -150,7 +150,7 @@ intercalate
 
 intercalate !is !vs
  | R.length vs == 0
- = R.vfromList []
+ = R.vfromList_ []
 
  | otherwise
  = unsafePerformIO
