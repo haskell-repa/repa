@@ -2,9 +2,9 @@
 module Data.Repa.Array.Internals.Operator.Fold
         (folds, C.Folds(..))
 where
+import Data.Repa.Array.Shape                    as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Array.Internals.Index          as A
 import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
 import Data.Repa.Fusion.Option

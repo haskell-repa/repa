@@ -9,8 +9,7 @@ module Data.Repa.Array.Internals.Bulk
         , toLists
         , toListss)
 where
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
+import Data.Repa.Array.Shape
 import Prelude hiding (length)
 
 

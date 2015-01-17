@@ -1,17 +1,16 @@
 
-module Data.Repa.Array.Boxed
+module Data.Repa.Array.Material.Safe.Boxed
         ( B(..)
         , Array (..)
         , boxed
         , fromVectorB, toVectorB)
 where
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
+import Data.Repa.Fusion.Unpack
 import qualified Data.Vector                    as V
 import qualified Data.Vector.Mutable            as VM
 import Control.Monad

@@ -1,16 +1,15 @@
 
-module Data.Repa.Array.Unboxed
+module Data.Repa.Array.Material.Safe.Unboxed
         ( U(..), U.Unbox
         , Array (..),  unboxed
         , fromVectorU, toVectorU)
 where
-import Data.Repa.Fusion.Unpack
-import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
+import Data.Repa.Eval.Array
+import Data.Repa.Fusion.Unpack
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad

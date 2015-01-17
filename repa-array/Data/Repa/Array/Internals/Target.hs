@@ -4,10 +4,9 @@ module Data.Repa.Array.Internals.Target
         , fromList,     fromList_
         , vfromList,    vfromList_)
 where
-import Data.Repa.Fusion.Unpack
+import Data.Repa.Array.Shape            as R
 import Data.Repa.Array.Internals.Bulk   as R
-import Data.Repa.Array.Internals.Shape  as R
-import Data.Repa.Array.Internals.Index  as R
+import Data.Repa.Fusion.Unpack
 import System.IO.Unsafe
 import Control.Monad
 import Prelude                          as P

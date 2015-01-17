@@ -1,5 +1,5 @@
 
-module Data.Repa.Array.Unsafe.Nested
+module Data.Repa.Array.Material.Unsafe.Nested
         ( UN(..), U.Unbox
         , Array (..)
 
@@ -27,13 +27,12 @@ module Data.Repa.Array.Unsafe.Nested
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
-import Data.Repa.Array.Internals.Shape                  as R
-import Data.Repa.Array.Internals.Index                  as R
-import Prelude                                          as P
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Repa.Vector.Unboxed               as U
+import Prelude                                          as P
 import Prelude  hiding (concat)
 
 ---------------------------------------------------------------------------------------------------

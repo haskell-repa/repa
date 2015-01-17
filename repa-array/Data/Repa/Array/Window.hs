@@ -6,8 +6,8 @@ module Data.Repa.Array.Window
         , windowed
         , entire)
 where
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
 
 
 -- Windows ----------------------------------------------------------------------------------------

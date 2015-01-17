@@ -1,11 +1,12 @@
 
-module Data.Repa.Array.Unsafe
+module Data.Repa.Array.Material.Unsafe
         (Unsafe (..))
 where
-import Data.Repa.Array.Foreign
-import Data.Repa.Array.Unboxed
-import Data.Repa.Array.Unsafe.Foreign
-import Data.Repa.Array.Unsafe.Unboxed
+import Data.Repa.Array.Material.Safe.Foreign
+import Data.Repa.Array.Material.Safe.Unboxed
+
+import Data.Repa.Array.Material.Unsafe.Foreign
+import Data.Repa.Array.Material.Unsafe.Unboxed
 
 
 class Unsafe r1 r2 where

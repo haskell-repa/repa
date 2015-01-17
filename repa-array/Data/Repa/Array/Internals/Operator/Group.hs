@@ -2,9 +2,9 @@
 module Data.Repa.Array.Internals.Operator.Group
         (groupsBy)
 where
+import Data.Repa.Array.Shape                    as R
 import Data.Repa.Array.Internals.Bulk           as R
 import Data.Repa.Array.Internals.Target         as R
-import Data.Repa.Array.Internals.Index          as R
 import Data.Repa.Eval.Chain                     as R
 import qualified Data.Repa.Chain                as C
 

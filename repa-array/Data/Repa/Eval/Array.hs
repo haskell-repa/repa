@@ -9,10 +9,10 @@ module Data.Repa.Eval.Array
 
         , computeS,     computeS_)
 where
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
 import System.IO.Unsafe
 
 

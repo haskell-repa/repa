@@ -1,37 +1,35 @@
 
--- | Index types.
-module Data.Repa.Array.Internals.Index
-	(
-	-- * Index types
-	  Z	(..)
-	, (:.)	(..)
+module Data.Repa.Array.Shape.Index
+        ( -- * Index types
+          Z    (..)
+        , (:.)  (..)
 
-	-- * Common dimensions.
-	, DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
+          -- * Common dimensions.
+        , DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
         ,       ix1,  ix2,  ix3,  ix4,  ix5)
 where
-import Data.Repa.Array.Internals.Shape
-import GHC.Base 		(quotInt, remInt)
+import Data.Repa.Array.Shape.Base
+import GHC.Base                 (quotInt, remInt)
 
 
 -- | An index of dimension zero
-data Z	= Z
-	deriving (Show, Read, Eq, Ord)
+data Z  = Z
+        deriving (Show, Read, Eq, Ord)
 
 -- | Our index type, used for both shapes and indices.
 infixl 3 :.
 data tail :. head
-	= !tail :. !head
-	deriving (Show, Read, Eq, Ord)
+        = !tail :. !head
+        deriving (Show, Read, Eq, Ord)
 
 
 -- Common dimensions
-type DIM0	= Z
-type DIM1	= DIM0 :. Int
-type DIM2	= DIM1 :. Int
-type DIM3	= DIM2 :. Int
-type DIM4	= DIM3 :. Int
-type DIM5	= DIM4 :. Int
+type DIM0       = Z
+type DIM1       = DIM0 :. Int
+type DIM2       = DIM1 :. Int
+type DIM3       = DIM2 :. Int
+type DIM4       = DIM3 :. Int
+type DIM5       = DIM4 :. Int
 
 
 -- | Helper for index construction, which constrains the coordinate to be 
@@ -59,68 +57,68 @@ ix5 b a z y x = Z :. b :. a :. z :. y :. x
 
 -- Shape ----------------------------------------------------------------------
 instance Shape Z where
-	rank _			= 0
+        rank _                  = 0
         {-# INLINE [1] rank #-}
 
-	zeroDim		 	= Z
+        zeroDim                 = Z
         {-# INLINE [1] zeroDim #-}
 
-	unitDim			= Z
+        unitDim                 = Z
         {-# INLINE [1] unitDim #-}
 
-	intersectDim _ _	= Z
+        intersectDim _ _        = Z
         {-# INLINE [1] intersectDim #-}
 
-	addDim _ _		= Z
+        addDim _ _              = Z
         {-# INLINE [1] addDim #-}
 
-	size _			= 1
+        size _                  = 1
         {-# INLINE [1] size #-}
 
-	toIndex _ _		= 0
+        toIndex _ _             = 0
         {-# INLINE [1] toIndex #-}
 
-	fromIndex _ _		= Z
+        fromIndex _ _           = Z
         {-# INLINE [1] fromIndex #-}
 
 
-	inShapeRange Z Z Z	= True
+        inShapeRange Z Z Z      = True
         {-# INLINE [1] inShapeRange #-}
 
-	listOfShape _		= []
+        listOfShape _           = []
         {-# NOINLINE listOfShape #-}
 
-	shapeOfList []		= Just Z
-	shapeOfList _		= Nothing
+        shapeOfList []          = Just Z
+        shapeOfList _           = Nothing
         {-# NOINLINE shapeOfList #-}
 
 
 
 instance Shape sh => Shape (sh :. Int) where
-	rank   (sh  :. _)
-		= rank sh + 1
+        rank   (sh  :. _)
+                = rank sh + 1
         {-# INLINE [1] rank #-}
 
-	zeroDim = zeroDim :. 0
+        zeroDim = zeroDim :. 0
         {-# INLINE [1] zeroDim #-}
 
-	unitDim = unitDim :. 1
+        unitDim = unitDim :. 1
         {-# INLINE [1] unitDim #-}
 
-	intersectDim (sh1 :. n1) (sh2 :. n2)
-		= (intersectDim sh1 sh2 :. (min n1 n2))
+        intersectDim (sh1 :. n1) (sh2 :. n2)
+                = (intersectDim sh1 sh2 :. (min n1 n2))
         {-# INLINE [1] intersectDim #-}
 
-	addDim (sh1 :. n1) (sh2 :. n2)
-		= addDim sh1 sh2 :. (n1 + n2)
+        addDim (sh1 :. n1) (sh2 :. n2)
+                = addDim sh1 sh2 :. (n1 + n2)
         {-# INLINE [1] addDim #-}
 
-	size  (sh1 :. n)
-		= size sh1 * n
+        size  (sh1 :. n)
+                = size sh1 * n
         {-# INLINE [1] size #-}
 
-	toIndex (sh1 :. sh2) (sh1' :. sh2')
-		= toIndex sh1 sh1' * sh2 + sh2'
+        toIndex (sh1 :. sh2) (sh1' :. sh2')
+                = toIndex sh1 sh1' * sh2 + sh2'
         {-# INLINE [1] toIndex #-}
 
         fromIndex (ds :. d) n
@@ -134,18 +132,18 @@ instance Shape sh => Shape (sh :. Int) where
                         | otherwise     = n `remInt` d
         {-# INLINE [1] fromIndex #-}
 
-	inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2)
-		= (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
+        inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2)
+                = (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
         {-# INLINE [1] inShapeRange #-}
 
-       	listOfShape (sh :. n)
-	 = n : listOfShape sh
+        listOfShape (sh :. n)
+         = n : listOfShape sh
         {-# NOINLINE listOfShape #-}
 
-	shapeOfList xx
-	 = case xx of
-		[]	-> Nothing
-		x : xs	-> do ss <- shapeOfList xs 
+        shapeOfList xx
+         = case xx of
+                []      -> Nothing
+                x : xs  -> do ss <- shapeOfList xs 
                               return $ ss :. x
         {-# NOINLINE shapeOfList #-}
 

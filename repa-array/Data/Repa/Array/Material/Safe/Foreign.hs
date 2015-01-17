@@ -1,15 +1,14 @@
 
-module Data.Repa.Array.Foreign
+module Data.Repa.Array.Material.Safe.Foreign
         ( F(..), Array (..), Buffer (..)
         , fromForeignPtr, toForeignPtr
         , fromByteString, toByteString)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
 import Data.Repa.Fusion.Unpack
 import Foreign.Ptr
 import Foreign.Storable

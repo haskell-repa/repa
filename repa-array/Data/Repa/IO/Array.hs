@@ -3,10 +3,9 @@ module Data.Repa.IO.Array
         ( hGetArray,   hGetArrayPre
         , hPutArray)
 where
-import Data.Repa.Array.Foreign
+import Data.Repa.Array.Shape
+import Data.Repa.Array.Material.Safe.Foreign
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
 import qualified Foreign.Ptr            as F
 import qualified Foreign.ForeignPtr     as F
 import qualified Foreign.Marshal.Alloc  as F

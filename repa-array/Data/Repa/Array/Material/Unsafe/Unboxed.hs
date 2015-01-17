@@ -1,5 +1,5 @@
 
-module Data.Repa.Array.Unsafe.Unboxed
+module Data.Repa.Array.Material.Unsafe.Unboxed
         ( UU(..), U.Unbox
         , Array (..),   uunboxed
 
@@ -10,15 +10,14 @@ module Data.Repa.Array.Unsafe.Unboxed
         , fromVectorUU, toVectorUU)
 
 where
-import Data.Repa.Fusion.Unpack
-import Data.Repa.Eval.Array
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
-import Data.Repa.Array.Unsafe.Nested
+import Data.Repa.Array.Shape
+import Data.Repa.Array.Material.Unsafe.Nested
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
+import Data.Repa.Fusion.Unpack
+import Data.Repa.Eval.Array
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad

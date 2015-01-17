@@ -1,13 +1,14 @@
 
 -- | Index space transformation between arrays and slices.
-module Data.Repa.Array.Internals.Slice
+module Data.Repa.Array.Shape.Slice
 	( All		(..)
 	, Any		(..)
 	, FullShape
 	, SliceShape
 	, Slice		(..))
 where
-import Data.Repa.Array.Internals.Index
+import Data.Repa.Array.Shape.Base
+import Data.Repa.Array.Shape.Index
 import Prelude		        hiding (replicate, drop)
 
 

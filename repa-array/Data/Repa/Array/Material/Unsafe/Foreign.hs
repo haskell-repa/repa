@@ -1,13 +1,12 @@
 
-module Data.Repa.Array.Unsafe.Foreign
+module Data.Repa.Array.Material.Unsafe.Foreign
         ( UF(..), Array (..))
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
+import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Shape
-import Data.Repa.Array.Internals.Index
 import Data.Word
 import Foreign.Ptr
 import Foreign.ForeignPtr

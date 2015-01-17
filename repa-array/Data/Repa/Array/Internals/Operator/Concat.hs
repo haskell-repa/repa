@@ -6,16 +6,16 @@ module Data.Repa.Array.Internals.Operator.Concat
         , concatWith
         , intercalate )
 where
-import Data.Repa.Fusion.Unpack
-import Data.Repa.Eval.Array                     as R
-import Data.Repa.Array.Delayed                  as R
-import Data.Repa.Array.Unboxed                  as R
-import Data.Repa.Array.Internals.Index          as R
-import Data.Repa.Array.Internals.Target         as R
-import Data.Repa.Array.Internals.Bulk           as R
+import Data.Repa.Array.Material.Safe.Unboxed            as R
+import Data.Repa.Array.Delayed                          as R
+import Data.Repa.Array.Shape                            as R
+import Data.Repa.Array.Internals.Target                 as R
+import Data.Repa.Array.Internals.Bulk                   as R
+import Data.Repa.Eval.Array                             as R
+import Data.Repa.Fusion.Unpack                          as R
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import System.IO.Unsafe
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Fusion.Stream.Monadic as V
 import GHC.Exts hiding (fromList, toList)
 import Prelude  hiding (reverse, length, map, zipWith, concat)
 

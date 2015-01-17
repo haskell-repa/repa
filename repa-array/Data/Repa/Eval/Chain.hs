@@ -10,7 +10,7 @@ import Data.Repa.Fusion.Unpack
 import Data.Repa.Chain                 (Chain(..), Step(..))
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
-import Data.Repa.Array.Internals.Index                  as R
+import Data.Repa.Array.Shape                            as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import qualified Data.Vector.Fusion.Util                as S

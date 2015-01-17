@@ -30,15 +30,22 @@ Library
 
 
   exposed-modules:
-        Data.Repa.Array.Unsafe.Foreign
-        Data.Repa.Array.Unsafe.Nested
-        Data.Repa.Array.Unsafe.Unboxed
-        Data.Repa.Array.Boxed
+        Data.Repa.Array.Material.Safe.Boxed
+        Data.Repa.Array.Material.Safe.Unboxed
+        Data.Repa.Array.Material.Safe.Foreign
+
+        Data.Repa.Array.Material.Unsafe.Unboxed
+        Data.Repa.Array.Material.Unsafe.Foreign
+        Data.Repa.Array.Material.Unsafe.Nested
+        Data.Repa.Array.Material.Unsafe
+
         Data.Repa.Array.Delayed
-        Data.Repa.Array.Foreign
-        Data.Repa.Array.Unboxed
-        Data.Repa.Array.Unsafe
         Data.Repa.Array.Window
+
+        Data.Repa.Array.Shape.Slice
+        Data.Repa.Array.Shape.Index
+        Data.Repa.Array.Shape.Base
+        Data.Repa.Array.Shape
         Data.Repa.Array
 
         Data.Repa.Eval.Array
@@ -60,10 +67,7 @@ Library
         Data.Repa.Array.Internals.Operator.Fold
         Data.Repa.Array.Internals.Operator.Group
         Data.Repa.Array.Internals.Bulk
-        Data.Repa.Array.Internals.Index
         Data.Repa.Array.Internals.Load
-        Data.Repa.Array.Internals.Shape
-        Data.Repa.Array.Internals.Slice
         Data.Repa.Array.Internals.Target
 
 

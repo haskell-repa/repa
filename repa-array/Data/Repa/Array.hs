@@ -1,18 +1,19 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Array
-        ( -- * Arrays and Vectors
+        ( module Data.Repa.Array.Shape
+        , 
+          -- * Arrays and Vectors
           Bulk      (..)
         , Vector
         , (!)
         , length
 
-          -- * Shapes and Indices
-        , Shape     (..)
-        , Z (..), (:.) (..)
-        , DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
-        ,       ix1,  ix2,  ix3,  ix4,  ix5
-
           -- * Array Representations
+          -- ** Material
+          -- | The material representations are defined 
+          --   in "Data.Repa.Array.Material.Safe"
+          --   and "Data.Repa.Array.Material.Unsafe"
+          --   import one or the other depending on whether you want bounds checks.
         , Material
 
           -- ** Delayed arrays
@@ -22,32 +23,11 @@ module Data.Repa.Array
         , delay 
         , computeS,     computeS_
 
-          -- ** Boxed arrays
-        , B(..), boxed
-        , fromVectorB, toVectorB
-
-          -- ** Unboxed arrays
-        , U(..), unboxed
-        , fromVectorU, toVectorU
-
-          -- ** Windowed arrays
-        , W
-        , Window    (..)
-        , windowed
-        , entire
-
-          -- ** Nested arrays
-        , UN(..)
-
           -- * Generic Conversion
         , vfromList,    vfromList_
         , fromList,     fromList_
-        , fromLists
-        , fromListss
         
         , toList
-        , toLists
-        , toListss
 
           -- * Array Operators
           -- ** Index space transforms
@@ -59,15 +39,6 @@ module Data.Repa.Array
 
           -- ** Mapping
         , map, zipWith
-        , mapElems
-
-          -- ** Splitting
-          -- | Splitting operators compute a segment descriptor which describes
-          --   how the elements in the source should be arranged into sub-arrays.
-          --   The elements of the source array are not copied.
-        , segment,      segmentOn
-        , dice,         diceOn
-        , trims,        trimStarts,     trimEnds
 
           -- ** Searching
         , findIndex
@@ -75,9 +46,7 @@ module Data.Repa.Array
           -- ** Sloshing
           -- | Sloshing operators copy array elements into a different arrangement, 
           --   but do not create new element values.
-        , ragspose3
         , concat
-        , concats
         , concatWith
         , intercalate
 
@@ -87,14 +56,10 @@ module Data.Repa.Array
           -- ** Folding
         , folds, Folds(..))
 where
+import Data.Repa.Array.Shape
 import Data.Repa.Eval.Array                             as R
 import Data.Repa.Array.Delayed                          as R
 import Data.Repa.Array.Window                           as R
-import Data.Repa.Array.Unboxed                          as R
-import Data.Repa.Array.Boxed                            as R
-import Data.Repa.Array.Unsafe.Nested                    as R
-import Data.Repa.Array.Internals.Shape                  as R
-import Data.Repa.Array.Internals.Index                  as R
 import Data.Repa.Array.Internals.Target                 as R
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Operator.Concat        as R
