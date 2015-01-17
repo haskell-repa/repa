@@ -2,18 +2,20 @@
 module Data.Repa.Flow.Generic.IO
         ( -- * Sourcing
           fromFiles
-        , sourceRecords
-        , sourceChunks
-        , sourceChars
         , sourceBytes
+        , sourceChars
+        , sourceChunks
+        , sourceRecords
 
           -- * Sinking
         , toFiles
+        , sinkBytes
         , sinkChars
-        , sinkBytes)
+        , sinkLines)
 where
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Unsafe.Nested            as UN
 import Data.Repa.Array.Foreign                  as A
 import Data.Repa.Array                          as A
@@ -173,8 +175,31 @@ toFiles paths use
 {-# NOINLINE toFiles #-}
 
 
+-- | Write vectors of text lines to the given files handles.
+-- 
+--   * Data is copied into a new buffer to insert newlines before being
+--     written out.
+--
+sinkLines :: ( Bulk r1 DIM1 (Vector r2 Char)
+             , Bulk r2 DIM1 Char, Unpack (Vector r2 Char) t2)
+          => r1 -> r2
+          -> [Handle]   -- ^ File handles.
+          -> IO (Sinks Int IO (Vector r1 (Vector r2 Char)))
+sinkLines _ _ !hs
+ =   smap_o (\_ !c -> computeS_ $ A.map (fromIntegral . ord) $ concatWith F fl c)
+ =<< sinkBytes hs
+ where  !fl     = A.vfromList F ['\n']
+{-# INLINE [2] sinkLines #-}
+
+
 -- | Write chunks of 8-byte ASCII characters to the given file handles.
-sinkChars :: [Handle] -> IO (Sinks Int IO (Vector F Char))
+-- 
+--   * Data is copied into a foreign buffer to truncate the characters
+--     to 8-bits each before being written out.
+--
+sinkChars :: Bulk r DIM1 Char
+          => [Handle]   -- ^ File handles.
+          -> IO (Sinks Int IO (Vector r Char))
 sinkChars !hs
  =   smap_o (\_ !c -> computeS_ $ A.map (fromIntegral . ord) c)
  =<< sinkBytes hs
@@ -182,6 +207,9 @@ sinkChars !hs
 
 
 -- | Write chunks of bytes to the given file handles.
+--
+--   * Data is written out directly from the provided buffer.
+--
 sinkBytes :: [Handle] -> IO (Sinks Int IO (Vector F Word8))
 sinkBytes !hs
  = do   let push_sinkBytes (IIx i _) !chunk

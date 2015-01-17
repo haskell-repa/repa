@@ -11,21 +11,22 @@ import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
 
 -- | Dictionaries needed to perform a segmented fold.
-type FoldsWorthy i m r1 r2 r3 t1 t2 t3 a b
-        = ( States i m, Window r1 DIM1 Int, Window r2 DIM1 a
-          , Bulk   r1 DIM1 Int, Bulk   r2 DIM1 a
-          , Target r1 Int t1,   Target r2 a t2,  Target r3 b t3, Bulk r3 DIM1 b)
+type FoldsWorthy i m r1 r2 r3 t1 t2 t3 n a b
+        = ( States i m, Window r1 DIM1 (n, Int), Window r2 DIM1 a
+          , Bulk   r1 DIM1 (n, Int), Bulk   r2 DIM1 a
+          , Target r1 Int t1,        Target r2 a t2
+          , Target r3 (n, b) t3,     Bulk   r3 DIM1 (n, b))
 
 
 -- Folds ----------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
-folds_i :: forall i m r1 r2 r3 t1 t2 t3 a b
-        .  FoldsWorthy i m r1 r2 r3 t1 t2 t3 a b
-        => (a -> b -> b)         -- ^ Worker function.
-        -> b                     -- ^ Initial state when folding each segment.
-        -> Sources i m r1 Int    -- ^ Segment lengths.
-        -> Sources i m r2 a      -- ^ Input elements to fold.
-        -> m (Sources i m r3 b)  -- ^ Result elements.
+folds_i :: forall i m r1 r2 r3 t1 t2 t3 n a b
+        .  FoldsWorthy i m r1 r2 r3 t1 t2 t3 n a b
+        => (a -> b -> b)             -- ^ Worker function.
+        -> b                         -- ^ Initial state when folding each segment.
+        -> Sources i m r1 (n, Int)   -- ^ Segment lengths.
+        -> Sources i m r2 a          -- ^ Input elements to fold.
+        -> m (Sources i m r3 (n, b))  -- ^ Result elements.
 
 folds_i f z sLens@(G.Sources nLens _)
             sVals@(G.Sources nVals _)
@@ -34,44 +35,44 @@ folds_i f z sLens@(G.Sources nLens _)
         let nFolds = min nLens nVals
 
         -- Refs to hold partial fold states between chunks.
-        refsState    <- newRefs nFolds None2
+        refsState    <- newRefs nFolds None3
 
         -- Refs to hold the current chunk of lengths data for each stream.
-        refsLens     <- newRefs nFolds Nothing
+        refsNameLens <- newRefs nFolds Nothing
 
         -- Refs to hold the current chunk of vals data for each stream.
         refsVals     <- newRefs nFolds Nothing
         refsValsDone <- newRefs nFolds False
 
-        let pull_folds :: Ix i -> (Vector r3 b -> m ()) -> m () -> m ()
+        let pull_folds :: Ix i -> (Vector r3 (n, b) -> m ()) -> m () -> m ()
             pull_folds i eat eject
-             = do mLens <- folds_loadChunkLens sLens refsLens i
-                  mVals <- folds_loadChunkVals sVals refsVals refsValsDone i 
+             = do mNameLens <- folds_loadChunkNameLens sLens refsNameLens i
+                  mVals     <- folds_loadChunkVals     sVals refsVals refsValsDone i 
 
-                  case (mLens, mVals) of
+                  case (mNameLens, mVals) of
                    -- If we couldn't get a chunk for both sides then we can't
                    -- produce anymore results, and the merge is done.
                    (Nothing, _)             -> eject
 
                    -- We've got a chunk for both sides, time to do some work.
-                   (Just cLens, Just cVals) 
-                    -> cLens `seq` cVals `seq`
+                   (Just cNameLens, Just cVals) 
+                    -> cNameLens `seq` cVals `seq`
                        do 
                           mState    <- readRefs refsState i
 
                           let (cResults, sFolds) 
-                                = A.folds f z mState cLens cVals
+                                = A.folds f z mState cNameLens cVals
 
                           folds_update 
-                                refsState refsLens refsVals i 
-                                cLens cVals sFolds
+                                refsState refsNameLens refsVals i 
+                                cNameLens cVals sFolds
 
                           valsDone <- readRefs refsValsDone i
 
                           -- If we're not producing output while we still
                           -- have segment lengths then we're done.
-                          if  A.length cResults == 0
-                           && A.length cLens    >= 0
+                          if  A.length cResults   == 0
+                           && A.length cNameLens  >= 0
                            && valsDone
                                 then eject
                                 else eat cResults
@@ -84,14 +85,14 @@ folds_i f z sLens@(G.Sources nLens _)
 -- Load the current chunk of lengths data.
 -- If we already have one in the state then use that, 
 -- otherwise try to pull a new chunk from the source.
-folds_loadChunkLens 
+folds_loadChunkNameLens 
     :: (States i m, Target r1 Int t1)
-    => Sources i m r1 Int
-    -> Refs i m (Maybe (Vector r1 Int)) 
+    => Sources i m r1 (n, Int)
+    -> Refs i m (Maybe (Vector r1 (n, Int)))
     -> Ix i 
-    -> m (Maybe (Vector r1 Int))
+    -> m (Maybe (Vector r1 (n, Int)))
 
-folds_loadChunkLens (G.Sources _ pullLens) refsLens i
+folds_loadChunkNameLens (G.Sources _ pullLens) refsLens i
  = do mChunkLens <- readRefs refsLens i
       case mChunkLens of 
        Nothing 
@@ -108,7 +109,7 @@ folds_loadChunkLens (G.Sources _ pullLens) refsLens i
 
        jc@(Just _)
         ->    return jc
-{-# NOINLINE folds_loadChunkLens #-}
+{-# NOINLINE folds_loadChunkNameLens #-}
 --  NOINLINE as this doesn't need to be specialized,
 --- and we want to hide the case from the simplifier.
 
@@ -154,23 +155,23 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
 
 folds_update
         :: ( States i m
-           , Window r1 DIM1 Int, Window r2 DIM1 a)
-        => Refs i m (Option2 Int b)
-        -> Refs i m (Maybe (Vector r1 Int))
+           , Window r1 DIM1 (n, Int), Window r2 DIM1 a)
+        => Refs i m (Option3 n Int b)
+        -> Refs i m (Maybe (Vector r1 (n, Int)))
         -> Refs i m (Maybe (Vector r2 a))
         -> Ix i 
-        -> Vector r1 Int
+        -> Vector r1 (n, Int)
         -> Vector r2 a
-        -> Folds Int Int a b
+        -> Folds Int Int n a b
         -> m ()
 
 folds_update refsState refsLens refsVals i cLens cVals sFolds 
  = do 
         -- Remember state for the final segment.
         writeRefs refsState i 
-         $ if _active sFolds 
-            then Some2 (_lenSeg sFolds) (_valSeg sFolds)
-            else None2
+         $ case _nameSeg sFolds of
+            Some name -> Some3 name (_lenSeg sFolds) (_valSeg sFolds)
+            None      -> None3
 
         -- Slice down the lengths chunk to just the elements
         -- that we haven't already consumed. If we've consumed

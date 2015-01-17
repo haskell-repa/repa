@@ -71,6 +71,7 @@ module Data.Repa.Flow.Generic
           -- ** Sinking
         , toFiles
         , sinkChars
+        , sinkLines
         , sinkBytes)
 where
 import Data.Repa.Flow.States

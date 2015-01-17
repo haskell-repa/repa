@@ -62,6 +62,12 @@ module Data.Repa.Flow
         , mapChunks_i,  mapChunks_o
         , smapChunks_i, smapChunks_o
 
+        -- ** Connecting
+        , dup_oo
+        , dup_io
+        , dup_oi
+        , connect_i
+
         -- ** Watching
         , watch_i,      watch_o
         , trigger_o
@@ -208,7 +214,7 @@ map_i _ f s = C.map_i f s
 
 -- | Apply a function to all elements pushed to some sinks.
 map_o   :: (Flow r1 a, A.Target r2 b t)
-        => r2 -> (a -> b) -> Sinks r2 b   -> IO (Sinks   r1 a)
+        => r1 -> (a -> b) -> Sinks r2 b   -> IO (Sinks   r1 a)
 map_o _ f s = C.map_o f s
 {-# INLINE map_o #-}
 
@@ -251,6 +257,49 @@ smapChunks_o
 smapChunks_o f k
         = G.smap_o (\(IIx i _) vec -> f i vec) k
 {-# INLINE smapChunks_o #-}
+
+
+-- Connecting -----------------------------------------------------------------
+-- | Send the same data to two consumers.
+--
+--   Given two argument sinks, yield a result sink.
+--   Pushing to the result sink causes the same element to be pushed to both
+--   argument sinks. 
+dup_oo  :: Sinks r a -> Sinks r a -> IO (Sinks r a)
+dup_oo = G.dup_oo
+{-# INLINE dup_oo #-}
+
+
+-- | Send the same data to two consumers.
+--  
+--   Given an argument source and argument sink, yield a result source.
+--   Pulling an element from the result source pulls from the argument source,
+--   and pushes that element to the sink, as well as returning it via the
+--   result source.
+--   
+dup_io  :: Sources r a -> Sinks r a -> IO (Sources r a)
+dup_io = G.dup_io
+{-# INLINE dup_io #-}
+
+
+-- | Send the same data to two consumers.
+--
+--   Like `dup_io` but with the arguments flipped.
+--
+dup_oi  :: Sinks r a -> Sources r a -> IO (Sources r a)
+dup_oi = G.dup_oi
+{-# INLINE dup_oi #-}
+
+
+-- | Connect an argument source to two result sources.
+--
+--   Pulling from either result source pulls from the argument source.
+--   Each result source only gets the elements pulled at the time, 
+--   so if one side pulls all the elements the other side won't get any.
+--
+connect_i :: Sources r a -> IO (Sources r a, Sources r a)
+connect_i = G.connect_i
+{-# INLINE connect_i #-}
 
 
 -- Watching -------------------------------------------------------------------
@@ -394,13 +443,13 @@ groupsBy_i _ f s
 --     Sources r1 (n, Int) -> Sources r2 a -> Sources r3 (n, b)
 --     The plain fn can pass a Unit, which will have repr squashed by vector lib.
 -- 
-folds_i :: FoldsWorthy r1 r2 r3 t1 t2 t3 a b
-        => r3                   -- ^ Result chunk representation.
-        -> (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding each segment.
-        -> Sources r1 Int       -- ^ Segment lengths.
-        -> Sources r2 a         -- ^ Input elements to fold.
-        -> IO (Sources r3 b)    -- ^ Result elements.
+folds_i :: (FoldsWorthy r1 r2 r3 t1 t2 t3 n a b, Target r1 Int t4)
+        => r3                     -- ^ Result chunk representation.
+        -> (a -> b -> b)          -- ^ Worker function.
+        -> b                      -- ^ Initial state when folding each segment.
+        -> Sources r1 (n, Int)    -- ^ Segment lengths.
+        -> Sources r2 a           -- ^ Input elements to fold.
+        -> IO (Sources r3 (n, b)) -- ^ Result elements.
 
 folds_i _ f z sLen sVal
         = C.folds_i f z sLen sVal
@@ -411,10 +460,10 @@ folds_i _ f z sLen sVal
 --   The chunks of all streams must have material representations,
 --   rather than being delayed.
 --
-type FoldsWorthy r1 r2 r3 t1 t2 t3 a b
- =      ( A.Material r1 t1 DIM1 Int
+type FoldsWorthy r1 r2 r3 t1 t2 t3 n a b
+ =      ( A.Material r1 t1 DIM1 (n, Int)
         , A.Material r2 t2 DIM1 a
-        , A.Material r3 t3 DIM1 b)
+        , A.Material r3 t3 DIM1 (n, b))
 
 
 -- | Combination of `groupsBy_i` and `folds_i`. We determine the the segment
@@ -436,7 +485,7 @@ type FoldsWorthy r1 r2 r3 t1 t2 t3 a b
 -- @
 --
 foldGroupsBy_i
-        :: (Bulk r1 DIM1 n, FoldsWorthy r1 r2 r3 t1 t2 t3 a b)
+        :: (Bulk r1 DIM1 n, FoldsWorthy r1 r2 r3 t1 t2 t3 n a b)
         => r3                   -- ^ Result chunk representation.
         -> (n -> n -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
@@ -444,10 +493,10 @@ foldGroupsBy_i
         -> b                    -- ^ Initial when folding each segment.
         -> Sources r1 n         -- ^ Names that determine groups.
         -> Sources r2 a         -- ^ Values to fold.
-        -> IO (Sources r3 b)
+        -> IO (Sources r3 (n, b))
 
 foldGroupsBy_i r3 pGroup f z sNames sVals
- = do   segLens <- map_i U snd =<< groupsBy_i B pGroup sNames
+ = do   segLens <- groupsBy_i B pGroup sNames
         folds_i r3 f z segLens sVals
 {-# INLINE foldGroupsBy_i #-}
 

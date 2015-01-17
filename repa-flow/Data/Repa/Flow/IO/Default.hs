@@ -16,6 +16,7 @@ module Data.Repa.Flow.IO.Default
           -- * Sinking
         , F.toFiles
         , sinkChars
+        , sinkLines
         , sinkBytes)
 where
 import qualified Data.Repa.Flow.IO      as F
@@ -48,6 +49,9 @@ sourceChars     = F.sourceChars defaultChunkSize
 
 -- | Like `F.sourceBytes`, but with the default chunk size.
 sourceBytes     = F.sourceBytes defaultChunkSize
+
+-- | An alias for `F.sinkLines`.
+sinkLines       = F.sinkLines
 
 -- | An alias for `F.sinkChars`.
 sinkChars       = F.sinkChars

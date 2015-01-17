@@ -17,12 +17,12 @@ import Data.Vector.Fusion.Stream.Size  as S
 --   other.
 --
 foldsC  :: Monad m
-        => (a -> b -> m b)      -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding rest of segments.
-        -> Option2 Int b        -- ^ Length and initial state for first segment.
-        -> Chain m sLen Int     -- ^ Segment lengths.
-        -> Chain m sVal a       -- ^ Input data to fold.
-        -> Chain m (Folds sLen sVal a b) b
+        => (a -> b -> m b)        -- ^ Worker function.
+        -> b                      -- ^ Initial state when folding rest of segments.
+        -> Option3 n Int b        -- ^ Name, length and initial state for first segment.
+        -> Chain m sLen (n, Int)  -- ^ Segment names and lengths.
+        -> Chain m sVal a         -- ^ Input data to fold.
+        -> Chain m (Folds sLen sVal n a b) (n, b)
 
 foldsC   f zN s0 
          (Chain _szLens sLens0 stepLens) 
@@ -31,23 +31,23 @@ foldsC   f zN s0
  where
         init_foldsC s
          = case s of
-            None2         -> Folds sLens0 sVals0 False 0   zN
-            Some2 len acc -> Folds sLens0 sVals0 True  len acc
+            None3           -> Folds sLens0 sVals0 None     0   zN
+            Some3 n len acc -> Folds sLens0 sVals0 (Some n) len acc
         {-# NOINLINE init_foldsC #-}
         --  NOINLINE to hide the case match from the simplifier so it
         --  doesn't unswitch it at top-level and duplicate the follow-on code.
 
-        step ss@(Folds sLens sVals active lenSeg valSeg)
-         = case active of
+        step ss@(Folds sLens sVals nameSeg lenSeg valSeg)
+         = case nameSeg of
             -- If we don't have a segment length we need to load the next one.
-            False
+            None
              -> stepLens sLens >>= \rLens
              -> case rLens of
                  -- We got a segment length, so load it into the state and
                  -- initialise the accumulator.
-                 Yield xLen sLens' 
+                 Yield (name, xLen) sLens' 
                   -> return  $ Skip   ss { _stateLens = sLens'
-                                         , _active    = True
+                                         , _nameSeg   = Some name
                                          , _lenSeg    = xLen 
                                          , _valSeg    = zN     }
 
@@ -61,10 +61,11 @@ foldsC   f zN s0
                   -> return  $ Done   ss { _stateLens = sLens' }
 
             -- We're currently folding a segment.
-            True
+            Some name
              -- We've reached the end of the segment, so emit the result.
-             |  lenSeg == 0   
-             -> return $ Yield valSeg ss { _active    = False }
+             |  lenSeg == 0 
+             -> return $ Yield (name, valSeg) 
+                                        ss { _nameSeg   = None }
 
              -- We still need more values for this segment.
              |  otherwise
@@ -90,7 +91,7 @@ foldsC   f zN s0
 
 
 -- | Return state of a folds operation.
-data Folds sLens sVals a b
+data Folds sLens sVals n a b
         = Folds 
         { -- | State of lengths chain.
           _stateLens        :: !sLens
@@ -98,8 +99,8 @@ data Folds sLens sVals a b
           -- | State of values chain.
         , _stateVals        :: !sVals
 
-          -- | Whether we're currently in a segment.
-        , _active           :: !Bool
+          -- | If we're currently in a segment, then hold its name,
+        , _nameSeg          :: !(Option n)
 
           -- | Length of current segment.
         , _lenSeg           :: !Int

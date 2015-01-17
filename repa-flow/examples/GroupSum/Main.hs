@@ -18,7 +18,7 @@
 -- @
 --
 module Main where
-import Data.Repa.Flow.IO                as F
+import Data.Repa.Flow.IO.Default        as F
 import Data.Repa.Flow                   as F
 import Data.Repa.Array                  as A
 import Data.Repa.Array.Foreign          as A
@@ -36,57 +36,34 @@ main :: IO ()
 main 
  = do   args    <- getArgs
         case args of
-         [fileInSeg, fileInVals, fileOutSums]      
-           -> pGroupSum fileInSeg fileInVals fileOutSums
+         [fiNames, fiVals, foNames, foSums]      
+           -> pGroupSum fiNames fiVals foNames foSums
          _ -> putStrLn $ unlines
-                [ "Usage: flow-groupsum <source_segs> <source_vals> <result_vals>" ]
+                [ "Usage: flow-groupsum <src_names> <src_vals> <dst_names> <dst_vals>" ]
 
 
 -- | Sum up segments of doubles according to a segment descriptor file.
-pGroupSum :: FilePath -> FilePath -> FilePath -> IO ()
-pGroupSum fileInSegs fileInVals fileOutSums
+pGroupSum :: FilePath -> FilePath -> FilePath -> FilePath -> IO ()
+pGroupSum fiNames fiVals foNames foSums
  = do   
-        -- Group the input segment file to get segment lengths.
-        iSegLens   <-  map_i snd 
-                   =<< groupsBy_i (==) 
-                   =<< fromFiles [fileInSegs] $ sourceLines (64 * 1024) dieLong
+        -- Read names and values from files.
+        iNames  <-  fromFiles [fiNames] sourceLines
 
-        i0        <-  watch_i (\_ arr -> putStrLn 
-                                         $ show $ A.toList arr)
-                             iSegLens
+        iVals   <-  map_i U readDouble 
+                =<< fromFiles [fiVals] sourceLines
 
-        oDiscard  <-  discard_o ()
-        drain i0 oDiscard
+        -- Sum up the values segment-wise.
+        iAgg    <-  foldGroupsBy_i B (==) (+) 0 iNames iVals
 
-{-
-        -- Read floating point values from input file.
-        let !nl  = fromIntegral $ ord '\n'
-        let !nr  = fromIntegral $ ord '\r'
-        let !nt  = fromIntegral $ ord '\t'
-        let isWhite c = c == nl || c == nr || c == nt
-            {-# INLINE isWhite #-}
+        -- Write group names and sums back to files.
+        oNames  <-  map_o B fst
+                =<< toFiles [foNames] (sinkLines B F)
 
-        istrings <-  mapChunks_i (R.trimEnds isWhite)
-                 =<< G.project_i (zero 1)
-                 =<< fileSourcesRecords [fileInVals] (64 * 1024) (== nl)
-                        (error "over long line in vals file")
+        oSums   <-  map_o B (showDoubleFixed 4 . snd) 
+                =<< toFiles [foSums]  (sinkLines B F)
 
-        ivals    <- map_i readDouble istrings
+        oAgg    <-  dup_oo oNames oSums
 
+        -- Drain all the source data into the sinks.
+        drain iAgg oAgg
 
-        -- Sum up values according to the segment descriptor.
-        isums    <- folds_ii (+) 0 isegLens ivals
-
-        -- Create a sink that converts floats back to strings and writes
-        -- them to the output file.
-        ofile    <-  G.project_i (zero 1)
-                 =<< fileSinksBytes fileOutSums
-
-        ofloat   <- map_o (showDoubleFixed 2) ofile
-
-        -- Drain sums into the output.
-        drain isums ofloat
-
--}
-
-dieLong = "over long line"

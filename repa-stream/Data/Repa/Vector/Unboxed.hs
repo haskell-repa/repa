@@ -248,13 +248,13 @@ extract get vStartLen
 --   equals the length of the lengths vector then all segment lengths were
 --   consumed. Similarly for the elements vector.
 --
-folds   :: (Unbox a, Unbox b)
+folds   :: (Unbox n, Unbox a, Unbox b)
         => (a -> b -> b)        -- ^ Worker function to fold each segment.
         -> b                    -- ^ Initial state when folding segments.
-        -> Option2 Int b        -- ^ Length and initial state for first segment.
-        -> U.Vector Int         -- ^ Segment lengths.
+        -> Option3 n Int b      -- ^ Length and initial state for first segment.
+        -> U.Vector (n, Int)    -- ^ Segment names and lengths.
         -> U.Vector a           -- ^ Elements.
-        -> (U.Vector b, C.Folds Int Int a b)
+        -> (U.Vector (n, b), C.Folds Int Int n a b)
 
 folds f zN s0 vLens vVals
  = let  

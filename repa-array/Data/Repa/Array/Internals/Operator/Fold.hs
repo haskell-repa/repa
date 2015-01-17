@@ -19,13 +19,13 @@ import System.IO.Unsafe
 --   vector of segment lengths or elements was too short relative to the
 --   other.
 --
-folds   :: (Bulk r1 DIM1 Int, Bulk r2 DIM1 a, Target r3 b t)
+folds   :: (Bulk r1 DIM1 (n, Int), Bulk r2 DIM1 a, Target r3 (n, b) t)
         => (a -> b -> b)        -- ^ Worker function.
         -> b                    -- ^ Initial state when folding segments.
-        -> Option2 Int b        -- ^ Length and initial state for first segment.
-        ->  Vector r1 Int       -- ^ Segment lengths.
+        -> Option3 n Int b      -- ^ Length and initial state for first segment.
+        ->  Vector r1 (n, Int)  -- ^ Segment lengths.
         ->  Vector r2 a         -- ^ Elements.
-        -> (Vector r3 b, C.Folds Int Int a b)
+        -> (Vector r3 (n, b), C.Folds Int Int n a b)
 
 folds f z s0 vLens vVals
  = unsafePerformIO
