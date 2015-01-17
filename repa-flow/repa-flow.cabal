@@ -29,7 +29,7 @@ Library
         Data.Repa.Flow.Debug
         Data.Repa.Flow.Generic
         Data.Repa.Flow.IO
-        Data.Repa.Flow.IO.TSV
+        Data.Repa.Flow.IO.Default
         Data.Repa.Flow.Simple
         Data.Repa.Flow.States
         Data.Repa.Flow
@@ -51,6 +51,8 @@ Library
         Data.Repa.Flow.Simple.List
         Data.Repa.Flow.Simple.Operator
         Data.Repa.Flow.Simple.IO
+
+        Data.Repa.Flow.IO.TSV
 
   ghc-options:
         -Wall 

@@ -14,14 +14,14 @@ module Data.Repa.Flow.Generic.IO
 where
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Array.Unsafe.Nested                    as UN
-import Data.Repa.Array.Foreign                          as A
-import Data.Repa.Array                                  as A
+import Data.Repa.Array.Unsafe.Nested            as UN
+import Data.Repa.Array.Foreign                  as A
+import Data.Repa.Array                          as A
 import Data.Repa.IO.Array
 import Data.Char
 import System.IO
 import Data.Word
-import Prelude                                          as P
+import Prelude                                  as P
 
 
 lix :: [a] -> Int -> Maybe a

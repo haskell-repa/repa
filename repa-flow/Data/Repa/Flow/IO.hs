@@ -3,6 +3,7 @@
 module Data.Repa.Flow.IO
         ( -- * Sourcing
           G.fromFiles
+        , sourceTSV
         , sourceRecords
         , sourceLines
         , sourceChars
@@ -14,6 +15,7 @@ module Data.Repa.Flow.IO
         , sinkBytes)
 where
 import Data.Repa.Flow
+import Data.Repa.Flow.IO.TSV                    as F
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array                          as A hiding (fromList, fromLists)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
