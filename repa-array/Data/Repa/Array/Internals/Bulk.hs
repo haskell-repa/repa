@@ -1,7 +1,7 @@
 
 module Data.Repa.Array.Internals.Bulk
-        ( Repr (..)
-        , Bulk (..)
+        ( Bulk (..)
+        , Repr (..)
         , Vector
         , (!)
         , length
@@ -13,38 +13,36 @@ import Data.Repa.Array.Shape
 import Prelude hiding (length)
 
 
--- Repr -------------------------------------------------------------------------------------------
--- | Class of array representation tags.
-class Repr r where
- -- | Proxy for an array representation. The representations are singletons, 
- --   so there is only one value of a given type. Use like  (repr :: B)
- repr :: r
-
-
 -- Bulk -------------------------------------------------------------------------------------------
 -- | Class of shape polymorphic array representations that we can read elements
 --   from in a random access manner.
-class Shape sh => Bulk r sh e where
+class (Repr r, Shape sh) => Bulk r sh e where
 
  -- | Arrays with a representation tag, shape, and element type.
  --   Use one of the type tags like `D`, `U` and so on for @r@, 
  --   one of `DIM1`, `DIM2` ... for @sh@.
  data Array r sh e
 
- -- | O(1). Take the extent of an array.
- extent         :: Array r sh e -> sh
+ -- | O(1). Yield the extent of an array.
+ --   For a 1-dimensional array this is equivalent to its length.
+ extent :: Array r sh e -> sh
 
- -- | O(1). Get an element from an array.
- --
+ -- | O(1). Get an element from an array. 
  --   The safety of this indexing operator depends on the array representation.
- index          :: Array r sh e -> sh -> e
+ index  :: Array r sh e -> sh -> e
+
+ -- | O(1). Yield the safe version of an unsafe array.
+ safe   :: Array r sh e -> Array (Safe r) sh e
+
+ -- | O(1). Yield the unsafe version of a safe array.
+ unsafe :: Array r sh e -> Array (Unsafe r) sh e
 
 
 -- | Vectors are 1-dimensional arrays.
 type Vector r e = Array r DIM1 e
 
 
--- | O(1). Alias for `index`
+-- | O(1). Alias for `index`.
 (!) :: Bulk r sh a => Array r sh a -> sh -> a
 (!) = index
 {-# INLINE [1] (!) #-}
@@ -58,6 +56,26 @@ length !arr
  = case extent arr of
         Z :. len        -> len
 {-# INLINE [1] length #-}
+
+
+-- Repr -------------------------------------------------------------------------------------------
+-- | Class of array representations.
+class Repr r where
+ -- | A safe    version of the array representation,
+ --   which performs bounds checks when indexing.
+ type Safe   r
+
+ -- | An unsafe version of the array representation,
+ --   which does not perform bounds checks when indexing.
+ -- 
+ --   * Indexing out of bounds into an unsafe array representation 
+ --     will cause the program to crash or give undefined results.
+ type Unsafe r 
+
+ -- | Proxy for an array representation. The representations are singletons, 
+ --   so there is only one value of a given type. 
+ --   Use with an explicit type signature, like @(repr :: B)@.
+ repr    :: r
 
 
 -- Conversion -------------------------------------------------------------------------------------

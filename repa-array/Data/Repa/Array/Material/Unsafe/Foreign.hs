@@ -21,10 +21,14 @@ import Data.Repa.Fusion.Unpack
 -------------------------------------------------------------------------------
 -- | Arrays represented as foreign buffers in the C heap.
 data UF = UF
+
+
+-- | Unsafe Foreign arrays.
 instance Repr UF where
  repr = UF
 
 
+-- | Unsafe Foreign arrays.
 instance (Shape sh, Storable a) => Bulk UF sh a where
  data Array UF sh a       = UFArray !sh !Int !(ForeignPtr a)
  extent (UFArray sh _ _)  = sh

@@ -26,10 +26,12 @@ import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 -------------------------------------------------------------------------------
 -- | Arrays represented as foreign buffers in the C heap.
 data F = F
+
+-- | Foreign arrays.
 instance Repr F where
  repr = F
 
-
+-- | Foreign arrays.
 instance (Shape sh, Storable a) => Bulk F sh a where
  data Array F sh a      = FArray !sh !Int !(ForeignPtr a)
  extent (FArray sh _ _) = sh

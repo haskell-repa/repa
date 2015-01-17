@@ -26,10 +26,12 @@ import Data.Word
 --   This is the most efficient representation for numerical data.
 --
 data U = U
+
+-- | Unboxed arrays.
 instance Repr U where
  repr = U
 
-
+-- | Unboxed arrays.
 instance (Shape sh, U.Unbox a) => Bulk U sh a where
  data Array U sh a    = UArray sh !(U.Vector a)
  extent (UArray sh _) = sh

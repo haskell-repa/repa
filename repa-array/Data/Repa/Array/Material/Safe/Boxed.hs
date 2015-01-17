@@ -24,10 +24,12 @@ import Control.Monad
 --   representation will be faster.
 --
 data B = B
+
+-- | Boxed arrays.
 instance Repr B where
  repr = B
 
-
+-- | Boxed arrays.
 instance Shape sh => Bulk B sh a where
  data Array B sh a
         = BArray sh !(V.Vector a)
@@ -41,6 +43,12 @@ instance Shape sh => Bulk B sh a where
 
  extent (BArray sh _) = sh
  {-# INLINE extent #-}
+
+ safe arr       = arr
+ {-# INLINE safe #-}
+
+ unsafe (BArary sh vec) = UBArray sh vec
+ {-# INLINE unsafe #-}
 
 deriving instance (Show sh, Show a) => Show (Array B sh a)
 deriving instance (Read sh, Read a) => Read (Array B sh a)

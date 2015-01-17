@@ -12,6 +12,9 @@ import Data.Repa.Array.Internals.Bulk
 
 -- Windows ----------------------------------------------------------------------------------------
 data W r = W r
+
+
+-- | Windowed arrays.
 instance Repr r => Repr (W r) where
  repr = W repr
 

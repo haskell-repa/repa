@@ -17,8 +17,7 @@ import System.IO.Unsafe
 
 
 -- | Sequential computation of array elements.
---
---   * The desired result representation is specified by the first argument.
+--   The desired result representation is specified by the first argument.
 --
 computeS :: (Load r1 sh e, Target r2 e t)
          => r2 -> Array r1 sh e -> Array r2 sh e

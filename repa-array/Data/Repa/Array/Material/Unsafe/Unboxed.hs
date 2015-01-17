@@ -36,10 +36,13 @@ import Data.Word
 --   UNSAFE: Indexing into this array is not bounds checked.
 --
 data UU = UU
+
+
+-- | Unsafe Unboxed arrays.
 instance Repr UU where
  repr = UU
  
-
+-- | Unsafe unboxed arrays.
 instance (Shape sh, U.Unbox a) => Bulk UU sh a where
  data Array UU sh a        = UUArray !sh !(U.Vector a)
  extent (UUArray sh _)     = sh

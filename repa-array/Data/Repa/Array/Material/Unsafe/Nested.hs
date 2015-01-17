@@ -49,10 +49,13 @@ import Prelude  hiding (concat)
 --   all the integer elements.
 --
 data UN = UN
+
+-- | Unsafe Nested Arrays.
 instance Repr UN where
  repr = UN
  
 
+-- | Unsafe nested arrays.
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)
       => Bulk UN DIM1 (Vector r a) where

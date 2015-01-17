@@ -1,19 +1,21 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Array
         ( module Data.Repa.Array.Shape
-        , 
           -- * Arrays and Vectors
-          Bulk      (..)
+        , Bulk          (..)
         , Vector
         , (!)
         , length
 
-          -- * Array Representations
-          -- ** Material
-          -- | The material representations are defined 
-          --   in "Data.Repa.Array.Material.Safe"
-          --   and "Data.Repa.Array.Material.Unsafe"
-          --   import one or the other depending on whether you want bounds checks.
+          -- * Representations
+        , Repr          (..)
+
+          -- ** Material arrays
+          -- | Material arrays are represented as concrete data in memory
+          --   and are defined in "Data.Repa.Array.Material.Safe"
+          --                   and "Data.Repa.Array.Material.Unsafe".
+          --   Import one or the other depending on whether you want to perform 
+          --   bounds checks when indexing into them.
         , Material
 
           -- ** Delayed arrays
@@ -23,13 +25,19 @@ module Data.Repa.Array
         , delay 
         , computeS,     computeS_
 
-          -- * Generic Conversion
+          -- ** Windowed arrays
+        , W(..)
+        , Window (..)
+        , windowed
+        , entire
+
+          -- * Conversion
         , vfromList,    vfromList_
         , fromList,     fromList_
         
         , toList
 
-          -- * Array Operators
+          -- * Operators
           -- ** Index space transforms
           -- | Index space transforms view the elements of an array in a different
           --   order, but do not compute new elements. They are all constant time
