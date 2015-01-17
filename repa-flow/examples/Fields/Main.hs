@@ -1,5 +1,4 @@
-
-{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns #-}
 import Data.Repa.Flow
 import Data.Repa.Flow.IO
 import Data.Repa.Flow.IO.TSV
@@ -36,8 +35,8 @@ pFields config
         -- Stream the rest of the file as TSV.
         sIn       <- sourceTSV lenChunk dieLong [hIn]
 
-        -- Do a ragged transpose the chunks, to produce a 
-        -- columnar representation.
+        -- Do a ragged transpose the chunks, to produce a columnar
+        -- representation.
         sColumns  <- mapChunks_i ragspose3 sIn
 
         -- Concatenate the fields in each column.

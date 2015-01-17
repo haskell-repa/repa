@@ -15,6 +15,7 @@ import qualified Data.Text      as T
 -- | How a given value should be displayed.
 data Display
         = Display Format Int
+        deriving (Eq, Show)
 
 
 -- | Common display formats.

@@ -18,17 +18,18 @@
 -- @
 --
 module Main where
-import Convert
-import Data.Repa.Flow.Chunked
-import Data.Repa.Flow.Chunked.IO
+import Data.Repa.Flow.IO                as F
+import Data.Repa.Flow                   as F
 import Data.Repa.Array                  as A
 import Data.Repa.Array.Foreign          as A
 import Data.Repa.Array.Unsafe.Nested    as A
 import Data.Repa.Array.Unsafe.Unboxed   as A
+import Data.Repa.IO.Convert             as A
+import qualified Data.Repa.Flow.Generic as G
+
+import System.Environment
 import Data.Char
 import Data.Word
-import System.Environment
-import qualified Data.Repa.Flow.Generic as G
 import Prelude                          as P
 
 main :: IO ()
@@ -45,20 +46,10 @@ main
 pGroupSum :: FilePath -> FilePath -> FilePath -> IO ()
 pGroupSum fileInSegs fileInVals fileOutSums
  = do   
-        let !nl  = fromIntegral $ ord '\n'
-
         -- Group the input segment file to get segment lengths.
-        iSegCols   <-  G.project_i (zero 1)
-                   =<< fileSourcesRecords [fileInSegs] (64 * 1024) (== nl) 
-                                (error "over long line in segs file")
-
-        iSegElems  <- mapChunks_i (A.segmentOn nl) iSegCols
-
---        iSegGroups :: Sources () IO B (Vector F Word8, Int)
---                   <- groupsBy_i eqVectorF iSegElems
-
-        iSegLens   :: Sources () IO U Int
-                   <- map_i snd =<< groupsBy_i eqVectorF iSegElems
+        iSegLens   <-  map_i snd 
+                   =<< groupsBy_i (==) 
+                   =<< fromFiles [fileInSegs] $ sourceLines (64 * 1024) dieLong
 
         i0        <-  watch_i (\_ arr -> putStrLn 
                                          $ show $ A.toList arr)
@@ -97,3 +88,5 @@ pGroupSum fileInSegs fileInVals fileOutSums
         drain isums ofloat
 
 -}
+
+dieLong = "over long line"

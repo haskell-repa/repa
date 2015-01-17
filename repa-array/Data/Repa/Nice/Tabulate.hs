@@ -26,10 +26,9 @@ tabulate xx
 
 tabulate1 :: [Text] -> Text
 tabulate1 strs
-  = let lens    = L.map T.length strs
-        len     = maximum lens
+  = let d       = mconcat $ map takeDisplay strs
     in  T.intercalate (T.pack "\n") 
-         $ L.map (padR len) strs
+         $ L.map (display d) strs
 
 
 tabulate2 :: [[Text]] -> Text

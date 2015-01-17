@@ -33,6 +33,7 @@
 --
 module Data.Repa.Flow
         ( module Data.Repa.Flow.States
+        , module Data.Repa.Eval.Array
 
         -- * Flow types
         , Sources, Sinks
@@ -83,6 +84,7 @@ module Data.Repa.Flow
 where
 import Data.Repa.Flow.States
 import Data.Repa.Eval.Array                     as A
+import Data.Repa.Eval.Array
 import Data.Repa.Array.Foreign                  as A
 import Data.Repa.Array                          as A hiding (fromList, fromLists)
 import qualified Data.Repa.Flow.Chunked         as C hiding (next)
