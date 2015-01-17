@@ -32,7 +32,7 @@ concat _ vs
 
  | otherwise
  = unsafePerformIO
- $ do   let !lens  = toVectorU $ computeS U $ R.map R.length vs
+ $ do   let !lens  = toVector $ computeS U $ R.map R.length vs
         let !len   = U.sum lens
         !buf       <- unsafeNewBuffer len
         let !iLenY = U.length lens
@@ -80,7 +80,7 @@ concatWith _ !is !vs
  = unsafePerformIO
  $ do   
         -- Lengths of the source vectors.
-        let !lens       = toVectorU $ computeS U $ R.map R.length vs
+        let !lens       = toVector $ computeS U $ R.map R.length vs
 
         -- Length of the final result vector.
         let !(I# len)   = U.sum lens
@@ -158,7 +158,7 @@ intercalate _ !is !vs
  = unsafePerformIO
  $ do   
         -- Lengths of the source vectors.
-        let !lens       = toVectorU $ computeS U $ R.map R.length vs
+        let !lens       = toVector $ computeS U $ R.map R.length vs
 
         -- Length of the final result vector.
         let !(I# len)   = U.sum lens

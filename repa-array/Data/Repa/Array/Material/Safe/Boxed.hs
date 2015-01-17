@@ -40,15 +40,10 @@ instance Shape sh => Bulk B sh a where
 
         | otherwise
         = vec V.! (toIndex sh ix)
+ {-# INLINE index #-}
 
  extent (BArray sh _) = sh
  {-# INLINE extent #-}
-
- safe arr       = arr
- {-# INLINE safe #-}
-
- unsafe (BArary sh vec) = UBArray sh vec
- {-# INLINE unsafe #-}
 
 deriving instance (Show sh, Show a) => Show (Array B sh a)
 deriving instance (Read sh, Read a) => Read (Array B sh a)

@@ -1,6 +1,9 @@
 
 module Data.Repa.Array.Material.Unsafe.Foreign
-        ( UF(..), Array (..))
+        ( UF    (..)
+        , Array (..)
+        , fromForeignPtr,       toForeignPtr
+        , fromByteString,       toByteString)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -16,6 +19,8 @@ import Foreign.Marshal.Utils
 import System.IO.Unsafe
 import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 import Data.Repa.Fusion.Unpack
+import Data.ByteString                          (ByteString)
+import qualified Data.ByteString.Internal       as BS
 
 
 -------------------------------------------------------------------------------
@@ -139,3 +144,81 @@ instance Unpack (Buffer UF a) (Int, Int, ForeignPtr a) where
  repack _ (start, len, fptr)      = UFBuffer start len fptr
  {-# INLINE unpack #-}
  {-# INLINE repack #-}
+
+
+-- Conversions ----------------------------------------------------------------
+-- | O(1). Wrap a `ForeignPtr` as an array.
+fromForeignPtr
+        :: Shape sh
+        => sh -> ForeignPtr a -> Array UF sh a
+fromForeignPtr !sh !fptr
+        = UFArray sh 0 fptr
+{-# INLINE fromForeignPtr #-}
+
+
+-- | O(1). Unpack a `ForeignPtr` from an array.
+toForeignPtr :: Array UF sh a -> ForeignPtr a
+toForeignPtr (UFArray _ _ fptr)
+        = fptr
+{-# INLINE toForeignPtr #-}
+
+
+-- | O(1). Convert a foreign 'Vector' to a `ByteString`.
+toByteString :: Vector UF Word8 -> ByteString
+toByteString (UFArray (Z :. len) offset fptr)
+ = BS.PS fptr offset len
+{-# INLINE toByteString #-}
+
+
+-- | O(1). Convert a `ByteString` to an foreign `Vector`.
+fromByteString :: ByteString -> Vector UF Word8
+fromByteString (BS.PS fptr offset len)
+ = UFArray (Z :. len) offset fptr
+{-# INLINE fromByteString #-}
+
+
+-- Comparisons ----------------------------------------------------------------
+instance Eq (Vector UF Word8) where
+ (==) (UFArray (Z :. len1) offset1 fptr1)
+      (UFArray (Z :. len2) offset2 fptr2)
+  | len1 == len2
+  =  unsafePerformIO
+  $  withForeignPtr fptr1 $ \ptr1
+  -> withForeignPtr fptr2 $ \ptr2
+  -> do  
+        let loop_eq_VectorF ix
+             | ix >= len1       = return True
+             | otherwise        
+             = do x1 <- peekElemOff ptr1 (offset1 + ix)
+                  x2 <- peekElemOff ptr2 (offset2 + ix)
+                  if x1 == x2
+                   then loop_eq_VectorF (ix + 1)
+                   else return False
+
+        loop_eq_VectorF 0
+
+  | otherwise = False
+ {-# INLINE (==) #-}
+
+
+instance Eq (Vector UF Char) where
+ (==) (UFArray (Z :. len1) offset1 fptr1)
+      (UFArray (Z :. len2) offset2 fptr2)
+  |  len1 == len2
+  =  unsafePerformIO
+  $  withForeignPtr fptr1 $ \(ptr1 :: Ptr Char)
+  -> withForeignPtr fptr2 $ \(ptr2 :: Ptr Char)
+  -> do  
+        let loop_eq_VectorF ix
+             | ix >= len1       = return True
+             | otherwise        
+             = do x1 <- peekElemOff ptr1 (offset1 + ix)
+                  x2 <- peekElemOff ptr2 (offset2 + ix)
+                  if x1 == x2
+                   then loop_eq_VectorF (ix + 1)
+                   else return False
+
+        loop_eq_VectorF 0
+
+  | otherwise = False
+ {-# INLINE (==) #-}

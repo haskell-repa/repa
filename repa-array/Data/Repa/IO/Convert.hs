@@ -6,6 +6,7 @@ module Data.Repa.IO.Convert
         , showDouble,           showDoubleAsBytes
         , showDoubleFixed,      showDoubleFixedAsBytes)
 where
+import Data.Repa.Array.Checked
 import Data.Repa.Array.Material.Safe.Foreign            as A
 import Data.Repa.Array                                  as A
 import System.IO.Unsafe
@@ -33,7 +34,7 @@ readDouble vec
 
 -- | Convert a foreign vector of bytes to a Double.
 readDoubleFromBytes :: Vector F Word8 -> Double
-readDoubleFromBytes (FArray (Z :. len) offset fptr)
+readDoubleFromBytes (KArray (UFArray (Z :. len) offset fptr))
  = unsafePerformIO
  $ F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->

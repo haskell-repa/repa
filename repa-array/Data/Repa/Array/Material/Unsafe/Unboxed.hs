@@ -1,23 +1,26 @@
 
 module Data.Repa.Array.Material.Unsafe.Unboxed
-        ( UU(..), U.Unbox
-        , Array (..),   uunboxed
+        ( UU(..), U(..)
+        , U.Unbox
+        , Array  (..)
+        , Buffer (..)
+        , Window (..)
 
         -- * Slicing
-        , slicesUU
+        , slices
 
         -- * Conversions
-        , fromVectorUU, toVectorUU)
+        , fromVector, toVector)
 
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
+import Data.Repa.Array.Checked
 import Data.Repa.Array.Shape
 import Data.Repa.Array.Material.Unsafe.Nested
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Eval.Array
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Unboxed.Mutable    as UM
 import Control.Monad
@@ -37,18 +40,47 @@ import Data.Word
 --
 data UU = UU
 
-
 -- | Unsafe Unboxed arrays.
 instance Repr UU where
- repr = UU
+ type Safe UU   = U
+ type Unsafe UU = UU
+ repr           = UU
+ {-# INLINE repr #-}
+
+
+-- | Unboxed arrays are represented as unboxed vectors.
+--
+--   The implementation uses "Data.Vector.Unboxed" which is based on type
+--   families and picks an efficient, specialised representation for every
+--   element type. In particular, unboxed vectors of pairs are represented
+--   as pairs of unboxed vectors.
+--   This is the most efficient representation for numerical data.
+--
+data U = U
+
+-- | Unboxed arrays.
+instance Repr U where
+ type Safe   U  = U
+ type Unsafe U  = UU
+ repr = U
+ {-# INLINE repr #-}
  
--- | Unsafe unboxed arrays.
+
+---------------------------------------------------------------------
+-- | Unsafe Unboxed arrays.
 instance (Shape sh, U.Unbox a) => Bulk UU sh a where
- data Array UU sh a        = UUArray !sh !(U.Vector a)
- extent (UUArray sh _)     = sh
- index (UUArray sh vec) ix = vec `U.unsafeIndex` (toIndex sh ix)
+ data Array UU sh a             = UUArray !sh !(U.Vector a)
+ extent (UUArray sh _)          = sh
+ index (UUArray sh vec) ix      = vec `U.unsafeIndex` (toIndex sh ix)
+ safe   arr                     = UArray $ checked arr
+ unsafe arr                     = arr
  {-# INLINE extent #-}
  {-# INLINE index #-}
+ {-# INLINE safe   #-}
+ {-# INLINE unsafe #-}
+ {-# SPECIALIZE instance Bulk UU DIM1 ()      #-}
+ {-# SPECIALIZE instance Bulk UU DIM1 Bool    #-}
+ {-# SPECIALIZE instance Bulk UU DIM1 Char    #-}
  {-# SPECIALIZE instance Bulk UU DIM1 Int     #-}
  {-# SPECIALIZE instance Bulk UU DIM1 Float   #-}
  {-# SPECIALIZE instance Bulk UU DIM1 Double  #-}
@@ -60,14 +92,32 @@ instance (Shape sh, U.Unbox a) => Bulk UU sh a where
 deriving instance (Show sh, Show e, U.Unbox e) => Show (Array UU sh e)
 
 
--- | Constrain an array to have an unsafe unboxed representation,
---   eg with @unboxed (compute arr)@
-uunboxed :: Array UU sh a -> Array UU sh a
-uunboxed = id
-{-# INLINE uunboxed #-}
+-- | Unboxed arrays.
+instance (Shape sh, U.Unbox e) 
+      => Bulk U sh e where
+ data Array U sh e              = UArray !(Array (K UU) sh e)
+ extent (UArray inner)          = extent inner
+ index  (UArray inner) ix       = index  inner ix
+ safe   arr                     = arr
+ unsafe (UArray inner)          = unchecked inner
+ {-# INLINE extent #-}
+ {-# INLINE index  #-}
+ {-# INLINE safe   #-}
+ {-# INLINE unsafe #-}
+ {-# SPECIALIZE instance Bulk U DIM1 ()      #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Bool    #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Char    #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Int     #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Float   #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Double  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word8   #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word16  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word32  #-}
+ {-# SPECIALIZE instance Bulk U DIM1 Word64  #-}
 
 
 -- Window ---------------------------------------------------------------------
+-- | Unsafe Unboxed windows.
 instance U.Unbox a => Window UU DIM1 a where
  window (Z :. start) (Z :. len) (UUArray _sh vec)
         = UUArray (Z :. len) (U.slice start len vec)
@@ -82,6 +132,7 @@ instance U.Unbox a => Window UU DIM1 a where
 
 
 -- Target ---------------------------------------------------------------------
+-- | Unsafe Unboxed buffers.
 instance U.Unbox e => Target UU e (UM.IOVector e) where
  data Buffer UU e 
   = UUBuffer !(UM.IOVector e)
@@ -131,34 +182,36 @@ instance Unpack (Buffer UU e) (UM.IOVector e) where
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
-fromVectorUU
+fromVector
         :: (Shape sh, U.Unbox e)
         => sh -> U.Vector e -> Array UU sh e
-fromVectorUU sh vec
+fromVector sh vec
         = UUArray sh vec
-{-# INLINE [1] fromVectorUU #-}
+{-# INLINE [1] fromVector #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
-toVectorUU
+toVector
         :: U.Unbox e
         => Array UU sh e -> U.Vector e
-toVectorUU (UUArray _ vec)
+toVector (UUArray _ vec)
         = vec
-{-# INLINE [1] toVectorUU #-}
+{-# INLINE [1] toVector #-}
 
 
 -------------------------------------------------------------------------------
 -- | O(1). Produce a nested array by taking slices from some array of elements.
 --   
 --   This is a constant time operation, as the representation for nested 
---   vectors simply wraps the starts lengths and elements vectors.
+--   vectors just wraps the starts, lengths and elements vectors.
 --
-slicesUU :: Vector UU Int               -- ^ Segment starting positions.
-         -> Vector UU Int               -- ^ Segment lengths.
-         -> Vector r  a                 -- ^ Array elements.
-         -> Vector UN (Vector r a)
+slices  :: Vector UU Int                -- ^ Segment starting positions.
+        -> Vector UU Int                -- ^ Segment lengths.
+        -> Vector r  a                  -- ^ Array elements.
+        -> Vector UN (Vector r a)
 
-slicesUU (UUArray _ starts) (UUArray _ lens) !elems
+slices (UUArray _ starts) (UUArray _ lens) !elems
  = UNArray starts lens elems
-{-# INLINE [1] slicesUU #-}
+{-# INLINE [1] slices #-}
+
+

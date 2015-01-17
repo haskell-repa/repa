@@ -1,72 +1,33 @@
-
+{-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Safe.Unboxed
-        ( U(..), U.Unbox
-        , Array (..),  unboxed
-        , fromVectorU, toVectorU)
+        ( U(..),        U.Unbox
+        , Array(..)
+        , Buffer(..)
+        , fromVector, toVector)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Shape
-import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Eval.Array
+import Data.Repa.Array.Checked
+import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
-import qualified Data.Vector.Unboxed            as U
-import qualified Data.Vector.Unboxed.Mutable    as UM
+import Data.Repa.Array.Material.Unsafe.Unboxed  (U(..), Buffer(..), Array (..))
+import qualified Data.Repa.Array.Material.Unsafe.Unboxed        as UU
+import qualified Data.Vector.Unboxed                            as U
+import qualified Data.Vector.Unboxed.Mutable                    as UM
 import Control.Monad
 import Data.Word
 
 
--------------------------------------------------------------------------------
--- | Unboxed arrays are represented as unboxed vectors.
---
---   The implementation uses @Data.Vector.Unboxed@ which is based on type
---   families and picks an efficient, specialised representation for every
---   element type. In particular, unboxed vectors of pairs are represented
---   as pairs of unboxed vectors.
---   This is the most efficient representation for numerical data.
---
-data U = U
-
--- | Unboxed arrays.
-instance Repr U where
- repr = U
-
--- | Unboxed arrays.
-instance (Shape sh, U.Unbox a) => Bulk U sh a where
- data Array U sh a    = UArray sh !(U.Vector a)
- extent (UArray sh _) = sh
- index  (UArray sh vec) ix
-        | not $ inShapeRange zeroDim sh ix
-        = error "repa-bulk.index[U] out of range"
-
-        | otherwise
-        = vec U.! (toIndex sh ix)
-
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# SPECIALIZE instance Bulk U DIM1 Int     #-}
- {-# SPECIALIZE instance Bulk U DIM1 Float   #-}
- {-# SPECIALIZE instance Bulk U DIM1 Double  #-}
- {-# SPECIALIZE instance Bulk U DIM1 Word8   #-}
- {-# SPECIALIZE instance Bulk U DIM1 Word16  #-}
- {-# SPECIALIZE instance Bulk U DIM1 Word32  #-}
- {-# SPECIALIZE instance Bulk U DIM1 Word64  #-}
-
-
--- | Constrain an array to have an unboxed representation,
---   eg with @unboxed (compute arr)@
-unboxed :: Array U sh a -> Array U sh a
-unboxed = id
-{-# INLINE unboxed #-}
-
-deriving instance (Show sh, Show e, U.Unbox e) => Show (Array U sh e)
-
-
 -- Window ---------------------------------------------------------------------
+-- | Unboxed windows.
 instance U.Unbox a => Window U DIM1 a where
- window (Z :. start) (Z :. len) (UArray _sh vec)
-        = UArray (Z :. len) (U.slice start len vec)
+ window (Z :. start) (Z :. len) (UArray (KArray (UUArray _sh vec)))
+        = UArray (KArray (UUArray (Z :. len) (U.slice start len vec)))
  {-# INLINE window #-}
+ {-# SPECIALIZE instance Window U DIM1 ()      #-}
+ {-# SPECIALIZE instance Window U DIM1 Bool    #-}
+ {-# SPECIALIZE instance Window U DIM1 Char    #-}
  {-# SPECIALIZE instance Window U DIM1 Int     #-}
  {-# SPECIALIZE instance Window U DIM1 Float   #-}
  {-# SPECIALIZE instance Window U DIM1 Double  #-}
@@ -76,9 +37,11 @@ instance U.Unbox a => Window U DIM1 a where
  {-# SPECIALIZE instance Window U DIM1 Word64  #-}
 
 
--- Target ---------------------------------------------------------------------
-instance U.Unbox e => Target U e (UM.IOVector e) where
- data Buffer U e 
+-------------------------------------------------------------------------------
+-- | Unboxed buffers.
+instance U.Unbox e
+      => Target U e (UM.IOVector e) where
+ data Buffer U e        
   = UBuffer !(UM.IOVector e)
 
  unsafeNewBuffer len
@@ -94,20 +57,23 @@ instance U.Unbox e => Target U e (UM.IOVector e) where
         return  $ UBuffer mvec'
  {-# INLINE unsafeGrowBuffer #-}
 
+ unsafeFreezeBuffer sh (UBuffer mvec)
+  = do  uuarr   <- unsafeFreezeBuffer sh (KBuffer (UUBuffer mvec))
+        return  $ UArray uuarr
+
+ {-# INLINE unsafeFreezeBuffer #-}
+
  unsafeSliceBuffer start len (UBuffer mvec)
   = do  let mvec'  = UM.unsafeSlice start len mvec
-        return  $  UBuffer mvec'
+        return $ UBuffer mvec'
  {-# INLINE unsafeSliceBuffer #-}
-
- unsafeFreezeBuffer sh (UBuffer mvec)     
-  = do  vec     <- U.unsafeFreeze mvec
-        return  $  UArray sh vec
- {-# INLINE unsafeFreezeBuffer #-}
 
  touchBuffer _ 
   = return ()
  {-# INLINE touchBuffer #-}
 
+ {-# SPECIALIZE instance Target U ()     (UM.IOVector ())     #-}
+ {-# SPECIALIZE instance Target U Char   (UM.IOVector Char)   #-}
  {-# SPECIALIZE instance Target U Int    (UM.IOVector Int)    #-}
  {-# SPECIALIZE instance Target U Float  (UM.IOVector Float)  #-}
  {-# SPECIALIZE instance Target U Double (UM.IOVector Double) #-}
@@ -118,28 +84,25 @@ instance U.Unbox e => Target U e (UM.IOVector e) where
 
 
 instance Unpack (Buffer U e) (UM.IOVector e) where
- unpack (UBuffer vec)  = vec
- repack _ vec          = UBuffer vec
+ unpack (UBuffer vec)   = vec `seq` vec
+ repack !_ !vec         = UBuffer vec
  {-# INLINE unpack #-}
  {-# INLINE repack #-}
 
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
-fromVectorU :: (Shape sh, U.Unbox e)
+fromVector  :: (Shape sh, U.Unbox e)
             => sh -> U.Vector e -> Array U sh e
-fromVectorU sh vec
-        = UArray sh vec
-{-# INLINE [1] fromVectorU #-}
+fromVector sh vec
+        = UArray $ checked $ UU.fromVector sh vec
+{-# INLINE [1] fromVector #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
-toVectorU
-        :: U.Unbox e
-        => Array U sh e -> U.Vector e
-toVectorU (UArray _ vec)
-        = vec
-{-# INLINE [1] toVectorU #-}
-
-
+toVector :: U.Unbox e
+         => Array U sh e -> U.Vector e
+toVector (UArray arr)
+        = UU.toVector (unchecked arr)
+{-# INLINE [1] toVector #-}
 

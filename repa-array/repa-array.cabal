@@ -39,6 +39,7 @@ Library
         Data.Repa.Array.Material.Unsafe.Nested
         Data.Repa.Array.Material.Unsafe
 
+        Data.Repa.Array.Checked
         Data.Repa.Array.Delayed
         Data.Repa.Array.Window
 
