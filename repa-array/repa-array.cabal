@@ -33,7 +33,9 @@ Library
         Data.Repa.Array.Material.Safe.Boxed
         Data.Repa.Array.Material.Safe.Unboxed
         Data.Repa.Array.Material.Safe.Foreign
+        Data.Repa.Array.Material.Safe
 
+        Data.Repa.Array.Material.Unsafe.Boxed
         Data.Repa.Array.Material.Unsafe.Unboxed
         Data.Repa.Array.Material.Unsafe.Foreign
         Data.Repa.Array.Material.Unsafe.Nested

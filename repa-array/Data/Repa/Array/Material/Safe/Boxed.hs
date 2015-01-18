@@ -1,70 +1,31 @@
-
+{-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Safe.Boxed
         ( B(..)
         , Array (..)
-        , boxed
-        , fromVectorB, toVectorB)
+        , fromVector, toVector)
 where
 import Data.Repa.Eval.Array
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
+import Data.Repa.Array.Checked
 import Data.Repa.Array.Shape
-import Data.Repa.Array.Internals.Bulk
+import Data.Repa.Array.Material.Unsafe.Boxed
 import Data.Repa.Fusion.Unpack
 import qualified Data.Vector                    as V
 import qualified Data.Vector.Mutable            as VM
 import Control.Monad
 
 
--------------------------------------------------------------------------------
--- | Arrays of boxed elements.
--- 
---   This representation should only be used when your element type doesn't
---   have an Unbox instance. If it does, then use the Unboxed `U` 
---   representation will be faster.
---
-data B = B
-
--- | Boxed arrays.
-instance Repr B where
- repr = B
-
--- | Boxed arrays.
-instance Shape sh => Bulk B sh a where
- data Array B sh a
-        = BArray sh !(V.Vector a)
-
- index  (BArray sh vec) ix
-        | not $ inShapeRange zeroDim sh ix
-        = error "repa-bulk.index[B] out of range"
-
-        | otherwise
-        = vec V.! (toIndex sh ix)
- {-# INLINE index #-}
-
- extent (BArray sh _) = sh
- {-# INLINE extent #-}
-
-deriving instance (Show sh, Show a) => Show (Array B sh a)
-deriving instance (Read sh, Read a) => Read (Array B sh a)
-
-
-
--- | Constrain an array to have a boxed representation,
---   eg with @boxed (compute arr)@ 
-boxed :: Array B sh a -> Array B sh a
-boxed = id
-{-# INLINE boxed #-}
-
-
 -- Window ---------------------------------------------------------------------
+-- | Boxed windows.
 instance Window B DIM1 a where
- window (Z :. start) (Z :. len) (BArray _sh vec)
-        = BArray (Z :. len) (V.slice start len vec)
+ window (Z :. start) (Z :. len) (BArray (KArray (UBArray _sh vec)))
+        = BArray (KArray (UBArray (Z :. len) (V.slice start len vec)))
  {-# INLINE window #-}
 
 
 -- Target ---------------------------------------------------------------------
+-- | Boxed buffers.
 instance Target B a (VM.IOVector a) where
  data Buffer B a 
   = BBuffer (VM.IOVector a)
@@ -89,7 +50,7 @@ instance Target B a (VM.IOVector a) where
 
  unsafeFreezeBuffer sh (BBuffer mvec)     
   = do  vec     <- V.unsafeFreeze mvec
-        return  $  BArray sh vec
+        return  $  BArray (KArray (UBArray sh vec))
  {-# INLINE unsafeFreezeBuffer #-}
 
  touchBuffer _ 
@@ -97,6 +58,7 @@ instance Target B a (VM.IOVector a) where
  {-# INLINE touchBuffer #-}
 
 
+-- | Unpack boxed buffers.
 instance Unpack (Buffer B a) (VM.IOVector a) where
  unpack (BBuffer vec) = vec
  repack _ vec         = BBuffer vec
@@ -106,15 +68,13 @@ instance Unpack (Buffer B a) (VM.IOVector a) where
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a boxed vector as an array.
-fromVectorB :: Shape sh
-            => sh -> V.Vector e -> Array B sh e
-fromVectorB sh vec
-        = BArray sh vec
-{-# INLINE [1] fromVectorB #-}
+fromVector :: Shape sh => sh -> V.Vector e -> Array B sh e
+fromVector sh vec = BArray $ checked $ UBArray sh vec
+{-# INLINE [1] fromVector #-}
 
 
 -- | O(1). Unpack a boxed vector from an array.
-toVectorB :: Array B sh e -> V.Vector e
-toVectorB (BArray _ vec)
-        = vec
-{-# INLINE [1] toVectorB #-}
+toVector :: Array B sh e -> V.Vector e
+toVector (BArray (KArray (UBArray _ vec))) = vec
+{-# INLINE [1] toVector #-}
+

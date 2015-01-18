@@ -50,12 +50,12 @@ import Prelude  hiding (concat)
 --
 data UN = UN
 
--- | Unsafe Nested Arrays.
+-- | Unsafe Nested arrays.
 instance Repr UN where
  repr = UN
  
 
--- | Unsafe nested arrays.
+-- | Unsafe Nested arrays.
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)
       => Bulk UN DIM1 (Vector r a) where
@@ -81,6 +81,7 @@ deriving instance Show (Vector r a) => Show (Vector UN (Vector r a))
 
 
 -- Window -----------------------------------------------------------------------------------------
+-- | Unsafe Nested windows.
 instance (Bulk r DIM1 a, Window r DIM1 a)
       => Window UN DIM1 (Vector r a) where
  window (Z :. start) (Z :. len) (UNArray starts lengths elems)

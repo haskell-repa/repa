@@ -27,7 +27,7 @@ import Data.Word
 
 
 -------------------------------------------------------------------------------
--- | Unboxed arrays are represented as unsafe unboxed vectors.
+-- | Representation tag for Unsafe Unboxed arrays.
 --
 --   The implementation uses @Data.Vector.Unboxed@ which is based on type
 --   families and picks an efficient, specialised representation for every
@@ -39,7 +39,8 @@ import Data.Word
 --
 data UU = UU
 
--- | Unboxed arrays are represented as unboxed vectors.
+
+-- | Representation tag for Unboxed arrays.
 --
 --   The implementation uses "Data.Vector.Unboxed" which is based on type
 --   families and picks an efficient, specialised representation for every
@@ -94,9 +95,7 @@ deriving instance (Show sh, Show e, U.Unbox e) => Show (Array UU sh e)
 
 
 -- | Unboxed arrays.
-instance (Shape sh, U.Unbox e) 
-      => Bulk U sh e where
-
+instance (Shape sh, U.Unbox e) => Bulk U sh e where
  data Array U sh e              = UArray !(Array (K UU) sh e)
  extent (UArray inner)          = extent inner
  index  (UArray inner) ix       = index  inner ix

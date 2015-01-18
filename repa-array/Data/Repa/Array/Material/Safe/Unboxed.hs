@@ -83,6 +83,7 @@ instance U.Unbox e
  {-# SPECIALIZE instance Target U Word64 (UM.IOVector Word64) #-}
 
 
+-- | Unpack unboxed buffers.
 instance Unpack (Buffer U e) (UM.IOVector e) where
  unpack (UBuffer vec)   = vec `seq` vec
  repack !_ !vec         = UBuffer vec

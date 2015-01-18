@@ -25,10 +25,10 @@ import qualified Data.ByteString.Internal       as BS
 
 
 -------------------------------------------------------------------------------
--- | Arrays represented as foreign buffers in the C heap.
+-- | Representation tag for Unsafe Foreign arrays.
 data UF = UF
 
--- | Arrays represented as foreign buffers in the C heap.
+-- | Representation tag for Foreign arrays.
 data F  = F
 
 
@@ -103,17 +103,19 @@ deriving instance (Show sh, Show e) => Show (Array F sh e)
 
 
 -- Unpack ---------------------------------------------------------------------
+-- | Unpack Unsafe Foreign arrays.
 instance Unpack (Array UF DIM1 a) (Int, Int, ForeignPtr a) where
  unpack (UFArray (Z :. len) offset fptr) = (len, offset, fptr)
  repack _ (len, offset, fptr)            = UFArray (Z :. len) offset fptr
 
-
+-- | Unpack Foreign arrays.
 instance Unpack (Array F DIM1 a)  (Int, Int, ForeignPtr a) where
  unpack (FArray (KArray (UFArray (Z :. len) offset fptr))) = (len, offset, fptr)
  repack _ (len, offset, fptr) = FArray (KArray (UFArray (Z :. len) offset fptr))
 
 
 -- Window ---------------------------------------------------------------------
+-- | Windowing Unsafe Foreign arrays.
 instance Storable a 
       => Window UF DIM1 a where
  window (Z :. start) sh' (UFArray _ offset ptr)
@@ -130,18 +132,14 @@ instance Storable a
 
 
 -- Target ---------------------------------------------------------------------
+-- | Unsafe Foreign buffers.
 instance Storable a 
       => Target UF a (Int, Int, ForeignPtr a) where
  data Buffer UF a
-        = UFBuffer
-        { -- | Starting position of data, in elements.
-          _ufBufferStart :: !Int
-
-          -- | Length of buffer, in elements.
-        , _ufBufferLen   :: !Int 
-
-          -- | Pointer to buffer data.
-        , _ufBufferFPtr  :: !(ForeignPtr a) }
+        = UFBuffer 
+                !Int            -- starting position of data, in elements.
+                !Int            -- length of buffer, in elements.
+                !(ForeignPtr a) -- element data.
 
  unsafeNewBuffer len
   = do  let (proxy :: a) = undefined
@@ -194,6 +192,7 @@ instance Storable a
  {-# SPECIALIZE instance Target UF Word64 (Int, Int, ForeignPtr Word64) #-}
 
 
+-- | Unpack Unsafe Foreign buffers.
 instance Unpack (Buffer UF a) (Int, Int, ForeignPtr a) where
  unpack (UFBuffer start len fptr) = (start, len, fptr)
  repack _ (start, len, fptr)      = UFBuffer start len fptr
@@ -231,6 +230,7 @@ fromByteString (BS.PS fptr offset len)
 
 
 -- Comparisons ----------------------------------------------------------------
+-- | Equality of Unsafe Foreign arrays.
 instance Eq (Vector UF Word8) where
  (==) (UFArray (Z :. len1) offset1 fptr1)
       (UFArray (Z :. len2) offset2 fptr2)
@@ -254,6 +254,7 @@ instance Eq (Vector UF Word8) where
  {-# INLINE (==) #-}
 
 
+-- | Equality of Unsafe Foreign arrays.
 instance Eq (Vector UF Char) where
  (==) (UFArray (Z :. len1) offset1 fptr1)
       (UFArray (Z :. len2) offset2 fptr2)

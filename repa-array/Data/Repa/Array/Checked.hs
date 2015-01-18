@@ -1,9 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Array.Checked
         ( K      (..)
-        , Array  (..)
         , Repr   (..)
-        , Buffer(..)
+        , Bulk   (..),   Array  (..)
+        , Buffer (..)
         , checked,      unchecked)
 where
 import Data.Repa.Array.Shape

@@ -48,14 +48,9 @@ instance Storable a
       => Target F a (Int, Int, ForeignPtr a) where
  data Buffer F a
         = FBuffer
-        { -- | Starting position of data, in elements.
-          _fBufferStart :: !Int
-
-          -- | Length of buffer, in elements.
-        , _fBufferLen   :: !Int 
-
-          -- | Pointer to buffer data.
-        , _fBufferFPtr  :: !(ForeignPtr a) }
+                !Int            -- Starting position of data, in elements.
+                !Int            -- Length of buffer, in elements.
+                !(ForeignPtr a) -- element data.
 
  unsafeNewBuffer len
   = do  let (proxy :: a) = undefined
@@ -107,6 +102,7 @@ instance Storable a
  {-# SPECIALIZE instance Target F Word64 (Int, Int, ForeignPtr Word64) #-}
 
 
+-- | Unpack foreign buffers.
 instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
  unpack (FBuffer start len fptr)  = (start, len, fptr)
  repack _ (start, len, fptr)      = FBuffer start len fptr
@@ -144,11 +140,13 @@ toByteString (FArray vec)
 
 
 -- Comparisons ----------------------------------------------------------------
+-- | Equality of Foreign arrays.
 instance Eq (Vector F Word8) where
  (==) (FArray (KArray arr1)) (FArray (KArray arr2)) = arr1 == arr2
  {-# INLINE (==) #-}
 
 
+-- | Equality of Foreign arrays.
 instance Eq (Vector F Char)  where
  (==) (FArray (KArray arr1)) (FArray (KArray arr2)) = arr1 == arr2
  {-# INLINE (==) #-}
