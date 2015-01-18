@@ -16,26 +16,25 @@ data W r = W r
 
 -- | Windowed arrays.
 instance Repr r => Repr (W r) where
+ type Safe   (W r) = W r
+ type Unsafe (W r) = W r
  repr = W repr
-
+ {-# INLINE repr #-}
+ 
 
 -- | Windowed arrays.
 instance Bulk r sh a 
       => Bulk (W r) sh a where
 
- data Array (W r) sh a
-        = WArray !sh !sh !(Array r sh a)
-
- extent (WArray _ sh _) = sh
- {-# INLINE [1] extent #-}
-
- index  (WArray start sh buffer) ix
-        | not $ inShapeRange zeroDim sh ix
-        = error "repa-bulk.index[W]: index out of bounds"
-
-        | otherwise
-        = index buffer (addDim start ix)
- {-# INLINE [1] index #-}
+ data Array (W r) sh a                  = WArray !sh !sh !(Array r sh a)
+ extent (WArray _ sh _)                 = sh
+ index  (WArray start _ buffer) ix      = index buffer (addDim start ix)
+ safe   arr                             = arr
+ unsafe arr                             = arr
+ {-# INLINE extent #-}
+ {-# INLINE index  #-}
+ {-# INLINE safe   #-}
+ {-# INLINE unsafe #-}
 
 
 -- | Wrap a window around an exiting array.
@@ -62,3 +61,4 @@ instance Bulk r sh a => Window (W r) sh a where
  window start _shape (WArray wStart wShape arr)
         = WArray (addDim wStart start) wShape arr
  {-# INLINE window #-}
+

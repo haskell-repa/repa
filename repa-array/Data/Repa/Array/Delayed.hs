@@ -30,8 +30,11 @@ data D = D
 
 -- | Delayed arrays.
 instance Repr D where
+ type Safe   D = D
+ type Unsafe D = D
  repr = D
-
+ {-# INLINE repr #-}
+ 
 
 -- | Delayed arrays.
 instance Shape sh => Bulk D sh a where
@@ -40,11 +43,17 @@ instance Shape sh => Bulk D sh a where
                 !sh 
                 (sh -> a) 
 
- index       (ADelayed _  f) ix  = f ix
+ index (ADelayed _  f) ix  = f ix
  {-# INLINE index #-}
 
- extent (ADelayed sh _)          = sh
+ extent (ADelayed sh _)    = sh
  {-# INLINE extent #-}
+
+ safe arr       = arr
+ {-# INLINE safe #-}
+
+ unsafe arr     = arr
+ {-# INLINE unsafe #-}
 
 
 -- Load -----------------------------------------------------------------------

@@ -11,7 +11,6 @@ module Data.Repa.Array.Material.Unsafe.Unboxed
 
         -- * Conversions
         , fromVector, toVector)
-
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
@@ -40,14 +39,6 @@ import Data.Word
 --
 data UU = UU
 
--- | Unsafe Unboxed arrays.
-instance Repr UU where
- type Safe UU   = U
- type Unsafe UU = UU
- repr           = UU
- {-# INLINE repr #-}
-
-
 -- | Unboxed arrays are represented as unboxed vectors.
 --
 --   The implementation uses "Data.Vector.Unboxed" which is based on type
@@ -57,6 +48,16 @@ instance Repr UU where
 --   This is the most efficient representation for numerical data.
 --
 data U = U
+
+
+-------------------------------------------------------------------------------
+-- | Unsafe Unboxed arrays.
+instance Repr UU where
+ type Safe UU   = U
+ type Unsafe UU = UU
+ repr           = UU
+ {-# INLINE repr #-}
+
 
 -- | Unboxed arrays.
 instance Repr U where
@@ -95,6 +96,7 @@ deriving instance (Show sh, Show e, U.Unbox e) => Show (Array UU sh e)
 -- | Unboxed arrays.
 instance (Shape sh, U.Unbox e) 
       => Bulk U sh e where
+
  data Array U sh e              = UArray !(Array (K UU) sh e)
  extent (UArray inner)          = extent inner
  index  (UArray inner) ix       = index  inner ix
@@ -114,6 +116,8 @@ instance (Shape sh, U.Unbox e)
  {-# SPECIALIZE instance Bulk U DIM1 Word16  #-}
  {-# SPECIALIZE instance Bulk U DIM1 Word32  #-}
  {-# SPECIALIZE instance Bulk U DIM1 Word64  #-}
+
+deriving instance (Show sh, Show e, U.Unbox e) => Show (Array U sh e)
 
 
 -- Window ---------------------------------------------------------------------

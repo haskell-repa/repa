@@ -95,13 +95,13 @@ instance Unpack (Buffer r e) t
  {-# INLINE repack #-}
 
 
--- | Yield a checked version of an array.
+-- | O(1). Yield a checked version of an array.
 checked   :: Array r sh a     -> Array (K r) sh a
 checked arr = KArray arr
 {-# INLINE checked #-}
 
 
--- | Yield the unchecked version of an array.
+-- | O(1). Yield the unchecked version of an array.
 unchecked :: Array (K r) sh a -> Array r sh a
 unchecked (KArray arr) = arr
 {-# INLINE unchecked #-}

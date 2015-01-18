@@ -35,7 +35,7 @@ hGetArray h len
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
 hGetArrayPre :: Handle -> Int -> Vector F Word8 -> IO (Vector F Word8)
-hGetArrayPre h len (KArray (UFArray shPre offset fptrPre))
+hGetArrayPre h len (FArray (KArray (UFArray shPre offset fptrPre)))
  = F.withForeignPtr fptrPre
  $ \ptrPre' -> do   
         let ptrPre      = F.plusPtr ptrPre' offset
@@ -55,7 +55,7 @@ hGetArrayPre h len (KArray (UFArray shPre offset fptrPre))
 --     without copying it through the GHC heap.
 --
 hPutArray :: Handle -> Vector F Word8 -> IO ()
-hPutArray h (KArray (UFArray shPre offset fptr))
+hPutArray h (FArray (KArray (UFArray shPre offset fptr)))
  = F.withForeignPtr fptr
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset

@@ -1,11 +1,12 @@
 
 module Data.Repa.Array.Material.Unsafe.Foreign
-        ( UF    (..)
+        ( UF    (..),           F(..)
         , Array (..)
         , fromForeignPtr,       toForeignPtr
         , fromByteString,       toByteString)
 where
 import Data.Repa.Array.Delayed
+import Data.Repa.Array.Checked
 import Data.Repa.Array.Window
 import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Target
@@ -27,22 +28,44 @@ import qualified Data.ByteString.Internal       as BS
 -- | Arrays represented as foreign buffers in the C heap.
 data UF = UF
 
+-- | Arrays represented as foreign buffers in the C heap.
+data F  = F
 
+
+------------------------------------------------------------------------------
 -- | Unsafe Foreign arrays.
 instance Repr UF where
+ type Safe   UF  = F
+ type Unsafe UF  = UF
  repr = UF
+ {-# INLINE repr #-}
+
+-- | Foreign arrays.
+instance Repr F where
+ type Safe F     = F
+ type Unsafe F   = UF
+ repr = F
+ {-# INLINE repr #-}
 
 
+-------------------------------------------------------------------------------
 -- | Unsafe Foreign arrays.
-instance (Shape sh, Storable a) => Bulk UF sh a where
+instance (Shape sh, Storable a) 
+       => Bulk UF sh a where
+
  data Array UF sh a       = UFArray !sh !Int !(ForeignPtr a)
  extent (UFArray sh _ _)  = sh
  index (UFArray sh offset fptr) ix
         = unsafePerformIO 
         $ withForeignPtr fptr
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
+ safe   arr             = FArray (checked arr)
+ unsafe arr             = arr
  {-# INLINE extent #-}
- {-# INLINE index #-}
+ {-# INLINE index  #-}
+ {-# INLINE safe   #-}
+ {-# INLINE unsafe #-}
+ {-# SPECIALIZE instance Bulk UF DIM1 Char    #-}
  {-# SPECIALIZE instance Bulk UF DIM1 Int     #-}
  {-# SPECIALIZE instance Bulk UF DIM1 Float   #-}
  {-# SPECIALIZE instance Bulk UF DIM1 Double  #-}
@@ -51,13 +74,43 @@ instance (Shape sh, Storable a) => Bulk UF sh a where
  {-# SPECIALIZE instance Bulk UF DIM1 Word32  #-}
  {-# SPECIALIZE instance Bulk UF DIM1 Word64  #-}
 
+deriving instance (Show sh, Show e) => Show (Array UF sh e)
 
+
+-- | Foreign arrays.
+instance (Shape sh, Storable a) 
+       => Bulk F sh a where
+
+ data Array F sh a        = FArray !(Array (K UF) sh a)
+ extent (FArray inner)    = extent inner
+ index  (FArray inner) ix = index inner ix
+ safe   arr               = arr
+ unsafe (FArray inner)    = unchecked inner
+ {-# INLINE extent #-}
+ {-# INLINE index  #-}
+ {-# INLINE safe   #-}
+ {-# INLINE unsafe #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Char    #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Int     #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Float   #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Double  #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word8   #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word16  #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word32  #-}
+ {-# SPECIALIZE instance Bulk F DIM1 Word64  #-}
+
+deriving instance (Show sh, Show e) => Show (Array F sh e)
+
+
+-- Unpack ---------------------------------------------------------------------
 instance Unpack (Array UF DIM1 a) (Int, Int, ForeignPtr a) where
  unpack (UFArray (Z :. len) offset fptr) = (len, offset, fptr)
  repack _ (len, offset, fptr)            = UFArray (Z :. len) offset fptr
 
 
-deriving instance (Show sh, Show e) => Show (Array UF sh e)
+instance Unpack (Array F DIM1 a)  (Int, Int, ForeignPtr a) where
+ unpack (FArray (KArray (UFArray (Z :. len) offset fptr))) = (len, offset, fptr)
+ repack _ (len, offset, fptr) = FArray (KArray (UFArray (Z :. len) offset fptr))
 
 
 -- Window ---------------------------------------------------------------------
@@ -66,6 +119,7 @@ instance Storable a
  window (Z :. start) sh' (UFArray _ offset ptr)
         = UFArray sh' (offset + start) ptr
  {-# INLINE window #-}
+ {-# SPECIALIZE instance Window UF DIM1 Char    #-}
  {-# SPECIALIZE instance Window UF DIM1 Int     #-}
  {-# SPECIALIZE instance Window UF DIM1 Float   #-}
  {-# SPECIALIZE instance Window UF DIM1 Double  #-}
@@ -130,6 +184,7 @@ instance Storable a
   = touchForeignPtr fptr
  {-# INLINE touchBuffer #-}
 
+ {-# SPECIALIZE instance Target UF Char   (Int, Int, ForeignPtr Char)   #-}
  {-# SPECIALIZE instance Target UF Int    (Int, Int, ForeignPtr Int)    #-}
  {-# SPECIALIZE instance Target UF Float  (Int, Int, ForeignPtr Float)  #-}
  {-# SPECIALIZE instance Target UF Double (Int, Int, ForeignPtr Double) #-}
@@ -148,9 +203,7 @@ instance Unpack (Buffer UF a) (Int, Int, ForeignPtr a) where
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a `ForeignPtr` as an array.
-fromForeignPtr
-        :: Shape sh
-        => sh -> ForeignPtr a -> Array UF sh a
+fromForeignPtr :: Shape sh => sh -> ForeignPtr a -> Array UF sh a
 fromForeignPtr !sh !fptr
         = UFArray sh 0 fptr
 {-# INLINE fromForeignPtr #-}

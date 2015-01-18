@@ -7,7 +7,6 @@ module Data.Repa.Array.Shape.Slice
 	, SliceShape
 	, Slice		(..))
 where
-import Data.Repa.Array.Shape.Base
 import Data.Repa.Array.Shape.Index
 import Prelude		        hiding (replicate, drop)
 

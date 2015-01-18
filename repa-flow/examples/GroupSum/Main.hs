@@ -50,7 +50,7 @@ pGroupSum fiNames fiVals foNames foSums
         iNames  <-  fromFiles [fiNames] sourceLines
 
         iVals   <-  map_i U readDouble 
-                =<< fromFiles [fiVals] sourceLines
+                =<< fromFiles [fiVals]  sourceLines
 
         -- Sum up the values segment-wise.
         iAgg    <-  foldGroupsBy_i B (==) (+) 0 iNames iVals
