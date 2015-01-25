@@ -1,7 +1,11 @@
-
+{-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Unsafe.Foreign
-        ( UF    (..),           F(..)
-        , Array (..)
+        ( U.F    (..)
+        , Array  (..)
+        , Buffer (..)
+        , Window (..)
+
+          -- * Conversions
         , fromForeignPtr,       toForeignPtr
         , fromByteString,       toByteString)
 where
@@ -18,124 +22,131 @@ import Foreign.Storable
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils
 import System.IO.Unsafe
-import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 import Data.Repa.Fusion.Unpack
-import Data.ByteString                          (ByteString)
-import qualified Data.ByteString.Internal       as BS
-
-
--------------------------------------------------------------------------------
--- | Representation tag for Unsafe Foreign arrays.
-data UF = UF
-
--- | Representation tag for Foreign arrays.
-data F  = F
+import Data.ByteString                                  (ByteString)
+import qualified Foreign.ForeignPtr.Unsafe              as Unsafe
+import qualified Data.Repa.Array.Material.Safe.Base     as S
+import qualified Data.Repa.Array.Material.Unsafe.Base   as U
+import qualified Data.ByteString.Internal               as BS
 
 
 ------------------------------------------------------------------------------
 -- | Unsafe Foreign arrays.
-instance Repr UF where
- type Safe   UF  = F
- type Unsafe UF  = UF
- repr = UF
+instance Repr U.F where
+ type Safe   U.F  = S.F
+ type Unsafe U.F  = U.F
+ repr             = U.F
  {-# INLINE repr #-}
 
+
 -- | Foreign arrays.
-instance Repr F where
- type Safe F     = F
- type Unsafe F   = UF
- repr = F
+instance Repr S.F where
+ type Safe   S.F  = S.F
+ type Unsafe S.F  = U.F
+ repr             = S.F
  {-# INLINE repr #-}
 
 
 -------------------------------------------------------------------------------
 -- | Unsafe Foreign arrays.
 instance (Shape sh, Storable a) 
-       => Bulk UF sh a where
+       => Bulk U.F sh a where
 
- data Array UF sh a       = UFArray !sh !Int !(ForeignPtr a)
+ data Array U.F sh a      = UFArray !sh !Int !(ForeignPtr a)
  extent (UFArray sh _ _)  = sh
- index (UFArray sh offset fptr) ix
+ index  (UFArray sh offset fptr) ix
         = unsafePerformIO 
         $ withForeignPtr fptr
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
- safe   arr             = FArray (checked arr)
+ safe   arr             = SFArray (checked arr)
  unsafe arr             = arr
  {-# INLINE extent #-}
  {-# INLINE index  #-}
  {-# INLINE safe   #-}
  {-# INLINE unsafe #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Char    #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Int     #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Float   #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Double  #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Word8   #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Word16  #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Word32  #-}
- {-# SPECIALIZE instance Bulk UF DIM1 Word64  #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Char    #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Int     #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Float   #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Double  #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Word8   #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Word16  #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Word32  #-}
+ {-# SPECIALIZE instance Bulk U.F DIM1 Word64  #-}
 
-deriving instance (Show sh, Show e) => Show (Array UF sh e)
+deriving instance (Show sh, Show e) => Show (Array U.F sh e)
 
 
+-------------------------------------------------------------------------------
 -- | Foreign arrays.
 instance (Shape sh, Storable a) 
-       => Bulk F sh a where
+       => Bulk S.F sh a where
 
- data Array F sh a        = FArray !(Array (K UF) sh a)
- extent (FArray inner)    = extent inner
- index  (FArray inner) ix = index inner ix
- safe   arr               = arr
- unsafe (FArray inner)    = unchecked inner
+ data Array S.F sh a       = SFArray !(Array (K U.F) sh a)
+ extent (SFArray inner)    = extent inner
+ index  (SFArray inner) ix = index inner ix
+ safe   arr                = arr
+ unsafe (SFArray inner)    = unchecked inner
  {-# INLINE extent #-}
  {-# INLINE index  #-}
  {-# INLINE safe   #-}
  {-# INLINE unsafe #-}
- {-# SPECIALIZE instance Bulk F DIM1 Char    #-}
- {-# SPECIALIZE instance Bulk F DIM1 Int     #-}
- {-# SPECIALIZE instance Bulk F DIM1 Float   #-}
- {-# SPECIALIZE instance Bulk F DIM1 Double  #-}
- {-# SPECIALIZE instance Bulk F DIM1 Word8   #-}
- {-# SPECIALIZE instance Bulk F DIM1 Word16  #-}
- {-# SPECIALIZE instance Bulk F DIM1 Word32  #-}
- {-# SPECIALIZE instance Bulk F DIM1 Word64  #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Char    #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Int     #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Float   #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Double  #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Word8   #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Word16  #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Word32  #-}
+ {-# SPECIALIZE instance Bulk S.F DIM1 Word64  #-}
 
-deriving instance (Show sh, Show e) => Show (Array F sh e)
+deriving instance (Show sh, Show e) => Show (Array S.F sh e)
 
 
--- Unpack ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Unpack Unsafe Foreign arrays.
-instance Unpack (Array UF DIM1 a) (Int, Int, ForeignPtr a) where
- unpack (UFArray (Z :. len) offset fptr) = (len, offset, fptr)
- repack _ (len, offset, fptr)            = UFArray (Z :. len) offset fptr
+instance Unpack (Array U.F DIM1 a) (Int, Int, ForeignPtr a) where
+ unpack (UFArray (Z :. len) offset fptr) 
+        = (len, offset, fptr)
+ {-# INLINE unpack #-}
+
+ repack _ (len, offset, fptr)
+        = UFArray (Z :. len) offset fptr
+ {-# INLINE repack #-}
+
 
 -- | Unpack Foreign arrays.
-instance Unpack (Array F DIM1 a)  (Int, Int, ForeignPtr a) where
- unpack (FArray (KArray (UFArray (Z :. len) offset fptr))) = (len, offset, fptr)
- repack _ (len, offset, fptr) = FArray (KArray (UFArray (Z :. len) offset fptr))
+instance Unpack (Array S.F DIM1 a)  (Int, Int, ForeignPtr a) where
+ unpack (SFArray (KArray (UFArray (Z :. len) offset fptr))) 
+        = (len, offset, fptr)
+ {-# INLINE unpack #-}
+
+ repack _ (len, offset, fptr) 
+        = SFArray (KArray (UFArray (Z :. len) offset fptr))
+ {-# INLINE repack #-}
 
 
--- Window ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Windowing Unsafe Foreign arrays.
 instance Storable a 
-      => Window UF DIM1 a where
+      => Window U.F DIM1 a where
  window (Z :. start) sh' (UFArray _ offset ptr)
         = UFArray sh' (offset + start) ptr
  {-# INLINE window #-}
- {-# SPECIALIZE instance Window UF DIM1 Char    #-}
- {-# SPECIALIZE instance Window UF DIM1 Int     #-}
- {-# SPECIALIZE instance Window UF DIM1 Float   #-}
- {-# SPECIALIZE instance Window UF DIM1 Double  #-}
- {-# SPECIALIZE instance Window UF DIM1 Word8   #-}
- {-# SPECIALIZE instance Window UF DIM1 Word16  #-}
- {-# SPECIALIZE instance Window UF DIM1 Word32  #-}
- {-# SPECIALIZE instance Window UF DIM1 Word64  #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Char    #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Int     #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Float   #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Double  #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Word8   #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Word16  #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Word32  #-}
+ {-# SPECIALIZE instance Window U.F DIM1 Word64  #-}
 
 
--- Target ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Unsafe Foreign buffers.
 instance Storable a 
-      => Target UF a (Int, Int, ForeignPtr a) where
- data Buffer UF a
+      => Target U.F a (Int, Int, ForeignPtr a) where
+ data Buffer U.F a
         = UFBuffer 
                 !Int            -- starting position of data, in elements.
                 !Int            -- length of buffer, in elements.
@@ -182,56 +193,56 @@ instance Storable a
   = touchForeignPtr fptr
  {-# INLINE touchBuffer #-}
 
- {-# SPECIALIZE instance Target UF Char   (Int, Int, ForeignPtr Char)   #-}
- {-# SPECIALIZE instance Target UF Int    (Int, Int, ForeignPtr Int)    #-}
- {-# SPECIALIZE instance Target UF Float  (Int, Int, ForeignPtr Float)  #-}
- {-# SPECIALIZE instance Target UF Double (Int, Int, ForeignPtr Double) #-}
- {-# SPECIALIZE instance Target UF Word8  (Int, Int, ForeignPtr Word8)  #-}
- {-# SPECIALIZE instance Target UF Word16 (Int, Int, ForeignPtr Word16) #-}
- {-# SPECIALIZE instance Target UF Word32 (Int, Int, ForeignPtr Word32) #-}
- {-# SPECIALIZE instance Target UF Word64 (Int, Int, ForeignPtr Word64) #-}
+ {-# SPECIALIZE instance Target U.F Char   (Int, Int, ForeignPtr Char)   #-}
+ {-# SPECIALIZE instance Target U.F Int    (Int, Int, ForeignPtr Int)    #-}
+ {-# SPECIALIZE instance Target U.F Float  (Int, Int, ForeignPtr Float)  #-}
+ {-# SPECIALIZE instance Target U.F Double (Int, Int, ForeignPtr Double) #-}
+ {-# SPECIALIZE instance Target U.F Word8  (Int, Int, ForeignPtr Word8)  #-}
+ {-# SPECIALIZE instance Target U.F Word16 (Int, Int, ForeignPtr Word16) #-}
+ {-# SPECIALIZE instance Target U.F Word32 (Int, Int, ForeignPtr Word32) #-}
+ {-# SPECIALIZE instance Target U.F Word64 (Int, Int, ForeignPtr Word64) #-}
 
 
 -- | Unpack Unsafe Foreign buffers.
-instance Unpack (Buffer UF a) (Int, Int, ForeignPtr a) where
+instance Unpack (Buffer U.F a) (Int, Int, ForeignPtr a) where
  unpack (UFBuffer start len fptr) = (start, len, fptr)
  repack _ (start, len, fptr)      = UFBuffer start len fptr
  {-# INLINE unpack #-}
  {-# INLINE repack #-}
 
 
--- Conversions ----------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | O(1). Wrap a `ForeignPtr` as an array.
-fromForeignPtr :: Shape sh => sh -> ForeignPtr a -> Array UF sh a
+fromForeignPtr :: Shape sh => sh -> ForeignPtr a -> Array U.F sh a
 fromForeignPtr !sh !fptr
         = UFArray sh 0 fptr
 {-# INLINE fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
-toForeignPtr :: Array UF sh a -> ForeignPtr a
+toForeignPtr :: Array U.F sh a -> ForeignPtr a
 toForeignPtr (UFArray _ _ fptr)
         = fptr
 {-# INLINE toForeignPtr #-}
 
 
 -- | O(1). Convert a foreign 'Vector' to a `ByteString`.
-toByteString :: Vector UF Word8 -> ByteString
+toByteString :: Vector U.F Word8 -> ByteString
 toByteString (UFArray (Z :. len) offset fptr)
  = BS.PS fptr offset len
 {-# INLINE toByteString #-}
 
 
 -- | O(1). Convert a `ByteString` to an foreign `Vector`.
-fromByteString :: ByteString -> Vector UF Word8
+fromByteString :: ByteString -> Vector U.F Word8
 fromByteString (BS.PS fptr offset len)
  = UFArray (Z :. len) offset fptr
 {-# INLINE fromByteString #-}
 
 
--- Comparisons ----------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Equality of Unsafe Foreign arrays.
-instance Eq (Vector UF Word8) where
+instance Eq (Vector U.F Word8) where
  (==) (UFArray (Z :. len1) offset1 fptr1)
       (UFArray (Z :. len2) offset2 fptr2)
   | len1 == len2
@@ -255,7 +266,7 @@ instance Eq (Vector UF Word8) where
 
 
 -- | Equality of Unsafe Foreign arrays.
-instance Eq (Vector UF Char) where
+instance Eq (Vector U.F Char) where
  (==) (UFArray (Z :. len1) offset1 fptr1)
       (UFArray (Z :. len2) offset2 fptr2)
   |  len1 == len2

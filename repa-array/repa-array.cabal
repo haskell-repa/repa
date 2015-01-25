@@ -73,6 +73,9 @@ Library
         Data.Repa.Array.Internals.Load
         Data.Repa.Array.Internals.Target
 
+        Data.Repa.Array.Material.Safe.Base
+        Data.Repa.Array.Material.Unsafe.Base
+
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

@@ -34,7 +34,7 @@ readDouble vec
 
 -- | Convert a foreign vector of bytes to a Double.
 readDoubleFromBytes :: Vector F Word8 -> Double
-readDoubleFromBytes (FArray (KArray (UFArray (Z :. len) offset fptr)))
+readDoubleFromBytes (SFArray (KArray (UFArray (Z :. len) offset fptr)))
  = unsafePerformIO
  $ F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->

@@ -1,9 +1,9 @@
 
 module Data.Repa.Array.Material.Unsafe
-        ( UB (..)
-        , UU (..)
-        , UF (..)
-        , UN (..))
+        ( B  (..)
+        , U  (..)
+        , F  (..)
+        , N  (..))
 where
 import Data.Repa.Array.Material.Unsafe.Boxed
 import Data.Repa.Array.Material.Unsafe.Unboxed

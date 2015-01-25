@@ -33,6 +33,8 @@
 --
 module Data.Repa.Flow
         ( module Data.Repa.Flow.States
+        , module Data.Repa.Array
+        , module Data.Repa.Array.Material.Safe
         , module Data.Repa.Eval.Array
 
         -- * Flow types
@@ -41,13 +43,6 @@ module Data.Repa.Flow
 
         -- * Evaluation
         , drain
-
-        -- * Representations
-        -- | These are the representations that can be used for the 
-        --   individual chunks in a flow.
-        , U(..), B(..), F(..)
-        , A.Array,    A.Vector
-        , A.Material, A.Bulk, A.Window, A.DIM1
 
         -- * Conversion
         , fromList,     fromLists
@@ -89,12 +84,14 @@ module Data.Repa.Flow
         , FoldsWorthy)
 where
 import Data.Repa.Flow.States
-import Data.Repa.Eval.Array                     as A
 import Data.Repa.Eval.Array
-import Data.Repa.Array.Foreign                  as A
-import Data.Repa.Array                          as A hiding (fromList, fromLists)
-import qualified Data.Repa.Flow.Chunked         as C hiding (next)
-import qualified Data.Repa.Flow.Generic         as G hiding (next)
+import Data.Repa.Array.Material.Safe
+import Data.Repa.Eval.Array                      as A
+import Data.Repa.Array                           hiding (fromList)
+import Data.Repa.Array                           as A hiding (fromList)
+import qualified Data.Repa.Array.Material.Unsafe        as U
+import qualified Data.Repa.Flow.Chunked          as C hiding (next)
+import qualified Data.Repa.Flow.Generic          as G hiding (next)
 import Control.Monad
 
 
@@ -496,7 +493,7 @@ foldGroupsBy_i
         -> IO (Sources r3 (n, b))
 
 foldGroupsBy_i r3 pGroup f z sNames sVals
- = do   segLens <- groupsBy_i B pGroup sNames
+ = do   segLens <- groupsBy_i U.B pGroup sNames
         folds_i r3 f z segLens sVals
 {-# INLINE foldGroupsBy_i #-}
 

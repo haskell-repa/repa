@@ -18,14 +18,12 @@
 -- @
 --
 module Main where
-import Data.Repa.Flow.IO.Default        as F
-import Data.Repa.Flow                   as F
-import Data.Repa.Array                  as A
-import Data.Repa.Array.Foreign          as A
-import Data.Repa.Array.Unsafe.Nested    as A
-import Data.Repa.Array.Unsafe.Unboxed   as A
-import Data.Repa.IO.Convert             as A
-import qualified Data.Repa.Flow.Generic as G
+import Data.Repa.Flow.IO.Default                        as F
+import Data.Repa.Flow                                   as F
+import Data.Repa.Array                                  as A
+import Data.Repa.Array.Material.Unsafe.Nested           as A
+import Data.Repa.IO.Convert                             as A
+import qualified Data.Repa.Flow.Generic                 as G
 
 import System.Environment
 import Data.Char

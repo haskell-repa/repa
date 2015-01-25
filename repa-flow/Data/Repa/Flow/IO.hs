@@ -18,8 +18,9 @@ where
 import Data.Repa.Flow
 import Data.Repa.Flow.IO.TSV                    as F
 import Data.Repa.Eval.Array                     as A
+import Data.Repa.Array.Material.Unsafe.Nested   as A
 import Data.Repa.Fusion.Unpack                  as F
-import Data.Repa.Array                          as A hiding (fromList, fromLists)
+import Data.Repa.Array                          as A hiding (fromList)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
 import Data.Word
@@ -54,7 +55,7 @@ sourceLines
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources UN (Vector F Char))
+        -> IO (Sources N (Vector F Char))
 sourceLines nChunk fails hs
  =   mapChunks_i chopChunk
  =<< G.sourceRecords nChunk isNewLine fails hs
@@ -99,7 +100,7 @@ sourceRecords
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources UN (Vector F Word8))
+        -> IO (Sources N (Vector F Word8))
 sourceRecords = G.sourceRecords
 {-# INLINE sourceRecords #-}
 

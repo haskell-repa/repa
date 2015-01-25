@@ -1,7 +1,8 @@
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Safe.Boxed
-        ( B(..)
-        , Array (..)
+        ( B      (..)
+        , Array  (..)
+        , Buffer (..)
         , fromVector, toVector)
 where
 import Data.Repa.Eval.Array
@@ -11,46 +12,48 @@ import Data.Repa.Array.Checked
 import Data.Repa.Array.Shape
 import Data.Repa.Array.Material.Unsafe.Boxed
 import Data.Repa.Fusion.Unpack
-import qualified Data.Vector                    as V
-import qualified Data.Vector.Mutable            as VM
+import qualified Data.Repa.Array.Material.Safe.Base     as S
+import qualified Data.Repa.Array.Material.Unsafe.Base   as U
+import qualified Data.Vector                            as V
+import qualified Data.Vector.Mutable                    as VM
 import Control.Monad
 
 
--- Window ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Boxed windows.
-instance Window B DIM1 a where
- window (Z :. start) (Z :. len) (BArray (KArray (UBArray _sh vec)))
-        = BArray (KArray (UBArray (Z :. len) (V.slice start len vec)))
+instance Window S.B DIM1 a where
+ window (Z :. start) (Z :. len) (SBArray (KArray (UBArray _sh vec)))
+        = SBArray (KArray (UBArray (Z :. len) (V.slice start len vec)))
  {-# INLINE window #-}
 
 
--- Target ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Boxed buffers.
-instance Target B a (VM.IOVector a) where
- data Buffer B a 
-  = BBuffer (VM.IOVector a)
+instance Target S.B a (VM.IOVector a) where
+ data Buffer S.B a 
+  = SBBuffer (VM.IOVector a)
 
  unsafeNewBuffer len
-  = liftM BBuffer (VM.unsafeNew len)
+  = liftM SBBuffer (VM.unsafeNew len)
  {-# INLINE unsafeNewBuffer #-}
 
- unsafeWriteBuffer (BBuffer mvec) ix
+ unsafeWriteBuffer (SBBuffer mvec) ix
   = VM.unsafeWrite mvec ix
  {-# INLINE unsafeWriteBuffer #-}
 
- unsafeGrowBuffer (BBuffer mvec) bump
+ unsafeGrowBuffer (SBBuffer mvec) bump
   = do  mvec'   <- VM.unsafeGrow mvec bump
-        return  $ BBuffer mvec'
+        return  $ SBBuffer mvec'
  {-# INLINE unsafeGrowBuffer #-}
 
- unsafeSliceBuffer start len (BBuffer mvec)
+ unsafeSliceBuffer start len (SBBuffer mvec)
   = do  let mvec'  = VM.unsafeSlice start len mvec
-        return  $  BBuffer mvec'
+        return  $  SBBuffer mvec'
  {-# INLINE unsafeSliceBuffer #-}
 
- unsafeFreezeBuffer sh (BBuffer mvec)     
+ unsafeFreezeBuffer sh (SBBuffer mvec)     
   = do  vec     <- V.unsafeFreeze mvec
-        return  $  BArray (KArray (UBArray sh vec))
+        return  $  SBArray (KArray (UBArray sh vec))
  {-# INLINE unsafeFreezeBuffer #-}
 
  touchBuffer _ 
@@ -59,22 +62,22 @@ instance Target B a (VM.IOVector a) where
 
 
 -- | Unpack boxed buffers.
-instance Unpack (Buffer B a) (VM.IOVector a) where
- unpack (BBuffer vec) = vec
- repack _ vec         = BBuffer vec
+instance Unpack (Buffer S.B a) (VM.IOVector a) where
+ unpack (SBBuffer vec) = vec
+ repack _ vec          = SBBuffer vec
  {-# INLINE unpack #-}
  {-# INLINE repack #-}
 
 
--- Conversions ----------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | O(1). Wrap a boxed vector as an array.
-fromVector :: Shape sh => sh -> V.Vector e -> Array B sh e
-fromVector sh vec = BArray $ checked $ UBArray sh vec
+fromVector :: Shape sh => sh -> V.Vector e -> Array S.B sh e
+fromVector sh vec = SBArray $ checked $ UBArray sh vec
 {-# INLINE [1] fromVector #-}
 
 
 -- | O(1). Unpack a boxed vector from an array.
-toVector :: Array B sh e -> V.Vector e
-toVector (BArray (KArray (UBArray _ vec))) = vec
+toVector :: Array S.B sh e -> V.Vector e
+toVector (SBArray (KArray (UBArray _ vec))) = vec
 {-# INLINE [1] toVector #-}
 

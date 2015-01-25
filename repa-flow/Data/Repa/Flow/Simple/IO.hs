@@ -9,7 +9,8 @@ where
 import Data.Repa.Flow.Simple.Base
 import System.IO
 import Data.Word
-import Data.Repa.Array.Foreign                  as A
+import Data.Repa.Array.Material.Safe            as A
+import Data.Repa.Array.Material.Unsafe.Nested   as A
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 
@@ -39,7 +40,7 @@ sourceRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> Handle               -- ^ File handle.
-        -> IO (Source IO (Vector UN (Vector F Word8)))
+        -> IO (Source IO (Vector N (Vector F Word8)))
 
 sourceRecords len pSep aFail h
  = do   s0      <- G.sourceRecords len pSep aFail [h]

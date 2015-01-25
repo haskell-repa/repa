@@ -18,7 +18,8 @@ where
 import Data.Repa.Flow.Chunked.Base
 import System.IO
 import Data.Word
-import Data.Repa.Array.Foreign                  as A
+import Data.Repa.Array.Material.Safe
+import Data.Repa.Array.Material.Unsafe.Nested   as A
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 
@@ -29,7 +30,7 @@ sourceRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources Int IO UN (Vector F Word8))
+        -> IO (Sources Int IO N (Vector F Word8))
 sourceRecords = G.sourceRecords
 {-# INLINE [2] sourceRecords #-}
 

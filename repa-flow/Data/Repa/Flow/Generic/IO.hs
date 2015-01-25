@@ -16,8 +16,8 @@ where
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Array.Unsafe.Nested            as UN
-import Data.Repa.Array.Foreign                  as A
+import Data.Repa.Array.Material.Safe
+import Data.Repa.Array.Material.Unsafe.Nested   as A
 import Data.Repa.Array                          as A
 import Data.Repa.IO.Array
 import Data.Char
@@ -73,10 +73,10 @@ sourceRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources Int IO (Vector UN (Vector F Word8)))
+        -> IO (Sources Int IO (Vector N (Vector F Word8)))
 
 sourceRecords len pSep aFail hs
- =   smap_i (\_ !c -> UN.segmentOn pSep c)
+ =   smap_i (\_ !c -> A.segmentOn pSep c)
  =<< sourceChunks len pSep aFail hs
 {-# INLINE [2] sourceRecords #-}
 

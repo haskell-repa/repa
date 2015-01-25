@@ -1,6 +1,7 @@
-
+{-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Unsafe.Nested
-        ( UN(..), U.Unbox
+        ( U.N(..)
+        , U.Unbox
         , Array (..)
 
         -- * Conversion
@@ -9,6 +10,9 @@ module Data.Repa.Array.Material.Unsafe.Nested
 
         -- * Mapping
         , mapElems
+
+        -- * Slicing
+        , slices
 
         -- * Concatenation
         , concats
@@ -25,6 +29,7 @@ module Data.Repa.Array.Material.Unsafe.Nested
         -- * Transpose
         , ragspose3)
 where
+import Data.Repa.Array.Material.Unsafe.Unboxed  (Array(..))
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Shape
@@ -32,35 +37,24 @@ import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Repa.Vector.Unboxed               as U
+import qualified Data.Repa.Array.Material.Safe.Base     as S
+import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import Prelude                                          as P
 import Prelude  hiding (concat)
 
 ---------------------------------------------------------------------------------------------------
--- | Nested array represented as a flat array of elements, and a segment
---   descriptor that describes how the elements are partitioned into
---   the sub-arrays. Using this representation for multidimentional arrays
---   is significantly more efficient than using a boxed array of arrays, 
---   as there is no need to allocate the sub-arrays individually in the heap.
---
---   With a nested type like:
---   @Array UN (Array UN (Array UU Int))@, the concrete representation consists
---   of five flat unboxed vectors: two for each of the segment descriptors
---   associated with each level of nesting, and one unboxed vector to hold
---   all the integer elements.
---
-data UN = UN
 
 -- | Unsafe Nested arrays.
-instance Repr UN where
- repr = UN
+instance Repr U.N where
+ repr           = U.N
  
 
 -- | Unsafe Nested arrays.
 instance ( Bulk   r DIM1 a 
          , Window r DIM1 a)
-      => Bulk UN DIM1 (Vector r a) where
+      => Bulk U.N DIM1 (Vector r a) where
 
- data Array UN DIM1 (Vector r a)
+ data Array U.N DIM1 (Vector r a)
         = UNArray 
                  !(U.Vector Int)        -- segment start positions.
                  !(U.Vector Int)        -- segment lengths.
@@ -71,19 +65,19 @@ instance ( Bulk   r DIM1 a
  {-# INLINE [1] extent #-}
 
  index  (UNArray starts lengths elems) (Z :. ix)
-  = window (Z :. (starts  `U.unsafeIndex` ix)) 
-           (Z :. (lengths `U.unsafeIndex` ix)) 
-           elems
+        = window (Z :. (starts  `U.unsafeIndex` ix)) 
+                 (Z :. (lengths `U.unsafeIndex` ix)) 
+                 elems
  {-# INLINE [1] index #-}
 
 
-deriving instance Show (Vector r a) => Show (Vector UN (Vector r a))
+deriving instance Show (Vector r a) => Show (Vector U.N (Vector r a))
 
 
 -- Window -----------------------------------------------------------------------------------------
 -- | Unsafe Nested windows.
 instance (Bulk r DIM1 a, Window r DIM1 a)
-      => Window UN DIM1 (Vector r a) where
+      => Window U.N DIM1 (Vector r a) where
  window (Z :. start) (Z :. len) (UNArray starts lengths elems)
         = UNArray (U.unsafeSlice start len starts)
                   (U.unsafeSlice start len lengths)
@@ -95,7 +89,7 @@ instance (Bulk r DIM1 a, Window r DIM1 a)
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
         :: Target r a t
-        => [[a]] -> Vector UN (Vector r a)
+        => [[a]] -> Vector U.N (Vector r a)
 fromLists xss
  = let  xs         = concat xss
         Just elems = fromList_     (Z :. P.length xs) xs
@@ -108,7 +102,7 @@ fromLists xss
 -- | O(size src) Convert a triply nested list to a triply nested array.
 fromListss 
         :: Target r a t
-        => [[[a]]] -> Vector UN (Vector UN (Vector r a))
+        => [[[a]]] -> Vector U.N (Vector U.N (Vector r a))
 fromListss xs
  = let  xs1        = concat xs
         xs2        = concat xs1
@@ -130,12 +124,28 @@ fromListss xs
 -- | Apply a function to all the elements of a doubly nested array,
 --   preserving the nesting structure.
 mapElems :: (Vector r1 a -> Vector r2 b)
-         ->  Vector UN (Vector r1 a)
-         ->  Vector UN (Vector r2 b)
+         ->  Vector U.N (Vector r1 a)
+         ->  Vector U.N (Vector r2 b)
 
 mapElems f (UNArray starts lengths elems)
  = UNArray starts lengths (f elems)
 {-# INLINE [1] mapElems #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | O(1). Produce a nested array by taking slices from some array of elements.
+--   
+--   This is a constant time operation, as the representation for nested 
+--   vectors just wraps the starts, lengths and elements vectors.
+--
+slices  :: Vector U.U Int               -- ^ Segment starting positions.
+        -> Vector U.U Int               -- ^ Segment lengths.
+        -> Vector r  a                  -- ^ Array elements.
+        -> Vector U.N (Vector r a)
+
+slices (UUArray _ starts) (UUArray _ lens) !elems
+ = UNArray starts lens elems
+{-# INLINE [1] slices #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -148,8 +158,8 @@ mapElems f (UNArray starts lengths elems)
 --   * This version is more efficient than plain `concat` as the operation
 --     is done entirely on the segment descriptors of the nested arrays.
 --
-concats :: Vector UN (Vector UN (Vector r a)) 
-        -> Vector UN (Vector r a)
+concats :: Vector U.N (Vector U.N (Vector r a)) 
+        -> Vector U.N (Vector r a)
 
 concats (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
  = let
@@ -170,7 +180,7 @@ segment :: (U.Unbox a, Bulk r DIM1 a)
         => (a -> Bool)  -- ^ Detect the start of a segment.
         -> (a -> Bool)  -- ^ Detect the end of a segment.
         -> Vector r a   -- ^ Vector to segment.
-        -> Vector UN (Vector r a)  
+        -> Vector U.N (Vector r a)  
 
 segment pStart pEnd !elems
  = let  len     = size (extent elems)
@@ -192,7 +202,7 @@ segmentOn
         :: (Eq a, U.Unbox a, Bulk r DIM1 a)
         => (a -> Bool)  -- ^ Detect the end of a segment.
         -> Vector r a   -- ^ Vector to segment.
-        -> Vector UN (Vector r a)
+        -> Vector U.N (Vector r a)
 
 segmentOn !pEnd !arr
  = segment (const True) pEnd arr
@@ -207,7 +217,7 @@ dice    :: (U.Unbox a, Bulk r DIM1 a, Window r DIM1 a)
         -> (a -> Bool)  -- ^ Detect the start of an outer segment.
         -> (a -> Bool)  -- ^ Detect the end   of an outer segment.
         -> Vector r a   -- ^ Vector to dice.
-        -> Vector UN (Vector UN (Vector r a))
+        -> Vector U.N (Vector U.N (Vector r a))
 
 dice pStart1 pEnd1 pStart2 pEnd2 !arr
  = let  lenArr           = size (extent arr)
@@ -249,10 +259,10 @@ diceOn  :: (U.Unbox a, Eq a, Bulk r DIM1 a, Window r DIM1 a)
         => a            -- ^ Terminating element for inner segments.
         -> a            -- ^ Terminating element for outer segments.
         -> Vector r a   -- ^ Vector to dice.
-        -> Vector UN (Vector UN (Vector r a))
+        -> Vector U.N (Vector U.N (Vector r a))
 
 diceOn !xEndWord !xEndLine !arr
- =      dice    (const True) (\x -> x == xEndWord || x == xEndLine)
+        = dice  (const True) (\x -> x == xEndWord || x == xEndLine)
                 (const True) (\x -> x == xEndLine)
                 arr
 {-# INLINE [1] diceOn #-}
@@ -263,8 +273,8 @@ diceOn !xEndWord !xEndLine !arr
 --   and end of the segment that match the given predicate.
 trims   :: Bulk r DIM1 a
         => (a -> Bool)
-        -> Vector UN (Vector r a)
-        -> Vector UN (Vector r a)
+        -> Vector U.N (Vector r a)
+        -> Vector U.N (Vector r a)
 
 trims pTrim (UNArray starts lengths elems)
  = let
@@ -293,8 +303,8 @@ trims pTrim (UNArray starts lengths elems)
 --   the segment that match the given predicate.
 trimEnds :: Bulk r DIM1 a
          => (a -> Bool)
-         -> Vector UN (Vector r a)
-         -> Vector UN (Vector r a)
+         -> Vector U.N (Vector r a)
+         -> Vector U.N (Vector r a)
 
 trimEnds pTrim (UNArray starts lengths elems)
  = let
@@ -315,8 +325,8 @@ trimEnds pTrim (UNArray starts lengths elems)
 --   the segment that match the given predicate.
 trimStarts :: Bulk r DIM1 a
            => (a -> Bool)
-           -> Vector UN (Vector r a)
-           -> Vector UN (Vector r a)
+           -> Vector U.N (Vector r a)
+           -> Vector U.N (Vector r a)
 
 trimStarts pTrim (UNArray starts lengths elems)
  = let
@@ -340,8 +350,8 @@ trimStarts pTrim (UNArray starts lengths elems)
 --   * This version is more efficient than plain `ragspose` as the operation
 --     is done entirely on the segment descriptors of the nested arrays.
 --
-ragspose3 :: Vector UN (Vector UN (Vector r a)) 
-          -> Vector UN (Vector UN (Vector r a))
+ragspose3 :: Vector U.N (Vector U.N (Vector r a)) 
+          -> Vector U.N (Vector U.N (Vector r a))
 
 ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
  = let  
@@ -358,4 +368,5 @@ ragspose3 (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
 --  NOINLINE Because the operation is entirely on the segment descriptor.
 --           This function won't fuse with anything externally, 
 --           and it does not need to be specialiased.
+
 

@@ -3,8 +3,9 @@ module Data.Repa.Flow.IO.TSV
         (sourceTSV)
 where
 import Data.Repa.Flow
-import Data.Repa.Array                  as A hiding (fromList, fromLists)
-import qualified Data.Repa.Flow.Generic as G hiding (next)
+import Data.Repa.Array.Material.Unsafe.Nested   as A
+import Data.Repa.Array                          as A
+import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
 import Data.Char
 
@@ -15,7 +16,7 @@ sourceTSV
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
         -> [Handle]             --  File paths.
-        -> IO (Sources UN (Vector UN (Vector F Char)))
+        -> IO (Sources N (Vector N (Vector F Char)))
 
 sourceTSV nChunk aFail hs
  = do
