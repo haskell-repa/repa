@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 import Data.Repa.Flow
-import Data.Repa.Flow.IO
-import Data.Repa.Flow.IO.TSV
+import Data.Repa.Flow.IO.Default
 import Data.Repa.Array                          as A
+import Data.Repa.Array.Material.Unsafe.Nested   as A
 import qualified Data.Repa.Flow.Generic         as G
 
 import Control.Monad
@@ -33,7 +33,7 @@ pFields config
         mapM_ (\_ -> hGetLine hIn) [1 .. configDrop config]
 
         -- Stream the rest of the file as TSV.
-        sIn       <- sourceTSV lenChunk dieLong [hIn]
+        sIn       <- sourceTSV [hIn]
 
         -- Do a ragged transpose the chunks, to produce a columnar
         -- representation.
@@ -46,7 +46,7 @@ pFields config
 
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut     <- toFiles filesOut $ sinkChars
+        ooOut     <- toFiles filesOut sinkChars
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.
@@ -87,12 +87,6 @@ parseArgs args config
  , ""
  , " -drop (n :: Nat)   Drop n lines from the front of the input file." ]
 
-
--- | Default chunk length, in bytes.
-lenChunk        = 1024
-
--- | Die if we find a line longer than a chunk.
-dieLong         = error "Found over-long line"
 
 -- | Die if the lines do not have the same number of fields.
 dieFields       = error "Lines do not have the same number of fields."
