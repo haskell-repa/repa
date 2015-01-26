@@ -1,8 +1,9 @@
 
 module Data.Repa.Array.Internals.Operator.Fold
-        (folds, C.Folds(..))
+        (folds, C.Folds(..), FoldsDict)
 where
 import Data.Repa.Array.Shape                    as A
+import Data.Repa.Array.Tuple                    as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Eval.Chain                     as A
@@ -14,19 +15,19 @@ import System.IO.Unsafe
 
 -- | Segmented fold over vectors of segment lengths and input values.
 --
---   The total lengths of all segments need not match the length of the
---   input elements vector. The returned `C.Folds` state can be inspected
---   to determine whether all segments were completely folded, or the 
---   vector of segment lengths or elements was too short relative to the
---   other.
+--   * The total lengths of all segments need not match the length of the
+--     input elements vector. The returned `C.Folds` state can be inspected
+--     to determine whether all segments were completely folded, or the 
+--     vector of segment lengths or elements was too short relative to the
+--     other.
 --
-folds   :: (Bulk r1 DIM1 (n, Int), Bulk r2 DIM1 a, Target r3 (n, b) t)
-        => (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding segments.
-        -> Option3 n Int b      -- ^ Length and initial state for first segment.
-        ->  Vector r1 (n, Int)  -- ^ Segment lengths.
-        ->  Vector r2 a         -- ^ Elements.
-        -> (Vector r3 (n, b), C.Folds Int Int n a b)
+folds   :: FoldsDict rSeg rElt rGrp rRes n a b tGrp tRes
+        => (a -> b -> b)         -- ^ Worker function.
+        -> b                     -- ^ Initial state when folding segments.
+        -> Option3 n Int b       -- ^ Length and initial state for first segment.
+        ->  Vector rSeg (n, Int) -- ^ Segment names and lengths.
+        ->  Vector rElt a        -- ^ Elements.
+        -> (Vector (T2 rGrp rRes) (n, b), C.Folds Int Int n a b)
 
 folds f z s0 vLens vVals
  = unsafePerformIO
@@ -39,3 +40,11 @@ folds f z s0 vLens vVals
                 (A.chainOfVector vLens)
                 (A.chainOfVector vVals)
 {-# INLINE_ARRAY folds #-}
+
+
+-- | Dictionaries need to perform a segmented fold.
+type FoldsDict rSeg rElt rGrp rRes n a b tGrp tRes
+      = ( Bulk   rSeg DIM1 (n, Int)
+        , Bulk   rElt DIM1 a
+        , Target rGrp n tGrp
+        , Target rRes b tRes)

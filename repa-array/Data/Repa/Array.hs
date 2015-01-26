@@ -60,9 +60,11 @@ module Data.Repa.Array
 
           -- ** Grouping
         , groupsBy
+        , GroupsDict(..)
 
           -- ** Folding
-        , folds, Folds(..))
+        , folds, Folds(..)
+        , FoldsDict(..))
 where
 import Data.Repa.Array.Shape
 import Data.Repa.Eval.Array                             as R

@@ -1,11 +1,12 @@
 
 module Data.Repa.Array.Internals.Operator.Group
-        (groupsBy)
+        (groupsBy, GroupsDict)
 where
-import Data.Repa.Array.Shape                    as R
-import Data.Repa.Array.Internals.Bulk           as R
-import Data.Repa.Array.Internals.Target         as R
-import Data.Repa.Eval.Chain                     as R
+import Data.Repa.Array.Shape                    as A
+import Data.Repa.Array.Tuple                    as A
+import Data.Repa.Array.Internals.Bulk           as A
+import Data.Repa.Array.Internals.Target         as A
+import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
 #include "repa-stream.h"
 
@@ -19,11 +20,11 @@ import qualified Data.Repa.Chain                as C
 --   => ([('a', 7), ('b', 2), ('c', 1)], Just (\'d\', 2))
 -- @
 --
-groupsBy :: (Bulk r1 DIM1 a, Target r2 (a, Int) t)
-         => (a -> a -> Bool)                -- ^ Comparison function.
-         -> Maybe (a, Int)                  -- ^ Starting element and count.
-         -> Vector  r1 a                    -- ^ Input elements.
-         -> (Vector r2 (a, Int), Maybe (a, Int))
+groupsBy :: GroupsDict rElt rGrp rLen n tSeg tLen
+         => (n -> n -> Bool)    -- ^ Comparison function.
+         -> Maybe   (n, Int)    -- ^ Starting element and count.
+         -> Vector  rElt n      -- ^ Input elements.
+         -> (Vector (T2 rGrp rLen) (n, Int), Maybe (n, Int))
 
 groupsBy f !c !vec0
  = (vec1, snd k1)
@@ -32,6 +33,13 @@ groupsBy f !c !vec0
         {-# INLINE f' #-}
 
         (vec1, k1)
-         = R.unchainToVector $ C.liftChain
-         $ C.groupsByC f' c  $ R.chainOfVector vec0
+         = A.unchainToVector $ C.liftChain
+         $ C.groupsByC f' c  $ A.chainOfVector vec0
 {-# INLINE_ARRAY groupsBy #-}
+
+
+-- | Dictionaries need to perform a grouping.
+type GroupsDict  rElt rGrp rLen n tGrp tLen
+      = ( Bulk   rElt DIM1 n
+        , Target rGrp n    tGrp
+        , Target rLen Int  tLen )
