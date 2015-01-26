@@ -18,6 +18,7 @@ import Data.Repa.Eval.Array                     as A
 import qualified Data.Repa.Flow.Generic         as G
 import Control.Monad
 import Prelude                                  as P
+#include "repa-stream.h"
 
 
 -- | A bundle of sources, where the elements are chunked into arrays.
@@ -45,9 +46,9 @@ fromList_i
         :: (States i m, A.Target r a t)
         => r -> i -> [a] -> m (Sources i m r a)
 
-fromList_i _ n xs
- = G.fromList n [A.vfromList_ xs]
-{-# INLINE [2] fromList_i #-}
+fromList_i r n xs
+ = G.fromList n [A.vfromList r xs]
+{-# INLINE fromList_i #-}
 
 
 -- | Like `fromLists_i` but take a list of lists, where each of the inner
@@ -56,9 +57,9 @@ fromLists_i
         :: (States i m, A.Target r a t)
         => r -> i -> [[a]] -> m (Sources i m r a)
 
-fromLists_i _ n xs
- = G.fromList n $ P.map A.vfromList_ xs
-{-# INLINE [2] fromLists_i #-}
+fromLists_i r n xs
+ = G.fromList n $ P.map (A.vfromList r) xs
+{-# INLINE fromLists_i #-}
 
 
 -- | Drain a single source into a list of elements.
@@ -68,7 +69,7 @@ toList1_i
 toList1_i i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.concat $ P.map A.toList chunks
-{-# INLINE [2] toList1_i #-}
+{-# INLINE toList1_i #-}
 
 
 -- | Drain a single source into a list of chunks.
@@ -78,7 +79,7 @@ toLists1_i
 toLists1_i i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.map A.toList chunks
-{-# INLINE [2] toLists1_i #-}
+{-# INLINE toLists1_i #-}
 
 
 -- | Split the given number of elements from the head of a source,
@@ -138,7 +139,7 @@ head_i len s0 i
 
         s2'        <- G.prependOn_i (\i' -> i' == i) stash s2
         return  (Q.toList here, s2')
-{-# INLINE [2] head_i #-}
+{-# INLINE_FLOW head_i #-}
 
 
 -- Finalizers -----------------------------------------------------------------
@@ -156,7 +157,7 @@ finalize_i
         => (Ix i -> m ())
         -> Sources i m r a -> m (Sources i m r a)
 finalize_i = G.finalize_i
-{-# INLINE [2] finalize_i #-}
+{-# INLINE finalize_i #-}
 
 
 -- | Attach a finalizer to a bundle of sinks.
@@ -171,4 +172,4 @@ finalize_o
         => (Ix i -> m ())
         -> Sinks i m r a -> m (Sinks i m r a)
 finalize_o = G.finalize_o
-{-# INLINE [2] finalize_o #-}
+{-# INLINE finalize_o #-}

@@ -13,10 +13,10 @@ import Data.Repa.Array.Shape
 import Data.Repa.Array.Material.Unsafe.Boxed
 import Data.Repa.Fusion.Unpack
 import qualified Data.Repa.Array.Material.Safe.Base     as S
-import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.Vector                            as V
 import qualified Data.Vector.Mutable                    as VM
 import Control.Monad
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ import Control.Monad
 instance Window S.B DIM1 a where
  window (Z :. start) (Z :. len) (SBArray (KArray (UBArray _sh vec)))
         = SBArray (KArray (UBArray (Z :. len) (V.slice start len vec)))
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
 
 
 -------------------------------------------------------------------------------
@@ -35,49 +35,49 @@ instance Target S.B a (VM.IOVector a) where
 
  unsafeNewBuffer len
   = liftM SBBuffer (VM.unsafeNew len)
- {-# INLINE unsafeNewBuffer #-}
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  unsafeWriteBuffer (SBBuffer mvec) ix
   = VM.unsafeWrite mvec ix
- {-# INLINE unsafeWriteBuffer #-}
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer (SBBuffer mvec) bump
   = do  mvec'   <- VM.unsafeGrow mvec bump
         return  $ SBBuffer mvec'
- {-# INLINE unsafeGrowBuffer #-}
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
  unsafeSliceBuffer start len (SBBuffer mvec)
   = do  let mvec'  = VM.unsafeSlice start len mvec
         return  $  SBBuffer mvec'
- {-# INLINE unsafeSliceBuffer #-}
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  unsafeFreezeBuffer sh (SBBuffer mvec)     
   = do  vec     <- V.unsafeFreeze mvec
         return  $  SBArray (KArray (UBArray sh vec))
- {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  touchBuffer _ 
   = return ()
- {-# INLINE touchBuffer #-}
+ {-# INLINE_ARRAY touchBuffer #-}
 
 
 -- | Unpack boxed buffers.
 instance Unpack (Buffer S.B a) (VM.IOVector a) where
  unpack (SBBuffer vec) = vec
  repack _ vec          = SBBuffer vec
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------
 -- | O(1). Wrap a boxed vector as an array.
 fromVector :: Shape sh => sh -> V.Vector e -> Array S.B sh e
 fromVector sh vec = SBArray $ checked $ UBArray sh vec
-{-# INLINE [1] fromVector #-}
+{-# INLINE_ARRAY fromVector #-}
 
 
 -- | O(1). Unpack a boxed vector from an array.
 toVector :: Array S.B sh e -> V.Vector e
 toVector (SBArray (KArray (UBArray _ vec))) = vec
-{-# INLINE [1] toVector #-}
+{-# INLINE_ARRAY toVector #-}
 

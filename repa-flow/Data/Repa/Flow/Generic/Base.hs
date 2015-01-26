@@ -8,6 +8,7 @@ module Data.Repa.Flow.Generic.Base
 where
 import Data.Repa.Flow.States
 import Control.Monad
+#include "repa-stream.h"
 
 -- | A bundle of flow sources, indexed by a value of type @i@,
 --   in some monad @m@, returning elements of type @e@.
@@ -76,7 +77,7 @@ finalize_i f (Sources n pull)
             {-# INLINE pull_finalize #-}
 
         return  $ Sources n pull_finalize
-{-# INLINE [2] finalize_i #-}
+{-# INLINE_FLOW finalize_i #-}
 
 
 -- | Attach a finalizer to a bundle of sinks.
@@ -105,5 +106,5 @@ finalize_o f  (Sinks n push eject)
             {-# INLINE eject_finalize #-}
 
         return $ Sinks n push eject_finalize
-{-# INLINE [2] finalize_o #-}
+{-# INLINE_FLOW finalize_o #-}
 

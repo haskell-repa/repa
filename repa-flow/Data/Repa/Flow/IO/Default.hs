@@ -20,6 +20,7 @@ module Data.Repa.Flow.IO.Default
         , sinkBytes)
 where
 import qualified Data.Repa.Flow.IO      as F
+#include "repa-stream.h"
 
 
 -- | The default chunk size of 64kBytes.

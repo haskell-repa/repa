@@ -17,6 +17,7 @@ import GHC.Exts
 import qualified Data.Array.Repa.Eval.Par       as Par
 import qualified Data.Array.Repa.Eval.Seq       as Seq
 import Prelude hiding (map, zipWith)
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -44,16 +45,16 @@ instance Shape sh => Bulk D sh a where
                 (sh -> a) 
 
  index (ADelayed _  f) ix  = f ix
- {-# INLINE index #-}
+ {-# INLINE_ARRAY index #-}
 
  extent (ADelayed sh _)    = sh
- {-# INLINE extent #-}
+ {-# INLINE_ARRAY extent #-}
 
  safe arr       = arr
- {-# INLINE safe #-}
+ {-# INLINE_ARRAY safe #-}
 
  unsafe arr     = arr
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY unsafe #-}
 
 
 -- Load -----------------------------------------------------------------------
@@ -64,7 +65,7 @@ instance Shape sh => Load D sh e where
         let get' ix     = get $ fromIndex sh (I# ix)
         Seq.fillLinear  write get' len
         touchBuffer  buf
- {-# INLINE [1] loadS #-}
+ {-# INLINE_ARRAY loadS #-}
 
  loadP gang (ADelayed sh get) !buf
   = do  traceEventIO "Repa.loadP[Delayed]: start"
@@ -74,7 +75,7 @@ instance Shape sh => Load D sh e where
         Par.fillChunked gang write get' len 
         touchBuffer  buf
         traceEventIO "Repa.loadP[Delayed]: end"
- {-# INLINE [1] loadP #-}
+ {-# INLINE_ARRAY loadP #-}
 
 
 instance Elt e => LoadRange D DIM2 e where
@@ -84,7 +85,7 @@ instance Elt e => LoadRange D DIM2 e where
         let get' x y    = get (Z :. I# y :. I# x)
         Seq.fillBlock2 write get' w x0 y0 w0 h0
         touchBuffer buf
- {-# INLINE [1] loadRangeS #-}
+ {-# INLINE_ARRAY loadRangeS #-}
 
  loadRangeP  gang
              (ADelayed (Z :. _h :. (I# w)) get) !buf
@@ -95,7 +96,7 @@ instance Elt e => LoadRange D DIM2 e where
         Par.fillBlock2  gang write get' w x0 y0 w0 h0
         touchBuffer  buf
         traceEventIO "Repa.loadRangeP[Delayed]: end"
- {-# INLINE [1] loadRangeP #-}
+ {-# INLINE_ARRAY loadRangeP #-}
 
 
 -- Conversions ----------------------------------------------------------------
@@ -103,7 +104,7 @@ instance Elt e => LoadRange D DIM2 e where
 fromFunction :: sh -> (sh -> a) -> Array D sh a
 fromFunction sh f 
         = ADelayed sh f 
-{-# INLINE [1] fromFunction #-}
+{-# INLINE_ARRAY fromFunction #-}
 
 
 -- | O(1). Produce the extent of an array, and a function to retrieve an
@@ -114,7 +115,7 @@ toFunction
 toFunction arr
  = case delay arr of
         ADelayed sh f -> (sh, f)
-{-# INLINE [1] toFunction #-}
+{-# INLINE_ARRAY toFunction #-}
 
 
 -- | O(1). Delay an array.
@@ -125,7 +126,7 @@ toFunction arr
 delay   :: Bulk  r sh e
         => Array r sh e -> Array D sh e
 delay arr = ADelayed (extent arr) (index arr)
-{-# INLINE [1] delay #-}
+{-# INLINE_ARRAY delay #-}
 
 
 -- Operators ------------------------------------------------------------------
@@ -136,7 +137,7 @@ map     :: (Shape sh, Bulk r sh a)
 map f arr
  = case delay arr of
         ADelayed sh g -> ADelayed sh (f . g)
-{-# INLINE [1] map #-}
+{-# INLINE_ARRAY map #-}
 
 
 -- ZipWith --------------------------------------------------------------------
@@ -155,6 +156,8 @@ zipWith f arr1 arr2
  where  get_zipWith ix  
          = f (arr1 `index` ix) (arr2 `index` ix)
         {-# INLINE get_zipWith #-}
+{-# INLINE_ARRAY zipWith #-}
+
 
 infixl 7  *^, /^
 infixl 6  +^, -^

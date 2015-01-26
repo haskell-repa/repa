@@ -10,6 +10,7 @@ module Data.Repa.Array.Shape.Index
 where
 import Data.Repa.Array.Shape.Base
 import GHC.Base                 (quotInt, remInt)
+#include "repa-stream.h"
 
 
 -- | An index of dimension zero
@@ -58,32 +59,32 @@ ix5 b a z y x = Z :. b :. a :. z :. y :. x
 -- Shape ----------------------------------------------------------------------
 instance Shape Z where
         rank _                  = 0
-        {-# INLINE [1] rank #-}
+        {-# INLINE rank #-}
 
         zeroDim                 = Z
-        {-# INLINE [1] zeroDim #-}
+        {-# INLINE zeroDim #-}
 
         unitDim                 = Z
-        {-# INLINE [1] unitDim #-}
+        {-# INLINE unitDim #-}
 
         intersectDim _ _        = Z
-        {-# INLINE [1] intersectDim #-}
+        {-# INLINE intersectDim #-}
 
         addDim _ _              = Z
-        {-# INLINE [1] addDim #-}
+        {-# INLINE addDim #-}
 
         size _                  = 1
-        {-# INLINE [1] size #-}
+        {-# INLINE size #-}
 
         toIndex _ _             = 0
-        {-# INLINE [1] toIndex #-}
+        {-# INLINE toIndex #-}
 
         fromIndex _ _           = Z
-        {-# INLINE [1] fromIndex #-}
+        {-# INLINE fromIndex #-}
 
 
         inShapeRange Z Z Z      = True
-        {-# INLINE [1] inShapeRange #-}
+        {-# INLINE inShapeRange #-}
 
         listOfShape _           = []
         {-# NOINLINE listOfShape #-}
@@ -97,29 +98,29 @@ instance Shape Z where
 instance Shape sh => Shape (sh :. Int) where
         rank   (sh  :. _)
                 = rank sh + 1
-        {-# INLINE [1] rank #-}
+        {-# INLINE rank #-}
 
         zeroDim = zeroDim :. 0
-        {-# INLINE [1] zeroDim #-}
+        {-# INLINE zeroDim #-}
 
         unitDim = unitDim :. 1
-        {-# INLINE [1] unitDim #-}
+        {-# INLINE unitDim #-}
 
         intersectDim (sh1 :. n1) (sh2 :. n2)
                 = (intersectDim sh1 sh2 :. (min n1 n2))
-        {-# INLINE [1] intersectDim #-}
+        {-# INLINE intersectDim #-}
 
         addDim (sh1 :. n1) (sh2 :. n2)
                 = addDim sh1 sh2 :. (n1 + n2)
-        {-# INLINE [1] addDim #-}
+        {-# INLINE addDim #-}
 
         size  (sh1 :. n)
                 = size sh1 * n
-        {-# INLINE [1] size #-}
+        {-# INLINE size #-}
 
         toIndex (sh1 :. sh2) (sh1' :. sh2')
                 = toIndex sh1 sh1' * sh2 + sh2'
-        {-# INLINE [1] toIndex #-}
+        {-# INLINE toIndex #-}
 
         fromIndex (ds :. d) n
                 = fromIndex ds (n `quotInt` d) :. r
@@ -130,11 +131,11 @@ instance Shape sh => Shape (sh :. Int) where
                 -- is quite a big deal.
                 r       | rank ds == 0  = n
                         | otherwise     = n `remInt` d
-        {-# INLINE [1] fromIndex #-}
+        {-# INLINE fromIndex #-}
 
         inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2)
                 = (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
-        {-# INLINE [1] inShapeRange #-}
+        {-# INLINE inShapeRange #-}
 
         listOfShape (sh :. n)
          = n : listOfShape sh

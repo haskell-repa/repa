@@ -8,6 +8,8 @@ module Data.Repa.Flow.Simple.Base
 where
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic as G
+#include "repa-stream.h"
+
 
 -- | Source consisting of a single stream.
 type Source m e = G.Sources () m e
@@ -31,7 +33,7 @@ finalize_i
         -> Source m a -> m (Source m a)
 
 finalize_i f s0 = G.finalize_i (\_ -> f) s0
-{-# INLINE [2] finalize_i #-}
+{-# INLINE finalize_i #-}
 
 
 -- | Attach a finalizer to a sink.
@@ -47,7 +49,7 @@ finalize_o
         -> Sink m a -> m (Sink m a)
 
 finalize_o f s0 = G.finalize_o (\_ -> f) s0
-{-# INLINE [2] finalize_o #-}
+{-# INLINE finalize_o #-}
 
 
 -- Wrapping -------------------------------------------------------------------
@@ -59,7 +61,7 @@ wrapI_i (G.Sources n pullX)
          = pullX (G.IIx 0 1) eat eject 
         {-# INLINE pullX' #-}
    in   Just $ G.Sources () pullX'
-{-# INLINE wrapI_i #-}
+{-# INLINE_FLOW wrapI_i #-}
 
 
 wrapI_o  :: G.Sinks Int m e -> Maybe (Sink m e)
@@ -69,5 +71,5 @@ wrapI_o (G.Sinks n eatX ejectX)
  = let  eatX' _ x       = eatX   (G.IIx 0 1) x
         ejectX' _       = ejectX (G.IIx 0 1)
    in   Just $ G.Sinks () eatX' ejectX'
-{-# INLINE wrapI_o #-}
+{-# INLINE_FLOW wrapI_o #-}
 

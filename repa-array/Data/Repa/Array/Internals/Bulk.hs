@@ -11,6 +11,7 @@ module Data.Repa.Array.Internals.Bulk
 where
 import Data.Repa.Array.Shape
 import Prelude hiding (length)
+#include "repa-stream.h"
 
 
 -- Bulk -------------------------------------------------------------------------------------------
@@ -45,7 +46,7 @@ type Vector r e = Array r DIM1 e
 -- | O(1). Alias for `index`.
 (!) :: Bulk r sh a => Array r sh a -> sh -> a
 (!) = index
-{-# INLINE [1] (!) #-}
+{-# INLINE (!) #-}
 
 
 -- | O(1). Get the length of a vector.
@@ -55,7 +56,7 @@ length :: Bulk r DIM1 a => Vector r a -> Int
 length !arr
  = case extent arr of
         Z :. len        -> len
-{-# INLINE [1] length #-}
+{-# INLINE_ARRAY length #-}
 
 
 -- Repr -------------------------------------------------------------------------------------------
@@ -93,7 +94,7 @@ toList arr
          | otherwise    
          = loop_fromList (arr `index` (fromIndex sh ix) : acc) 
                          (ix + 1)
-{-# INLINE [1] toList #-}
+{-# INLINE_ARRAY toList #-}
 
 
 -- | Convert a nested array to some lists.
@@ -106,7 +107,7 @@ toLists
 toLists arr
  = let  ll'    =  toList arr
    in   map toList ll'
-{-# INLINE [1] toLists #-}
+{-# INLINE_ARRAY toLists #-}
 
 
 -- | Convert a triply nested array to a triply nested list.
@@ -120,5 +121,5 @@ toListss
 toListss arr
  = let  ll'    = toLists arr
    in   map (map toList) ll'
-{-# INLINE [1] toListss #-}
+{-# INLINE_ARRAY toListss #-}
 

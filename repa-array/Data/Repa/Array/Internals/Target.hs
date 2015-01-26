@@ -15,7 +15,8 @@ import Prelude                          as P
 -- Target ---------------------------------------------------------------------
 -- | Class of manifest array representations that can be constructed 
 --   in a random-access manner.
-class Unpack (Buffer r e) t => Target r e t where
+class (Repr r, Unpack (Buffer r e) t) 
+   => Target r e t where
 
  -- | Mutable buffer for some array representation.
  data Buffer r e

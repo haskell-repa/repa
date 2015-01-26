@@ -93,6 +93,7 @@ import qualified Data.Repa.Array.Material.Unsafe        as U
 import qualified Data.Repa.Flow.Chunked          as C hiding (next)
 import qualified Data.Repa.Flow.Generic          as G hiding (next)
 import Control.Monad
+#include "repa-stream.h"
 
 
 -- | A bundle of data sources, where the elements are chunked into arrays.

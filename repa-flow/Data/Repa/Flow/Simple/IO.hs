@@ -13,6 +13,7 @@ import Data.Repa.Array.Material.Safe            as A
 import Data.Repa.Array.Material.Unsafe.Nested   as A
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
+#include "repa-stream.h"
 
 
 -- Source Records ---------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ sourceRecords len pSep aFail h
  = do   s0      <- G.sourceRecords len pSep aFail [h]
         let Just s1 = wrapI_i s0
         return s1
-{-# INLINE [2] sourceRecords #-}
+{-# INLINE sourceRecords #-}
 
 
 -- Source Bytes -----------------------------------------------------------------------------------
@@ -66,8 +67,7 @@ sourceBytes len h
  = do   s0      <- G.sourceBytes len [h]
         let Just s1 = wrapI_i s0
         return s1
-{-# INLINE [2] sourceBytes #-}
-
+{-# INLINE sourceBytes #-}
 
 
 -- Sinking Bytes ----------------------------------------------------------------------------------
@@ -80,5 +80,5 @@ sinkBytes h
  = do   s0      <- G.sinkBytes [h]
         let Just s1 = wrapI_o s0
         return s1
-{-# INLINE [2] sinkBytes #-}
+{-# INLINE sinkBytes #-}
 

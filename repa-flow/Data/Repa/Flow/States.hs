@@ -5,6 +5,7 @@ module Data.Repa.Flow.States
 where
 import Control.Monad
 import qualified Data.Vector.Mutable            as VM
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------

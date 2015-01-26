@@ -9,6 +9,7 @@ import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
 import Data.Repa.Fusion.Option
 import System.IO.Unsafe
+#include "repa-stream.h"
 
 
 -- | Segmented fold over vectors of segment lengths and input values.
@@ -37,4 +38,4 @@ folds f z s0 vLens vVals
          $  C.foldsC f' z s0
                 (A.chainOfVector vLens)
                 (A.chainOfVector vVals)
-{-# INLINE [3] folds #-}
+{-# INLINE_ARRAY folds #-}

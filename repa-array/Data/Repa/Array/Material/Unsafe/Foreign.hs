@@ -28,6 +28,7 @@ import qualified Foreign.ForeignPtr.Unsafe              as Unsafe
 import qualified Data.Repa.Array.Material.Safe.Base     as S
 import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.ByteString.Internal               as BS
+#include "repa-stream.h"
 
 
 ------------------------------------------------------------------------------
@@ -60,10 +61,10 @@ instance (Shape sh, Storable a)
         $ \ptr -> peekElemOff ptr (offset + toIndex sh ix)
  safe   arr             = SFArray (checked arr)
  unsafe arr             = arr
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
  {-# SPECIALIZE instance Bulk U.F DIM1 Char    #-}
  {-# SPECIALIZE instance Bulk U.F DIM1 Int     #-}
  {-# SPECIALIZE instance Bulk U.F DIM1 Float   #-}
@@ -86,10 +87,10 @@ instance (Shape sh, Storable a)
  index  (SFArray inner) ix = index inner ix
  safe   arr                = arr
  unsafe (SFArray inner)    = unchecked inner
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
  {-# SPECIALIZE instance Bulk S.F DIM1 Char    #-}
  {-# SPECIALIZE instance Bulk S.F DIM1 Int     #-}
  {-# SPECIALIZE instance Bulk S.F DIM1 Float   #-}
@@ -107,22 +108,22 @@ deriving instance (Show sh, Show e) => Show (Array S.F sh e)
 instance Unpack (Array U.F DIM1 a) (Int, Int, ForeignPtr a) where
  unpack (UFArray (Z :. len) offset fptr) 
         = (len, offset, fptr)
- {-# INLINE unpack #-}
+ {-# INLINE_ARRAY unpack #-}
 
  repack _ (len, offset, fptr)
         = UFArray (Z :. len) offset fptr
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -- | Unpack Foreign arrays.
 instance Unpack (Array S.F DIM1 a)  (Int, Int, ForeignPtr a) where
  unpack (SFArray (KArray (UFArray (Z :. len) offset fptr))) 
         = (len, offset, fptr)
- {-# INLINE unpack #-}
+ {-# INLINE_ARRAY unpack #-}
 
  repack _ (len, offset, fptr) 
         = SFArray (KArray (UFArray (Z :. len) offset fptr))
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------
@@ -131,7 +132,7 @@ instance Storable a
       => Window U.F DIM1 a where
  window (Z :. start) sh' (UFArray _ offset ptr)
         = UFArray sh' (offset + start) ptr
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
  {-# SPECIALIZE instance Window U.F DIM1 Char    #-}
  {-# SPECIALIZE instance Window U.F DIM1 Int     #-}
  {-# SPECIALIZE instance Window U.F DIM1 Float   #-}
@@ -159,13 +160,13 @@ instance Storable a
         
         fptr    <- newForeignPtr finalizerFree ptr
         return  $ UFBuffer 0 len fptr
- {-# INLINE unsafeNewBuffer #-}
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
  -- to touch it after the last use, otherwise the finaliser might run too early.
  unsafeWriteBuffer (UFBuffer start _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) (start + ix) x
- {-# INLINE unsafeWriteBuffer #-}
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer (UFBuffer start len fptr) bump
   =  withForeignPtr fptr $ \ptr 
@@ -179,19 +180,19 @@ instance Storable a
 
         fptr'   <- newForeignPtr finalizerFree ptr'
         return  $ UFBuffer 0 len' fptr'
- {-# INLINE unsafeGrowBuffer #-}
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
  unsafeFreezeBuffer !sh (UFBuffer start _len fptr)
   =     return  $ UFArray sh start fptr
- {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer start' len (UFBuffer start _len fptr)
   =     return  $ UFBuffer (start + start') len fptr
- {-# INLINE unsafeSliceBuffer #-}
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer (UFBuffer _ _ fptr)
   = touchForeignPtr fptr
- {-# INLINE touchBuffer #-}
+ {-# INLINE_ARRAY touchBuffer #-}
 
  {-# SPECIALIZE instance Target U.F Char   (Int, Int, ForeignPtr Char)   #-}
  {-# SPECIALIZE instance Target U.F Int    (Int, Int, ForeignPtr Int)    #-}
@@ -207,8 +208,8 @@ instance Storable a
 instance Unpack (Buffer U.F a) (Int, Int, ForeignPtr a) where
  unpack (UFBuffer start len fptr) = (start, len, fptr)
  repack _ (start, len, fptr)      = UFBuffer start len fptr
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------
@@ -216,28 +217,28 @@ instance Unpack (Buffer U.F a) (Int, Int, ForeignPtr a) where
 fromForeignPtr :: Shape sh => sh -> ForeignPtr a -> Array U.F sh a
 fromForeignPtr !sh !fptr
         = UFArray sh 0 fptr
-{-# INLINE fromForeignPtr #-}
+{-# INLINE_ARRAY fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
 toForeignPtr :: Array U.F sh a -> ForeignPtr a
 toForeignPtr (UFArray _ _ fptr)
         = fptr
-{-# INLINE toForeignPtr #-}
+{-# INLINE_ARRAY toForeignPtr #-}
 
 
 -- | O(1). Convert a foreign 'Vector' to a `ByteString`.
 toByteString :: Vector U.F Word8 -> ByteString
 toByteString (UFArray (Z :. len) offset fptr)
  = BS.PS fptr offset len
-{-# INLINE toByteString #-}
+{-# INLINE_ARRAY toByteString #-}
 
 
 -- | O(1). Convert a `ByteString` to an foreign `Vector`.
 fromByteString :: ByteString -> Vector U.F Word8
 fromByteString (BS.PS fptr offset len)
  = UFArray (Z :. len) offset fptr
-{-# INLINE fromByteString #-}
+{-# INLINE_ARRAY fromByteString #-}
 
 
 -------------------------------------------------------------------------------
@@ -262,7 +263,7 @@ instance Eq (Vector U.F Word8) where
         loop_eq_VectorF 0
 
   | otherwise = False
- {-# INLINE (==) #-}
+ {-# INLINE_ARRAY (==) #-}
 
 
 -- | Equality of Unsafe Foreign arrays.
@@ -286,4 +287,4 @@ instance Eq (Vector U.F Char) where
         loop_eq_VectorF 0
 
   | otherwise = False
- {-# INLINE (==) #-}
+ {-# INLINE_ARRAY (==) #-}

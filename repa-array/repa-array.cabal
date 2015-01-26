@@ -84,6 +84,7 @@ Library
         -funbox-strict-fields
 
   extensions:
+        CPP
         BangPatterns
         NoMonomorphismRestriction
         RankNTypes

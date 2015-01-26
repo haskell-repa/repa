@@ -11,6 +11,8 @@ import Data.Repa.Eval.Array
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Internals.Bulk
 import Control.Monad
+#include "repa-stream.h"
+
 
 -- | Checked arrays are wrappers that perform bounds checks before indexing
 --   into a lower level representation.
@@ -38,15 +40,16 @@ instance Bulk r sh a => Bulk (K r) sh a where
 
         | otherwise
         = index inner ix
+ {-# INLINE_ARRAY index #-}
 
  extent (KArray inner)  = extent inner
- {-# INLINE extent #-}
+ {-# INLINE_ARRAY extent #-}
 
  safe arr               = arr
- {-# INLINE safe #-}
+ {-# INLINE_ARRAY safe #-}
 
  unsafe (KArray inner)  = inner
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY unsafe #-}
 
 deriving instance 
           (Show sh, Show (Array r sh a)) 
@@ -61,48 +64,48 @@ instance (Target r e t, Unpack (Buffer (K r) e) t)
 
  unsafeNewBuffer   len          
         = liftM KBuffer $ unsafeNewBuffer len
- {-# INLINE unsafeNewBuffer #-}
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  unsafeWriteBuffer (KBuffer buf) ix e     
         = unsafeWriteBuffer buf ix e
- {-# INLINE unsafeWriteBuffer #-}
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer  (KBuffer buf) ix
         = liftM KBuffer $ unsafeGrowBuffer buf ix
- {-# INLINE unsafeGrowBuffer #-}
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
  unsafeSliceBuffer start len (KBuffer buf)
         = liftM KBuffer $ unsafeSliceBuffer start len buf
- {-# INLINE unsafeSliceBuffer #-}
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  unsafeFreezeBuffer sh (KBuffer buf)
         = liftM checked $ unsafeFreezeBuffer sh buf
- {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  touchBuffer (KBuffer buf)
         = touchBuffer buf
- {-# INLINE touchBuffer #-}
+ {-# INLINE_ARRAY touchBuffer #-}
 
 
 ---------------------------------------------------------------------------------------------------
 instance Unpack (Buffer r e) t
       => Unpack (Buffer (K r) e) t where
  unpack (KBuffer buf)   = unpack buf
- {-# INLINE unpack #-}
+ {-# INLINE_ARRAY unpack #-}
 
  repack (KBuffer buf) parts  
         = KBuffer (repack buf parts)
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -- | O(1). Yield a checked version of an array.
 checked   :: Array r sh a     -> Array (K r) sh a
 checked arr = KArray arr
-{-# INLINE checked #-}
+{-# INLINE_ARRAY checked #-}
 
 
 -- | O(1). Yield the unchecked version of an array.
 unchecked :: Array (K r) sh a -> Array r sh a
 unchecked (KArray arr) = arr
-{-# INLINE unchecked #-}
+{-# INLINE_ARRAY unchecked #-}
 

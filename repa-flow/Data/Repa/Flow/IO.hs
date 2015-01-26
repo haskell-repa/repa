@@ -25,6 +25,7 @@ import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
 import Data.Word
 import Data.Char
+#include "repa-stream.h"
 
 
 -- Sourcing ---------------------------------------------------------------------------------------
@@ -65,7 +66,7 @@ sourceLines nChunk fails hs
         {-# INLINE isNewLine #-}
   
         chopChunk chunk
-         = A.mapElems (A.computeS_ . A.map (chr . fromIntegral)) 
+         = A.mapElems (A.computeS repr . A.map (chr . fromIntegral)) 
          $ A.trimEnds (== nl) chunk
         {-# INLINE chopChunk #-}
 

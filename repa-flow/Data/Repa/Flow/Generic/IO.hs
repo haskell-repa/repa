@@ -24,6 +24,7 @@ import Data.Char
 import System.IO
 import Data.Word
 import Prelude                                  as P
+#include "repa-stream.h"
 
 
 lix :: [a] -> Int -> Maybe a
@@ -78,7 +79,7 @@ sourceRecords
 sourceRecords len pSep aFail hs
  =   smap_i (\_ !c -> A.segmentOn pSep c)
  =<< sourceChunks len pSep aFail hs
-{-# INLINE [2] sourceRecords #-}
+{-# INLINE sourceRecords #-}
 
 
 -- | Like `sourceRecords`, but produce all records in a single vector.
@@ -121,7 +122,7 @@ sourceChunks len pSep aFail hs
                         -- Eat complete records at the start of the chunk.
                         eat $ window (Z :. 0) (Z :. ixSplit) arr
         {-# INLINE pull_sourceChunks #-}
-{-# INLINE [2] sourceChunks #-}
+{-# INLINE_FLOW sourceChunks #-}
 
 
 -- | Read 8-byte ASCII characters from some files, using the given chunk length.
@@ -131,9 +132,9 @@ sourceChunks len pSep aFail hs
 ----
 sourceChars :: Int -> [Handle] -> IO (Sources Int IO (Vector F Char))
 sourceChars len hs
- =   smap_i (\_ !c -> A.computeS_ $ A.map (chr . fromIntegral) c)
+ =   smap_i (\_ !c -> A.computeS F $ A.map (chr . fromIntegral) c)
  =<< sourceBytes len hs
-{-# INLINE [2] sourceChars #-}
+{-# INLINE sourceChars #-}
 
 
 -- | Read data from some files, using the given chunk length.
@@ -155,7 +156,7 @@ sourceBytes len hs
                         !chunk  <- hGetArray h len
                         eat chunk
         {-# INLINE pull_sourceBytes #-}
-{-# INLINE [2] sourceBytes #-}
+{-# INLINE_FLOW sourceBytes #-}
 
 
 -- Sinking ----------------------------------------------------------------------------------------
@@ -186,10 +187,10 @@ sinkLines :: ( Bulk r1 DIM1 (Vector r2 Char)
           -> [Handle]   -- ^ File handles.
           -> IO (Sinks Int IO (Vector r1 (Vector r2 Char)))
 sinkLines _ _ !hs
- =   smap_o (\_ !c -> computeS_ $ A.map (fromIntegral . ord) $ concatWith F fl c)
+ =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) $ concatWith F fl c)
  =<< sinkBytes hs
  where  !fl     = A.vfromList F ['\n']
-{-# INLINE [2] sinkLines #-}
+{-# INLINE sinkLines #-}
 
 
 -- | Write chunks of 8-byte ASCII characters to the given file handles.
@@ -201,9 +202,9 @@ sinkChars :: Bulk r DIM1 Char
           => [Handle]   -- ^ File handles.
           -> IO (Sinks Int IO (Vector r Char))
 sinkChars !hs
- =   smap_o (\_ !c -> computeS_ $ A.map (fromIntegral . ord) c)
+ =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) c)
  =<< sinkBytes hs
-{-# INLINE [2] sinkChars #-}
+{-# INLINE sinkChars #-}
 
 
 -- | Write chunks of bytes to the given file handles.
@@ -221,5 +222,5 @@ sinkBytes !hs
             {-# INLINE eject_sinkBytes #-}
 
         return  $ Sinks (P.length hs) push_sinkBytes eject_sinkBytes
-{-# INLINE [2] sinkBytes #-}
+{-# INLINE_FLOW sinkBytes #-}
 

@@ -22,6 +22,7 @@ import Data.Repa.Array.Material.Safe
 import Data.Repa.Array.Material.Unsafe.Nested   as A
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
+#include "repa-stream.h"
 
 
 -- | Like `fileSourceRecords`, but taking an existing file handle.
@@ -32,29 +33,29 @@ sourceRecords
         -> [Handle]             -- ^ File handles.
         -> IO (Sources Int IO N (Vector F Word8))
 sourceRecords = G.sourceRecords
-{-# INLINE [2] sourceRecords #-}
+{-# INLINE sourceRecords #-}
 
 
 -- | Read 8-bit ASCII characters from some files, using the given chunk length.
 sourceChars :: Int -> [Handle] -> IO (Sources Int IO F Char)
 sourceChars = G.sourceChars
-{-# INLINE [2] sourceChars #-}
+{-# INLINE sourceChars #-}
 
 
 -- | Read data from some files, using the given chunk length.
 sourceBytes :: Int -> [Handle] -> IO (Sources Int IO F Word8)
 sourceBytes = G.sourceBytes
-{-# INLINE [2] sourceBytes #-}
+{-# INLINE sourceBytes #-}
 
 
 -- | Write 8-bit ASCII characters to the given file handles.
 sinkChars    :: [Handle] -> IO (Sinks Int IO F Char)
 sinkChars    =  G.sinkChars
-{-# INLINE [2] sinkChars #-}
+{-# INLINE sinkChars #-}
 
 
 -- | Write chunks of data to the given file handles.
 sinkBytes    :: [Handle] -> IO (Sinks Int IO F Word8)
 sinkBytes    =  G.sinkBytes
-{-# INLINE [2] sinkBytes #-}
+{-# INLINE sinkBytes #-}
 

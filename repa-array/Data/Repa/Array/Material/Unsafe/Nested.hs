@@ -37,13 +37,13 @@ import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Repa.Vector.Unboxed               as U
-import qualified Data.Repa.Array.Material.Safe.Base     as S
 import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import Prelude                                          as P
 import Prelude  hiding (concat)
+#include "repa-stream.h"
+
 
 ---------------------------------------------------------------------------------------------------
-
 -- | Unsafe Nested arrays.
 instance Repr U.N where
  repr           = U.N
@@ -62,13 +62,13 @@ instance ( Bulk   r DIM1 a
 
  extent (UNArray starts _lengths _elems)
         = Z :. U.length starts
- {-# INLINE [1] extent #-}
+ {-# INLINE_ARRAY extent #-}
 
  index  (UNArray starts lengths elems) (Z :. ix)
         = window (Z :. (starts  `U.unsafeIndex` ix)) 
                  (Z :. (lengths `U.unsafeIndex` ix)) 
                  elems
- {-# INLINE [1] index #-}
+ {-# INLINE_ARRAY index #-}
 
 
 deriving instance Show (Vector r a) => Show (Vector U.N (Vector r a))
@@ -82,7 +82,7 @@ instance (Bulk r DIM1 a, Window r DIM1 a)
         = UNArray (U.unsafeSlice start len starts)
                   (U.unsafeSlice start len lengths)
                   elems
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
 
 
 -- Conversion -------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ fromLists r xss
         lengths    = U.fromList    $ P.map P.length xss
         starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
    in   UNArray starts lengths elems
-{-# INLINE [1] fromLists #-}
+{-# INLINE_ARRAY fromLists #-}
         
 
 -- | O(size src) Convert a triply nested list to a triply nested array.
@@ -117,7 +117,7 @@ fromListss r xs
    in   UNArray    starts1 lengths1 
          $ UNArray starts2 lengths2 
          $ elems
-{-# INLINE [1] fromListss #-}
+{-# INLINE_ARRAY fromListss #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ mapElems :: (Vector r1 a -> Vector r2 b)
 
 mapElems f (UNArray starts lengths elems)
  = UNArray starts lengths (f elems)
-{-# INLINE [1] mapElems #-}
+{-# INLINE_ARRAY mapElems #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ slices  :: Vector U.U Int               -- ^ Segment starting positions.
 
 slices (UUArray _ starts) (UUArray _ lens) !elems
  = UNArray starts lens elems
-{-# INLINE [1] slices #-}
+{-# INLINE_ARRAY slices #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ concats (UNArray starts1 lengths1 (UNArray starts2 lengths2 elems))
                         $ U.zip starts1 lengths1
 
    in   UNArray starts2' lengths2' elems
-{-# INLINE [1] concats #-}
+{-# INLINE_ARRAY concats #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -189,7 +189,7 @@ segment pStart pEnd !elems
                 $ U.generate len (\ix -> index elems (Z :. ix))
 
    in   UNArray starts lens elems
-{-# INLINE [1] segment #-}
+{-# INLINE_ARRAY segment #-}
 
 
 -- | O(len src). Given a terminating value, split an vector into segments.
@@ -206,7 +206,7 @@ segmentOn
 
 segmentOn !pEnd !arr
  = segment (const True) pEnd arr
-{-# INLINE [1] segmentOn #-}
+{-# INLINE_ARRAY segmentOn #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
                                 (\ix -> index arrInner (Z :. ix))
 
    in   UNArray starts2 lens2 arrInner
-{-# INLINE [1] dice #-}
+{-# INLINE_ARRAY dice #-}
 
 
 -- | O(len src). Given field and row terminating values, 
@@ -265,7 +265,7 @@ diceOn !xEndWord !xEndLine !arr
         = dice  (const True) (\x -> x == xEndWord || x == xEndLine)
                 (const True) (\x -> x == xEndLine)
                 arr
-{-# INLINE [1] diceOn #-}
+{-# INLINE_ARRAY diceOn #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -283,20 +283,20 @@ trims pTrim (UNArray starts lengths elems)
          | pTrim (elems `index` (Z :. start + len - 1)) 
                         = loop_trimEnds   start (len - 1)
          | otherwise    = loop_trimStarts start len
-        {-# INLINE loop_trimEnds #-}
+        {-# INLINE_INNER loop_trimEnds #-}
 
         loop_trimStarts !start !len 
          | len == 0     = (start, len)
          | pTrim (elems `index` (Z :. start + len - 1)) 
                         = loop_trimStarts (start + 1) (len - 1)
          | otherwise    = (start, len)
-        {-# INLINE loop_trimStarts #-}
+        {-# INLINE_INNER loop_trimStarts #-}
 
         (starts', lengths')
                 = U.unzip $ U.zipWith loop_trimEnds starts lengths
 
    in   UNArray starts' lengths' elems
-{-# INLINE [1] trims #-}
+{-# INLINE_ARRAY trims #-}
 
 
 -- | For each segment of a nested vector, trim elements off the end of 
@@ -313,12 +313,12 @@ trimEnds pTrim (UNArray starts lengths elems)
          | pTrim (elems `index` (Z :. start + len - 1)) 
                         = loop_trimEnds start (len - 1)
          | otherwise    = len
-        {-# INLINE loop_trimEnds #-}
+        {-# INLINE_INNER loop_trimEnds #-}
 
         lengths'        = U.zipWith loop_trimEnds starts lengths
 
    in   UNArray starts lengths' elems
-{-# INLINE [1] trimEnds #-}
+{-# INLINE_ARRAY trimEnds #-}
 
 
 -- | For each segment of a nested vector, trim elements off the start of
@@ -335,13 +335,13 @@ trimStarts pTrim (UNArray starts lengths elems)
          | pTrim (elems `index` (Z :. start + len - 1)) 
                         = loop_trimStarts (start + 1) (len - 1)
          | otherwise    = (start, len)
-        {-# INLINE loop_trimStarts #-}
+        {-# INLINE_INNER loop_trimStarts #-}
 
         (starts', lengths')
                 = U.unzip $ U.zipWith loop_trimStarts starts lengths
 
    in   UNArray starts' lengths' elems
-{-# INLINE [1] trimStarts #-}
+{-# INLINE_ARRAY trimStarts #-}
 
 
 ---------------------------------------------------------------------------------------------------

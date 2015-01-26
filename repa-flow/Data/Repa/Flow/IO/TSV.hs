@@ -8,6 +8,7 @@ import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
 import Data.Char
+#include "repa-stream.h"
 
 
 -- | Like `sourceTSV` but take existing file handles.
@@ -52,5 +53,5 @@ sourceTSV nChunk aFail hs
 
         return sRows
 
-{-# INLINE [2] sourceTSV #-}
+{-# INLINE sourceTSV #-}
 

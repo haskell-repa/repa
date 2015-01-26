@@ -7,6 +7,7 @@ import Data.Repa.Array.Internals.Bulk           as R
 import Data.Repa.Array.Internals.Target         as R
 import Data.Repa.Eval.Chain                     as R
 import qualified Data.Repa.Chain                as C
+#include "repa-stream.h"
 
 
 -- | From a stream of values which has consecutive runs of idential values,
@@ -33,4 +34,4 @@ groupsBy f !c !vec0
         (vec1, k1)
          = R.unchainToVector $ C.liftChain
          $ C.groupsByC f' c  $ R.chainOfVector vec0
-{-# INLINE [2] groupsBy #-}
+{-# INLINE_ARRAY groupsBy #-}

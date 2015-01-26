@@ -75,7 +75,7 @@ import Data.Repa.Array.Internals.Operator.Group         as R
 import Data.Repa.Array.Internals.Operator.Fold          as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
-#include "vector.h"
+#include "repa-stream.h"
 
 -- | Classes supported by all material representations.
 --
@@ -98,7 +98,7 @@ reverse !vec
  = let  !len           = size (extent vec)
         get (Z :. ix)  = vec `index` (Z :. len - ix - 1)
    in   fromFunction (extent vec) get
-{-# INLINE [2] reverse #-}
+{-# INLINE_ARRAY reverse #-}
 
 
 -- | O(len src) Yield `Just` the index of the first element matching the predicate
@@ -119,5 +119,5 @@ findIndex p !vec
                         else loop_findIndex sPEC (ix + 1)
         {-# INLINE_INNER loop_findIndex #-}
 
-{-# INLINE [2] findIndex #-}
+{-# INLINE_ARRAY findIndex #-}
 

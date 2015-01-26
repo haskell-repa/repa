@@ -6,6 +6,7 @@ where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array
 import Prelude hiding (length)
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ distributes_o (Sinks nSinks push eject) spill
             {-# INLINE eject_distributes #-}
 
         return $ Sinks () push_distributes eject_distributes
-{-# INLINE [2] distributes_o #-}
+{-# INLINE_FLOW distributes_o #-}
 
 
 -- | Like `distributes_o` but drop spilled elements on the floor.
@@ -68,4 +69,4 @@ ddistributes_o
 
 ddistributes_o sinks 
         = distributes_o sinks (\_ -> return ())
-{-# INLINE [2] ddistributes_o #-}
+{-# INLINE ddistributes_o #-}

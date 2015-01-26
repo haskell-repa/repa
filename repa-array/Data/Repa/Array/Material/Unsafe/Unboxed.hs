@@ -21,6 +21,7 @@ import qualified Data.Repa.Array.Material.Safe.Base     as S
 import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -48,10 +49,10 @@ instance (Shape sh, U.Unbox a) => Bulk U.U sh a where
  index  (UUArray sh vec) ix     = vec `U.unsafeIndex` (toIndex sh ix)
  safe   arr                     = SUArray $ checked arr
  unsafe arr                     = arr
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
  {-# SPECIALIZE instance Bulk U.U DIM1 ()      #-}
  {-# SPECIALIZE instance Bulk U.U DIM1 Bool    #-}
  {-# SPECIALIZE instance Bulk U.U DIM1 Char    #-}
@@ -73,10 +74,10 @@ instance (Shape sh, U.Unbox e) => Bulk S.U sh e where
  index  (SUArray inner) ix      = index  inner ix
  safe   arr                     = arr
  unsafe (SUArray inner)         = unchecked inner
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
  {-# SPECIALIZE instance Bulk S.U DIM1 ()      #-}
  {-# SPECIALIZE instance Bulk S.U DIM1 Bool    #-}
  {-# SPECIALIZE instance Bulk S.U DIM1 Char    #-}
@@ -96,7 +97,7 @@ deriving instance (Show sh, Show e, U.Unbox e) => Show (Array S.U sh e)
 instance U.Unbox a => Window U.U DIM1 a where
  window (Z :. start) (Z :. len) (UUArray _sh vec)
         = UUArray (Z :. len) (U.slice start len vec)
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
  {-# SPECIALIZE instance Window U.U DIM1 Int     #-}
  {-# SPECIALIZE instance Window U.U DIM1 Float   #-}
  {-# SPECIALIZE instance Window U.U DIM1 Double  #-}
@@ -114,30 +115,30 @@ instance U.Unbox e => Target U.U e (UM.IOVector e) where
 
  unsafeNewBuffer len
   = liftM UUBuffer (UM.unsafeNew len)
- {-# INLINE unsafeNewBuffer #-}
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  unsafeWriteBuffer (UUBuffer mvec) ix
   = UM.unsafeWrite mvec ix
- {-# INLINE unsafeWriteBuffer #-}
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer (UUBuffer mvec) bump
   = do  mvec'   <- UM.unsafeGrow mvec bump
         return  $ UUBuffer mvec'
- {-# INLINE unsafeGrowBuffer #-}
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
  unsafeFreezeBuffer sh (UUBuffer mvec)     
   = do  vec     <- U.unsafeFreeze mvec
         return  $  UUArray sh vec
- {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer start len (UUBuffer mvec)
   = do  let mvec'  = UM.unsafeSlice start len mvec
         return $ UUBuffer mvec'
- {-# INLINE unsafeSliceBuffer #-}
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer _ 
   = return ()
- {-# INLINE touchBuffer #-}
+ {-# INLINE_ARRAY touchBuffer #-}
 
  {-# SPECIALIZE instance Target U.U Int    (UM.IOVector Int)    #-}
  {-# SPECIALIZE instance Target U.U Float  (UM.IOVector Float)  #-}
@@ -151,8 +152,8 @@ instance U.Unbox e => Target U.U e (UM.IOVector e) where
 instance Unpack (Buffer U.U e) (UM.IOVector e) where
  unpack (UUBuffer vec) = vec `seq` vec
  repack !_ !vec        = UUBuffer vec
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -- Conversions ----------------------------------------------------------------
@@ -162,7 +163,7 @@ fromVector
         => sh -> U.Vector e -> Array U.U sh e
 fromVector sh vec
         = UUArray sh vec
-{-# INLINE [1] fromVector #-}
+{-# INLINE_ARRAY fromVector #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
@@ -171,5 +172,5 @@ toVector
         => Array U.U sh e -> U.Vector e
 toVector (UUArray _ vec)
         = vec
-{-# INLINE [1] toVector #-}
+{-# INLINE_ARRAY toVector #-}
 

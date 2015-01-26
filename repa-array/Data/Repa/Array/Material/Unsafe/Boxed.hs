@@ -16,6 +16,7 @@ import qualified Data.Repa.Array.Material.Safe.Base     as S
 import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.Vector                            as V
 import qualified Data.Vector.Mutable                    as VM
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -43,10 +44,10 @@ instance Shape sh => Bulk U.B sh a where
  index  (UBArray sh vec) ix     = vec `V.unsafeIndex` (toIndex sh ix)
  safe   arr                     = SBArray $ checked arr
  unsafe arr                     = arr
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
 
 deriving instance (Show sh, Show a) => Show (Array U.B sh a)
 
@@ -58,10 +59,10 @@ instance Shape sh => Bulk S.B sh a where
  extent (SBArray inner)          = extent inner
  safe  arr                       = arr
  unsafe (SBArray (KArray inner)) = inner
- {-# INLINE index  #-}
- {-# INLINE extent #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
 
 deriving instance (Show sh, Show a) => Show (Array S.B sh a)
 
@@ -71,7 +72,7 @@ deriving instance (Show sh, Show a) => Show (Array S.B sh a)
 instance Window U.B DIM1 a where
  window (Z :. start) (Z :. len) (UBArray _sh vec)
         = UBArray (Z :. len) (V.slice start len vec)
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
 
 
 -- Target ---------------------------------------------------------------------
@@ -82,30 +83,30 @@ instance Target U.B e (VM.IOVector e) where
 
  unsafeNewBuffer len
   = liftM UBBuffer (VM.unsafeNew len)
- {-# INLINE unsafeNewBuffer #-}
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  unsafeWriteBuffer (UBBuffer mvec) ix
   = VM.unsafeWrite mvec ix
- {-# INLINE unsafeWriteBuffer #-}
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer (UBBuffer mvec) bump
   = do  mvec'   <- VM.unsafeGrow mvec bump
         return  $ UBBuffer mvec'
- {-# INLINE unsafeGrowBuffer #-}
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
  unsafeFreezeBuffer sh (UBBuffer mvec)     
   = do  vec     <- V.unsafeFreeze mvec
         return  $  UBArray sh vec
- {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer start len (UBBuffer mvec)
   = do  let mvec'  = VM.unsafeSlice start len mvec
         return $ UBBuffer mvec'
- {-# INLINE unsafeSliceBuffer #-}
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer _ 
   = return ()
- {-# INLINE touchBuffer #-}
+ {-# INLINE_ARRAY touchBuffer #-}
 
  {-# SPECIALIZE instance Target U.B Int    (VM.IOVector Int)    #-}
  {-# SPECIALIZE instance Target U.B Float  (VM.IOVector Float)  #-}
@@ -119,6 +120,6 @@ instance Target U.B e (VM.IOVector e) where
 instance Unpack (Buffer U.B e) (VM.IOVector e) where
  unpack (UBBuffer vec) = vec `seq` vec
  repack !_ !vec        = UBBuffer vec
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
 

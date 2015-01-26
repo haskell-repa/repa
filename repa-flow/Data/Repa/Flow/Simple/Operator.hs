@@ -37,6 +37,7 @@ where
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.States                    (States (..))
 import qualified Data.Repa.Flow.Generic         as G
+#include "repa-stream.h"
 
 
 -- Constructors ---------------------------------------------------------------
@@ -45,7 +46,7 @@ repeat_i :: States () m
          => a -> m (Source m a)
 repeat_i x 
         = G.repeat_i () (const x)
-{-# INLINE [2] repeat_i #-}
+{-# INLINE repeat_i #-}
 
 
 -- | Yield a source of the given length that always produces the same value.
@@ -54,14 +55,14 @@ replicate_i
         => Int -> a -> m (Source m a)
 replicate_i n x 
         = G.replicate_i () n (const x)
-{-# INLINE [2] replicate_i #-}
+{-# INLINE replicate_i #-}
 
 
 -- | Prepend some more elements to the front of a source.
 prepend_i :: States () m
           => [a] -> Source m a -> m (Source m a)
 prepend_i = G.prepend_i
-{-# INLINE [2] prepend_i #-}
+{-# INLINE prepend_i #-}
 
 
 -- Mapping --------------------------------------------------------------------
@@ -69,14 +70,14 @@ prepend_i = G.prepend_i
 --   producing a new source.
 map_i     :: States () m => (a -> b) -> Source m a -> m (Source m b)
 map_i f s =  G.smap_i (\G.UIx x -> f x) s
-{-# INLINE [2] map_i #-}
+{-# INLINE map_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
 map_o     :: States () m => (a -> b) -> Sink   m b -> m (Sink   m a)
 map_o f s = G.smap_o (\G.UIx x -> f x) s
-{-# INLINE [2] map_o #-}
+{-# INLINE map_o #-}
 
 
 -- Connecting -----------------------------------------------------------------
@@ -87,7 +88,7 @@ map_o f s = G.smap_o (\G.UIx x -> f x) s
 --   argument sinks. 
 dup_oo    :: States () m => Sink m a   -> Sink m a -> m (Sink m a)
 dup_oo    =  G.dup_oo
-{-# INLINE [2] dup_oo #-}
+{-# INLINE dup_oo #-}
 
 
 -- | Send the same data to two consumers.
@@ -98,7 +99,7 @@ dup_oo    =  G.dup_oo
 --   result source.
 dup_io    :: States () m => Source m a -> Sink m a -> m (Source m a)
 dup_io    =  G.dup_io
-{-# INLINE [2] dup_io #-}
+{-# INLINE dup_io #-}
 
 
 -- | Send the same data to two consumers.
@@ -107,7 +108,7 @@ dup_io    =  G.dup_io
 --
 dup_oi    :: States () m => Sink m a   -> Source m a -> m (Source m a)
 dup_oi    =  G.dup_oi
-{-# INLINE [2] dup_oi #-}
+{-# INLINE dup_oi #-}
 
 
 -- | Connect an argument source to two result sources.
@@ -118,7 +119,7 @@ dup_oi    =  G.dup_oi
 connect_i :: States () m
           => Source m a -> m (Source m a, Source m a)
 connect_i = G.connect_i
-{-# INLINE [2] connect_i #-}
+{-# INLINE connect_i #-}
 
 
 -- Splitting ------------------------------------------------------------------
@@ -130,7 +131,7 @@ head_i  :: States () m
 
 head_i len s0 
         = G.head_i len s0 G.UIx
-{-# INLINE [2] head_i #-}
+{-# INLINE head_i #-}
 
 
 -- | Peek at the given number of elements in the stream, 
@@ -142,7 +143,7 @@ peek_i n s0
         xs       <- G.takeList1 n G.UIx s1
         s3       <- G.prepend_i xs s2
         return   (xs, s3)
-{-# INLINE [2] peek_i #-}
+{-# INLINE peek_i #-}
 
 
 -- Grouping -------------------------------------------------------------------
@@ -154,7 +155,7 @@ peek_i n s0
 groups_i :: (Monad m, Eq a)
          => Source m a -> m (Source m Int)
 groups_i = G.groups_i 
-{-# INLINE [2] groups_i #-}
+{-# INLINE groups_i #-}
 
 
 -- Packing --------------------------------------------------------------------
@@ -164,7 +165,7 @@ groups_i = G.groups_i
 pack_ii  :: Monad m
          => Source m Bool -> Source m a -> m (Source m a)
 pack_ii s0 s1 = G.pack_ii s0 s1
-{-# INLINE [2] pack_ii #-}
+{-# INLINE pack_ii #-}
 
 
 -- Folding --------------------------------------------------------------------
@@ -174,7 +175,7 @@ folds_ii :: Monad m
          -> Source m Int  -> Source m a 
          -> m (Source m a)
 folds_ii f z s0 s1 = G.folds_ii f z s0 s1
-{-# INLINE [2] folds_ii #-}
+{-# INLINE folds_ii #-}
 
 
 -- Watching -------------------------------------------------------------------
@@ -184,7 +185,7 @@ watch_i :: Monad m
         => (a -> m ()) 
         -> Source m a  -> m (Source m a)
 watch_i f s0 = G.watch_i (\_ x -> f x) s0
-{-# INLINE [2] watch_i #-}
+{-# INLINE watch_i #-}
 
 
 -- | Pass elements to the provided action as they are pushed to the sink.
@@ -192,14 +193,14 @@ watch_o :: Monad m
         => (a -> m ())
         -> Sink m a -> m (Sink m a)
 watch_o f s0 = G.watch_o (\_ x -> f x) s0
-{-# INLINE [2] watch_o #-}
+{-# INLINE watch_o #-}
 
 
 -- | Like `watch` but doesn't pass elements to another sink.
 trigger_o :: Monad m 
           => (a -> m ()) -> m (Sink m a)
 trigger_o f  = G.trigger_o () (\_ x -> f x)
-{-# INLINE [2] trigger_o #-}
+{-# INLINE trigger_o #-}
 
 
 -- Ignorance ------------------------------------------------------------------
@@ -210,7 +211,7 @@ trigger_o f  = G.trigger_o () (\_ x -> f x)
 discard_o :: Monad m 
           => m (Sink m a)
 discard_o = G.discard_o ()
-{-# INLINE [2] discard_o #-}
+{-# INLINE discard_o #-}
 
 
 -- | A sink that ignores all incoming elements.
@@ -220,5 +221,5 @@ discard_o = G.discard_o ()
 ignore_o  :: Monad m 
           => m (Sink m a)
 ignore_o = G.ignore_o ()
-{-# INLINE [2] ignore_o #-}
+{-# INLINE ignore_o #-}
 

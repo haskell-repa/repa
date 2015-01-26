@@ -57,10 +57,11 @@ import Data.Repa.Flow.Chunked.Operator
 import Data.Repa.Flow.Chunked.IO
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic as G
+#include "repa-stream.h"
 
 
 -- | Pull all available values from the sources and push them to the sinks.
 drain   :: (G.Index i, Monad m)
         => Sources i m r a -> Sinks i m r a -> m ()
 drain = G.drain
-{-# INLINE [2] drain #-}
+{-# INLINE drain #-}

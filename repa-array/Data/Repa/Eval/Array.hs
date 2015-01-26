@@ -14,6 +14,7 @@ import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Bulk
 import System.IO.Unsafe
+#include "repa-stream.h"
 
 
 -- | Sequential computation of array elements.
@@ -25,4 +26,4 @@ computeS _ arr1
  $ do   mvec2   <- unsafeNewBuffer (size $ extent arr1) 
         loadS arr1 mvec2
         unsafeFreezeBuffer (extent arr1) mvec2
-{-# INLINE [2] computeS #-}
+{-# INLINE_ARRAY computeS #-}

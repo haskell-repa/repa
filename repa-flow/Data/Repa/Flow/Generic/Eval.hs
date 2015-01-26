@@ -3,6 +3,7 @@ module Data.Repa.Flow.Generic.Eval
         (drain)
 where
 import Data.Repa.Flow.Generic.Base
+#include "repa-stream.h"
 
 
 -- | Pull all available values from the sources and push them to the sinks.
@@ -27,4 +28,4 @@ drain (Sources nSources ipull) (Sinks nSinks opush oeject)
                          Just ix'       -> loop_drain ix'
                 {-# INLINE eject_drain #-}
         {-# INLINE loop_drain #-}
-{-# INLINE [1] drain #-}
+{-# INLINE_FLOW drain #-}

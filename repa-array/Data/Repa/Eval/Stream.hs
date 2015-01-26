@@ -7,7 +7,7 @@ where
 import Data.Repa.Array.Shape                            as R
 import Data.Repa.Array.Internals.Bulk                   as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -- | Convert a `Vector` to a `Stream`.

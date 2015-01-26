@@ -8,6 +8,7 @@ module Data.Repa.Array.Window
 where
 import Data.Repa.Array.Shape
 import Data.Repa.Array.Internals.Bulk
+#include "repa-stream.h"
 
 
 -- Windows ----------------------------------------------------------------------------------------
@@ -31,24 +32,24 @@ instance Bulk r sh a
  index  (WArray start _ buffer) ix      = index buffer (addDim start ix)
  safe   arr                             = arr
  unsafe arr                             = arr
- {-# INLINE extent #-}
- {-# INLINE index  #-}
- {-# INLINE safe   #-}
- {-# INLINE unsafe #-}
+ {-# INLINE_ARRAY extent #-}
+ {-# INLINE_ARRAY index  #-}
+ {-# INLINE_ARRAY safe   #-}
+ {-# INLINE_ARRAY unsafe #-}
 
 
 -- | Wrap a window around an exiting array.
 windowed :: Shape sh => sh -> sh -> Array r sh a -> Array (W r) sh a
 windowed start shape arr
         = WArray start shape arr
-{-# INLINE [1] windowed #-}
+{-# INLINE_ARRAY windowed #-}
 
 
 -- | Wrap a window around an existing array that encompases the entire array.
 entire :: Bulk r sh a => Array r sh a -> Array (W r) sh a
 entire arr
         = WArray zeroDim (extent arr) arr
-{-# INLINE [1] entire #-}
+{-# INLINE_ARRAY entire #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -60,5 +61,5 @@ class Bulk r sh a => Window r sh a where
 instance Bulk r sh a => Window (W r) sh a where
  window start _shape (WArray wStart wShape arr)
         = WArray (addDim wStart start) wShape arr
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
 

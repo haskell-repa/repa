@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 
 -- | Evaluation of chains into bulk arrays.
 module Data.Repa.Eval.Chain
@@ -15,7 +14,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import qualified Data.Vector.Fusion.Util                as S
 import System.IO.Unsafe
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -32,15 +31,15 @@ chainOfVector !vec
         step !i
          | i >= len     = return $ Done  i
          | otherwise    = return $ Yield (R.index vec (Z :. i)) (i + 1)
-        {-# INLINE step #-}
-{-# INLINE [2] chainOfVector #-}
+        {-# INLINE_INNER step #-}
+{-# INLINE_STREAM chainOfVector #-}
 
 
 -- | Lift a pure chain to a monadic chain.
 liftChain :: Monad m => Chain S.Id s a -> Chain m s a
 liftChain (Chain sz s step)
         = Chain sz s (return . S.unId . step)
-{-# INLINE  liftChain #-}
+{-# INLINE_STREAM  liftChain #-}
 
 
 -------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ unchainToVector c
         = unsafePerformIO 
         $ unchainToVectorIO 
         $ liftChain c
-{-# INLINE [2] unchainToVector #-}
+{-# INLINE_STREAM unchainToVector #-}
 
 
 -- | Compute the elements of an `IO` `Chain`, 
@@ -87,10 +86,10 @@ unchainToVectorIO (Chain sz s0 step)
                           -> do  vec'    <- unsafeSliceBuffer 0 i vec
                                  arr     <- unsafeFreezeBuffer (Z :. i) vec'
                                  return  (arr, s')
-                    {-# INLINE go_unchainIO_max #-}
+                    {-# INLINE_INNER go_unchainIO_max #-}
 
                 go_unchainIO_max S.SPEC 0 s0
-        {-# INLINE [1] unchainToVectorIO_max #-}
+        {-# INLINE_INNER unchainToVectorIO_max #-}
 
         -- unchain when we don't know the maximum size of the vector.
         unchainToVectorIO_unknown !nStart
@@ -122,9 +121,8 @@ unchainToVectorIO (Chain sz s0 step)
                                 done (arr, s')
 
                 go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0
-        {-# INLINE [1] unchainToVectorIO_unknown #-}
-
-{-# INLINE [2] unchainToVectorIO #-}
+        {-# INLINE_INNER unchainToVectorIO_unknown #-}
+{-# INLINE_STREAM unchainToVectorIO #-}
 
 
 

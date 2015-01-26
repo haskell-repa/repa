@@ -7,6 +7,7 @@ import Data.Repa.Flow.Simple.Base
 import Data.Repa.Array
 import Data.Repa.Eval.Array
 import Data.IORef
+#include "repa-stream.h"
 
 
 -- Chunk ------------------------------------------------------------------------------------------
@@ -66,9 +67,9 @@ chunk_i !maxLen (Source pullX)
           -> do chunk'  <- unsafeSliceBuffer 0 len chunk
                 arr     <- unsafeFreezeBuffer (Z :. len) chunk'
                 eat arr
-  {-# INLINE [1] pull #-}
+  {-# INLINE pull #-}
 
-{-# INLINE [2] chunk_i #-}
+{-# INLINE_FLOW chunk_i #-}
 
 
 -- Unchunk ----------------------------------------------------------------------------------------
@@ -139,7 +140,7 @@ unchunk_i (Source pullC)
             {-# INLINE pullX #-}
 
         return $ Source pullX
-{-# INLINE [2] unchunk_i #-}
+{-# INLINE_FLOW unchunk_i #-}
 
 
 -- | Take an argument sink for individual elements, and produce a result sink
@@ -168,5 +169,5 @@ unchunk_o (Sink pushX ejectX)
         eject_unchunk
          = ejectX 
         {-# INLINE eject_unchunk #-}
-{-# INLINE [2] unchunk_o #-}
+{-# INLINE_FLOW unchunk_o #-}
 

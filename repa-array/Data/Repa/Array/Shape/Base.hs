@@ -5,6 +5,8 @@ module Data.Repa.Array.Shape.Base
         , inShape
         , showShape )
 where
+#include "repa-stream.h"
+
 
 -- | Class of types that can be used as array shapes and indices.
 class Eq sh => Shape sh where
@@ -48,7 +50,7 @@ class Eq sh => Shape sh where
 inShape ::  Shape sh => sh -> sh -> Bool
 inShape sh ix
         = inShapeRange zeroDim sh ix
-{-# INLINE inShape #-}
+{-# INLINE_ARRAY inShape #-}
 
 
 -- | Nicely format a shape as a string

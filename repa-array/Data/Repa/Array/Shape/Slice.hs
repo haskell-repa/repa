@@ -9,6 +9,7 @@ module Data.Repa.Array.Shape.Slice
 where
 import Data.Repa.Array.Shape.Index
 import Prelude		        hiding (replicate, drop)
+#include "repa-stream.h"
 
 
 -- | Select all indices at a certain position.
@@ -46,36 +47,36 @@ class Slice ss where
 
 instance Slice Z  where
 	sliceOfFull _ _		= Z
-        {-# INLINE [1] sliceOfFull #-}
+        {-# INLINE sliceOfFull #-}
 
 	fullOfSlice _ _		= Z
-        {-# INLINE [1] fullOfSlice #-}
+        {-# INLINE fullOfSlice #-}
 
 
 instance Slice (Any sh) where
 	sliceOfFull _ sh	= sh
-        {-# INLINE [1] sliceOfFull #-}
+        {-# INLINE sliceOfFull #-}
 
 	fullOfSlice _ sh	= sh
-        {-# INLINE [1] fullOfSlice #-}
+        {-# INLINE fullOfSlice #-}
 
 
 instance Slice sl => Slice (sl :. Int) where
 	sliceOfFull (fsl :. _) (ssl :. _)
 		= sliceOfFull fsl ssl
-        {-# INLINE [1] sliceOfFull #-}
+        {-# INLINE sliceOfFull #-}
 
 	fullOfSlice (fsl :. n) ssl
 		= fullOfSlice fsl ssl :. n
-        {-# INLINE [1] fullOfSlice #-}
+        {-# INLINE fullOfSlice #-}
 
 
 instance Slice sl => Slice (sl :. All) where
 	sliceOfFull (fsl :. All) (ssl :. s)
 		= sliceOfFull fsl ssl :. s
-        {-# INLINE [1] sliceOfFull #-}
+        {-# INLINE sliceOfFull #-}
 
 	fullOfSlice (fsl :. All) (ssl :. s)
 		= fullOfSlice fsl ssl :. s
-        {-# INLINE [1] fullOfSlice #-}
+        {-# INLINE fullOfSlice #-}
 

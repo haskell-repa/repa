@@ -23,8 +23,8 @@ import Foreign.Marshal.Alloc
 import Foreign.Marshal.Utils
 import Data.Repa.Array.Material.Unsafe.Foreign          (Array(..))
 import qualified Data.Repa.Array.Material.Safe.Base     as S
-import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Foreign.ForeignPtr.Unsafe              as Unsafe
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ instance Storable a
       => Window S.F DIM1 a where
  window (Z :. start) sh' (SFArray (KArray (UFArray _ offset ptr)))
         = SFArray (KArray (UFArray sh' (offset + start) ptr))
- {-# INLINE window #-}
+ {-# INLINE_ARRAY window #-}
  {-# SPECIALIZE instance Window S.F DIM1 Char    #-}
  {-# SPECIALIZE instance Window S.F DIM1 Int     #-}
  {-# SPECIALIZE instance Window S.F DIM1 Float   #-}
@@ -61,13 +61,13 @@ instance Storable a
         
         fptr    <- newForeignPtr finalizerFree ptr
         return  $ SFBuffer 0 len fptr
- {-# INLINE unsafeNewBuffer #-}
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
  -- to touch it after the last use, otherwise the finaliser might run too early.
  unsafeWriteBuffer (SFBuffer start _ fptr) !ix !x
   = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) (start + ix) x
- {-# INLINE unsafeWriteBuffer #-}
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer (SFBuffer start len fptr) bump
   =  withForeignPtr fptr $ \ptr 
@@ -81,19 +81,19 @@ instance Storable a
 
         fptr'   <- newForeignPtr finalizerFree ptr'
         return  $ SFBuffer 0 len' fptr'
- {-# INLINE unsafeGrowBuffer #-}
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
  unsafeFreezeBuffer !sh (SFBuffer start _len fptr)
   =     return  $ SFArray (KArray (UFArray sh start fptr))
- {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer start' len (SFBuffer start _len fptr)
   =     return  $ SFBuffer (start + start') len fptr
- {-# INLINE unsafeSliceBuffer #-}
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer (SFBuffer _ _ fptr)
   = touchForeignPtr fptr
- {-# INLINE touchBuffer #-}
+ {-# INLINE_ARRAY touchBuffer #-}
 
  {-# SPECIALIZE instance Target S.F Int    (Int, Int, ForeignPtr Int)    #-}
  {-# SPECIALIZE instance Target S.F Float  (Int, Int, ForeignPtr Float)  #-}
@@ -108,8 +108,8 @@ instance Storable a
 instance Unpack (Buffer S.F a) (Int, Int, ForeignPtr a) where
  unpack (SFBuffer start len fptr) = (start, len, fptr)
  repack _ (start, len, fptr)      = SFBuffer start len fptr
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------
@@ -117,40 +117,39 @@ instance Unpack (Buffer S.F a) (Int, Int, ForeignPtr a) where
 fromForeignPtr :: Shape sh => sh -> ForeignPtr a -> Array S.F sh a
 fromForeignPtr !sh !fptr
         = SFArray $ checked $ UF.fromForeignPtr sh fptr
-{-# INLINE fromForeignPtr #-}
+{-# INLINE_ARRAY fromForeignPtr #-}
 
 
 -- | O(1). Unpack a `ForeignPtr` from an array.
 toForeignPtr :: Array S.F sh a -> ForeignPtr a
 toForeignPtr (SFArray arr)
         = UF.toForeignPtr $ unchecked arr
-{-# INLINE toForeignPtr #-}
+{-# INLINE_ARRAY toForeignPtr #-}
 
 
 -- | O(1). Convert a `ByteString` to an foreign `Vector`.
 fromByteString :: ByteString -> Vector S.F Word8
 fromByteString bs
         = SFArray $ checked $ UF.fromByteString bs
-{-# INLINE fromByteString #-}
+{-# INLINE_ARRAY fromByteString #-}
 
 
 -- | O(1). Convert a foreign 'Vector' to a `ByteString`.
 toByteString :: Vector S.F Word8 -> ByteString
 toByteString (SFArray vec)
         = UF.toByteString $ unchecked vec
-{-# INLINE toByteString #-}
+{-# INLINE_ARRAY toByteString #-}
 
 
 -------------------------------------------------------------------------------
 -- | Equality of Foreign arrays.
 instance Eq (Vector S.F Word8) where
  (==) (SFArray (KArray arr1)) (SFArray (KArray arr2)) = arr1 == arr2
- {-# INLINE (==) #-}
+ {-# INLINE_ARRAY (==) #-}
 
 
 -- | Equality of Foreign arrays.
 instance Eq (Vector S.F Char)  where
  (==) (SFArray (KArray arr1)) (SFArray (KArray arr2)) = arr1 == arr2
- {-# INLINE (==) #-}
-
+ {-# INLINE_ARRAY (==) #-}
 

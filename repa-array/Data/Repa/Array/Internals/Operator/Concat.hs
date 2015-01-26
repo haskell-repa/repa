@@ -18,8 +18,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import System.IO.Unsafe
 import GHC.Exts hiding (fromList, toList)
 import Prelude  hiding (reverse, length, map, zipWith, concat)
-
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -- Concat ---------------------------------------------------------------------
@@ -50,14 +49,14 @@ concat r3 vs
              = do let x = row `index` (Z :. iX)
                   unsafeWriteBuffer buf iO x
                   loop_concat (iO + 1) iY row (iX + 1) iLenX
-            {-# INLINE loop_concat #-}
+            {-# INLINE_INNER loop_concat #-}
 
         let !row0   = vs `index` (Z :. 0)
         let !iLenX0 = R.length row0
         loop_concat 0 0 row0 0 iLenX0
 
         unsafeFreezeBuffer (Z :. len) buf
-{-# INLINE [2] concat #-}
+{-# INLINE_ARRAY concat #-}
 
 
 -- O(len result) Concatenate the elements of some nested vector,
@@ -134,7 +133,7 @@ concatWith r3 !is !vs
         let !(I# iLenX0) = R.length row0
         loop_concatWith V.SPEC 0# 0# (unpack row0) 0# iLenX0
         unsafeFreezeBuffer (Z :. (I# len)) buf
-{-# INLINE [2] concatWith #-}
+{-# INLINE_ARRAY concatWith #-}
 
 
 -- Intercalate ----------------------------------------------------------------
@@ -210,6 +209,6 @@ intercalate r3 !is !vs
         let !(I# iLenX0) = R.length row0
         loop_intercalate V.SPEC 0# 0# (unpack row0) 0# iLenX0
         unsafeFreezeBuffer (Z :. (I# len)) buf
-{-# INLINE [2] intercalate #-}
+{-# INLINE_ARRAY intercalate #-}
 
 

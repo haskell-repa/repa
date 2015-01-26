@@ -62,6 +62,7 @@ Library
         -fno-warn-missing-signatures
 
   extensions:
+        CPP
         BangPatterns
         NoMonomorphismRestriction
         RankNTypes

@@ -31,21 +31,22 @@ import Data.Repa.Flow.States
 import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
+#include "repa-stream.h"
 
 
 -- Mapping --------------------------------------------------------------------
 -- | Map a function over elements pulled from a source.
 map_i   :: (Flow i m r1 a, A.Target r2 b t)
         => (a -> b) -> Sources i m r1 a -> m (Sources i m r2 b)
-map_i f s0 = G.smap_i (\_ c -> A.computeS_ $ A.map f c) s0
-{-# INLINE [2] map_i #-}
+map_i f s0 = G.smap_i (\_ c -> A.computeS repr $ A.map f c) s0
+{-# INLINE map_i #-}
 
 
 -- | Map a function over elements pushed into a sink.
 map_o   :: (Flow i m r1 a, A.Target r2 b t)
         => (a -> b) -> Sinks i m r2 b -> m (Sinks i m r1 a)
-map_o f s0 = G.smap_o (\_ c -> A.computeS_ $ A.map f c) s0
-{-# INLINE [2] map_o #-}
+map_o f s0 = G.smap_o (\_ c -> A.computeS repr $ A.map f c) s0
+{-# INLINE map_o #-}
 
 
 -- | Map a function over elements pulled from a source, a chunk at a time.
@@ -54,7 +55,7 @@ mapChunks_i
         => (Vector r1 a -> Vector r2 b)
         -> Sources i m r1 a -> m (Sources i m r2 b)
 mapChunks_i f s = G.smap_i (\_ c -> f c) s
-{-# INLINE [2] mapChunks_i #-}
+{-# INLINE mapChunks_i #-}
 
 
 -- | Map a function over elements pushed to a sink, a chunk at a time.
@@ -63,7 +64,7 @@ mapChunks_o
         => (Vector r1 a -> Vector r2 b)
         -> Sinks i m r2 b -> m (Sinks i m r1 a)
 mapChunks_o f s = G.smap_o (\_ c -> f c) s
-{-# INLINE [2] mapChunks_o #-}
+{-# INLINE mapChunks_o #-}
 
 
 -- | Like `mapChunks_i`, except that the worker function is also given
@@ -73,7 +74,7 @@ smapChunks_i
         => (G.Ix i -> Vector r1 a -> Vector r2 b)
         -> Sources i m r1 a -> m (Sources i m r2 b)
 smapChunks_i = G.smap_i
-{-# INLINE [2] smapChunks_i #-}
+{-# INLINE smapChunks_i #-}
 
 
 -- | Like `mapChunks_o`, except that the worker function is also given
@@ -83,7 +84,7 @@ smapChunks_o
         => (G.Ix i -> Vector r1 a -> Vector r2 b)
         -> Sinks i m r2 b -> m (Sinks i m r1 a)
 smapChunks_o = G.smap_o
-{-# INLINE [2] smapChunks_o #-}
+{-# INLINE smapChunks_o #-}
 
 
 -- Watch ----------------------------------------------------------------------
@@ -93,7 +94,7 @@ watch_i :: Monad m
         => (G.Ix i -> Vector r a -> m ()) 
         -> Sources i m r a  -> m (Sources i m r a)
 watch_i = G.watch_i
-{-# INLINE [2] watch_i #-}
+{-# INLINE watch_i #-}
 
 
 -- | Hook a monadic function to some sinks, which will be passed every 
@@ -103,7 +104,7 @@ watch_o :: Monad m
         -> Sinks i m r a ->  m (Sinks i m r a)
 
 watch_o = G.watch_o
-{-# INLINE [2] watch_o #-}
+{-# INLINE watch_o #-}
 
 
 -- | Like `watch_o` but discard the incoming chunks after they are passed
@@ -111,7 +112,7 @@ watch_o = G.watch_o
 trigger_o :: Monad m
           => i -> (G.Ix i -> Vector r a -> m ()) -> m (Sinks i m r a)
 trigger_o = G.trigger_o
-{-# INLINE [2] trigger_o #-}
+{-# INLINE trigger_o #-}
 
 
 -- Ignorance ------------------------------------------------------------------
@@ -122,7 +123,7 @@ trigger_o = G.trigger_o
 --
 ignore_o :: Monad m => i -> m (Sinks i m r a)
 ignore_o  = G.ignore_o
-{-# INLINE [2] ignore_o #-}
+{-# INLINE ignore_o #-}
 
 
 -- | Yield a bundle of sinks of the given arity that drops all data on the
@@ -135,7 +136,7 @@ ignore_o  = G.ignore_o
 --
 discard_o :: Monad m => i -> m (Sinks i m r a)
 discard_o = G.discard_o
-{-# INLINE [2] discard_o #-}
+{-# INLINE discard_o #-}
 
 
 -- Grouping -------------------------------------------------------------------
@@ -180,11 +181,11 @@ groupsBy_i f (G.Sources n pull_chunk)
                           Nothing         -> eject
                           Just seg
                            -> do writeRefs refs i Nothing
-                                 eat (A.vfromList_ [seg])
+                                 eat (A.vfromList repr [seg])
                    {-# INLINE eject_groupsBy #-}
             {-# INLINE pull_groupsBy #-}
 
         return $ G.Sources n pull_groupsBy
-{-# INLINE [2] groupsBy_i #-}
+{-# INLINE_FLOW groupsBy_i #-}
 
 

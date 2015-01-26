@@ -40,6 +40,7 @@ where
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
 import GHC.Exts
+#include "repa-stream.h"
 
 
 -- Projection -----------------------------------------------------------------
@@ -50,7 +51,7 @@ project_i ix (Sources _ pull)
  = return $ Sources () pull_project
  where  pull_project _ eat eject
          = pull ix eat eject
-{-# INLINE [2] project_i #-}
+{-# INLINE_FLOW project_i #-}
 
 
 -- | Project out a single stream source from a bundle.
@@ -61,7 +62,7 @@ project_o ix (Sinks _ push eject)
  where
         push_project _ v = push  ix v
         eject_project _  = eject ix
-{-# INLINE [2] project_o #-}
+{-# INLINE_FLOW project_o #-}
 
 
 -- Constructors ---------------------------------------------------------------
@@ -74,7 +75,7 @@ repeat_i n f
  where  pull_repeat i eat _eject
           = eat (f i)
         {-# INLINE pull_repeat #-}
-{-# INLINE [2] repeat_i #-}
+{-# INLINE_FLOW repeat_i #-}
 
 
 -- | Yield sources of the given length that always produce the same value.
@@ -94,7 +95,7 @@ replicate_i n len f
             {-# INLINE pull_replicate #-}
 
         return $ Sources n pull_replicate
-{-# INLINE [2] replicate_i #-}
+{-# INLINE_FLOW replicate_i #-}
 
 
 -- | Prepend some more elements into the front of some sources.
@@ -115,7 +116,7 @@ prepend_i xs (Sources n pullX)
             {-# INLINE pull_prepend #-}
 
         return (Sources n pull_prepend)
-{-# INLINE [2] prepend_i #-}
+{-# INLINE_FLOW prepend_i #-}
 
 
 -- | Like `prepend_i` but only prepend the elements to the streams
@@ -142,7 +143,7 @@ prependOn_i p xs (Sources n pullX)
             {-# INLINE pull_prependOn #-}
 
         return (Sources n pull_prependOn)
-{-# INLINE [2] prependOn_i #-}
+{-# INLINE_FLOW prependOn_i #-}
 
 
 -- Mapping --------------------------------------------------------------------
@@ -164,7 +165,7 @@ smap_i f (Sources n pullsA)
                 {-# INLINE eject_a #-}
 
         {-# INLINE [1] pullsB_map #-}
-{-# INLINE [2] smap_i #-}
+{-# INLINE_FLOW smap_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
@@ -180,7 +181,7 @@ smap_o f (Sinks n pushB ejectB)
 
         ejectA_map i    = ejectB i
         {-# INLINE ejectA_map #-}
-{-# INLINE [2] smap_o #-}
+{-# INLINE_FLOW smap_o #-}
 
 
 
@@ -200,7 +201,7 @@ dup_oo (Sinks n1 push1 eject1) (Sinks n2 push2 eject2)
 
         eject_dup i   = eject1 i  >> eject2 i
         {-# INLINE eject_dup #-}
-{-# INLINE [2] dup_oo #-}
+{-# INLINE_FLOW dup_oo #-}
 
 
 -- | Send the same data to two consumers.
@@ -223,9 +224,8 @@ dup_io (Sources n1 pull1) (Sinks n2 push2 eject2)
 
                  eject_x = eject >> eject2 i
                  {-# INLINE eject_x #-}
-
-        {-# INLINE [1] pull_dup #-}
-{-# INLINE [2] dup_io #-}
+        {-# INLINE pull_dup #-}
+{-# INLINE_FLOW dup_io #-}
 
 
 -- | Send the same data to two consumers.
@@ -235,7 +235,7 @@ dup_io (Sources n1 pull1) (Sinks n2 push2 eject2)
 dup_oi  :: (Ord i, Monad m)
         => Sinks i m a -> Sources i m a -> m (Sources i m a)
 dup_oi sink1 source2 = dup_io source2 sink1
-{-# INLINE [2] dup_oi #-}
+{-# INLINE_FLOW dup_oi #-}
 
 
 -- | Connect an argument source to two result sources.
@@ -279,7 +279,7 @@ connect_i (Sources n pullX)
         return ( Sources n pull_splitAt
                , Sources n pull_splitAt )
 
-{-# INLINE [2] connect_i #-}
+{-# INLINE_FLOW connect_i #-}
 
 
 -- Splitting ------------------------------------------------------------------
@@ -293,7 +293,7 @@ head_i len s0 i
         (s1, s2) <- connect_i s0
         xs       <- takeList1 len i s1
         return   (xs, s2)
-{-# INLINE [2] head_i #-}
+{-# INLINE head_i #-}
 
 
 -- Groups ---------------------------------------------------------------------
@@ -341,8 +341,8 @@ groups_i (Sources n pullV)
                             Just _  -> eat (I# count)
                         {-# INLINE eject_v #-}
                 {-# INLINE loop_groups #-}
-        {-# INLINE [1] pull_n #-}
-{-# INLINE [2] groups_i #-}
+        {-# INLINE pull_n #-}
+{-# INLINE_FLOW groups_i #-}
 
 
 -- Pack -----------------------------------------------------------------------
@@ -366,9 +366,9 @@ pack_ii (Sources nF pullF) (Sources nX pullX)
                                      else pull_pack i eat eject
 
                       eject_x = eject
-               {-# INLINE [1] pack_x #-}
-        {-# INLINE [1] pull_pack #-}
-{-# INLINE [2] pack_ii #-}
+               {-# INLINE pack_x #-}
+        {-# INLINE pull_pack #-}
+{-# INLINE_FLOW pack_ii #-}
 
 
 -- Folds ----------------------------------------------------------------------
@@ -398,8 +398,8 @@ folds_ii f z (Sources nL pullLen)
                       eat_x x = loop_folds (c -# 1#) (f acc x)
                       eject_x = eject
                {-# INLINE loop_folds #-} 
-        {-# INLINE [1] pull_folds #-}
-{-# INLINE [2] folds_ii #-}
+        {-# INLINE pull_folds #-}
+{-# INLINE_FLOW folds_ii #-}
 
 
 -- Watch ----------------------------------------------------------------------
@@ -417,8 +417,8 @@ watch_i f (Sources n pullX)
          where
                 eat_watch x     = f i x >> eat x
                 eject_watch     = eject
-        {-# INLINE [1] pull_watch #-}
-{-# INLINE [2] watch_i #-}
+        {-# INLINE pull_watch #-}
+{-# INLINE_FLOW watch_i #-}
 
 
 -- | Pass elements to the provided action as they are pushed into the sink.
@@ -431,7 +431,7 @@ watch_o f  (Sinks n push eject)
  where
         push_watch  !i !x = f i x >> push i x
         eject_watch !i    = eject i
-{-# INLINE [2] watch_o #-}
+{-# INLINE_FLOW watch_o #-}
 
 
 -- | Like `watch` but doesn't pass elements to another sink.
@@ -439,7 +439,7 @@ trigger_o :: Monad m
           => i -> (Ix i -> a -> m ()) -> m (Sinks i m a)
 trigger_o i f
  = discard_o i >>= watch_o f
-{-# INLINE [2] trigger_o #-}
+{-# INLINE trigger_o #-}
 
 
 -- Discard --------------------------------------------------------------------
@@ -458,7 +458,7 @@ discard_o n
         -- We *discard* the elements, but don't completely ignore them.
         push_discard  !_ !_ = return ()
         eject_discard !_    = return ()
-{-# INLINE [2] discard_o #-}
+{-# INLINE_FLOW discard_o #-}
 
 
 -- | A sink that ignores all incoming data.
@@ -473,5 +473,5 @@ ignore_o n
  where
         push_ignore  _ _   = return ()
         eject_ignore _     = return ()
-{-# INLINE [2] ignore_o #-}
+{-# INLINE_FLOW ignore_o #-}
 

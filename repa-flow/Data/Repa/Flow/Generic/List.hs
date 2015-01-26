@@ -5,6 +5,7 @@ module Data.Repa.Flow.Generic.List
         , takeList1)
 where
 import Data.Repa.Flow.Generic.Base
+#include "repa-stream.h"
 
 
 -- | Given an arity and a list of elements, yield sources that each produce
@@ -24,7 +25,7 @@ fromList n xx0
             {-# INLINE pull_fromList #-}
 
         return  $ Sources n pull_fromList
-{-# INLINE [2] fromList #-}
+{-# INLINE_FLOW fromList #-}
 
 
 -- | Drain a single source into a list.
@@ -42,7 +43,7 @@ toList1 i (Sources n pullX)
         loop_toList []
         xx      <- readRefs refs i
         return xx
-{-# INLINE [2] toList1 #-}
+{-# INLINE_FLOW toList1 #-}
 
 
 -- | Drain the given number of elements from a single source into a list.
@@ -62,5 +63,5 @@ takeList1 len i (Sources n pullX)
         loop_toList 0 []
         xx  <- readRefs refs i
         return xx
-{-# INLINE [2] takeList1 #-}
+{-# INLINE_FLOW takeList1 #-}
 

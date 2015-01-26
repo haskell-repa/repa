@@ -9,6 +9,8 @@ import Data.Repa.Fusion.Option
 import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
+#include "repa-stream.h"
+
 
 -- | Dictionaries needed to perform a segmented fold.
 type FoldsWorthy i m r1 r2 r3 t1 t2 t3 n a b
@@ -79,7 +81,7 @@ folds_i f z sLens@(G.Sources nLens _)
             {-# INLINE pull_folds #-} 
 
         return $ G.Sources nFolds pull_folds
-{-# INLINE [1] folds_i #-}
+{-# INLINE_FLOW folds_i #-}
 
 
 -- Load the current chunk of lengths data.
@@ -138,7 +140,7 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
                 -- this is needed when there are zero lengthed
                 -- segments on the end of the stream
                 ejectVals_folds 
-                 = do writeRefs refsVals     i (Just $ vfromList_ [])
+                 = do writeRefs refsVals     i (Just $ vfromList repr [])
                       writeRefs refsValsDone i True
                 {-# INLINE ejectVals_folds #-}
 
