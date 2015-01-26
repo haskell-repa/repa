@@ -44,6 +44,7 @@ Library
         Data.Repa.Array.Checked
         Data.Repa.Array.Delayed
         Data.Repa.Array.Window
+        Data.Repa.Array.Tuple
 
         Data.Repa.Array.Shape.Slice
         Data.Repa.Array.Shape.Index
