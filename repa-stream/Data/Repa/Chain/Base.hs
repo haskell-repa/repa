@@ -7,7 +7,7 @@ module Data.Repa.Chain.Base
 where
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import Control.Monad.Identity
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -- | A chain is an abstract, stateful producer of elements. It is similar

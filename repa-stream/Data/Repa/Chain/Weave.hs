@@ -9,7 +9,7 @@ where
 import Data.Repa.Fusion.Option
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
-#include "vector.h"
+#include "repa-stream.h"
 
 -- | A weave is a generalized merge of two input chains.
 --
@@ -54,8 +54,8 @@ weaveC f !ki (Chain _sz1 s1i step1) (Chain _sz2 s2i step2)
                  Give x k' m  -> return $ Yield x (move k' m ss)
                  Next   k' m  -> return $ Skip    (move k' m ss)
                  Finish k' m  -> return $ Done    (move k' m ss)
-        {-# INLINE [1] step #-}
-{-# INLINE [2] weaveC #-}
+        {-# INLINE_INNER step #-}
+{-# INLINE_STREAM weaveC #-}
 
 
 -- | Internal state of a weave.
@@ -110,5 +110,5 @@ move !k' !mm !ss
         MoveRight       -> ss { _here = k', _elemR = None }
         MoveBoth        -> ss { _here = k', _elemL = None, _elemR = None }
         MoveNone        -> ss { _here = k' }
-{-# INLINE move #-}
+{-# INLINE_INNER move #-}
 

@@ -5,7 +5,7 @@ module Data.Repa.Chain.Scan
 where
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -67,6 +67,6 @@ groupsByC f !s !vec
                  -> if rk 
                         then return (Just (x, n + 1), Nothing)
                         else return (Just (y, 1),     Just (x, n))
-        {-# INLINE work_groupsByC #-}
+        {-# INLINE_INNER work_groupsByC #-}
 {-# INLINE_STREAM groupsByC #-}
 

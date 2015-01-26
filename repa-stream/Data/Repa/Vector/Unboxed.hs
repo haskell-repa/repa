@@ -43,7 +43,7 @@ import Control.Monad.ST
 import Control.Monad.Primitive
 import System.IO.Unsafe
 import Data.IORef
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ chainOfVector
         :: (Monad m, Unbox a)
         => Vector a -> Chain m Int a
 chainOfVector = G.chainOfVector
-{-# INLINE_STREAM chainOfVector #-}
+{-# INLINE chainOfVector #-}
 
 
 -- | Compute a chain into a vector.
@@ -60,7 +60,7 @@ unchainToVector
         :: (PrimMonad m, Unbox a)
         => C.Chain m s a  -> m (Vector a, s)
 unchainToVector = G.unchainToVector
-{-# INLINE_STREAM unchainToVector #-}
+{-# INLINE unchainToVector #-}
 
 
 -- | Compute a chain into a mutable vector.
@@ -69,7 +69,7 @@ unchainToMVector
         => C.Chain m s a
         -> m (MVector (PrimState m) a, s)
 unchainToMVector = G.unchainToMVector
-{-# INLINE_STREAM unchainToMVector #-}
+{-# INLINE unchainToMVector #-}
 
 
 -------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ scanMaybe f k0 vec0
         (vec1, k1)
          = runST $ unchainToVector     $ C.liftChain 
                  $ C.scanMaybeC f' k0  $ chainOfVector vec0
-{-# INLINE_STREAM scanMaybe #-}
+{-# INLINE scanMaybe #-}
 
 
 -------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ groupsBy f !c !vec0
         (vec1, k1)
          = runST $ unchainToVector   $ C.liftChain 
                  $ C.groupsByC f' c  $ chainOfVector vec0
-{-# INLINE_STREAM groupsBy #-}
+{-# INLINE groupsBy #-}
 
 
 -------------------------------------------------------------------------------
@@ -145,7 +145,7 @@ findSegments pStart pEnd src
         $ findSegmentsS pStart pEnd (U.length src - 1)
         $ S.indexed 
         $ G.stream src
-{-# INLINE_STREAM findSegments #-}
+{-# INLINE findSegments #-}
 
 
 -------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ findSegmentsFrom pStart pEnd len get
         $ findSegmentsS pStart pEnd (len - 1)
         $ S.map         (\ix -> (ix, get ix))
         $ S.enumFromStepN 0 1 len
-{-# INLINE_STREAM findSegmentsFrom #-}
+{-# INLINE findSegmentsFrom #-}
 
 
 -------------------------------------------------------------------------------
@@ -213,7 +213,7 @@ ratchet vStartsMax
         vStarts'   <- G.unsafeFreeze mvStarts'
         vLens'     <- G.unsafeFreeze mvLens'
         return (vStarts', vLens')
-{-# INLINE_STREAM ratchet #-}
+{-# INLINE ratchet #-}
 
 
 -------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ extract :: Unbox a
 
 extract get vStartLen
  = G.unstream $ extractS get (G.stream vStartLen)
-{-# INLINE_STREAM extract #-}
+{-# INLINE extract #-}
 
 
 -------------------------------------------------------------------------------
@@ -268,5 +268,5 @@ folds f zN s0 vLens vVals
                         (chainOfVector vVals)
 
    in   (vResults, state)
-{-# INLINE_STREAM folds #-}
+{-# INLINE folds #-}
 

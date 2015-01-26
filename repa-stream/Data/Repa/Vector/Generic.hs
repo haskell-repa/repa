@@ -10,7 +10,7 @@ import qualified Data.Vector.Generic.Mutable            as GM
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import Control.Monad.Primitive
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -------------------------------------------------------------------------------
@@ -103,14 +103,3 @@ unchainToMVector_unknown nStart s0 step
     in go S.SPEC vec0 0 nStart s0
 {-# INLINE_STREAM unchainToMVector_unknown #-}
 
-
-{-
-                 -> do (vec', n')
-                         <- if i >= n 
-                             then do
-                                vec' <- GM.unsafeGrow vec n
-                                return (vec', n + n)
-                             else do
-                                return (vec, n)
-                       go sPEC vec' (i + 1) n' s' 
--}

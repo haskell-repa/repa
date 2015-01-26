@@ -26,4 +26,3 @@ import Data.Repa.Chain.Base
 import Data.Repa.Chain.Scan
 import Data.Repa.Chain.Weave
 import Data.Repa.Chain.Folds
-import qualified Data.Vector.Fusion.Util as S

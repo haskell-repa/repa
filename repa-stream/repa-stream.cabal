@@ -38,6 +38,12 @@ Library
         Data.Repa.Stream.Ratchet
         Data.Repa.Stream.Segment
 
+  include-dirs:
+        include
+
+  install-includes:
+        repa-stream.h
+
   ghc-options:
         -Wall 
         -fno-warn-missing-signatures

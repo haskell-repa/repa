@@ -5,7 +5,7 @@ where
 import Data.Repa.Fusion.Option
 import Data.Repa.Chain.Base
 import Data.Vector.Fusion.Stream.Size  as S
-#include "vector.h"
+#include "repa-stream.h"
 
 
 -- | Segmented fold over vectors of segment lengths and input values.
@@ -86,8 +86,8 @@ foldsC   f zN s0
                  -- all the values, so we're done for now.
                  Done sVals'
                   -> return $ Done    ss { _stateVals = sVals' }
-        {-# INLINE step #-}
-{-# INLINE [2] foldsC #-}
+        {-# INLINE_INNER step #-}
+{-# INLINE_STREAM foldsC #-}
 
 
 -- | Return state of a folds operation.

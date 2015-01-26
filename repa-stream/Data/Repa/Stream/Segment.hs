@@ -5,8 +5,8 @@ module Data.Repa.Stream.Segment
 where
 import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
 import qualified Data.Vector.Fusion.Stream.Size  as S
+#include "repa-stream.h"
 
-#include "vector.h"
 
 -------------------------------------------------------------------------------
 -- | Given predicates that detect the beginning and end of some interesting

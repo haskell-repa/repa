@@ -4,8 +4,7 @@ module Data.Repa.Stream.Extract
 where
 import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
 import qualified Data.Vector.Fusion.Stream.Size  as S
-
-#include "vector.h"
+#include "repa-stream.h"
 
 -- | Extract segments from some source array and concatenate them.
 -- 
