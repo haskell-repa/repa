@@ -89,10 +89,10 @@ instance (Bulk r DIM1 a, Window r DIM1 a)
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
         :: Target r a t
-        => [[a]] -> Vector U.N (Vector r a)
-fromLists xss
+        => r -> [[a]] -> Vector U.N (Vector r a)
+fromLists r xss
  = let  xs         = concat xss
-        Just elems = fromList_     (Z :. P.length xs) xs
+        Just elems = fromList r (Z :. P.length xs) xs
         lengths    = U.fromList    $ P.map P.length xss
         starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
    in   UNArray starts lengths elems
@@ -102,11 +102,11 @@ fromLists xss
 -- | O(size src) Convert a triply nested list to a triply nested array.
 fromListss 
         :: Target r a t
-        => [[[a]]] -> Vector U.N (Vector U.N (Vector r a))
-fromListss xs
+        => r -> [[[a]]] -> Vector U.N (Vector U.N (Vector r a))
+fromListss r xs
  = let  xs1        = concat xs
         xs2        = concat xs1
-        Just elems = fromList_ (Z :. P.length xs2) xs2
+        Just elems = fromList r (Z :. P.length xs2) xs2
         
         lengths1   = U.fromList   $ P.map P.length xs
         starts1    = U.unsafeInit $ U.scanl (+) 0 lengths1

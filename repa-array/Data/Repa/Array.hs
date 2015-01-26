@@ -23,7 +23,7 @@ module Data.Repa.Array
         , fromFunction
         , toFunction
         , delay 
-        , computeS,     computeS_
+        , computeS
 
           -- ** Windowed arrays
         , W(..)
@@ -32,8 +32,8 @@ module Data.Repa.Array
         , entire
 
           -- * Conversion
-        , vfromList,    vfromList_
-        , fromList,     fromList_
+        , vfromList
+        , fromList
         
         , toList
 

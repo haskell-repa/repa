@@ -28,7 +28,8 @@ import qualified Data.Double.Conversion.ByteString      as DC
 --
 readDouble :: Vector F Char -> Double
 readDouble vec
- = readDoubleFromBytes $ A.computeS_ $ A.map (fromIntegral . ord) vec
+        = readDoubleFromBytes 
+        $ A.computeS F $ A.map (fromIntegral . ord) vec
 {-# INLINE readDouble #-}
 
 
@@ -59,7 +60,7 @@ foreign import ccall unsafe
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
 showDouble :: Double -> Vector F Char
 showDouble !d
-        = A.computeS_ $ A.map (chr . fromIntegral)
+        = A.computeS F $ A.map (chr . fromIntegral)
         $ showDoubleAsBytes d
 
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
@@ -73,7 +74,7 @@ showDoubleAsBytes !d
 --   the decimal point.
 showDoubleFixed :: Int -> Double -> Vector F Char
 showDoubleFixed !prec !d
-        = A.computeS_ $ A.map (chr . fromIntegral)
+        = A.computeS F $ A.map (chr . fromIntegral)
         $ showDoubleFixedAsBytes prec d
 {-# INLINE showDoubleFixed #-}
 

@@ -13,7 +13,6 @@ import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Checked
 import Data.Repa.Array.Shape
-import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
 import Control.Monad

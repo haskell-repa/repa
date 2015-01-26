@@ -1,8 +1,8 @@
 
 module Data.Repa.Array.Internals.Target
-        ( Target        (..)
-        , fromList,     fromList_
-        , vfromList,    vfromList_)
+        ( Target (..)
+        , fromList
+        , vfromList)
 where
 import Data.Repa.Array.Shape            as R
 import Data.Repa.Array.Internals.Bulk   as R
@@ -57,16 +57,9 @@ class Unpack (Buffer r e) t => Target r e t where
 -- | O(length src). Construct an array from a list of elements,
 --   and give it the provided shape. The `size` of the provided shape must
 --   match the length of the list, else `Nothing`.
-fromList  :: (Shape sh, Target r a t)
+fromList :: (Shape sh, Target r a t)
           => r -> sh -> [a] -> Maybe (Array r sh a)
-fromList _ sh xx = fromList_ sh xx
-{-# INLINE fromList #-}
-
-
--- | Like `fromList`, but the result respresentation is implicit.
-fromList_ :: (Shape sh, Target r a t)
-          => sh -> [a] -> Maybe (Array r sh a)
-fromList_ sh xx
+fromList _ sh xx
  = unsafePerformIO
  $ do   let !len = P.length xx
         if   len /= size sh
@@ -76,21 +69,14 @@ fromList_ sh xx
                 zipWithM_ (unsafeWriteBuffer mvec) [0..] xx
                 arr     <- unsafeFreezeBuffer sh mvec
                 return $ Just arr
-{-# NOINLINE fromList_ #-}
+{-# NOINLINE fromList #-}
 
 
 -- | O(length src). Construct a vector from a list.
-vfromList :: Target r a t 
-        => r -> [a] -> Vector r a
-vfromList _ xx = vfromList_ xx
-{-# INLINE vfromList #-}
-
-
--- | Like `vfromList`, but the result representation is implicit.
-vfromList_ :: Target r a t => [a] -> Vector r a
-vfromList_ xx
+vfromList :: Target r a t => r -> [a] -> Vector r a
+vfromList r xx
  = let  !len     = P.length xx 
-        Just arr = fromList_ (Z :. len) xx
+        Just arr = fromList r (Z :. len) xx
    in   arr
-{-# NOINLINE vfromList_ #-}
+{-# NOINLINE vfromList #-}
 
