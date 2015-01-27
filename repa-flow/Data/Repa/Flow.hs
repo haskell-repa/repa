@@ -427,10 +427,11 @@ groupsBy_i _ _ f s
 --   together.
 --
 -- @
--- > sLens <- fromList U 1 [1, 2, 4, 0, 1, 5 :: Int]
+-- > import Data.Repa.Flow
+-- > sSegs <- fromList U 1 [(\'a\', 1), (\'b\', 2), (\'c\', 4), (\'d\', 0), (\'e\', 1), (\'f\', 5 :: Int)]
 -- > sVals <- fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90 :: Int]
--- > toList1 0 =<< folds_i U (+) 0 sLens sVals
--- Just [10,50,220,0,80]
+-- > toList1 0 =<< folds_i U U (+) 0 sSegs sVals
+-- Just [(\'a\',10),(\'b\',50),(\'c\',220),(\'d\',0),(\'e\',80)]
 -- @
 --
 --   If not enough input elements are available to fold a complete segment
@@ -438,10 +439,11 @@ groupsBy_i _ _ f s
 --   length segments still produce the initial value for the fold.
 --
 -- @
--- > sLens <- fromList U 1 [1, 2, 0, 0, 0 :: Int]
+-- > import Data.Repa.Flow
+-- > sSegs <- fromList U 1 [(\'a\', 1), (\'b\', 2), (\'c\', 0), (\'d\', 0), (\'e\', 0 :: Int)]
 -- > sVals <- fromList U 1 [10, 20, 30 :: Int]
--- > toList1 0 =<< folds_i U (*) 1 sLens sVals
--- Just [10,600,1,1,1]
+-- > toList1 0 =<< folds_i U U (*) 1 sSegs sVals
+-- Just [(\'a\',10),(\'b\',600),(\'c\',1),(\'d\',1),(\'e\',1)]
 -- @
 --
 folds_i :: (FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b)
@@ -477,13 +479,14 @@ type FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
 --   we can take the average of some groups of values:
 --
 -- @
+-- > import Data.Repa.Flow
 -- > sKeys   <-  fromList U 1 "waaaabllle"
--- > sVals   <-  fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Int]
+-- > sVals   <-  fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Double]
 -- 
--- > sResult \<-  map_i U (\\(acc, n) -\> acc / n)
---           =\<\< foldGroupsBy_i U (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0)
+-- > sResult \<-  map_i U (\\(key, (acc, n)) -\> (key, fromIntegral acc / n))
+--           =\<\< foldGroupsBy_i U U (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0) sKeys sVals
 --
--- > toLists1 0 sResult
+-- > toList1 0 sResult
 -- Just [10.0,35.0,60.0,80.0,100.0]
 -- @
 --
