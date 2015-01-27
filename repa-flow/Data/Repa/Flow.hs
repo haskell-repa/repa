@@ -465,7 +465,8 @@ folds_i _ _ f z sLen sVal
 --   rather than being delayed.
 --
 type FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
- =      ( A.Material rSeg tSeg DIM1 (n, Int)
+ =      ( A.Bulk     rSeg DIM1 (n, Int)
+        , A.Window   rSeg DIM1 (n, Int)
         , A.Material rElt tElt DIM1 a
         , A.Material rGrp tGrp DIM1 n
         , A.Material rRes tRes DIM1 b)
@@ -491,8 +492,7 @@ type FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
 -- @
 --
 foldGroupsBy_i
-        :: ( FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
-           , Bulk rSeg DIM1 n)
+        :: ( FoldGroupsDict rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b)
         => rGrp                 -- ^ Groups chunk representation.
         -> rRes                 -- ^ Result chunk representation.
         -> (n -> n -> Bool)     -- ^ Fn to check if consecutive elements
@@ -507,4 +507,12 @@ foldGroupsBy_i rGrp rRes pGroup f z sNames sVals
  = do   segLens <- groupsBy_i rGrp U.U pGroup sNames
         folds_i rGrp rRes f z segLens sVals
 {-# INLINE foldGroupsBy_i #-}
+
+
+type FoldGroupsDict rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+ =      ( A.Bulk rSeg DIM1 n
+        , A.Material rElt tElt DIM1 a
+        , A.Material rGrp tGrp DIM1 n
+        , A.Material rRes tRes DIM1 b)
+
 
