@@ -149,11 +149,11 @@ discard_o = G.discard_o
 -- @
 -- 
 groupsBy_i 
-        :: (Flow i m r1 a, Target r2 (a, Int) t)
+        :: (Flow i m r1 a, Target rGrp a tGrp, Target rLen Int tLen)
         => (a -> a -> Bool)     -- ^ Comparison function to decide whether
                                 --   successive values should be grouped.
         ->    Sources i m r1 a 
-        -> m (Sources i m r2 (a, Int))
+        -> m (Sources i m (T2 rGrp rLen) (a, Int))
 
 groupsBy_i f (G.Sources n pull_chunk)
  = do   

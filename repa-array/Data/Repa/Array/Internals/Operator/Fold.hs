@@ -21,7 +21,7 @@ import System.IO.Unsafe
 --     vector of segment lengths or elements was too short relative to the
 --     other.
 --
-folds   :: FoldsDict rSeg rElt rGrp rRes n a b tGrp tRes
+folds   :: FoldsDict rSeg rElt rGrp rRes tGrp tRes n a b
         => (a -> b -> b)         -- ^ Worker function.
         -> b                     -- ^ Initial state when folding segments.
         -> Option3 n Int b       -- ^ Length and initial state for first segment.
@@ -43,7 +43,7 @@ folds f z s0 vLens vVals
 
 
 -- | Dictionaries need to perform a segmented fold.
-type FoldsDict rSeg rElt rGrp rRes n a b tGrp tRes
+type FoldsDict rSeg rElt rGrp rRes tGrp tRes n a b
       = ( Bulk   rSeg DIM1 (n, Int)
         , Bulk   rElt DIM1 a
         , Target rGrp n tGrp

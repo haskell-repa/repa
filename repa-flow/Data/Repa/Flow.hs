@@ -391,25 +391,32 @@ head_i ix len s
 -- @
 --
 groups_i
-        :: (A.Bulk r1 DIM1 a, A.Target r2 (a, Int) t2, Eq a)
-        => r2                   -- ^ Representation of result chunks.
-        -> Sources r1 a         -- ^ Input elements.
-        -> IO (Sources r2 (a, Int)) -- ^ Starting element and length of groups.
-groups_i r s
-        = groupsBy_i r (==) s
+        :: ( A.Bulk   rElt DIM1 a
+           , A.Target rGrp a    tGrp
+           , A.Target rLen Int  tLen
+           , Eq a)
+        => rGrp                 -- ^ Representation of result chunks.
+        -> rLen
+        -> Sources rElt a         -- ^ Input elements.
+        -> IO (Sources (T2 rGrp rLen) (a, Int)) -- ^ Starting element and length of groups.
+groups_i rGrp rLen s
+        = groupsBy_i rGrp rLen (==) s
 {-# INLINE groups_i #-}
 
 
 -- | Like `groupsBy`, but take a function to determine whether two consecutive
 --   values should be in the same group.
 groupsBy_i
-        :: (A.Bulk r1 DIM1 a, A.Target r2 (a, Int) t2)
-        => r2                   -- ^ Representation of result chunks.
+        :: ( A.Bulk   rElt DIM1 a
+           , A.Target rGrp a   tGrp
+           , A.Target rLen Int tLen)
+        => rGrp                 -- ^ Representation of result chunks.
+        -> rLen
         -> (a -> a -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
-        -> Sources r1 a         -- ^ Input elements.
-        -> IO (Sources r2 (a, Int)) -- ^ Starting element and length of groups.
-groupsBy_i _ f s
+        -> Sources rElt a       -- ^ Input elements.
+        -> IO (Sources (T2 rGrp rLen) (a, Int)) -- ^ Starting element and length of groups.
+groupsBy_i _ _ f s
         = C.groupsBy_i f s
 {-# INLINE groupsBy_i #-}
 
@@ -437,19 +444,16 @@ groupsBy_i _ f s
 -- Just [10,600,1,1,1]
 -- @
 --
--- TODO: change folds to shim in a segment name
---     Sources r1 (n, Int) -> Sources r2 a -> Sources r3 (n, b)
---     The plain fn can pass a Unit, which will have repr squashed by vector lib.
--- 
-folds_i :: (FoldsWorthy r1 r2 r3 t1 t2 t3 n a b, Target r1 Int t4)
-        => r3                     -- ^ Result chunk representation.
+folds_i :: (FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b)
+        => rGrp                   -- ^ Groups  chunk representation.
+        -> rRes                   -- ^ Results chunk representation.
         -> (a -> b -> b)          -- ^ Worker function.
         -> b                      -- ^ Initial state when folding each segment.
-        -> Sources r1 (n, Int)    -- ^ Segment lengths.
-        -> Sources r2 a           -- ^ Input elements to fold.
-        -> IO (Sources r3 (n, b)) -- ^ Result elements.
+        -> Sources rSeg (n, Int)  -- ^ Segment lengths.
+        -> Sources rElt a         -- ^ Input elements to fold.
+        -> IO (Sources (T2 rGrp rRes) (n, b)) -- ^ Result elements.
 
-folds_i _ f z sLen sVal
+folds_i _ _ f z sLen sVal
         = C.folds_i f z sLen sVal
 {-# INLINE folds_i #-}
 
@@ -458,10 +462,11 @@ folds_i _ f z sLen sVal
 --   The chunks of all streams must have material representations,
 --   rather than being delayed.
 --
-type FoldsWorthy r1 r2 r3 t1 t2 t3 n a b
- =      ( A.Material r1 t1 DIM1 (n, Int)
-        , A.Material r2 t2 DIM1 a
-        , A.Material r3 t3 DIM1 (n, b))
+type FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+ =      ( A.Material rSeg tSeg DIM1 (n, Int)
+        , A.Material rElt tElt DIM1 a
+        , A.Material rGrp tGrp DIM1 n
+        , A.Material rRes tRes DIM1 b)
 
 
 -- | Combination of `groupsBy_i` and `folds_i`. We determine the the segment
@@ -483,18 +488,20 @@ type FoldsWorthy r1 r2 r3 t1 t2 t3 n a b
 -- @
 --
 foldGroupsBy_i
-        :: (Bulk r1 DIM1 n, FoldsWorthy r1 r2 r3 t1 t2 t3 n a b)
-        => r3                   -- ^ Result chunk representation.
+        :: ( FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+           , Bulk rSeg DIM1 n)
+        => rGrp                 -- ^ Groups chunk representation.
+        -> rRes                 -- ^ Result chunk representation.
         -> (n -> n -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
         -> (a -> b -> b)        -- ^ Worker function for the fold.
         -> b                    -- ^ Initial when folding each segment.
-        -> Sources r1 n         -- ^ Names that determine groups.
-        -> Sources r2 a         -- ^ Values to fold.
-        -> IO (Sources r3 (n, b))
+        -> Sources rSeg n       -- ^ Names that determine groups.
+        -> Sources rElt a       -- ^ Values to fold.
+        -> IO (Sources (T2 rGrp rRes) (n, b))
 
-foldGroupsBy_i r3 pGroup f z sNames sVals
- = do   segLens <- groupsBy_i U.B pGroup sNames
-        folds_i r3 f z segLens sVals
+foldGroupsBy_i rGrp rRes pGroup f z sNames sVals
+ = do   segLens <- groupsBy_i rGrp U.U pGroup sNames
+        folds_i rGrp rRes f z segLens sVals
 {-# INLINE foldGroupsBy_i #-}
 

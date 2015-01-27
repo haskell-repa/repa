@@ -20,7 +20,7 @@ import qualified Data.Repa.Chain                as C
 --   => ([('a', 7), ('b', 2), ('c', 1)], Just (\'d\', 2))
 -- @
 --
-groupsBy :: GroupsDict rElt rGrp rLen n tSeg tLen
+groupsBy :: GroupsDict rElt rGrp rLen tGrp tLen n
          => (n -> n -> Bool)    -- ^ Comparison function.
          -> Maybe   (n, Int)    -- ^ Starting element and count.
          -> Vector  rElt n      -- ^ Input elements.
@@ -39,7 +39,7 @@ groupsBy f !c !vec0
 
 
 -- | Dictionaries need to perform a grouping.
-type GroupsDict  rElt rGrp rLen n tGrp tLen
+type GroupsDict  rElt rGrp rLen tGrp tLen n
       = ( Bulk   rElt DIM1 n
         , Target rGrp n    tGrp
         , Target rLen Int  tLen )

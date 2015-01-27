@@ -31,6 +31,11 @@ module Data.Repa.Array
         , windowed
         , entire
 
+          -- ** Tupled arrays
+        , T2(..)
+        , tup2
+        , untup2
+
           -- * Conversion
         , vfromList
         , fromList
@@ -60,21 +65,22 @@ module Data.Repa.Array
 
           -- ** Grouping
         , groupsBy
-        , GroupsDict(..)
+        , GroupsDict
 
           -- ** Folding
         , folds, Folds(..)
-        , FoldsDict(..))
+        , FoldsDict)
 where
 import Data.Repa.Array.Shape
-import Data.Repa.Eval.Array                             as R
-import Data.Repa.Array.Delayed                          as R
-import Data.Repa.Array.Window                           as R
-import Data.Repa.Array.Internals.Target                 as R
-import Data.Repa.Array.Internals.Bulk                   as R
-import Data.Repa.Array.Internals.Operator.Concat        as R
-import Data.Repa.Array.Internals.Operator.Group         as R
-import Data.Repa.Array.Internals.Operator.Fold          as R
+import Data.Repa.Eval.Array                             as A
+import Data.Repa.Array.Delayed                          as A
+import Data.Repa.Array.Window                           as A
+import Data.Repa.Array.Tuple                            as A
+import Data.Repa.Array.Internals.Target                 as A
+import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Array.Internals.Operator.Concat        as A
+import Data.Repa.Array.Internals.Operator.Group         as A
+import Data.Repa.Array.Internals.Operator.Fold          as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
 #include "repa-stream.h"

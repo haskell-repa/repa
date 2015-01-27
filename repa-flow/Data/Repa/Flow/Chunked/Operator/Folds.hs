@@ -1,4 +1,3 @@
-
 module Data.Repa.Flow.Chunked.Operator.Folds
         ( folds_i
         , FoldsWorthy)
@@ -13,22 +12,27 @@ import qualified Data.Repa.Flow.Generic   as G
 
 
 -- | Dictionaries needed to perform a segmented fold.
-type FoldsWorthy i m r1 r2 r3 t1 t2 t3 n a b
-        = ( States i m, Window r1 DIM1 (n, Int), Window r2 DIM1 a
-          , Bulk   r1 DIM1 (n, Int), Bulk   r2 DIM1 a
-          , Target r1 Int t1,        Target r2 a t2
-          , Target r3 (n, b) t3,     Bulk   r3 DIM1 (n, b))
+type FoldsWorthy i m rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+        = ( States i m
+          , Window rSeg DIM1 (n, Int), Window rElt DIM1 a
+          , Bulk   rSeg DIM1 (n, Int)
+          , Bulk   rElt DIM1 a
+          , Bulk   rGrp DIM1 n
+          , Bulk   rRes DIM1 b
+          , Target rElt a    tElt
+          , Target rGrp n    tGrp
+          , Target rRes b    tRes)
 
 
 -- Folds ----------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
-folds_i :: forall i m r1 r2 r3 t1 t2 t3 n a b
-        .  FoldsWorthy i m r1 r2 r3 t1 t2 t3 n a b
+folds_i :: forall      i m rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+        .  FoldsWorthy i m rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
         => (a -> b -> b)             -- ^ Worker function.
         -> b                         -- ^ Initial state when folding each segment.
-        -> Sources i m r1 (n, Int)   -- ^ Segment lengths.
-        -> Sources i m r2 a          -- ^ Input elements to fold.
-        -> m (Sources i m r3 (n, b))  -- ^ Result elements.
+        -> Sources i m rSeg (n, Int)   -- ^ Segment lengths.
+        -> Sources i m rElt a          -- ^ Input elements to fold.
+        -> m (Sources i m (T2 rGrp rRes) (n, b)) -- ^ Result elements.
 
 folds_i f z sLens@(G.Sources nLens _)
             sVals@(G.Sources nVals _)
@@ -46,7 +50,7 @@ folds_i f z sLens@(G.Sources nLens _)
         refsVals     <- newRefs nFolds Nothing
         refsValsDone <- newRefs nFolds False
 
-        let pull_folds :: Ix i -> (Vector r3 (n, b) -> m ()) -> m () -> m ()
+        let pull_folds :: Ix i -> (Vector (T2 rGrp rRes) (n, b) -> m ()) -> m () -> m ()
             pull_folds i eat eject
              = do mNameLens <- folds_loadChunkNameLens sLens refsNameLens i
                   mVals     <- folds_loadChunkVals     sVals refsVals refsValsDone i 
@@ -88,7 +92,7 @@ folds_i f z sLens@(G.Sources nLens _)
 -- If we already have one in the state then use that, 
 -- otherwise try to pull a new chunk from the source.
 folds_loadChunkNameLens 
-    :: (States i m, Target r1 Int t1)
+    :: States i m
     => Sources i m r1 (n, Int)
     -> Refs i m (Maybe (Vector r1 (n, Int)))
     -> Ix i 
