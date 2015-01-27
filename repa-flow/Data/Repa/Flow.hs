@@ -79,17 +79,16 @@ module Data.Repa.Flow
         , groupsBy_i
 
         -- ** Folding
-        , folds_i
-        , foldGroupsBy_i
-        , FoldsWorthy)
+        , folds_i,              FoldsWorthy
+        , foldGroupsBy_i,       FoldGroupsDict)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Eval.Array
-import Data.Repa.Array.Material.Safe
 import Data.Repa.Eval.Array                      as A
 import Data.Repa.Array                           hiding (fromList)
 import Data.Repa.Array                           as A hiding (fromList)
-import qualified Data.Repa.Array.Material.Unsafe        as U
+import Data.Repa.Array.Material.Safe
+import qualified Data.Repa.Array.Material.Unsafe as U
 import qualified Data.Repa.Flow.Chunked          as C hiding (next)
 import qualified Data.Repa.Flow.Generic          as G hiding (next)
 import Control.Monad

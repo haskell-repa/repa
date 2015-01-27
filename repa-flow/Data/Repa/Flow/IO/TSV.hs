@@ -3,9 +3,10 @@ module Data.Repa.Flow.IO.TSV
         (sourceTSV)
 where
 import Data.Repa.Flow
-import Data.Repa.Array.Material.Unsafe.Nested   as A
-import Data.Repa.Array                          as A
-import qualified Data.Repa.Flow.Generic         as G hiding (next)
+import Data.Repa.Array                                  as A
+import Data.Repa.Array.Material.Unsafe.Nested           as A
+import Data.Repa.Array.Material.Safe                    as S
+import qualified Data.Repa.Flow.Generic                 as G hiding (next)
 import System.IO
 import Data.Char
 #include "repa-stream.h"
@@ -17,7 +18,7 @@ sourceTSV
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
         -> [Handle]             --  File paths.
-        -> IO (Sources N (Vector N (Vector F Char)))
+        -> IO (Sources N (Vector N (Vector S.F Char)))
 
 sourceTSV nChunk aFail hs
  = do
@@ -36,22 +37,18 @@ sourceTSV nChunk aFail hs
             {-# INLINE isWhite #-}
 
         sRows8  <- mapChunks_i 
-                        (A.mapElems (A.trimEnds isWhite) . A.diceOn nt nl) 
-                        sChunk
+                     (A.mapElems (A.trimEnds isWhite) . A.diceOn nt nl) 
+                     sChunk
 
         -- Convert element data from Word8 to Char.
         -- Chars take 4 bytes each, but are standard Haskell and pretty
         -- print properly. We've done the dicing on the smaller Word8
         -- version, and now map across the elements vector in the array
         -- to do the conversion.
-        sRows   
-         <- mapChunks_i 
-                (A.mapElems 
-                        (A.mapElems 
-                                (A.computeS F . A.map (chr . fromIntegral))))
-                sRows8
+        sRows   <- mapChunks_i 
+                     (A.mapElems (A.mapElems 
+                        (A.computeS S.F . A.map (chr . fromIntegral))))
+                     sRows8
 
         return sRows
-
 {-# INLINE sourceTSV #-}
-
