@@ -32,7 +32,7 @@ where
 import Data.Repa.Array.Material.Unsafe.Unboxed  (Array(..))
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
 import qualified Data.Vector.Unboxed                    as U

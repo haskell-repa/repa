@@ -4,7 +4,7 @@ module Data.Repa.Array.Internals.Target
         , fromList
         , vfromList)
 where
-import Data.Repa.Array.Shape            as R
+import Data.Repa.Array.Index            as R
 import Data.Repa.Array.Internals.Bulk   as R
 import Data.Repa.Fusion.Unpack
 import System.IO.Unsafe

@@ -6,7 +6,7 @@ module Data.Repa.Array.Checked
         , Buffer (..)
         , checked,      unchecked)
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Eval.Array
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Internals.Bulk

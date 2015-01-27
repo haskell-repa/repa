@@ -6,7 +6,7 @@ module Data.Repa.Array.Window
         , windowed
         , entire)
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 #include "repa-stream.h"
 

@@ -7,7 +7,7 @@ module Data.Repa.Array.Delayed
         , zipWith
         , (+^), (-^), (*^), (/^))
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target

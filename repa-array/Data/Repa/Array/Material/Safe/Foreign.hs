@@ -10,7 +10,7 @@ import qualified  Data.Repa.Array.Material.Unsafe.Foreign  as UF
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Checked
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Eval.Array
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Internals.Bulk

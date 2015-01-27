@@ -8,7 +8,7 @@ module Data.Repa.Array.Internals.Operator.Concat
 where
 import Data.Repa.Array.Material.Safe.Unboxed            as R
 import Data.Repa.Array.Delayed                          as R
-import Data.Repa.Array.Shape                            as R
+import Data.Repa.Array.Index                            as R
 import Data.Repa.Array.Internals.Target                 as R
 import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Eval.Array                             as R

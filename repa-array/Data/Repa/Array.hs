@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Array
-        ( module Data.Repa.Array.Shape
+        ( module Data.Repa.Array.Index
+                
           -- * Arrays and Vectors
         , Bulk          (..)
         , Vector
@@ -71,7 +72,7 @@ module Data.Repa.Array
         , folds, Folds(..)
         , FoldsDict)
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Eval.Array                             as A
 import Data.Repa.Array.Delayed                          as A
 import Data.Repa.Array.Window                           as A

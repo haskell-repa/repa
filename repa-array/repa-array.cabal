@@ -46,10 +46,10 @@ Library
         Data.Repa.Array.Window
         Data.Repa.Array.Tuple
 
-        Data.Repa.Array.Shape.Slice
-        Data.Repa.Array.Shape.Index
-        Data.Repa.Array.Shape.Base
-        Data.Repa.Array.Shape
+        Data.Repa.Array.Index.Slice
+        Data.Repa.Array.Index.Index
+        Data.Repa.Array.Index.Shape
+        Data.Repa.Array.Index
         Data.Repa.Array
 
         Data.Repa.Eval.Array

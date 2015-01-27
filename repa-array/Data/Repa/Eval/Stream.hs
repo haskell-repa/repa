@@ -4,7 +4,7 @@
 module Data.Repa.Eval.Stream
         (stream)
 where
-import Data.Repa.Array.Shape                            as R
+import Data.Repa.Array.Index                            as R
 import Data.Repa.Array.Internals.Bulk                   as R
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 #include "repa-stream.h"

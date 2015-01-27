@@ -1,6 +1,6 @@
 
 -- | Class of types that can be used as array shapes and indices.
-module Data.Repa.Array.Shape.Base
+module Data.Repa.Array.Index.Shape
         ( Shape(..)
         , inShape
         , showShape )

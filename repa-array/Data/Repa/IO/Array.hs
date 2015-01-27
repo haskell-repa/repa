@@ -3,7 +3,7 @@ module Data.Repa.IO.Array
         ( hGetArray,   hGetArrayPre
         , hPutArray)
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Array.Checked
 import Data.Repa.Array.Material.Safe.Foreign
 import Data.Repa.Array.Internals.Bulk

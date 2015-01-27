@@ -9,7 +9,7 @@ module Data.Repa.Eval.Array
 
         , computeS)
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Bulk

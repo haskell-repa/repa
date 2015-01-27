@@ -2,7 +2,7 @@
 module Data.Repa.Array.Internals.Operator.Group
         (groupsBy, GroupsDict)
 where
-import Data.Repa.Array.Shape                    as A
+import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Tuple                    as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A

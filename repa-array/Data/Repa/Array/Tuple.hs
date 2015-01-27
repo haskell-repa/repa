@@ -4,7 +4,7 @@ module Data.Repa.Array.Tuple
         , tup2, untup2)
 where
 import Data.Repa.Array.Window
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack

@@ -9,7 +9,7 @@ module Data.Repa.Array.Internals.Bulk
         , toLists
         , toListss)
 where
-import Data.Repa.Array.Shape
+import Data.Repa.Array.Index
 import Prelude hiding (length)
 #include "repa-stream.h"
 

@@ -1,5 +1,5 @@
 
-module Data.Repa.Array.Shape.Index
+module Data.Repa.Array.Index.Index
         ( -- * Index types
           Z    (..)
         , (:.)  (..)
@@ -8,7 +8,7 @@ module Data.Repa.Array.Shape.Index
         , DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
         ,       ix1,  ix2,  ix3,  ix4,  ix5)
 where
-import Data.Repa.Array.Shape.Base
+import Data.Repa.Array.Index.Shape
 import GHC.Base                 (quotInt, remInt)
 #include "repa-stream.h"
 
