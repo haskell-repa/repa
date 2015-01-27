@@ -49,6 +49,7 @@ Library
         Data.Repa.Array.Index.Dim
         Data.Repa.Array.Index.Slice
         Data.Repa.Array.Index.Shape
+        Data.Repa.Array.Index.Layout
         Data.Repa.Array.Index
         Data.Repa.Array
 
@@ -73,6 +74,7 @@ Library
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Load
         Data.Repa.Array.Internals.Target
+        Data.Repa.Array.Internals.Flat
 
         Data.Repa.Array.Material.Safe.Base
         Data.Repa.Array.Material.Unsafe.Base

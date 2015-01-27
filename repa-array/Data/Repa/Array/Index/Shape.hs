@@ -29,13 +29,6 @@ class Eq sh => Shape sh where
         -- | Get the total number of elements in an array with this shape.
         size           :: sh -> Int
 
-        -- | Given an array shape and shape polymorphic index, yield a linear index
-        --   into a flat, row-major representation.
-        toIndex        :: sh -> sh -> Int
-
-        -- | Given an array shape and linear index, yield the shape polymorphic index.
-        fromIndex      :: sh -> Int -> sh
-
         -- | Given a starting and ending index, check if some index is with that range.
         inShapeRange   :: sh -> sh -> sh -> Bool
 

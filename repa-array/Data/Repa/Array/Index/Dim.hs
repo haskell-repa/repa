@@ -9,7 +9,6 @@ module Data.Repa.Array.Index.Dim
         ,       ix1,  ix2,  ix3,  ix4,  ix5)
 where
 import Data.Repa.Array.Index.Shape
-import GHC.Base                 (quotInt, remInt)
 #include "repa-stream.h"
 
 
@@ -77,13 +76,6 @@ instance Shape Z where
         size _                  = 1
         {-# INLINE size #-}
 
-        toIndex _ _             = 0
-        {-# INLINE toIndex #-}
-
-        fromIndex _ _           = Z
-        {-# INLINE fromIndex #-}
-
-
         inShapeRange Z Z Z      = True
         {-# INLINE inShapeRange #-}
 
@@ -118,21 +110,6 @@ instance Shape sh => Shape (sh :. Int) where
         size  (sh1 :. n)
                 = size sh1 * n
         {-# INLINE size #-}
-
-        toIndex (sh1 :. sh2) (sh1' :. sh2')
-                = toIndex sh1 sh1' * sh2 + sh2'
-        {-# INLINE toIndex #-}
-
-        fromIndex (ds :. d) n
-                = fromIndex ds (n `quotInt` d) :. r
-                where
-                -- If we assume that the index is in range, there is no point
-                -- in computing the remainder for the highest dimension since
-                -- n < d must hold. This saves one remInt per element access which
-                -- is quite a big deal.
-                r       | rank ds == 0  = n
-                        | otherwise     = n `remInt` d
-        {-# INLINE fromIndex #-}
 
         inShapeRange (zs :. z) (sh1 :. n1) (sh2 :. n2)
                 = (n2 >= z) && (n2 < n1) && (inShapeRange zs sh1 sh2)
