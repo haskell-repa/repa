@@ -51,13 +51,13 @@ pGroupSum fiNames fiVals foNames foSums
                 =<< fromFiles [fiVals]  sourceLines
 
         -- Sum up the values segment-wise.
-        iAgg    <-  foldGroupsBy_i B (==) (+) 0 iNames iVals
+        iAgg    <-  foldGroupsBy_i B U (==) (+) 0 iNames iVals
 
         -- Write group names and sums back to files.
-        oNames  <-  map_o B fst
+        oNames  <-  map_o (T2 B U) fst
                 =<< toFiles [foNames] (sinkLines B F)
 
-        oSums   <-  map_o B (showDoubleFixed 4 . snd) 
+        oSums   <-  map_o (T2 B U) (showDoubleFixed 4 . snd) 
                 =<< toFiles [foSums]  (sinkLines B F)
 
         oAgg    <-  dup_oo oNames oSums
