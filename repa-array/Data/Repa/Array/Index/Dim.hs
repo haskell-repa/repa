@@ -1,5 +1,5 @@
 
-module Data.Repa.Array.Index.Index
+module Data.Repa.Array.Index.Dim
         ( -- * Index types
           Z    (..)
         , (:.)  (..)
@@ -16,6 +16,7 @@ import GHC.Base                 (quotInt, remInt)
 -- | An index of dimension zero
 data Z  = Z
         deriving (Show, Read, Eq, Ord)
+
 
 -- | Our index type, used for both shapes and indices.
 infixl 3 :.

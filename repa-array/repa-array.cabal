@@ -46,8 +46,8 @@ Library
         Data.Repa.Array.Window
         Data.Repa.Array.Tuple
 
+        Data.Repa.Array.Index.Dim
         Data.Repa.Array.Index.Slice
-        Data.Repa.Array.Index.Index
         Data.Repa.Array.Index.Shape
         Data.Repa.Array.Index
         Data.Repa.Array

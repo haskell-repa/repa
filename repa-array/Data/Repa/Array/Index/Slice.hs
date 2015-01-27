@@ -7,7 +7,7 @@ module Data.Repa.Array.Index.Slice
 	, SliceShape
 	, Slice		(..))
 where
-import Data.Repa.Array.Index.Index
+import Data.Repa.Array.Index.Dim
 import Prelude		        hiding (replicate, drop)
 #include "repa-stream.h"
 
