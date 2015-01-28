@@ -75,6 +75,7 @@ Library
         Data.Repa.Array.Internals.Load
         Data.Repa.Array.Internals.Target
         Data.Repa.Array.Internals.Flat
+        Data.Repa.Array.Internals.Check
 
         Data.Repa.Array.Material.Safe.Base
         Data.Repa.Array.Material.Unsafe.Base

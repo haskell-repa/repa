@@ -12,7 +12,7 @@ import Prelude hiding (length)
 #include "repa-stream.h"
 
 
--- Bulk -------------------------------------------------------------------------------------------
+-- Bulk -----------------------------------------------------------------------
 -- | Class of shape polymorphic array representations that we can read elements
 --   from in a random access manner.
 class Layout l => Bulk l a where
@@ -41,7 +41,7 @@ length !arr = size (extent (layout arr))
 {-# INLINE_ARRAY length #-}
 
 
--- Conversion -------------------------------------------------------------------------------------
+-- Conversion -----------------------------------------------------------------
 -- | Convert an array to a list.
 toList  :: Bulk  l a
         => Array l a -> [a]

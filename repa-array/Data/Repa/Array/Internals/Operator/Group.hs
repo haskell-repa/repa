@@ -4,8 +4,9 @@ module Data.Repa.Array.Internals.Operator.Group
 where
 import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Tuple                    as A
-import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
+import Data.Repa.Array.Internals.Flat           as A
+import Data.Repa.Fusion.Unpack                  as A
 import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
 #include "repa-stream.h"
@@ -20,26 +21,33 @@ import qualified Data.Repa.Chain                as C
 --   => ([('a', 7), ('b', 2), ('c', 1)], Just (\'d\', 2))
 -- @
 --
-groupsBy :: GroupsDict rElt rGrp rLen tGrp tLen n
-         => (n -> n -> Bool)    -- ^ Comparison function.
+groupsBy :: GroupsDict lElt lGrp tGrp lLen tLen n
+         => lGrp 
+         -> lLen
+         -> (n -> n -> Bool)    -- ^ Comparison function.
          -> Maybe   (n, Int)    -- ^ Starting element and count.
-         -> Vector  rElt n      -- ^ Input elements.
-         -> (Vector (T2 rGrp rLen) (n, Int), Maybe (n, Int))
+         -> Vector  lElt n      -- ^ Input elements.
+         -> (Vector (T2 lGrp lLen) (n, Int), Maybe (n, Int))
 
-groupsBy f !c !vec0
+groupsBy lGrp lLen f !c !vec0
  = (vec1, snd k1)
  where  
         f' x y = return $ f x y
         {-# INLINE f' #-}
 
         (vec1, k1)
-         = A.unchainToVector $ C.liftChain
-         $ C.groupsByC f' c  $ A.chainOfVector vec0
+         = A.unchainToVector (T2 lGrp lLen) 
+         $ C.liftChain
+         $ C.groupsByC f' c  
+         $ A.chainOfVector vec0
 {-# INLINE_ARRAY groupsBy #-}
 
 
 -- | Dictionaries need to perform a grouping.
-type GroupsDict  rElt rGrp rLen tGrp tLen n
-      = ( Bulk   rElt DIM1 n
-        , Target rGrp n    tGrp
-        , Target rLen Int  tLen )
+type GroupsDict  lElt lGrp tGrp lLen tLen n
+      = ( Bulk1  lElt n
+        , Target lGrp n
+        , Target lLen Int 
+        , Index  lGrp ~ Index lLen
+        , Unpack (Buffer lLen Int) tLen
+        , Unpack (Buffer lGrp n)   tGrp)

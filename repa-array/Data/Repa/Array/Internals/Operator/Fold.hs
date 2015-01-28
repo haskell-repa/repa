@@ -4,9 +4,10 @@ module Data.Repa.Array.Internals.Operator.Fold
 where
 import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Tuple                    as A
-import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
+import Data.Repa.Array.Internals.Flat           as A
 import Data.Repa.Eval.Chain                     as A
+import Data.Repa.Fusion.Unpack                  as A
 import qualified Data.Repa.Chain                as C
 import Data.Repa.Fusion.Option
 import System.IO.Unsafe
@@ -21,21 +22,23 @@ import System.IO.Unsafe
 --     vector of segment lengths or elements was too short relative to the
 --     other.
 --
-folds   :: FoldsDict rSeg rElt rGrp rRes tGrp tRes n a b
-        => (a -> b -> b)         -- ^ Worker function.
+folds   :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
+        => lGrp
+        -> lRes
+        -> (a -> b -> b)         -- ^ Worker function.
         -> b                     -- ^ Initial state when folding segments.
         -> Option3 n Int b       -- ^ Length and initial state for first segment.
-        ->  Vector rSeg (n, Int) -- ^ Segment names and lengths.
-        ->  Vector rElt a        -- ^ Elements.
-        -> (Vector (T2 rGrp rRes) (n, b), C.Folds Int Int n a b)
+        ->  Vector lSeg (n, Int) -- ^ Segment names and lengths.
+        ->  Vector lElt a        -- ^ Elements.
+        -> (Vector (T2 lGrp lRes) (n, b), C.Folds Int Int n a b)
 
-folds f z s0 vLens vVals
+folds lGrp lRes f z s0 vLens vVals
  = unsafePerformIO
  $ do   
         let f' !x !y = return $ f x y
             {-# INLINE f' #-}
 
-        A.unchainToVectorIO
+        A.unchainToVectorIO (T2 lGrp lRes)
          $  C.foldsC f' z s0
                 (A.chainOfVector vLens)
                 (A.chainOfVector vVals)
@@ -43,8 +46,11 @@ folds f z s0 vLens vVals
 
 
 -- | Dictionaries need to perform a segmented fold.
-type FoldsDict rSeg rElt rGrp rRes tGrp tRes n a b
-      = ( Bulk   rSeg DIM1 (n, Int)
-        , Bulk   rElt DIM1 a
-        , Target rGrp n tGrp
-        , Target rRes b tRes)
+type FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
+      = ( Bulk1  lSeg (n, Int)
+        , Bulk1  lElt a
+        , Target lGrp n 
+        , Target lRes b
+        , Index  lGrp ~ Index lRes
+        , Unpack (Buffer lGrp n) tGrp
+        , Unpack (Buffer lRes b) tRes)

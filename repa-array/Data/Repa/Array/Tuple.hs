@@ -16,58 +16,64 @@ import Prelude                          hiding (zip, unzip)
 -------------------------------------------------------------------------------
 -- | Tupled arrays where the components are unpacked and can have 
 --   separate representations.
-data T2 r1 r2 = T2 r1 r2
+data T2 l1 l2 = T2 l1 l2
+
+
+instance ( Index  l1 ~ Index l2
+         , Layout l1, Layout l2) 
+        => Layout (T2 l1 l2) where
+
+        type Index (T2 l1 l2)    = Index l1
+
+        extent    (T2 l1 l2)     = intersectDim (extent l1) (extent l2)
+        {-# INLINE extent #-}
+
+        toIndex   (T2 l1 _l2) ix = toIndex l1 ix
+        {-# INLINE toIndex #-}
+
+        fromIndex (T2 l1 _l2) ix = fromIndex l1 ix
+        {-# INLINE fromIndex #-}
 
 
 -- | Tupled arrays.
-instance (Repr r1, Repr r2) => Repr (T2 r1 r2) where
- type Safe   (T2 r1 r2) = T2 (Safe   r1) (Safe   r2)
- type Unsafe (T2 r1 r2) = T2 (Unsafe r1) (Unsafe r2)
- repr = T2 repr repr
- {-# INLINE repr #-}
-
-
--- | Tupled arrays.
-instance (Bulk r1 sh a, Bulk r2 sh b)
-       => Bulk (T2 r1 r2) sh (a, b) where
+instance (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
+       => Bulk (T2 l1 l2) (a, b) where
 
  -- | INVARIANT: both components of the tupled array have the same shape.
- data Array (T2 r1 r2) sh (a, b)
-        = T2Array sh (Array r1 sh a) (Array r2 sh b)
+ data Array (T2 l1 l2) (a, b)
+        = T2Array (Array l1 a) (Array l2 b)
 
- index  (T2Array _  arr1 arr2) ix = (index arr1 ix, index arr2 ix)
- extent (T2Array sh _    _)       = sh
- safe   (T2Array sh arr1 arr2)    = T2Array sh (safe arr1)   (safe arr2)
- unsafe (T2Array sh arr1 arr2)    = T2Array sh (unsafe arr1) (unsafe arr2)
- {-# INLINE_ARRAY index #-}
- {-# INLINE_ARRAY extent #-}
- {-# INLINE_ARRAY safe #-}
- {-# INLINE_ARRAY unsafe #-}
+ layout (T2Array arr1 arr2)     = T2 (layout arr1)  (layout arr2)
+ index  (T2Array arr1 arr2) ix  = (index  arr1 ix, index  arr2 ix)
+ {-# INLINE_ARRAY layout #-}
+ {-# INLINE_ARRAY index  #-}
+
 
 deriving instance 
-    (Show sh, Show (Array r1 sh a), Show (Array r2 sh b))
- =>  Show (Array (T2 r1 r2) sh (a, b))
+    (Show (Array l1 a), Show (Array l2 b))
+ =>  Show (Array (T2 l1 l2) (a, b))
 
 
 -------------------------------------------------------------------------------
 -- | Tupled windows.
-instance (Window r1 DIM1 a, Window r2 DIM1 b)
-      =>  Window (T2 r1 r2) DIM1 (a, b) where
- window start size (T2Array _sh arr1 arr2)
-        = T2Array size (window start size arr1) (window start size arr2)
+instance (Windowable l1 a, Windowable l2 b, Index l1 ~ Index l2)
+      =>  Windowable (T2 l1 l2) (a, b) where
+ window st sz (T2Array arr1 arr2)
+        = T2Array (window st sz arr1) (window st sz arr2)
  {-# INLINE_ARRAY window #-}
 
 
 -------------------------------------------------------------------------------
 -- | Tupled buffers.
-instance (Target r1 a t1, Target r2 b t2)
-      =>  Target (T2 r1 r2) (a, b) (t1, t2) where
+instance ( Target l1 a, Target l2 b
+         , Index l1 ~ Index l2)
+      =>   Target (T2 l1 l2) (a, b) where
 
- data Buffer (T2 r1 r2) (a, b) 
-        = T2Buffer !(Buffer r1 a) !(Buffer r2 b)
+ data Buffer (T2 l1 l2) (a, b) 
+        = T2Buffer !(Buffer l1 a) !(Buffer l2 b)
 
- unsafeNewBuffer len
-  = liftM2 T2Buffer (unsafeNewBuffer len) (unsafeNewBuffer len)
+ unsafeNewBuffer (T2 l1 l2)
+  = liftM2 T2Buffer (unsafeNewBuffer l1) (unsafeNewBuffer l2)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
 
  unsafeWriteBuffer  (T2Buffer buf1 buf2) ix (x1, x2)
@@ -81,10 +87,10 @@ instance (Target r1 a t1, Target r2 b t2)
         return  $  T2Buffer buf1' buf2'
  {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
- unsafeFreezeBuffer sh (T2Buffer buf1 buf2)
-  = do  arr1    <- unsafeFreezeBuffer sh buf1
-        arr2    <- unsafeFreezeBuffer sh buf2
-        return  $  T2Array sh arr1 arr2
+ unsafeFreezeBuffer (T2Buffer buf1 buf2)
+  = do  arr1    <- unsafeFreezeBuffer buf1
+        arr2    <- unsafeFreezeBuffer buf2
+        return  $  T2Array arr1 arr2
  {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
  unsafeSliceBuffer start len (T2Buffer buf1 buf2)
@@ -116,12 +122,11 @@ instance (Unpack (Buffer r1 a) t1, Unpack (Buffer r2 b) t2)
 --   The extent of the result array is the intersection of the extents of the
 --   two argument arrays.
 --
-tup2    :: (Bulk r1 sh a, Bulk r2 sh b)
-        => Array r1 sh a -> Array r2 sh b 
-        -> Array (T2 r1 r2) sh (a, b)
+tup2    :: (Bulk l1 a, Bulk l2 b)
+        => Array l1 a -> Array l2 b 
+        -> Array (T2 l1 l2) (a, b)
 tup2 arr1 arr2
-        = T2Array (intersectDim (extent arr1) (extent arr2))
-                  arr1 arr2
+        = T2Array arr1 arr2
 {-# INLINE_ARRAY tup2 #-}
 
 
@@ -131,12 +136,11 @@ tup2 arr1 arr2
 --     guaranteed to be at least as big as the argument array. This is the
 --     key property that makes `untup2` different from `unzip`.
 --
-untup2  :: Array (T2 r1 r2) sh (a, b)
-        -> (Array r1 sh a, Array r2 sh b)
+untup2  ::  Array (T2 l1 l2) (a, b)
+        -> (Array l1 a, Array l2 b)
 
-untup2  (T2Array _ arr1 arr2)
+untup2  (T2Array arr1 arr2)
         = (arr1, arr2)
 {-# INLINE_ARRAY untup2 #-}
-
 
 

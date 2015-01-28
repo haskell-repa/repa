@@ -71,7 +71,7 @@ unchainToVectorIO rep (Chain sz s0 step)
 
         -- unchain when we known the maximum size of the vector.
  where  unchainToVectorIO_max !nMax
-         = do   !vec     <- unsafeNewBuffer nMax
+         = do   !vec     <- unsafeNewBuffer (Flat rep (Z :. nMax))
 
                 let go_unchainIO_max !sPEC !i !s
                      =  step s >>= \m
@@ -84,8 +84,8 @@ unchainToVectorIO rep (Chain sz s0 step)
                           ->     go_unchainIO_max sPEC i s'
         
                          Done s' 
-                          -> do  vec'    <- unsafeSliceBuffer 0 i vec
-                                 arr     <- unsafeFreezeBuffer rep Safe (Z :. i) vec'
+                          -> do  buf'    <- unsafeSliceBuffer  0 i vec
+                                 arr     <- unsafeFreezeBuffer buf'
                                  return  (arr, s')
                     {-# INLINE_INNER go_unchainIO_max #-}
 
@@ -94,7 +94,7 @@ unchainToVectorIO rep (Chain sz s0 step)
 
         -- unchain when we don't know the maximum size of the vector.
         unchainToVectorIO_unknown !nStart
-         = do   !vec0   <- unsafeNewBuffer nStart
+         = do   !vec0   <- unsafeNewBuffer (Flat rep (Z :. nStart))
 
                 let go_unchainIO_unknown !sPEC !uvec !i !n !s
                      = go_unchainIO_unknown1 (repack vec0 uvec) i n s
@@ -117,8 +117,8 @@ unchainToVectorIO rep (Chain sz s0 step)
                           ->    cont vec i n s'
 
                          Done s' 
-                          -> do vec' <- unsafeSliceBuffer 0 i vec
-                                arr  <- unsafeFreezeBuffer rep Safe (Z :. i) vec'
+                          -> do vec' <- unsafeSliceBuffer  0 i vec
+                                arr  <- unsafeFreezeBuffer vec'
                                 done (arr, s')
 
                 go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0

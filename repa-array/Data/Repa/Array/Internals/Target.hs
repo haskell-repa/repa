@@ -1,11 +1,9 @@
 
 module Data.Repa.Array.Internals.Target
         ( Target (..)
-        , fromList
-        , vfromList)
+        , fromList)
 where
 import Data.Repa.Array.Index            as A
-import Data.Repa.Array.Internals.Flat   as A
 import Data.Repa.Array.Internals.Bulk   as A
 import System.IO.Unsafe
 import Control.Monad
@@ -15,66 +13,60 @@ import Prelude                          as P
 -- Target ---------------------------------------------------------------------
 -- | Class of manifest array representations that can be constructed 
 --   in a random-access manner.
-class Target r a where
+--
+--   TODO: generalise unsafeGrowBuffer to work with higher ranked dims.
+--
+class Layout l => Target l a where
 
  -- | Mutable buffer for some array representation.
- data Buffer r a
+ data Buffer l a
 
- -- | Allocate a new mutable buffer of the given size.
+ -- | Allocate a new mutable buffer for the given layout.
  --
  --   UNSAFE: The integer must be positive, but this is not checked.
- unsafeNewBuffer    :: Int -> IO (Buffer r a)
+ unsafeNewBuffer    :: l -> IO (Buffer l a)
 
  -- | Write an element into the mutable buffer.
  -- 
  --   UNSAFE: The index bounds are not checked.
- unsafeWriteBuffer  :: Buffer r a -> Int -> a -> IO ()
+ unsafeWriteBuffer  :: Buffer l a -> Int -> a -> IO ()
 
  -- | O(n). Copy the contents of a buffer that is larger by the given
  --   number of elements.
- unsafeGrowBuffer   :: Buffer r a -> Int -> IO (Buffer r a)
+ unsafeGrowBuffer   :: Buffer l a -> Int -> IO (Buffer l a)
  
  -- | O(1). Yield a slice of the buffer without copying.
  --
  --   UNSAFE: The given starting position and length must be within the bounds
  --   of the of the source buffer, but this is not checked.
- unsafeSliceBuffer  :: Int -> Int -> Buffer r a -> IO (Buffer r a)
+ unsafeSliceBuffer  :: Int -> Int -> Buffer l a -> IO (Buffer l a)
 
  -- | O(1). Freeze a mutable buffer into an immutable Repa array.
  --
  --   UNSAFE: If the buffer is mutated further then the result of reading from
  --           the returned array will be non-deterministic.
- unsafeFreezeBuffer :: r -> ex -> sh -> Buffer r a -> IO (Array (Flat r ex sh) a)
+ unsafeFreezeBuffer :: Buffer l a -> IO (Array l a)
 
  -- | Ensure the array is still live at this point.
  --   Sometimes needed when the mutable buffer is a ForeignPtr with a finalizer.
- touchBuffer        :: Buffer r a -> IO ()
+ touchBuffer        :: Buffer l a -> IO ()
 
 
 -------------------------------------------------------------------------------
 -- | O(length src). Construct an array from a list of elements,
 --   and give it the provided shape. The `size` of the provided shape must
 --   match the length of the list, else `Nothing`.
-fromList  :: (Target r a, Shape sh)
-          => r -> sh -> [a] -> Maybe (Array (Flat r Safe sh) a)
-fromList r sh xx
+fromList  :: Target l a
+          => l -> [a] -> Maybe (Array l a)
+fromList l xx
  = unsafePerformIO
  $ do   let !len = P.length xx
-        if   len /= size sh
+        if   len /= size (extent l)
          then return Nothing
          else do
-                mvec    <- unsafeNewBuffer len
-                zipWithM_ (unsafeWriteBuffer mvec) [0..] xx
-                arr     <- unsafeFreezeBuffer r Safe sh mvec
+                buf     <- unsafeNewBuffer    l
+                zipWithM_ (unsafeWriteBuffer  buf) [0..] xx
+                arr     <- unsafeFreezeBuffer buf
                 return $ Just arr
 {-# NOINLINE fromList #-}
-
-
--- | O(length src). Construct a vector from a list.
-vfromList :: Target r a => r -> [a] -> Vector r a
-vfromList r xx
- = let  !len     = P.length xx 
-        Just arr = fromList r (Z :. len) xx
-   in   arr
-{-# NOINLINE vfromList #-}
 
