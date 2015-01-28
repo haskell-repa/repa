@@ -5,8 +5,9 @@ module Data.Repa.Eval.Stream
         (stream)
 where
 import Data.Repa.Array.Index                            as A
-import Data.Repa.Array.Internals.Flat                   as A
 import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Array.Internals.Dense                  as A
+import Data.Repa.Array.Internals.RowWise                as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 #include "repa-stream.h"
 
@@ -17,5 +18,5 @@ stream  :: (Monad m, Bulk1 r a)
         -> S.Stream m a
 stream vec
         = S.generate (A.length vec)
-                     (\i -> A.index vec (Z :. i))
+                     (\i -> A.index vec (RowWise (Z :. i)))
 {-# INLINE_STREAM stream #-}

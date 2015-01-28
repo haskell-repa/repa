@@ -1,16 +1,17 @@
 
 -- | Evaluation of chains into bulk arrays.
 module Data.Repa.Eval.Chain
-        ( chainOfVector
-        , unchainToVector
-        , unchainToVectorIO)
+        ( chainOfArray
+        , unchainToArray
+        , unchainToArrayIO)
 where
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Chain                 (Chain(..), Step(..))
-import Data.Repa.Array.Internals.Bulk                   as R
-import Data.Repa.Array.Internals.Target                 as R
-import Data.Repa.Array.Internals.Flat                   as R
-import Data.Repa.Array.Index                            as R
+import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Array.Internals.Dense                  as A
+import Data.Repa.Array.Internals.Target                 as A
+import Data.Repa.Array.Internals.RowWise                as A
+import Data.Repa.Array.Index                            as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import qualified Data.Vector.Fusion.Util                as S
@@ -20,18 +21,18 @@ import System.IO.Unsafe
 
 -------------------------------------------------------------------------------
 -- | Produce a chain from a generic vector.
-chainOfVector 
-        :: (Monad m, Bulk1 r a)
-        => Vector r a -> Chain m Int a
+chainOfArray
+        :: (Monad m, Bulk l a)
+        => Array l a -> Chain m Int a
 
 chainOfVector !vec
  = Chain (S.Exact len) 0 step
  where
-        !len  = R.length vec
+        !len  = A.length vec
 
         step !i
          | i >= len     = return $ Done  i
-         | otherwise    = return $ Yield (R.index vec (Z :. i)) (i + 1)
+         | otherwise    = return $ Yield (A.index vec (RowWise (Z :. i))) (i + 1)
         {-# INLINE_INNER step #-}
 {-# INLINE_STREAM chainOfVector #-}
 
@@ -46,32 +47,33 @@ liftChain (Chain sz s step)
 -------------------------------------------------------------------------------
 -- | Compute the elements of a pure `Chain`,
 --   writing them into a new array `Array`.
-unchainToVector
-        :: (Target r a, Unpack (Buffer r a) t)
-        => r -> Chain S.Id s a -> (Vector r a, s)
-unchainToVector r c
+unchainToArray
+        :: (Target l a, Unpack (Buffer l a) t)
+        => l -> Chain S.Id s a -> (Array l a, s)
+unchainToArray l c
         = unsafePerformIO 
-        $ unchainToVectorIO r
+        $ unchainToArrayIO l
         $ liftChain c
-{-# INLINE_STREAM unchainToVector #-}
+{-# INLINE_STREAM unchainToArray #-}
 
 
 -- | Compute the elements of an `IO` `Chain`, 
 --   writing them to a new `Array`.
-unchainToVectorIO
-        :: forall r a s t
-        .  (Target r a, Unpack (Buffer r a) t)
-        => r -> Chain IO s a -> IO (Vector r a, s)
+unchainToArrayIO
+        :: forall l a s t
+        .  (Target l a, Unpack (Buffer l a) t)
+        => l -> Chain IO s a -> IO (Array l a, s)
 
-unchainToVectorIO rep (Chain sz s0 step)
+unchainToArrayIO l (Chain sz s0 step)
  = case sz of
-        S.Exact i       -> unchainToVectorIO_max     i 
-        S.Max i         -> unchainToVectorIO_max     i 
-        S.Unknown       -> unchainToVectorIO_unknown 32
+        S.Exact i       -> unchainToArrayIO_max     i 
+        S.Max i         -> unchainToArrayIO_max     i 
+        S.Unknown       -> unchainToArrayIO_unknown 32
 
         -- unchain when we known the maximum size of the vector.
- where  unchainToVectorIO_max !nMax
-         = do   !vec     <- unsafeNewBuffer (Flat rep (Z :. nMax))
+ where  unchainToArrayIO_max !nMax
+         = do   !vec0   <- unsafeNewBuffer  l
+                !vec    <- unsafeGrowBuffer vec0 nMax
 
                 let go_unchainIO_max !sPEC !i !s
                      =  step s >>= \m
@@ -90,11 +92,12 @@ unchainToVectorIO rep (Chain sz s0 step)
                     {-# INLINE_INNER go_unchainIO_max #-}
 
                 go_unchainIO_max S.SPEC 0 s0
-        {-# INLINE_INNER unchainToVectorIO_max #-}
+        {-# INLINE_INNER unchainToArrayIO_max #-}
 
         -- unchain when we don't know the maximum size of the vector.
-        unchainToVectorIO_unknown !nStart
-         = do   !vec0   <- unsafeNewBuffer (Flat rep (Z :. nStart))
+        unchainToArrayIO_unknown !nStart
+         = do   !vec0   <- unsafeNewBuffer  l
+                !vec    <- unsafeGrowBuffer vec0 nStart
 
                 let go_unchainIO_unknown !sPEC !uvec !i !n !s
                      = go_unchainIO_unknown1 (repack vec0 uvec) i n s
@@ -117,13 +120,14 @@ unchainToVectorIO rep (Chain sz s0 step)
                           ->    cont vec i n s'
 
                          Done s' 
-                          -> do vec' <- unsafeSliceBuffer  0 i vec
+                          -> do 
+                                vec' <- unsafeSliceBuffer  0 i vec
                                 arr  <- unsafeFreezeBuffer vec'
                                 done (arr, s')
 
                 go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0
-        {-# INLINE_INNER unchainToVectorIO_unknown #-}
-{-# INLINE_STREAM unchainToVectorIO #-}
+        {-# INLINE_INNER unchainToArrayIO_unknown #-}
+{-# INLINE_STREAM unchainToArrayIO #-}
 
 
 

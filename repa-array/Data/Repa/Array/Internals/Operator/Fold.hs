@@ -4,8 +4,8 @@ module Data.Repa.Array.Internals.Operator.Fold
 where
 import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Tuple                    as A
+import Data.Repa.Array.Internals.Dense          as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Array.Internals.Flat           as A
 import Data.Repa.Eval.Chain                     as A
 import Data.Repa.Fusion.Unpack                  as A
 import qualified Data.Repa.Chain                as C
@@ -23,8 +23,8 @@ import System.IO.Unsafe
 --     other.
 --
 folds   :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
-        => lGrp
-        -> lRes
+        => lGrp                  -- ^ Layout for group names.
+        -> lRes                  -- ^ Layout for fold results.
         -> (a -> b -> b)         -- ^ Worker function.
         -> b                     -- ^ Initial state when folding segments.
         -> Option3 n Int b       -- ^ Length and initial state for first segment.

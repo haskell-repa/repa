@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Repa.Array.Internals.Flat
-        ( Flat   (..)
+module Data.Repa.Array.Internals.Dense
+        ( Dense (..)
         , Bulk1
         , Vector
         , vfromList)
@@ -13,59 +13,58 @@ import Data.Repa.Fusion.Unpack
 import Prelude                                  as P
 
 
--- | The Flat type overlays a RowWise layout onto some underlying
---   primitive, linear representation.
-data Flat r sh 
-        = Flat r sh
+-- | The Dense layout maps a higher-ranked index space to some underlying
+--   linear index space.
+data Dense r l 
+        = Dense r l
 
 
 -- The elements of Flat arrays are stored in row-wise order.
-instance (Layout (RowWise sh))
-      =>  Layout (Flat r  sh) where
+instance (Index r ~ Int, Layout l)
+      =>  Layout (Dense r l) where
 
-        type Index (Flat r sh)          = Index     (RowWise sh)
-        extent     (Flat _ sh)          = extent    (RowWise sh)
-        toIndex    (Flat _ sh) ix       = toIndex   (RowWise sh) ix
-        fromIndex  (Flat _ sh) n        = fromIndex (RowWise sh) n
-        {-# INLINE toIndex #-}
+        type Index (Dense r l)          = Index     l
+        extent     (Dense _ l)          = extent    l
+        toIndex    (Dense _ l) ix       = toIndex   l ix
+        fromIndex  (Dense _ l) n        = fromIndex l n
         {-# INLINE extent #-}
+        {-# INLINE toIndex #-}
         {-# INLINE fromIndex #-}
 
 
 -- The elements of Flat arrays are stored in some 
 -- underlying linear representation.
-instance ( Layout (RowWise sh)
-         , Bulk r a, Index r ~ Int)
-      =>  Bulk (Flat r sh) a where
+instance (Index r ~ Int, Layout l, Bulk r a)
+      =>  Bulk (Dense r l) a where
         
-        data Array (Flat r sh) a        = Array sh (Array r a)
-        layout (Array sh inner)         = Flat (layout inner) sh
-        index  (Array sh inner) ix      = index inner (toIndex (RowWise sh) ix)
+        data Array (Dense r l) a        = Array l (Array r a)
+        layout (Array l inner)          = Dense (layout inner) l
+        index  (Array l inner) ix       = index inner (toIndex l ix)
         {-# INLINE layout #-}
         {-# INLINE index  #-}
 
 
 -- When constructing flat arrays we use the same buffer
 -- type as the underlying linear representation.
-instance ( Layout (RowWise sh), Target r a)
-      =>   Target (Flat r sh) a where
+instance (Index r ~ Int, Layout l, Target r a)
+      =>  Target (Dense r l) a where
 
-        data Buffer (Flat r sh) a
-                = FlatBuffer sh (Buffer r a)
+        data Buffer (Dense r l) a
+                = DenseBuffer l (Buffer r a)
 
-        unsafeNewBuffer   (Flat r sh)   
+        unsafeNewBuffer   (Dense r l)   
          = do   buf     <- unsafeNewBuffer r
-                return  $ FlatBuffer sh buf
+                return  $ DenseBuffer l buf
 
         unsafeWriteBuffer  buf ix x     = unsafeWriteBuffer buf ix x
         unsafeGrowBuffer   buf ix       = unsafeGrowBuffer  buf ix
         unsafeSliceBuffer  st  sz buf   = unsafeSliceBuffer st sz buf
 
-        unsafeFreezeBuffer (FlatBuffer sh buf)
+        unsafeFreezeBuffer (DenseBuffer l buf)
          = do   inner   <- unsafeFreezeBuffer buf
-                return  $ Array sh inner
+                return  $ Array l inner
 
-        touchBuffer (FlatBuffer _ buf)  = touchBuffer buf
+        touchBuffer (DenseBuffer _ buf)  = touchBuffer buf
         {-# INLINE unsafeNewBuffer    #-}
         {-# INLINE unsafeWriteBuffer  #-}
         {-# INLINE unsafeGrowBuffer   #-}
@@ -75,28 +74,28 @@ instance ( Layout (RowWise sh), Target r a)
 
 
 instance Unpack (Buffer r a) tBuf
-      => Unpack (Buffer (Flat r sh) a) (sh, tBuf) where
+      => Unpack (Buffer (Dense r l) a) (l, tBuf) where
 
- unpack (FlatBuffer sh buf)             = (sh, unpack buf)
- repack (FlatBuffer _ buf) (sh, ubuf)   = FlatBuffer sh (repack buf ubuf)
+ unpack (DenseBuffer l buf)             = (l, unpack buf)
+ repack (DenseBuffer _ buf) (l, ubuf)   = DenseBuffer l (repack buf ubuf)
  {-# INLINE unpack #-}
  {-# INLINE repack #-}
 
 
 -------------------------------------------------------------------------------
 type Bulk1 r a
-        = Bulk  (Flat r DIM1) a
+        = (Bulk (Dense r DIM1) a)
 
 type Vector r a
-        = Array (Flat r DIM1) a
+        = Array (Dense r DIM1) a
 
 
 -- | O(length src). Construct a vector from a list.
-vfromList :: Target (Flat r DIM1) a 
+vfromList :: Target (Dense r DIM1) a 
           => r -> [a] -> Vector r a
 vfromList r xx
  = let  !len     = P.length xx 
-        Just arr = fromList (Flat r (Z :. len)) xx
+        Just arr = fromList (Dense r (RowWise (Z :. len))) xx
    in   arr
 {-# NOINLINE vfromList #-}
 

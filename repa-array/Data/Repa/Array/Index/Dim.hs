@@ -4,9 +4,8 @@ module Data.Repa.Array.Index.Dim
           Z    (..)
         , (:.)  (..)
 
-          -- * Common dimensions.
-        , DIM0, DIM1, DIM2, DIM3, DIM4, DIM5
-        ,       ix1,  ix2,  ix3,  ix4,  ix5)
+          -- * Common shapes
+        , SH0, SH1, SH2, SH3, SH4, SH5)
 where
 import Data.Repa.Array.Index.Shape
 #include "repa-stream.h"
@@ -24,36 +23,13 @@ data tail :. head
         deriving (Show, Read, Eq, Ord)
 
 
--- Common dimensions
-type DIM0       = Z
-type DIM1       = DIM0 :. Int
-type DIM2       = DIM1 :. Int
-type DIM3       = DIM2 :. Int
-type DIM4       = DIM3 :. Int
-type DIM5       = DIM4 :. Int
-
-
--- | Helper for index construction, which constrains the coordinate to be 
---   an @Int@.
-ix1 :: Int -> DIM1
-ix1 x = Z :. x
-{-# INLINE ix1 #-}
-
-ix2 :: Int -> Int -> DIM2
-ix2 y x = Z :. y :. x
-{-# INLINE ix2 #-}
-
-ix3 :: Int -> Int -> Int -> DIM3
-ix3 z y x = Z :. z :. y :. x
-{-# INLINE ix3 #-}
-
-ix4 :: Int -> Int -> Int -> Int -> DIM4
-ix4 a z y x = Z :. a :. z :. y :. x
-{-# INLINE ix4 #-}
-
-ix5 :: Int -> Int -> Int -> Int -> Int -> DIM5
-ix5 b a z y x = Z :. b :. a :. z :. y :. x
-{-# INLINE ix5 #-}
+-- Common shapes
+type SH0       = Z
+type SH1       = SH0 :. Int
+type SH2       = SH1 :. Int
+type SH3       = SH2 :. Int
+type SH4       = SH3 :. Int
+type SH5       = SH4 :. Int
 
 
 -- Shape ----------------------------------------------------------------------

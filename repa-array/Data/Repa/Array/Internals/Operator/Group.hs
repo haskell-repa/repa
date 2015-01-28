@@ -4,8 +4,8 @@ module Data.Repa.Array.Internals.Operator.Group
 where
 import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Tuple                    as A
+import Data.Repa.Array.Internals.Dense          as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Array.Internals.Flat           as A
 import Data.Repa.Fusion.Unpack                  as A
 import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
@@ -22,8 +22,8 @@ import qualified Data.Repa.Chain                as C
 -- @
 --
 groupsBy :: GroupsDict lElt lGrp tGrp lLen tLen n
-         => lGrp 
-         -> lLen
+         => lGrp                -- ^ Layout for group names.
+         -> lLen                -- ^ Layour for group lengths.
          -> (n -> n -> Bool)    -- ^ Comparison function.
          -> Maybe   (n, Int)    -- ^ Starting element and count.
          -> Vector  lElt n      -- ^ Input elements.

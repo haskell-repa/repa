@@ -1,17 +1,17 @@
-
+{-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Array.Delayed
         ( D(..), Array(..)
         , fromFunction, toFunction
         , delay
-        , map
-        , zipWith
-        , (+^), (-^), (*^), (/^))
+        , map)
+--        , zipWith
+--        , (+^), (-^), (*^), (/^))
 where
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target
-import Data.Array.Repa.Eval.Elt
+-- import Data.Array.Repa.Eval.Elt
 import Debug.Trace
 import GHC.Exts
 import qualified Data.Array.Repa.Eval.Par       as Par
@@ -26,58 +26,56 @@ import Prelude hiding (map, zipWith)
 --
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
-data D = D
+data D l = D l
+
+
+instance Layout l
+      => Layout (D l) where
+
+      type Index (D l)    = Index l
+      extent     (D l)    = extent l
+      toIndex    (D l) ix = toIndex l ix
+      fromIndex  (D l) i  = fromIndex l i
+      {-# INLINE extent    #-}
+      {-# INLINE toIndex   #-}
+      {-# INLINE fromIndex #-}
 
 
 -- | Delayed arrays.
-instance Repr D where
- type Safe   D = D
- type Unsafe D = D
- repr = D
- {-# INLINE repr #-}
- 
+instance Layout l => Bulk (D l) a where
+ data Array (D l) a
+        = ADelayed !l (Index l -> a) 
 
--- | Delayed arrays.
-instance Shape sh => Bulk D sh a where
- data Array D sh a
-        = ADelayed  
-                !sh 
-                (sh -> a) 
+ layout (ADelayed l _)      = D l
+ {-# INLINE_ARRAY layout #-}
 
- index (ADelayed _  f) ix  = f ix
+ index  (ADelayed _l f) ix  = f ix
  {-# INLINE_ARRAY index #-}
 
- extent (ADelayed sh _)    = sh
- {-# INLINE_ARRAY extent #-}
-
- safe arr       = arr
- {-# INLINE_ARRAY safe #-}
-
- unsafe arr     = arr
- {-# INLINE_ARRAY unsafe #-}
 
 
 -- Load -----------------------------------------------------------------------
-instance Shape sh => Load D sh e where
- loadS (ADelayed sh get) !buf
-  = do  let !(I# len)   = size sh
+instance (Layout l1, Target l2 a)
+      =>  Load (D l1) l2 a where
+ loadS (ADelayed l1 get) !buf
+  = do  let !(I# len)   = size (extent l1)
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
-        let get' ix     = get $ fromIndex sh (I# ix)
+        let get' ix     = get $ fromIndex   l1  (I# ix)
         Seq.fillLinear  write get' len
         touchBuffer  buf
  {-# INLINE_ARRAY loadS #-}
 
- loadP gang (ADelayed sh get) !buf
+ loadP gang (ADelayed l1 get) !buf
   = do  traceEventIO "Repa.loadP[Delayed]: start"
-        let !(I# len)   = size sh
+        let !(I# len)   = size (extent l1)
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
-        let get' ix     = get $ fromIndex sh (I# ix)
+        let get' ix     = get $ fromIndex   l1  (I# ix)
         Par.fillChunked gang write get' len 
         touchBuffer  buf
         traceEventIO "Repa.loadP[Delayed]: end"
  {-# INLINE_ARRAY loadP #-}
 
-
+{-
 instance Elt e => LoadRange D DIM2 e where
  loadRangeS  (ADelayed (Z :. _h :. (I# w)) get) !buf
              (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
@@ -97,24 +95,21 @@ instance Elt e => LoadRange D DIM2 e where
         touchBuffer  buf
         traceEventIO "Repa.loadRangeP[Delayed]: end"
  {-# INLINE_ARRAY loadRangeP #-}
-
+-}
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a function as a delayed array.
-fromFunction :: sh -> (sh -> a) -> Array D sh a
-fromFunction sh f 
-        = ADelayed sh f 
+fromFunction :: l -> (Index l -> a) -> Array (D l) a
+fromFunction l f 
+        = ADelayed l f 
 {-# INLINE_ARRAY fromFunction #-}
 
 
 -- | O(1). Produce the extent of an array, and a function to retrieve an
 --   arbitrary element.
-toFunction 
-        :: Bulk r sh a
-        => Array r sh a -> (sh, sh -> a)
-toFunction arr
- = case delay arr of
-        ADelayed sh f -> (sh, f)
+toFunction  :: Bulk  l a
+            => Array (D l) a -> (l, Index l -> a)
+toFunction (ADelayed l f) = (l, f)
 {-# INLINE_ARRAY toFunction #-}
 
 
@@ -123,32 +118,32 @@ toFunction arr
 --   indices to elements, so consumers don't need to worry about
 --   what the previous representation was.
 --
-delay   :: Bulk  r sh e
-        => Array r sh e -> Array D sh e
-delay arr = ADelayed (extent arr) (index arr)
+delay   :: Bulk  l a
+        => Array l a -> Array (D l) a
+delay arr = ADelayed (layout arr) (index arr)
 {-# INLINE_ARRAY delay #-}
 
 
 -- Operators ------------------------------------------------------------------
 -- | Apply a worker function to each element of an array, 
 --   yielding a new array with the same extent.
-map     :: (Shape sh, Bulk r sh a)
-        => (a -> b) -> Array r sh a -> Array D sh b
+map     :: (Bulk l a, Index (Index l) ~ Index l)
+        => (a -> b) -> Array l a -> Array (D (Index l)) b
 map f arr
- = case delay arr of
-        ADelayed sh g -> ADelayed sh (f . g)
+        = ADelayed (extent $ layout arr) 
+                   (f . index arr)
 {-# INLINE_ARRAY map #-}
 
 
 -- ZipWith --------------------------------------------------------------------
+{-
 -- | Combine two arrays, element-wise, with a binary operator.
 --      If the extent of the two array arguments differ,
 --      then the resulting array's extent is their intersection.
---
-zipWith :: (Shape sh, Bulk r1 sh a, Bulk r2 sh b)
+zipWith :: (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
         => (a -> b -> c)
-        -> Array r1 sh a -> Array r2 sh b
-        -> Array D  sh c
+        -> Array l1 a -> Array l2 b
+        -> Array (D (Index l1))  sh c
 
 zipWith f arr1 arr2
  = fromFunction (intersectDim (extent arr1) (extent arr2)) 
@@ -157,8 +152,8 @@ zipWith f arr1 arr2
          = f (arr1 `index` ix) (arr2 `index` ix)
         {-# INLINE get_zipWith #-}
 {-# INLINE_ARRAY zipWith #-}
-
-
+-}
+{-
 infixl 7  *^, /^
 infixl 6  +^, -^
 
@@ -173,4 +168,4 @@ infixl 6  +^, -^
 
 (/^)    = zipWith (/)
 {-# INLINE (/^) #-}
-
+-}
