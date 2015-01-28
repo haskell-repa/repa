@@ -16,22 +16,13 @@ import Control.Monad
 
 -- | Checked arrays are wrappers that perform bounds checks before indexing
 --   into a lower level representation.
---
-data K r = K r
-
-
--- | Checked arrays.
-instance Repr r => Repr (K r) where
- repr = K repr
-
- type Safe   (K r) = K r
- type Unsafe (K r) = r
+data K l = K l
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Checked arrays.
-instance Bulk r sh a => Bulk (K r) sh a where
- data Array (K r) sh a
+instance Bulk l a => Bulk (K l) a where
+ data Array (K l) a
         = KArray (Array r sh a)
 
  index  (KArray inner) ix

@@ -4,7 +4,7 @@ module Data.Repa.Array.Internals.Operator.Fold
 where
 import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Tuple                    as A
-import Data.Repa.Array.Internals.Dense          as A
+import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Eval.Chain                     as A
 import Data.Repa.Fusion.Unpack                  as A
@@ -28,9 +28,9 @@ folds   :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
         -> (a -> b -> b)         -- ^ Worker function.
         -> b                     -- ^ Initial state when folding segments.
         -> Option3 n Int b       -- ^ Length and initial state for first segment.
-        ->  Vector lSeg (n, Int) -- ^ Segment names and lengths.
-        ->  Vector lElt a        -- ^ Elements.
-        -> (Vector (T2 lGrp lRes) (n, b), C.Folds Int Int n a b)
+        ->  Array lSeg (n, Int)  -- ^ Segment names and lengths.
+        ->  Array lElt a         -- ^ Elements.
+        -> (Array (T2 lGrp lRes) (n, b), C.Folds Int Int n a b)
 
 folds lGrp lRes f z s0 vLens vVals
  = unsafePerformIO
@@ -38,17 +38,17 @@ folds lGrp lRes f z s0 vLens vVals
         let f' !x !y = return $ f x y
             {-# INLINE f' #-}
 
-        A.unchainToVectorIO (T2 lGrp lRes)
+        A.unchainToArrayIO (T2 lGrp lRes)
          $  C.foldsC f' z s0
-                (A.chainOfVector vLens)
-                (A.chainOfVector vVals)
+                (A.chainOfArray vLens)
+                (A.chainOfArray vVals)
 {-# INLINE_ARRAY folds #-}
 
 
 -- | Dictionaries need to perform a segmented fold.
 type FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
-      = ( Bulk1  lSeg (n, Int)
-        , Bulk1  lElt a
+      = ( Bulk   lSeg (n, Int)
+        , Bulk   lElt a
         , Target lGrp n 
         , Target lRes b
         , Index  lGrp ~ Index lRes

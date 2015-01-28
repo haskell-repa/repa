@@ -30,18 +30,11 @@ Library
 
 
   exposed-modules:
-        Data.Repa.Array.Material.Safe.Boxed
-        Data.Repa.Array.Material.Safe.Unboxed
-        Data.Repa.Array.Material.Safe.Foreign
-        Data.Repa.Array.Material.Safe
+        Data.Repa.Array.Material.Boxed
+        Data.Repa.Array.Material.Unboxed
+        Data.Repa.Array.Material.Foreign
+        Data.Repa.Array.Material.Nested
 
-        Data.Repa.Array.Material.Unsafe.Boxed
-        Data.Repa.Array.Material.Unsafe.Unboxed
-        Data.Repa.Array.Material.Unsafe.Foreign
-        Data.Repa.Array.Material.Unsafe.Nested
-        Data.Repa.Array.Material.Unsafe
-
-        Data.Repa.Array.Checked
         Data.Repa.Array.Delayed
         Data.Repa.Array.Window
         Data.Repa.Array.Tuple
@@ -76,10 +69,6 @@ Library
         Data.Repa.Array.Internals.Target
         Data.Repa.Array.Internals.Dense
         Data.Repa.Array.Internals.Check
-
-        Data.Repa.Array.Material.Safe.Base
-        Data.Repa.Array.Material.Unsafe.Base
-
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

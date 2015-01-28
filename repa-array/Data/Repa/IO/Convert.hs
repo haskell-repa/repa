@@ -6,8 +6,7 @@ module Data.Repa.IO.Convert
         , showDouble,           showDoubleAsBytes
         , showDoubleFixed,      showDoubleFixedAsBytes)
 where
-import Data.Repa.Array.Checked
-import Data.Repa.Array.Material.Safe.Foreign            as A
+import Data.Repa.Array.Material.Foreign                 as A
 import Data.Repa.Array                                  as A
 import System.IO.Unsafe
 import Data.Word

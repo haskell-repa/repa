@@ -8,9 +8,7 @@ where
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Chain                 (Chain(..), Step(..))
 import Data.Repa.Array.Internals.Bulk                   as A
-import Data.Repa.Array.Internals.Dense                  as A
 import Data.Repa.Array.Internals.Target                 as A
-import Data.Repa.Array.Internals.RowWise                as A
 import Data.Repa.Array.Index                            as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
@@ -25,16 +23,17 @@ chainOfArray
         :: (Monad m, Bulk l a)
         => Array l a -> Chain m Int a
 
-chainOfVector !vec
+chainOfArray !arr
  = Chain (S.Exact len) 0 step
  where
-        !len  = A.length vec
+        !len  = A.length arr
 
         step !i
          | i >= len     = return $ Done  i
-         | otherwise    = return $ Yield (A.index vec (RowWise (Z :. i))) (i + 1)
+         | otherwise    
+         = return $ Yield (A.index arr $ A.fromIndex (A.layout arr) i) (i + 1)
         {-# INLINE_INNER step #-}
-{-# INLINE_STREAM chainOfVector #-}
+{-# INLINE_STREAM chainOfArray #-}
 
 
 -- | Lift a pure chain to a monadic chain.
@@ -97,7 +96,7 @@ unchainToArrayIO l (Chain sz s0 step)
         -- unchain when we don't know the maximum size of the vector.
         unchainToArrayIO_unknown !nStart
          = do   !vec0   <- unsafeNewBuffer  l
-                !vec    <- unsafeGrowBuffer vec0 nStart
+                !vec1   <- unsafeGrowBuffer vec0 nStart
 
                 let go_unchainIO_unknown !sPEC !uvec !i !n !s
                      = go_unchainIO_unknown1 (repack vec0 uvec) i n s
@@ -125,7 +124,7 @@ unchainToArrayIO l (Chain sz s0 step)
                                 arr  <- unsafeFreezeBuffer vec'
                                 done (arr, s')
 
-                go_unchainIO_unknown S.SPEC (unpack vec0) 0 nStart s0
+                go_unchainIO_unknown S.SPEC (unpack vec1) 0 nStart s0
         {-# INLINE_INNER unchainToArrayIO_unknown #-}
 {-# INLINE_STREAM unchainToArrayIO #-}
 

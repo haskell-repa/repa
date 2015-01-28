@@ -1,6 +1,6 @@
 {-# OPTIONS -fno-warn-orphans #-}
-module Data.Repa.Array.Material.Unsafe.Foreign
-        ( U.F    (..)
+module Data.Repa.Array.Material.Foreign
+        ( F      (..)
         , Array  (..)
         , Buffer (..)
         , Window (..)
@@ -10,7 +10,6 @@ module Data.Repa.Array.Material.Unsafe.Foreign
         , fromByteString,       toByteString)
 where
 import Data.Repa.Array.Delayed
-import Data.Repa.Array.Checked
 import Data.Repa.Array.Window
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Target
@@ -25,10 +24,12 @@ import System.IO.Unsafe
 import Data.Repa.Fusion.Unpack
 import Data.ByteString                                  (ByteString)
 import qualified Foreign.ForeignPtr.Unsafe              as Unsafe
-import qualified Data.Repa.Array.Material.Safe.Base     as S
-import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.ByteString.Internal               as BS
 #include "repa-stream.h"
+
+
+-- | Representation tag for Unsafe Foreign arrays.
+data F = F
 
 
 ------------------------------------------------------------------------------

@@ -4,8 +4,7 @@ module Data.Repa.IO.Array
         , hPutArray)
 where
 import Data.Repa.Array.Index
-import Data.Repa.Array.Checked
-import Data.Repa.Array.Material.Safe.Foreign
+import Data.Repa.Array.Material.Foreign
 import Data.Repa.Array.Internals.Bulk
 import qualified Foreign.Ptr            as F
 import qualified Foreign.ForeignPtr     as F

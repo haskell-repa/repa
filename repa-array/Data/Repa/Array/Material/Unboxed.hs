@@ -1,7 +1,7 @@
 {-# OPTIONS -fno-warn-orphans #-}
-module Data.Repa.Array.Material.Unsafe.Unboxed
-        ( U.U    (..)
-        , U.Unbox
+module Data.Repa.Array.Material.Unboxed
+        ( U    (..)
+        , Unbox
         , Array  (..)
         , Buffer (..)
         , Window (..)
@@ -11,64 +11,45 @@ module Data.Repa.Array.Material.Unsafe.Unboxed
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
-import Data.Repa.Array.Checked
 import Data.Repa.Array.Index
+import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
 import Control.Monad
 import Data.Word
-import qualified Data.Repa.Array.Material.Safe.Base     as S
-import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
 #include "repa-stream.h"
 
 
+-- | Representation tag for Unsafe arrays of Unboxed elements.
+--
+--   The implementation uses @Data.Vector.Unboxed@ which is based on type
+--   families and picks an efficient, specialised representation for every
+--   element type. In particular, unboxed vectors of pairs are represented
+--   as pairs of unboxed vectors.
+--   This is the most efficient representation for numerical data.
+--
+--   UNSAFE: Indexing into this array is not bounds checked.
+--
+data U = U Int
+
+
 -------------------------------------------------------------------------------
--- | Unsafe Unboxed arrays.
-instance Repr U.U where
- type Safe   U.U = S.U
- type Unsafe U.U = U.U
- repr            = U.U
- {-# INLINE repr #-}
+instance Layout U where
+        type Index U    = Int
+        extent (U len)  = len
+        toIndex   _ ix  = ix
+        fromIndex _ ix  = ix
+        {-# INLINE extent    #-}
+        {-# INLINE toIndex   #-}
+        {-# INLINE fromIndex #-}
 
 
+{-
+-------------------------------------------------------------------------------
 -- | Unboxed arrays.
-instance Repr S.U where
- type Safe   S.U  = S.U
- type Unsafe S.U  = U.U
- repr             = S.U
- {-# INLINE repr #-}
- 
-
----------------------------------------------------------------------
--- | Unsafe Unboxed arrays.
-instance (Shape sh, U.Unbox a) => Bulk U.U sh a where
- data Array U.U sh a            = UUArray !sh !(U.Vector a)
- extent (UUArray sh _)          = sh
- index  (UUArray sh vec) ix     = vec `U.unsafeIndex` (toIndex sh ix)
- safe   arr                     = SUArray $ checked arr
- unsafe arr                     = arr
- {-# INLINE_ARRAY extent #-}
- {-# INLINE_ARRAY index  #-}
- {-# INLINE_ARRAY safe   #-}
- {-# INLINE_ARRAY unsafe #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 ()      #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Bool    #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Char    #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Int     #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Float   #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Double  #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Word8   #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Word16  #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Word32  #-}
- {-# SPECIALIZE instance Bulk U.U DIM1 Word64  #-}
-
-deriving instance (Show sh, Show e, U.Unbox e) => Show (Array U.U sh e)
-
-
--- | Unboxed arrays.
-instance (Shape sh, U.Unbox e) => Bulk S.U sh e where
+instance U.Unbox a => Bulk U e where
  data Array S.U sh e            = SUArray !(Array (K U.U) sh e)
  extent (SUArray inner)         = extent inner
  index  (SUArray inner) ix      = index  inner ix
@@ -173,4 +154,4 @@ toVector
 toVector (UUArray _ vec)
         = vec
 {-# INLINE_ARRAY toVector #-}
-
+-}

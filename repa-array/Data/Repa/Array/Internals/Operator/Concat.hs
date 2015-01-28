@@ -6,7 +6,7 @@ module Data.Repa.Array.Internals.Operator.Concat
         , concatWith
         , intercalate )
 where
-import Data.Repa.Array.Material.Safe.Unboxed            as R
+import Data.Repa.Array.Material.Unboxed                 as R
 import Data.Repa.Array.Delayed                          as R
 import Data.Repa.Array.Index                            as R
 import Data.Repa.Array.Internals.Target                 as R

@@ -1,5 +1,5 @@
 {-# OPTIONS -fno-warn-orphans #-}
-module Data.Repa.Array.Material.Unsafe.Nested
+module Data.Repa.Array.Material.Nested
         ( U.N(..)
         , U.Unbox
         , Array (..)
@@ -29,7 +29,6 @@ module Data.Repa.Array.Material.Unsafe.Nested
         -- * Transpose
         , ragspose3)
 where
-import Data.Repa.Array.Material.Unsafe.Unboxed  (Array(..))
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
 import Data.Repa.Array.Index
@@ -37,10 +36,24 @@ import Data.Repa.Array.Internals.Bulk                   as R
 import Data.Repa.Array.Internals.Target                 as R
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Repa.Vector.Unboxed               as U
-import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import Prelude                                          as P
 import Prelude  hiding (concat)
 #include "repa-stream.h"
+
+
+-- | Nested array represented as a flat array of elements, and a segment
+--   descriptor that describes how the elements are partitioned into
+--   the sub-arrays. Using this representation for multidimentional arrays
+--   is significantly more efficient than using a boxed array of arrays, 
+--   as there is no need to allocate the sub-arrays individually in the heap.
+--
+--   With a nested type like:
+--   @Array N (Array N (Array U Int))@, the concrete representation consists
+--   of five flat unboxed vectors: two for each of the segment descriptors
+--   associated with each level of nesting, and one unboxed vector to hold
+--   all the integer elements.
+--
+data N = N
 
 
 ---------------------------------------------------------------------------------------------------

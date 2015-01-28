@@ -1,59 +1,27 @@
 {-# OPTIONS -fno-warn-orphans #-}
-module Data.Repa.Array.Material.Unsafe.Boxed
-        ( U.B    (..)
+module Data.Repa.Array.Material.Boxed
+        ( B    (..)
         , Array  (..)
         , Buffer (..)
         , Window (..))
 where
 import Data.Repa.Array.Window
-import Data.Repa.Array.Checked
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
 import Data.Word
 import Control.Monad
-import qualified Data.Repa.Array.Material.Safe.Base     as S
-import qualified Data.Repa.Array.Material.Unsafe.Base   as U
 import qualified Data.Vector                            as V
 import qualified Data.Vector.Mutable                    as VM
 #include "repa-stream.h"
 
 
--------------------------------------------------------------------------------
--- | Unsafe boxed arrays.
-instance Repr U.B where
- type Safe   U.B = S.B
- type Unsafe U.B = U.B
- repr            = U.B
- {-# INLINE repr #-}
+-- | Representation tag for Unsafe arrays of Boxed elements.
+data B = B
 
 
 -- | Boxed arrays.
-instance Repr S.B where
- type Safe    S.B = S.B
- type Unsafe  S.B = U.B
- repr             = S.B
- {-# INLINE repr #-}
-
-
--------------------------------------------------------------------------------
--- | Unsafe Boxed arrays.
-instance Shape sh => Bulk U.B sh a where
- data Array U.B sh a            = UBArray sh !(V.Vector a)
- extent (UBArray sh _ )         = sh
- index  (UBArray sh vec) ix     = vec `V.unsafeIndex` (toIndex sh ix)
- safe   arr                     = SBArray $ checked arr
- unsafe arr                     = arr
- {-# INLINE_ARRAY extent #-}
- {-# INLINE_ARRAY index  #-}
- {-# INLINE_ARRAY safe   #-}
- {-# INLINE_ARRAY unsafe #-}
-
-deriving instance (Show sh, Show a) => Show (Array U.B sh a)
-
-
--- | Boxed arrays.
-instance Shape sh => Bulk S.B sh a where
+instance Bulk B a where
  data Array S.B sh a             = SBArray (Array (K U.B) sh a)
  index  (SBArray inner) ix       = index inner ix
  extent (SBArray inner)          = extent inner
@@ -76,7 +44,7 @@ instance Window U.B DIM1 a where
 
 
 -- Target ---------------------------------------------------------------------
--- | Unsafe Boxed buffers.
+-- | Boxed buffers.
 instance Target U.B e (VM.IOVector e) where
  data Buffer U.B e 
   = UBBuffer !(VM.IOVector e)
