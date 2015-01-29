@@ -47,10 +47,10 @@ instance Layout F where
 instance Storable a => Bulk F a where
  data Array F  a          = FArray !Int !Int !(ForeignPtr a)
  layout (FArray _  len _) = F len
- index  (FArray st _ fptr) ix
+ index  (FArray st len fptr) ix
         = unsafePerformIO 
         $ withForeignPtr fptr
-        $ \ptr -> peekElemOff ptr (st + ix)
+        $ \ptr -> peekElemOff ptr (st + toIndex (F len) ix)
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
  {-# SPECIALIZE instance Bulk F Char    #-}
