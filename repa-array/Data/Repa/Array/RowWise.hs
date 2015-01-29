@@ -1,7 +1,13 @@
 
-module Data.Repa.Array.Internals.RowWise
-        ( RowWise (..)
+module Data.Repa.Array.RowWise
+        ( RW   (..)
+        , Name (..)
+        , rowWise
+
+        -- | Synonyms for common layouts.
         , DIM1, DIM2, DIM3, DIM4, DIM5
+
+        -- | Helpers that contrain the coordinates to be @Ints@.
         , ix1,  ix2,  ix3,  ix4,  ix5)
 where
 import Data.Repa.Array.Internals.Shape
@@ -12,19 +18,26 @@ import GHC.Base                 (quotInt, remInt)
 #include "repa-array.h"
 
 
--- | The RowWise layout maps higher rank indices to linear ones in a
+-- | A row-wise layout that maps higher rank indices to linear ones in a
 --   row-major order.
 --
---   * The mapping between higher ranked indices and linear indices
---     is not bounds checked.
+--   Indices are ordered so the inner-most coordinate varies most frequently:
 --
-data RowWise sh 
-        = RowWise !sh
+--   @> Prelude.map (fromIndex (RowWise (ish2 2 3))) [0..5]
+--   [(Z :. 0) :. 0, (Z :. 0) :. 1, (Z :. 0) :. 2, 
+--    (Z :. 1) :. 0, (Z :. 1) :. 1, (Z :. 1) :. 2]@
+--
+--   * Indexing is not bounds checked. Indexing outside the extent 
+--     yields the corresponding index.
+--
+data RW sh 
+        = RowWise 
+        { rowWiseShape  :: !sh }
         deriving (Show, Eq)
 
 
 instance Shape sh 
-      => Shape (RowWise sh) where
+      => Shape (RW sh) where
 
         rank (RowWise sh)       
                 = rank sh
@@ -61,37 +74,36 @@ instance Shape sh
         {-# INLINE shapeOfList #-}
 
 
-instance Layout (RowWise Z) where         
-        type Index (RowWise Z)   
-                = RowWise Z
+instance Layout (RW Z) where         
+        data Name  (RW Z)       = RZ
+        type Index (RW Z)       = Z
 
-        extent _        = RowWise Z
+        extent _                = Z
         {-# INLINE extent  #-}
 
-        toIndex _ _     = 0
+        toIndex _ _             = 0
         {-# INLINE toIndex #-}
 
-        fromIndex _ _   = RowWise Z
+        fromIndex _ _           = Z
         {-# INLINE fromIndex #-}
 
 
-instance ( Layout  (RowWise sh)
-         , Index   (RowWise sh) ~ sh)
-       =>  Layout  (RowWise (sh :. Int)) where
+instance ( Layout  (RW sh)
+         , Index   (RW sh) ~ sh)
+       =>  Layout  (RW (sh :. Int)) where
 
-        type Index (RowWise (sh :. Int))
-                = RowWise   (sh :. Int)
+        type Index (RW (sh :. Int))
+                = sh :. Int
 
-        extent     (RowWise sh)
-                = RowWise sh
+        extent     (RowWise sh) = sh
         {-# INLINE extent  #-}
 
-        toIndex    (RowWise (sh1 :. sh2)) (RowWise (sh1' :. sh2'))
+        toIndex    (RowWise (sh1 :. sh2)) (sh1' :. sh2')
                 = toIndex (RowWise sh1) sh1' * sh2 + sh2'
-        {-# INLINE toIndex #-}
+        {-# INLINEY toIndex #-}
 
         fromIndex  (RowWise (ds :. d)) n
-               = RowWise (fromIndex (RowWise ds) (n `quotInt` d) :. r)
+               = fromIndex (RowWise ds) (n `quotInt` d) :. r
                -- If we assume that the index is in range, there is no point
                -- in computing the remainder for the highest dimension since
                -- n < d must hold. This saves one remInt per element access
@@ -101,25 +113,37 @@ instance ( Layout  (RowWise sh)
         {-# INLINE fromIndex #-}
 
 
-instance (Layout (RowWise sh), Index (RowWise sh) ~ RowWise sh)
-      => Bulk (RowWise sh) (RowWise sh) where
- data Array (RowWise sh) (RowWise sh)   = RArray sh
- layout (RArray sh)                     = RowWise sh
- index  (RArray _) ix                   = ix
+-- | Row-wise arrays
+instance (Layout (RW sh), Index (RW sh) ~ sh)
+      => Bulk (RW sh) sh where
+ data Array (RW sh) sh          = RArray sh
+ layout (RArray sh)             = RowWise sh
+ index  (RArray _) ix           = ix
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
 
+-- | Construct a rowWise array that produces the corresponding index
+--   for every element.
+--
+--   @> toList $ rowWise (ish2 3 2) 
+--   [(Z :. 0) :. 0, (Z :. 0) :. 1,
+--    (Z :. 1) :. 0, (Z :. 1) :. 1,
+--    (Z :. 2) :. 0, (Z :. 2) :. 1]@
+--
+rowWise :: sh -> Array (RW sh) sh
+rowWise sh = RArray sh
+{-# INLINE_ARRAY rowWise #-}
+
+
 -------------------------------------------------------------------------------
-type DIM1       = RowWise SH1
-type DIM2       = RowWise SH2
-type DIM3       = RowWise SH3
-type DIM4       = RowWise SH4
-type DIM5       = RowWise SH5
+type DIM1       = RW SH1
+type DIM2       = RW SH2
+type DIM3       = RW SH3
+type DIM4       = RW SH4
+type DIM5       = RW SH5
 
 
--- | Helper for index construction, which constrains the coordinate to be 
---   an @Int@.
 ix1 :: Int -> DIM1
 ix1 x         = RowWise (Z :. x)
 {-# INLINE ix1 #-}

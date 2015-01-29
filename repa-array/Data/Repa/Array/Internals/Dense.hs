@@ -6,8 +6,8 @@ module Data.Repa.Array.Internals.Dense
         , vfromList)
 where
 import Data.Repa.Array.Index
+import Data.Repa.Array.RowWise
 import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.RowWise
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
 import Prelude                                  as P

@@ -42,6 +42,7 @@ Library
         Data.Repa.Array.Tuple
         Data.Repa.Array.Window
         Data.Repa.Array.Material
+        Data.Repa.Array.RowWise
         Data.Repa.Array.Linear
 
         Data.Repa.Eval.Array
@@ -69,7 +70,6 @@ Library
         Data.Repa.Array.Internals.Dense
         Data.Repa.Array.Internals.Layout
         Data.Repa.Array.Internals.Load
-        Data.Repa.Array.Internals.RowWise
         Data.Repa.Array.Internals.Shape
         Data.Repa.Array.Internals.Target
 

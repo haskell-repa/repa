@@ -21,7 +21,7 @@ import Prelude hiding (map, zipWith)
 
 -------------------------------------------------------------------------------
 -- | Delayed arrays are represented as functions from the index to element
---   value.
+--   value. The index space depends on an inner layout @l@.
 --
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
@@ -79,30 +79,13 @@ instance (Layout l1, Target l2 a)
         traceEventIO "Repa.loadP[Delayed]: end"
  {-# INLINE_ARRAY loadP #-}
 
-{-
-instance Elt e => LoadRange D DIM2 e where
- loadRangeS  (ADelayed (Z :. _h :. (I# w)) get) !buf
-             (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
-  = do  let write ix x  = unsafeWriteBuffer buf (I# ix) x
-        let get' x y    = get (Z :. I# y :. I# x)
-        Seq.fillBlock2 write get' w x0 y0 w0 h0
-        touchBuffer buf
- {-# INLINE_ARRAY loadRangeS #-}
-
- loadRangeP  gang
-             (ADelayed (Z :. _h :. (I# w)) get) !buf
-             (Z :. (I# y0) :. (I# x0)) (Z :. (I# h0) :. (I# w0))
-  = do  traceEventIO "Repa.loadRangeP[Delayed]: start"
-        let write ix x  = unsafeWriteBuffer buf (I# ix) x
-        let get' x y    = get (Z :. I# y :. I# x)
-        Par.fillBlock2  gang write get' w x0 y0 w0 h0
-        touchBuffer  buf
-        traceEventIO "Repa.loadRangeP[Delayed]: end"
- {-# INLINE_ARRAY loadRangeP #-}
--}
 
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a function as a delayed array.
+--
+--  @> toList $ fromFunction (Linear 10) (* 2)
+--    = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]@
+-- 
 fromFunction :: l -> (Index l -> a) -> Array (D l) a
 fromFunction l f 
         = ADelayed l f 

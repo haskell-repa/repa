@@ -11,7 +11,8 @@ module Data.Repa.Array.Internals.Shape
           -- * Polymorphic shapes
         , Z     (..)
         , (:.)  (..)
-        , SH0, SH1, SH2, SH3, SH4, SH5)
+        ,  SH0,  SH1,  SH2,  SH3,  SH4,  SH5
+        , ish0, ish1, ish2, ish3, ish4, ish5)
 where
 #include "repa-array.h"
 
@@ -100,15 +101,6 @@ data tail :. head
         deriving (Show, Read, Eq, Ord)
 
 
--- Common shapes
-type SH0       = Z
-type SH1       = SH0 :. Int
-type SH2       = SH1 :. Int
-type SH3       = SH2 :. Int
-type SH4       = SH3 :. Int
-type SH5       = SH4 :. Int
-
-
 instance Shape Z where
         rank _                  = 0
         {-# INLINE rank #-}
@@ -178,4 +170,33 @@ instance Shape sh => Shape (sh :. Int) where
                               return $ ss :. x
         {-# NOINLINE shapeOfList #-}
 
+
+-------------------------------------------------------------------------------
+-- Common shapes
+type SH0       = Z
+type SH1       = SH0 :. Int
+type SH2       = SH1 :. Int
+type SH3       = SH2 :. Int
+type SH4       = SH3 :. Int
+type SH5       = SH4 :. Int
+
+
+ish0 :: SH0
+ish0     = Z
+
+ish1 :: Int -> SH1
+ish1 x1          = Z :. x1
+
+ish2 :: Int -> Int -> SH2
+ish2 x2 x1       = Z :. x2 :. x1
+
+ish3 :: Int -> Int -> Int -> SH3
+ish3 x3 x2 x1    = Z :. x3 :. x2 :. x1
+
+ish4 :: Int -> Int -> Int -> Int -> SH4
+ish4 x4 x3 x2 x1 = Z :. x4 :. x3 :. x2 :. x1
+
+
+ish5 :: Int -> Int -> Int -> Int -> Int -> SH5
+ish5 x5 x4 x3 x2 x1 = Z :. x5 :. x4 :. x3 :. x2 :. x1
 

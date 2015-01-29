@@ -37,6 +37,7 @@ data F  = Foreign
 
 
 ------------------------------------------------------------------------------
+-- | Foreign arrays
 instance Layout F where
  data Name  F            = F
  type Index F            = Int
@@ -51,7 +52,7 @@ instance Layout F where
 
 
 -------------------------------------------------------------------------------
--- | Foreign arrays.
+-- | Foreign arrays
 instance Storable a => Bulk F a where
  data Array F  a          = FArray !Int !Int !(ForeignPtr a)
  layout (FArray _  len _) = Foreign len
@@ -73,7 +74,7 @@ instance Storable a => Bulk F a where
 deriving instance Show a => Show (Array F a)
 
 
--- | Unpack Foreign arrays.
+-- | Foreign arrays
 instance Unpack (Array F a) (Int, Int, ForeignPtr a) where
  unpack (FArray st len fptr)    = (st, len, fptr)
  repack _ (st, len, fptr)       = FArray st len fptr
@@ -98,7 +99,7 @@ instance Storable a => Windowable F a where
 
 
 -------------------------------------------------------------------------------
--- | Unsafe Foreign buffers.
+-- | Foreign buffers
 instance Storable a => Target F a where
  data Buffer F a
         = FBuffer 
@@ -157,7 +158,7 @@ instance Storable a => Target F a where
  {-# SPECIALIZE instance Target F Word64 #-}
 
 
--- | Unpack Unsafe Foreign buffers.
+-- | Unpack Foreign buffers
 instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
  unpack (FBuffer start len fptr)  = (start, len, fptr)
  repack _ (start, len, fptr)      = FBuffer start len fptr

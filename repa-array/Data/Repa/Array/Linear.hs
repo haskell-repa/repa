@@ -11,6 +11,10 @@ import Data.Repa.Array.Internals.Bulk
 
 
 -- | A linear layout with the elements indexed by integers.
+--
+--   * Indexing is not bounds checked. Indexing outside the extent
+--     yields the corresponding index.
+--
 data L  = Linear
         { linearLength  :: Int }
 
@@ -34,9 +38,11 @@ instance Bulk L Int where
  {-# INLINE_ARRAY index  #-}
 
 
--- | Construct a linear array that produces the index for every element.
+-- | Construct a linear array that produces the corresponding index
+--   for every element.
 --
---   @toList (Linear 10) = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]@
+--   @> toList $ linear 10
+--   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]@
 --
 linear :: Int -> Array L Int
 linear len      = LArray len

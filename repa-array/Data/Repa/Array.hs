@@ -2,15 +2,25 @@
 module Data.Repa.Array
         ( module Data.Repa.Array.Index
                 
-          -- * Arrays and Vectors
         , Bulk          (..)
         , (!)
         , length
 
-          -- ** Linear arrays
+          -- * Index arrays
+          -- | Index arrays define an index space but do not contain concrete
+          --   element values. Indexing into any point in the array produces
+          --   the index at that point. Index arrays are typically used to 
+          --   provide an array shape to other array operators.
+
+          -- ** Linear spaces
         , L(..)
         , linear
 
+          -- ** RowWise spaces
+        , RW(..)
+        , rowWise
+
+          -- * Meta arrays
           -- ** Delayed arrays
         , D(..)
         , fromFunction
@@ -28,7 +38,7 @@ module Data.Repa.Array
         , tup2
         , untup2
 
-          -- ** Material arrays
+          -- * Material arrays
           -- | Material arrays are represented as concrete data in memory
           --   and are defined in "Data.Repa.Array.Material". Indexing into these
           --   arrays is not bounds checked, so you may want to use them in
@@ -40,7 +50,7 @@ module Data.Repa.Array
         , toList
 
 
-          -- ** Computation
+          -- * Computation
         , Load
         , Target
         , computeS,     computeSn
@@ -74,7 +84,8 @@ module Data.Repa.Array
         , folds, Folds(..)
         , FoldsDict)
 where
-import Data.Repa.Array.Linear
+import Data.Repa.Array.Linear                           as A
+import Data.Repa.Array.RowWise                          as A
 import Data.Repa.Array.Delayed                          as A
 import Data.Repa.Array.Window                           as A
 import Data.Repa.Array.Tuple                            as A
