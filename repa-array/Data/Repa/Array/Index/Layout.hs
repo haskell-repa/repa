@@ -11,7 +11,6 @@ import Data.Repa.Array.Index.Shape
 class Shape (Index lo) => Layout lo where
 
         type Index lo 
-        -- TODO: add layout tag
 
         -- | O(1). Yield the extent of an array.
         --   For a 1-dimensional array this is equivalent to its length.

@@ -30,21 +30,20 @@ Library
 
 
   exposed-modules:
+        Data.Repa.Array.Index.Dim
+        Data.Repa.Array.Index.Layout
+        Data.Repa.Array.Index.Shape
+        Data.Repa.Array.Index.Slice
+
         Data.Repa.Array.Material.Boxed
-        Data.Repa.Array.Material.Unboxed
         Data.Repa.Array.Material.Foreign
         Data.Repa.Array.Material.Nested
+        Data.Repa.Array.Material.Unboxed
 
         Data.Repa.Array.Delayed
-        Data.Repa.Array.Window
-        Data.Repa.Array.Tuple
-
-        Data.Repa.Array.Index.Dim
-        Data.Repa.Array.Index.Slice
-        Data.Repa.Array.Index.Shape
-        Data.Repa.Array.Index.Layout
         Data.Repa.Array.Index
-        Data.Repa.Array
+        Data.Repa.Array.Tuple
+        Data.Repa.Array.Window
 
         Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
@@ -55,20 +54,24 @@ Library
         Data.Repa.IO.Array
         Data.Repa.IO.Convert
 
-        Data.Repa.Nice
+
         Data.Repa.Nice.Display
         Data.Repa.Nice.Tabulate
         Data.Repa.Nice.Present
+
+        Data.Repa.Array
+        Data.Repa.Nice
         
   other-modules:
         Data.Repa.Array.Internals.Operator.Concat
         Data.Repa.Array.Internals.Operator.Fold
         Data.Repa.Array.Internals.Operator.Group
         Data.Repa.Array.Internals.Bulk
-        Data.Repa.Array.Internals.Load
-        Data.Repa.Array.Internals.Target
-        Data.Repa.Array.Internals.Dense
         Data.Repa.Array.Internals.Check
+        Data.Repa.Array.Internals.Dense
+        Data.Repa.Array.Internals.Load
+        Data.Repa.Array.Internals.RowWise
+        Data.Repa.Array.Internals.Target
 
   include-dirs:
         include

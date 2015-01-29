@@ -127,10 +127,10 @@ delay arr = ADelayed (layout arr) (index arr)
 -- Operators ------------------------------------------------------------------
 -- | Apply a worker function to each element of an array, 
 --   yielding a new array with the same extent.
-map     :: (Bulk l a, Index (Index l) ~ Index l)
-        => (a -> b) -> Array l a -> Array (D (Index l)) b
+map     :: Bulk l a
+        => (a -> b) -> Array l a -> Array (D l) b
 map f arr
-        = ADelayed (extent $ layout arr) 
+        = ADelayed (layout arr)
                    (f . index arr)
 {-# INLINE_ARRAY map #-}
 

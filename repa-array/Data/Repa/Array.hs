@@ -20,7 +20,6 @@ module Data.Repa.Array
         , fromFunction
         , toFunction
         , delay 
-        , computeS
 
           -- ** Windowed arrays
         , W(..)
@@ -36,6 +35,12 @@ module Data.Repa.Array
           -- * Conversion
         , fromList
         , toList
+
+
+          -- ** Computation
+        , Load
+        , Target
+        , computeS
 
           -- * Operators
           -- ** Index space transforms
