@@ -5,7 +5,6 @@ module Data.Repa.IO.Array
 where
 import Data.Repa.Array.Index
 import Data.Repa.Array.Material.Foreign
-import Data.Repa.Array.Internals.Bulk
 import qualified Foreign.Ptr            as F
 import qualified Foreign.ForeignPtr     as F
 import qualified Foreign.Marshal.Alloc  as F
@@ -18,13 +17,13 @@ import Data.Word
 -- 
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
-hGetArray :: Handle -> Int -> IO (Vector F Word8)
+hGetArray :: Handle -> Int -> IO (Array F Word8)
 hGetArray h len
  = do
         buf :: F.Ptr Word8 <- F.mallocBytes len
         bytesRead          <- hGetBuf h buf len
         fptr               <- F.newForeignPtr F.finalizerFree buf
-        return  $ fromForeignPtr (Z :. bytesRead) fptr
+        return  $ fromForeignPtr bytesRead fptr
 {-# NOINLINE hGetArray #-}
 
 
@@ -33,8 +32,8 @@ hGetArray h len
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
-hGetArrayPre :: Handle -> Int -> Vector F Word8 -> IO (Vector F Word8)
-hGetArrayPre h len (SFArray (KArray (UFArray shPre offset fptrPre)))
+hGetArrayPre :: Handle -> Int -> Array F Word8 -> IO (Array F Word8)
+hGetArrayPre h len (FArray shPre offset fptrPre)
  = F.withForeignPtr fptrPre
  $ \ptrPre' -> do   
         let ptrPre      = F.plusPtr ptrPre' offset
@@ -44,7 +43,7 @@ hGetArrayPre h len (SFArray (KArray (UFArray shPre offset fptrPre)))
         lenRead         <- hGetBuf h (F.plusPtr ptrBuf lenPre) len
         let bytesTotal  = lenPre + lenRead
         fptrBuf         <- F.newForeignPtr F.finalizerFree ptrBuf
-        return  $ fromForeignPtr (Z :. bytesTotal) fptrBuf
+        return  $ fromForeignPtr bytesTotal fptrBuf
 {-# NOINLINE hGetArrayPre #-}
 
 
@@ -53,8 +52,8 @@ hGetArrayPre h len (SFArray (KArray (UFArray shPre offset fptrPre)))
 --   * Data is written to file directly from foreign memory,
 --     without copying it through the GHC heap.
 --
-hPutArray :: Handle -> Vector F Word8 -> IO ()
-hPutArray h (SFArray (KArray (UFArray shPre offset fptr)))
+hPutArray :: Handle -> Array F Word8 -> IO ()
+hPutArray h (FArray shPre offset fptr)
  = F.withForeignPtr fptr
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset
