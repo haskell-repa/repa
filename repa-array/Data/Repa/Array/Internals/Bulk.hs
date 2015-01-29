@@ -14,10 +14,12 @@ import Prelude hiding (length)
 
 
 -- Bulk -----------------------------------------------------------------------
--- | Class of shape polymorphic array representations that we can read elements
---   from in a random access manner.
+-- | Class of array representations that we can read elements from in a 
+--   random-access manner. 
 class Layout l => Bulk l a where
 
+ -- | An `Array` is a data structure that supplies an element of type @a@ to 
+ --   each position in the index space associated with a layout @l@.
  data Array l a
 
  -- | O(1). Get the layout of an array.
@@ -25,7 +27,7 @@ class Layout l => Bulk l a where
 
  -- | O(1). Get an element from an array. 
  --   If the provided index is outside the extent of the array then the
- --   result depends on the array representation and layout.
+ --   result depends on the layout.
  index       :: Array l a -> Index l -> a
 
 

@@ -5,8 +5,9 @@ where
 import Data.Repa.Array.Internals.Shape
 
 
--- | A Layout specifies the physical representation of an array,
---   and gives a total order to the elements contained within.
+-- | A layout provides a total order on the elements of an index space.
+--   We can talk about the n-th element of an array, independent of its
+--   shape and dimensionality.
 class Shape (Index lo) => Layout lo where
 
         -- | Short name for a layout which does not include details of
