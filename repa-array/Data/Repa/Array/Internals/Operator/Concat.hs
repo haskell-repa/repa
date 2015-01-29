@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP #-}
 
 -- | Concatenation operators on arrays.
-module Data.Repa.Array.Internals.Operator.Concat
+module Data.Repa.Array.Internals.Operator.Concat () where
+
+{-
         ( concat
         , concatWith
         , intercalate )
@@ -211,4 +213,4 @@ intercalate r3 !is !vs
         unsafeFreezeBuffer (Z :. (I# len)) buf
 {-# INLINE_ARRAY intercalate #-}
 
-
+-}

@@ -1,10 +1,9 @@
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Unboxed
         ( U    (..)
-        , Unbox
+        , U.Unbox
         , Array  (..)
         , Buffer (..)
-        , Window (..)
 
         -- * Conversions
         , fromVector, toVector)
@@ -22,7 +21,7 @@ import qualified Data.Vector.Unboxed.Mutable            as UM
 #include "repa-stream.h"
 
 
--- | Representation tag for Unsafe arrays of Unboxed elements.
+-- | Layout for arrays of unboxed elements.
 --
 --   The implementation uses @Data.Vector.Unboxed@ which is based on type
 --   families and picks an efficient, specialised representation for every
@@ -46,93 +45,88 @@ instance Layout U where
         {-# INLINE fromIndex #-}
 
 
-{-
 -------------------------------------------------------------------------------
 -- | Unboxed arrays.
-instance U.Unbox a => Bulk U e where
- data Array S.U sh e            = SUArray !(Array (K U.U) sh e)
- extent (SUArray inner)         = extent inner
- index  (SUArray inner) ix      = index  inner ix
- safe   arr                     = arr
- unsafe (SUArray inner)         = unchecked inner
- {-# INLINE_ARRAY extent #-}
+instance U.Unbox a => Bulk U a where
+ data Array U a                 = UArray !(U.Vector a)
+ layout (UArray vec)            = U (U.length vec)
+ index  (UArray vec) ix         = U.unsafeIndex vec ix
+ {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
- {-# INLINE_ARRAY safe   #-}
- {-# INLINE_ARRAY unsafe #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 ()      #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Bool    #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Char    #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Int     #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Float   #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Double  #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Word8   #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Word16  #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Word32  #-}
- {-# SPECIALIZE instance Bulk S.U DIM1 Word64  #-}
+ {-# SPECIALIZE instance Bulk U ()      #-}
+ {-# SPECIALIZE instance Bulk U Bool    #-}
+ {-# SPECIALIZE instance Bulk U Char    #-}
+ {-# SPECIALIZE instance Bulk U Int     #-}
+ {-# SPECIALIZE instance Bulk U Float   #-}
+ {-# SPECIALIZE instance Bulk U Double  #-}
+ {-# SPECIALIZE instance Bulk U Word8   #-}
+ {-# SPECIALIZE instance Bulk U Word16  #-}
+ {-# SPECIALIZE instance Bulk U Word32  #-}
+ {-# SPECIALIZE instance Bulk U Word64  #-}
 
-deriving instance (Show sh, Show e, U.Unbox e) => Show (Array S.U sh e)
+deriving instance (Show a, U.Unbox a) => Show (Array U a)
 
 
--- Window ---------------------------------------------------------------------
--- | Unsafe Unboxed windows.
-instance U.Unbox a => Window U.U DIM1 a where
- window (Z :. start) (Z :. len) (UUArray _sh vec)
-        = UUArray (Z :. len) (U.slice start len vec)
+-------------------------------------------------------------------------------
+-- | Windowing Unboxed arrays.
+instance U.Unbox a => Windowable U a where
+ window st len (UArray vec)
+        = UArray (U.slice st len vec)
  {-# INLINE_ARRAY window #-}
- {-# SPECIALIZE instance Window U.U DIM1 Int     #-}
- {-# SPECIALIZE instance Window U.U DIM1 Float   #-}
- {-# SPECIALIZE instance Window U.U DIM1 Double  #-}
- {-# SPECIALIZE instance Window U.U DIM1 Word8   #-}
- {-# SPECIALIZE instance Window U.U DIM1 Word16  #-}
- {-# SPECIALIZE instance Window U.U DIM1 Word32  #-}
- {-# SPECIALIZE instance Window U.U DIM1 Word64  #-}
+ {-# SPECIALIZE instance Windowable U Int     #-}
+ {-# SPECIALIZE instance Windowable U Float   #-}
+ {-# SPECIALIZE instance Windowable U Double  #-}
+ {-# SPECIALIZE instance Windowable U Word8   #-}
+ {-# SPECIALIZE instance Windowable U Word16  #-}
+ {-# SPECIALIZE instance Windowable U Word32  #-}
+ {-# SPECIALIZE instance Windowable U Word64  #-}
 
 
--- Target ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Unsafe Unboxed buffers.
-instance U.Unbox e => Target U.U e (UM.IOVector e) where
- data Buffer U.U e 
-  = UUBuffer !(UM.IOVector e)
+instance U.Unbox a => Target U a where
+ data Buffer U a 
+  = UBuffer !(UM.IOVector a)
 
- unsafeNewBuffer len
-  = liftM UUBuffer (UM.unsafeNew len)
+ unsafeNewBuffer (U len)
+  = liftM UBuffer (UM.unsafeNew len)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
 
- unsafeWriteBuffer (UUBuffer mvec) ix
+ unsafeWriteBuffer (UBuffer mvec) ix
   = UM.unsafeWrite mvec ix
  {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
- unsafeGrowBuffer (UUBuffer mvec) bump
+ unsafeGrowBuffer (UBuffer mvec) bump
   = do  mvec'   <- UM.unsafeGrow mvec bump
-        return  $ UUBuffer mvec'
+        return  $ UBuffer mvec'
  {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
- unsafeFreezeBuffer sh (UUBuffer mvec)     
+ unsafeFreezeBuffer (UBuffer mvec)     
   = do  vec     <- U.unsafeFreeze mvec
-        return  $  UUArray sh vec
+        return  $  UArray vec
  {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
- unsafeSliceBuffer start len (UUBuffer mvec)
-  = do  let mvec'  = UM.unsafeSlice start len mvec
-        return $ UUBuffer mvec'
+ unsafeSliceBuffer st len (UBuffer mvec)
+  = do  let mvec'  = UM.unsafeSlice st len mvec
+        return $ UBuffer mvec'
  {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer _ 
   = return ()
  {-# INLINE_ARRAY touchBuffer #-}
 
- {-# SPECIALIZE instance Target U.U Int    (UM.IOVector Int)    #-}
- {-# SPECIALIZE instance Target U.U Float  (UM.IOVector Float)  #-}
- {-# SPECIALIZE instance Target U.U Double (UM.IOVector Double) #-}
- {-# SPECIALIZE instance Target U.U Word8  (UM.IOVector Word8)  #-}
- {-# SPECIALIZE instance Target U.U Word16 (UM.IOVector Word16) #-}
- {-# SPECIALIZE instance Target U.U Word32 (UM.IOVector Word32) #-}
- {-# SPECIALIZE instance Target U.U Word64 (UM.IOVector Word64) #-}
+ {-# SPECIALIZE instance Target U Int    #-}
+ {-# SPECIALIZE instance Target U Float  #-}
+ {-# SPECIALIZE instance Target U Double #-}
+ {-# SPECIALIZE instance Target U Word8  #-}
+ {-# SPECIALIZE instance Target U Word16 #-}
+ {-# SPECIALIZE instance Target U Word32 #-}
+ {-# SPECIALIZE instance Target U Word64 #-}
 
 
-instance Unpack (Buffer U.U e) (UM.IOVector e) where
- unpack (UUBuffer vec) = vec `seq` vec
- repack !_ !vec        = UUBuffer vec
+instance Unpack (Buffer U e) (UM.IOVector e) where
+ unpack (UBuffer vec)  = vec `seq` vec
+ repack !_ !vec        = UBuffer vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
 
@@ -140,18 +134,15 @@ instance Unpack (Buffer U.U e) (UM.IOVector e) where
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
 fromVector
-        :: (Shape sh, U.Unbox e)
-        => sh -> U.Vector e -> Array U.U sh e
-fromVector sh vec
-        = UUArray sh vec
+        :: U.Unbox e
+        => U.Vector e -> Array U e
+fromVector vec = UArray vec
 {-# INLINE_ARRAY fromVector #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
-toVector
+toVector 
         :: U.Unbox e
-        => Array U.U sh e -> U.Vector e
-toVector (UUArray _ vec)
-        = vec
+        => Array U e -> U.Vector e
+toVector (UArray vec) = vec
 {-# INLINE_ARRAY toVector #-}
--}
