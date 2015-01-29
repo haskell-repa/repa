@@ -11,7 +11,6 @@ import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target
--- import Data.Array.Repa.Eval.Elt
 import Debug.Trace
 import GHC.Exts
 import qualified Data.Array.Repa.Eval.Par       as Par
@@ -26,27 +25,32 @@ import Prelude hiding (map, zipWith)
 --
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
-data D l = D l
+data D l 
+        = Delayed 
+        { delayedLayout :: l }
 
 
-instance Layout l
-      => Layout (D l) where
+-------------------------------------------------------------------------------
+instance Layout l => Layout (D l) where
+ data Name  (D l)               = D (Name l)
+ type Index (D l)               = Index l
+ create     (D n) len           = Delayed (create n len)
+ extent     (Delayed l)         = extent l
+ toIndex    (Delayed l) ix      = toIndex l ix
+ fromIndex  (Delayed l) i       = fromIndex l i
+ {-# INLINE create    #-}
+ {-# INLINE extent    #-}
+ {-# INLINE toIndex   #-}
+ {-# INLINE fromIndex #-}
 
-      type Index (D l)    = Index l
-      extent     (D l)    = extent l
-      toIndex    (D l) ix = toIndex l ix
-      fromIndex  (D l) i  = fromIndex l i
-      {-# INLINE extent    #-}
-      {-# INLINE toIndex   #-}
-      {-# INLINE fromIndex #-}
 
-
+-------------------------------------------------------------------------------
 -- | Delayed arrays.
 instance Layout l => Bulk (D l) a where
  data Array (D l) a
         = ADelayed !l (Index l -> a) 
 
- layout (ADelayed l _)      = D l
+ layout (ADelayed l _)      = Delayed l
  {-# INLINE_ARRAY layout #-}
 
  index  (ADelayed _l f) ix  = f ix

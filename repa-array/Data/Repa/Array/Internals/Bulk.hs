@@ -7,7 +7,8 @@ module Data.Repa.Array.Internals.Bulk
         , toLists
         , toListss)
 where
-import Data.Repa.Array.Index
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Layout
 import Prelude hiding (length)
 #include "repa-array.h"
 

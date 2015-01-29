@@ -1,6 +1,7 @@
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Unboxed
-        ( U    (..)
+        ( U      (..)
+        , Name   (..)
         , U.Unbox
         , Array  (..)
         , Buffer (..)
@@ -21,35 +22,39 @@ import qualified Data.Vector.Unboxed.Mutable            as UM
 #include "repa-array.h"
 
 
--- | Layout for arrays of unboxed elements.
+-- | Layout an array as a flat vector of unboxed elements.
 --
---   The implementation uses @Data.Vector.Unboxed@ which is based on type
---   families and picks an efficient, specialised representation for every
---   element type. In particular, unboxed vectors of pairs are represented
---   as pairs of unboxed vectors.
 --   This is the most efficient representation for numerical data.
 --
---   UNSAFE: Indexing into this array is not bounds checked.
+--   The implementation uses @Data.Vector.Unboxed@ which picks an efficient,
+--   specialised representation for every element type. In particular,
+--   unboxed vectors of pairs are represented as pairs of unboxed vectors.
 --
-data U = U Int
+--   UNSAFE: Indexing into raw material arrays is not bounds checked.
+--   You may want to wrap this with a Checked layout as well.
+--
+data U  = Unboxed { unboxedLength :: Int }
 
 
 -------------------------------------------------------------------------------
 instance Layout U where
-        type Index U    = Int
-        extent (U len)  = len
-        toIndex   _ ix  = ix
-        fromIndex _ ix  = ix
-        {-# INLINE extent    #-}
-        {-# INLINE toIndex   #-}
-        {-# INLINE fromIndex #-}
+ data Name  U                   = U
+ type Index U                   = Int
+ create U len                   = Unboxed len
+ extent (Unboxed len)           = len
+ toIndex   _ ix                 = ix
+ fromIndex _ ix                 = ix
+ {-# INLINE_ARRAY create    #-}
+ {-# INLINE_ARRAY extent    #-}
+ {-# INLINE_ARRAY toIndex   #-}
+ {-# INLINE_ARRAY fromIndex #-}
 
 
 -------------------------------------------------------------------------------
 -- | Unboxed arrays.
 instance U.Unbox a => Bulk U a where
  data Array U a                 = UArray !(U.Vector a)
- layout (UArray vec)            = U (U.length vec)
+ layout (UArray vec)            = Unboxed (U.length vec)
  index  (UArray vec) ix         = U.unsafeIndex vec ix
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
@@ -88,7 +93,7 @@ instance U.Unbox a => Target U a where
  data Buffer U a 
   = UBuffer !(UM.IOVector a)
 
- unsafeNewBuffer (U len)
+ unsafeNewBuffer (Unboxed len)
   = liftM UBuffer (UM.unsafeNew len)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
 
@@ -146,3 +151,4 @@ toVector
         => Array U e -> U.Vector e
 toVector (UArray vec) = vec
 {-# INLINE_ARRAY toVector #-}
+

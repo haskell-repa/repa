@@ -54,18 +54,24 @@ import Prelude  hiding (concat)
 --   associated with each level of nesting, and one unboxed vector to hold
 --   all the integer elements.
 --
-data N = N Int
+--   UNSAFE: Indexing into raw material arrays is not bounds checked.
+--   You may want to wrap this with a Checked layout as well.
+--
+data N  = Nested 
+        { nestedLength  :: Int }
 
 
 -------------------------------------------------------------------------------
 instance Layout N where
-        type Index N    = Int
-        extent (N len)  = len
-        toIndex   _ ix  = ix
-        fromIndex _ ix  = ix
-        {-# INLINE extent    #-}
-        {-# INLINE toIndex   #-}
-        {-# INLINE fromIndex #-}
+ data Name  N           = N
+ type Index N           = Int
+ create N len           = Nested len
+ extent (Nested len)    = len
+ toIndex   _ ix         = ix
+ fromIndex _ ix         = ix
+ {-# INLINE extent    #-}
+ {-# INLINE toIndex   #-}
+ {-# INLINE fromIndex #-}
 
 
 -------------------------------------------------------------------------------
@@ -79,7 +85,7 @@ instance (Bulk l a, Windowable l a, Index l ~ Int)
                  !(Array l a)           -- data values
 
  layout (NArray starts _lengths _elems)
-        = N (U.length starts)
+        = Nested (U.length starts)
  {-# INLINE_ARRAY layout #-}
 
  index  (NArray starts lengths elems) ix

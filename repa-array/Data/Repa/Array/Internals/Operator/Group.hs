@@ -22,21 +22,21 @@ import qualified Data.Repa.Chain                as C
 -- @
 --
 groupsBy :: GroupsDict lElt lGrp tGrp lLen tLen n
-         => lGrp                -- ^ Layout for group names.
-         -> lLen                -- ^ Layour for group lengths.
+         => Name lGrp           -- ^ Layout for group names.
+         -> Name lLen           -- ^ Layour for group lengths.
          -> (n -> n -> Bool)    -- ^ Comparison function.
          -> Maybe  (n, Int)     -- ^ Starting element and count.
          -> Array  lElt n       -- ^ Input elements.
          -> (Array (T2 lGrp lLen) (n, Int), Maybe (n, Int))
 
-groupsBy lGrp lLen f !c !vec0
+groupsBy nGrp nLen f !c !vec0
  = (vec1, snd k1)
  where  
         f' x y = return $ f x y
         {-# INLINE f' #-}
 
         (vec1, k1)
-         = A.unchainToArray (T2 lGrp lLen) 
+         = A.unchainToArray (T2 (create nGrp 0) (create nLen 0))
          $ C.liftChain
          $ C.groupsByC f' c  
          $ A.chainOfArray vec0

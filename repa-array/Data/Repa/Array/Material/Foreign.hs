@@ -28,29 +28,37 @@ import qualified Data.ByteString.Internal               as BS
 
 
 -- | Layout for Foreign arrays.
-data F = F Int
+--
+--   UNSAFE: Indexing into raw material arrays is not bounds checked.
+--   You may want to wrap this with a Checked layout as well.
+--
+data F  = Foreign 
+        { foreignLength :: Int}
 
 
 ------------------------------------------------------------------------------
 instance Layout F where
-        type Index F    = Int
-        extent (F len)  = len
-        toIndex   _ ix  = ix
-        fromIndex _ ix  = ix
-        {-# INLINE extent    #-}
-        {-# INLINE toIndex   #-}
-        {-# INLINE fromIndex #-}
+ data Name  F            = F
+ type Index F            = Int
+ create F len            = Foreign len
+ extent (Foreign len)    = len
+ toIndex   _ ix          = ix
+ fromIndex _ ix          = ix
+ {-# INLINE_ARRAY create    #-}
+ {-# INLINE_ARRAY extent    #-}
+ {-# INLINE_ARRAY toIndex   #-}
+ {-# INLINE_ARRAY fromIndex #-}
 
 
 -------------------------------------------------------------------------------
 -- | Foreign arrays.
 instance Storable a => Bulk F a where
  data Array F  a          = FArray !Int !Int !(ForeignPtr a)
- layout (FArray _  len _) = F len
+ layout (FArray _  len _) = Foreign len
  index  (FArray st len fptr) ix
         = unsafePerformIO 
         $ withForeignPtr fptr
-        $ \ptr -> peekElemOff ptr (st + toIndex (F len) ix)
+        $ \ptr -> peekElemOff ptr (st + toIndex (Foreign len) ix)
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
  {-# SPECIALIZE instance Bulk F Char    #-}
@@ -98,7 +106,7 @@ instance Storable a => Target F a where
                 !Int            -- length of buffer, in elements.
                 !(ForeignPtr a) -- element data.
 
- unsafeNewBuffer (F len)
+ unsafeNewBuffer (Foreign len)
   = do  let (proxy :: a) = undefined
         ptr     <- mallocBytes (sizeOf proxy * len)
         _       <- peek ptr  `asTypeOf` return proxy

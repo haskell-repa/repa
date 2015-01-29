@@ -12,21 +12,33 @@ import Data.Repa.Array.Internals.Bulk
 
 
 -- Windows --------------------------------------------------------------------
-data W l = Window (Index l) (Index l) l
+data W l 
+        = Window 
+        { windowStart   :: Index l
+        , windowSize    :: Index l
+        , windowInner   :: l }
+
 
 instance Layout l => Layout (W l) where
+        data Name  (W l) = W (Name l)
         type Index (W l) = Index l
+
+        create (W n) len  
+         = let  inner   = create n len
+           in   Window zeroDim (extent inner) inner
 
         extent    (Window _ sz _)  
                 = sz
-        {-# INLINE extent #-}
 
         toIndex   (Window _st _sz inner) ix  
                 = toIndex inner ix              -- TODO: wrong, use offsets
-        {-# INLINE toIndex #-}
 
         fromIndex (Window _st _sz inner) ix     -- TODO: wrong, use offsets
                 = fromIndex inner ix
+
+        {-# INLINE create    #-}
+        {-# INLINE toIndex   #-}
+        {-# INLINE extent    #-}
         {-# INLINE fromIndex #-}
 
 

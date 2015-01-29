@@ -7,13 +7,9 @@ module Data.Repa.Array
         , (!)
         , length
 
-          -- ** Material arrays
-          -- | Material arrays are represented as concrete data in memory
-          --   and are defined in "Data.Repa.Array.Material.Safe"
-          --                   and "Data.Repa.Array.Material.Unsafe".
-          --   Import one or the other depending on whether you want to perform 
-          --   bounds checks when indexing into them.
-        , Material
+          -- ** Linear arrays
+        , L(..)
+        , linear
 
           -- ** Delayed arrays
         , D(..)
@@ -32,6 +28,13 @@ module Data.Repa.Array
         , tup2
         , untup2
 
+          -- ** Material arrays
+          -- | Material arrays are represented as concrete data in memory
+          --   and are defined in "Data.Repa.Array.Material". Indexing into these
+          --   arrays is not bounds checked, so you may want to use them in
+          --   conjunction with a @C@hecked layout.
+        , Material
+
           -- * Conversion
         , fromList
         , toList
@@ -40,10 +43,10 @@ module Data.Repa.Array
           -- ** Computation
         , Load
         , Target
-        , computeS
+        , computeS,     computeSn
 
           -- * Operators
-          -- ** Index space transforms
+          -- ** Index space
           -- | Index space transforms view the elements of an array in a different
           --   order, but do not compute new elements. They are all constant time
           --   operations as the location of the required element in the source
@@ -71,11 +74,13 @@ module Data.Repa.Array
         , folds, Folds(..)
         , FoldsDict)
 where
-import Data.Repa.Array.Index
-import Data.Repa.Eval.Array                             as A
+import Data.Repa.Array.Linear
 import Data.Repa.Array.Delayed                          as A
 import Data.Repa.Array.Window                           as A
 import Data.Repa.Array.Tuple                            as A
+import Data.Repa.Array.Material.Unboxed                 as A
+import Data.Repa.Array.Index
+import Data.Repa.Eval.Array                             as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Operator.Concat        as A
@@ -84,6 +89,7 @@ import Data.Repa.Array.Internals.Operator.Fold          as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
 #include "repa-array.h"
+
 
 -- | Classes supported by all material representations.
 --

@@ -4,20 +4,19 @@ module Data.Repa.Array.Internals.RowWise
         , DIM1, DIM2, DIM3, DIM4, DIM5
         , ix1,  ix2,  ix3,  ix4,  ix5)
 where
-import Data.Repa.Array.Index.Layout
-import Data.Repa.Array.Index.Dim
-import Data.Repa.Array.Index.Shape
+import Data.Repa.Array.Internals.Shape
+import Data.Repa.Array.Internals.Layout
+import Data.Repa.Array.Internals.Bulk
 import Control.Monad
 import GHC.Base                 (quotInt, remInt)
+#include "repa-array.h"
 
 
 -- | The RowWise layout maps higher rank indices to linear ones in a
---   dense, row-major order.
+--   row-major order.
 --
---   TODO: add a parameter to RowWise for bounds checking, but do not
---   expose in type. Safe/Unsafe should not pollute visible type. 
---   Bounds errors should be caught when producing linear indices
---   from higher-ranked ones.
+--   * The mapping between higher ranked indices and linear indices
+--     is not bounds checked.
 --
 data RowWise sh 
         = RowWise !sh
@@ -100,6 +99,15 @@ instance ( Layout  (RowWise sh)
                where r | rank ds == 0  = n
                        | otherwise     = n `remInt` d
         {-# INLINE fromIndex #-}
+
+
+instance (Layout (RowWise sh), Index (RowWise sh) ~ RowWise sh)
+      => Bulk (RowWise sh) (RowWise sh) where
+ data Array (RowWise sh) (RowWise sh)   = RArray sh
+ layout (RArray sh)                     = RowWise sh
+ index  (RArray _) ix                   = ix
+ {-# INLINE_ARRAY layout #-}
+ {-# INLINE_ARRAY index  #-}
 
 
 -------------------------------------------------------------------------------

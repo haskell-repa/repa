@@ -30,9 +30,6 @@ Library
 
 
   exposed-modules:
-        Data.Repa.Array.Index.Dim
-        Data.Repa.Array.Index.Layout
-        Data.Repa.Array.Index.Shape
         Data.Repa.Array.Index.Slice
 
         Data.Repa.Array.Material.Boxed
@@ -44,6 +41,8 @@ Library
         Data.Repa.Array.Index
         Data.Repa.Array.Tuple
         Data.Repa.Array.Window
+        Data.Repa.Array.Material
+        Data.Repa.Array.Linear
 
         Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
@@ -53,7 +52,6 @@ Library
 
         Data.Repa.IO.Array
         Data.Repa.IO.Convert
-
 
         Data.Repa.Nice.Display
         Data.Repa.Nice.Tabulate
@@ -69,8 +67,10 @@ Library
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Check
         Data.Repa.Array.Internals.Dense
+        Data.Repa.Array.Internals.Layout
         Data.Repa.Array.Internals.Load
         Data.Repa.Array.Internals.RowWise
+        Data.Repa.Array.Internals.Shape
         Data.Repa.Array.Internals.Target
 
   include-dirs:

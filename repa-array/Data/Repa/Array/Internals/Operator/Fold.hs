@@ -23,8 +23,8 @@ import System.IO.Unsafe
 --     other.
 --
 folds   :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
-        => lGrp                  -- ^ Layout for group names.
-        -> lRes                  -- ^ Layout for fold results.
+        => Name lGrp             -- ^ Layout for group names.
+        -> Name lRes             -- ^ Layout for fold results.
         -> (a -> b -> b)         -- ^ Worker function.
         -> b                     -- ^ Initial state when folding segments.
         -> Option3 n Int b       -- ^ Length and initial state for first segment.
@@ -32,13 +32,13 @@ folds   :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
         ->  Array lElt a         -- ^ Elements.
         -> (Array (T2 lGrp lRes) (n, b), C.Folds Int Int n a b)
 
-folds lGrp lRes f z s0 vLens vVals
+folds nGrp nRes f z s0 vLens vVals
  = unsafePerformIO
  $ do   
         let f' !x !y = return $ f x y
             {-# INLINE f' #-}
 
-        A.unchainToArrayIO (T2 lGrp lRes)
+        A.unchainToArrayIO (T2 (create nGrp 0) (create nRes 0))
          $  C.foldsC f' z s0
                 (A.chainOfArray vLens)
                 (A.chainOfArray vVals)
