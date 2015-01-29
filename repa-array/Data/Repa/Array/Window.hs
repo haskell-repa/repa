@@ -8,7 +8,7 @@ module Data.Repa.Array.Window
 where
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- Windows --------------------------------------------------------------------

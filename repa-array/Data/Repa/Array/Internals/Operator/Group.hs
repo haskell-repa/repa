@@ -9,7 +9,7 @@ import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Fusion.Unpack                  as A
 import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | From a stream of values which has consecutive runs of idential values,

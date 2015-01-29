@@ -9,7 +9,7 @@ module Data.Repa.Array.Index.Slice
 where
 import Data.Repa.Array.Index.Dim
 import Prelude		        hiding (replicate, drop)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Select all indices at a certain position.

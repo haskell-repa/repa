@@ -14,7 +14,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic      as S
 import qualified Data.Vector.Fusion.Stream.Size         as S
 import qualified Data.Vector.Fusion.Util                as S
 import System.IO.Unsafe
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -------------------------------------------------------------------------------

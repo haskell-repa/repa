@@ -8,7 +8,7 @@ module Data.Repa.Array.Index.Dim
         , SH0, SH1, SH2, SH3, SH4, SH5)
 where
 import Data.Repa.Array.Index.Shape
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | An index of dimension zero

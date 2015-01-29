@@ -24,7 +24,7 @@ import Data.Repa.Fusion.Unpack
 import Data.ByteString                                  (ByteString)
 import qualified Foreign.ForeignPtr.Unsafe              as Unsafe
 import qualified Data.ByteString.Internal               as BS
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Layout for Foreign arrays.

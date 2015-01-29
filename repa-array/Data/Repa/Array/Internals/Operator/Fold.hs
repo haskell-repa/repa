@@ -11,7 +11,7 @@ import Data.Repa.Fusion.Unpack                  as A
 import qualified Data.Repa.Chain                as C
 import Data.Repa.Fusion.Option
 import System.IO.Unsafe
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Segmented fold over vectors of segment lengths and input values.

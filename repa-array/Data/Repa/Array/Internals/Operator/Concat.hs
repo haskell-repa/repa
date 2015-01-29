@@ -20,7 +20,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import System.IO.Unsafe
 import GHC.Exts hiding (fromList, toList)
 import Prelude  hiding (reverse, length, map, zipWith, concat)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- Concat ---------------------------------------------------------------------

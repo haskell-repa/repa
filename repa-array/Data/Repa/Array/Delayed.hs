@@ -17,7 +17,7 @@ import GHC.Exts
 import qualified Data.Array.Repa.Eval.Par       as Par
 import qualified Data.Array.Repa.Eval.Seq       as Seq
 import Prelude hiding (map, zipWith)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -------------------------------------------------------------------------------

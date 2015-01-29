@@ -9,7 +9,7 @@ module Data.Repa.Array.Internals.Bulk
 where
 import Data.Repa.Array.Index
 import Prelude hiding (length)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- Bulk -----------------------------------------------------------------------

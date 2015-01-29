@@ -9,7 +9,7 @@ import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Dense                  as A
 import Data.Repa.Array.Internals.RowWise                as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as S
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Convert a `Vector` to a `Stream`.

@@ -18,7 +18,7 @@ import Control.Monad
 import Data.Word
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Layout for arrays of unboxed elements.

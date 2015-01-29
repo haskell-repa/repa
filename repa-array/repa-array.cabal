@@ -70,6 +70,12 @@ Library
         Data.Repa.Array.Internals.Dense
         Data.Repa.Array.Internals.Check
 
+  include-dirs:
+        include
+
+  install-includes:
+        repa-array.h
+
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -O2

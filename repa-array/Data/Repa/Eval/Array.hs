@@ -13,7 +13,7 @@ import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Bulk
 import System.IO.Unsafe
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Sequential computation of array elements.

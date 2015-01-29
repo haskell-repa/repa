@@ -39,7 +39,7 @@ import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Repa.Vector.Unboxed               as U
 import Prelude                                          as P
 import Prelude  hiding (concat)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Nested array represented as a flat array of elements, and a segment

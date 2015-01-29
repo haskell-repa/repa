@@ -78,7 +78,7 @@ import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 -- | Classes supported by all material representations.
 --

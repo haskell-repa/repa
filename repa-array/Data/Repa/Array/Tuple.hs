@@ -10,7 +10,7 @@ import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
 import Control.Monad
 import Prelude                          hiding (zip, unzip)
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -------------------------------------------------------------------------------

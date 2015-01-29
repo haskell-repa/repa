@@ -5,7 +5,7 @@ module Data.Repa.Array.Index.Shape
         , inShape
         , showShape )
 where
-#include "repa-stream.h"
+#include "repa-array.h"
 
 
 -- | Class of types that can be used as array shapes and indices.
