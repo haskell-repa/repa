@@ -14,7 +14,7 @@ import Prelude                          as P
 -- | Class of manifest array representations that can be constructed 
 --   in a random-access manner.
 --
---   TODO: generalise unsafeGrowBuffer to work with higher ranked dims.
+--   TODO: generalise to work with higher ranked indices.
 --
 class Layout l => Target l a where
 

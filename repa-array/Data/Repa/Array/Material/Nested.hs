@@ -1,8 +1,9 @@
 
 module Data.Repa.Array.Material.Nested
-        ( N(..)
-        , U.Unbox
+        ( N     (..)
+        , Name  (..)
         , Array (..)
+        , U.Unbox
 
         -- * Conversion
         , fromLists
@@ -60,6 +61,9 @@ import Prelude  hiding (concat)
 data N  = Nested 
         { nestedLength  :: Int }
 
+deriving instance Eq N
+deriving instance Show N
+
 
 -------------------------------------------------------------------------------
 instance Layout N where
@@ -72,6 +76,9 @@ instance Layout N where
  {-# INLINE extent    #-}
  {-# INLINE toIndex   #-}
  {-# INLINE fromIndex #-}
+
+deriving instance Eq   (Name N)
+deriving instance Show (Name N)
 
 
 -------------------------------------------------------------------------------

@@ -2,9 +2,9 @@
 module Data.Repa.Array.Material.Unboxed
         ( U      (..)
         , Name   (..)
-        , U.Unbox
         , Array  (..)
         , Buffer (..)
+        , U.Unbox
 
         -- * Conversions
         , fromVector, toVector)
@@ -35,6 +35,9 @@ import qualified Data.Vector.Unboxed.Mutable            as UM
 --
 data U  = Unboxed { unboxedLength :: Int }
 
+deriving instance Eq U
+deriving instance Show U
+
 
 -------------------------------------------------------------------------------
 instance Layout U where
@@ -48,6 +51,9 @@ instance Layout U where
  {-# INLINE_ARRAY extent    #-}
  {-# INLINE_ARRAY toIndex   #-}
  {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name U)
+deriving instance Show (Name U)
 
 
 -------------------------------------------------------------------------------

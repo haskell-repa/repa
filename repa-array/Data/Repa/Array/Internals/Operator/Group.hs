@@ -32,11 +32,13 @@ groupsBy :: GroupsDict lElt lGrp tGrp lLen tLen n
 groupsBy nGrp nLen f !c !vec0
  = (vec1, snd k1)
  where  
-        f' x y = return $ f x y
+        f' x y  = return $ f x y
         {-# INLINE f' #-}
 
+        lDst    = create (T2 nGrp nLen) zeroDim
+
         (vec1, k1)
-         = A.unchainToArray (T2 (create nGrp 0) (create nLen 0))
+         = A.unchainToArray lDst
          $ C.liftChain
          $ C.groupsByC f' c  
          $ A.chainOfArray vec0

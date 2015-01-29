@@ -1,7 +1,8 @@
 
 module Data.Repa.Array.RowWise
-        ( RW   (..)
-        , Name (..)
+        ( RW    (..)
+        , Name  (..)
+        , Array (..)
         , rowWise
 
         -- | Synonyms for common layouts.
@@ -77,14 +78,13 @@ instance Shape sh
 instance Layout (RW Z) where         
         data Name  (RW Z)       = RZ
         type Index (RW Z)       = Z
-
+        create RZ Z             = RowWise Z
         extent _                = Z
-        {-# INLINE extent  #-}
-
         toIndex _ _             = 0
-        {-# INLINE toIndex #-}
-
         fromIndex _ _           = Z
+        {-# INLINE create #-}
+        {-# INLINE extent  #-}
+        {-# INLINE toIndex #-}
         {-# INLINE fromIndex #-}
 
 
@@ -92,15 +92,17 @@ instance ( Layout  (RW sh)
          , Index   (RW sh) ~ sh)
        =>  Layout  (RW (sh :. Int)) where
 
-        type Index (RW (sh :. Int))
-                = sh :. Int
+        data Name  (RW (sh :. Int))     = RC (Name (RW sh))
+        type Index (RW (sh :. Int))     = sh :. Int
+
+        create (RC nSh) (sh :. i)
+         = let RowWise  iSh     = create nSh sh
+           in  RowWise (iSh :. i)
 
         extent     (RowWise sh) = sh
-        {-# INLINE extent  #-}
 
         toIndex    (RowWise (sh1 :. sh2)) (sh1' :. sh2')
                 = toIndex (RowWise sh1) sh1' * sh2 + sh2'
-        {-# INLINEY toIndex #-}
 
         fromIndex  (RowWise (ds :. d)) n
                = fromIndex (RowWise ds) (n `quotInt` d) :. r
@@ -110,6 +112,10 @@ instance ( Layout  (RW sh)
                -- which is quite a big deal.
                where r | rank ds == 0  = n
                        | otherwise     = n `remInt` d
+
+        {-# INLINE create    #-}
+        {-# INLINE toIndex   #-}
+        {-# INLINE extent    #-}
         {-# INLINE fromIndex #-}
 
 

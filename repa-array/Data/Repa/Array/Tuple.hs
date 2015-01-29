@@ -1,6 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Array.Tuple
-        ( T2(..), Array(..)
+        ( T2     (..)
+        , Name   (..)
+        , Array  (..)
+        , Buffer (..)
         , tup2, untup2)
 where
 import Data.Repa.Array.Window
@@ -13,37 +16,51 @@ import Prelude                          hiding (zip, unzip)
 #include "repa-array.h"
 
 
--------------------------------------------------------------------------------
 -- | Tupled arrays where the components are unpacked and can have 
 --   separate representations.
-data T2 l1 l2 = T2 l1 l2
+data T2 l1 l2 
+        = Tup2 l1 l2
 
 
+deriving instance (Eq   l1, Eq   l2) => Eq   (T2 l1 l2)
+deriving instance (Show l1, Show l2) => Show (T2 l1 l2)
+
+
+-------------------------------------------------------------------------------
 instance ( Index  l1 ~ Index l2
          , Layout l1, Layout l2) 
         => Layout (T2 l1 l2) where
 
-        type Index (T2 l1 l2)    = Index l1
+ data Name  (T2 l1 l2)       = T2 (Name l1) (Name l2)
+ type Index (T2 l1 l2)       = Index l1
+ create     (T2 n1 n2)    ix = Tup2 (create n1 ix) (create n2 ix)
+ extent     (Tup2 l1 l2)     = intersectDim (extent l1) (extent l2)
+ toIndex    (Tup2 l1 _l2) ix = toIndex l1 ix
+ fromIndex  (Tup2 l1 _l2) ix = fromIndex l1 ix
+ {-# INLINE create    #-}
+ {-# INLINE extent    #-}
+ {-# INLINE toIndex   #-}
+ {-# INLINE fromIndex #-}
 
-        extent    (T2 l1 l2)     = intersectDim (extent l1) (extent l2)
-        {-# INLINE extent #-}
 
-        toIndex   (T2 l1 _l2) ix = toIndex l1 ix
-        {-# INLINE toIndex #-}
+deriving instance 
+          (Eq   (Name l1), Eq   (Name l2)) 
+        => Eq   (Name (T2 l1 l2))
 
-        fromIndex (T2 l1 _l2) ix = fromIndex l1 ix
-        {-# INLINE fromIndex #-}
+deriving instance 
+          (Show (Name l1), Show (Name l2))
+        => Show (Name (T2 l1 l2))
 
 
+-------------------------------------------------------------------------------
 -- | Tupled arrays.
 instance (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
        => Bulk (T2 l1 l2) (a, b) where
 
- -- | INVARIANT: both components of the tupled array have the same shape.
  data Array (T2 l1 l2) (a, b)
         = T2Array (Array l1 a) (Array l2 b)
 
- layout (T2Array arr1 arr2)     = T2 (layout arr1)  (layout arr2)
+ layout (T2Array arr1 arr2)     = Tup2 (layout arr1)  (layout arr2)
  index  (T2Array arr1 arr2) ix  = (index  arr1 ix, index  arr2 ix)
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
@@ -72,7 +89,7 @@ instance ( Target l1 a, Target l2 b
  data Buffer (T2 l1 l2) (a, b) 
         = T2Buffer !(Buffer l1 a) !(Buffer l2 b)
 
- unsafeNewBuffer (T2 l1 l2)
+ unsafeNewBuffer (Tup2 l1 l2)
   = liftM2 T2Buffer (unsafeNewBuffer l1) (unsafeNewBuffer l2)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
 
@@ -119,10 +136,11 @@ instance (Unpack (Buffer r1 a) t1, Unpack (Buffer r2 b) t2)
 -------------------------------------------------------------------------------
 -- | Tuple two arrays into an array of pairs.
 -- 
---   The extent of the result array is the intersection of the extents of the
---   two argument arrays.
+--   The two argument arrays must have the same index type, but can have
+--   different extents. The extent of the result is the intersection
+--   of the extents of the two argument arrays.
 --
-tup2    :: (Bulk l1 a, Bulk l2 b)
+tup2    :: (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
         => Array l1 a -> Array l2 b 
         -> Array (T2 l1 l2) (a, b)
 tup2 arr1 arr2

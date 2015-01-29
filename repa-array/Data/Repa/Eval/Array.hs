@@ -38,10 +38,12 @@ computeS lDst aSrc
 {-# INLINE_ARRAY computeS #-}
 
 
--- | Like `computeS`, but use a default destination layout of the given name.
-computeSn :: Load lSrc lDst a
-          => Name lDst -> Array lSrc a -> Array lDst a
+-- | Like `computeS`, but use a destination layout of the given name,
+--   with the same extent as the source.
+computeSn :: (Load lSrc lDst a, Index lSrc ~ Index lDst)
+          =>  Name lDst -> Array lSrc a -> Array lDst a
 computeSn nDst aSrc
- = let Just aDst  = computeS (create nDst (A.length aSrc)) aSrc
-   in  aDst
+ = let  lDst       = create nDst (extent $ layout aSrc)
+        Just aDst  = computeS lDst aSrc
+   in   aDst
 {-# INLINE computeSn #-}

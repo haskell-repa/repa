@@ -1,6 +1,7 @@
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Repa.Array.Material.Foreign
         ( F      (..)
+        , Name   (..)
         , Array  (..)
         , Buffer (..)
 
@@ -35,6 +36,9 @@ import qualified Data.ByteString.Internal               as BS
 data F  = Foreign 
         { foreignLength :: Int}
 
+deriving instance Eq F
+deriving instance Show F
+
 
 ------------------------------------------------------------------------------
 -- | Foreign arrays
@@ -49,6 +53,9 @@ instance Layout F where
  {-# INLINE_ARRAY extent    #-}
  {-# INLINE_ARRAY toIndex   #-}
  {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name F)
+deriving instance Show (Name F)
 
 
 -------------------------------------------------------------------------------

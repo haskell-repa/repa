@@ -37,6 +37,7 @@ Library
         Data.Repa.Array.Material.Nested
         Data.Repa.Array.Material.Unboxed
 
+        Data.Repa.Array.Dense
         Data.Repa.Array.Delayed
         Data.Repa.Array.Index
         Data.Repa.Array.Tuple
@@ -67,7 +68,6 @@ Library
         Data.Repa.Array.Internals.Operator.Group
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Check
-        Data.Repa.Array.Internals.Dense
         Data.Repa.Array.Internals.Layout
         Data.Repa.Array.Internals.Load
         Data.Repa.Array.Internals.Shape

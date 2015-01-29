@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP #-}
 module Data.Repa.Array
         ( module Data.Repa.Array.Index
-                
-        , Bulk          (..)
+
+        , Name  (..)                
+        , Bulk  (..)
         , (!)
         , length
 
@@ -21,6 +22,7 @@ module Data.Repa.Array
         , rowWise
 
           -- * Meta arrays
+
           -- ** Delayed arrays
         , D(..)
         , fromFunction
@@ -44,6 +46,12 @@ module Data.Repa.Array
           --   arrays is not bounds checked, so you may want to use them in
           --   conjunction with a @C@hecked layout.
         , Material
+
+          -- ** Dense arrays
+        , E (..)
+        , vector
+        , matrix
+        , cube
 
           -- * Conversion
         , fromList
@@ -85,11 +93,11 @@ module Data.Repa.Array
         , FoldsDict)
 where
 import Data.Repa.Array.Linear                           as A
+import Data.Repa.Array.Dense                            as A
 import Data.Repa.Array.RowWise                          as A
 import Data.Repa.Array.Delayed                          as A
 import Data.Repa.Array.Window                           as A
 import Data.Repa.Array.Tuple                            as A
-import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array.Index
 import Data.Repa.Eval.Array                             as A
 import Data.Repa.Array.Internals.Target                 as A
