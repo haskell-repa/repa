@@ -4,12 +4,8 @@ module Data.Repa.Array
                 
           -- * Arrays and Vectors
         , Bulk          (..)
-        , Vector
         , (!)
         , length
-
-          -- * Representations
-        , Repr          (..)
 
           -- ** Material arrays
           -- | Material arrays are represented as concrete data in memory
@@ -28,7 +24,7 @@ module Data.Repa.Array
 
           -- ** Windowed arrays
         , W(..)
-        , Window (..)
+        , Windowable (..)
         , windowed
         , entire
 
@@ -38,9 +34,7 @@ module Data.Repa.Array
         , untup2
 
           -- * Conversion
-        , vfromList
         , fromList
-        
         , toList
 
           -- * Operators
@@ -52,7 +46,7 @@ module Data.Repa.Array
         , reverse
 
           -- ** Mapping
-        , map, zipWith
+        , map -- , zipWith
 
           -- ** Searching
         , findIndex
@@ -60,9 +54,9 @@ module Data.Repa.Array
           -- ** Sloshing
           -- | Sloshing operators copy array elements into a different arrangement, 
           --   but do not create new element values.
-        , concat
-        , concatWith
-        , intercalate
+--        , concat
+--        , concatWith
+--        , intercalate
 
           -- ** Grouping
         , groupsBy
@@ -95,35 +89,35 @@ import Prelude  hiding (reverse, length, map, zipWith, concat)
 --   In particular, delayed arrays are not material as we cannot use them
 --   as targets for a computation.
 --
-type Material r t sh a
-        = (Bulk r sh a, Window r sh a, Target r a t)
+type Material l a
+        = (Bulk l a, Windowable l a, Target l a)
 
 
 -- | O(1). View the elements of a vector in reverse order.
-reverse   :: Bulk r DIM1 a
-          => Vector r a -> Vector D a
+reverse   :: (Bulk  l a, Index l ~ Int)
+          => Array l a -> Array (D l) a
 
-reverse !vec
- = let  !len           = size (extent vec)
-        get (Z :. ix)  = vec `index` (Z :. len - ix - 1)
-   in   fromFunction (extent vec) get
+reverse !arr
+ = let  !len    = size (extent $ layout arr)
+        get ix  = arr `index` (len - ix - 1)
+   in   fromFunction (layout arr) get
 {-# INLINE_ARRAY reverse #-}
 
 
 -- | O(len src) Yield `Just` the index of the first element matching the predicate
 --   or `Nothing` if no such element exists.
-findIndex :: Bulk r DIM1 a
-          => (a -> Bool) -> Vector r a -> Maybe Int
+findIndex :: (Bulk l a, Index l ~ Int)
+          => (a -> Bool) -> Array l a -> Maybe Int
 
-findIndex p !vec
+findIndex p !arr
  = loop_findIndex V.SPEC 0
  where  
-        !len    = size (extent vec)
+        !len    = size (extent $ layout arr)
 
         loop_findIndex !sPEC !ix
          | ix >= len    = Nothing
          | otherwise    
-         = let  !x      = vec `index` (Z :. ix)
+         = let  !x      = arr `index` ix
            in   if p x  then Just ix
                         else loop_findIndex sPEC (ix + 1)
         {-# INLINE_INNER loop_findIndex #-}

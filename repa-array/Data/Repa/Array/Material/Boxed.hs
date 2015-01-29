@@ -1,5 +1,7 @@
 {-# OPTIONS -fno-warn-orphans #-}
-module Data.Repa.Array.Material.Boxed
+module Data.Repa.Array.Material.Boxed () where
+
+{-
         ( B    (..)
         , Array  (..)
         , Buffer (..)
@@ -90,4 +92,4 @@ instance Unpack (Buffer U.B e) (VM.IOVector e) where
  repack !_ !vec        = UBBuffer vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
-
+-}

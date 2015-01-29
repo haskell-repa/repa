@@ -120,9 +120,9 @@ instance (Nicer a, Nicer b)
  type Nice (a, b)       = (Nice a, Nice b)
  nice (x, y)            = (nice x, nice y)
 
-instance (Bulk r DIM1 a, Nicer [a]) 
-      => Nicer (A.Vector r a) where
- type Nice (Vector r a) = Nice [a]
+instance (Bulk l a, Nicer [a]) 
+      => Nicer (Array l a) where
+ type Nice (Array l a)  = Nice [a]
  nice vec               = nice $ toList vec
 
 instance Nicer a 
@@ -135,9 +135,9 @@ instance (Nicer a, Nicer b)
  type Nice [(a, b)]     = [Nice (a, b)]
  nice xs                = P.map nice xs
 
-instance (Bulk r DIM1 a, Nicer [a])
-      => Nicer [(A.Vector r a)] where
- type Nice [A.Vector r a] = [Nice [a]]
+instance (Bulk l a, Nicer [a])
+      => Nicer [(Array l a)] where
+ type Nice [Array l a]  = [Nice [a]]
  nice xs                = P.map (nice . toList) xs
 
 instance Nicer [a]
