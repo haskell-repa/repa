@@ -22,18 +22,18 @@ import Prelude                                  as P
 
 
 -- | A bundle of sources, where the elements are chunked into arrays.
-type Sources i m r e
-        = G.Sources i m (A.Vector r e)
+type Sources i m l e
+        = G.Sources i m (A.Array l e)
 
 
 -- | A bundle of sinks,   where the elements are chunked into arrays.
-type Sinks   i m r e
-        = G.Sinks   i m (A.Vector r e)
+type Sinks   i m l e
+        = G.Sinks   i m (A.Array l e)
 
 
 -- | Shorthand for common type classes.
-type Flow i m r a
-        = (Ord i, Monad m, Bulk r DIM1 a, States i m)
+type Flow i m l a
+        = (Ord i, Monad m, BulkI l a, States i m)
 
 
 -- Conversion -----------------------------------------------------------------
@@ -43,29 +43,29 @@ type Flow i m r a
 --   * All elements are stuffed into a single chunk, and each stream is given
 --     the same chunk.
 fromList_i 
-        :: (States i m, A.Target r a t)
-        => r -> i -> [a] -> m (Sources i m r a)
+        :: (States i m, A.TargetI l a)
+        => Name l -> i -> [a] -> m (Sources i m l a)
 
-fromList_i r n xs
- = G.fromList n [A.vfromList r xs]
+fromList_i nDst n xs
+ = G.fromList n [A.fromList nDst xs]
 {-# INLINE fromList_i #-}
 
 
 -- | Like `fromLists_i` but take a list of lists, where each of the inner
 --   lists is packed into a single chunk.
 fromLists_i 
-        :: (States i m, A.Target r a t)
-        => r -> i -> [[a]] -> m (Sources i m r a)
+        :: (States i m, A.TargetI l a)
+        => Name l -> i -> [[a]] -> m (Sources i m l a)
 
-fromLists_i r n xs
- = G.fromList n $ P.map (A.vfromList r) xs
+fromLists_i nDst n xs
+ = G.fromList n $ P.map (A.fromList nDst) xs
 {-# INLINE fromLists_i #-}
 
 
 -- | Drain a single source into a list of elements.
 toList1_i 
-        :: (States i m, A.Bulk r DIM1 a)
-        => Ix i -> Sources i m r a  -> m [a]
+        :: (States i m, A.BulkI l a)
+        => Ix i -> Sources i m l a  -> m [a]
 toList1_i i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.concat $ P.map A.toList chunks
@@ -74,8 +74,8 @@ toList1_i i sources
 
 -- | Drain a single source into a list of chunks.
 toLists1_i
-        :: (States i m, A.Bulk r DIM1 a)
-        => Ix i -> Sources i m r a -> m [[a]]
+        :: (States i m, A.BulkI l a)
+        => Ix i -> Sources i m l a -> m [[a]]
 toLists1_i i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.map A.toList chunks
@@ -90,8 +90,8 @@ toLists1_i i sources
 --     at least the desired number of elements. The leftover elements
 --     in the final chunk are visible in the result `Sources`.
 --
-head_i  :: (States i m, A.Window r DIM1 a)
-        => Int -> Sources i m r a -> Ix i -> m ([a], Sources i m r a)
+head_i  :: (States i m, A.Windowable l a, A.Index l ~ Int)
+        => Int -> Sources i m l a -> Ix i -> m ([a], Sources i m l a)
 
 head_i len s0 i
  = do   
@@ -135,7 +135,7 @@ head_i len s0 i
         let start  =  Q.length has - Q.length rest
         let stash  = case mFinal of
                         Nothing -> []
-                        Just c  -> [A.window (Z :. start) (Z :. Q.length rest) c]
+                        Just c  -> [A.window start (Q.length rest) c]
 
         s2'        <- G.prependOn_i (\i' -> i' == i) stash s2
         return  (Q.toList here, s2')
@@ -155,7 +155,7 @@ head_i len s0 i
 finalize_i
         :: States i m
         => (Ix i -> m ())
-        -> Sources i m r a -> m (Sources i m r a)
+        -> Sources i m l a -> m (Sources i m l a)
 finalize_i = G.finalize_i
 {-# INLINE finalize_i #-}
 
@@ -170,6 +170,6 @@ finalize_i = G.finalize_i
 finalize_o
         :: States i m
         => (Ix i -> m ())
-        -> Sinks i m r a -> m (Sinks i m r a)
+        -> Sinks i m l a -> m (Sinks i m l a)
 finalize_o = G.finalize_o
 {-# INLINE finalize_o #-}

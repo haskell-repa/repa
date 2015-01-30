@@ -18,15 +18,27 @@ import Data.Repa.Array.Internals.Bulk
 data L  = Linear
         { linearLength  :: Int }
 
+deriving instance Eq L
+deriving instance Show L
+
 
 -- | Linear layout.
 instance Layout L where
  data Name  L           = L
  type Index L           = Int
+ name                   = L
  create  L len          = Linear len
  extent  (Linear len)   = len
  toIndex   _ ix         = ix
  fromIndex _ ix         = ix
+ {-# INLINE_ARRAY name      #-}
+ {-# INLINE_ARRAY create    #-}
+ {-# INLINE_ARRAY extent    #-}
+ {-# INLINE_ARRAY toIndex   #-}
+ {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name L)
+deriving instance Show (Name L)
 
 
 -- | Linear arrays.

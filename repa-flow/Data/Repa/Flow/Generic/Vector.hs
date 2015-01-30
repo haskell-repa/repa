@@ -17,11 +17,11 @@ import Prelude hiding (length)
 --   them to the spill action.
 --
 distributes_o 
-        :: Bulk r DIM1 a 
+        :: BulkI l a 
         => Sinks Int IO a       -- ^ Sinks to push elements into.
         -> ((Int, a) -> IO ())  -- ^ Spill action, given the spilled element
                                 --   along with its index in the array.
-        -> IO (Sinks () IO (Vector r a))
+        -> IO (Sinks () IO (Array l a))
 
 distributes_o (Sinks nSinks push eject) spill
  = do   
@@ -34,11 +34,11 @@ distributes_o (Sinks nSinks push eject) spill
                     = return ()
 
                     | ix >= nSinks
-                    = do spill (ix, index xs (Z :. ix))
+                    = do spill (ix, index xs ix)
                          loop_distributes (ix + 1)
 
                     | otherwise  
-                    = do push (IIx ix nx) (index xs (Z :. ix))
+                    = do push (IIx ix nx) (index xs ix)
                          loop_distributes (ix + 1)
 
                    {-# INLINE loop_distributes #-}
@@ -63,9 +63,9 @@ distributes_o (Sinks nSinks push eject) spill
 
 -- | Like `distributes_o` but drop spilled elements on the floor.
 ddistributes_o
-        :: Bulk r DIM1 a
+        :: BulkI l a
         => Sinks Int IO a
-        -> IO (Sinks () IO (Vector r a))
+        -> IO (Sinks () IO (Array l a))
 
 ddistributes_o sinks 
         = distributes_o sinks (\_ -> return ())

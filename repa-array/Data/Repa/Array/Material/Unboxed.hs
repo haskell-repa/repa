@@ -44,10 +44,12 @@ deriving instance Show U
 instance Layout U where
  data Name  U                   = U
  type Index U                   = Int
+ name                           = U
  create U len                   = Unboxed len
  extent (Unboxed len)           = len
  toIndex   _ ix                 = ix
  fromIndex _ ix                 = ix
+ {-# INLINE_ARRAY name      #-}
  {-# INLINE_ARRAY create    #-}
  {-# INLINE_ARRAY extent    #-}
  {-# INLINE_ARRAY toIndex   #-}

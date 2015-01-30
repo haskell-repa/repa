@@ -45,10 +45,12 @@ deriving instance Show F
 instance Layout F where
  data Name  F            = F
  type Index F            = Int
+ name                    = F
  create F len            = Foreign len
  extent (Foreign len)    = len
  toIndex   _ ix          = ix
  fromIndex _ ix          = ix
+ {-# INLINE_ARRAY name      #-}
  {-# INLINE_ARRAY create    #-}
  {-# INLINE_ARRAY extent    #-}
  {-# INLINE_ARRAY toIndex   #-}

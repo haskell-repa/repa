@@ -3,10 +3,9 @@ module Data.Repa.Flow.IO.TSV
         (sourceTSV)
 where
 import Data.Repa.Flow
-import Data.Repa.Array                                  as A
-import Data.Repa.Array.Material.Unsafe.Nested           as A
-import Data.Repa.Array.Material.Safe                    as S
-import qualified Data.Repa.Flow.Generic                 as G hiding (next)
+import Data.Repa.Array                          as A
+import Data.Repa.Array.Material                 as A
+import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import System.IO
 import Data.Char
 #include "repa-stream.h"

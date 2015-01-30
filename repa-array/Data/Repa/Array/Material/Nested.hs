@@ -70,13 +70,15 @@ deriving instance Show N
 instance Layout N where
  data Name  N           = N
  type Index N           = Int
+ name                   = N
  create N len           = Nested len
  extent (Nested len)    = len
  toIndex   _ ix         = ix
  fromIndex _ ix         = ix
- {-# INLINE extent    #-}
- {-# INLINE toIndex   #-}
- {-# INLINE fromIndex #-}
+ {-# INLINE_ARRAY name      #-}
+ {-# INLINE_ARRAY extent    #-}
+ {-# INLINE_ARRAY toIndex   #-}
+ {-# INLINE_ARRAY fromIndex #-}
 
 deriving instance Eq   (Name N)
 deriving instance Show (Name N)

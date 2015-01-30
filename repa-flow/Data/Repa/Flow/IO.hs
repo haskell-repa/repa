@@ -18,7 +18,7 @@ where
 import Data.Repa.Flow
 import Data.Repa.Flow.IO.TSV                    as F
 import Data.Repa.Eval.Array                     as A
-import Data.Repa.Array.Material.Unsafe.Nested   as A
+import Data.Repa.Array.Material                 as A
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array                          as A hiding (fromList)
 import qualified Data.Repa.Flow.Generic         as G hiding (next)

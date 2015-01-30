@@ -1,3 +1,4 @@
+
 module Data.Repa.Flow.Chunked.Operator.Folds
         ( folds_i
         , FoldsWorthy)
@@ -12,27 +13,27 @@ import qualified Data.Repa.Flow.Generic   as G
 
 
 -- | Dictionaries needed to perform a segmented fold.
-type FoldsWorthy i m rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+type FoldsWorthy i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
         = ( States i m
-          , Window rSeg DIM1 (n, Int), Window rElt DIM1 a
-          , Bulk   rSeg DIM1 (n, Int)
-          , Bulk   rElt DIM1 a
-          , Bulk   rGrp DIM1 n
-          , Bulk   rRes DIM1 b
-          , Target rElt a    tElt
-          , Target rGrp n    tGrp
-          , Target rRes b    tRes)
+          , Windowable lSeg (n, Int), Windowable lElt a
+          , BulkI   lSeg (n, Int)
+          , BulkI   lElt a
+          , BulkI   lGrp n
+          , BulkI   lRes b
+          , TargetI lElt a
+          , TargetI lGrp n
+          , TargetI lRes b)
 
 
 -- Folds ----------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
-folds_i :: forall      i m rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
-        .  FoldsWorthy i m rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
+folds_i :: forall      i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
+        .  FoldsWorthy i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
         => (a -> b -> b)             -- ^ Worker function.
         -> b                         -- ^ Initial state when folding each segment.
-        -> Sources i m rSeg (n, Int)   -- ^ Segment lengths.
-        -> Sources i m rElt a          -- ^ Input elements to fold.
-        -> m (Sources i m (T2 rGrp rRes) (n, b)) -- ^ Result elements.
+        -> Sources i m lSeg (n, Int)   -- ^ Segment lengths.
+        -> Sources i m lElt a          -- ^ Input elements to fold.
+        -> m (Sources i m (T2 lGrp lRes) (n, b)) -- ^ Result elements.
 
 folds_i f z sLens@(G.Sources nLens _)
             sVals@(G.Sources nVals _)
@@ -50,7 +51,7 @@ folds_i f z sLens@(G.Sources nLens _)
         refsVals     <- newRefs nFolds Nothing
         refsValsDone <- newRefs nFolds False
 
-        let pull_folds :: Ix i -> (Vector (T2 rGrp rRes) (n, b) -> m ()) -> m () -> m ()
+        let pull_folds :: Ix i -> (Array (T2 lGrp lRes) (n, b) -> m ()) -> m () -> m ()
             pull_folds i eat eject
              = do mNameLens <- folds_loadChunkNameLens sLens refsNameLens i
                   mVals     <- folds_loadChunkVals     sVals refsVals refsValsDone i 
@@ -92,11 +93,11 @@ folds_i f z sLens@(G.Sources nLens _)
 -- If we already have one in the state then use that, 
 -- otherwise try to pull a new chunk from the source.
 folds_loadChunkNameLens 
-    :: States i m
-    => Sources i m r1 (n, Int)
-    -> Refs i m (Maybe (Vector r1 (n, Int)))
+    :: States  i m
+    => Sources i m l1 (n, Int)
+    -> Refs i m (Maybe (Array l1 (n, Int)))
     -> Ix i 
-    -> m (Maybe (Vector r1 (n, Int)))
+    -> m (Maybe (Array l1 (n, Int)))
 
 folds_loadChunkNameLens (G.Sources _ pullLens) refsLens i
  = do mChunkLens <- readRefs refsLens i
@@ -124,12 +125,12 @@ folds_loadChunkNameLens (G.Sources _ pullLens) refsLens i
 -- If we already have one in the state then use that,
 -- otherwise try to pull a new chunk from the source.
 folds_loadChunkVals 
-        :: (States i m, Target r2 a t2)
-        => Sources i m r2 a
-        -> Refs i m (Maybe (Vector r2 a))
+        :: (States i m, TargetI l2 a)
+        => Sources i m l2 a
+        -> Refs i m (Maybe (Array l2 a))
         -> Refs i m Bool
         -> Ix i 
-        -> m (Maybe (Vector r2 a))
+        -> m (Maybe (Array l2 a))
 
 folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
  = do mChunkVals <- readRefs refsVals i
@@ -144,7 +145,7 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
                 -- this is needed when there are zero lengthed
                 -- segments on the end of the stream
                 ejectVals_folds 
-                 = do writeRefs refsVals     i (Just $ vfromList repr [])
+                 = do writeRefs refsVals     i (Just $ fromList repr [])
                       writeRefs refsValsDone i True
                 {-# INLINE ejectVals_folds #-}
 
@@ -161,13 +162,13 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
 
 folds_update
         :: ( States i m
-           , Window r1 DIM1 (n, Int), Window r2 DIM1 a)
+           , Windowable l1 (n, Int), Windowable l2 a)
         => Refs i m (Option3 n Int b)
-        -> Refs i m (Maybe (Vector r1 (n, Int)))
-        -> Refs i m (Maybe (Vector r2 a))
+        -> Refs i m (Maybe (Array l1 (n, Int)))
+        -> Refs i m (Maybe (Array l2 a))
         -> Ix i 
-        -> Vector r1 (n, Int)
-        -> Vector r2 a
+        -> Array l1 (n, Int)
+        -> Array l2 a
         -> Folds Int Int n a b
         -> m ()
 

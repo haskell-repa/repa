@@ -1,4 +1,4 @@
-
+{-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Array.Window
         ( W          (..)
         , Array      (..)
@@ -18,11 +18,17 @@ data W l
         , windowSize    :: Index l
         , windowInner   :: l }
 
+deriving instance (Show l, Show (Index l)) => Show (W l)
+deriving instance (Eq   l, Eq   (Index l)) => Eq   (W l)
 
+
+-------------------------------------------------------------------------------
 -- | Windowed arrays.
 instance Layout l => Layout (W l) where
         data Name  (W l) = W (Name l)
         type Index (W l) = Index l
+
+        name = W name
 
         create (W n) len  
          = let  inner   = create n len
@@ -37,12 +43,18 @@ instance Layout l => Layout (W l) where
         fromIndex (Window _st _sz inner) ix     -- TODO: wrong, use offsets
                 = fromIndex inner ix
 
-        {-# INLINE create    #-}
-        {-# INLINE toIndex   #-}
-        {-# INLINE extent    #-}
-        {-# INLINE fromIndex #-}
+        {-# INLINE_ARRAY name      #-}
+        {-# INLINE_ARRAY create    #-}
+        {-# INLINE_ARRAY toIndex   #-}
+        {-# INLINE_ARRAY extent    #-}
+        {-# INLINE_ARRAY fromIndex #-}
 
 
+deriving instance Eq   (Name l) => Eq   (Name (W l))
+deriving instance Show (Name l) => Show (Name (W l))
+
+
+-------------------------------------------------------------------------------
 -- | Windowed arrays.
 instance Bulk l a => Bulk (W l) a where
  data Array (W l) a             = WArray !(Index l) !(Index l) !(Array l a)

@@ -9,9 +9,7 @@ where
 import Data.Repa.Flow.Simple.Base
 import System.IO
 import Data.Word
-import Data.Repa.Array.Material.Safe            as A
-import Data.Repa.Array.Material.Unsafe.Nested   as A
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 #include "repa-stream.h"
 
@@ -41,7 +39,7 @@ sourceRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> Handle               -- ^ File handle.
-        -> IO (Source IO (Vector N (Vector F Word8)))
+        -> IO (Source IO (Array N (Array F Word8)))
 
 sourceRecords len pSep aFail h
  = do   s0      <- G.sourceRecords len pSep aFail [h]
@@ -61,7 +59,7 @@ sourceRecords len pSep aFail h
 --
 sourceBytes 
         :: Int -> Handle 
-        -> IO (Source IO (Vector F Word8))
+        -> IO (Source IO (Array F Word8))
 
 sourceBytes len h
  = do   s0      <- G.sourceBytes len [h]
@@ -75,7 +73,7 @@ sourceBytes len h
 --
 --   The file will be closed when the associated stream is ejected.
 --
-sinkBytes :: Handle  -> IO (Sink IO (Vector F Word8))
+sinkBytes :: Handle  -> IO (Sink IO (Array F Word8))
 sinkBytes h
  = do   s0      <- G.sinkBytes [h]
         let Just s1 = wrapI_o s0

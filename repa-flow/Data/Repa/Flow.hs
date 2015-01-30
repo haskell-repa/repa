@@ -87,8 +87,7 @@ import Data.Repa.Eval.Array
 import Data.Repa.Eval.Array                      as A
 import Data.Repa.Array                           hiding (fromList)
 import Data.Repa.Array                           as A hiding (fromList)
-import Data.Repa.Array.Material.Safe
-import qualified Data.Repa.Array.Material.Unsafe as U
+import Data.Repa.Array.Material
 import qualified Data.Repa.Flow.Chunked          as C hiding (next)
 import qualified Data.Repa.Flow.Generic          as G hiding (next)
 import Control.Monad

@@ -19,6 +19,9 @@ class Shape (Index l) => Layout l where
         -- | Type used to index into this array layout.
         type Index l
 
+        -- | O(1). Proxy for the layout name.
+        name        :: Name l
+
         -- | O(1). Create a default layout of the given extent.
         create      :: Name l -> Index l -> l
 
@@ -33,3 +36,4 @@ class Shape (Index l) => Layout l where
 
 
 type LayoutI l  = (Layout l, Index l ~ Int)
+

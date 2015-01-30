@@ -29,20 +29,28 @@ data D l
         = Delayed 
         { delayedLayout :: l }
 
+deriving instance Eq   l => Eq   (D l)
+deriving instance Show l => Show (D l)
+
 
 -------------------------------------------------------------------------------
 -- | Delayed arrays.
 instance Layout l => Layout (D l) where
  data Name  (D l)               = D (Name l)
  type Index (D l)               = Index l
+ name                           = D name
  create     (D n) len           = Delayed (create n len)
  extent     (Delayed l)         = extent l
  toIndex    (Delayed l) ix      = toIndex l ix
  fromIndex  (Delayed l) i       = fromIndex l i
- {-# INLINE create    #-}
- {-# INLINE extent    #-}
- {-# INLINE toIndex   #-}
- {-# INLINE fromIndex #-}
+ {-# INLINE_ARRAY name      #-}
+ {-# INLINE_ARRAY create    #-}
+ {-# INLINE_ARRAY extent    #-}
+ {-# INLINE_ARRAY toIndex   #-}
+ {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name l) => Eq   (Name (D l))
+deriving instance Show (Name l) => Show (Name (D l))
 
 
 -------------------------------------------------------------------------------

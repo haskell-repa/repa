@@ -16,8 +16,7 @@ where
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Array.Material.Safe
-import Data.Repa.Array.Material.Unsafe.Nested   as A
+import Data.Repa.Array.Material                 as A
 import Data.Repa.Array                          as A
 import Data.Repa.IO.Array
 import Data.Char
@@ -74,7 +73,7 @@ sourceRecords
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources Int IO (Vector N (Vector F Word8)))
+        -> IO (Sources Int IO (Array N (Array F Word8)))
 
 sourceRecords len pSep aFail hs
  =   smap_i (\_ !c -> A.segmentOn pSep c)
@@ -88,7 +87,7 @@ sourceChunks
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources Int IO (Vector F Word8))
+        -> IO (Sources Int IO (Array F Word8))
 
 sourceChunks len pSep aFail hs
  = return $ Sources (P.length hs) pull_sourceChunks
@@ -113,14 +112,14 @@ sourceChunks len pSep aFail hs
 
                  -- Work out how long the record is.
                  Just lenSlack
-                  -> do let !lenArr     = size (extent arr)
+                  -> do let !lenArr     = A.length arr
                         let !ixSplit    = lenArr - lenSlack
 
                         -- Seek the file to just after the last complete record.
                         hSeek (hs !! i) RelativeSeek (fromIntegral $ negate lenSlack)
 
                         -- Eat complete records at the start of the chunk.
-                        eat $ window (Z :. 0) (Z :. ixSplit) arr
+                        eat $ window 0 ixSplit arr
         {-# INLINE pull_sourceChunks #-}
 {-# INLINE_FLOW sourceChunks #-}
 
@@ -130,7 +129,7 @@ sourceChunks len pSep aFail hs
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 ----
-sourceChars :: Int -> [Handle] -> IO (Sources Int IO (Vector F Char))
+sourceChars :: Int -> [Handle] -> IO (Sources Int IO (Array F Char))
 sourceChars len hs
  =   smap_i (\_ !c -> A.computeS F $ A.map (chr . fromIntegral) c)
  =<< sourceBytes len hs
@@ -142,7 +141,7 @@ sourceChars len hs
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 --
-sourceBytes :: Int -> [Handle] -> IO (Sources Int IO (Vector F Word8))
+sourceBytes :: Int -> [Handle] -> IO (Sources Int IO (Array F Word8))
 sourceBytes len hs
  = return $ Sources (P.length hs) pull_sourceBytes
  where
@@ -181,15 +180,15 @@ toFiles paths use
 --   * Data is copied into a new buffer to insert newlines before being
 --     written out.
 --
-sinkLines :: ( Bulk r1 DIM1 (Vector r2 Char)
-             , Bulk r2 DIM1 Char, Unpack (Vector r2 Char) t2)
+sinkLines :: ( BulkI r1 (Array r2 Char)
+             , BulkI r2 Char, Unpack (Array r2 Char) t2)
           => r1 -> r2
           -> [Handle]   -- ^ File handles.
-          -> IO (Sinks Int IO (Vector r1 (Vector r2 Char)))
+          -> IO (Sinks Int IO (Array r1 (Array r2 Char)))
 sinkLines _ _ !hs
  =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) $ concatWith F fl c)
  =<< sinkBytes hs
- where  !fl     = A.vfromList F ['\n']
+ where  !fl     = A.fromList F ['\n']
 {-# INLINE sinkLines #-}
 
 
@@ -198,9 +197,9 @@ sinkLines _ _ !hs
 --   * Data is copied into a foreign buffer to truncate the characters
 --     to 8-bits each before being written out.
 --
-sinkChars :: Bulk r DIM1 Char
+sinkChars :: BulkI r Char
           => [Handle]   -- ^ File handles.
-          -> IO (Sinks Int IO (Vector r Char))
+          -> IO (Sinks Int IO (Array r Char))
 sinkChars !hs
  =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) c)
  =<< sinkBytes hs
@@ -211,7 +210,7 @@ sinkChars !hs
 --
 --   * Data is written out directly from the provided buffer.
 --
-sinkBytes :: [Handle] -> IO (Sinks Int IO (Vector F Word8))
+sinkBytes :: [Handle] -> IO (Sinks Int IO (Array F Word8))
 sinkBytes !hs
  = do   let push_sinkBytes (IIx i _) !chunk
                 = hPutArray (hs !! i) chunk

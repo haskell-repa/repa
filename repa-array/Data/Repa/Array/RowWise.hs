@@ -34,9 +34,12 @@ import GHC.Base                 (quotInt, remInt)
 data RW sh 
         = RowWise 
         { rowWiseShape  :: !sh }
-        deriving (Show, Eq)
+
+deriving instance Eq sh   => Eq   (RW sh)
+deriving instance Show sh => Show (RW sh)
 
 
+-------------------------------------------------------------------------------
 instance Shape sh 
       => Shape (RW sh) where
 
@@ -75,25 +78,34 @@ instance Shape sh
         {-# INLINE shapeOfList #-}
 
 
+-------------------------------------------------------------------------------
 instance Layout (RW Z) where         
         data Name  (RW Z)       = RZ
         type Index (RW Z)       = Z
+        name                    = RZ
         create RZ Z             = RowWise Z
         extent _                = Z
         toIndex _ _             = 0
         fromIndex _ _           = Z
-        {-# INLINE create #-}
-        {-# INLINE extent  #-}
-        {-# INLINE toIndex #-}
-        {-# INLINE fromIndex #-}
+        {-# INLINE_ARRAY name      #-}
+        {-# INLINE_ARRAY create    #-}
+        {-# INLINE_ARRAY extent    #-}
+        {-# INLINE_ARRAY toIndex   #-}
+        {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name (RW Z))
+deriving instance Show (Name (RW Z))
 
 
+-------------------------------------------------------------------------------
 instance ( Layout  (RW sh)
          , Index   (RW sh) ~ sh)
        =>  Layout  (RW (sh :. Int)) where
 
         data Name  (RW (sh :. Int))     = RC (Name (RW sh))
         type Index (RW (sh :. Int))     = sh :. Int
+
+        name = RC name
 
         create (RC nSh) (sh :. i)
          = let RowWise  iSh     = create nSh sh
@@ -113,12 +125,17 @@ instance ( Layout  (RW sh)
                where r | rank ds == 0  = n
                        | otherwise     = n `remInt` d
 
-        {-# INLINE create    #-}
-        {-# INLINE toIndex   #-}
-        {-# INLINE extent    #-}
-        {-# INLINE fromIndex #-}
+        {-# INLINE_ARRAY name      #-}
+        {-# INLINE_ARRAY create    #-}
+        {-# INLINE_ARRAY toIndex   #-}
+        {-# INLINE_ARRAY extent    #-}
+        {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name (RW sh)) => Eq   (Name (RW (sh :. Int)))
+deriving instance Show (Name (RW sh)) => Show (Name (RW (sh :. Int)))
 
 
+-------------------------------------------------------------------------------
 -- | Row-wise arrays.
 instance (Layout (RW sh), Index (RW sh) ~ sh)
       => Bulk (RW sh) sh where

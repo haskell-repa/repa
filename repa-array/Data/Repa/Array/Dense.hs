@@ -50,16 +50,22 @@ instance (Index r ~ Int, Layout r, Layout l)
         data Name  (E r l)              = E (Name r) (Name l)
         type Index (E r l)              = Index     l
 
+        name = E name name
+
         create     (E nR nL) ix        
-         = Dense (create nR (size ix)) (create nL ix)
+             = Dense (create nR (size ix)) (create nL ix)
 
         extent     (Dense _ l)          = extent    l
         toIndex    (Dense _ l) ix       = toIndex   l ix
         fromIndex  (Dense _ l) n        = fromIndex l n
+        {-# INLINE name      #-}
         {-# INLINE create    #-}
         {-# INLINE extent    #-}
         {-# INLINE toIndex   #-}
         {-# INLINE fromIndex #-}
+
+deriving instance (Eq   (Name r), Eq   (Name l)) => Eq   (Name (E r l))
+deriving instance (Show (Name r), Show (Name l)) => Show (Name (E r l))
 
 
 -------------------------------------------------------------------------------

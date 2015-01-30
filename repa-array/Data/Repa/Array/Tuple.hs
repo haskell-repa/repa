@@ -33,10 +33,12 @@ instance ( Index  l1 ~ Index l2
 
  data Name  (T2 l1 l2)       = T2 (Name l1) (Name l2)
  type Index (T2 l1 l2)       = Index l1
+ name                        = T2 name name
  create     (T2 n1 n2)    ix = Tup2 (create n1 ix) (create n2 ix)
  extent     (Tup2 l1 l2)     = intersectDim (extent l1) (extent l2)
  toIndex    (Tup2 l1 _l2) ix = toIndex l1 ix
  fromIndex  (Tup2 l1 _l2) ix = fromIndex l1 ix
+ {-# INLINE name      #-}
  {-# INLINE create    #-}
  {-# INLINE extent    #-}
  {-# INLINE toIndex   #-}

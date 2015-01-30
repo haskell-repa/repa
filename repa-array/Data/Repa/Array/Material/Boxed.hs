@@ -36,10 +36,12 @@ deriving instance Show B
 instance Layout B where
  data Name  B                   = B
  type Index B                   = Int
+ name                           = B
  create B len                   = Boxed len
  extent (Boxed len)             = len
  toIndex   _ ix                 = ix
  fromIndex _ ix                 = ix
+ {-# INLINE_ARRAY name      #-}
  {-# INLINE_ARRAY create    #-}
  {-# INLINE_ARRAY extent    #-}
  {-# INLINE_ARRAY toIndex   #-}
