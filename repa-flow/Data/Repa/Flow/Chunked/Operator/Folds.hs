@@ -6,6 +6,7 @@ where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
 import Data.Repa.Fusion.Option
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
@@ -22,7 +23,9 @@ type FoldsWorthy i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
           , BulkI   lRes b
           , TargetI lElt a
           , TargetI lGrp n
-          , TargetI lRes b)
+          , TargetI lRes b
+          , Unpack (Buffer lGrp n) tGrp
+          , Unpack (Buffer lRes b) tRes)
 
 
 -- Folds ----------------------------------------------------------------------
@@ -68,7 +71,8 @@ folds_i f z sLens@(G.Sources nLens _)
                           mState    <- readRefs refsState i
 
                           let (cResults, sFolds) 
-                                = A.folds f z mState cNameLens cVals
+                                = A.foldsWith name name f z 
+                                        (fromOption3 mState) cNameLens cVals
 
                           folds_update 
                                 refsState refsNameLens refsVals i 
@@ -145,7 +149,7 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
                 -- this is needed when there are zero lengthed
                 -- segments on the end of the stream
                 ejectVals_folds 
-                 = do writeRefs refsVals     i (Just $ fromList repr [])
+                 = do writeRefs refsVals     i (Just $ fromList name [])
                       writeRefs refsValsDone i True
                 {-# INLINE ejectVals_folds #-}
 
@@ -162,7 +166,8 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
 
 folds_update
         :: ( States i m
-           , Windowable l1 (n, Int), Windowable l2 a)
+           , Windowable l1 (n, Int), Windowable l2 a
+           , A.Index l1 ~ Int,       A.Index l2 ~ Int)
         => Refs i m (Option3 n Int b)
         -> Refs i m (Maybe (Array l1 (n, Int)))
         -> Refs i m (Maybe (Array l2 a))
@@ -177,8 +182,8 @@ folds_update refsState refsLens refsVals i cLens cVals sFolds
         -- Remember state for the final segment.
         writeRefs refsState i 
          $ case _nameSeg sFolds of
-            Some name -> Some3 name (_lenSeg sFolds) (_valSeg sFolds)
-            None      -> None3
+            Some n      -> Some3 n (_lenSeg sFolds) (_valSeg sFolds)
+            None        -> None3
 
         -- Slice down the lengths chunk to just the elements
         -- that we haven't already consumed. If we've consumed
@@ -189,7 +194,7 @@ folds_update refsState refsLens refsVals i cLens cVals sFolds
         writeRefs refsLens i 
          $ if nLensRemain <= 0 
               then Nothing
-              else Just $ A.window (Z :. posLens) (Z :. nLensRemain) cLens
+              else Just $ A.window posLens nLensRemain cLens
 
         -- Likewise for the values chunk.
         let !posVals     = _stateVals sFolds
@@ -197,7 +202,7 @@ folds_update refsState refsLens refsVals i cLens cVals sFolds
         writeRefs refsVals i
          $ if nValsRemain <= 0
               then Nothing
-              else Just $ A.window (Z :. posVals) (Z :. nValsRemain) cVals
+              else Just $ A.window posVals nValsRemain cVals
 {-# NOINLINE folds_update #-}
 --  NOINLINE because it is only called once per chunk
 --  and does not need to be specialised.

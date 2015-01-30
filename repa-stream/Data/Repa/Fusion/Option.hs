@@ -1,24 +1,74 @@
 
 module Data.Repa.Fusion.Option
         ( Option  (..)
+        , fromOption,  toOption
+
         , Option2 (..)
-        , Option3 (..))
+        , fromOption2, toOption2
+
+        , Option3 (..)
+        , fromOption3, toOption3)
 where
 
 
+-------------------------------------------------------------------------------
 data Option a
         = Some !a
         | None 
         deriving Show
 
+-- | Convert a `Maybe` to an `Option`.
+toOption :: Maybe a -> Option a
+toOption Nothing        = None
+toOption (Just x)       = Some x
+{-# INLINE toOption #-}
 
+
+-- | Convert an `Option` to a `Maybe`.
+fromOption :: Option a -> Maybe a
+fromOption None         = Nothing
+fromOption (Some x)     = Just x
+{-# INLINE fromOption #-}
+
+
+-------------------------------------------------------------------------------
 data Option2 a b
         = Some2 !a !b
         | None2 
         deriving Show
 
 
+-- | Convert a `Maybe` to an `Option2`.
+toOption2 :: Maybe (a, b) -> Option2 a b
+toOption2 Nothing        = None2
+toOption2 (Just (x, y))  = Some2 x y
+{-# INLINE toOption2 #-}
+
+
+-- | Convert an `Option2` to a `Maybe`.
+fromOption2 :: Option2 a b -> Maybe (a, b)
+fromOption2 None2        = Nothing
+fromOption2 (Some2 x y)  = Just (x, y)
+{-# INLINE fromOption2 #-}
+
+
+-------------------------------------------------------------------------------
 data Option3 a b c
         = Some3 !a !b !c
         | None3 
         deriving Show
+
+
+-- | Convert a `Maybe` to an `Option3`.
+toOption3 :: Maybe (a, b, c) -> Option3 a b c
+toOption3 Nothing          = None3
+toOption3 (Just (x, y, z)) = Some3 x y z
+{-# INLINE toOption3 #-}
+
+
+-- | Convert an `Option2` to a `Maybe`.
+fromOption3 :: Option3 a b c -> Maybe (a, b, c)
+fromOption3 None3          = Nothing
+fromOption3 (Some3 x y z)  = Just (x, y, z)
+{-# INLINE fromOption3 #-}
+
