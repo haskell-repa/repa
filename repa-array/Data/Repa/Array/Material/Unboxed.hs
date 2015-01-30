@@ -79,6 +79,13 @@ instance U.Unbox a => Bulk U a where
 deriving instance (Show a, U.Unbox a) => Show (Array U a)
 
 
+instance Unpack (Array U a) (U.Vector a) where
+ unpack (UArray vec)    = vec `seq` vec
+ repack !_ !vec         = UArray vec
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
+
+
 -------------------------------------------------------------------------------
 -- | Windowing Unboxed arrays.
 instance U.Unbox a => Windowable U a where

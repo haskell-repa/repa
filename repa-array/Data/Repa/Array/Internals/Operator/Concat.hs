@@ -2,9 +2,10 @@
 
 -- | Concatenation operators on arrays.
 module Data.Repa.Array.Internals.Operator.Concat
-        ( concat)
---        , concatWith
---        , intercalate )
+        ( concat
+        , concatWith
+        , intercalate
+        , ConcatDict)
 where
 import Data.Repa.Array.Material                         as A
 import Data.Repa.Array.Delayed                          as A
@@ -21,21 +22,37 @@ import Prelude  hiding (reverse, length, map, zipWith, concat)
 #include "repa-array.h"
 
 
--- Concat ---------------------------------------------------------------------
+-- | Dictionaries needed to perform a concatenation.
+type ConcatDict lOut lIn tIn lDst a
+      = ( BulkI   lOut (Array lIn a)
+        , BulkI   lIn a
+        , TargetI lDst a
+        , Unpack (Array lIn a) tIn)
+
+
+-------------------------------------------------------------------------------
 -- | O(len result) Concatenate nested arrays.
-concat  :: ( BulkI lOut (Array lIn a), BulkI lIn a, TargetI lDst a)
+--
+-- @
+-- > import Data.Repa.Array.Material
+-- > let arrs = fromList B [fromList U [1, 2, 3], fromList U [5, 6, 7 :: Int]]
+-- > toList $ concat U arrs
+-- [1,2,3,5,6,7]
+-- @
+--  
+concat  :: ConcatDict lOut lIn tIn lDst a
         => Name  lDst                   -- ^ Layout for destination.
         -> Array lOut (Array lIn a)     -- ^ Arrays to concatenate.
         -> Array lDst a
-concat n3 vs
+concat nDst vs
  | A.length vs == 0
- = A.fromList n3 []
+ = A.fromList nDst []
 
  | otherwise
  = unsafePerformIO
  $ do   let !lens  = toUnboxed $ computeS U $ A.map A.length vs
         let !len   = U.sum lens
-        !buf_      <- unsafeNewBuffer  (create n3 0)
+        !buf_      <- unsafeNewBuffer  (create nDst 0)
         !buf       <- unsafeGrowBuffer buf_ len
         let !iLenY = U.length lens
 
@@ -61,38 +78,47 @@ concat n3 vs
         unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concat #-}
 
-{-
--- O(len result) Concatenate the elements of some nested vector,
--- inserting a copy of the provided separator array between each element.
-concatWith
-        :: ( Bulk r0 DIM1 a
-           , Bulk r1 DIM1 (Vector r2 a)
-           , Bulk r2 DIM1 a, Unpack (Vector r2 a) t2
-           , Target r3 a t3)
-        => r3                           -- ^ Result representation.
-        -> Vector r0 a                  -- ^ Separator array.
-        -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
-        -> Vector r3 a
 
-concatWith r3 !is !vs
- | R.length vs == 0
- = R.vfromList r3 []
+-------------------------------------------------------------------------------
+-- | O(len result) Concatenate the elements of some nested vector,
+--   inserting a copy of the provided separator array between each element.
+--
+-- @
+-- > import Data.Repa.Array.Material
+-- > let sep  = fromList U [0, 0, 0]
+-- > let arrs = fromList B [fromList U [1, 2, 3], fromList U [5, 6, 7 :: Int]]
+-- > toList $ concatWith U sep arrs
+-- [1,2,3,0,0,0,5,6,7,0,0,0]
+-- @
+--
+concatWith
+        :: ( ConcatDict lOut lIn tIn lDst a
+           , BulkI   lSep a)
+        => Name lDst                  -- ^ Result representation.
+        -> Array lSep a               -- ^ Separator array.
+        -> Array lOut (Array lIn a)   -- ^ Arrays to concatenate.
+        -> Array lDst a
+
+concatWith nDst !is !vs
+ | A.length vs == 0
+ = A.fromList nDst []
 
  | otherwise
  = unsafePerformIO
  $ do   
         -- Lengths of the source vectors.
-        let !lens       = toVector $ computeS U $ R.map R.length vs
+        let !lens       = toUnboxed $ computeS U $ A.map A.length vs
 
         -- Length of the final result vector.
         let !(I# len)   = U.sum lens
-                        + U.length lens * R.length is
+                        + U.length lens * A.length is
 
         -- New buffer for the result vector.
-        !buf            <- unsafeNewBuffer (I# len)
+        !buf_           <- unsafeNewBuffer  (create nDst 0)
+        !buf            <- unsafeGrowBuffer buf_ (I# len)
         let !(I# iLenY) = U.length lens
-        let !(I# iLenI) = R.length is
-        let !row0       = vs `index` (Z :. 0)
+        let !(I# iLenI) = A.length is
+        let !row0       = vs `index` 0
 
         let loop_concatWith !sPEC !iO !iY !row !iX !iLenX
              -- We've finished copying one of the source elements.
@@ -113,13 +139,13 @@ concatWith r3 !is !vs
                  --       here. Check the fused code.
                  I# iO' <- loop_concatWith_inject sPEC iO 0#
                  let !iY'         = iY +# 1#
-                 let !row'        = vs `index` (Z :. I# iY')
-                 let !(I# iLenX') = R.length row'
+                 let !row'        = vs `index` (I# iY')
+                 let !(I# iLenX') = A.length row'
                  loop_concatWith sPEC iO' iY' (unpack row') 0# iLenX'
 
              -- Keep copying a source element.
              | otherwise
-             = do let x = (repack row0 row) `index` (Z :. I# iX)
+             = do let x = (repack row0 row) `index` (I# iX)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_concatWith sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
             {-# INLINE_INNER loop_concatWith #-}
@@ -128,49 +154,58 @@ concatWith r3 !is !vs
             loop_concatWith_inject !sPEC !iO !n
              | 1# <- n >=# iLenI = return (I# iO)
              | otherwise
-             = do let x = is `index` (Z :. I# n)
+             = do let x = is `index` (I# n)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_concatWith_inject sPEC (iO +# 1#) (n +# 1#)
             {-# INLINE_INNER loop_concatWith_inject #-}
 
-        let !(I# iLenX0) = R.length row0
+        let !(I# iLenX0) = A.length row0
         loop_concatWith V.SPEC 0# 0# (unpack row0) 0# iLenX0
-        unsafeFreezeBuffer (Z :. (I# len)) buf
+        unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concatWith #-}
 
 
--- Intercalate ----------------------------------------------------------------
--- O(len result) Insert a copy of the separator array between the elements of
--- the second and concatenate the result.
-intercalate 
-        :: ( Bulk r0 DIM1 a
-           , Bulk r1 DIM1 (Vector r2 a)
-           , Bulk r2 DIM1 a, Unpack (Vector r2 a) t
-           , Target r3 a t)
-        => r3
-        -> Vector r0 a                  -- ^ Separator array.
-        -> Vector r1 (Vector r2 a)      -- ^ Elements to concatenate.
-        -> Vector r3 a
 
-intercalate r3 !is !vs
- | R.length vs == 0
- = R.vfromList r3 []
+-- Intercalate ----------------------------------------------------------------
+-- | O(len result) Insert a copy of the separator array between the elements of
+--   the second and concatenate the result.
+--
+-- @
+-- > import Data.Repa.Array.Material
+-- > let sep  = fromList U [0, 0, 0]
+-- > let arrs = fromList B [fromList U [1, 2, 3], fromList U [5, 6, 7 :: Int]]
+-- > toList $ intercalate U sep arrs
+-- [1,2,3,0,0,0,5,6,7]
+-- @
+--
+intercalate 
+        :: ( ConcatDict lOut lIn tIn lDst a
+           , BulkI   lSep a)
+        => Name lDst                  -- ^ Result representation.
+        -> Array lSep a               -- ^ Separator array.
+        -> Array lOut (Array lIn a)   -- ^ Arrays to concatenate.
+        -> Array lDst a
+
+intercalate nDst !is !vs
+ | A.length vs == 0
+ = A.fromList nDst []
 
  | otherwise
  = unsafePerformIO
  $ do   
         -- Lengths of the source vectors.
-        let !lens       = toVector $ computeS U $ R.map R.length vs
+        let !lens       = toUnboxed $ computeS U $ A.map A.length vs
 
         -- Length of the final result vector.
         let !(I# len)   = U.sum lens
-                        + (U.length lens - 1) * R.length is
+                        + (U.length lens - 1) * A.length is
 
         -- New buffer for the result vector.
-        !buf            <- unsafeNewBuffer (I# len)
+        !buf_           <- unsafeNewBuffer (create nDst 0)
+        !buf            <- unsafeGrowBuffer buf_ (I# len)
         let !(I# iLenY) = U.length lens
-        let !(I# iLenI) = R.length is
-        let !row0       = vs `index` (Z :. 0)
+        let !(I# iLenI) = A.length is
+        let !row0       = vs `index` 0
 
         let loop_intercalate !sPEC !iO !iY !row !iX !iLenX
              -- We've finished copying one of the source elements.
@@ -189,13 +224,13 @@ intercalate r3 !is !vs
                  --       here. Check the fused code.
                  I# iO'           <- loop_intercalate_inject sPEC iO 0#
                  let !iY'         = iY +# 1#
-                 let !row'        = vs `index` (Z :. I# iY')
-                 let !(I# iLenX') = R.length row'
+                 let !row'        = vs `index` (I# iY')
+                 let !(I# iLenX') = A.length row'
                  loop_intercalate sPEC iO' iY' (unpack row') 0# iLenX'
 
              -- Keep copying a source element.
              | otherwise
-             = do let x = (repack row0 row) `index` (Z :. I# iX)
+             = do let x = (repack row0 row) `index` (I# iX)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_intercalate sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
             {-# INLINE_INNER loop_intercalate #-}
@@ -204,13 +239,13 @@ intercalate r3 !is !vs
             loop_intercalate_inject !sPEC !iO !n
              | 1# <- n >=# iLenI = return (I# iO)
              | otherwise
-             = do let x = is `index` (Z :. I# n)
+             = do let x = is `index` (I# n)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_intercalate_inject sPEC (iO +# 1#) (n +# 1#)
             {-# INLINE_INNER loop_intercalate_inject #-}
 
-        let !(I# iLenX0) = R.length row0
+        let !(I# iLenX0) = A.length row0
         loop_intercalate V.SPEC 0# 0# (unpack row0) 0# iLenX0
-        unsafeFreezeBuffer (Z :. (I# len)) buf
+        unsafeFreezeBuffer buf
 {-# INLINE_ARRAY intercalate #-}
--}
+
