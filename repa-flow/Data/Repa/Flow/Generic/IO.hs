@@ -180,11 +180,11 @@ toFiles paths use
 --   * Data is copied into a new buffer to insert newlines before being
 --     written out.
 --
-sinkLines :: ( BulkI r1 (Array r2 Char)
-             , BulkI r2 Char, Unpack (Array r2 Char) t2)
-          => r1 -> r2
+sinkLines :: ( BulkI l1 (Array l2 Char)
+             , BulkI l2 Char, Unpack (Array l2 Char) t2)
+          => Name l1 -> Name l2
           -> [Handle]   -- ^ File handles.
-          -> IO (Sinks Int IO (Array r1 (Array r2 Char)))
+          -> IO (Sinks Int IO (Array l1 (Array l2 Char)))
 sinkLines _ _ !hs
  =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) $ concatWith F fl c)
  =<< sinkBytes hs

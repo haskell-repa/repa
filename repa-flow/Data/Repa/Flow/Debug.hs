@@ -25,10 +25,10 @@ import Prelude                          as P
 --   * This function is intended for interactive debugging.
 --     If you want to retain the rest of the final chunk then use `head_i`.
 --
-more    :: A.Window r DIM1 a
+more    :: (Windowable l a, A.Index l ~ Int)
         => Int          -- ^ Source index.
         -> Int          -- ^ Number of elements to show.
-        -> Sources r a
+        -> Sources l a
         -> IO (Maybe [a])
 more ix len s
         = liftM (liftM fst) $ head_i ix len s
@@ -36,10 +36,10 @@ more ix len s
 
 
 -- | Like `more`, but convert the result to a nice representation.
-moren   :: (A.Window r DIM1 a, Nicer a)
+moren   :: (A.Windowable l a, A.Index l ~ Int, Nicer a)
         => Int          -- ^ Source index.
         -> Int          -- ^ Number of elements to show.
-        -> Sources r a
+        -> Sources l a
         -> IO (Maybe [Nice a])
 moren ix len s
         = liftM (liftM (L.map nice . fst)) $ head_i ix len s
@@ -47,11 +47,11 @@ moren ix len s
 
 
 -- | Like `more`, but print results in tabular form to the console.
-moret   :: ( A.Window r DIM1 a
+moret   :: ( A.Windowable l a, A.Index l ~ Int
            , Nicer [a], Presentable (Nice [a]))
         => Int          -- ^ Source index.
         -> Int          -- ^ Number of elements to show.
-        -> Sources r a
+        -> Sources l a
         -> IO ()
 
 moret ix len s

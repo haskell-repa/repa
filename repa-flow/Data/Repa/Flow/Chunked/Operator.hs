@@ -27,6 +27,7 @@ module Data.Repa.Flow.Chunked.Operator
 where
 import Data.Repa.Flow.Chunked.Operator.Folds
 import Data.Repa.Flow.Chunked.Base
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Flow.States
 import Data.Repa.Array                    as A
 import Data.Repa.Eval.Array               as A
@@ -36,24 +37,24 @@ import qualified Data.Repa.Flow.Generic   as G
 
 -- Mapping --------------------------------------------------------------------
 -- | Map a function over elements pulled from a source.
-map_i   :: (Flow i m r1 a, A.Target r2 b t)
-        => (a -> b) -> Sources i m r1 a -> m (Sources i m r2 b)
-map_i f s0 = G.smap_i (\_ c -> A.computeS repr $ A.map f c) s0
+map_i   :: (Flow i m l1 a, A.TargetI l2 b)
+        => (a -> b) -> Sources i m l1 a -> m (Sources i m l2 b)
+map_i f s0 = G.smap_i (\_ c -> A.computeS name $ A.map f c) s0
 {-# INLINE map_i #-}
 
 
 -- | Map a function over elements pushed into a sink.
-map_o   :: (Flow i m r1 a, A.Target r2 b t)
-        => (a -> b) -> Sinks i m r2 b -> m (Sinks i m r1 a)
-map_o f s0 = G.smap_o (\_ c -> A.computeS repr $ A.map f c) s0
+map_o   :: (Flow i m l1 a, A.TargetI l2 b)
+        => (a -> b) -> Sinks i m l2 b -> m (Sinks i m l1 a)
+map_o f s0 = G.smap_o (\_ c -> A.computeS name $ A.map f c) s0
 {-# INLINE map_o #-}
 
 
 -- | Map a function over elements pulled from a source, a chunk at a time.
 mapChunks_i  
         :: Monad m
-        => (Vector r1 a -> Vector r2 b)
-        -> Sources i m r1 a -> m (Sources i m r2 b)
+        => (Array l1 a -> Array l2 b)
+        -> Sources i m l1 a -> m (Sources i m l2 b)
 mapChunks_i f s = G.smap_i (\_ c -> f c) s
 {-# INLINE mapChunks_i #-}
 
@@ -61,8 +62,8 @@ mapChunks_i f s = G.smap_i (\_ c -> f c) s
 -- | Map a function over elements pushed to a sink, a chunk at a time.
 mapChunks_o  
         :: Monad m
-        => (Vector r1 a -> Vector r2 b)
-        -> Sinks i m r2 b -> m (Sinks i m r1 a)
+        => (Array l1 a -> Array l2 b)
+        -> Sinks i m l2 b -> m (Sinks i m l1 a)
 mapChunks_o f s = G.smap_o (\_ c -> f c) s
 {-# INLINE mapChunks_o #-}
 
@@ -71,8 +72,8 @@ mapChunks_o f s = G.smap_o (\_ c -> f c) s
 --   the source index.
 smapChunks_i  
         :: Monad m
-        => (G.Ix i -> Vector r1 a -> Vector r2 b)
-        -> Sources i m r1 a -> m (Sources i m r2 b)
+        => (G.Ix i -> Array l1 a -> Array l2 b)
+        -> Sources i m l1 a -> m (Sources i m l2 b)
 smapChunks_i = G.smap_i
 {-# INLINE smapChunks_i #-}
 
@@ -81,8 +82,8 @@ smapChunks_i = G.smap_i
 --   the sink index.
 smapChunks_o  
         :: Monad m
-        => (G.Ix i -> Vector r1 a -> Vector r2 b)
-        -> Sinks i m r2 b -> m (Sinks i m r1 a)
+        => (G.Ix i -> Array l1 a -> Array l2 b)
+        -> Sinks i m l2 b -> m (Sinks i m l1 a)
 smapChunks_o = G.smap_o
 {-# INLINE smapChunks_o #-}
 
@@ -91,8 +92,8 @@ smapChunks_o = G.smap_o
 -- | Hook a monadic function to some sources, which will be passed every
 --   chunk that is pulled from the result.
 watch_i :: Monad m
-        => (G.Ix i -> Vector r a -> m ()) 
-        -> Sources i m r a  -> m (Sources i m r a)
+        => (G.Ix i -> Array l a -> m ()) 
+        -> Sources i m l a  -> m (Sources i m l a)
 watch_i = G.watch_i
 {-# INLINE watch_i #-}
 
@@ -100,8 +101,8 @@ watch_i = G.watch_i
 -- | Hook a monadic function to some sinks, which will be passed every 
 --   chunk that is pushed to the result.
 watch_o :: Monad m
-        => (G.Ix i -> Vector r a -> m ())
-        -> Sinks i m r a ->  m (Sinks i m r a)
+        => (G.Ix i -> Array l a -> m ())
+        -> Sinks i m l a ->  m (Sinks i m l a)
 
 watch_o = G.watch_o
 {-# INLINE watch_o #-}
@@ -110,7 +111,7 @@ watch_o = G.watch_o
 -- | Like `watch_o` but discard the incoming chunks after they are passed
 --   to the function.
 trigger_o :: Monad m
-          => i -> (G.Ix i -> Vector r a -> m ()) -> m (Sinks i m r a)
+          => i -> (G.Ix i -> Array l a -> m ()) -> m (Sinks i m l a)
 trigger_o = G.trigger_o
 {-# INLINE trigger_o #-}
 
@@ -121,7 +122,7 @@ trigger_o = G.trigger_o
 --   This sink is non-strict in the chunks. 
 --   Haskell tracing thunks attached to the chunks will *not* be demanded.
 --
-ignore_o :: Monad m => i -> m (Sinks i m r a)
+ignore_o :: Monad m => i -> m (Sinks i m l a)
 ignore_o  = G.ignore_o
 {-# INLINE ignore_o #-}
 
@@ -134,7 +135,7 @@ ignore_o  = G.ignore_o
 --     demanded, but thunks attached to elements may not be -- depending on
 --     whether the chunk representation is strict in the elements.
 --
-discard_o :: Monad m => i -> m (Sinks i m r a)
+discard_o :: Monad m => i -> m (Sinks i m l a)
 discard_o = G.discard_o
 {-# INLINE discard_o #-}
 
@@ -149,11 +150,13 @@ discard_o = G.discard_o
 -- @
 -- 
 groupsBy_i 
-        :: (Flow i m r1 a, Target rGrp a tGrp, Target rLen Int tLen)
+        :: ( Flow i m lVal a, TargetI lGrp a, TargetI lLen Int
+           , Unpack (Buffer lGrp a)   tGrp
+           , Unpack (Buffer lLen Int) tLen)
         => (a -> a -> Bool)     -- ^ Comparison function to decide whether
                                 --   successive values should be grouped.
-        ->    Sources i m r1 a 
-        -> m (Sources i m (T2 rGrp rLen) (a, Int))
+        ->    Sources i m lVal a 
+        -> m (Sources i m (T2 lGrp lLen) (a, Int))
 
 groupsBy_i f (G.Sources n pull_chunk)
  = do   
@@ -167,7 +170,7 @@ groupsBy_i f (G.Sources n pull_chunk)
                    -- using the current state we have for that stream.
                    eat_groupsBy chunk
                     = do state <- readRefs refs i
-                         let (segs, state') = A.groupsBy f state chunk
+                         let (segs, state') = A.groupsWith name name f state chunk
                          writeRefs refs i state'
                          eat segs
                    {-# INLINE eat_groupsBy #-}
@@ -181,7 +184,7 @@ groupsBy_i f (G.Sources n pull_chunk)
                           Nothing         -> eject
                           Just seg
                            -> do writeRefs refs i Nothing
-                                 eat (A.vfromList repr [seg])
+                                 eat (A.fromList name [seg])
                    {-# INLINE eject_groupsBy #-}
             {-# INLINE pull_groupsBy #-}
 

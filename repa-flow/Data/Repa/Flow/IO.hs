@@ -56,7 +56,7 @@ sourceLines
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources N (Vector F Char))
+        -> IO (Sources N (Array F Char))
 sourceLines nChunk fails hs
  =   mapChunks_i chopChunk
  =<< G.sourceRecords nChunk isNewLine fails hs
@@ -66,7 +66,7 @@ sourceLines nChunk fails hs
         {-# INLINE isNewLine #-}
   
         chopChunk chunk
-         = A.mapElems (A.computeS repr . A.map (chr . fromIntegral)) 
+         = A.mapElems (A.computeS name . A.map (chr . fromIntegral)) 
          $ A.trimEnds (== nl) chunk
         {-# INLINE chopChunk #-}
 
@@ -101,7 +101,7 @@ sourceRecords
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
         -> [Handle]             -- ^ File handles.
-        -> IO (Sources N (Vector F Word8))
+        -> IO (Sources N (Array F Word8))
 sourceRecords = G.sourceRecords
 {-# INLINE sourceRecords #-}
 
@@ -124,11 +124,11 @@ sinkChars = G.sinkChars
 --   * Data is copied into a new buffer to insert newlines before being
 --     written out.
 --
-sinkLines :: ( Bulk r1 DIM1 (Vector r2 Char)
-             , Bulk r2 DIM1 Char, Unpack (Vector r2 Char) t2)
-          => r1 -> r2 
+sinkLines :: ( BulkI l1 (Array l2 Char)
+             , BulkI l2 Char, Unpack (Array l2 Char) t2)
+          => Name l1 -> Name l2
           -> [Handle]           -- ^ File handles.
-          -> IO (Sinks r1 (Vector r2 Char))
+          -> IO (Sinks l1 (Array l2 Char))
 sinkLines = G.sinkLines
 {-# INLINE sinkLines #-}
 

@@ -34,7 +34,7 @@
 module Data.Repa.Flow
         ( module Data.Repa.Flow.States
         , module Data.Repa.Array
-        , module Data.Repa.Array.Material.Safe
+        , module Data.Repa.Array.Material
         , module Data.Repa.Eval.Array
 
         -- * Flow types
@@ -84,35 +84,36 @@ module Data.Repa.Flow
 where
 import Data.Repa.Flow.States
 import Data.Repa.Eval.Array
-import Data.Repa.Eval.Array                      as A
-import Data.Repa.Array                           hiding (fromList)
-import Data.Repa.Array                           as A hiding (fromList)
-import Data.Repa.Array.Material
-import qualified Data.Repa.Flow.Chunked          as C hiding (next)
-import qualified Data.Repa.Flow.Generic          as G hiding (next)
+import Data.Repa.Eval.Array                     as A
+import Data.Repa.Array                          hiding (Index, fromList)
+import Data.Repa.Array                          as A hiding (fromList)
+import Data.Repa.Array.Material                 hiding (fromLists)
+import Data.Repa.Fusion.Unpack                  as A
+import qualified Data.Repa.Flow.Chunked         as C hiding (next)
+import qualified Data.Repa.Flow.Generic         as G hiding (next)
 import Control.Monad
 #include "repa-stream.h"
 
 
 -- | A bundle of data sources, where the elements are chunked into arrays.
 --
---   The chunks have some representation @r@ and contain elements of type @a@.
-type Sources r a = C.Sources Int IO r a
+--   The chunks have some layout @l@ and contain elements of type @a@.
+type Sources l a = C.Sources Int IO l a
 
 
 -- | A bundle of data sinks,   where the elements are chunked into arrays.
 --
---   The chunks have some representation @r@ and contain elements of type @a@.
-type Sinks   r a = C.Sinks   Int IO r a
+--   The chunks have some layout @l@ and contain elements of type @a@.
+type Sinks   l a = C.Sinks Int IO l a
 
 
 -- | Shorthand for common type classes.
-type Flow    r a = C.Flow    Int IO r a
+type Flow    l a = C.Flow  Int IO l a
 
 
 -- Evaluation -----------------------------------------------------------------
 -- | Pull all available values from the sources and push them to the sinks.
-drain   :: Sources r a -> Sinks r a -> IO ()
+drain   :: Sources l a -> Sinks l a -> IO ()
 drain = G.drain
 {-# INLINE drain #-}
 
@@ -124,23 +125,23 @@ drain = G.drain
 --   * All elements are stuffed into a single chunk, and each stream is given
 --     the same chunk.
 --
-fromList :: A.Target r a t
-         => r -> Int -> [a] -> IO (Sources r a)
-fromList r xs = C.fromList_i r xs
+fromList :: A.TargetI l a
+         => Name l -> Int -> [a] -> IO (Sources l a)
+fromList l xs = C.fromList_i l xs
 {-# INLINE fromList #-}
 
 
 -- | Like `fromLists_i` but take a list of lists. Each each of the inner
 --   lists is packed into a single chunk.
-fromLists :: A.Target r a t
-          => r -> Int -> [[a]] -> IO (Sources r a)
-fromLists r xss = C.fromLists_i r xss
+fromLists :: A.TargetI l a
+          => Name l -> Int -> [[a]] -> IO (Sources l a)
+fromLists nDst xss = C.fromLists_i nDst xss
 {-# INLINE fromLists #-}
 
 
 -- | Drain a single source from a bundle into a list of elements.
-toList1   :: A.Bulk r DIM1 a
-          => Int -> Sources r a -> IO (Maybe [a])
+toList1   :: A.BulkI l a
+          => Int -> Sources l a -> IO (Maybe [a])
 toList1 ix s  
  | ix >= G.sourceArity s = return Nothing
  | otherwise             
@@ -149,8 +150,8 @@ toList1 ix s
 
 
 -- | Drain a single source from a bundle into a list of chunks.
-toLists1  :: A.Bulk r DIM1 a
-          =>  Int -> Sources r a -> IO (Maybe [[a]])
+toLists1  :: A.BulkI l a
+          => Int -> Sources l a -> IO (Maybe [[a]])
 toLists1 ix s
  | ix >= G.sourceArity s = return Nothing
  | otherwise             
@@ -174,7 +175,7 @@ toLists1 ix s
 --
 finalize_i
         :: (Int -> IO ())
-        -> Sources r a -> IO (Sources r a)
+        -> Sources l a -> IO (Sources l a)
 finalize_i f s 
         = G.finalize_i (\(IIx i _) -> f i) s
 {-# INLINE finalize_i #-}
@@ -194,7 +195,7 @@ finalize_i f s
 --
 finalize_o
         :: (Int -> IO ())
-        -> Sinks r a   -> IO (Sinks r a)
+        -> Sinks l a   -> IO (Sinks l a)
 finalize_o f k 
         = G.finalize_o (\(IIx i _) -> f i) k
 {-# INLINE finalize_o #-}
@@ -202,15 +203,15 @@ finalize_o f k
 
 -- Mapping --------------------------------------------------------------------
 -- | Apply a function to all elements pulled from some sources.
-map_i   :: (Flow r1 a, A.Target r2 b t)
-        => r2 -> (a -> b) -> Sources r1 a -> IO (Sources r2 b)
+map_i   :: (Flow l1 a, A.TargetI l2 b)
+        => Name l2 -> (a -> b) -> Sources l1 a -> IO (Sources l2 b)
 map_i _ f s = C.map_i f s
 {-# INLINE map_i #-}
 
 
 -- | Apply a function to all elements pushed to some sinks.
-map_o   :: (Flow r1 a, A.Target r2 b t)
-        => r1 -> (a -> b) -> Sinks r2 b   -> IO (Sinks   r1 a)
+map_o   :: (Flow l1 a, A.TargetI l2 b)
+        => Name l1 -> (a -> b) -> Sinks l2 b   -> IO (Sinks   l1 a)
 map_o _ f s = C.map_o f s
 {-# INLINE map_o #-}
 
@@ -218,8 +219,8 @@ map_o _ f s = C.map_o f s
 -- | Apply a function to all elements pulled from some sources,
 --   a chunk at a time.
 mapChunks_i  
-        :: (Vector r1 a -> Vector r2 b)
-        -> Sources r1 a -> IO (Sources r2 b)
+        :: (Array  l1 a -> Array l2 b)
+        -> Sources l1 a -> IO (Sources l2 b)
 mapChunks_i f s 
         = G.smap_i (\_ c -> f c) s
 {-# INLINE mapChunks_i #-}
@@ -228,8 +229,8 @@ mapChunks_i f s
 -- | Apply a function to all elements pushed to some sinks,
 --   a chunk at a time.
 mapChunks_o  
-        :: (Vector r1 a -> Vector r2 b)
-        -> Sinks r2 b -> IO (Sinks r1 a)
+        :: (Array l1 a -> Array l2 b)
+        -> Sinks l2 b -> IO (Sinks l1 a)
 mapChunks_o f s 
         = G.smap_o (\_ c -> f c) s
 {-# INLINE mapChunks_o #-}
@@ -238,8 +239,8 @@ mapChunks_o f s
 -- | Like `mapChunks_i`, except that the worker function is also given
 --   the source index.
 smapChunks_i  
-        :: (Int -> Vector r1 a -> Vector r2 b)
-        -> Sources r1 a -> IO (Sources r2 b)
+        :: (Int -> Array l1 a -> Array l2 b)
+        -> Sources l1 a -> IO (Sources l2 b)
 smapChunks_i f s
         = G.smap_i (\(IIx i _) vec -> f i vec) s
 {-# INLINE smapChunks_i #-}
@@ -248,8 +249,8 @@ smapChunks_i f s
 -- | Like `mapChunks_o`, except that the worker function is also given
 --   the sink index.
 smapChunks_o  
-        :: (Int -> Vector r1 a -> Vector r2 b)
-        -> Sinks r2 b -> IO (Sinks r1 a)
+        :: (Int -> Array l1 a -> Array l2 b)
+        -> Sinks l2 b -> IO (Sinks l1 a)
 smapChunks_o f k
         = G.smap_o (\(IIx i _) vec -> f i vec) k
 {-# INLINE smapChunks_o #-}
@@ -261,7 +262,7 @@ smapChunks_o f k
 --   Given two argument sinks, yield a result sink.
 --   Pushing to the result sink causes the same element to be pushed to both
 --   argument sinks. 
-dup_oo  :: Sinks r a -> Sinks r a -> IO (Sinks r a)
+dup_oo  :: Sinks l a -> Sinks l a -> IO (Sinks l a)
 dup_oo = G.dup_oo
 {-# INLINE dup_oo #-}
 
@@ -273,7 +274,7 @@ dup_oo = G.dup_oo
 --   and pushes that element to the sink, as well as returning it via the
 --   result source.
 --   
-dup_io  :: Sources r a -> Sinks r a -> IO (Sources r a)
+dup_io  :: Sources l a -> Sinks l a -> IO (Sources l a)
 dup_io = G.dup_io
 {-# INLINE dup_io #-}
 
@@ -282,7 +283,7 @@ dup_io = G.dup_io
 --
 --   Like `dup_io` but with the arguments flipped.
 --
-dup_oi  :: Sinks r a -> Sources r a -> IO (Sources r a)
+dup_oi  :: Sinks l a -> Sources l a -> IO (Sources l a)
 dup_oi = G.dup_oi
 {-# INLINE dup_oi #-}
 
@@ -293,7 +294,7 @@ dup_oi = G.dup_oi
 --   Each result source only gets the elements pulled at the time, 
 --   so if one side pulls all the elements the other side won't get any.
 --
-connect_i :: Sources r a -> IO (Sources r a, Sources r a)
+connect_i :: Sources l a -> IO (Sources l a, Sources l a)
 connect_i = G.connect_i
 {-# INLINE connect_i #-}
 
@@ -304,8 +305,8 @@ connect_i = G.connect_i
 --
 --   * The worker is also passed the source index of the chunk that was pulled.
 --
-watch_i :: (Int -> Vector r a -> IO ()) 
-        -> Sources r a  -> IO (Sources r a)
+watch_i :: (Int -> Array l a -> IO ()) 
+        -> Sources l a  -> IO (Sources l a)
 watch_i f s = G.watch_i (\(IIx i _) vec -> f i vec) s
 {-# INLINE watch_i #-}
 
@@ -315,8 +316,8 @@ watch_i f s = G.watch_i (\(IIx i _) vec -> f i vec) s
 --
 --   * The worker is also passed the source index of the chunk that was pushed.
 --
-watch_o :: (Int -> Vector r a -> IO ())
-        -> Sinks r a    -> IO (Sinks r a)
+watch_o :: (Int -> Array l a -> IO ())
+        -> Sinks l a    -> IO (Sinks l a)
 watch_o f k = G.watch_o (\(IIx i _) vec -> f i vec) k
 {-# INLINE watch_o #-}
 
@@ -327,8 +328,8 @@ watch_o f k = G.watch_o (\(IIx i _) vec -> f i vec) k
 --   * This is like `watch_o`, except that the incoming chunks are discarded
 --     after they are passed to the worker function
 --
-trigger_o :: Int -> (Int -> Vector r a -> IO ()) 
-          -> IO (Sinks r a)
+trigger_o :: Int -> (Int -> Array l a -> IO ()) 
+          -> IO (Sinks l a)
 trigger_o arity f 
         = G.trigger_o arity (\(IIx i _) vec -> f i vec)
 {-# INLINE trigger_o #-}
@@ -344,7 +345,7 @@ trigger_o arity f
 --     demanded, but thunks attached to elements may not be -- depending on
 --     whether the chunk representation is strict in the elements.
 --
-discard_o :: Int -> IO (Sinks r a)
+discard_o :: Int -> IO (Sinks l a)
 discard_o = G.discard_o
 {-# INLINE discard_o #-}
 
@@ -356,7 +357,7 @@ discard_o = G.discard_o
 --   * Haskell debugging thunks attached to the chunks will *not* be 
 --     demanded.
 --
-ignore_o :: Int -> IO (Sinks r a)
+ignore_o :: Int -> IO (Sinks l a)
 ignore_o  = G.ignore_o
 {-# INLINE ignore_o #-}
 
@@ -370,8 +371,8 @@ ignore_o  = G.ignore_o
 --     at least the desired number of elements. The leftover elements
 --     in the final chunk are visible in the result `Sources`.
 --
-head_i  :: A.Window r DIM1 a
-        => Int -> Int -> Sources r a -> IO (Maybe ([a], Sources r a))
+head_i  :: (A.Windowable l a, A.Index l ~ Int)
+        => Int -> Int -> Sources l a -> IO (Maybe ([a], Sources l a))
 head_i ix len s
  | ix >= G.sourceArity s = return Nothing
  | otherwise             
@@ -389,31 +390,35 @@ head_i ix len s
 -- @
 --
 groups_i
-        :: ( A.Bulk   rElt DIM1 a
-           , A.Target rGrp a    tGrp
-           , A.Target rLen Int  tLen
-           , Eq a)
-        => rGrp                 -- ^ Representation of result chunks.
-        -> rLen
-        -> Sources rElt a         -- ^ Input elements.
-        -> IO (Sources (T2 rGrp rLen) (a, Int)) -- ^ Starting element and length of groups.
-groups_i rGrp rLen s
-        = groupsBy_i rGrp rLen (==) s
+        :: ( A.BulkI   lElt a
+           , A.TargetI lGrp a
+           , A.TargetI lLen Int
+           , Eq a
+           , Unpack (Buffer lGrp a)   tGrp
+           , Unpack (Buffer lLen Int) tLen)
+        => Name lGrp            -- ^ Layout of result groups.
+        -> Name lLen            -- ^ Layout of result lengths.
+        -> Sources lElt a       -- ^ Input elements.
+        -> IO (Sources (T2 lGrp lLen) (a, Int)) -- ^ Starting element and length of groups.
+groups_i nGrp nLen s
+        = groupsBy_i nGrp nLen (==) s
 {-# INLINE groups_i #-}
 
 
 -- | Like `groupsBy`, but take a function to determine whether two consecutive
 --   values should be in the same group.
 groupsBy_i
-        :: ( A.Bulk   rElt DIM1 a
-           , A.Target rGrp a   tGrp
-           , A.Target rLen Int tLen)
-        => rGrp                 -- ^ Representation of result chunks.
-        -> rLen
+        :: ( A.BulkI   lElt a
+           , A.TargetI lGrp a
+           , A.TargetI lLen Int
+           , Unpack (Buffer lGrp a)   tGrp
+           , Unpack (Buffer lLen Int) tLen)
+        => Name lGrp            -- ^ Layout of result groups.
+        -> Name lLen            -- ^ Layout of result lengths.
         -> (a -> a -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
-        -> Sources rElt a       -- ^ Input elements.
-        -> IO (Sources (T2 rGrp rLen) (a, Int)) -- ^ Starting element and length of groups.
+        -> Sources lElt a       -- ^ Input elements.
+        -> IO (Sources (T2 lGrp lLen) (a, Int)) -- ^ Starting element and length of groups.
 groupsBy_i _ _ f s
         = C.groupsBy_i f s
 {-# INLINE groupsBy_i #-}
@@ -444,14 +449,14 @@ groupsBy_i _ _ f s
 -- Just [(\'a\',10),(\'b\',600),(\'c\',1),(\'d\',1),(\'e\',1)]
 -- @
 --
-folds_i :: (FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b)
-        => rGrp                   -- ^ Groups  chunk representation.
-        -> rRes                   -- ^ Results chunk representation.
+folds_i :: (FoldsWorthy lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b)
+        => Name lGrp              -- ^ Groups  chunk representation.
+        -> Name lRes              -- ^ Results chunk representation.
         -> (a -> b -> b)          -- ^ Worker function.
         -> b                      -- ^ Initial state when folding each segment.
-        -> Sources rSeg (n, Int)  -- ^ Segment lengths.
-        -> Sources rElt a         -- ^ Input elements to fold.
-        -> IO (Sources (T2 rGrp rRes) (n, b)) -- ^ Result elements.
+        -> Sources lSeg (n, Int)  -- ^ Segment lengths.
+        -> Sources lElt a         -- ^ Input elements to fold.
+        -> IO (Sources (T2 lGrp lRes) (n, b)) -- ^ Result elements.
 
 folds_i _ _ f z sLen sVal
         = C.folds_i f z sLen sVal
@@ -462,12 +467,14 @@ folds_i _ _ f z sLen sVal
 --   The chunks of all streams must have material representations,
 --   rather than being delayed.
 --
-type FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
- =      ( A.Bulk     rSeg DIM1 (n, Int)
-        , A.Window   rSeg DIM1 (n, Int)
-        , A.Material rElt tElt DIM1 a
-        , A.Material rGrp tGrp DIM1 n
-        , A.Material rRes tRes DIM1 b)
+type FoldsWorthy lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
+ =      ( A.BulkI      lSeg (n, Int)
+        , A.Windowable lSeg (n, Int)
+        , A.Material   lElt a, A.Index lElt ~ Int
+        , A.Material   lGrp n, A.Index lGrp ~ Int
+        , A.Material   lRes b, A.Index lRes ~ Int
+        , Unpack (Buffer lGrp n) tGrp
+        , Unpack (Buffer lRes b) tRes)
 
 
 -- | Combination of `groupsBy_i` and `folds_i`. We determine the the segment
@@ -490,27 +497,29 @@ type FoldsWorthy rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
 -- @
 --
 foldGroupsBy_i
-        :: ( FoldGroupsDict rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b)
-        => rGrp                 -- ^ Groups chunk representation.
-        -> rRes                 -- ^ Result chunk representation.
+        :: ( FoldGroupsDict lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b)
+        => Name lGrp            -- ^ Groups chunk representation.
+        -> Name lRes            -- ^ Result chunk representation.
         -> (n -> n -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
         -> (a -> b -> b)        -- ^ Worker function for the fold.
         -> b                    -- ^ Initial when folding each segment.
-        -> Sources rSeg n       -- ^ Names that determine groups.
-        -> Sources rElt a       -- ^ Values to fold.
-        -> IO (Sources (T2 rGrp rRes) (n, b))
+        -> Sources lSeg n       -- ^ Names that determine groups.
+        -> Sources lElt a       -- ^ Values to fold.
+        -> IO (Sources (T2 lGrp lRes) (n, b))
 
-foldGroupsBy_i rGrp rRes pGroup f z sNames sVals
- = do   segLens <- groupsBy_i rGrp U.U pGroup sNames
-        folds_i rGrp rRes f z segLens sVals
+foldGroupsBy_i nGrp nRes pGroup f z sNames sVals
+ = do   segLens <- groupsBy_i nGrp U pGroup sNames
+        folds_i nGrp nRes f z segLens sVals
 {-# INLINE foldGroupsBy_i #-}
 
 
-type FoldGroupsDict rSeg rElt rGrp rRes tSeg tElt tGrp tRes n a b
- =      ( A.Bulk rSeg DIM1 n
-        , A.Material rElt tElt DIM1 a
-        , A.Material rGrp tGrp DIM1 n
-        , A.Material rRes tRes DIM1 b)
+type FoldGroupsDict lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
+ =      ( A.BulkI    lSeg n
+        , A.Material lElt a, A.Index lElt ~ Int
+        , A.Material lGrp n, A.Index lGrp ~ Int
+        , A.Material lRes b, A.Index lRes ~ Int
+        , Unpack (Buffer lGrp n) tGrp
+        , Unpack (Buffer lRes b) tRes)
 
 

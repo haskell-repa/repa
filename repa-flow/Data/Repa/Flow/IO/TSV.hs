@@ -17,7 +17,7 @@ sourceTSV
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
         -> [Handle]             --  File paths.
-        -> IO (Sources N (Vector N (Vector S.F Char)))
+        -> IO (Sources N (Array N (Array F Char)))
 
 sourceTSV nChunk aFail hs
  = do
@@ -46,7 +46,7 @@ sourceTSV nChunk aFail hs
         -- to do the conversion.
         sRows   <- mapChunks_i 
                      (A.mapElems (A.mapElems 
-                        (A.computeS S.F . A.map (chr . fromIntegral))))
+                        (A.computeS F . A.map (chr . fromIntegral))))
                      sRows8
 
         return sRows
