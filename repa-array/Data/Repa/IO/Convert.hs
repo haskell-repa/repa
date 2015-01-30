@@ -1,6 +1,5 @@
 
-module Data.Repa.IO.Convert () where
-{-
+module Data.Repa.IO.Convert
         ( -- * Conversion
           -- | Read and Show `Double`s for a reasonable runtime cost.
           readDouble,           readDoubleFromBytes
@@ -20,7 +19,6 @@ import qualified Foreign.Marshal.Utils                  as F
 import qualified Data.Double.Conversion.ByteString      as DC
 
 
-{-
 -- | Convert a foreign vector of characters to a Double.
 -- 
 --   * The standard Haskell `Char` type is four bytes in length.
@@ -30,9 +28,9 @@ import qualified Data.Double.Conversion.ByteString      as DC
 readDouble :: Array F Char -> Double
 readDouble vec
         = readDoubleFromBytes 
-        $ A.computeS (F 0) $ A.map (fromIntegral . ord) vec
+        $ A.computeS F $ A.map (fromIntegral . ord) vec
 {-# INLINE readDouble #-}
--}
+
 
 -- | Convert a foreign vector of bytes to a Double.
 readDoubleFromBytes :: Array F Word8 -> Double
@@ -57,14 +55,14 @@ readDoubleFromBytes (FArray start len fptr)
 foreign import ccall unsafe 
  strtod :: Ptr Word8 -> Ptr (Ptr Word8) -> Double
 
-{-
+
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
 showDouble :: Double -> Array F Char
 showDouble !d
-        = A.computeS (F 0) $ A.map (chr . fromIntegral)
+        = A.computeS F $ A.map (chr . fromIntegral)
         $ showDoubleAsBytes d
 {-# INLINE showDouble #-}
--}
+
 
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
 showDoubleAsBytes :: Double -> Array F Word8
@@ -72,15 +70,15 @@ showDoubleAsBytes !d
         = fromByteString $ DC.toShortest d
 {-# INLINE showDoubleAsBytes #-}
 
-{-
+
 -- | Like `showDouble`, but use a fixed number of digits after
 --   the decimal point.
 showDoubleFixed :: Int -> Double -> Array F Char
 showDoubleFixed !prec !d
-        = A.computeS (F 0) $ A.map (chr . fromIntegral)
+        = A.computeS F $ A.map (chr . fromIntegral)
         $ showDoubleFixedAsBytes prec d
 {-# INLINE showDoubleFixed #-}
--}
+
 
 -- | Like `showDoubleAsBytes`, but use a fixed number of digits after
 --   the decimal point.
@@ -88,4 +86,4 @@ showDoubleFixedAsBytes :: Int -> Double -> Array F Word8
 showDoubleFixedAsBytes !prec !d 
         = fromByteString $ DC.toFixed prec d
 {-# INLINE showDoubleFixedAsBytes #-}
--}
+

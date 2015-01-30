@@ -13,12 +13,12 @@ module Data.Repa.Flow.Generic.IO
         , sinkChars
         , sinkLines)
 where
-import Data.Repa.Flow.Generic.Operator
-import Data.Repa.Flow.Generic.Base
-import Data.Repa.Fusion.Unpack
+import Data.Repa.Flow.Generic.Operator          as F
+import Data.Repa.Flow.Generic.Base              as F
+import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array                          as A
-import Data.Repa.IO.Array
+import Data.Repa.IO.Array                       as A
 import Data.Char
 import System.IO
 import Data.Word
@@ -46,9 +46,7 @@ fromFiles
 
 fromFiles paths use
  = do   hs      <- mapM (flip openBinaryFile ReadMode) paths
-        i0      <- use hs
-        finalize_i (\(IIx i _) -> let Just h = lix hs i
-                                  in  hClose h) i0
+        use hs
 {-# NOINLINE fromFiles #-}
 
 
@@ -146,12 +144,15 @@ sourceBytes len hs
  = return $ Sources (P.length hs) pull_sourceBytes
  where
         pull_sourceBytes (IIx i _) eat eject
-         = do print i
-              let Just h  = lix hs i
-              eof <- hIsEOF h
-              if eof 
-                  then  eject
-                  else do  
+         = do let Just h  = lix hs i
+              op  <- hIsOpen h
+              if not op 
+                then eject
+                else do
+                  eof <- hIsEOF h
+                  if eof
+                   then eject
+                   else do
                         !chunk  <- hGetArray h len
                         eat chunk
         {-# INLINE pull_sourceBytes #-}
@@ -170,8 +171,7 @@ toFiles :: [FilePath]
 
 toFiles paths use
  = do   hs      <- mapM (flip openBinaryFile WriteMode) paths
-        o0      <- use hs
-        finalize_o (\(IIx i _) -> hClose (hs !! i)) o0
+        use hs
 {-# NOINLINE toFiles #-}
 
 
@@ -213,11 +213,11 @@ sinkChars !hs
 sinkBytes :: [Handle] -> IO (Sinks Int IO (Array F Word8))
 sinkBytes !hs
  = do   let push_sinkBytes (IIx i _) !chunk
-                = hPutArray (hs !! i) chunk
+             = hPutArray (hs !! i) chunk
             {-# NOINLINE push_sinkBytes #-}
 
-        let eject_sinkBytes _
-                = return ()
+        let eject_sinkBytes (IIx i _)
+             = hClose    (hs !! i)
             {-# INLINE eject_sinkBytes #-}
 
         return  $ Sinks (P.length hs) push_sinkBytes eject_sinkBytes

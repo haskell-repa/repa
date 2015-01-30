@@ -18,12 +18,12 @@
 -- @
 --
 module Main where
-import Data.Repa.Flow.IO.Default                        as F
-import Data.Repa.Flow                                   as F
-import Data.Repa.Array                                  as A
-import Data.Repa.Array.Material.Unsafe.Nested           as A
-import Data.Repa.IO.Convert                             as A
-import qualified Data.Repa.Flow.Generic                 as G
+import Data.Repa.Flow.IO.Default                as F
+import Data.Repa.Flow                           as F
+import Data.Repa.Array                          as A
+import Data.Repa.Array.Material                 as A
+import Data.Repa.IO.Convert                     as A
+import qualified Data.Repa.Flow.Generic         as G
 
 import System.Environment
 import Data.Char
@@ -54,10 +54,10 @@ pGroupSum fiNames fiVals foNames foSums
         iAgg    <-  foldGroupsBy_i B U (==) (+) 0 iNames iVals
 
         -- Write group names and sums back to files.
-        oNames  <-  map_o repr fst
+        oNames  <-  map_o name fst
                 =<< toFiles [foNames] (sinkLines B F)
 
-        oSums   <-  map_o repr (showDoubleFixed 4 . snd) 
+        oSums   <-  map_o name (showDoubleFixed 4 . snd) 
                 =<< toFiles [foSums]  (sinkLines B F)
 
         oAgg    <-  dup_oo oNames oSums

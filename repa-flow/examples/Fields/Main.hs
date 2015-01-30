@@ -2,7 +2,7 @@
 import Data.Repa.Flow
 import Data.Repa.Flow.IO.Default
 import Data.Repa.Array                          as A
-import Data.Repa.Array.Material.Unsafe.Nested   as A
+import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic         as G
 
 import Control.Monad
@@ -40,7 +40,7 @@ pFields config
         sColumns  <- mapChunks_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        let !fl   =  A.vfromList F ['\n']
+        let !fl   =  A.fromList F ['\n']
         sCat      <- mapChunks_i (A.computeS B . A.map (A.concatWith F fl))
                                  sColumns
 
