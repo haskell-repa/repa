@@ -7,7 +7,7 @@ module Data.Repa.Eval.Array
         , Load      (..)
 
         , computeS
-        , computeSn)
+        , computeIntoS)
 where
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Load           as A
@@ -17,15 +17,28 @@ import System.IO.Unsafe
 #include "repa-array.h"
 
 
--- | Sequential computation of array elements.
+-- | Sequential computation of delayed array elements.
 --
---   The destination layout is specified by the first argument.
---   If the size of the destination layout does not match the size of the
---   array then `Nothing`.
+--   Elements of the source array are computed sequentially and 
+--   written to a new array of the specified layout.
 --
-computeS :: Load lSrc lDst a
-         => lDst -> Array lSrc a -> Maybe (Array lDst a)
-computeS lDst aSrc
+computeS     :: (Load lSrc lDst a, Index lSrc ~ Index lDst)
+             =>  Name lDst -> Array lSrc a -> Array lDst a
+computeS nDst aSrc
+ = let  lDst       = create nDst (extent $ layout aSrc)
+        Just aDst  = computeIntoS lDst aSrc
+   in   aDst
+{-# INLINE computeS #-}
+
+
+-- | Like `computeS` but use the provided desination layout.
+--
+--   The size of the destination layout must match the size of the source
+--   array, else `Nothing`.
+--
+computeIntoS :: Load lSrc lDst a
+             => lDst -> Array lSrc a -> Maybe (Array lDst a)
+computeIntoS lDst aSrc
  | (A.size $ A.extent lDst) == A.length aSrc
  = unsafePerformIO
  $ do   buf     <- unsafeNewBuffer lDst
@@ -35,15 +48,6 @@ computeS lDst aSrc
 
  | otherwise
  =      Nothing
-{-# INLINE_ARRAY computeS #-}
+{-# INLINE_ARRAY computeIntoS #-}
 
 
--- | Like `computeS`, but use a destination layout of the given name,
---   with the same extent as the source.
-computeSn :: (Load lSrc lDst a, Index lSrc ~ Index lDst)
-          =>  Name lDst -> Array lSrc a -> Array lDst a
-computeSn nDst aSrc
- = let  lDst       = create nDst (extent $ layout aSrc)
-        Just aDst  = computeS lDst aSrc
-   in   aDst
-{-# INLINE computeSn #-}

@@ -61,7 +61,7 @@ module Data.Repa.Array
           -- * Computation
         , Load
         , Target
-        , computeS,     computeSn
+        , computeS,     computeIntoS
 
           -- * Operators
           -- ** Index space

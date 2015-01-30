@@ -25,6 +25,7 @@ import Prelude                                  as P
 --   stored in a flat unboxed vector:
 --
 -- @
+-- > import Data.Repa.Array.Material
 -- > let Just arr  = fromList (matrix U 10 10) [1000..1099 :: Float]
 -- > :type arr
 --   arr :: Array (E U (RW DIM2) Float
