@@ -121,10 +121,10 @@ instance (Bulk l a, Windowable l a, Index l ~ Int)
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
         :: (Target l a, Index l ~ Int)
-        => l -> [[a]] -> Array N (Array l a)
-fromLists l xss
+        => Name l -> [[a]] -> Array N (Array l a)
+fromLists nDst xss
  = let  xs         = concat xss
-        Just elems = fromList l xs
+        elems      = fromList nDst xs
         lengths    = U.fromList    $ P.map P.length xss
         starts     = U.unsafeInit  $ U.scanl (+) 0 lengths
    in   NArray starts lengths elems
@@ -134,11 +134,11 @@ fromLists l xss
 -- | O(size src) Convert a triply nested list to a triply nested array.
 fromListss 
         :: (Target l a, Index l ~ Int)
-        => l -> [[[a]]] -> Array N (Array N (Array l a))
-fromListss l xs
+        => Name l -> [[[a]]] -> Array N (Array N (Array l a))
+fromListss nDst xs
  = let  xs1        = concat xs
         xs2        = concat xs1
-        Just elems = fromList l xs2
+        elems      = fromList nDst xs2
         
         lengths1   = U.fromList   $ P.map P.length xs
         starts1    = U.unsafeInit $ U.scanl (+) 0 lengths1
@@ -184,11 +184,15 @@ slices (UArray starts) (UArray lens) !elems
 -- | Segmented concatenation.
 --   Concatenate triply nested vector, producing a doubly nested vector.
 --
---   Example: @concats [[[10 11 12] [20 21]] [[30 31] [40] [50]]]
---                   = [ [10 11 12   20 21]   [30 31   40   50] ]@
+--   * This operation is performed entirely on the segment descriptors
+--     of the nested arrays, and does not require the inner array elements
+--     to be copied.
 --
---   * This version is more efficient than plain `concat` as the operation
---     is done entirely on the segment descriptors of the nested arrays.
+-- @
+-- > import Data.Repa.Nice
+-- > nice $ concats $ fromListss U [["red", "green", "blue"], ["grey", "white"], [], ["black"]]
+-- ["red","green","blue","grey","white","black"]
+-- @
 --
 concats :: Array N (Array N (Array l a)) 
         -> Array N (Array l a)
@@ -228,7 +232,11 @@ segment pStart pEnd !elems
 --
 --   The result segments do not include the terminator.
 --  
---   @segmentOn ' ' "fresh fried fish" = ["fresh", "fried", "fish"]@
+-- @
+-- > import Data.Repa.Nice
+-- > nice $ segmentOn (== ' ') (fromList U "fresh   fried fish  ") 
+-- ["fresh "," "," ","fried ","fish "," "]
+-- @
 --
 segmentOn 
         :: (Eq a, U.Unbox a, Bulk l a, Index l ~ Int)
@@ -280,15 +288,15 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 -- | O(len src). Given field and row terminating values, 
 --   split an array into rows and fields.
 --
--- @ 
---   toListss $ diceOn '\t' '\n' 
---            $ (vfromList "12\\t34\\t56\\n78\\t\\t9\\n\\t00" :: Vector B Char)
---    = [["12\\t","34\\t","56\\n"],["78\\t","\\t","9\\n"],["\\t", "00"]]
--- @
---
 --   If you don't want the terminating values in the result then use 
 --   `trimEnds` to trim them off.
--- 
+--
+-- @ 
+-- > import Data.Repa.Nice
+-- > nice $ diceOn '\t' '\n' $ fromList U \"A1\\tA2\\tA3\\nB1\\tB2\\nC1\\tC2\\tC3\\n\\n\"
+-- [[\"A1\\t\",\"A2\\t\",\"A3\\n\"],[\"B1\\t\",\"B2\\n\"],[\"C1\\t\",\"C2\\t\",\"C3\\n\"],[\"\\n\"]]
+-- @
+--
 diceOn  :: (U.Unbox a, Eq a, Bulk l a, Windowable l a, Index l ~ Int)
         => a            -- ^ Terminating element for inner segments.
         -> a            -- ^ Terminating element for outer segments.
@@ -381,8 +389,9 @@ trimStarts pTrim (NArray starts lengths elems)
 -------------------------------------------------------------------------------
 -- | Ragged transpose of a triply nested array.
 -- 
---   * This version is more efficient than plain `ragspose` as the operation
---     is done entirely on the segment descriptors of the nested arrays.
+--   * This operation is performed entirely on the segment descriptors
+--     of the nested arrays, and does not require the inner array elements
+--     to be copied.
 --
 ragspose3 :: Array N (Array N (Array l a)) 
           -> Array N (Array N (Array l a))

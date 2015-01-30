@@ -2,7 +2,10 @@
 module Data.Repa.Array.Material.Boxed
         ( B      (..)
         , Array  (..)
-        , Buffer (..))
+        , Buffer (..)
+
+        -- * Conversions
+        , fromBoxed,    toBoxed)
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Index
@@ -112,4 +115,18 @@ instance Unpack (Buffer B a) (VM.IOVector a) where
  repack !_ !vec        = BBuffer vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
+
+
+-------------------------------------------------------------------------------
+-- | O(1). Wrap a boxed vector as an array.
+fromBoxed :: V.Vector a -> Array B a
+fromBoxed vec = BArray vec
+{-# INLINE_ARRAY fromBoxed #-}
+
+
+-- | O(1). Unwrap a boxed vector from an array.
+toBoxed   :: Array B a -> V.Vector a
+toBoxed (BArray vec) = vec
+{-# INLINE_ARRAY toBoxed #-}
+
 

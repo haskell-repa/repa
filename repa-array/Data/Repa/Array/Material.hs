@@ -3,19 +3,17 @@ module Data.Repa.Array.Material
         ( Name  (..)
         , Array (..)
 
+          -- * Boxed arrays
+        , B     (..)
+        , fromBoxed,            toBoxed
+
           -- * Unboxed arrays
         , U     (..)
         , Unbox
-
-          -- ** Conversion
-        , fromVector
-        , toVector
-
+        , fromUnboxed,          toUnboxed
 
           -- * Foreign arrays
         , F (..)
-
-          -- ** Conversion
         , fromForeignPtr,       toForeignPtr
         , fromByteString,       toByteString
 
@@ -48,9 +46,10 @@ module Data.Repa.Array.Material
           -- ** Transpose
         , ragspose3)
 where
+import Data.Repa.Array.Material.Boxed
+import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign
 import Data.Repa.Array.Material.Nested
-import Data.Repa.Array.Material.Unboxed
 
 
 

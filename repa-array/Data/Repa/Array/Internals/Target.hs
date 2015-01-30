@@ -1,7 +1,7 @@
 
 module Data.Repa.Array.Internals.Target
         ( Target (..)
-        , fromList)
+        , fromList,     fromListInto)
 where
 import Data.Repa.Array.Index            as A
 import Data.Repa.Array.Internals.Bulk   as A
@@ -55,20 +55,34 @@ class Layout l => Target l a where
 
 
 -------------------------------------------------------------------------------
+-- | O(length src). Construct a linear array from a list of elements.
+fromList        :: (Target l a, Index l ~ Int)
+                => Name l -> [a] -> Array l a
+fromList nDst xx
+ = let  len      = P.length xx
+        lDst     = create nDst len
+        Just arr = fromListInto lDst xx
+   in   arr
+{-# NOINLINE fromList #-}
+
+
 -- | O(length src). Construct an array from a list of elements,
---   and give it the provided shape. The `size` of the provided shape must
---   match the length of the list, else `Nothing`.
-fromList  :: Target l a
-          => l -> [a] -> Maybe (Array l a)
-fromList l xx
+--   and give it the provided layout.
+--
+--   The `length` of the provided shape must match the length of the list,
+--   else `Nothing`.
+--
+fromListInto    :: Target l a
+                => l -> [a] -> Maybe (Array l a)
+fromListInto lDst xx
  = unsafePerformIO
  $ do   let !len = P.length xx
-        if   len /= size (extent l)
+        if   len /= size (extent lDst)
          then return Nothing
          else do
-                buf     <- unsafeNewBuffer    l
+                buf     <- unsafeNewBuffer    lDst
                 zipWithM_ (unsafeWriteBuffer  buf) [0..] xx
                 arr     <- unsafeFreezeBuffer buf
                 return $ Just arr
-{-# NOINLINE fromList #-}
+{-# NOINLINE fromListInto #-}
 

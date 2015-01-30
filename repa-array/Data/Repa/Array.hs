@@ -54,7 +54,7 @@ module Data.Repa.Array
         , cube
 
           -- * Conversion
-        , fromList
+        , fromList,     fromListInto
         , toList
 
 

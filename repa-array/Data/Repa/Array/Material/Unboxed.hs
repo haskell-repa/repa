@@ -7,7 +7,7 @@ module Data.Repa.Array.Material.Unboxed
         , U.Unbox
 
         -- * Conversions
-        , fromVector, toVector)
+        , fromUnboxed,  toUnboxed)
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
@@ -136,26 +136,24 @@ instance U.Unbox a => Target U a where
  {-# SPECIALIZE instance Target U Word64 #-}
 
 
-instance Unpack (Buffer U e) (UM.IOVector e) where
+instance Unpack (Buffer U a) (UM.IOVector a) where
  unpack (UBuffer vec)  = vec `seq` vec
  repack !_ !vec        = UBuffer vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
 
 
--- Conversions ----------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
-fromVector
-        :: U.Unbox e
-        => U.Vector e -> Array U e
-fromVector vec = UArray vec
-{-# INLINE_ARRAY fromVector #-}
+fromUnboxed :: U.Unbox a
+            => U.Vector a -> Array U a
+fromUnboxed vec = UArray vec
+{-# INLINE_ARRAY fromUnboxed #-}
 
 
--- | O(1). Unpack an unboxed vector from an array.
-toVector 
-        :: U.Unbox e
-        => Array U e -> U.Vector e
-toVector (UArray vec) = vec
-{-# INLINE_ARRAY toVector #-}
+-- | O(1). Unwrap an unboxed vector from an array.
+toUnboxed   :: U.Unbox a
+            => Array U a -> U.Vector a
+toUnboxed (UArray vec) = vec
+{-# INLINE_ARRAY toUnboxed #-}
 
