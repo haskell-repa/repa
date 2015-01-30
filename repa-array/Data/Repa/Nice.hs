@@ -1,7 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Nice
         ( Nicer (..)
-        , Str(..))
+        , Str   (..)
+        , Tok   (..))
 where
 import Data.Repa.Array          as A
 import Control.Monad
@@ -9,12 +10,20 @@ import Data.Word
 import Prelude                  as P
 
 
--- | Wrapper to indicate a list of characters should be printed as a string.
-data Str
-        = Str [Char]
+-- | Wrapper to indicate a list of characters should be printed as a string,
+--   including double quotes.
+data Str = Str [Char]
 
 instance Show Str where
  show (Str xs) = show xs
+
+
+-- | Wrapper to indicate a list of characters should be printed as a string,
+--   without double quotes.
+data Tok = Tok [Char]
+
+instance Show Tok where
+ show (Tok xs) = xs
 
 
 -- | Convert some value to a nice form.

@@ -54,12 +54,16 @@ takeDisplay str
         | otherwise
         = Display FormatText    (T.length str)
 
+
+-- | Left justify some text in a column of the given width.
 padL n xs
  = let len = T.length xs
    in  if len >= n 
         then xs
         else xs <> T.replicate (n - len) (T.pack " ")
 
+
+-- | Right justify some text in a column of the given width.
 padR n xs
  = let len = T.length xs
    in  if len >= n 

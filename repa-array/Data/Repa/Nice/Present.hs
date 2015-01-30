@@ -1,7 +1,9 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
 module Data.Repa.Nice.Present
-        ( Presentable (..)
-        , Str(..)
+        ( Presentable   (..)
+        , Present       (..)
+        , Str           (..)
+        , Tok           (..)
         , depth
         , strip1
         , strip2
@@ -11,13 +13,18 @@ import Data.Monoid
 import Data.Word
 import Data.Text                (Text)
 import qualified Data.Text      as T
-import Data.Repa.Nice           (Str(..))
+import Data.Repa.Nice           (Str(..), Tok(..))
 
 -- | A value, wrapped up nicely.
 data Present
-        = Atom  Text            -- ^ An atomic thing.
-        | Many  [Present]       -- ^ Many of the same thing.
-        | Some  [Present]       -- ^ Some different things.
+        -- | An atomic thing.
+        = Atom  Text
+
+        -- | Many of the same thing, to display with list brackets @[.. , ..]@
+        | Many  [Present]
+
+        -- | Some different things,  to display with tuple brackets @(.. , ..)@
+        | Some  [Present]
         deriving (Eq, Show)
 
 
@@ -87,7 +94,10 @@ instance Presentable Word64 where
  present = Atom . T.pack . show
 
 instance Presentable Str where
- present (Str xs) = Atom $ T.pack xs
+ present (Str xs) = Atom $ T.pack (show xs)
+
+instance Presentable Tok where
+ present (Tok xs) = Atom $ T.pack xs
 
 instance Presentable a 
       => Presentable [a] where
