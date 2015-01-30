@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Internals.Target
-        ( Target (..)
+        ( Target (..),  TargetI
         , fromList,     fromListInto)
 where
 import Data.Repa.Array.Index            as A
@@ -52,6 +52,10 @@ class Layout l => Target l a where
  -- | Ensure the array is still live at this point.
  --   Sometimes needed when the mutable buffer is a ForeignPtr with a finalizer.
  touchBuffer        :: Buffer l a -> IO ()
+
+
+-- | Constraint synonym that requires an integer index space.
+type TargetI l a  = (Target l a, Index l ~ Int)
 
 
 -------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 
 module Data.Repa.Eval.Array
         ( -- * Array Targets
-          Target    (..)
+          Target    (..),       TargetI
 
           -- * Array Loading
         , Load      (..)

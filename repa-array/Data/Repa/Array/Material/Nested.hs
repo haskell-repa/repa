@@ -84,7 +84,7 @@ deriving instance Show (Name N)
 
 -------------------------------------------------------------------------------
 -- | Nested arrays.
-instance (Bulk l a, Windowable l a, Index l ~ Int)
+instance (BulkI l a, Windowable l a)
       =>  Bulk N (Array l a) where
 
  data Array N (Array l a)
@@ -108,7 +108,7 @@ deriving instance Show (Array l a) => Show (Array N (Array l a))
 
 -------------------------------------------------------------------------------
 -- | Windowing Nested arrays.
-instance (Bulk l a, Windowable l a, Index l ~ Int)
+instance (BulkI l a, Windowable l a)
       => Windowable N (Array l a) where
  window start len (NArray starts lengths elems)
         = NArray  (U.unsafeSlice start len starts)
@@ -120,7 +120,7 @@ instance (Bulk l a, Windowable l a, Index l ~ Int)
 -------------------------------------------------------------------------------
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
-        :: (Target l a, Index l ~ Int)
+        :: TargetI l a
         => Name l -> [[a]] -> Array N (Array l a)
 fromLists nDst xss
  = let  xs         = concat xss
@@ -133,7 +133,7 @@ fromLists nDst xss
 
 -- | O(size src) Convert a triply nested list to a triply nested array.
 fromListss 
-        :: (Target l a, Index l ~ Int)
+        :: TargetI l a
         => Name l -> [[[a]]] -> Array N (Array N (Array l a))
 fromListss nDst xs
  = let  xs1        = concat xs
@@ -184,9 +184,9 @@ slices (UArray starts) (UArray lens) !elems
 -- | Segmented concatenation.
 --   Concatenate triply nested vector, producing a doubly nested vector.
 --
---   * This operation is performed entirely on the segment descriptors
---     of the nested arrays, and does not require the inner array elements
---     to be copied.
+--   * Unlike the plain `concat` function, this operation is performed entirely
+--     on the segment descriptors of the nested arrays, and does not require
+--     the inner array elements to be copied.
 --
 -- @
 -- > import Data.Repa.Nice
@@ -212,7 +212,7 @@ concats (NArray starts1 lengths1 (NArray starts2 lengths2 elems))
 -------------------------------------------------------------------------------
 -- | O(len src). Given predicates which detect the start and end of a segment, 
 --   split an vector into the indicated segments.
-segment :: (U.Unbox a, Bulk l a, Index l ~ Int)
+segment :: (BulkI l a, U.Unbox a)
         => (a -> Bool)  -- ^ Detect the start of a segment.
         -> (a -> Bool)  -- ^ Detect the end of a segment.
         -> Array l a    -- ^ Vector to segment.
@@ -239,7 +239,7 @@ segment pStart pEnd !elems
 -- @
 --
 segmentOn 
-        :: (Eq a, U.Unbox a, Bulk l a, Index l ~ Int)
+        :: (BulkI l a, Eq a, U.Unbox a)
         => (a -> Bool)  -- ^ Detect the end of a segment.
         -> Array l a    -- ^ Vector to segment.
         -> Array N (Array l a)
@@ -251,7 +251,7 @@ segmentOn !pEnd !arr
 
 -------------------------------------------------------------------------------
 -- | O(len src). Like `segment`, but cut the source array twice.
-dice    :: (U.Unbox a, Bulk l a, Windowable l a, Index l ~ Int)
+dice    :: (BulkI l a, Windowable l a, U.Unbox a)
         => (a -> Bool)  -- ^ Detect the start of an inner segment.
         -> (a -> Bool)  -- ^ Detect the end   of an inner segment.
         -> (a -> Bool)  -- ^ Detect the start of an outer segment.
@@ -297,7 +297,7 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 -- [[\"A1\\t\",\"A2\\t\",\"A3\\n\"],[\"B1\\t\",\"B2\\n\"],[\"C1\\t\",\"C2\\t\",\"C3\\n\"],[\"\\n\"]]
 -- @
 --
-diceOn  :: (U.Unbox a, Eq a, Bulk l a, Windowable l a, Index l ~ Int)
+diceOn  :: (BulkI l a, Windowable l a, U.Unbox a, Eq a)
         => a            -- ^ Terminating element for inner segments.
         -> a            -- ^ Terminating element for outer segments.
         -> Array l a    -- ^ Vector to dice.
@@ -313,7 +313,7 @@ diceOn !xEndWord !xEndLine !arr
 -------------------------------------------------------------------------------
 -- | For each segment of a nested vector, trim elements off the start
 --   and end of the segment that match the given predicate.
-trims   :: (Bulk l a, Index l ~ Int)
+trims   :: BulkI l a
         => (a -> Bool)
         -> Array N (Array l a)
         -> Array N (Array l a)
@@ -343,7 +343,7 @@ trims pTrim (NArray starts lengths elems)
 
 -- | For each segment of a nested vector, trim elements off the end of 
 --   the segment that match the given predicate.
-trimEnds :: (Bulk l a, Index l ~ Int)
+trimEnds :: BulkI l a
          => (a -> Bool)
          -> Array N (Array l a)
          -> Array N (Array l a)
@@ -365,7 +365,7 @@ trimEnds pTrim (NArray starts lengths elems)
 
 -- | For each segment of a nested vector, trim elements off the start of
 --   the segment that match the given predicate.
-trimStarts :: (Bulk l a, Index l ~ Int)
+trimStarts :: BulkI l a
            => (a -> Bool)
            -> Array N (Array l a)
            -> Array N (Array l a)

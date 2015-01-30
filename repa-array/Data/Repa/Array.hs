@@ -3,7 +3,7 @@ module Data.Repa.Array
         ( module Data.Repa.Array.Index
 
         , Name  (..)                
-        , Bulk  (..)
+        , Bulk  (..),   BulkI
         , (!)
         , length
 
@@ -80,7 +80,7 @@ module Data.Repa.Array
           -- ** Sloshing
           -- | Sloshing operators copy array elements into a different arrangement, 
           --   but do not create new element values.
---        , concat
+        , concat
 --        , concatWith
 --        , intercalate
 

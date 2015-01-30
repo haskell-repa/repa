@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Internals.Bulk
-        ( Bulk (..)
+        ( Bulk (..),    BulkI
         , (!)
         , length
         , toList
@@ -29,6 +29,10 @@ class Layout l => Bulk l a where
  --   If the provided index is outside the extent of the array then the
  --   result depends on the layout.
  index       :: Array l a -> Index l -> a
+
+
+-- | Constraint synonym that requires an integer index space.
+type BulkI l a = (Bulk l a, Index l ~ Int)
 
 
 -- | O(1). Alias for `index`.

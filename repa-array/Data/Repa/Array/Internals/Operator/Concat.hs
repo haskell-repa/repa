@@ -1,20 +1,18 @@
 {-# LANGUAGE CPP #-}
 
 -- | Concatenation operators on arrays.
-module Data.Repa.Array.Internals.Operator.Concat () where
-
-{-
-        ( concat
-        , concatWith
-        , intercalate )
+module Data.Repa.Array.Internals.Operator.Concat
+        ( concat)
+--        , concatWith
+--        , intercalate )
 where
-import Data.Repa.Array.Material.Unboxed                 as R
-import Data.Repa.Array.Delayed                          as R
-import Data.Repa.Array.Index                            as R
-import Data.Repa.Array.Internals.Target                 as R
-import Data.Repa.Array.Internals.Bulk                   as R
-import Data.Repa.Eval.Array                             as R
-import Data.Repa.Fusion.Unpack                          as R
+import Data.Repa.Array.Material                         as A
+import Data.Repa.Array.Delayed                          as A
+import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Internals.Target                 as A
+import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Eval.Array                             as A
+import Data.Repa.Fusion.Unpack                          as A
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import System.IO.Unsafe
@@ -24,18 +22,21 @@ import Prelude  hiding (reverse, length, map, zipWith, concat)
 
 
 -- Concat ---------------------------------------------------------------------
--- | O(len result) Concatenate nested vectors.
-concat  :: (Bulk r1 DIM1 (Vector r2 a), Bulk r2 DIM1 a, Target r3 a t)
-        => r3 -> Vector r1 (Vector r2 a) -> Vector r3 a
-concat r3 vs
- | R.length vs == 0
- = R.vfromList r3 []
+-- | O(len result) Concatenate nested arrays.
+concat  :: ( BulkI lOut (Array lIn a), BulkI lIn a, TargetI lDst a)
+        => Name  lDst                   -- ^ Layout for destination.
+        -> Array lOut (Array lIn a)     -- ^ Arrays to concatenate.
+        -> Array lDst a
+concat n3 vs
+ | A.length vs == 0
+ = A.fromList n3 []
 
  | otherwise
  = unsafePerformIO
- $ do   let !lens  = toVector $ computeS U $ R.map R.length vs
+ $ do   let !lens  = toUnboxed $ computeS U $ A.map A.length vs
         let !len   = U.sum lens
-        !buf       <- unsafeNewBuffer len
+        !buf_      <- unsafeNewBuffer  (create n3 0)
+        !buf       <- unsafeGrowBuffer buf_ len
         let !iLenY = U.length lens
 
         let loop_concat !iO !iY !row !iX !iLenX
@@ -43,24 +44,24 @@ concat r3 vs
              = if iY >= iLenY - 1
                 then return ()
                 else let iY'    = iY + 1
-                         row'   = vs `index` (Z :. iY')
-                         iLenX' = R.length row'
+                         row'   = vs `index` iY'
+                         iLenX' = A.length row'
                      in  loop_concat iO iY' row' 0 iLenX'
 
              | otherwise
-             = do let x = row `index` (Z :. iX)
+             = do let x = row `index` iX
                   unsafeWriteBuffer buf iO x
                   loop_concat (iO + 1) iY row (iX + 1) iLenX
             {-# INLINE_INNER loop_concat #-}
 
-        let !row0   = vs `index` (Z :. 0)
-        let !iLenX0 = R.length row0
+        let !row0   = vs `index` 0
+        let !iLenX0 = A.length row0
         loop_concat 0 0 row0 0 iLenX0
 
-        unsafeFreezeBuffer (Z :. len) buf
+        unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concat #-}
 
-
+{-
 -- O(len result) Concatenate the elements of some nested vector,
 -- inserting a copy of the provided separator array between each element.
 concatWith
@@ -212,5 +213,4 @@ intercalate r3 !is !vs
         loop_intercalate V.SPEC 0# 0# (unpack row0) 0# iLenX0
         unsafeFreezeBuffer (Z :. (I# len)) buf
 {-# INLINE_ARRAY intercalate #-}
-
 -}
