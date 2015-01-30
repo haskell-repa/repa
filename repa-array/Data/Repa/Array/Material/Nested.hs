@@ -66,6 +66,7 @@ deriving instance Show N
 
 
 -------------------------------------------------------------------------------
+-- | Nested arrays.
 instance Layout N where
  data Name  N           = N
  type Index N           = Int

@@ -20,8 +20,8 @@ import Prelude hiding (map, zipWith)
 
 
 -------------------------------------------------------------------------------
--- | Delayed arrays are represented as functions from the index to element
---   value. The index space depends on an inner layout @l@.
+-- | Delayed arrays wrap functions from an index to element value.
+--   The index space is specified by an inner layout, @l@.
 --
 --   Every time you index into a delayed array the element at that position 
 --   is recomputed.
@@ -31,6 +31,7 @@ data D l
 
 
 -------------------------------------------------------------------------------
+-- | Delayed arrays.
 instance Layout l => Layout (D l) where
  data Name  (D l)               = D (Name l)
  type Index (D l)               = Index l
@@ -81,7 +82,7 @@ instance (Layout l1, Target l2 a)
 
 
 -- Conversions ----------------------------------------------------------------
--- | O(1). Wrap a function as a delayed array.
+-- | Wrap a function as a delayed array.
 --
 --  @> toList $ fromFunction (Linear 10) (* 2)
 --    = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]@
@@ -92,7 +93,7 @@ fromFunction l f
 {-# INLINE_ARRAY fromFunction #-}
 
 
--- | O(1). Produce the extent of an array, and a function to retrieve an
+-- | Produce the extent of an array, and a function to retrieve an
 --   arbitrary element.
 toFunction  :: Bulk  l a
             => Array (D l) a -> (l, Index l -> a)
@@ -100,25 +101,21 @@ toFunction (ADelayed l f) = (l, f)
 {-# INLINE_ARRAY toFunction #-}
 
 
--- | O(1). Delay an array.
---   This wraps the internal representation to be a function from
---   indices to elements, so consumers don't need to worry about
---   what the previous representation was.
---
-delay   :: Bulk  l a
-        => Array l a -> Array (D l) a
-delay arr = ADelayed (layout arr) (index arr)
-{-# INLINE_ARRAY delay #-}
-
 
 -- Operators ------------------------------------------------------------------
+-- | Wrap an existing array in a delayed one.
+delay   :: Bulk l a
+        => Array l a -> Array (D l) a
+delay arr = map id arr
+{-# INLINE delay #-}
+
+
 -- | Apply a worker function to each element of an array, 
 --   yielding a new array with the same extent.
 map     :: Bulk l a
         => (a -> b) -> Array l a -> Array (D l) b
 map f arr
-        = ADelayed (layout arr)
-                   (f . index arr)
+        = ADelayed (layout arr) (f . index arr)
 {-# INLINE_ARRAY map #-}
 
 

@@ -33,6 +33,8 @@ class Layout l => Target l a where
 
  -- | O(n). Copy the contents of a buffer that is larger by the given
  --   number of elements.
+ --
+ --   UNSAFE: The integer must be positive, but this is not checked.
  unsafeGrowBuffer   :: Buffer l a -> Int -> IO (Buffer l a)
  
  -- | O(1). Yield a slice of the buffer without copying.

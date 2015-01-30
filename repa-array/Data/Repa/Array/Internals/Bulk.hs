@@ -18,8 +18,8 @@ import Prelude hiding (length)
 --   random-access manner. 
 class Layout l => Bulk l a where
 
- -- | An `Array` is a data structure that supplies an element of type @a@ to 
- --   each position in the index space associated with a layout @l@.
+ -- | An Array supplies an element of type @a@ to each position in the
+ --   index space associated with layout @l@.
  data Array l a
 
  -- | O(1). Get the layout of an array.
