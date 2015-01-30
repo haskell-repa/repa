@@ -1,5 +1,5 @@
 
--- | Evaluation of chains into bulk arrays.
+-- | Interface with chain fusion.
 module Data.Repa.Eval.Chain
         ( chainOfArray
         , unchainToArray
@@ -18,7 +18,9 @@ import System.IO.Unsafe
 
 
 -------------------------------------------------------------------------------
--- | Produce a chain from a generic vector.
+-- | Produce a `Chain` for the elements of the given array.
+--   The order in which the elements appear in the chain is
+--   determined by the layout of the array.
 chainOfArray
         :: (Monad m, Bulk l a)
         => Array l a -> Chain m Int a
@@ -48,10 +50,10 @@ liftChain (Chain sz s step)
 --   writing them into a new array `Array`.
 unchainToArray
         :: (Target l a, Unpack (Buffer l a) t)
-        => l -> Chain S.Id s a -> (Array l a, s)
-unchainToArray l c
+        => Name l -> Chain S.Id s a -> (Array l a, s)
+unchainToArray nDst c
         = unsafePerformIO 
-        $ unchainToArrayIO l
+        $ unchainToArrayIO nDst
         $ liftChain c
 {-# INLINE_STREAM unchainToArray #-}
 
@@ -59,11 +61,10 @@ unchainToArray l c
 -- | Compute the elements of an `IO` `Chain`, 
 --   writing them to a new `Array`.
 unchainToArrayIO
-        :: forall l a s t
-        .  (Target l a, Unpack (Buffer l a) t)
-        => l -> Chain IO s a -> IO (Array l a, s)
+        :: (Target l a, Unpack (Buffer l a) t)
+        => Name l -> Chain IO s a -> IO (Array l a, s)
 
-unchainToArrayIO l (Chain sz s0 step)
+unchainToArrayIO nDst (Chain sz s0 step)
  = case sz of
         S.Exact i       -> unchainToArrayIO_max     i 
         S.Max i         -> unchainToArrayIO_max     i 
@@ -71,7 +72,7 @@ unchainToArrayIO l (Chain sz s0 step)
 
         -- unchain when we known the maximum size of the vector.
  where  unchainToArrayIO_max !nMax
-         = do   !vec0   <- unsafeNewBuffer  l
+         = do   !vec0   <- unsafeNewBuffer  (create nDst zeroDim)
                 !vec    <- unsafeGrowBuffer vec0 nMax
 
                 let go_unchainIO_max !sPEC !i !s
@@ -95,7 +96,7 @@ unchainToArrayIO l (Chain sz s0 step)
 
         -- unchain when we don't know the maximum size of the vector.
         unchainToArrayIO_unknown !nStart
-         = do   !vec0   <- unsafeNewBuffer  l
+         = do   !vec0   <- unsafeNewBuffer  (create nDst zeroDim)
                 !vec1   <- unsafeGrowBuffer vec0 nStart
 
                 let go_unchainIO_unknown !sPEC !uvec !i !n !s

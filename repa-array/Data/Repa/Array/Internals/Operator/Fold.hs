@@ -38,9 +38,7 @@ folds nGrp nRes f z s0 vLens vVals
         let f' !x !y = return $ f x y
             {-# INLINE f' #-}
 
-        let lDst     = create (T2 nGrp nRes) zeroDim
-
-        A.unchainToArrayIO lDst
+        A.unchainToArrayIO (T2 nGrp nRes)
          $  C.foldsC f' z s0
                 (A.chainOfArray vLens)
                 (A.chainOfArray vVals)

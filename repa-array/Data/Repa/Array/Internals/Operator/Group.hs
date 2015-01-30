@@ -35,10 +35,8 @@ groupsBy nGrp nLen f !c !vec0
         f' x y  = return $ f x y
         {-# INLINE f' #-}
 
-        lDst    = create (T2 nGrp nLen) zeroDim
-
         (vec1, k1)
-         = A.unchainToArray lDst
+         = A.unchainToArray (T2 nGrp nLen)
          $ C.liftChain
          $ C.groupsByC f' c  
          $ A.chainOfArray vec0
