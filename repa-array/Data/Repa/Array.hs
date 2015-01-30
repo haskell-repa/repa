@@ -85,11 +85,14 @@ module Data.Repa.Array
 --        , intercalate
 
           -- ** Grouping
-        , groupsBy
+        , groups
+        , groupsWith
         , GroupsDict
 
           -- ** Folding
-        , folds, Folds(..)
+        , folds
+        , foldsWith
+        , Folds(..)
         , FoldsDict)
 where
 import Data.Repa.Array.Linear                           as A
@@ -124,6 +127,11 @@ type Material l a
 
 
 -- | O(1). View the elements of a vector in reverse order.
+--
+-- @
+-- > toList $ reverse $ fromList U [0..10 :: Int]
+-- [10,9,8,7,6,5,4,3,2,1,0]
+-- @
 reverse   :: (Bulk  l a, Index l ~ Int)
           => Array l a -> Array (D l) a
 

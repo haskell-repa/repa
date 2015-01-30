@@ -10,7 +10,7 @@ import Data.Array.Repa.Eval.Gang
 -- | Compute all elements defined by a delayed array and write them to a
 --   manifest target representation.
 --  
---   The instance of this class require that the source array has a delayed
+--   The instances of this class require that the source array has a delayed
 --   representation. If you want to use a pre-existing manifest array as the
 --   source then `delay` it first.
 --

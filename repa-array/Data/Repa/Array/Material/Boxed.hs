@@ -1,6 +1,7 @@
 
 module Data.Repa.Array.Material.Boxed
         ( B      (..)
+        , Name   (..)
         , Array  (..)
         , Buffer (..)
 

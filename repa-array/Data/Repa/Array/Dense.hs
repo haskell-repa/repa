@@ -26,9 +26,10 @@ import Prelude                                  as P
 --
 -- @
 -- > import Data.Repa.Array.Material
--- > let Just arr  = fromList (matrix U 10 10) [1000..1099 :: Float]
+-- > let Just arr  = fromListInto (matrix U 10 10) [1000..1099 :: Float]
+--
 -- > :type arr
---   arr :: Array (E U (RW DIM2) Float
+-- arr :: Array (E U (RW DIM2) Float
 --
 -- > arr ! (Z :. 5 :. 4)
 -- > 1054.0 
