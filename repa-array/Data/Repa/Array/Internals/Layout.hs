@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Internals.Layout
-        (Layout  (..))
+        (Layout  (..),  LayoutI)
 where
 import Data.Repa.Array.Internals.Shape
 
@@ -10,24 +10,26 @@ import Data.Repa.Array.Internals.Shape
 --   We can talk about the n-th element of an array, independent of its
 --   shape and dimensionality.
 --
-class Shape (Index lo) => Layout lo where
+class Shape (Index l) => Layout l where
 
         -- | Short name for a layout which does not include details of
         --   the exact extent.
-        data Name  lo   
+        data Name  l
 
         -- | Type used to index into this array layout.
-        type Index lo 
+        type Index l
 
         -- | O(1). Create a default layout of the given extent.
-        create      :: Name lo -> Index lo -> lo
+        create      :: Name l -> Index l -> l
 
         -- | O(1). Yield the extent of the layout.
-        extent      :: lo  -> Index lo
+        extent      :: l  -> Index l
 
         -- | O(1). Convert a polymorphic index to a linear one.
-        toIndex     :: lo  -> Index lo -> Int
+        toIndex     :: l  -> Index l -> Int
 
         -- | O(1). Convert a linear index to a polymorphic one.
-        fromIndex   :: lo  -> Int -> Index lo
+        fromIndex   :: l  -> Int -> Index l
 
+
+type LayoutI l  = (Layout l, Index l ~ Int)

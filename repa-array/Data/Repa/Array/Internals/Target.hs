@@ -60,8 +60,8 @@ type TargetI l a  = (Target l a, Index l ~ Int)
 
 -------------------------------------------------------------------------------
 -- | O(length src). Construct a linear array from a list of elements.
-fromList        :: (Target l a, Index l ~ Int)
-                => Name l -> [a] -> Array l a
+fromList :: TargetI l a
+         => Name l -> [a] -> Array l a
 fromList nDst xx
  = let  len      = P.length xx
         lDst     = create nDst len

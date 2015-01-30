@@ -132,7 +132,7 @@ type Material l a
 -- > toList $ reverse $ fromList U [0..10 :: Int]
 -- [10,9,8,7,6,5,4,3,2,1,0]
 -- @
-reverse   :: (Bulk  l a, Index l ~ Int)
+reverse   :: BulkI  l a
           => Array l a -> Array (D l) a
 
 reverse !arr
@@ -144,7 +144,7 @@ reverse !arr
 
 -- | O(len src) Yield `Just` the index of the first element matching the predicate
 --   or `Nothing` if no such element exists.
-findIndex :: (Bulk l a, Index l ~ Int)
+findIndex :: BulkI l a
           => (a -> Bool) -> Array l a -> Maybe Int
 
 findIndex p !arr

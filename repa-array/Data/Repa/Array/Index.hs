@@ -17,7 +17,7 @@ module Data.Repa.Array.Index
         , ish0, ish1, ish2, ish3, ish4, ish5
 
           -- * Layouts
-        , Layout(..))
+        , Layout(..),   LayoutI)
 where
 import Data.Repa.Array.Internals.Shape
 import Data.Repa.Array.Internals.Layout

@@ -123,7 +123,7 @@ instance Unpack (Buffer r a) tBuf
 --
 --   The first argument is the name of the underlying linear layout
 --   which stores the elements.
-vector  :: (Layout l, Index l ~ Int)
+vector  :: LayoutI l
         => Name l -> Int -> E l DIM1
 vector n len            
         = create (E n (RC RZ)) (Z :. len)
@@ -131,7 +131,7 @@ vector n len
 
 -- | Yield a layout for a matrix with the given number of
 --   rows and columns.
-matrix  :: (Layout l, Index l ~ Int)
+matrix  :: LayoutI l
         => Name l -> Int -> Int -> E l DIM2
 matrix n rows cols
         = create (E n (RC (RC RZ))) (Z :. rows :. cols)
@@ -139,7 +139,7 @@ matrix n rows cols
 
 -- | Yield a layout for a cube with the given number of
 --   planes, rows, and columns.
-cube    :: (Layout l, Index l ~ Int)
+cube    :: LayoutI l
         => Name l -> Int -> Int -> Int -> E l DIM3
 cube n planes rows cols
         = create (E n (RC (RC (RC RZ)))) (Z :. planes :. rows :. cols)
