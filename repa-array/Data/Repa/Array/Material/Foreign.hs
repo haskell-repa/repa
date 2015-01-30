@@ -41,7 +41,7 @@ deriving instance Show F
 
 
 ------------------------------------------------------------------------------
--- | Foreign arrays
+-- | Foreign arrays.
 instance Layout F where
  data Name  F            = F
  type Index F            = Int
@@ -59,7 +59,7 @@ deriving instance Show (Name F)
 
 
 -------------------------------------------------------------------------------
--- | Foreign arrays
+-- | Foreign arrays.
 instance Storable a => Bulk F a where
  data Array F  a          = FArray !Int !Int !(ForeignPtr a)
  layout (FArray _  len _) = Foreign len

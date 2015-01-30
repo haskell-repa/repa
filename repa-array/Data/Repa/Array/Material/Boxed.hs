@@ -1,14 +1,12 @@
-{-# OPTIONS -fno-warn-orphans #-}
-module Data.Repa.Array.Material.Boxed () where
 
-{-
-        ( B    (..)
+module Data.Repa.Array.Material.Boxed
+        ( B      (..)
         , Array  (..)
-        , Buffer (..)
-        , Window (..))
+        , Buffer (..))
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Index
+import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
 import Data.Word
@@ -18,78 +16,100 @@ import qualified Data.Vector.Mutable                    as VM
 #include "repa-array.h"
 
 
--- | Representation tag for Unsafe arrays of Boxed elements.
-data B = B
+-- | Layout an array as flat vector of boxed elements.
+--
+--   UNSAFE: Indexing into raw material arrays is not bounds checked.
+--   You may want to wrap this with a Checked layout as well.
+--
+data B  = Boxed { boxedLength :: Int}
+
+deriving instance Eq B
+deriving instance Show B
 
 
+------------------------------------------------------------------------------
+-- | Boxed arrays.
+instance Layout B where
+ data Name  B                   = B
+ type Index B                   = Int
+ create B len                   = Boxed len
+ extent (Boxed len)             = len
+ toIndex   _ ix                 = ix
+ fromIndex _ ix                 = ix
+ {-# INLINE_ARRAY create    #-}
+ {-# INLINE_ARRAY extent    #-}
+ {-# INLINE_ARRAY toIndex   #-}
+ {-# INLINE_ARRAY fromIndex #-}
+
+deriving instance Eq   (Name B)
+deriving instance Show (Name B)
+
+
+------------------------------------------------------------------------------
 -- | Boxed arrays.
 instance Bulk B a where
- data Array S.B sh a             = SBArray (Array (K U.B) sh a)
- index  (SBArray inner) ix       = index inner ix
- extent (SBArray inner)          = extent inner
- safe  arr                       = arr
- unsafe (SBArray (KArray inner)) = inner
- {-# INLINE_ARRAY index  #-}
- {-# INLINE_ARRAY extent #-}
- {-# INLINE_ARRAY safe   #-}
- {-# INLINE_ARRAY unsafe #-}
+ data Array B a                  = BArray (V.Vector a)
+ layout (BArray vec)             = Boxed (V.length vec)
+ index  (BArray vec) ix          = V.unsafeIndex vec ix
+ {-# INLINE_ARRAY layout  #-}
+ {-# INLINE_ARRAY index   #-}
 
-deriving instance (Show sh, Show a) => Show (Array S.B sh a)
+deriving instance Show a => Show (Array B a)
 
 
 -------------------------------------------------------------------------------
 -- | Boxed windows.
-instance Window U.B DIM1 a where
- window (Z :. start) (Z :. len) (UBArray _sh vec)
-        = UBArray (Z :. len) (V.slice start len vec)
+instance Windowable B a where
+ window st len (BArray vec)
+        = BArray (V.slice st len vec)
  {-# INLINE_ARRAY window #-}
 
 
--- Target ---------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Boxed buffers.
-instance Target U.B e (VM.IOVector e) where
- data Buffer U.B e 
-  = UBBuffer !(VM.IOVector e)
+instance Target B a where
+ data Buffer B a
+  = BBuffer !(VM.IOVector a)
 
- unsafeNewBuffer len
-  = liftM UBBuffer (VM.unsafeNew len)
+ unsafeNewBuffer (Boxed len)
+  = liftM BBuffer (VM.unsafeNew len)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
 
- unsafeWriteBuffer (UBBuffer mvec) ix
+ unsafeWriteBuffer (BBuffer mvec) ix
   = VM.unsafeWrite mvec ix
  {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
- unsafeGrowBuffer (UBBuffer mvec) bump
+ unsafeGrowBuffer (BBuffer mvec) bump
   = do  mvec'   <- VM.unsafeGrow mvec bump
-        return  $ UBBuffer mvec'
+        return  $ BBuffer mvec'
  {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
- unsafeFreezeBuffer sh (UBBuffer mvec)     
+ unsafeFreezeBuffer (BBuffer mvec)     
   = do  vec     <- V.unsafeFreeze mvec
-        return  $  UBArray sh vec
+        return  $  BArray vec
  {-# INLINE_ARRAY unsafeFreezeBuffer #-}
 
- unsafeSliceBuffer start len (UBBuffer mvec)
+ unsafeSliceBuffer start len (BBuffer mvec)
   = do  let mvec'  = VM.unsafeSlice start len mvec
-        return $ UBBuffer mvec'
+        return $ BBuffer mvec'
  {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer _ 
   = return ()
  {-# INLINE_ARRAY touchBuffer #-}
 
- {-# SPECIALIZE instance Target U.B Int    (VM.IOVector Int)    #-}
- {-# SPECIALIZE instance Target U.B Float  (VM.IOVector Float)  #-}
- {-# SPECIALIZE instance Target U.B Double (VM.IOVector Double) #-}
- {-# SPECIALIZE instance Target U.B Word8  (VM.IOVector Word8)  #-}
- {-# SPECIALIZE instance Target U.B Word16 (VM.IOVector Word16) #-}
- {-# SPECIALIZE instance Target U.B Word32 (VM.IOVector Word32) #-}
- {-# SPECIALIZE instance Target U.B Word64 (VM.IOVector Word64) #-}
+ {-# SPECIALIZE instance Target B Int    #-}
+ {-# SPECIALIZE instance Target B Float  #-}
+ {-# SPECIALIZE instance Target B Double #-}
+ {-# SPECIALIZE instance Target B Word8  #-}
+ {-# SPECIALIZE instance Target B Word16 #-}
+ {-# SPECIALIZE instance Target B Word32 #-}
+ {-# SPECIALIZE instance Target B Word64 #-}
 
 
-instance Unpack (Buffer U.B e) (VM.IOVector e) where
- unpack (UBBuffer vec) = vec `seq` vec
- repack !_ !vec        = UBBuffer vec
+instance Unpack (Buffer B a) (VM.IOVector a) where
+ unpack (BBuffer vec)  = vec `seq` vec
+ repack !_ !vec        = BBuffer vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
--}
+

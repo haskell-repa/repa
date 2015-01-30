@@ -14,8 +14,8 @@ import Prelude                          as P
 -- | Class of manifest array representations that can be constructed 
 --   in a random-access manner.
 --
+---
 --   TODO: generalise to work with higher ranked indices.
---
 class Layout l => Target l a where
 
  -- | Mutable buffer for some array representation.

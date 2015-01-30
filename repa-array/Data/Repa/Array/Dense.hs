@@ -5,7 +5,7 @@ module Data.Repa.Array.Dense
         , Array  (..)
         , Buffer (..)
 
-        -- * Common layouts)
+        -- * Common layouts
         , vector
         , matrix
         , cube)
@@ -41,7 +41,7 @@ deriving instance (Show r, Show l) => Show (E r l)
 
 
 -------------------------------------------------------------------------------
--- The elements of Flat arrays are stored in row-wise order.
+-- | Dense arrays.
 instance (Index r ~ Int, Layout r, Layout l)
       =>  Layout (E r l) where
 
@@ -61,8 +61,7 @@ instance (Index r ~ Int, Layout r, Layout l)
 
 
 -------------------------------------------------------------------------------
--- The elements of Flat arrays are stored in some 
--- underlying linear representation.
+-- | Dense arrays.
 instance (Index r ~ Int, Layout l, Bulk r a)
       =>  Bulk (E r l) a where
         
@@ -73,8 +72,8 @@ instance (Index r ~ Int, Layout l, Bulk r a)
         {-# INLINE index  #-}
 
 
--- When constructing flat arrays we use the same buffer
--- type as the underlying linear representation.
+-------------------------------------------------------------------------------
+-- | Dense buffers.
 instance (Index r ~ Int, Layout l, Target r a)
       =>  Target (E r l) a where
 

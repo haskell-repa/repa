@@ -19,7 +19,7 @@ data L  = Linear
         { linearLength  :: Int }
 
 
--- | Linear layout
+-- | Linear layout.
 instance Layout L where
  data Name  L           = L
  type Index L           = Int
@@ -29,7 +29,7 @@ instance Layout L where
  fromIndex _ ix         = ix
 
 
--- | Linear arrays
+-- | Linear arrays.
 instance Bulk L Int where
  data Array L Int       = LArray Int
  layout (LArray len)    = Linear len

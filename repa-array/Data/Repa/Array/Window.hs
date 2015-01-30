@@ -19,6 +19,7 @@ data W l
         , windowInner   :: l }
 
 
+-- | Windowed arrays.
 instance Layout l => Layout (W l) where
         data Name  (W l) = W (Name l)
         type Index (W l) = Index l
@@ -43,9 +44,7 @@ instance Layout l => Layout (W l) where
 
 
 -- | Windowed arrays.
-instance Bulk l a 
-      => Bulk (W l) a where
-
+instance Bulk l a => Bulk (W l) a where
  data Array (W l) a             = WArray !(Index l) !(Index l) !(Array l a)
  layout (WArray st  sz inner)   = Window st sz (layout inner)
  index  (WArray st _  inner) ix = index inner (addDim st ix)
@@ -76,6 +75,7 @@ entire arr
 class Bulk l a    => Windowable l a where
  window :: Index l -> Index l -> Array l a -> Array l a
 
+-- | Windows are windowable.
 instance Bulk l a => Windowable (W l) a where
  window start _shape (WArray wStart wShape arr)
         = WArray (addDim wStart start) wShape arr

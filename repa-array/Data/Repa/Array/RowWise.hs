@@ -119,7 +119,7 @@ instance ( Layout  (RW sh)
         {-# INLINE fromIndex #-}
 
 
--- | Row-wise arrays
+-- | Row-wise arrays.
 instance (Layout (RW sh), Index (RW sh) ~ sh)
       => Bulk (RW sh) sh where
  data Array (RW sh) sh          = RArray sh

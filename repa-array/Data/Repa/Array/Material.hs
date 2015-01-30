@@ -5,7 +5,7 @@ module Data.Repa.Array.Material
 
           -- * Unboxed arrays
         , U     (..)
-        , Unbox (..)
+        , Unbox
 
           -- ** Conversion
         , fromVector

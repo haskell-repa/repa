@@ -1,4 +1,4 @@
-{-# OPTIONS -fno-warn-orphans #-}
+
 module Data.Repa.Array.Material.Unboxed
         ( U      (..)
         , Name   (..)
@@ -40,6 +40,7 @@ deriving instance Show U
 
 
 -------------------------------------------------------------------------------
+-- | Unboxed arrays.
 instance Layout U where
  data Name  U                   = U
  type Index U                   = Int
@@ -94,7 +95,7 @@ instance U.Unbox a => Windowable U a where
 
 
 -------------------------------------------------------------------------------
--- | Unsafe Unboxed buffers.
+-- | Unboxed buffers.
 instance U.Unbox a => Target U a where
  data Buffer U a 
   = UBuffer !(UM.IOVector a)
