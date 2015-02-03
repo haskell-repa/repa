@@ -31,13 +31,7 @@ sourceTSV nChunk aFail hs
         -- cleanly at line boundaries. 
         sChunk  <- G.sourceChunks nChunk (== nl) aFail hs
 
-        -- Dice the chunks of data into arrays of lines and fields.
-        let isWhite c = c == nl || c == nr || c == nt
-            {-# INLINE isWhite #-}
-
-        sRows8  <- mapChunks_i 
-                     (A.mapElems (A.trimEnds isWhite) . A.diceOn nt nl) 
-                     sChunk
+        sRows8  <- mapChunks_i (A.diceSep nt nl) sChunk
 
         -- Convert element data from Word8 to Char.
         -- Chars take 4 bytes each, but are standard Haskell and pretty
