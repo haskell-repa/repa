@@ -3,7 +3,6 @@ module Data.Repa.IO.Array
         ( hGetArray,   hGetArrayPre
         , hPutArray)
 where
-import Data.Repa.Array.Index
 import Data.Repa.Array.Material.Foreign
 import qualified Foreign.Ptr            as F
 import qualified Foreign.ForeignPtr     as F
