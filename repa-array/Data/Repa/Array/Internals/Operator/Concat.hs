@@ -30,7 +30,7 @@ type ConcatDict lOut lIn tIn lDst a
         , Unpack (Array lIn a) tIn)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(len result) Concatenate nested arrays.
 --
 -- @
@@ -79,7 +79,7 @@ concat nDst vs
 {-# INLINE_ARRAY concat #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(len result) Concatenate the elements of some nested vector,
 --   inserting a copy of the provided separator array between each element.
 --
@@ -116,57 +116,63 @@ concatWith nDst !is !vs
         -- New buffer for the result vector.
         !buf_           <- unsafeNewBuffer  (create nDst 0)
         !buf            <- unsafeGrowBuffer buf_ (I# len)
-        let !(I# iLenY) = U.length lens
-        let !(I# iLenI) = A.length is
+
+        -- We checked that vs > 0 at the start, so this is safe.
         let !row0       = vs `index` 0
 
-        let loop_concatWith !sPEC !iO !iY !row !iX !iLenX
-             -- We've finished copying one of the source elements.
-             | 1# <- iX >=# iLenX
-             = case iY >=# iLenY -# 1# of
+        -- Number of columns.
+        let !(I# iLenY) = U.length lens
 
-                -- We've finished all of the source elements.
-                1# -> do
-                 _      <- loop_concatWith_inject sPEC iO 0#
-                 return ()
+        -- Length of separator array.
+        let !(I# iLenS) = A.length is
 
-                -- We've finished one of the source elements, but it wasn't
-                -- the last one. Inject the separator array then copy the 
-                -- next element.
-                _  -> do
+        let -- Source from column,
+            loop_concatWith !sPEC !mode !iO !iY !row !iX !iLenX !iS 
+             = case mode of
 
-                 -- TODO: We're probably getting an unboxing an reboxing
-                 --       here. Check the fused code.
-                 I# iO' <- loop_concatWith_inject sPEC iO 0#
-                 let !iY'         = iY +# 1#
-                 let !row'        = vs `index` (I# iY')
-                 let !(I# iLenX') = A.length row'
-                 loop_concatWith sPEC iO' iY' (unpack row') 0# iLenX'
+                -- Source from row
+                0# 
+                 -- We've finished one of the source rows, 
+                 --  so injet the separator array.
+                 | 1# <- iX >=# iLenX
+                 ->     loop_concatWith sPEC 1# iO         iY row iX         iLenX 0# 
 
-             -- Keep copying a source element.
-             | otherwise
-             = do let x = (repack row0 row) `index` (I# iX)
-                  unsafeWriteBuffer buf (I# iO) x
-                  loop_concatWith sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
-            {-# INLINE_INNER loop_concatWith #-}
+                 -- Keep copying the source row.
+                 | otherwise
+                 -> do  let !x = (repack row0 row) `index` (I# iX)
+                        unsafeWriteBuffer buf (I# iO) x
+                        loop_concatWith sPEC 0# (iO +# 1#) iY row (iX +# 1#) iLenX iS
 
-            -- Inject the separator array.
-            loop_concatWith_inject !sPEC !iO !n
-             | 1# <- n >=# iLenI = return (I# iO)
-             | otherwise
-             = do let x = is `index` (I# n)
-                  unsafeWriteBuffer buf (I# iO) x
-                  loop_concatWith_inject sPEC (iO +# 1#) (n +# 1#)
-            {-# INLINE_INNER loop_concatWith_inject #-}
+                -- Source from separator array
+                _
+                 -- We've finished the separator array.
+                 | 1# <- iS >=# iLenS 
+                 -> case iY >=# (iLenY -# 1#) of
 
+                     -- We've also finished all the rows, so we're done.
+                     1# -> return ()
+
+                     -- Move to the next row.
+                     _  -> do
+                        let !iY'         = iY +# 1#
+                        let !row'        = vs `index` (I# iY')
+                        let !(I# iLenX') = A.length row'
+                        loop_concatWith sPEC 0# iO  iY' (unpack row') 0# iLenX' 0#
+
+                 -- Keep copying from the separator array.
+                 | otherwise
+                 -> do  let !x  = is `index` (I# iS)
+                        unsafeWriteBuffer buf (I# iO) x
+                        loop_concatWith sPEC 1# (iO +# 1#) iY row iX iLenX (iS +# 1#)
+
+        -- First row.
         let !(I# iLenX0) = A.length row0
-        loop_concatWith V.SPEC 0# 0# (unpack row0) 0# iLenX0
+        loop_concatWith V.SPEC 0# 0# 0# (unpack row0) 0# iLenX0 0#
         unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concatWith #-}
 
 
-
--- Intercalate ----------------------------------------------------------------
+-- Intercalate ------------------------------------------------------------------------------------
 -- | O(len result) Insert a copy of the separator array between the elements of
 --   the second and concatenate the result.
 --

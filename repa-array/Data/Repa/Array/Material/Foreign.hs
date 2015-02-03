@@ -25,6 +25,7 @@ import Data.Repa.Fusion.Unpack
 import Data.ByteString                                  (ByteString)
 import qualified Foreign.ForeignPtr.Unsafe              as Unsafe
 import qualified Data.ByteString.Internal               as BS
+import GHC.Exts
 #include "repa-array.h"
 
 
@@ -84,9 +85,20 @@ deriving instance Show a => Show (Array F a)
 
 
 -- | Foreign arrays
+{-
 instance Unpack (Array F a) (Int, Int, ForeignPtr a) where
  unpack (FArray st len fptr)    = (st, len, fptr)
  repack _ (st, len, fptr)       = FArray st len fptr
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
+-}
+data FArrayUnpacked a
+        = FArrayUnpacked Int# Int# !(ForeignPtr a)
+
+
+instance Unpack (Array F a) (FArrayUnpacked a) where
+ unpack (FArray (I# st) (I# len) fptr)    = FArrayUnpacked st len fptr
+ repack _ (FArrayUnpacked st len fptr)    = FArray (I# st) (I# len) fptr
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
 
@@ -139,7 +151,7 @@ instance Storable a => Target F a where
         let bytesStart   = sizeOf proxy * start
 
         ptr'            <- mallocBytes bytesLen'
-        copyBytes ptr' (plusPtr ptr bytesStart) bytesLen'
+        copyBytes ptr' (plusPtr ptr bytesStart) len
 
         fptr'   <- newForeignPtr finalizerFree ptr'
         return  $ FBuffer 0 len' fptr'
