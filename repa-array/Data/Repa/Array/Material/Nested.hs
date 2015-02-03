@@ -19,8 +19,11 @@ module Data.Repa.Array.Material.Nested
         , concats
 
         -- * Splitting
-        , segment, segmentOn
-        , dice,    diceOn
+        , segment
+        , segmentOn
+
+        , dice
+        , diceSep
 
         -- * Trimming
         , trims
@@ -36,8 +39,13 @@ import Data.Repa.Array.Index
 import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
+import Data.Repa.Eval.Stream                            as A
+import Data.Repa.Stream                                 as S
 import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Fusion.Stream              as S
+import qualified Data.Repa.Vector.Generic               as G
 import qualified Data.Repa.Vector.Unboxed               as U
+import Control.Monad.ST
 import Prelude                                          as P
 import Prelude  hiding (concat)
 #include "repa-array.h"
@@ -290,26 +298,25 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 -- | O(len src). Given field and row terminating values, 
 --   split an array into rows and fields.
 --
---   If you don't want the terminating values in the result then use 
---   `trimEnds` to trim them off.
---
--- @ 
--- > import Data.Repa.Nice
--- > nice $ diceOn '\t' '\n' $ fromList U \"A1\\tA2\\tA3\\nB1\\tB2\\nC1\\tC2\\tC3\\n\\n\"
--- [[\"A1\\t\",\"A2\\t\",\"A3\\n\"],[\"B1\\t\",\"B2\\n\"],[\"C1\\t\",\"C2\\t\",\"C3\\n\"],[\"\\n\"]]
--- @
---
-diceOn  :: (BulkI l a, Windowable l a, U.Unbox a, Eq a)
+diceSep  :: (BulkI l a, Windowable l a, U.Unbox a, Eq a)
         => a            -- ^ Terminating element for inner segments.
         -> a            -- ^ Terminating element for outer segments.
         -> Array l a    -- ^ Vector to dice.
         -> Array N (Array N (Array l a))
 
-diceOn !xEndWord !xEndLine !arr
-        = dice  (const True) (\x -> x == xEndWord || x == xEndLine)
-                (const True) (\x -> x == xEndLine)
-                arr
-{-# INLINE_ARRAY diceOn #-}
+diceSep !xEndCol !xEndRow !arr
+ = let  (startsLensCol, startsLensRow)
+                = runST
+                $ G.unstreamToVector2
+                $ S.diceSepS  (== xEndCol) (== xEndRow)
+                $ S.liftStream
+                $ streamOfArray arr
+
+        (startsCol, endsCol)  = U.unzip startsLensCol
+        (startsRow, endsRow)  = U.unzip startsLensRow
+
+   in   NArray startsRow endsRow $ NArray startsCol endsCol arr
+{-# INLINE_ARRAY diceSep #-}
 
 
 -------------------------------------------------------------------------------

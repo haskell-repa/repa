@@ -14,7 +14,7 @@ module Data.Repa.Vector.Unboxed
         -- * Splitting
         , findSegments
         , findSegmentsFrom
-        , diceWith
+        , diceSep
 
           -- * Scan operators
           -- | These have a scan-like structure,
@@ -245,26 +245,22 @@ findSegmentsFrom pStart pEnd len get
 
 
 -------------------------------------------------------------------------------
--- | Given predicates that detect the begining and end of interesting segments
---   of information, scan through a vector looking for when these begin
---   and end.
+-- | Dice a vector stream into rows and columns.
 --
-diceWith
-        :: Unbox a
-        => (a -> Bool)  -- ^ Detect the start of an inner and outer segment.
-        -> (a -> Bool)  -- ^ Detect the end   of an inner segment.
-        -> (a -> Bool)  -- ^ Detect the end   of an inner and outer segment.
+diceSep :: Unbox a
+        => (a -> Bool)  -- ^ Detect the end of a column.
+        -> (a -> Bool)  -- ^ Detect the end of a row.
         -> U.Vector a
         -> (U.Vector (Int, Int), U.Vector (Int, Int))
                         -- ^ Segment starts   and lengths
 
-diceWith pStart pEndInner pEndBoth vec
+diceSep pEndInner pEndBoth vec
         = runST
         $ G.unstreamToVector2
-        $ diceWithS pStart pEndInner pEndBoth 
+        $ diceSepS pEndInner pEndBoth 
         $ S.liftStream
         $ G.stream vec
-{-# INLINE diceWith #-}
+{-# INLINE diceSep #-}
 
 
 -------------------------------------------------------------------------------

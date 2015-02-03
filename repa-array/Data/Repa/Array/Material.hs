@@ -35,8 +35,11 @@ module Data.Repa.Array.Material
         , concats
 
           -- ** Splitting
-        , segment,      segmentOn
-        , dice,         diceOn
+        , segment
+        , segmentOn
+
+        , dice
+        , diceSep
 
           -- ** Trimming
         , trims
