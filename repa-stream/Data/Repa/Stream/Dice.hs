@@ -25,7 +25,6 @@ diceWithS pStart pEndInner pEndBoth (Stream istep s0 sz)
  = Stream ostep (s0, True, 0, 0, 0, Nothing) (S.toMax sz)
 
  where
-        -- TODO: check end of input condition with no inner segments.
         ostep (_, False, _, _, _, _)
          = return Done
 
@@ -90,7 +89,7 @@ diceWithS pStart pEndInner pEndBoth (Stream istep s0 sz)
                   -> return  $ Yield 
                         ( Just  (iInnerStart, iInnerLen)
                         , Nothing)
-                        ( si', f, iSrc + 1, iOuterStart, iOuterLen + 1, Nothing)
+                        ( si', f, iSrc + 1, iOuterStart, iOuterLen,     Nothing)
 
                   -- Another element of the inner segment.
                   | otherwise
