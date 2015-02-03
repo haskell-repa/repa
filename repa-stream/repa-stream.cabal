@@ -37,6 +37,7 @@ Library
         Data.Repa.Stream.Extract
         Data.Repa.Stream.Ratchet
         Data.Repa.Stream.Segment
+        Data.Repa.Stream.Dice
 
   include-dirs:
         include
@@ -53,9 +54,11 @@ Library
         -funbox-strict-fields
 
   extensions:
+        CPP
         NoMonomorphismRestriction
         ExistentialQuantification
         BangPatterns
         FlexibleContexts
+        PatternGuards
 
 
