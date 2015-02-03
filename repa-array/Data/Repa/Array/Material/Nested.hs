@@ -416,7 +416,7 @@ ragspose3 (NArray starts1 lengths1 (NArray starts2 lengths2 elems))
         starts1'          = U.unsafeInit $ U.scanl (+) 0 lengths1'
 
    in   NArray starts1' lengths1' (NArray starts2' lengths2' elems)
-{-# NOINLINE ragspose3 #-}
+{-# INLINE_ARRAY ragspose3 #-}
 --  NOINLINE Because the operation is entirely on the segment descriptor.
 --           This function won't fuse with anything externally, 
 --           and it does not need to be specialiased.

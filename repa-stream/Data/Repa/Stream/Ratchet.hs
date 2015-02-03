@@ -47,15 +47,19 @@ unsafeRatchetS
         -> IORef (UM.IOVector Int)      -- ^ Vector holding segment lengths.
         -> Stream IO   Int
 
-unsafeRatchetS mvStarts vMax rmvLens
+unsafeRatchetS !mvStarts !vMax !rmvLens
  = Stream ostep (0, Nothing, 0, 0) S.Unknown
  where
         !iSegMax = GM.length mvStarts - 1
 
         ostep (iSeg, mvmLens, oSeg, oLen)
+         = ostep' iSeg mvmLens oSeg oLen
+        {-# INLINE ostep #-}
+
+        ostep' !iSeg !mvmLens !oSeg !oLen
          | iSeg <= iSegMax
-         = do   iVal      <- GM.unsafeRead mvStarts iSeg
-                let iNext = vMax `G.unsafeIndex` iSeg
+         = do   !iVal      <- GM.unsafeRead mvStarts iSeg
+                let !iNext = vMax `G.unsafeIndex` iSeg
                 if  iVal >= iNext
                  then   return $ Skip       (iSeg + 1, mvmLens, oSeg, oLen)
                  else do
@@ -66,32 +70,32 @@ unsafeRatchetS mvStarts vMax rmvLens
          -- so write the output length into the lengths vector.
          | oLen > 0
          = do   -- Get the current output vector.
-                vmLens  <- case mvmLens of
-                                Nothing     -> readIORef rmvLens
-                                Just vmLens -> return $ vmLens
+                !vmLens  <- case mvmLens of
+                              Nothing     -> readIORef rmvLens
+                              Just vmLens -> return $ vmLens
 
                 -- If the output vector is full then we need to grow it.
                 let !oSegLen = UM.length vmLens
-                if oSeg >= oSegLen
+                if   oSeg >= oSegLen
                  then do
-                        vmLens' <- UM.unsafeGrow vmLens (UM.length vmLens)
+                        !vmLens' <- UM.unsafeGrow vmLens (UM.length vmLens)
                         writeIORef rmvLens vmLens'
                         UM.unsafeWrite vmLens' oSeg oLen
                         return $ Skip (0, Just vmLens', oSeg + 1, 0)
 
                  else do
-                        UM.write vmLens  oSeg oLen
+                        UM.unsafeWrite vmLens  oSeg oLen
                         return $ Skip (0, Just vmLens,  oSeg + 1, 0)
 
          | otherwise
-         = do   vmLens  <- case mvmLens of
+         = do   !vmLens  <- case mvmLens of
                                 Nothing     -> readIORef rmvLens
                                 Just vmLens -> return $ vmLens
 
-                let vmLens' = UM.unsafeSlice 0 oSeg vmLens
+                let !vmLens' = UM.unsafeSlice 0 oSeg vmLens
                 writeIORef rmvLens vmLens'
                 return Done
-        {-# INLINE_INNER ostep #-}
+        {-# INLINE_INNER ostep' #-}
 {-# INLINE_STREAM unsafeRatchetS #-}
 
 

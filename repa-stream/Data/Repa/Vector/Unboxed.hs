@@ -112,7 +112,7 @@ ratchet vStartsMax
         mvStarts   <- U.thaw vStarts
 
         -- Make a vector for the output lengths.
-        mvLens     <- UM.new (U.length vStartsMax)
+        mvLens     <- UM.unsafeNew (U.length vStartsMax)
         rmvLens    <- newIORef mvLens
 
         -- Run the computation
