@@ -9,7 +9,7 @@ import qualified Data.Vector.Fusion.Stream.Size as S
 
 -------------------------------------------------------------------------------
 -- | Given predicates that detect the begining and end of interesting segments
---   of informaiton, scan through a vector looking for when these begin
+--   of information, scan through a vector looking for when these begin
 --   and end.
 --
 diceWithS   
@@ -109,6 +109,6 @@ diceWithS pStart pEndInner pEndBoth (Stream istep s0 sz)
                         ( Just (iInnerStart, iInnerLen)
                         , Just (iOuterStart, iOuterLen))
                         ( si,  True, iSrc, iOuterStart, iOuterLen,      Nothing)
-
+{-# INLINE_STREAM diceWithS #-}
 
         

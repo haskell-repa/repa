@@ -5,10 +5,16 @@ module Data.Repa.Vector.Unboxed
         , unchainToVector
         , unchainToMVector
 
+        -- * Generators
+        , ratchet
+
+        -- * Extract
+        , extract
+
+        -- * Splitting
         , findSegments
         , findSegmentsFrom
-        , ratchet
-        , extract
+        , diceWith
 
           -- * Scan operators
           -- | These have a scan-like structure,
@@ -29,6 +35,7 @@ import Data.Repa.Fusion.Option
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
+import Data.Repa.Stream.Dice
 import Data.Vector.Unboxed                              (Unbox, Vector)
 import Data.Vector.Unboxed.Mutable                      (MVector)
 import Data.Repa.Chain                                  (Chain)
@@ -38,7 +45,7 @@ import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Unboxed.Mutable            as UM
 import qualified Data.Vector.Generic                    as G
 import qualified Data.Vector.Generic.Mutable            as GM
-import qualified Data.Vector.Fusion.Stream.Monadic      as S
+import qualified Data.Vector.Fusion.Stream              as S
 import Control.Monad.ST
 import Control.Monad.Primitive
 import System.IO.Unsafe
@@ -70,6 +77,73 @@ unchainToMVector
         -> m (MVector (PrimState m) a, s)
 unchainToMVector = G.unchainToMVector
 {-# INLINE unchainToMVector #-}
+
+
+
+-------------------------------------------------------------------------------
+-- | Interleaved `enumFromTo`. 
+--
+--   Given a vector of starting values, and a vector of stopping values, 
+--   produce an stream of elements where we increase each of the starting
+--   values to the stopping values in a round-robin order. Also produce a
+--   vector of result segment lengths.
+--
+-- @
+--  unsafeRatchetS [10,20,30,40] [15,26,33,47]
+--  =  [10,20,30,40       -- 4
+--     ,11,21,31,41       -- 4
+--     ,12,22,32,42       -- 4
+--     ,13,23   ,43       -- 3
+--     ,14,24   ,44       -- 3
+--        ,25   ,45       -- 2
+--              ,46]      -- 1
+--
+--         ^^^^             ^^^
+--       Elements         Lengths
+-- @
+--
+ratchet :: U.Vector (Int, Int)          -- ^ Starting and ending values.
+        -> (U.Vector Int, U.Vector Int) -- ^ Elements and Lengths vectors.
+ratchet vStartsMax 
+ = unsafePerformIO
+ $ do   
+        -- Make buffers for the start values and unpack the max values.
+        let (vStarts, vMax) = U.unzip vStartsMax
+        mvStarts   <- U.thaw vStarts
+
+        -- Make a vector for the output lengths.
+        mvLens     <- UM.new (U.length vStartsMax)
+        rmvLens    <- newIORef mvLens
+
+        -- Run the computation
+        mvStarts'  <- GM.munstream $ unsafeRatchetS mvStarts vMax rmvLens
+
+        -- Read back the output segment lengths and freeze everything.
+        mvLens'    <- readIORef rmvLens
+        vStarts'   <- G.unsafeFreeze mvStarts'
+        vLens'     <- G.unsafeFreeze mvLens'
+        return (vStarts', vLens')
+{-# INLINE ratchet #-}
+
+
+-------------------------------------------------------------------------------
+-- | Extract segments from some source array and concatenate them.
+-- 
+-- @
+--    let arr = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+--    in  extractS (index arr) [(0, 1), (3, 3), (2, 6)]
+--    
+--     => [10, 13, 14, 15, 12, 13, 14, 15, 16, 17]
+-- @
+--
+extract :: Unbox a 
+        => (Int -> a)           -- ^ Function to get elements from the source.
+        -> U.Vector (Int, Int)  -- ^ Segment starts and lengths.
+        -> U.Vector a           -- ^ Result elements.
+
+extract get vStartLen
+ = G.unstream $ extractS get (G.stream vStartLen)
+{-# INLINE extract #-}
 
 
 -------------------------------------------------------------------------------
@@ -171,69 +245,26 @@ findSegmentsFrom pStart pEnd len get
 
 
 -------------------------------------------------------------------------------
--- | Interleaved `enumFromTo`. 
+-- | Given predicates that detect the begining and end of interesting segments
+--   of information, scan through a vector looking for when these begin
+--   and end.
 --
---   Given a vector of starting values, and a vector of stopping values, 
---   produce an stream of elements where we increase each of the starting
---   values to the stopping values in a round-robin order. Also produce a
---   vector of result segment lengths.
---
--- @
---  unsafeRatchetS [10,20,30,40] [15,26,33,47]
---  =  [10,20,30,40       -- 4
---     ,11,21,31,41       -- 4
---     ,12,22,32,42       -- 4
---     ,13,23   ,43       -- 3
---     ,14,24   ,44       -- 3
---        ,25   ,45       -- 2
---              ,46]      -- 1
---
---         ^^^^             ^^^
---       Elements         Lengths
--- @
---
-ratchet :: U.Vector (Int, Int)          -- ^ Starting and ending values.
-        -> (U.Vector Int, U.Vector Int) -- ^ Elements and Lengths vectors.
-ratchet vStartsMax 
- = unsafePerformIO
- $ do   
-        -- Make buffers for the start values and unpack the max values.
-        let (vStarts, vMax) = U.unzip vStartsMax
-        mvStarts   <- U.thaw vStarts
+diceWith
+        :: Unbox a
+        => (a -> Bool)  -- ^ Detect the start of an inner and outer segment.
+        -> (a -> Bool)  -- ^ Detect the end   of an inner segment.
+        -> (a -> Bool)  -- ^ Detect the end   of an inner and outer segment.
+        -> U.Vector a
+        -> (U.Vector (Int, Int), U.Vector (Int, Int))
+                        -- ^ Segment starts   and lengths
 
-        -- Make a vector for the output lengths.
-        mvLens     <- UM.new (U.length vStartsMax)
-        rmvLens    <- newIORef mvLens
-
-        -- Run the computation
-        mvStarts'  <- GM.munstream $ unsafeRatchetS mvStarts vMax rmvLens
-
-        -- Read back the output segment lengths and freeze everything.
-        mvLens'    <- readIORef rmvLens
-        vStarts'   <- G.unsafeFreeze mvStarts'
-        vLens'     <- G.unsafeFreeze mvLens'
-        return (vStarts', vLens')
-{-# INLINE ratchet #-}
-
-
--------------------------------------------------------------------------------
--- | Extract segments from some source array and concatenate them.
--- 
--- @
---    let arr = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
---    in  extractS (index arr) [(0, 1), (3, 3), (2, 6)]
---    
---     => [10, 13, 14, 15, 12, 13, 14, 15, 16, 17]
--- @
---
-extract :: Unbox a 
-        => (Int -> a)           -- ^ Function to get elements from the source.
-        -> U.Vector (Int, Int)  -- ^ Segment starts and lengths.
-        -> U.Vector a           -- ^ Result elements.
-
-extract get vStartLen
- = G.unstream $ extractS get (G.stream vStartLen)
-{-# INLINE extract #-}
+diceWith pStart pEndInner pEndBoth vec
+        = runST
+        $ G.unstreamToVector2
+        $ diceWithS pStart pEndInner pEndBoth 
+        $ S.liftStream
+        $ G.stream vec
+{-# INLINE diceWith #-}
 
 
 -------------------------------------------------------------------------------
