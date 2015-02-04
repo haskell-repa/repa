@@ -5,18 +5,33 @@ module Data.Repa.Flow.IO.Bucket
         , openBucket
 
           -- * Reading files
-        , bucketsFromFile)
+        , bucketsFromFile
+
+          -- * Bucket IO
+        , bClose
+        , bAtEnd
+        , bGetArray)
 where
-import System.IO
 import Data.Word
+import System.IO
+import Control.Monad
+import Data.Repa.Array                  as A
+import Data.Repa.Array.Material         as A
+import Data.Repa.IO.Array               as A
 import qualified Foreign.Storable       as Foreign
 import qualified Foreign.Marshal.Alloc  as Foreign
+import Prelude                          as P
 
 
--- | A bucket represents portion of a whole data-set on disk.
+-- | A bucket represents portion of a whole data-set on disk,
+--   and contains a file handle that points to the next piece of 
+--   data to be read or written.
 --  
---   It could be a portion of a single flat file, 
---   or one file of a split data set.
+--   The bucket could be created from a portion of a single flat file,
+--   or be one file of a split data set. The main advantage over a plain
+--  `Handle` is that a `Bucket` can represent a small portion of a larger
+--   file.
+--
 data Bucket
         = Bucket
         { -- | Physical location of the file.
@@ -60,7 +75,8 @@ openBucket path mode
 --   length, in either records or buckets, though we try to give them the
 --   approximatly the same number of bytes.
 --
---   * The provided file handle must support seeking, else you'll get an exception.
+--   * The provided file handle must support seeking, else you'll get an
+--     exception.
 --
 bucketsFromFile 
         :: FilePath             -- ^ Path to file to read.
@@ -92,7 +108,8 @@ bucketsFromFile path n pEnd
              = do 
                   -- Push the next handle an even distance into the
                   -- remaining part of the file.
-                  let lenWanted = remain `div` (fromIntegral $ length (h1 : h2 : hs))
+                  let lenWanted 
+                       = remain `div` (fromIntegral $ P.length (h1 : h2 : hs))
                   let posWanted = pos1 + lenWanted
                   hSeek h2 AbsoluteSeek posWanted
 
@@ -107,7 +124,8 @@ bucketsFromFile path n pEnd
 
         -- Ending positions and lengths for each bucket.
         let ends  = tail (starts ++ [lenTotal])
-        let lens  = map (\(start, end) -> end - start) $ zip starts ends
+        let lens  = P.map (\(start, end) -> end - start) 
+                  $ P.zip starts ends
 
         return [ Bucket
                   { bucketFilePath = path
@@ -117,6 +135,11 @@ bucketsFromFile path n pEnd
                         | start <- starts
                         | len   <- lens
                         | h     <- hh ]
+{-# NOINLINE bucketsFromFile #-}
+--  NOINLINE to avoid polluting the core code of the consumer.
+--  This prevents it from being specialised for the pEnd predicate, 
+--  but we're expecting pEnd to be applied a small number of times,
+--  so it shouldn't matter.
 
 
 -- | Advance a file handle until we reach a byte that, matches the given 
@@ -137,3 +160,52 @@ advance h pEnd
         loop_advance
         Foreign.free buf
         hTell h
+
+
+-- Bucket IO ------------------------------------------------------------------
+
+-- | Close a bucket, releasing the contained filed handle.
+bClose :: Bucket -> IO ()
+bClose bucket
+        = hClose $ bucketHandle bucket
+{-# NOINLINE bClose #-}
+
+
+-- | Check if the contained file handle is at the end of the bucket.
+bAtEnd :: Bucket -> IO Bool
+bAtEnd bucket
+ = do   eof     <- hIsEOF $ bucketHandle bucket
+
+        -- Position in the file.
+        posFile  <- hTell $ bucketHandle bucket
+
+        -- Check for bogus position before we subtract the startPos.
+        -- If this happenes then something has messed with our handle.
+        when (posFile < bucketStartPos bucket)
+         $ error "repa-flow.bAtEnd: handle position is outside bucket."
+
+        -- Position in the bucket.
+        let posBucket = posFile - bucketStartPos bucket
+
+        return $ eof || (case bucketLength bucket of
+                                Nothing  -> False
+                                Just len -> posBucket >= len)
+{-# NOINLINE bAtEnd #-}
+
+
+-- | Get some data from a bucket.
+bGetArray :: Bucket -> Integer -> IO (Array F Word8)
+bGetArray bucket lenWanted
+ = do   
+        let len = case bucketLength bucket of
+                        Nothing         -> lenWanted
+                        Just lenMax     -> max len lenMax
+
+        hGetArray (bucketHandle bucket) 
+         $ fromIntegral len
+{-# NOINLINE bGetArray #-}
+
+
+
+
+

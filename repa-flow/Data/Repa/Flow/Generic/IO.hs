@@ -13,6 +13,7 @@ module Data.Repa.Flow.Generic.IO
         , sinkChars
         , sinkLines)
 where
+import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Generic.Operator          as F
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Fusion.Unpack                  as F
@@ -41,7 +42,6 @@ lix _        _  = Nothing
 --
 ---
 --   TODO: reinstate finalisers
-
 fromFiles 
         :: [FilePath]                           -- ^ Files to open.
         -> ([Handle] -> IO (Sources Int IO a))  -- ^ Consumer.
