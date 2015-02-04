@@ -16,12 +16,13 @@ module Data.Repa.Flow.IO.Default
 
           -- * Sinking
         , F.toFiles
+        , F.bucketsToDir
+        , F.bucketToFile
         , sinkChars
         , sinkLines
         , sinkBytes)
 where
 import qualified Data.Repa.Flow.IO              as F
-import qualified Data.Repa.Flow.IO.Bucket       as F
 #include "repa-stream.h"
 
 

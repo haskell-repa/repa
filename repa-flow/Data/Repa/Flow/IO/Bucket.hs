@@ -196,7 +196,7 @@ bucketsToDir n path use
  = do   
         createDirectory path
 
-        let makeName i = path </> ((replicate (6 - (P.length $ show i)) ' ') ++ show i)
+        let makeName i = path </> ((replicate (6 - (P.length $ show i)) '0') ++ show i)
         let names      = [makeName i | i <- [0 .. n - 1]]
 
         let newBucket file

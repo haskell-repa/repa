@@ -3,6 +3,7 @@
 module Data.Repa.Flow.IO
         ( -- * Sourcing
           G.fromFiles
+        , bucketsFromFile
         , sourceBytes
         , sourceChars
         , sourceLines
@@ -11,6 +12,8 @@ module Data.Repa.Flow.IO
 
           -- * Sinking
         , G.toFiles
+        , bucketsToDir
+        , bucketToFile
         , sinkBytes
         , sinkChars
         , sinkLines)
