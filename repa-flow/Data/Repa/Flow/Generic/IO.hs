@@ -32,16 +32,19 @@ lix (_ : xs) n  = lix xs (n - 1)
 lix _        _  = Nothing
 
 
--- Sourcing ---------------------------------------------------------------------------------------
+-- FromFiles --------------------------------------------------------------------------------------
 -- | Open some files for reading and use the handles to create `Sources`.
 --
 --   Finalisers are attached to the `Sources` so that each file will be 
 --   closed the first time the consumer tries to an element from the associated
 --   stream when no more are available.
 --
+---
+--   TODO: reinstate finalisers
+
 fromFiles 
-        :: [FilePath] 
-        -> ([Handle] -> IO (Sources Int IO a))
+        :: [FilePath]                           -- ^ Files to open.
+        -> ([Handle] -> IO (Sources Int IO a))  -- ^ Consumer.
         -> IO (Sources Int IO a)
 
 fromFiles paths use
@@ -50,6 +53,31 @@ fromFiles paths use
 {-# NOINLINE fromFiles #-}
 
 
+{-
+-- SplitFile --------------------------------------------------------------------------------------
+-- | Open a file for reading, splitting it into chunks and creating
+--   a stream for each of the chunks.
+--
+splitFile 
+        :: FilePath                             -- ^ File to open.
+        -> Int                                  -- ^ Number of chunks.
+        -> (Word8 -> Bool)                      -- ^ Detect the end of a record.
+        -> ([Handle] -> IO (Sources Int IO a))  -- ^ Consumer.
+        -> IO (Sources Int IO a)
+
+splitFile path chunks pEnd use
+ = do
+        -- Get a file handle for each of the chunks.
+        hs      <- mapM (flip openBinaryFile ReadMode) [1..chunks]
+
+ where
+
+        -- Advance the file 
+        advance h 
+-}
+
+
+-- Sourcing ---------------------------------------------------------------------------------------
 -- | Read complete records of data form a file, into chunks of the given length.
 --   We read as many complete records as will fit into each chunk.
 --
@@ -92,7 +120,7 @@ sourceChunks len pSep aFail hs
  where  
         pull_sourceChunks (IIx i _) eat eject
          = let Just h = lix hs i
-           in hIsEOF h >>= \eof ->
+           in  hIsEOF h >>= \eof ->
             if eof
                 -- We're at the end of the file.
                 then eject

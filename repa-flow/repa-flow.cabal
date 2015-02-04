@@ -30,6 +30,7 @@ Library
         Data.Repa.Flow.Generic
         Data.Repa.Flow.IO
         Data.Repa.Flow.IO.Default
+        Data.Repa.Flow.IO.Bucket
         Data.Repa.Flow.Simple
         Data.Repa.Flow.States
         Data.Repa.Flow
@@ -78,6 +79,7 @@ Library
         ConstraintKinds
         ForeignFunctionInterface
         StandaloneDeriving
+        ParallelListComp
 
         
 
