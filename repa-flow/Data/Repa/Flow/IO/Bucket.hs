@@ -9,8 +9,11 @@ module Data.Repa.Flow.IO.Bucket
 
           -- * Bucket IO
         , bClose
+        , bIsOpen
         , bAtEnd
-        , bGetArray)
+        , bSeek
+        , bGetArray
+        , bPutArray)
 where
 import Data.Word
 import System.IO
@@ -164,11 +167,18 @@ advance h pEnd
 
 -- Bucket IO ------------------------------------------------------------------
 
--- | Close a bucket, releasing the contained filed handle.
+-- | Close a bucket, releasing the contained file handle.
 bClose :: Bucket -> IO ()
 bClose bucket
         = hClose $ bucketHandle bucket
 {-# NOINLINE bClose #-}
+
+
+-- | Check if the bucket is currently open.
+bIsOpen :: Bucket -> IO Bool
+bIsOpen bucket
+        = hIsOpen $ bucketHandle bucket
+{-# NOINLINE bIsOpen #-}
 
 
 -- | Check if the contained file handle is at the end of the bucket.
@@ -193,19 +203,72 @@ bAtEnd bucket
 {-# NOINLINE bAtEnd #-}
 
 
+-- | Seek to a position with a bucket.
+bSeek :: Bucket -> SeekMode -> Integer -> IO ()
+bSeek bucket mode offset
+ = do   
+        -- The current position in the underlying file.
+        posFile <- hTell $ bucketHandle bucket
+
+        -- Apply the seek mode to get the wanted position in the file,
+        --  which might be outside the bucket.
+        --  If Nothing it means the end of the file.
+        let posWanted 
+             = case mode of
+                AbsoluteSeek     
+                 -> Just $ bucketStartPos bucket + max 0 offset
+
+                RelativeSeek     
+                 -> Just $ posFile + offset
+
+                SeekFromEnd
+                 -> case bucketLength bucket of
+                        Nothing  -> Nothing
+                        Just len -> Just $ bucketStartPos bucket 
+                                         + len - max 0 offset
+
+        -- Clip the wanted position so that it's inside the bucket.
+        let posActual
+             = case posWanted of
+                Nothing
+                 -> Nothing
+
+                Just wanted      
+                  | Just len    <- bucketLength bucket
+                  -> Just $ (wanted `min`  bucketStartPos bucket)
+                                    `max` (bucketStartPos bucket + len)
+
+                  | otherwise
+                  -> Just $  wanted `min`  bucketStartPos bucket
+
+        case posActual of
+         Nothing   -> hSeek (bucketHandle bucket) SeekFromEnd  0
+         Just pos  -> hSeek (bucketHandle bucket) AbsoluteSeek pos
+{-# NOINLINE bSeek #-}
+
+
 -- | Get some data from a bucket.
 bGetArray :: Bucket -> Integer -> IO (Array F Word8)
 bGetArray bucket lenWanted
  = do   
-        let len = case bucketLength bucket of
-                        Nothing         -> lenWanted
-                        Just lenMax     -> max len lenMax
+        -- Curent position in the file.
+        posFile         <- hTell $ bucketHandle bucket
+        let posBucket   =  posFile - bucketStartPos bucket
+
+        let len         = case bucketLength bucket of
+                           Nothing         -> lenWanted
+                           Just lenMax
+                            -> let lenRemain = lenMax - posBucket
+                               in  max lenWanted lenRemain
 
         hGetArray (bucketHandle bucket) 
          $ fromIntegral len
 {-# NOINLINE bGetArray #-}
 
 
-
-
+-- | Put some data in a bucket.
+bPutArray :: Bucket -> Array F Word8 -> IO ()
+bPutArray bucket arr
+        = hPutArray (bucketHandle bucket) arr
+{-# NOINLINE bPutArray #-}
 

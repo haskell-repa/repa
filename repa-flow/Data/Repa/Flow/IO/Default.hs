@@ -24,7 +24,7 @@ import qualified Data.Repa.Flow.IO      as F
 
 
 -- | The default chunk size of 64kBytes.
-defaultChunkSize :: Int
+defaultChunkSize :: Integer
 defaultChunkSize = 64 * 1024
 
 -- | Like `F.sourceTSV`, but with the default chunk size and error action.

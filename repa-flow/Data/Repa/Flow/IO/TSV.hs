@@ -3,23 +3,23 @@ module Data.Repa.Flow.IO.TSV
         (sourceTSV)
 where
 import Data.Repa.Flow
+import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A
-import qualified Data.Repa.Flow.Generic         as G hiding (next)
-import System.IO
 import Data.Char
+import qualified Data.Repa.Flow.Generic         as G hiding (next)
 #include "repa-stream.h"
 
 
 -- | Like `sourceTSV` but take existing file handles.
 sourceTSV
-        :: Int                  --  Chunk length.
+        :: Integer              --  Chunk length.
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
-        -> [Handle]             --  File paths.
+        -> [Bucket]             --  File paths.
         -> IO (Sources N (Array N (Array F Char)))
 
-sourceTSV nChunk aFail hs
+sourceTSV nChunk aFail bs
  = do
         -- Rows are separated by new lines, 
         -- fields are separated by tabs.
@@ -29,7 +29,7 @@ sourceTSV nChunk aFail hs
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
-        sChunk  <- G.sourceChunks nChunk (== nl) aFail hs
+        sChunk  <- G.sourceChunks nChunk (== nl) aFail bs
 
         sRows8  <- mapChunks_i (A.diceSep nt nl) sChunk
 

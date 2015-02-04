@@ -15,8 +15,8 @@ module Data.Repa.Flow.Chunked.IO
         , sinkChars
         , sinkBytes)
 where
+import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Chunked.Base
-import System.IO
 import Data.Word
 import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
@@ -25,35 +25,35 @@ import qualified Data.Repa.Flow.Generic.IO      as G
 
 -- | Like `fileSourceRecords`, but taking an existing file handle.
 sourceRecords 
-        :: Int                  -- ^ Size of chunk to read in bytes.
+        :: Integer              -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> [Handle]             -- ^ File handles.
+        -> [Bucket]             -- ^ File handles.
         -> IO (Sources Int IO N (Array F Word8))
 sourceRecords = G.sourceRecords
 {-# INLINE sourceRecords #-}
 
 
 -- | Read 8-bit ASCII characters from some files, using the given chunk length.
-sourceChars :: Int -> [Handle] -> IO (Sources Int IO F Char)
+sourceChars :: Integer -> [Bucket] -> IO (Sources Int IO F Char)
 sourceChars = G.sourceChars
 {-# INLINE sourceChars #-}
 
 
 -- | Read data from some files, using the given chunk length.
-sourceBytes :: Int -> [Handle] -> IO (Sources Int IO F Word8)
+sourceBytes :: Integer -> [Bucket] -> IO (Sources Int IO F Word8)
 sourceBytes = G.sourceBytes
 {-# INLINE sourceBytes #-}
 
 
 -- | Write 8-bit ASCII characters to the given file handles.
-sinkChars    :: [Handle] -> IO (Sinks Int IO F Char)
+sinkChars    :: [Bucket] -> IO (Sinks Int IO F Char)
 sinkChars    =  G.sinkChars
 {-# INLINE sinkChars #-}
 
 
 -- | Write chunks of data to the given file handles.
-sinkBytes    :: [Handle] -> IO (Sinks Int IO F Word8)
+sinkBytes    :: [Bucket] -> IO (Sinks Int IO F Word8)
 sinkBytes    =  G.sinkBytes
 {-# INLINE sinkBytes #-}
 

@@ -6,8 +6,8 @@ module Data.Repa.Flow.Simple.IO
         , G.toFiles
         , sinkBytes)
 where
+import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Simple.Base
-import System.IO
 import Data.Word
 import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
@@ -35,14 +35,14 @@ import qualified Data.Repa.Flow.Generic.IO      as G
 --   from the associated stream when no more are available.
 --
 sourceRecords 
-        :: Int                  -- ^ Size of chunk to read in bytes.
+        :: Integer              -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> Handle               -- ^ File handle.
+        -> Bucket               -- ^ File handle.
         -> IO (Source IO (Array N (Array F Word8)))
 
-sourceRecords len pSep aFail h
- = do   s0      <- G.sourceRecords len pSep aFail [h]
+sourceRecords len pSep aFail b
+ = do   s0      <- G.sourceRecords len pSep aFail [b]
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE sourceRecords #-}
@@ -58,11 +58,12 @@ sourceRecords len pSep aFail h
 --   from the associated stream when no more are available.
 --
 sourceBytes 
-        :: Int -> Handle 
+        :: Integer 
+        -> Bucket
         -> IO (Source IO (Array F Word8))
 
-sourceBytes len h
- = do   s0      <- G.sourceBytes len [h]
+sourceBytes len b
+ = do   s0      <- G.sourceBytes len [b]
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE sourceBytes #-}
@@ -73,9 +74,9 @@ sourceBytes len h
 --
 --   The file will be closed when the associated stream is ejected.
 --
-sinkBytes :: Handle  -> IO (Sink IO (Array F Word8))
-sinkBytes h
- = do   s0      <- G.sinkBytes [h]
+sinkBytes :: Bucket -> IO (Sink IO (Array F Word8))
+sinkBytes b
+ = do   s0      <- G.sinkBytes [b]
         let Just s1 = wrapI_o s0
         return s1
 {-# INLINE sinkBytes #-}
