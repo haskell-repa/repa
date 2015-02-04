@@ -2,13 +2,12 @@
 module Data.Repa.Flow.Chunked.Base
         ( Sources, Sinks
         , Flow
-        , fromList_i
-        , fromLists_i
-        , toList1_i
-        , toLists1_i
+        , Data.Repa.Flow.Chunked.Base.fromList
+        , fromLists
+        , toList1
+        , toLists1
         , head_i
-        , finalize_i
-        , finalize_o)
+        , finalize_i,    finalize_o)
 where
 import qualified Data.Sequence                  as Q
 import qualified Data.Foldable                  as Q
@@ -42,44 +41,39 @@ type Flow i m l a
 --
 --   * All elements are stuffed into a single chunk, and each stream is given
 --     the same chunk.
-fromList_i 
-        :: (States i m, A.TargetI l a)
-        => Name l -> i -> [a] -> m (Sources i m l a)
-
-fromList_i nDst n xs
+fromList  :: (States i m, A.TargetI l a)
+          => Name l -> i -> [a] -> m (Sources i m l a)
+fromList nDst n xs
  = G.fromList n [A.fromList nDst xs]
-{-# INLINE fromList_i #-}
+{-# INLINE fromList #-}
 
 
--- | Like `fromLists_i` but take a list of lists, where each of the inner
+-- | Like `fromLists` but take a list of lists, where each of the inner
 --   lists is packed into a single chunk.
-fromLists_i 
-        :: (States i m, A.TargetI l a)
-        => Name l -> i -> [[a]] -> m (Sources i m l a)
+fromLists :: (States i m, A.TargetI l a)
+          => Name l -> i -> [[a]] -> m (Sources i m l a)
 
-fromLists_i nDst n xs
+fromLists nDst n xs
  = G.fromList n $ P.map (A.fromList nDst) xs
-{-# INLINE fromLists_i #-}
+{-# INLINE fromLists #-}
 
 
 -- | Drain a single source into a list of elements.
-toList1_i 
-        :: (States i m, A.BulkI l a)
+toList1 :: (States i m, A.BulkI l a)
         => Ix i -> Sources i m l a  -> m [a]
-toList1_i i sources
+toList1 i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.concat $ P.map A.toList chunks
-{-# INLINE toList1_i #-}
+{-# INLINE toList1 #-}
 
 
 -- | Drain a single source into a list of chunks.
-toLists1_i
-        :: (States i m, A.BulkI l a)
-        => Ix i -> Sources i m l a -> m [[a]]
-toLists1_i i sources
+toLists1 :: (States i m, A.BulkI l a)
+         => Ix i -> Sources i m l a -> m [[a]]
+toLists1 i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.map A.toList chunks
-{-# INLINE toLists1_i #-}
+{-# INLINE toLists1 #-}
 
 
 -- | Split the given number of elements from the head of a source,

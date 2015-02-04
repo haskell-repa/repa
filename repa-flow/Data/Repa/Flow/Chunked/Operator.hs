@@ -20,18 +20,17 @@ module Data.Repa.Flow.Chunked.Operator
         , ignore_o
 
           -- * Grouping
-        , groupsBy_i
+        , groupsBy_i,   F.GroupsDict
 
           -- * Folding
-        , folds_i,      FoldsWorthy)
+        , folds_i,      F.FoldsDict)
 where
-import Data.Repa.Flow.Chunked.Operator.Folds
+import Data.Repa.Flow.Chunked.Operator.Groups   as F
+import Data.Repa.Flow.Chunked.Operator.Folds    as F
 import Data.Repa.Flow.Chunked.Base
-import Data.Repa.Fusion.Unpack
-import Data.Repa.Flow.States
-import Data.Repa.Array                    as A
-import Data.Repa.Eval.Array               as A
-import qualified Data.Repa.Flow.Generic   as G
+import Data.Repa.Array                          as A
+import Data.Repa.Eval.Array                     as A
+import qualified Data.Repa.Flow.Generic         as G
 #include "repa-stream.h"
 
 
@@ -138,57 +137,4 @@ ignore_o  = G.ignore_o
 discard_o :: Monad m => i -> m (Sinks i m l a)
 discard_o = G.discard_o
 {-# INLINE discard_o #-}
-
-
--- Grouping -------------------------------------------------------------------
--- | From a stream of values which has consecutive runs of idential values,
---   produce a stream of the lengths of these runs.
---
--- @  
---   groupsBy (==) [4, 4, 4, 3, 3, 1, 1, 1, 4] 
---    => [3, 2, 3, 1]
--- @
--- 
-groupsBy_i 
-        :: ( Flow i m lVal a, TargetI lGrp a, TargetI lLen Int
-           , Unpack (Buffer lGrp a)   tGrp
-           , Unpack (Buffer lLen Int) tLen)
-        => (a -> a -> Bool)     -- ^ Comparison function to decide whether
-                                --   successive values should be grouped.
-        ->    Sources i m lVal a 
-        -> m (Sources i m (T2 lGrp lLen) (a, Int))
-
-groupsBy_i f (G.Sources n pull_chunk)
- = do   
-        -- Refs to hold partial counts between chunks.
-        refs    <- newRefs n Nothing
-
-        let pull_groupsBy i eat eject
-             = pull_chunk i eat_groupsBy eject_groupsBy
-             where 
-                   -- Process a chunk from the a source stream, 
-                   -- using the current state we have for that stream.
-                   eat_groupsBy chunk
-                    = do state <- readRefs refs i
-                         let (segs, state') = A.groupsWith name name f state chunk
-                         writeRefs refs i state'
-                         eat segs
-                   {-# INLINE eat_groupsBy #-}
-
-                   -- When there are no more chunks of source data we still
-                   -- need to pass on the last count we have stored in the
-                   -- state.
-                   eject_groupsBy 
-                    = do state <- readRefs refs i
-                         case state of
-                          Nothing         -> eject
-                          Just seg
-                           -> do writeRefs refs i Nothing
-                                 eat (A.fromList name [seg])
-                   {-# INLINE eject_groupsBy #-}
-            {-# INLINE pull_groupsBy #-}
-
-        return $ G.Sources n pull_groupsBy
-{-# INLINE_FLOW groupsBy_i #-}
-
 

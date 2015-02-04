@@ -1,6 +1,7 @@
 
 module Data.Repa.Flow.Chunked
         ( module Data.Repa.Flow.States
+
         , Sources, Sinks
         , Flow
 
@@ -8,13 +9,13 @@ module Data.Repa.Flow.Chunked
         , drain
 
           -- * Conversion
-        , fromList_i
-        , fromLists_i
-        , toList1_i,    toLists1_i
+        , fromList
+        , fromLists
+        , toList1
+        , toLists1
 
           -- * Finalizers
-        , finalize_i
-        , finalize_o
+        , finalize_i,   finalize_o
 
           -- * Flow Operators
           -- ** Mapping
@@ -26,11 +27,10 @@ module Data.Repa.Flow.Chunked
         , head_i
 
           -- ** Grouping
-        , groupsBy_i
+        , groupsBy_i,   GroupsDict
 
           -- ** Folding
-        , folds_i
-        , FoldsWorthy
+        , folds_i,      FoldsDict
 
           -- ** Watching
         , watch_i,      watch_o

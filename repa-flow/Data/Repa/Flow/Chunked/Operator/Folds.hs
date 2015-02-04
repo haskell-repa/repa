@@ -1,20 +1,20 @@
 
 module Data.Repa.Flow.Chunked.Operator.Folds
         ( folds_i
-        , FoldsWorthy)
+        , FoldsDict)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
 import Data.Repa.Fusion.Option
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Array                    as A
+import Data.Repa.Array                    as A hiding (FoldsDict)
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
 #include "repa-stream.h"
 
 
 -- | Dictionaries needed to perform a segmented fold.
-type FoldsWorthy i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
+type FoldsDict i m lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
         = ( States i m
           , Windowable lSeg (n, Int), Windowable lElt a
           , BulkI   lSeg (n, Int)
@@ -30,15 +30,16 @@ type FoldsWorthy i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
 
 -- Folds ----------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
-folds_i :: forall      i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
-        .  FoldsWorthy i m lSeg lElt lGrp lRes tSeg tElt tGrp tRes n a b
-        => (a -> b -> b)             -- ^ Worker function.
+folds_i :: FoldsDict i m lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
+        => Name lGrp                 -- ^ Layout for group names.
+        -> Name lRes                 -- ^ Layout for fold results.
+        -> (a -> b -> b)             -- ^ Worker function.
         -> b                         -- ^ Initial state when folding each segment.
-        -> Sources i m lSeg (n, Int)   -- ^ Segment lengths.
-        -> Sources i m lElt a          -- ^ Input elements to fold.
+        -> Sources i m lSeg (n, Int) -- ^ Segment lengths.
+        -> Sources i m lElt a        -- ^ Input elements to fold.
         -> m (Sources i m (T2 lGrp lRes) (n, b)) -- ^ Result elements.
 
-folds_i f z sLens@(G.Sources nLens _)
+folds_i _ _ f z sLens@(G.Sources nLens _)
             sVals@(G.Sources nVals _)
  = do
         -- Arity of the result bundle is the minimum of the two inputs.
@@ -54,8 +55,7 @@ folds_i f z sLens@(G.Sources nLens _)
         refsVals     <- newRefs nFolds Nothing
         refsValsDone <- newRefs nFolds False
 
-        let pull_folds :: Ix i -> (Array (T2 lGrp lRes) (n, b) -> m ()) -> m () -> m ()
-            pull_folds i eat eject
+        let pull_folds i eat eject
              = do mNameLens <- folds_loadChunkNameLens sLens refsNameLens i
                   mVals     <- folds_loadChunkVals     sVals refsVals refsValsDone i 
 
@@ -149,7 +149,7 @@ folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
                 -- this is needed when there are zero lengthed
                 -- segments on the end of the stream
                 ejectVals_folds 
-                 = do writeRefs refsVals     i (Just $ fromList name [])
+                 = do writeRefs refsVals     i (Just $ A.fromList name [])
                       writeRefs refsValsDone i True
                 {-# INLINE ejectVals_folds #-}
 

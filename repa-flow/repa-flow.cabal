@@ -38,6 +38,7 @@ Library
         Data.Repa.Flow.Chunked.Base
         Data.Repa.Flow.Chunked.Operator
         Data.Repa.Flow.Chunked.Operator.Folds
+        Data.Repa.Flow.Chunked.Operator.Groups
         Data.Repa.Flow.Chunked.IO
 
         Data.Repa.Flow.Generic.Base
