@@ -52,30 +52,6 @@ fromFiles paths use
 {-# NOINLINE fromFiles #-}
 
 
-{-
--- SplitFile --------------------------------------------------------------------------------------
--- | Open a file for reading, splitting it into chunks and creating
---   a stream for each of the chunks.
---
-splitFile 
-        :: FilePath                             -- ^ File to open.
-        -> Int                                  -- ^ Number of chunks.
-        -> (Word8 -> Bool)                      -- ^ Detect the end of a record.
-        -> ([Handle] -> IO (Sources Int IO a))  -- ^ Consumer.
-        -> IO (Sources Int IO a)
-
-splitFile path chunks pEnd use
- = do
-        -- Get a file handle for each of the chunks.
-        hs      <- mapM (flip openBinaryFile ReadMode) [1..chunks]
-
- where
-
-        -- Advance the file 
-        advance h 
--}
-
-
 -- Sourcing ---------------------------------------------------------------------------------------
 -- | Read complete records of data form a bucket, into chunks of the given length.
 --   We read as many complete records as will fit into each chunk.

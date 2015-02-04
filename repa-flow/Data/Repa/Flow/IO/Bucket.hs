@@ -66,6 +66,7 @@ openBucket path mode
                 , bucketStartPos        = 0
                 , bucketLength          = Nothing
                 , bucketHandle          = h }
+{-# NOINLINE openBucket #-}
 
 
 -- | Open a file containing atomic records and split it into the given number
@@ -81,13 +82,14 @@ openBucket path mode
 --   * The provided file handle must support seeking, else you'll get an
 --     exception.
 --
-bucketsFromFile 
-        :: FilePath             -- ^ Path to file to read.
-        -> Int                  -- ^ Number of buckets.
+bucketsFromFile
+        :: Int                  -- ^ Number of buckets.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> IO [Bucket]          -- ^ Produced buckets.
+        -> FilePath             -- ^ Path to file to read.
+        -> ([Bucket] -> IO b)   -- ^ Consumer.
+        -> IO b
 
-bucketsFromFile path n pEnd 
+bucketsFromFile n pEnd path use
  = do
         -- Open the file first to check its length.
         h0       <- openBinaryFile path ReadMode
@@ -130,14 +132,16 @@ bucketsFromFile path n pEnd
         let lens  = P.map (\(start, end) -> end - start) 
                   $ P.zip starts ends
 
-        return [ Bucket
-                  { bucketFilePath = path
-                  , bucketStartPos = start
-                  , bucketLength   = Just len
-                  , bucketHandle   = h }       
-                        | start <- starts
-                        | len   <- lens
-                        | h     <- hh ]
+        let bs    = [ Bucket
+                        { bucketFilePath = path
+                        , bucketStartPos = start
+                        , bucketLength   = Just len
+                        , bucketHandle   = h }       
+                              | start <- starts
+                              | len   <- lens
+                              | h     <- hh ]
+
+        use bs
 {-# NOINLINE bucketsFromFile #-}
 --  NOINLINE to avoid polluting the core code of the consumer.
 --  This prevents it from being specialised for the pEnd predicate, 
@@ -163,10 +167,10 @@ advance h pEnd
         loop_advance
         Foreign.free buf
         hTell h
+{-# NOINLINE advance #-}
 
 
 -- Bucket IO ------------------------------------------------------------------
-
 -- | Close a bucket, releasing the contained file handle.
 bClose :: Bucket -> IO ()
 bClose bucket
@@ -259,7 +263,7 @@ bGetArray bucket lenWanted
                            Nothing         -> lenWanted
                            Just lenMax
                             -> let lenRemain = lenMax - posBucket
-                               in  max lenWanted lenRemain
+                               in  min lenWanted lenRemain
 
         hGetArray (bucketHandle bucket) 
          $ fromIntegral len
