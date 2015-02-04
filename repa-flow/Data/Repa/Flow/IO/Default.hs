@@ -7,6 +7,7 @@ module Data.Repa.Flow.IO.Default
 
           -- * Sourcing
         , F.fromFiles
+        , F.bucketsFromFile
         , sourceTSV
         , sourceRecords
         , sourceLines
@@ -19,7 +20,8 @@ module Data.Repa.Flow.IO.Default
         , sinkLines
         , sinkBytes)
 where
-import qualified Data.Repa.Flow.IO      as F
+import qualified Data.Repa.Flow.IO              as F
+import qualified Data.Repa.Flow.IO.Bucket       as F
 #include "repa-stream.h"
 
 

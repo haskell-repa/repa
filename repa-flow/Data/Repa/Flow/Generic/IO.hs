@@ -33,7 +33,7 @@ lix _        _  = Nothing
 
 
 -- FromFiles --------------------------------------------------------------------------------------
--- | Open some files for reading and use the handles to create `Sources`.
+-- | Open some files as buckets and use them as `Sources`.
 --
 --   Finalisers are attached to the `Sources` so that each file will be 
 --   closed the first time the consumer tries to an element from the associated

@@ -4,8 +4,12 @@ module Data.Repa.Flow.IO.Bucket
         , bucketLength
         , openBucket
 
-          -- * Reading files
+          -- * Reading
         , bucketsFromFile
+
+          -- * Writing 
+        , bucketsToDir
+        , bucketToFile
 
           -- * Bucket IO
         , bClose
@@ -15,14 +19,16 @@ module Data.Repa.Flow.IO.Bucket
         , bGetArray
         , bPutArray)
 where
-import Data.Word
-import System.IO
-import Control.Monad
 import Data.Repa.Array                  as A
 import Data.Repa.Array.Material         as A
 import Data.Repa.IO.Array               as A
 import qualified Foreign.Storable       as Foreign
 import qualified Foreign.Marshal.Alloc  as Foreign
+import Control.Monad
+import Data.Word
+import System.IO
+import System.FilePath
+import System.Directory
 import Prelude                          as P
 
 
@@ -69,23 +75,21 @@ openBucket path mode
 {-# NOINLINE openBucket #-}
 
 
+-- From Files -----------------------------------------------------------------
 -- | Open a file containing atomic records and split it into the given number
 --   of evenly sized buckets. 
 --
---   The records separated by a special terminating charater, which the
+--   The records are separated by a special terminating charater, which the
 --   given predicate detects. The file is split cleanly on record boundaries, 
 --   so we get a whole number of records in each bucket. As the records can be
---   of varying size, the buckets are not guaranteed to have exactly the same
+--   of varying size the buckets are not guaranteed to have exactly the same
 --   length, in either records or buckets, though we try to give them the
 --   approximatly the same number of bytes.
---
---   * The provided file handle must support seeking, else you'll get an
---     exception.
 --
 bucketsFromFile
         :: Int                  -- ^ Number of buckets.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> FilePath             -- ^ Path to file to read.
+        -> FilePath             -- ^ File to open.
         -> ([Bucket] -> IO b)   -- ^ Consumer.
         -> IO b
 
@@ -168,6 +172,62 @@ advance h pEnd
         Foreign.free buf
         hTell h
 {-# NOINLINE advance #-}
+
+
+-- To Files -------------------------------------------------------------------
+-- | Create a new directory of the given name, containing the given number
+--   of buckets. 
+--
+--   If the dir is named @somedir@ then the buckets are named
+--   @somedir/000000@, @somedir/000001@, @somedir/000002@ and so on.
+--
+--   * The number of buckets must be greater than zero, else `Nothing`.
+bucketsToDir 
+        :: Int                  -- ^ Number of buckets to create.
+        -> FilePath             -- ^ Path to directory.
+        -> ([Bucket] -> IO b)  -- ^ Consumer.
+        -> IO (Maybe b)
+
+bucketsToDir n path use
+ | n <= 0        
+ = return Nothing
+
+ | otherwise
+ = do   
+        createDirectory path
+
+        let makeName i = path </> ((replicate (6 - (P.length $ show i)) ' ') ++ show i)
+        let names      = [makeName i | i <- [0 .. n - 1]]
+
+        let newBucket file
+             = do h      <- openBinaryFile file WriteMode
+                  return $  Bucket
+                         { bucketFilePath       = file
+                         , bucketStartPos       = 0
+                         , bucketLength         = Nothing
+                         , bucketHandle         = h }
+
+        bs <- mapM newBucket names
+        liftM Just $ use bs
+{-# NOINLINE bucketsToDir #-}
+
+
+-- | Open a file for writing as a bucket.
+bucketToFile 
+        :: FilePath             -- ^ Path to bucket.
+        -> ([Bucket] -> IO b)  -- ^ Consumer
+        -> IO b
+
+bucketToFile file use
+ = do   h       <- openBinaryFile file WriteMode
+        let b   = Bucket
+                { bucketFilePath        = file
+                , bucketStartPos        = 0
+                , bucketLength          = Nothing
+                , bucketHandle          = h }
+
+        use [b]
+{-# NOINLINE bucketToFile #-}
 
 
 -- Bucket IO ------------------------------------------------------------------
