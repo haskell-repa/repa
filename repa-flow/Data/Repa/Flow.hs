@@ -1,37 +1,79 @@
 {-# LANGUAGE UndecidableInstances #-}
 
--- | Data Parallel Data Flows.
---
---   NOTE: Althogh @repa-flow@ can be used productively in the ghci REPL, 
---   performance won't be great because you will be running unspecialised,
---   polymorphic code. For best results you should write a complete
---   program and compile it with @ghc -fllvm -O2 Main.hs@
---
--- * Getting Started
---
---   Open a stream for a single file using 64k chunks, with the chunks
---   ending on newline characters. Say "argh" if we find a line longer than 64k.
+-- | A flow consists of a bundle of individual streams. Here we create
+--   a bundle of two streams, using different files for each. Data will
+--   be read in chunks, using the default chunk size of 64kBytes.
 --
 -- @
--- > import Data.Repa.Flow
--- > import Data.Repa.Flow.IO.Default
--- > import Data.Repa.Flow.Debug
--- > ws <- fromFiles [\"\/usr\/share\/dict\/words\"] sourceLines
+-- > import Data.Repa.Flow             as R
+-- > import Data.Repa.Flow.IO.Default  as R
+-- > import Data.Repa.Flow.Debug       as R
+-- > ws <- fromFiles [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
 -- @
 --
---   Show the first 20 elements of the first chunk in stream 0.
+--   Show the first few elements of the first chunk of the first file.
 --
 -- @ 
 -- > more 0 ws
---   Just [\"A\",\"A's\",\"AA's\",\"AB's\",\"ABM's\",\"AC's\",\"ACTH's\",\"AI's\" ...]
+-- Just [\"A\",\"A's\",\"AA's\",\"AB's\",\"ABM's\",\"AC's\",\"ACTH's\",\"AI's\" ...]
 -- @
 --
---   Show the first 20 elements of the next chunk.
+--   The `more` function is helpful for debugging. It pulls a whole chunk from a
+--   source, displays the requested number of elements from the front of it, then
+--   discards the rest. In production code you could use `head_i` to split a few
+--   elements from a stream while retaining the rest.
+--
+--   Use `more'` to show more elements at a time. We've already pulled the first chunk,
+--   so here are the first 100 elements from the second chunk:
 --
 -- @
--- > more ws
--- Just \"Jubal\\nJudah\\nJudaic\\nJudaism\\nJudaism\'s\\nJud\"
+-- > more' 0 100 ws
+-- Just [\"Jubal\",\"Judah\",\"Judaic\",\"Judaism\",\"Judaism's\",\"Judaisms\",\"Judas\" ...]
 -- @
+--
+--   Use `moret` to display elements in tabular form. Here are the first few elements of
+--   the second stream in the bundle:
+--
+-- @ 
+-- > moret 1 ws
+-- "10th"   
+-- "1st"    
+-- "2nd"    
+-- "3rd"    
+-- "4th"    
+-- "5th"    
+-- ...
+-- @
+--
+--   Flows are data-parallel. Functions like `map_i` apply to all streams in the 
+--   bundle. Lets convert the characters in all streams to upper-case.
+--
+-- @
+-- > import Data.Char
+-- > up <- map_i B (computeS U . R.map toUpper) ws
+-- > more 0 up
+-- Just [\"UTOPIAN\",\"UTOPIAN'S\",\"UTOPIANS\",\"UTOPIAS\",\"UTRECHT\" ...]
+-- @ 
+--
+--   The `B` and `U` are `Layout` names that indicate how the chunks for the
+--   result streams should be arranged in memory. Here, `B` indicates a chunk
+--   of boxed elements, and `U` indicates a chunk of unboxed elements. 
+--   Other useful layouts are `F` for chunks in foreign memory, and `N` for
+--   nested arrays.
+--
+--
+--   Flow functions like `map_i` apply to all streams in the bundle. We can look
+--   at the second stream as well:
+--
+-- @
+-- > more 1 up
+-- Just [\"BROWNER\",\"BROWNEST\",\"BROWNIAN\",\"BROWNIE\",\"BROWNIE'S\" ...]
+-- @
+--
+--  * NOTE: Althogh @repa-flow@ can be used productively in the ghci REPL, 
+--    performance won't be great because you will be running unspecialised,
+--    polymorphic code. For best results you should write a complete
+--    program and compile it with @ghc -fllvm -O2 Main.hs@
 --
 module Data.Repa.Flow
         ( module Data.Repa.Flow.States

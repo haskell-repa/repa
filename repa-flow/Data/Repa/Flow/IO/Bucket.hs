@@ -67,10 +67,14 @@ data Bucket
 openBucket :: FilePath -> IOMode -> IO Bucket
 openBucket path mode
  = do   h       <- openBinaryFile path mode
+        hSeek h SeekFromEnd  0
+        lenTotal <- hTell h
+        hSeek h AbsoluteSeek 0 
+
         return  $ Bucket
                 { bucketFilePath        = path
                 , bucketStartPos        = 0
-                , bucketLength          = Nothing
+                , bucketLength          = Just lenTotal
                 , bucketHandle          = h }
 {-# NOINLINE openBucket #-}
 
@@ -298,12 +302,17 @@ bSeek bucket mode offset
                  -> Nothing
 
                 Just wanted      
-                  | Just len    <- bucketLength bucket
-                  -> Just $ (wanted `min`  bucketStartPos bucket)
-                                    `max` (bucketStartPos bucket + len)
+                  |  Just len    <- bucketLength bucket
+                  -> if      wanted < bucketStartPos bucket
+                        then Just $ bucketStartPos bucket
+                     else if wanted > bucketStartPos bucket + len
+                        then Just $ bucketStartPos bucket + len
+                     else Just wanted
 
                   | otherwise
-                  -> Just $  wanted `min`  bucketStartPos bucket
+                  -> if     wanted < bucketStartPos bucket
+                       then Just $ bucketStartPos bucket
+                       else Just wanted
 
         case posActual of
          Nothing   -> hSeek (bucketHandle bucket) SeekFromEnd  0
