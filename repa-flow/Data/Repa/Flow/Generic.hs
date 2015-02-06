@@ -1,9 +1,16 @@
 
 -- | Everything flows.
+--
+--   This module defines generic flows. The other flow types defined
+--   in "Data.Repa.Flow.Chunked" and "Data.Repa.Flow.Simple" are
+--   specialisations of this generic one.
+--
 module Data.Repa.Flow.Generic
-        ( module Data.Repa.Flow.States
-        , Sources       (..)
+        ( Sources       (..)
         , Sinks         (..)
+
+          -- * Flow state
+         , module Data.Repa.Flow.States
 
           -- * Evaluation
         , drain

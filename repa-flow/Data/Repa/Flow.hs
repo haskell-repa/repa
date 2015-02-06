@@ -49,9 +49,7 @@
 -- ...
 -- @
 --
---   Flows are data-parallel, which means operators like `map_i` apply to all
---   streams in the  bundle. Lets convert the characters in all streams to
---   upper-case.
+--   Lets convert the characters to upper-case.
 --
 -- @
 -- > import Data.Char
@@ -61,13 +59,14 @@
 -- @ 
 --
 --   The `B` and `U` are `Layout` names that indicate how the chunks for the
---   result streams should be arranged in memory. In this case the result
---   is a `B`-oxed array of `U`-nboxed arrays of characters. Other useful
+--   result streams should be arranged in memory. In this case the chunks
+--   are `B`-oxed arrays of `U`-nboxed arrays of characters. Other useful
 --   layouts are `F` which stores data in foreign memory, and `N` for nested
 --   arrays.
 --
---   Flow functions like `map_i` apply to all streams in the bundle. We can look
---   at the second stream as well:
+--   Flows are data-parallel, which means operators like `map_i` apply to all
+--   streams in the  bundle. The second stream has been converted to upper-case
+--   as well:
 --
 -- @
 -- > more 1 up
