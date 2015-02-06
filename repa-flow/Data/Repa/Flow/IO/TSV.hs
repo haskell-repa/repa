@@ -24,7 +24,10 @@ sourceTSV nChunk aFail bs
         -- Rows are separated by new lines, 
         -- fields are separated by tabs.
         let !nl  = fromIntegral $ ord '\n'
-        let !nr  = fromIntegral $ ord '\r'
+
+--        let !nr  = fromIntegral $ ord '\r'
+        -- TODO: what to do about \r?
+
         let !nt  = fromIntegral $ ord '\t'
 
         -- Stream chunks of data from the input file, where the chunks end
