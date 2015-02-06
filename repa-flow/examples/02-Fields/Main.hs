@@ -1,13 +1,12 @@
 {-# LANGUAGE BangPatterns #-}
 import Data.Repa.Flow
-import Data.Repa.Flow.IO.Default
 import Data.Repa.Array                          as A
-import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic         as G
 
 import Control.Monad
 import System.Environment
 import System.IO
+import Data.Maybe
 import Data.Char
 import Prelude                                  as P
 
@@ -16,6 +15,7 @@ main
  = do   args    <- getArgs
         config  <- parseArgs args configZero
         pFields config
+
 
 pFields :: Config -> IO ()
 pFields config
@@ -32,8 +32,11 @@ pFields config
         -- Drop the requested number of lines from the front.
         mapM_ (\_ -> hGetLine hIn) [1 .. configDrop config]
 
+        -- Wrap the handle as a bucket.
+        bIn       <- hBucket hIn
+
         -- Stream the rest of the file as TSV.
-        sIn       <- sourceTSV [hIn]
+        sIn       <- sourceTSV [bIn]
 
         -- Do a ragged transpose the chunks, to produce a columnar
         -- representation.
@@ -41,7 +44,7 @@ pFields config
 
         -- Concatenate the fields in each column.
         let !fl   =  A.fromList F ['\n']
-        sCat      <- mapChunks_i (A.computeS B . A.map (A.concatWith F fl))
+        sCat      <- mapChunks_i (mapS B (A.concatWith F fl))
                                  sColumns
 
         -- Open an output file for each of the columns.
@@ -69,8 +72,12 @@ configZero
         , configFileIn  = Nothing }
 
 parseArgs :: [String] -> Config -> IO Config
+
 parseArgs [] config 
-        = return config
+ | isJust $ configFileIn config
+ = return config
+
+ | otherwise = dieUsage
 
 parseArgs args config
  | "-drop" : sn : rest <- args
@@ -81,13 +88,18 @@ parseArgs args config
  = return $ config { configFileIn = Just filePath }
 
  | otherwise
+ = dieUsage
+
+
+-- | Die on wrong usage at the command line.
+dieUsage
  = error $ unlines
  [ "Usage: flow-fields [OPTIONS] <source_file>"
  , "Split a TSV file into separate files, one for each column."
- , ""
  , " -drop (n :: Nat)   Drop n lines from the front of the input file." ]
 
 
 -- | Die if the lines do not have the same number of fields.
-dieFields       = error "Lines do not have the same number of fields."
+dieFields       
+ = error "Lines do not have the same number of fields."
 

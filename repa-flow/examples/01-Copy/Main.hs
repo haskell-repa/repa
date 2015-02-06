@@ -1,9 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
+
 import Data.Repa.Flow
-import Data.Repa.Flow.IO.Default
 import System.Environment
-import Control.Monad
-import Data.Char
+
 
 main :: IO ()
 main 

@@ -3,6 +3,7 @@ module Data.Repa.Flow.IO.Bucket
         ( Bucket
         , bucketLength
         , openBucket
+        , hBucket
 
           -- * Reading
         , bucketsFromFile
@@ -43,8 +44,8 @@ import Prelude                          as P
 --
 data Bucket
         = Bucket
-        { -- | Physical location of the file.
-          bucketFilePath        :: FilePath 
+        { -- | Physical location of the file, if known.
+          bucketFilePath        :: Maybe FilePath 
 
           -- | Starting position of the bucket in the file, in bytes.
         , bucketStartPos        :: Integer
@@ -72,11 +73,23 @@ openBucket path mode
         hSeek h AbsoluteSeek 0 
 
         return  $ Bucket
-                { bucketFilePath        = path
+                { bucketFilePath        = Just path
                 , bucketStartPos        = 0
                 , bucketLength          = Just lenTotal
                 , bucketHandle          = h }
 {-# NOINLINE openBucket #-}
+
+
+-- | Wrap an existing file handle as a bucket.
+hBucket :: Handle -> IO Bucket
+hBucket h
+ = do   pos     <- hTell h
+        return  $ Bucket
+                { bucketFilePath        = Nothing
+                , bucketStartPos        = pos
+                , bucketLength          = Nothing
+                , bucketHandle          = h }
+{-# NOINLINE hBucket #-}
 
 
 -- From Files -----------------------------------------------------------------
@@ -141,7 +154,7 @@ bucketsFromFile n pEnd path use
                   $ P.zip starts ends
 
         let bs    = [ Bucket
-                        { bucketFilePath = path
+                        { bucketFilePath = Just path
                         , bucketStartPos = start
                         , bucketLength   = Just len
                         , bucketHandle   = h }       
@@ -206,7 +219,7 @@ bucketsToDir n path use
         let newBucket file
              = do h      <- openBinaryFile file WriteMode
                   return $  Bucket
-                         { bucketFilePath       = file
+                         { bucketFilePath       = Just file
                          , bucketStartPos       = 0
                          , bucketLength         = Nothing
                          , bucketHandle         = h }
@@ -225,7 +238,7 @@ bucketToFile
 bucketToFile file use
  = do   h       <- openBinaryFile file WriteMode
         let b   = Bucket
-                { bucketFilePath        = file
+                { bucketFilePath        = Just file
                 , bucketStartPos        = 0
                 , bucketLength          = Nothing
                 , bucketHandle          = h }
