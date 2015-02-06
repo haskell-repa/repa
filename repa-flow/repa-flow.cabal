@@ -33,11 +33,11 @@ Library
         Data.Repa.Flow.Default
         Data.Repa.Flow.Default.Debug
         Data.Repa.Flow.Default.IO
+        Data.Repa.Flow.Default.SizedIO
 
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.IO
 
-        Data.Repa.Flow.IO
         Data.Repa.Flow.IO.Bucket
 
         Data.Repa.Flow.Simple

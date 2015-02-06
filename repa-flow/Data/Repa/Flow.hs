@@ -133,6 +133,9 @@ module Data.Repa.Flow
         -- * Flow I/O
         , defaultChunkSize
 
+        -- ** Buckets
+        , module Data.Repa.Flow.IO.Bucket
+
         -- ** Sourcing
         , fromFiles
         , sourceTSV
@@ -150,6 +153,7 @@ where
 import Data.Repa.Flow.Default
 import Data.Repa.Flow.Default.Debug
 import Data.Repa.Flow.Default.IO
+import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.States
 
 import Data.Repa.Eval.Array
