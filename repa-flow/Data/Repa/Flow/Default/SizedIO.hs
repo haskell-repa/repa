@@ -65,7 +65,7 @@ sourceLines nChunk fails hs
 
         nl :: Word8
         !nl = fromIntegral $ ord '\n'
-{-# INLINE sourceLines #-}
+{-# NOINLINE sourceLines #-}
 
 
 -- | Like `F.sourceRecords`, but with the default chunk size and error action.

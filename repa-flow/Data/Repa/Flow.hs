@@ -8,9 +8,8 @@
 --   be read in chunks, using the default chunk size of 64kBytes.
 --
 -- @
--- > import Data.Repa.Flow             as R
--- > import Data.Repa.Flow.IO.Default  as R
--- > import Data.Repa.Flow.Debug       as R
+-- > import Data.Repa.Flow               as R
+-- > import Data.Repa.Flow.Default.Debug as R
 -- > ws <- fromFiles [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
 -- @
 --
@@ -72,10 +71,48 @@
 -- Just [\"BROWNER\",\"BROWNEST\",\"BROWNIAN\",\"BROWNIE\",\"BROWNIE'S\" ...]
 -- @
 --
---  * NOTE: Althogh @repa-flow@ can be used productively in the ghci REPL, 
---    performance won't be great because you will be running unspecialised,
---    polymorphic code. For best results you should write a complete
---    program and compile it with @ghc -fllvm -O2 Main.hs@
+--   Lets write out the data to some files. There are two streams in the bundle,
+--   so open a file for each stream:
+--
+-- @
+-- > out <- toFiles ["out1.txt", "out2.txt"] $ sinkLines B U
+-- @
+--
+--   Note that the @ws@ and @up@ we used before were bundles of stream 
+--  `Sources` whereas @out@ is a bundle of stream `Sinks`. When we used
+--   the `map_i` operator before the @_i@ (input) suffix indicates that
+--   this is  a transformer of `Sources`. There is a related `map_o`
+--   (output) operator for `Sinks`.
+-- 
+--   Now that we have a bundle of `Sources`, and some matching `Sinks`, 
+--   we can `drain` all of the data from the former into the latter.
+--
+-- @
+-- > drain up out
+-- @
+--
+--   At this point we can run an external shell command to check the output.
+--
+-- @
+-- > :! head out1.txt
+-- BEARSKIN'S
+-- BEARSKINS
+-- BEAST
+-- BEAST'S
+-- BEASTLIER
+-- BEASTLIEST
+-- BEASTLINESS
+-- BEASTLINESS'S
+-- BEASTLY
+-- BEASTLY'S
+-- @
+--
+-- = Performance
+--
+--   Althogh @repa-flow@ can be used productively in the ghci REPL, 
+--   performance won't be great because you will be running unspecialised,
+--   polymorphic code. For best results you should write a complete
+--   program and compile it with @ghc -fllvm -O2 Main.hs@. 
 --
 module Data.Repa.Flow
         ( -- * Flow types

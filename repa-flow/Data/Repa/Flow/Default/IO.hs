@@ -39,6 +39,8 @@ sourceTSV
         = F.sourceTSV defaultChunkSize
         $ error $  "Line exceeds chunk size of "
                 ++ show defaultChunkSize ++ "bytes."
+{-# INLINE sourceTSV #-}
+
 
 -- | Read complete records of data form a file, into chunks of the given length.
 --   We read as many complete records as will fit into each chunk.
@@ -64,6 +66,8 @@ sourceRecords pSep
         = F.sourceRecords defaultChunkSize pSep
         $ error $  "Record exceeds chunk size of " 
                 ++ show defaultChunkSize ++ "bytes."
+{-# INLINE sourceRecords #-}
+
 
 -- | Read complete lines of data from a text file, using the given chunk length.
 --   We read as many complete lines as will fit into each chunk.
@@ -79,12 +83,17 @@ sourceLines
         = F.sourceLines   defaultChunkSize
         $ error $  "Line exceeds chunk size of "
                 ++ show defaultChunkSize ++ "bytes."
+{-# INLINE sourceLines #-}
+
 
 -- | Read 8-bit ASCII characters from some files, using the given chunk length.
 sourceChars     = F.sourceChars defaultChunkSize
+{-# INLINE sourceChars #-}
+
 
 -- | Read data from some files, using the given chunk length.
 sourceBytes     = F.sourceBytes defaultChunkSize
+{-# INLINE sourceBytes #-}
 
 
 -- | Write vectors of text lines to the given files handles.
@@ -93,10 +102,14 @@ sourceBytes     = F.sourceBytes defaultChunkSize
 --     written out.
 --
 sinkLines       = F.sinkLines
+{-# INLINE sinkLines #-}
+
 
 -- | Write 8-bit ASCII characters to some files.
 sinkChars       = F.sinkChars
+{-# INLINE sinkChars #-}
+
 
 -- | Write bytes to some file.
 sinkBytes       = F.sinkBytes
-
+{-# INLINE sinkBytes #-}
