@@ -1,10 +1,19 @@
 {-# LANGUAGE CPP #-}
--- | Repa arrays are wrappers around a linear structure that holds the element
---   data. 
--- 
---  The layout tag determines what structure holds the data.
+-- | A Repa array is a wrapper around an underlying container structure that
+--   holds the array elements.
 --
---  Material layouts (hold real data and are defined in "Data.Repa.Array.Material")
+--  In the type (`Array` @l@ @a@), the @l@ specifies the `Layout` of data,
+--  which includes the type of the underlying container, as well as how 
+--  the elements should be arranged in that container. The @a@ specifies 
+--  the element type.
+--
+--  === Material layouts 
+--
+--  Material layouts hold real data and are defined in "Data.Repa.Array.Material".
+--
+--  For performance reasons, random access indexing into these layouts
+--  is not bounds checked. However, all bulk operators like @map@ and @concat@
+--  are guaranteed to be safe.
 --
 --  * `B`  -- Boxed vectors.
 --
@@ -14,17 +23,27 @@
 --
 --  * `N`  -- Nested arrays.
 --
---  Delayed layouts  (contain functions that compute elements)
+--
+--  === Delayed layouts
+--
+--  Delayed layouts represent the elements of an array by a function that
+--  computes those elements on demand.
 --
 --  * `D`  -- Functions from indices to elements.
 --
---  Index-space layouts (produce the corresponding index for every element)
+--  === Index-space layouts 
+--
+--  Index-space produce the corresponding index for each element of the array,
+--  rather than real data. They can be used to define an array shape
+--  without needing to provide element data.
 -- 
 --  * `L`   -- Linear spaces.
 --
 --  * `RW`  -- RowWise spaces.
 --
---  Meta layouts (combine other layouts)
+--  === Meta layouts
+--
+--  Meta layouts combine existing layouts into new ones.
 --
 --  * `W`  -- Windowed arrays.
 --
@@ -32,8 +51,9 @@
 --
 --  * `T2` -- Tupled arrays.
 --  
--- == Array Fusion
--- Array fusion is achieved via the delayed (`D`) representation 
+-- === Array fusion
+--
+-- Array fusion is achieved via the delayed (`D`) layout 
 -- and the `computeS` function. For example:
 --
 -- @
@@ -91,6 +111,25 @@
 -- When used correctly, array fusion allows Repa programs to run as fast as
 -- equivalents in C or Fortran. However, without fusion the programs typically
 -- run 10-20x slower (so remember apply `computeS` to delayed arrays).
+--
+-- === How to write fast code
+--
+-- 1. Add @INLINE@ pragmas to all leaf-functions in your code, expecially ones
+--    that compute numeric results. Non-inlined lazy function calls can cost
+--    upwards of 50 cycles each, while each numeric operator only costs one
+--    (or less). Inlining leaf functions also ensures they are specialised at
+--    the appropriate numeric types.
+--
+-- 2. Add bang patterns to all function arguments, and all fields of your data
+--    types. In a high-performance Haskell program, the cost of lazy evaluation
+--    can easily dominate the run time if not handled correctly. You don't want
+--    to rely on the strictness analyser in numeric code because if it does not
+--    return a perfect result then the performance of your program will be
+--    awful. This is less of a problem for general Haskell code, and in a different
+--    context relying on strictness analysis is fine.
+--
+-- 3. Compile your program with @ghc -O2 -fllvm -optlo-O3@. The LLVM compiler
+--    produces better object code that GHC's internal native code generator.
 --
 module Data.Repa.Array
         ( module Data.Repa.Array.Index
