@@ -8,8 +8,8 @@
 --   be read in chunks, using the default chunk size of 64kBytes.
 --
 -- @
--- > import Data.Repa.Flow               as R
--- > import Data.Repa.Flow.Default.Debug as R
+-- > import Data.Repa.Flow
+-- > import Data.Repa.Flow.Default.Debug
 -- > ws <- fromFiles [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
 -- @
 --

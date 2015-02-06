@@ -366,7 +366,8 @@ head_i ix len s
 --   and count the lengths of those runs.
 --
 -- @  
--- > toList1 0 =<< groups_i U =<< fromList U 1 "waabbbblle"
+-- > import Data.Repa.Flow
+-- > toList1 0 =<< groups_i U U =<< fromList U 1 "waabbbblle"
 -- Just [(\'w\',1),(\'a\',2),(\'b\',4),(\'l\',2),(\'e\',1)]
 -- @
 --
@@ -458,7 +459,7 @@ type FoldsDict lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
 -- > sKeys   <-  fromList U 1 "waaaabllle"
 -- > sVals   <-  fromList U 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Double]
 -- 
--- > sResult \<-  map_i U (\\(key, (acc, n)) -\> (key, fromIntegral acc / n))
+-- > sResult \<-  map_i U (\\(key, (acc, n)) -\> (key, acc / n))
 --           =\<\< foldGroupsBy_i U U (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0) sKeys sVals
 --
 -- > toList1 0 sResult
