@@ -45,8 +45,9 @@
 -- ...
 -- @
 --
---   Flows are data-parallel. Functions like `map_i` apply to all streams in the 
---   bundle. Lets convert the characters in all streams to upper-case.
+--   Flows are data-parallel, which means operators like `map_i` apply to all
+--   streams in the  bundle. Lets convert the characters in all streams to
+--   upper-case.
 --
 -- @
 -- > import Data.Char

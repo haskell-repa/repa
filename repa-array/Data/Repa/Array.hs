@@ -1,4 +1,97 @@
 {-# LANGUAGE CPP #-}
+-- | Repa arrays are wrappers around a linear structure that holds the element
+--   data. 
+-- 
+--  The layout tag determines what structure holds the data.
+--
+--  Material layouts (hold real data and are defined in "Data.Repa.Array.Material")
+--
+--  * `B`  -- Boxed vectors.
+--
+--  * `U`  -- Adaptive unboxed vectors.
+--
+--  * `F`  -- Foreign memory buffers.
+--
+--  * `N`  -- Nested arrays.
+--
+--  Delayed layouts  (contain functions that compute elements)
+--
+--  * `D`  -- Functions from indices to elements.
+--
+--  Index-space layouts (produce the corresponding index for every element)
+-- 
+--  * `L`   -- Linear spaces.
+--
+--  * `RW`  -- RowWise spaces.
+--
+--  Meta layouts (combine other layouts)
+--
+--  * `W`  -- Windowed arrays.
+--
+--  * `E`  -- Dense arrays.
+--
+--  * `T2` -- Tupled arrays.
+--  
+-- == Array Fusion
+-- Array fusion is achieved via the delayed (`D`) representation 
+-- and the `computeS` function. For example:
+--
+-- @
+-- > import Data.Repa.Array
+-- > computeS U $ A.map (+ 1) $ A.map (* 2) $ fromList U [1 .. 100 :: Int]
+-- @
+--
+-- Lets look at the result of the first `map`:
+--
+-- @
+-- > :type A.map (* 2) $ fromList U [1 .. 100 :: Int]
+-- A.map (* 2) $ fromList U [1 .. 100 :: Int] 
+--     :: Array (D U) Int
+-- @
+--
+-- In the type @Array (D U) Int@, the outer `D` indicates that the array
+-- is represented as a function that computes each element on demand.
+--
+-- Applying a second `map` layers another element-producing function on top:
+--
+-- @ 
+-- > :type A.map (+ 1) $ A.map (* 2) $ fromList U [1 .. 100 :: Int]
+-- A.map (+ 1) $ A.map (* 2) $ fromList U [1 .. 100 :: Int]
+--     :: Array (D (D U)) Int
+-- @
+--
+-- At runtime, indexing into an array of the above type involves calling
+-- the outer @D@-elayed function, which calls the inner @D@-elayed function,
+-- which retrieves source data from the inner @U@-nboxed array. Although
+-- this works, indexing into a deep stack of delayed arrays can be quite
+-- expensive.
+--
+-- To fully evaluate a delayed array, use the `computeS` function, 
+-- which computes each element of the array sequentially. We pass @computeS@
+-- the name of the desired result layout, in this case we use `U` to indicate
+-- an unboxed array of values:
+--
+-- @
+-- > :type computeS U $ A.map (+ 1) $ A.map (* 2) $ fromList U [1 .. 100 :: Int]
+-- computeS U $ A.map (+ 1) $ A.map (* 2) $ fromList U [1 .. 100 :: Int]
+--      :: Array U Int
+-- @
+--
+-- At runtime, each element of the result will be computed by first reading
+-- the source element, applying @(*2)@ to it, then applying @(+1)@ to it, 
+-- then writing to the result array. Array \"fusion\" is achieved by the fact
+-- that result of applying @(*2)@ to an element is used directly, without
+-- writing it to an intermediate buffer. 
+-- 
+-- An added bonus is that during compilation, the GHC simplifier will inline
+-- the definitions of `map` and `computeS`, then eliminate the intermediate 
+-- function calls. In the compiled code all intermediate values will be stored
+-- unboxed in registers, without any overhead due to boxing or laziness.
+--
+-- When used correctly, array fusion allows Repa programs to run as fast as
+-- equivalents in C or Fortran. However, without fusion the programs typically
+-- run 10-20x slower (so remember apply `computeS` to delayed arrays).
+--
 module Data.Repa.Array
         ( module Data.Repa.Array.Index
 
