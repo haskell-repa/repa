@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
+
 -- | Sum up segments of doubles according to a segment descriptor file.
 --   The number of values written to the output is equal to the number
 --   of segments defined by the segments file.
@@ -32,8 +32,7 @@ main
         case args of
          [fiNames, fiVals, foNames, foSums]      
            -> pGroupSum fiNames fiVals foNames foSums
-         _ -> putStrLn $ unlines
-                [ "Usage: flow-groupsum <src_names> <src_vals> <dst_names> <dst_vals>" ]
+         _ -> dieUsage
 
 
 -- | Sum up segments of doubles according to a segment descriptor file.
@@ -61,3 +60,7 @@ pGroupSum fiNames fiVals foNames foSums
         -- Drain all the source data into the sinks.
         drain iAgg oAgg
 
+
+dieUsage
+ = error $ unlines
+ [ "flow-groupsum <src_names> <src_vals> <dst_names> <dst_vals>" ]
