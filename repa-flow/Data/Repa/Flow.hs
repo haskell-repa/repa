@@ -19,17 +19,17 @@
 -- > ws <- fromFiles [\"\/usr\/share\/dict\/words\"] sourceLines
 -- @
 --
---   Show the first 10 elements of the first chunk in source 0.
+--   Show the first 20 elements of the first chunk in stream 0.
 --
 -- @ 
--- > moren 0 10 ws
---   Just ["A","A's","AA's","AB's","ABM's","AC's","ACTH's","AI's","AIDS's","AM's"]
+-- > more 0 ws
+--   Just [\"A\",\"A's\",\"AA's\",\"AB's\",\"ABM's\",\"AC's\",\"ACTH's\",\"AI's\" ...]
 -- @
 --
---   Show the first 40 elements of the next chunk.
+--   Show the first 20 elements of the next chunk.
 --
 -- @
--- > next 0 40 ws
+-- > more ws
 -- Just \"Jubal\\nJudah\\nJudaic\\nJudaism\\nJudaism\'s\\nJud\"
 -- @
 --
