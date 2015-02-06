@@ -80,14 +80,15 @@
 --    program and compile it with @ghc -fllvm -O2 Main.hs@
 --
 module Data.Repa.Flow
-        ( module Data.Repa.Flow.States
+        ( -- * Flow types
+          Sources, Sinks
+        , Flow
+
+        -- * States and Arrays
+        , module Data.Repa.Flow.States
+        , module Data.Repa.Eval.Array
         , module Data.Repa.Array
         , module Data.Repa.Array.Material
-        , module Data.Repa.Eval.Array
-
-        -- * Flow types
-        , Sources, Sinks
-        , Flow
 
         -- * Evaluation
         , drain
@@ -149,15 +150,17 @@ import Control.Monad
 #include "repa-stream.h"
 
 
--- | A bundle of data sources, where the elements are chunked into arrays.
+-- | A bundle of stream sources, where the elements of the stream
+--   are chunked into arrays.
 --
---   The chunks have some layout @l@ and contain elements of type @a@.
+--   The chunks have some `Layout` @l@ and contain elements of type @a@.
+--   See "Data.Repa.Array" for the available layouts.
 type Sources l a = C.Sources Int IO l a
 
 
--- | A bundle of data sinks,   where the elements are chunked into arrays.
+-- | A bundle of stream sinks,   where the elements of the stream
+--   are chunked into arrays.
 --
---   The chunks have some layout @l@ and contain elements of type @a@.
 type Sinks   l a = C.Sinks Int IO l a
 
 
