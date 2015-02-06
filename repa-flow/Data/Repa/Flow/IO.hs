@@ -1,9 +1,10 @@
 
 -- | Read and write files.
 module Data.Repa.Flow.IO
-        ( -- * Sourcing
-          G.fromFiles
-        , bucketsFromFile
+        ( module Data.Repa.Flow.IO.Bucket
+
+           -- * Sourcing
+        , G.fromFiles
         , sourceBytes
         , sourceChars
         , sourceLines
@@ -12,8 +13,6 @@ module Data.Repa.Flow.IO
 
           -- * Sinking
         , G.toFiles
-        , bucketsToDir
-        , bucketToFile
         , sinkBytes
         , sinkChars
         , sinkLines)

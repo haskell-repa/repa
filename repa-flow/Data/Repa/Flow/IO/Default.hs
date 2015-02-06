@@ -3,11 +3,11 @@
 --   chunk size of 64kBytes and just call `error` if the source file
 --   appears corruped. 
 module Data.Repa.Flow.IO.Default
-        ( defaultChunkSize
+        ( module Data.Repa.Flow.IO.Bucket
+        , defaultChunkSize
 
           -- * Sourcing
         , F.fromFiles
-        , F.bucketsFromFile
         , sourceTSV
         , sourceRecords
         , sourceLines
@@ -16,12 +16,11 @@ module Data.Repa.Flow.IO.Default
 
           -- * Sinking
         , F.toFiles
-        , F.bucketsToDir
-        , F.bucketToFile
         , sinkChars
         , sinkLines
         , sinkBytes)
 where
+import Data.Repa.Flow.IO.Bucket
 import qualified Data.Repa.Flow.IO              as F
 #include "repa-stream.h"
 
