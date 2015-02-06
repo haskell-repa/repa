@@ -1,5 +1,4 @@
-{-# LANGUAGE UndecidableInstances #-}
-
+{-# OPTIONS -fno-warn-unused-imports #-}
 -- | 
 -- 
 --  = Getting Started
@@ -132,6 +131,7 @@ module Data.Repa.Flow
         , foldGroupsBy_i,       FoldGroupsDict)
 where
 import Data.Repa.Flow.Default
+import Data.Repa.Flow.Default.Debug
 import Data.Repa.Flow.States
 
 import Data.Repa.Eval.Array

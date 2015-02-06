@@ -1,22 +1,22 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
-module Data.Repa.Flow.Debug
-        ( Nicer         (..)
-        , Presentable   (..)
-
-        -- * More
-        , more,         more'
+module Data.Repa.Flow.Default.Debug
+        (-- * More
+          more,         more'
 
         -- * More (tabular)
         , moret,        moret'
 
         -- * More (raw)
-        , morer,        morer')
+        , morer,        morer'
 
+        -- * Nicer
+        , Nicer         (..)
+        , Presentable   (..))
 where
 import Data.Repa.Nice.Present
 import Data.Repa.Nice.Tabulate
 import Data.Repa.Nice
-import Data.Repa.Flow                   hiding (next)
+import Data.Repa.Flow.Default           hiding (next)
 import qualified Data.Repa.Array        as A
 import Control.Monad
 import Data.List                        as L

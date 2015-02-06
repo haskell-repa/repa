@@ -28,8 +28,8 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Chunked
-        Data.Repa.Flow.Debug
         Data.Repa.Flow.Default
+        Data.Repa.Flow.Default.Debug
         Data.Repa.Flow.Generic
         Data.Repa.Flow.IO
         Data.Repa.Flow.IO.Default

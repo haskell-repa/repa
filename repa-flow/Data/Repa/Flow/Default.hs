@@ -2,8 +2,6 @@
 -- | This module defines the default specialisation of flows that
 --   appears in "Data.Repa.Flow". Each stream in the bundle is indexed
 --   by a single integer, and stream state is stored using the IO monad.
---   We assume this is what most client programmers will want most
---   of the time.
 --
 module Data.Repa.Flow.Default
         ( -- * Flow types
