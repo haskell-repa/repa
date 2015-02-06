@@ -204,7 +204,8 @@ module Data.Repa.Array
         , reverse
 
           -- ** Mapping
-        , map -- , zipWith
+        , map,  mapS
+          -- , zipWith
 
           -- ** Searching
         , findIndex
@@ -292,6 +293,16 @@ findIndex p !arr
            in   if p x  then Just ix
                         else loop_findIndex sPEC (ix + 1)
         {-# INLINE_INNER loop_findIndex #-}
-
 {-# INLINE_ARRAY findIndex #-}
+
+
+-- | Like `A.map`, but immediately `computeS` the result.
+mapS    :: (Bulk lSrc a, Target lDst b, Index lSrc ~ Index lDst) 
+        => Name lDst    -- ^ Name of destination layout.
+        -> (a -> b)     -- ^ Worker function.
+        -> Array lSrc a -- ^ Source array.
+        -> Array lDst b
+mapS l f xs = computeS l $ A.map f xs
+{-# INLINE mapS #-}
+
 
