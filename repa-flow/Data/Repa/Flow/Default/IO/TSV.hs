@@ -1,8 +1,8 @@
 
-module Data.Repa.Flow.IO.TSV
+module Data.Repa.Flow.Default.IO.TSV
         (sourceTSV)
 where
-import Data.Repa.Flow
+import Data.Repa.Flow.Default
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A

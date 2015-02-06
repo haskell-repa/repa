@@ -128,10 +128,28 @@ module Data.Repa.Flow
 
         -- ** Folding
         , folds_i,              FoldsDict
-        , foldGroupsBy_i,       FoldGroupsDict)
+        , foldGroupsBy_i,       FoldGroupsDict
+
+        -- * Flow I/O
+        , defaultChunkSize
+
+        -- ** Sourcing
+        , fromFiles
+        , sourceTSV
+        , sourceRecords
+        , sourceLines
+        , sourceChars
+        , sourceBytes
+
+        -- ** Sinking
+        , toFiles
+        , sinkChars
+        , sinkLines
+        , sinkBytes)
 where
 import Data.Repa.Flow.Default
 import Data.Repa.Flow.Default.Debug
+import Data.Repa.Flow.Default.IO
 import Data.Repa.Flow.States
 
 import Data.Repa.Eval.Array

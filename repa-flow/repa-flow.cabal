@@ -52,6 +52,8 @@ Library
         Data.Repa.Flow.Chunked.Operator.Folds
         Data.Repa.Flow.Chunked.Operator.Groups
 
+        Data.Repa.Flow.Default.IO.TSV
+
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.List
         Data.Repa.Flow.Generic.Operator
@@ -63,7 +65,6 @@ Library
         Data.Repa.Flow.Simple.Operator
         Data.Repa.Flow.Simple.IO
 
-        Data.Repa.Flow.IO.TSV
 
   ghc-options:
         -Wall 

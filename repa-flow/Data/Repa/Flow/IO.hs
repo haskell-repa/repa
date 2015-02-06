@@ -17,9 +17,9 @@ module Data.Repa.Flow.IO
         , sinkChars
         , sinkLines)
 where
-import Data.Repa.Flow
+import Data.Repa.Flow.Default
 import Data.Repa.Flow.IO.Bucket
-import Data.Repa.Flow.IO.TSV                    as F
+import Data.Repa.Flow.Default.IO.TSV            as F
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Fusion.Unpack                  as F
