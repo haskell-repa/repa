@@ -7,7 +7,7 @@ import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A
 import Data.Char
-import qualified Data.Repa.Flow.Generic         as G hiding (next)
+import qualified Data.Repa.Flow.Generic.IO      as G
 #include "repa-stream.h"
 
 

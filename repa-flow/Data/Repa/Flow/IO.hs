@@ -24,7 +24,7 @@ import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array                          as A hiding (fromList)
-import qualified Data.Repa.Flow.Generic         as G hiding (next)
+import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
 import Data.Char
 #include "repa-stream.h"

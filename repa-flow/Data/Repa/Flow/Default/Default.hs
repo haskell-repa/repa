@@ -2,7 +2,7 @@
 -- | Re-exports functions from "Data.Repa.Flow.IO" that use a default
 --   chunk size of 64kBytes and just call `error` if the source file
 --   appears corruped. 
-module Data.Repa.Flow.IO.Default
+module Data.Repa.Flow.Default.IO
         ( module Data.Repa.Flow.IO.Bucket
         , defaultChunkSize
 

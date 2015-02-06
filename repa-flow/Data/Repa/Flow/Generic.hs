@@ -65,21 +65,7 @@ module Data.Repa.Flow.Generic
           -- * Vector Flow Operators
           -- ** Distribution
         , distributes_o
-        , ddistributes_o
-
-          -- * Flow IO
-          -- ** Sourcing
-        , fromFiles
-        , sourceRecords
-        , sourceChunks
-        , sourceChars
-        , sourceBytes
-
-          -- ** Sinking
-        , toFiles
-        , sinkChars
-        , sinkLines
-        , sinkBytes)
+        , ddistributes_o)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
@@ -87,5 +73,4 @@ import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Vector
 import Data.Repa.Flow.Generic.Eval
-import Data.Repa.Flow.Generic.IO
 

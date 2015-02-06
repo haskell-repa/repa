@@ -38,25 +38,12 @@ module Data.Repa.Flow.Chunked
 
           -- ** Ignorance
         , discard_o
-        , ignore_o
-
-          -- * Flow IO
-          -- ** Sourcing
-        , G.fromFiles
-        , sourceRecords
-        , sourceChars
-        , sourceBytes
-
-          -- ** Sinking
-        , G.toFiles
-        , sinkChars
-        , sinkBytes)
+        , ignore_o)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Operator
-import Data.Repa.Flow.Chunked.IO
 import Data.Repa.Flow.States
-import qualified Data.Repa.Flow.Generic as G
+import qualified Data.Repa.Flow.Generic         as G
 #include "repa-stream.h"
 
 

@@ -28,14 +28,22 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Chunked
+        Data.Repa.Flow.Chunked.IO
+
         Data.Repa.Flow.Default
         Data.Repa.Flow.Default.Debug
+        Data.Repa.Flow.Default.IO
+
         Data.Repa.Flow.Generic
+        Data.Repa.Flow.Generic.IO
+
         Data.Repa.Flow.IO
-        Data.Repa.Flow.IO.Default
         Data.Repa.Flow.IO.Bucket
+
         Data.Repa.Flow.Simple
+
         Data.Repa.Flow.States
+
         Data.Repa.Flow
 
   other-modules:
@@ -43,14 +51,12 @@ Library
         Data.Repa.Flow.Chunked.Operator
         Data.Repa.Flow.Chunked.Operator.Folds
         Data.Repa.Flow.Chunked.Operator.Groups
-        Data.Repa.Flow.Chunked.IO
 
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.List
         Data.Repa.Flow.Generic.Operator
         Data.Repa.Flow.Generic.Vector
         Data.Repa.Flow.Generic.Eval
-        Data.Repa.Flow.Generic.IO
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List
