@@ -14,17 +14,19 @@
 --
 -- @
 -- > import Data.Repa.Flow
--- > ws <- fileSourcesLines [\"\/usr\/share\/dict\/words\"] (64 * 1024) (error \"argh\")
+-- > import Data.Repa.Flow.IO.Default
+-- > import Data.Repa.Flow.Debug
+-- > ws <- fromFiles [\"\/usr\/share\/dict\/words\"] sourceLines
 -- @
 --
---   Show the first 40 characters of the first chunk in source 0.
+--   Show the first 10 elements of the first chunk in source 0.
 --
 -- @ 
--- > next 0 40 ws
--- Just \"A\\nA\'s\\nAA\'s\\nAB\'s\\nABM\'s\\nAC\'s\\nACTH\'s\\nAI\'s\\nA\"
+-- > moren 0 10 ws
+--   Just ["A","A's","AA's","AB's","ABM's","AC's","ACTH's","AI's","AIDS's","AM's"]
 -- @
 --
---   Show the first 40 characters of the next chunk.
+--   Show the first 40 elements of the next chunk.
 --
 -- @
 -- > next 0 40 ws

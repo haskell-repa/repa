@@ -2,9 +2,15 @@
 module Data.Repa.Flow.Debug
         ( Nicer         (..)
         , Presentable   (..)
-        , more
-        , moren
-        , moret)
+
+        -- * More
+        , more,         more'
+
+        -- * More (nicely)
+        , moren,        moren'
+
+        -- * More (tabular)
+        , moret,        moret')
 where
 import Data.Repa.Nice.Present
 import Data.Repa.Nice.Tabulate
@@ -26,36 +32,58 @@ import Prelude                          as P
 --     If you want to retain the rest of the final chunk then use `head_i`.
 --
 more    :: (Windowable l a, A.Index l ~ Int)
-        => Int          -- ^ Source index.
-        -> Int          -- ^ Number of elements to show.
-        -> Sources l a
+        => Int          -- ^ Index  of source in bundle.
+        -> Sources l a  -- ^ Bundle of sources.
         -> IO (Maybe [a])
-more ix len s
-        = liftM (liftM fst) $ head_i ix len s
+more i ss = more' i 20 ss
 {-# INLINE more #-}
 
 
--- | Like `more`, but convert the result to a nice representation.
+-- | Like `more` but also specify now many elements you want.
+more'   :: (Windowable l a, A.Index l ~ Int)
+        => Int -> Int -> Sources l a -> IO (Maybe [a])
+more' ix len s
+        = liftM (liftM fst) $ head_i ix len s
+{-# INLINE_FLOW more' #-}
+
+
+
+-- | Like `more`, but convert the result to a nicer representation.
 moren   :: (A.Windowable l a, A.Index l ~ Int, Nicer a)
-        => Int          -- ^ Source index.
-        -> Int          -- ^ Number of elements to show.
-        -> Sources l a
+        => Int          -- ^ Index  of source in bundle.
+        -> Sources l a  -- ^ Bundle of sources.
         -> IO (Maybe [Nice a])
-moren ix len s
-        = liftM (liftM (L.map nice . fst)) $ head_i ix len s
+
+moren i ss = moren' i 20 ss
 {-# INLINE moren #-}
 
 
--- | Like `more`, but print results in tabular form to the console.
+-- | Like `more'`, but convert the result to a nice representation.
+moren'   :: (A.Windowable l a, A.Index l ~ Int, Nicer a)
+        => Int -> Int -> Sources l a -> IO (Maybe [Nice a])
+moren' ix len s
+        = liftM (liftM (L.map nice . fst)) $ head_i ix len s
+{-# INLINE_FLOW moren' #-}
+
+
+-- | Like `more`, but print results in a tabular form to the console.
 moret   :: ( A.Windowable l a, A.Index l ~ Int
            , Nicer [a], Presentable (Nice [a]))
-        => Int          -- ^ Source index.
-        -> Int          -- ^ Number of elements to show.
-        -> Sources l a
+        => Int          -- ^ Index of source in bundle.
+        -> Sources l a  -- ^ Bundle of sources.
         -> IO ()
 
-moret ix len s
+moret i ss = moret' i 20 ss
+{-# INLINE moret #-}
+
+
+-- | Like `more'`, but print results in tabular form to the console.
+moret'  :: ( A.Windowable l a, A.Index l ~ Int
+           , Nicer [a], Presentable (Nice [a]))
+        => Int -> Int -> Sources l a -> IO ()
+
+moret' ix len s
  = do   Just (vals, _) <- head_i ix len s
         putStrLn $ T.unpack $ tabulate $ nice vals
-{-# NOINLINE moret #-}
+{-# INLINE_FLOW moret' #-}
 
