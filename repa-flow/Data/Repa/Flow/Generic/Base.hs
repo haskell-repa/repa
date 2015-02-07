@@ -18,13 +18,13 @@ import Control.Monad
 data Sources i m e
         = Sources
         { -- | Number of sources in this bundle.
-          sourceArity   :: i
+          sourcesArity  :: i
 
           -- | Function to pull data from a bundle. 
           --   Give it the index of the desired stream, a continuation that 
           --   accepts an element, and a continuation to invoke when no more
           --   elements will ever be available.
-        , sourcePull    :: Ix i -> (e -> m ()) -> m () -> m () }
+        , sourcesPull   :: Ix i -> (e -> m ()) -> m () -> m () }
 
 
 -- | A bundle of stream sinks, indexed by a value of type @i@, 
@@ -35,14 +35,14 @@ data Sources i m e
 data Sinks   i m e
         = Sinks
         { -- | Number of sources in the bundle.
-          sinkArity     :: i
+          sinksArity    :: i
 
           -- | Push an element to one of the streams in the bundle.
-        , sinkPush      :: Ix i -> e -> m ()
+        , sinksPush     :: Ix i -> e -> m ()
 
           -- | Signal that no more elements will ever be available for this
           --   sink.
-        , sinkEject     :: Ix i -> m () }
+        , sinksEject    :: Ix i -> m () }
 
 
 -------------------------------------------------------------------------------

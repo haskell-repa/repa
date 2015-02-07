@@ -5,7 +5,8 @@
 --
 module Data.Repa.Flow.Default
         ( -- * Flow types
-          Sources, Sinks
+          Sources,              sourcesArity
+        , Sinks,                sinksArity
         , Flow
 
         -- * States and Arrays
@@ -88,6 +89,16 @@ type Sources l a = C.Sources Int IO l a
 type Sinks   l a = C.Sinks Int IO l a
 
 
+-- | Yield the number of streams in the bundle.
+sourcesArity :: Sources l a -> Int
+sourcesArity = G.sourcesArity
+
+
+-- | Yield the number of streams in the bundle.
+sinksArity :: Sinks l a -> Int
+sinksArity = G.sinksArity
+
+
 -- | Shorthand for common type classes.
 type Flow    l a = C.Flow  Int IO l a
 
@@ -124,9 +135,9 @@ fromLists nDst xss = C.fromLists nDst xss
 toList1   :: A.BulkI l a
           => Int -> Sources l a -> IO (Maybe [a])
 toList1 ix s  
- | ix >= G.sourceArity s = return Nothing
+ | ix >= G.sourcesArity s = return Nothing
  | otherwise             
- = liftM Just $ C.toList1 (IIx ix (G.sourceArity s)) s 
+ = liftM Just $ C.toList1 (IIx ix (G.sourcesArity s)) s 
 {-# INLINE toList1 #-}
 
 
@@ -134,9 +145,9 @@ toList1 ix s
 toLists1  :: A.BulkI l a
           => Int -> Sources l a -> IO (Maybe [[a]])
 toLists1 ix s
- | ix >= G.sourceArity s = return Nothing
+ | ix >= G.sourcesArity s = return Nothing
  | otherwise             
- = liftM Just $ C.toLists1 (IIx ix (G.sourceArity s)) s 
+ = liftM Just $ C.toLists1 (IIx ix (G.sourcesArity s)) s 
 {-# INLINE toLists1 #-}
 
 
@@ -355,9 +366,9 @@ ignore_o  = G.ignore_o
 head_i  :: (A.Windowable l a, A.Index l ~ Int)
         => Int -> Int -> Sources l a -> IO (Maybe ([a], Sources l a))
 head_i ix len s
- | ix >= G.sourceArity s = return Nothing
+ | ix >= G.sourcesArity s = return Nothing
  | otherwise             
- = liftM Just $ C.head_i len s (IIx ix (G.sourceArity s))
+ = liftM Just $ C.head_i len s (IIx ix (G.sourcesArity s))
 {-# INLINE head_i #-}
 
 
