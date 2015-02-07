@@ -58,7 +58,7 @@ pGroupSum fiNames fiVals foNames foSums
         oAgg    <-  dup_oo oNames oSums
 
         -- Drain all the source data into the sinks.
-        drain iAgg oAgg
+        drainS iAgg oAgg
 
 
 dieUsage

@@ -85,10 +85,10 @@
 --   (output) operator for `Sinks`.
 -- 
 --   Now that we have a bundle of `Sources`, and some matching `Sinks`, 
---   we can `drain` all of the data from the former into the latter.
+--   we can `drainS` all of the data from the former into the latter.
 --
 -- @
--- > drain up out
+-- > drainS up out
 -- @
 --
 --   At this point we can run an external shell command to check the output.
@@ -116,8 +116,11 @@
 --
 module Data.Repa.Flow
         ( -- * Flow types
-          Sources, Sinks
+          Sources
+        , Sinks
         , Flow
+        , sourcesArity
+        , sinksArity
 
         -- * States and Arrays
         , module Data.Repa.Flow.States
@@ -126,7 +129,7 @@ module Data.Repa.Flow
         , module Data.Repa.Array.Material
 
         -- * Evaluation
-        , drain
+        , drainS
 
         -- * Conversion
         , fromList,             fromLists

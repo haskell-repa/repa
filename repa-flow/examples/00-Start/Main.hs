@@ -14,4 +14,4 @@ main
 
         up  <- map_i B (mapS U toUpper) ws
         out <- toFiles ["out1.txt", "out2.txt"] $ sinkLines B U
-        drain up out
+        drainS up out

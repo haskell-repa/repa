@@ -5,7 +5,7 @@ module Data.Repa.Flow.Simple
         , Sink
 
           -- * Evaluation
-        , drain
+        , drainS
 
           -- * Conversions
         , fromList
@@ -71,7 +71,7 @@ import qualified Data.Repa.Flow.Generic.Eval    as G
 
 
 -- | Pull all available values from the source and push them to the sink.
-drain   :: Monad m
+drainS  :: Monad m
         => Source m a -> Sink m a -> m ()
-drain = G.drain
-{-# INLINE drain #-}
+drainS = G.drainS
+{-# INLINE drainS #-}

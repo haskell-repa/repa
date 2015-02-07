@@ -25,4 +25,4 @@ pcopy fileIn fileOut
         ofile   <- toFiles   [fileOut] sinkBytes
 
         -- Drain the source into the sink.
-        drain ifile ofile
+        drainS ifile ofile

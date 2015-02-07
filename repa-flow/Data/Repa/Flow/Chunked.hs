@@ -6,7 +6,7 @@ module Data.Repa.Flow.Chunked
         , Flow
 
           -- * Evaluation
-        , drain
+        , drainS
 
           -- * Conversion
         , fromList
@@ -48,7 +48,7 @@ import qualified Data.Repa.Flow.Generic         as G
 
 
 -- | Pull all available values from the sources and push them to the sinks.
-drain   :: (G.Index i, Monad m)
+drainS   :: (G.Index i, Monad m)
         => Sources i m r a -> Sinks i m r a -> m ()
-drain = G.drain
-{-# INLINE drain #-}
+drainS = G.drainS
+{-# INLINE drainS #-}

@@ -1,16 +1,16 @@
 
 module Data.Repa.Flow.Generic.Eval
-        (drain)
+        (drainS)
 where
 import Data.Repa.Flow.Generic.Base
 #include "repa-stream.h"
 
 
 -- | Pull all available values from the sources and push them to the sinks.
-drain   :: (Index i, Monad m)
+drainS   :: (Index i, Monad m)
         => Sources i m a -> Sinks i m a -> m ()
 
-drain (Sources nSources ipull) (Sinks nSinks opush oeject)
+drainS (Sources nSources ipull) (Sinks nSinks opush oeject)
  = loop_drain (zero n)
  where 
         n = min nSources nSinks
@@ -28,4 +28,4 @@ drain (Sources nSources ipull) (Sinks nSinks opush oeject)
                          Just ix'       -> loop_drain ix'
                 {-# INLINE eject_drain #-}
         {-# INLINE loop_drain #-}
-{-# INLINE_FLOW drain #-}
+{-# INLINE_FLOW drainS #-}

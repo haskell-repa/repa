@@ -57,7 +57,7 @@ pFields config
 
         -- Drain all the input chunks into the output files.
         sSingle   <- G.project_i (IIx 0 1) sCat
-        G.drain sSingle oOut
+        G.drainS sSingle oOut
 
 
 -------------------------------------------------------------------------------

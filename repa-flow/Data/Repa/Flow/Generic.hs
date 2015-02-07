@@ -13,7 +13,7 @@ module Data.Repa.Flow.Generic
          , module Data.Repa.Flow.States
 
           -- * Evaluation
-        , drain
+        , drainS
 
           -- * Conversion
         , fromList

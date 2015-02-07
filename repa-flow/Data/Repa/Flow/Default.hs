@@ -5,9 +5,11 @@
 --
 module Data.Repa.Flow.Default
         ( -- * Flow types
-          Sources,              sourcesArity
-        , Sinks,                sinksArity
+          Sources
+        , Sinks
         , Flow
+        , sourcesArity
+        , sinksArity
 
         -- * States and Arrays
         , module Data.Repa.Flow.States
@@ -16,7 +18,7 @@ module Data.Repa.Flow.Default
         , module Data.Repa.Array.Material
 
         -- * Evaluation
-        , drain
+        , drainS
 
         -- * Conversion
         , fromList,             fromLists
@@ -105,9 +107,9 @@ type Flow    l a = C.Flow  Int IO l a
 
 -- Evaluation -----------------------------------------------------------------
 -- | Pull all available values from the sources and push them to the sinks.
-drain   :: Sources l a -> Sinks l a -> IO ()
-drain = G.drain
-{-# INLINE drain #-}
+drainS   :: Sources l a -> Sinks l a -> IO ()
+drainS = G.drainS
+{-# INLINE drainS #-}
 
 
 -- Conversion -----------------------------------------------------------------
