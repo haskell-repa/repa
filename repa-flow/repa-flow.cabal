@@ -24,6 +24,7 @@ Library
         containers              == 0.5.*,
         text                    == 1.2.*,
         repa-stream             == 4.0.0.0,
+        repa-eval               == 4.0.0.0,
         repa-array              == 4.0.0.0
 
   exposed-modules:
@@ -67,6 +68,7 @@ Library
 
 
   ghc-options:
+        -threaded
         -Wall 
         -O2
         -fcpr-off

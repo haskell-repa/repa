@@ -56,12 +56,10 @@ gangSize (Gang n _ _ _)
 
 
 -- | Fork a 'Gang' with the given number of threads (at least 1).
-forkGang :: Int# -> IO Gang
-forkGang n_
- = assert (I# n_ > I# 0#)
+forkGang :: Int -> IO Gang
+forkGang !n
+ = assert (n > 0)
  $ do
-        let !n  = I# n_
-
         -- Create the vars we'll use to issue work requests.
         mvsRequest     <- sequence $ replicate n $ newEmptyMVar
 
@@ -78,7 +76,7 @@ forkGang n_
         -- Create all the worker threads
         zipWithM_ forkOn [0..]
                 $ zipWith3 (\(I# i) -> gangWorker i)
-                        [0 .. n-1] mvsRequest mvsDone
+                        [0 .. n - 1] mvsRequest mvsDone
 
         -- The gang is currently idle.
         busy   <- newMVar False

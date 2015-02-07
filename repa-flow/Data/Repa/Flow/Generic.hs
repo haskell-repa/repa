@@ -10,10 +10,11 @@ module Data.Repa.Flow.Generic
         , Sinks         (..)
 
           -- * Flow state
-         , module Data.Repa.Flow.States
+        , module Data.Repa.Flow.States
 
           -- * Evaluation
         , drainS
+        , drainP
 
           -- * Conversion
         , fromList

@@ -130,6 +130,7 @@ module Data.Repa.Flow
 
         -- * Evaluation
         , drainS
+        , drainP
 
         -- * Conversion
         , fromList,             fromLists

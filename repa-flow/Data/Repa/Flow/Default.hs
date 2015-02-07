@@ -19,6 +19,7 @@ module Data.Repa.Flow.Default
 
         -- * Evaluation
         , drainS
+        , drainP
 
         -- * Conversion
         , fromList,             fromLists
@@ -107,9 +108,26 @@ type Flow    l a = C.Flow  Int IO l a
 
 -- Evaluation -----------------------------------------------------------------
 -- | Pull all available values from the sources and push them to the sinks.
+--   Streams in the bundle are processed sequentially, from first to last.
+--
+--   * If the `Sources` and `Sinks` have different numbers of streams then
+--     we only evaluate the common subset.
+--
 drainS   :: Sources l a -> Sinks l a -> IO ()
 drainS = G.drainS
 {-# INLINE drainS #-}
+
+
+-- | Pull all available values from the sources and push them to the sinks,
+--   in parallel. We fork a thread for each of the streams and evaluate
+--   them all in parallel.
+--
+--   * If the `Sources` and `Sinks` have different numbers of streams then
+--     we only evaluate the common subset.
+--
+drainP   :: Sources l a -> Sinks l a -> IO ()
+drainP = G.drainP
+{-# INLINE drainP #-}
 
 
 -- Conversion -----------------------------------------------------------------
