@@ -1,8 +1,8 @@
 
-module Data.Array.Repa.Eval.Seq.Cursored
+module Data.Repa.Eval.Generic.Seq.Cursored
         (fillCursoredBlock2)
 where
-import Data.Array.Repa.Eval.Elt
+import Data.Repa.Eval.Elt
 import GHC.Exts
 
 

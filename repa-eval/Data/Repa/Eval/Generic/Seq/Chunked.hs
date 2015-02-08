@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Eval.Seq.Chunked
+module Data.Repa.Eval.Generic.Seq.Chunked
         ( fillLinear
         , fillBlock2)
 where

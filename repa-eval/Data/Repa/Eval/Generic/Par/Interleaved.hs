@@ -1,8 +1,8 @@
 
-module Data.Array.Repa.Eval.Par.Interleaved
+module Data.Repa.Eval.Generic.Par.Interleaved
         (fillInterleaved)
 where
-import Data.Array.Repa.Eval.Gang
+import Data.Repa.Eval.Gang
 import GHC.Exts
 
 

@@ -1,5 +1,5 @@
 -- | Gang Primitives.
-module Data.Array.Repa.Eval.Gang
+module Data.Repa.Eval.Gang
         (Gang, forkGang, gangSize, gangIO, gangST)     
 where
 import GHC.IO
@@ -57,7 +57,7 @@ gangSize (Gang n _ _ _)
 
 -- | Fork a 'Gang' with the given number of threads (at least 1).
 forkGang :: Int -> IO Gang
-forkGang !n
+forkGang !n@(I# n_)
  = assert (n > 0)
  $ do
         -- Create the vars we'll use to issue work requests.

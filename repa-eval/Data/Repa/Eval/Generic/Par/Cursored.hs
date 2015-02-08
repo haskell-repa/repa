@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Eval.Par.Cursored
+module Data.Repa.Eval.Generic.Par.Cursored
         ( fillBlock2
         , fillCursoredBlock2)
 where
-import Data.Array.Repa.Eval.Elt
-import Data.Array.Repa.Eval.Gang
-import qualified Data.Array.Repa.Eval.Seq.Cursored      as Seq
+import Data.Repa.Eval.Elt
+import Data.Repa.Eval.Gang
+import qualified Data.Repa.Eval.Generic.Seq.Cursored      as Seq
 import GHC.Exts
 
 

@@ -1,11 +1,11 @@
 
-module Data.Array.Repa.Eval.Par.Reduction
+module Data.Repa.Eval.Generic.Par.Reduction
         ( foldAll
         , foldInner)
 where
-import Data.Array.Repa.Eval.Gang
+import Data.Repa.Eval.Gang
 import GHC.Exts
-import qualified Data.Array.Repa.Eval.Seq.Reduction     as Seq
+import qualified Data.Repa.Eval.Generic.Seq.Reduction     as Seq
 import Data.IORef
 
 

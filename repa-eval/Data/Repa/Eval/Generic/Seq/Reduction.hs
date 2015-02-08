@@ -1,5 +1,5 @@
 
-module Data.Array.Repa.Eval.Seq.Reduction
+module Data.Repa.Eval.Generic.Seq.Reduction
         ( foldAll
         , foldRange
         , foldInner)

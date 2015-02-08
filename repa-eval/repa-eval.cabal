@@ -22,20 +22,20 @@ Library
         ghc-prim        == 0.3.*
 
   Exposed-modules:
-        Data.Array.Repa.Eval.Elt
-        Data.Array.Repa.Eval.Gang
-        Data.Array.Repa.Eval.Seq
-        Data.Array.Repa.Eval.Par
+        Data.Repa.Eval.Elt
+        Data.Repa.Eval.Gang
+        Data.Repa.Eval.Generic.Seq
+        Data.Repa.Eval.Generic.Par
 
   Other-modules:
-        Data.Array.Repa.Eval.Seq.Chunked
-        Data.Array.Repa.Eval.Seq.Cursored
-        Data.Array.Repa.Eval.Seq.Reduction
+        Data.Repa.Eval.Generic.Seq.Chunked
+        Data.Repa.Eval.Generic.Seq.Cursored
+        Data.Repa.Eval.Generic.Seq.Reduction
 
-        Data.Array.Repa.Eval.Par.Chunked
-        Data.Array.Repa.Eval.Par.Cursored
-        Data.Array.Repa.Eval.Par.Reduction
-        Data.Array.Repa.Eval.Par.Interleaved
+        Data.Repa.Eval.Generic.Par.Chunked
+        Data.Repa.Eval.Generic.Par.Cursored
+        Data.Repa.Eval.Generic.Par.Reduction
+        Data.Repa.Eval.Generic.Par.Interleaved
 
   ghc-options:
         -Wall 

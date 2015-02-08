@@ -1,6 +1,6 @@
 
 -- | Values that can be stored in Repa Arrays.
-module Data.Array.Repa.Eval.Elt
+module Data.Repa.Eval.Elt
 	(Elt (..))
 where
 import GHC.Prim

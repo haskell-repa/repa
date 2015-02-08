@@ -1,9 +1,9 @@
 
-module Data.Array.Repa.Eval.Par.Chunked
+module Data.Repa.Eval.Generic.Par.Chunked
         ( fillChunked
         , fillChunkedIO)
 where
-import Data.Array.Repa.Eval.Gang
+import Data.Repa.Eval.Gang
 import GHC.Exts
 
 -------------------------------------------------------------------------------
