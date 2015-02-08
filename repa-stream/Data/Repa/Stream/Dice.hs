@@ -4,7 +4,6 @@ module Data.Repa.Stream.Dice
 where
 import Data.Vector.Fusion.Stream.Monadic        (Stream(..), Step(..))
 import qualified Data.Vector.Fusion.Stream.Size as S
-import Debug.Trace
 #include "repa-stream.h"
 
 

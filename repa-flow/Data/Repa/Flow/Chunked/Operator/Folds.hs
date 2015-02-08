@@ -62,7 +62,8 @@ folds_i _ _ f z sLens@(G.Sources nLens _)
                   case (mNameLens, mVals) of
                    -- If we couldn't get a chunk for both sides then we can't
                    -- produce anymore results, and the merge is done.
-                   (Nothing, _)             -> eject
+                   (Nothing, _)       -> eject
+                   (_,       Nothing) -> eject
 
                    -- We've got a chunk for both sides, time to do some work.
                    (Just cNameLens, Just cVals) 
