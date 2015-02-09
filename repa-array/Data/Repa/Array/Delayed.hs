@@ -11,6 +11,7 @@ import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target
+import Control.Monad.Primitive
 import Debug.Trace
 import GHC.Exts
 import qualified Data.Repa.Eval.Generic.Par       as Par
@@ -74,8 +75,8 @@ instance (Layout l1, Target l2 a)
   = do  let !(I# len)   = size (extent l1)
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
         let get' ix     = get $ fromIndex   l1  (I# ix)
-        Seq.fillLinear  write get' len
-        touchBuffer  buf
+        Seq.fillLinear write get' len
+        touchBuffer buf
  {-# INLINE_ARRAY loadS #-}
 
  loadP gang (ADelayed l1 get) !buf

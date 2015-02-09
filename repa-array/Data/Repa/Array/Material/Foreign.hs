@@ -15,6 +15,7 @@ import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
 import Data.Word
+import Control.Monad.Primitive
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Storable
@@ -34,12 +35,8 @@ import GHC.Exts
 --   UNSAFE: Indexing into raw material arrays is not bounds checked.
 --   You may want to wrap this with a Checked layout as well.
 --
-data F  = Foreign 
-        { foreignLength :: Int}
-
-deriving instance Eq F
-deriving instance Show F
-
+newtype F = Foreign { foreignLength :: Int }
+  deriving (Show, Eq)
 
 ------------------------------------------------------------------------------
 -- | Foreign arrays.
@@ -67,7 +64,7 @@ instance Storable a => Bulk F a where
  data Array F  a          = FArray !Int !Int !(ForeignPtr a)
  layout (FArray _  len _) = Foreign len
  index  (FArray st len fptr) ix
-        = BS.inlinePerformIO 
+        = BS.inlinePerformIO
         $ withForeignPtr fptr
         $ \ptr -> peekElemOff ptr (st + toIndex (Foreign len) ix)
  {-# INLINE_ARRAY layout #-}
@@ -122,17 +119,18 @@ instance Storable a => Windowable F a where
 -------------------------------------------------------------------------------
 -- | Foreign buffers
 instance Storable a => Target F a where
- data Buffer F a
-        = FBuffer 
+ data Buffer s F a
+        = FBuffer
                 !Int            -- starting position of data, in elements.
                 !Int            -- length of buffer, in elements.
                 !(ForeignPtr a) -- element data.
 
  unsafeNewBuffer (Foreign len)
-  = do  let (proxy :: a) = undefined
+  = unsafePrimToPrim $
+    do  let (proxy :: a) = undefined
         ptr     <- mallocBytes (sizeOf proxy * len)
         _       <- peek ptr  `asTypeOf` return proxy
-        
+
         fptr    <- newForeignPtr finalizerFree ptr
         return  $ FBuffer 0 len fptr
  {-# INLINE_ARRAY unsafeNewBuffer #-}
@@ -140,11 +138,12 @@ instance Storable a => Target F a where
  -- CAREFUL: Unwrapping the foreignPtr like this means we need to be careful
  -- to touch it after the last use, otherwise the finaliser might run too early.
  unsafeWriteBuffer (FBuffer start _ fptr) !ix !x
-  = pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) (start + ix) x
+  = unsafePrimToPrim $
+    pokeElemOff (Unsafe.unsafeForeignPtrToPtr fptr) (start + ix) x
  {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer (FBuffer start len fptr) bump
-  =  withForeignPtr fptr $ \ptr 
+  = unsafePrimToPrim $ withForeignPtr fptr $ \ptr
   -> do let (proxy :: a) = undefined
         let len'         = len + bump
         let bytesLen'    = sizeOf proxy * len'
@@ -166,8 +165,12 @@ instance Storable a => Target F a where
  {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
  touchBuffer (FBuffer _ _ fptr)
-  = touchForeignPtr fptr
+  = unsafePrimToPrim $ touchForeignPtr fptr
  {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (FBuffer _ len _)
+   = Foreign len
+ {-# INLINE_ARRAY bufferLayout #-}
 
  {-# SPECIALIZE instance Target F Char   #-}
  {-# SPECIALIZE instance Target F Int    #-}
@@ -180,7 +183,7 @@ instance Storable a => Target F a where
 
 
 -- | Unpack Foreign buffers
-instance Unpack (Buffer F a) (Int, Int, ForeignPtr a) where
+instance Unpack (Buffer s F a) (Int, Int, ForeignPtr a) where
  unpack (FBuffer start len fptr)  = (start, len, fptr)
  repack _ (start, len, fptr)      = FBuffer start len fptr
  {-# INLINE_ARRAY unpack #-}
@@ -225,10 +228,10 @@ instance Eq (Array F Word8) where
   =  unsafePerformIO
   $  withForeignPtr fptr1 $ \ptr1
   -> withForeignPtr fptr2 $ \ptr2
-  -> do  
+  -> do
         let loop_eq_ArrayF ix
              | ix >= len1       = return True
-             | otherwise        
+             | otherwise
              = do x1 <- peekElemOff ptr1 (start1 + ix)
                   x2 <- peekElemOff ptr2 (start2 + ix)
                   if x1 == x2
@@ -249,10 +252,10 @@ instance Eq (Array F Char) where
   =  unsafePerformIO
   $  withForeignPtr fptr1 $ \(ptr1 :: Ptr Char)
   -> withForeignPtr fptr2 $ \(ptr2 :: Ptr Char)
-  -> do  
+  -> do
         let loop_eq_ArrayF ix
              | ix >= len1       = return True
-             | otherwise        
+             | otherwise
              = do x1 <- peekElemOff ptr1 (start1 + ix)
                   x2 <- peekElemOff ptr2 (start2 + ix)
                   if x1 == x2

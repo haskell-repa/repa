@@ -36,17 +36,17 @@ groups nGrp nLen arr
 
 
 -- | Like `groups`, but use the given function to determine whether two
---   consecutive elements should be in the same group. Also take 
+--   consecutive elements should be in the same group. Also take
 --   an initial starting group and count.
 --
--- @ 
+-- @
 -- > import Data.Repa.Array.Material
 -- > import Data.Repa.Nice
 -- > nice $ groupsWith U U (==) (Just ('w', 5)) (fromList U "waaabllle")
 -- ([('w',6),('a',3),('b',1),('l',3)],Just ('e',1))
 -- @
 --
-groupsWith 
+groupsWith
         :: GroupsDict lElt lGrp tGrp lLen tLen n
         => Name lGrp           -- ^ Layout for group names.
         -> Name lLen           -- ^ Layour for group lengths.
@@ -57,14 +57,14 @@ groupsWith
 
 groupsWith nGrp nLen f !c !vec0
  = (vec1, snd k1)
- where  
+ where
         f' x y  = return $ f x y
         {-# INLINE f' #-}
 
         (vec1, k1)
          = A.unchainToArray (T2 nGrp nLen)
          $ C.liftChain
-         $ C.groupsByC f' c  
+         $ C.groupsByC f' c
          $ A.chainOfArray vec0
 {-# INLINE_ARRAY groupsWith #-}
 
@@ -73,9 +73,9 @@ groupsWith nGrp nLen f !c !vec0
 type GroupsDict  lElt lGrp tGrp lLen tLen n
       = ( Bulk   lElt n
         , Target lGrp n
-        , Target lLen Int 
+        , Target lLen Int
         , Index  lGrp ~ Index lLen
-        , Unpack (Buffer lLen Int) tLen
-        , Unpack (Buffer lGrp n)   tGrp)
+        , Unpack (IOBuffer lLen Int) tLen
+        , Unpack (IOBuffer lGrp n)   tGrp)
 
-      
+
