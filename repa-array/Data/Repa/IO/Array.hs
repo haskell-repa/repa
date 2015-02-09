@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 
 module Data.Repa.IO.Array
         ( hGetArray,   hGetArrayPre
@@ -13,7 +14,7 @@ import Data.Word
 
 
 -- | Get data from a file, up to the given number of bytes.
--- 
+--
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
 hGetArray :: Handle -> Int -> IO (Array F Word8)
@@ -26,15 +27,15 @@ hGetArray h len
 {-# NOINLINE hGetArray #-}
 
 
--- | Get data from a file, up to the given number of bytes, also 
+-- | Get data from a file, up to the given number of bytes, also
 --   copying the given data to the front of the new buffer.
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
 hGetArrayPre :: Handle -> Int -> Array F Word8 -> IO (Array F Word8)
-hGetArrayPre h len (FArray offset lenPre fptrPre)
+hGetArrayPre h len (toForeignPtr -> (offset,lenPre,fptrPre))
  = F.withForeignPtr fptrPre
- $ \ptrPre' -> do   
+ $ \ptrPre' -> do
         let ptrPre      = F.plusPtr ptrPre' offset
         ptrBuf :: F.Ptr Word8 <- F.mallocBytes (lenPre + len)
         F.copyBytes ptrBuf ptrPre lenPre
@@ -51,7 +52,7 @@ hGetArrayPre h len (FArray offset lenPre fptrPre)
 --     without copying it through the GHC heap.
 --
 hPutArray :: Handle -> Array F Word8 -> IO ()
-hPutArray h (FArray offset lenPre fptr)
+hPutArray h (toForeignPtr -> (offset,lenPre,fptr))
  = F.withForeignPtr fptr
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset

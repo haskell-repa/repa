@@ -79,7 +79,7 @@ deriving instance (Show a, U.Unbox a) => Show (Array U a)
 
 
 instance Unpack (Array U a) (U.Vector a) where
- unpack (UArray vec)    = vec `seq` vec
+ unpack (UArray vec)    = vec
  repack !_ !vec         = UArray vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}

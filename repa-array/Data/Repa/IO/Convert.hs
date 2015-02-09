@@ -1,4 +1,4 @@
-
+{-# LANGUAGE ViewPatterns #-}
 module Data.Repa.IO.Convert
         ( -- * Conversion
           -- | Read and Show `Double`s for a reasonable runtime cost.
@@ -20,26 +20,26 @@ import qualified Data.Double.Conversion.ByteString      as DC
 
 
 -- | Convert a foreign vector of characters to a Double.
--- 
+--
 --   * The standard Haskell `Char` type is four bytes in length.
 --     If you already have a vector of `Word8` then use `readDoubleFromBytes`
 --     instead to avoid the conversion.
 --
 readDouble :: Array F Char -> Double
 readDouble vec
-        = readDoubleFromBytes 
+        = readDoubleFromBytes
         $ A.computeS F $ A.map (fromIntegral . ord) vec
 {-# INLINE readDouble #-}
 
 
 -- | Convert a foreign vector of bytes to a Double.
 readDoubleFromBytes :: Array F Word8 -> Double
-readDoubleFromBytes (FArray start len fptr)
+readDoubleFromBytes (toForeignPtr -> (start,len,fptr))
  = unsafePerformIO
  $ F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->
-   F.withForeignPtr fptr   $ \pIn  -> 
-    do  
+   F.withForeignPtr fptr   $ \pIn  ->
+    do
         -- Copy the data to our new buffer.
         F.copyBytes   pBuf (pIn `plusPtr` start) (fromIntegral len)
 
@@ -52,7 +52,7 @@ readDoubleFromBytes (FArray start len fptr)
         return d
 {-# NOINLINE readDoubleFromBytes #-}
 
-foreign import ccall unsafe 
+foreign import ccall unsafe
  strtod :: Ptr Word8 -> Ptr (Ptr Word8) -> Double
 
 
@@ -66,7 +66,7 @@ showDouble !d
 
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
 showDoubleAsBytes :: Double -> Array F Word8
-showDoubleAsBytes !d 
+showDoubleAsBytes !d
         = fromByteString $ DC.toShortest d
 {-# INLINE showDoubleAsBytes #-}
 
@@ -83,7 +83,7 @@ showDoubleFixed !prec !d
 -- | Like `showDoubleAsBytes`, but use a fixed number of digits after
 --   the decimal point.
 showDoubleFixedAsBytes :: Int -> Double -> Array F Word8
-showDoubleFixedAsBytes !prec !d 
+showDoubleFixedAsBytes !prec !d
         = fromByteString $ DC.toFixed prec d
 {-# INLINE showDoubleFixedAsBytes #-}
 
