@@ -15,6 +15,7 @@ import Data.Repa.Array.RowWise
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack
+import Control.Monad
 import Prelude                                  as P
 
 
@@ -32,10 +33,10 @@ import Prelude                                  as P
 -- arr :: Array (E U (RW DIM2) Float
 --
 -- > arr ! (Z :. 5 :. 4)
--- > 1054.0 
+-- > 1054.0
 -- @
 --
-data E r l 
+data E r l
         = Dense r l
 
 deriving instance (Eq   r, Eq   l) => Eq   (E r l)
@@ -52,7 +53,7 @@ instance (Index r ~ Int, Layout r, Layout l)
 
         name = E name name
 
-        create     (E nR nL) ix        
+        create     (E nR nL) ix
              = Dense (create nR (size ix)) (create nL ix)
 
         extent     (Dense _ l)          = extent    l
@@ -72,7 +73,7 @@ deriving instance (Show (Name r), Show (Name l)) => Show (Name (E r l))
 -- | Dense arrays.
 instance (Index r ~ Int, Layout l, Bulk r a)
       =>  Bulk (E r l) a where
-        
+
         data Array (E r l) a            = Array l (Array r a)
         layout (Array l inner)          = Dense (layout inner) l
         index  (Array l inner) ix       = index inner (toIndex l ix)
@@ -82,41 +83,53 @@ instance (Index r ~ Int, Layout l, Bulk r a)
 
 -------------------------------------------------------------------------------
 -- | Dense buffers.
-instance (Index r ~ Int, Layout l, Target r a)
-      =>  Target (E r l) a where
+instance (Layout l, Index r ~ Int, Target r a)
+ => Target (E r l) a where
 
-        data Buffer (E r l) a
-                = EBuffer l (Buffer r a)
+ data Buffer s (E r l) a
+  = EBuffer !l !(Buffer s r a)
 
-        unsafeNewBuffer   (Dense r l)   
-         = do   buf     <- unsafeNewBuffer r
-                return  $ EBuffer l buf
+ unsafeNewBuffer   (Dense r l)
+  = do   buf     <- unsafeNewBuffer r
+         return  $ EBuffer l buf
 
-        unsafeWriteBuffer  (EBuffer _ buf) ix x     
-                = unsafeWriteBuffer buf ix x
+ unsafeReadBuffer  (EBuffer _ buf) ix
+  = unsafeReadBuffer buf ix
 
-        unsafeGrowBuffer   (EBuffer l buf) ix       
-         = do   buf'    <- unsafeGrowBuffer  buf ix
-                return  $ EBuffer l buf'
+ unsafeWriteBuffer  (EBuffer _ buf) ix x
+  = unsafeWriteBuffer buf ix x
 
-        unsafeSliceBuffer  _st _sz _buf
-                = error "repa-array: dense sliceBuffer, can't window inner"
+ unsafeGrowBuffer   (EBuffer l buf) ix
+  = do   buf'    <- unsafeGrowBuffer  buf ix
+         return  $ EBuffer l buf'
 
-        unsafeFreezeBuffer (EBuffer l buf)
-         = do   inner   <- unsafeFreezeBuffer buf
-                return  $ Array l inner
+ unsafeSliceBuffer  _st _sz _buf
+  = error "repa-array: dense sliceBuffer, can't window inner"
 
-        touchBuffer (EBuffer _ buf)  = touchBuffer buf
-        {-# INLINE unsafeNewBuffer    #-}
-        {-# INLINE unsafeWriteBuffer  #-}
-        {-# INLINE unsafeGrowBuffer   #-}
-        {-# INLINE unsafeSliceBuffer  #-}
-        {-# INLINE unsafeFreezeBuffer #-}
-        {-# INLINE touchBuffer        #-}
+ unsafeFreezeBuffer (EBuffer l buf)
+  = do   inner   <- unsafeFreezeBuffer buf
+         return  $ Array l inner
+
+ unsafeThawBuffer (Array l inner)
+  = EBuffer l `liftM` unsafeThawBuffer inner
+
+ touchBuffer (EBuffer _ buf)
+  = touchBuffer buf
+
+ bufferLayout (EBuffer l buf)
+  = Dense (bufferLayout buf) l
+
+ {-# INLINE unsafeNewBuffer    #-}
+ {-# INLINE unsafeWriteBuffer  #-}
+ {-# INLINE unsafeGrowBuffer   #-}
+ {-# INLINE unsafeSliceBuffer  #-}
+ {-# INLINE unsafeFreezeBuffer #-}
+ {-# INLINE touchBuffer        #-}
+ {-# INLINE bufferLayout       #-}
 
 
-instance Unpack (Buffer r a) tBuf
-      => Unpack (Buffer (E r l) a) (l, tBuf) where
+instance Unpack (Buffer s r a) tBuf
+      => Unpack (Buffer s (E r l) a) (l, tBuf) where
 
  unpack (EBuffer l buf)             = (l, unpack buf)
  repack (EBuffer _ buf) (l, ubuf)   = EBuffer l (repack buf ubuf)
@@ -131,7 +144,7 @@ instance Unpack (Buffer r a) tBuf
 --   which stores the elements.
 vector  :: LayoutI l
         => Name l -> Int -> E l DIM1
-vector n len            
+vector n len
         = create (E n (RC RZ)) (Z :. len)
 
 
