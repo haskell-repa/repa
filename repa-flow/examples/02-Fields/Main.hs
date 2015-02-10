@@ -49,8 +49,7 @@ pFields config
         sColumns   <- mapChunks_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        let !fl    =  A.fromList F ['\n']
-        sCat       <- mapChunks_i (mapS B (A.concatWith F fl)) sColumns
+        sCat       <- mapChunks_i (mapS B (A.unlines F)) sColumns
 
         -- Open an output directory for each of the columns.
         let dirsOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
@@ -61,7 +60,8 @@ pFields config
         ooOut'     <- G.flipIndex2_o  ooOut
         oOut       <- G.distribute2_o ooOut' dieFields
 
-        -- Drain all the input chunks into the output files.
+        -- Drain all the input chunks into the output files,
+        -- processing each of the input buckets in parallel.
         G.drainP sCat oOut
 
 
@@ -98,7 +98,7 @@ parseArgs args config
 
 -- | Die on wrong usage at the command line.
 dieUsage
- = error $ unlines
+ = error $ P.unlines
  [ "Usage: flow-fields [OPTIONS] <source_file>"
  , "Split a TSV file into separate files, one for each column."
  , " -drop (n :: Nat)   Drop n lines from the front of the input file." ]

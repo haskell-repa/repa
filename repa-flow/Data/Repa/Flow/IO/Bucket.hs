@@ -345,7 +345,7 @@ bAtEnd bucket
         -- Check for bogus position before we subtract the startPos.
         -- If this happenes then something has messed with our handle.
         when (posFile < bucketStartPos bucket)
-         $ error $ unlines
+         $ error $ P.unlines
          [ "repa-flow.bAtEnd: handle position is outside bucket."
          , "  bucket file path = " ++ show (bucketFilePath bucket)
          , "  bucket start pos = " ++ show (bucketStartPos bucket)

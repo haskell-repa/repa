@@ -214,7 +214,7 @@ module Data.Repa.Array
           -- | Sloshing operators copy array elements into a different arrangement, 
           --   but do not create new element values.
         , concat
-        , concatWith
+        , concatWith,   unlines
         , intercalate
         , ConcatDict
 
@@ -243,7 +243,7 @@ import Data.Repa.Array.Internals.Operator.Concat        as A
 import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
-import Prelude  hiding (reverse, length, map, zipWith, concat)
+import Prelude  hiding (reverse, length, map, zipWith, concat, unlines)
 #include "repa-array.h"
 
 

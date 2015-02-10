@@ -4,6 +4,7 @@
 module Data.Repa.Array.Internals.Operator.Concat
         ( concat
         , concatWith
+        , unlines
         , intercalate
         , ConcatDict)
 where
@@ -18,7 +19,7 @@ import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import System.IO.Unsafe
 import GHC.Exts hiding (fromList, toList)
-import Prelude  hiding (reverse, length, map, zipWith, concat)
+import Prelude  hiding (reverse, length, map, zipWith, concat, unlines)
 #include "repa-array.h"
 
 
@@ -170,6 +171,19 @@ concatWith nDst !is !vs
         loop_concatWith V.SPEC 0# 0# 0# (unpack row0) 0# iLenX0 0#
         unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concatWith #-}
+
+
+-- | Perform a `concatWith`, adding a newline character to the end of each
+--   inner array.
+unlines :: ( ConcatDict lOut lIn tIn lDst Char)
+        => Name  lDst                  -- ^ Result representation.
+        -> Array lOut (Array lIn Char) -- ^ Arrays to concatenate.
+        -> Array lDst Char
+
+unlines nDst arrs
+ = let  !fl    =  A.fromList F ['\n']
+   in   concatWith nDst fl arrs
+{-# INLINE unlines #-}
 
 
 -- Intercalate ------------------------------------------------------------------------------------
