@@ -40,7 +40,6 @@ distributes_o (Sinks nSinks push eject) spill
                     | otherwise  
                     = do push (IIx ix nx) (index xs ix)
                          loop_distributes (ix + 1)
-
                    {-# INLINE loop_distributes #-}
             {-# INLINE push_distributes #-}
 

@@ -81,6 +81,43 @@ deriving instance Eq   (Ix Int)
 deriving instance Show (Ix Int)
 
 
+-- | Tuple indices.
+instance Index (Int, Int) where
+
+ data Ix (Int, Int)
+        = I2x 
+        { i2xIx_1       :: !Int
+        , i2xRange_1    :: !Int
+        , i2xIx_0       :: !Int
+        , i2xRange_0    :: !Int }
+
+ zero (i1, i0) = I2x 0 i1 0 i0
+ {-# INLINE zero #-}
+
+ next (I2x ix1 a1 ix0 a0)
+  | ix0 + 1 >= a0
+  = if ix1 + 1 >= a1
+        then Nothing
+        else Just $ I2x (ix1 + 1) a1 0 a0
+
+  | otherwise
+  = Just $ I2x ix1 a1 0 a0
+ {-# INLINE next #-}
+
+ like (i1, i0) (I2x _ a1 _ a0)
+  | i1 >= a1 || i0 >= a0  = Nothing
+  | otherwise             = Just $ I2x i1 a1 i0 a0
+ {-# INLINE like #-}
+
+ check (i1, i0) (a1, a0)
+  | i1 >= a1 || i0 >= a0  = Nothing
+  | otherwise             = Just $ I2x i1 a1 i0 a0
+ {-# INLINE check #-}
+
+deriving instance Eq   (Ix (Int, Int))
+deriving instance Show (Ix (Int, Int))
+
+
 -------------------------------------------------------------------------------
 class (Index i, Monad m) => States i m where
 
