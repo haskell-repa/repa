@@ -79,12 +79,12 @@ ddistribute_o sinks
 -------------------------------------------------------------------------------
 distribute2_o 
         :: BulkI l a 
-        => Sinks (Int, Int) IO a        -- ^ Sinks to push elements into.
-        -> ((Int, Int) -> a -> IO ())   -- ^ Spill action, given the spilled element
+        => Sinks SH2 IO a               -- ^ Sinks to push elements into.
+        -> (SH2 -> a -> IO ())          -- ^ Spill action, given the spilled element
                                         --   along with its index in the array.
         -> IO (Sinks Int IO (Array l a))
 
-distribute2_o (Sinks (a1, a0) push eject) spill
+distribute2_o (Sinks (Z :. a1 :. a0) push eject) spill
  = do   
         let push_distribute i1 !xs
              = loop_distribute 0
@@ -95,11 +95,11 @@ distribute2_o (Sinks (a1, a0) push eject) spill
                     = return ()
 
                     | ix >= a0
-                    = do spill (i1, ix) (index xs ix)
+                    = do spill (ish2 i1 ix) (index xs ix)
                          loop_distribute (ix + 1)
 
                     | otherwise  
-                    = do push  (i1, ix) (index xs ix)
+                    = do push  (ish2 i1 ix) (index xs ix)
                          loop_distribute (ix + 1)
                    {-# INLINE loop_distribute #-}
             {-# INLINE push_distribute #-}
@@ -112,7 +112,7 @@ distribute2_o (Sinks (a1, a0) push eject) spill
                      = return ()
 
                      | otherwise 
-                     = do eject (i1, ix)
+                     = do eject (ish2 i1 ix)
                           loop_distribute (ix + 1)
                     {-# INLINE loop_distribute #-}
             {-# INLINE eject_distribute #-}
@@ -124,7 +124,7 @@ distribute2_o (Sinks (a1, a0) push eject) spill
 -- | Like `distribute2_o`, but drop spilled elements on the floor.
 ddistribute2_o
         :: BulkI l a
-        => Sinks (Int, Int) IO a
+        => Sinks SH2 IO a
         -> IO (Sinks Int IO (Array l a))
 
 ddistribute2_o sinks 
