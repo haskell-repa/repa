@@ -9,6 +9,7 @@ where
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Simple.Base
 import Data.Word
+import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 #include "repa-stream.h"
@@ -42,7 +43,7 @@ sourceRecords
         -> IO (Source IO (Array N (Array F Word8)))
 
 sourceRecords len pSep aFail b
- = do   s0      <- G.sourceRecords len pSep aFail [b]
+ = do   s0      <- G.sourceRecords len pSep aFail (A.fromList B [b])
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE sourceRecords #-}
@@ -63,7 +64,7 @@ sourceBytes
         -> IO (Source IO (Array F Word8))
 
 sourceBytes len b
- = do   s0      <- G.sourceBytes len [b]
+ = do   s0      <- G.sourceBytes len (A.fromList B [b])
         let Just s1 = wrapI_i s0
         return s1
 {-# INLINE sourceBytes #-}
@@ -76,7 +77,7 @@ sourceBytes len b
 --
 sinkBytes :: Bucket -> IO (Sink IO (Array F Word8))
 sinkBytes b
- = do   s0      <- G.sinkBytes [b]
+ = do   s0      <- G.sinkBytes (A.fromList B [b])
         let Just s1 = wrapI_o s0
         return s1
 {-# INLINE sinkBytes #-}

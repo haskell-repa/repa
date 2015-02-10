@@ -32,7 +32,8 @@ sourceTSV nChunk aFail bs
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
-        sChunk  <- G.sourceChunks nChunk (== nl) aFail bs
+        sChunk  <- G.sourceChunks nChunk (== nl) aFail 
+                $  A.fromList B bs
 
         sRows8  <- mapChunks_i (A.diceSep nt nl) sChunk
 

@@ -26,13 +26,7 @@ import Prelude                                  as P
 #include "repa-stream.h"
 
 
-lix :: [a] -> Int -> Maybe a
-lix (x : _)  0  = Just x
-lix (_ : xs) n  = lix xs (n - 1)
-lix _        _  = Nothing
-
-
--- FromFiles --------------------------------------------------------------------------------------
+-- fromFiles --------------------------------------------------------------------------------------
 -- | Open some files as buckets and use them as `Sources`.
 --
 --   Finalisers are attached to the `Sources` so that each file will be 
@@ -42,13 +36,22 @@ lix _        _  = Nothing
 ---
 --   TODO: reinstate finalisers
 fromFiles 
-        :: [FilePath]                           -- ^ Files to open.
-        -> ([Bucket] -> IO (Sources Int IO a))  -- ^ Consumer.
-        -> IO (Sources Int IO a)
+        ::  (Bulk l FilePath, Target l Bucket)
+        =>  Array l FilePath                    -- ^ Files to open.
+        -> (Array l Bucket -> IO (Sources (Index l) IO a))  
+                                                -- ^ Consumer.
+        -> IO (Sources (Index l) IO a)
 
 fromFiles paths use
- = do   hs      <- mapM (flip openBucket ReadMode) paths
-        use hs
+ = do   
+         -- Open all the files, ending up with a list of buckets.
+        bs             <- mapM (flip openBucket ReadMode) $ A.toList paths
+
+        -- Pack buckets back into an array with the same layout as
+        -- the original.
+        let Just bsArr =  A.fromListInto (A.layout paths) bs
+
+        use bsArr
 {-# NOINLINE fromFiles #-}
 
 
@@ -70,10 +73,11 @@ fromFiles paths use
 --   * The provided file handle must support seeking, else you'll get an exception.
 --
 sourceRecords 
-        :: Integer              -- ^ Chunk length in bytes.
+        :: BulkI l Bucket
+        => Integer              -- ^ Chunk length in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> [Bucket]             -- ^ Source buckets.
+        -> Array l Bucket       -- ^ Source buckets.
         -> IO (Sources Int IO (Array N (Array F Word8)))
 
 sourceRecords len pSep aFail hs
@@ -84,17 +88,18 @@ sourceRecords len pSep aFail hs
 
 -- | Like `sourceRecords`, but produce all records in a single vector.
 sourceChunks
-        :: Integer              -- ^ Chunk length in bytes.
+        :: BulkI l Bucket
+        => Integer              -- ^ Chunk length in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
-        -> [Bucket]             -- ^ Source buckets.
+        -> Array l Bucket       -- ^ Source buckets.
         -> IO (Sources Int IO (Array F Word8))
 
 sourceChunks len pSep aFail bs
- = return $ Sources (P.length bs) pull_sourceChunks
+ = return $ Sources (A.length bs) pull_sourceChunks
  where  
         pull_sourceChunks i eat eject
-         = let Just b = lix bs i
+         = let b = bs `index` i
            in  bAtEnd b >>= \eof ->
             if eof
                 -- We're at the end of the file.
@@ -102,7 +107,7 @@ sourceChunks len pSep aFail bs
 
             else do
                 -- Read a new chunk from the file.
-                arr      <- bGetArray (bs !! i) len
+                arr      <- bGetArray b len
 
                 -- Find the end of the last record in the file.
                 let !mLenSlack  = findIndex pSep (A.reverse arr)
@@ -117,7 +122,7 @@ sourceChunks len pSep aFail bs
                         let !ixSplit    = lenArr - lenSlack
 
                         -- Seek the file to just after the last complete record.
-                        bSeek (bs !! i) RelativeSeek (fromIntegral $ negate lenSlack)
+                        bSeek b RelativeSeek (fromIntegral $ negate lenSlack)
 
                         -- Eat complete records at the start of the chunk.
                         eat $ window 0 ixSplit arr
@@ -130,7 +135,11 @@ sourceChunks len pSep aFail bs
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 ----
-sourceChars :: Integer -> [Bucket] -> IO (Sources Int IO (Array F Char))
+sourceChars 
+        :: BulkI l Bucket
+        => Integer              -- ^ Chunk length in bytes.
+        -> Array l Bucket       -- ^ Buckets.
+        -> IO (Sources Int IO (Array F Char))
 sourceChars len bs
  =   smap_i (\_ !c -> A.computeS F $ A.map (chr . fromIntegral) c)
  =<< sourceBytes len bs
@@ -142,12 +151,16 @@ sourceChars len bs
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --   * All chunks have the same size, except possibly the last one.
 --
-sourceBytes :: Integer -> [Bucket] -> IO (Sources Int IO (Array F Word8))
+sourceBytes 
+        :: BulkI l Bucket
+        => Integer              -- ^ Chunk length in bytes.
+        -> Array l Bucket       -- ^ Buckets.
+        -> IO (Sources Int IO (Array F Word8))
 sourceBytes len bs
- = return $ Sources (P.length bs) pull_sourceBytes
+ = return $ Sources (A.length bs) pull_sourceBytes
  where
         pull_sourceBytes i eat eject
-         = do let Just b  = lix bs i
+         = do let b  = A.index bs i
               op  <- bIsOpen b
               if not op 
                 then eject
@@ -168,13 +181,21 @@ sourceBytes len bs
 --   Finalisers are attached to the sinks so that file assocated with
 --   each stream is closed when that stream is ejected.
 --
-toFiles :: [FilePath] 
-        -> ([Bucket] -> IO (Sinks Int IO a))
-        -> IO (Sinks Int IO a)
+toFiles :: (Bulk l FilePath, Target l Bucket)
+        =>  Array l FilePath            -- ^ File paths.
+        -> (Array l Bucket -> IO (Sinks (Index l) IO a))
+                                        -- ^ Consumer.
+        -> IO (Sinks (Index l) IO a)
 
 toFiles paths use
- = do   bs      <- mapM (flip openBucket WriteMode) paths
-        use bs
+ = do   -- Open all the files, ending up with a list of buckets.
+        bs             <- mapM (flip openBucket WriteMode) $ A.toList paths
+
+        -- Pack buckets back into an array with the same layout as
+        -- the original.
+        let Just bsArr =  A.fromListInto (A.layout paths) bs
+
+        use bsArr
 {-# NOINLINE toFiles #-}
 
 
@@ -183,11 +204,14 @@ toFiles paths use
 --   * Data is copied into a new buffer to insert newlines before being
 --     written out.
 --
-sinkLines :: ( BulkI l1 (Array l2 Char)
-             , BulkI l2 Char, Unpack (Array l2 Char) t2)
-          => Name l1 -> Name l2
-          -> [Bucket]   -- ^ File handles.
-          -> IO (Sinks Int IO (Array l1 (Array l2 Char)))
+sinkLines 
+        :: ( Bulk  l Bucket
+           , BulkI l1 (Array l2 Char)
+           , BulkI l2 Char, Unpack (Array l2 Char) t2)
+        => Name  l1             -- ^ Layout of chunks of lines.
+        -> Name  l2             -- ^ Layout of lines.
+        -> Array l Bucket       -- ^ Buckets.
+        -> IO (Sinks (Index l) IO (Array l1 (Array l2 Char)))
 sinkLines _ _ !bs
  =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) $ concatWith F fl c)
  =<< sinkBytes bs
@@ -200,9 +224,10 @@ sinkLines _ _ !bs
 --   * Data is copied into a foreign buffer to truncate the characters
 --     to 8-bits each before being written out.
 --
-sinkChars :: BulkI r Char
-          => [Bucket]   -- ^ File handles.
-          -> IO (Sinks Int IO (Array r Char))
+sinkChars 
+        :: (Bulk  l Bucket, BulkI r Char)
+        =>  Array l Bucket      -- ^ Buckets.
+        -> IO (Sinks (Index l) IO (Array r Char))
 sinkChars !bs
  =   smap_o (\_ !c -> computeS F $ A.map (fromIntegral . ord) c)
  =<< sinkBytes bs
@@ -213,16 +238,19 @@ sinkChars !bs
 --
 --   * Data is written out directly from the provided buffer.
 --
-sinkBytes :: [Bucket] -> IO (Sinks Int IO (Array F Word8))
+sinkBytes 
+        :: Bulk  l Bucket
+        => Array l Bucket       -- ^ Buckets.
+        -> IO (Sinks (Index l) IO (Array F Word8))
 sinkBytes !bs
  = do   let push_sinkBytes i !chunk
-             = bPutArray (bs !! i) chunk
+             = bPutArray (bs `index` i) chunk
             {-# NOINLINE push_sinkBytes #-}
 
         let eject_sinkBytes i
-             = bClose    (bs !! i)
+             = bClose    (bs `index` i)
             {-# INLINE eject_sinkBytes #-}
 
-        return  $ Sinks (P.length bs) push_sinkBytes eject_sinkBytes
+        return  $ Sinks (A.extent $ A.layout bs) push_sinkBytes eject_sinkBytes
 {-# INLINE_FLOW sinkBytes #-}
 

@@ -105,10 +105,10 @@ hBucket h
 --   approximatly the same number of bytes.
 --
 bucketsFromFile
-        :: Int                  -- ^ Number of buckets.
-        -> (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> FilePath             -- ^ File to open.
-        -> ([Bucket] -> IO b)   -- ^ Consumer.
+        :: Int                          -- ^ Number of buckets.
+        -> (Word8 -> Bool)              -- ^ Detect the end of a record.
+        -> FilePath                     -- ^ File to open.
+        -> (Array B Bucket -> IO b)     -- ^ Consumer.
         -> IO b
 
 bucketsFromFile n pEnd path use
@@ -118,11 +118,11 @@ bucketsFromFile n pEnd path use
 
 -- | Like `bucketsFromFile` but start at the given offset.
 bucketsFromFileAt
-        :: Int                  -- ^ Number of buckets.
-        -> (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> FilePath             -- ^ File to open.
-        -> Integer              -- ^ Starting offset.
-        -> ([Bucket] -> IO b)   -- ^ Consumer.
+        :: Int                          -- ^ Number of buckets.
+        -> (Word8 -> Bool)              -- ^ Detect the end of a record.
+        -> FilePath                     -- ^ File to open.
+        -> Integer                      -- ^ Starting offset.
+        -> (Array B Bucket -> IO b)     -- ^ Consumer.
         -> IO b
 
 bucketsFromFileAt n pEnd path offsetStart use
@@ -177,7 +177,7 @@ bucketsFromFileAt n pEnd path offsetStart use
                               | len   <- lens
                               | h     <- hh ]
 
-        use bs
+        use  $ A.fromList B bs
 {-# NOINLINE bucketsFromFileAt #-}
 --  NOINLINE to avoid polluting the core code of the consumer.
 --  This prevents it from being specialised for the pEnd predicate, 
@@ -215,9 +215,9 @@ advance h pEnd
 --
 --   * The number of buckets must be greater than zero, else `Nothing`.
 bucketsToDir 
-        :: Int                  -- ^ Number of buckets to create.
-        -> FilePath             -- ^ Path to directory.
-        -> ([Bucket] -> IO b)  -- ^ Consumer.
+        :: Int                          -- ^ Number of buckets to create.
+        -> FilePath                     -- ^ Path to directory.
+        -> (Array B Bucket -> IO b)     -- ^ Consumer.
         -> IO (Maybe b)
 
 bucketsToDir n path use
@@ -240,14 +240,14 @@ bucketsToDir n path use
                          , bucketHandle         = h }
 
         bs <- mapM newBucket names
-        liftM Just $ use bs
+        liftM Just $ use (A.fromList B bs)
 {-# NOINLINE bucketsToDir #-}
 
 
 -- | Open a file for writing as a bucket.
 bucketToFile 
-        :: FilePath             -- ^ Path to bucket.
-        -> ([Bucket] -> IO b)  -- ^ Consumer
+        :: FilePath                     -- ^ Path to bucket.
+        -> (Array B Bucket -> IO b)     -- ^ Consumer
         -> IO b
 
 bucketToFile file use
@@ -258,7 +258,7 @@ bucketToFile file use
                 , bucketLength          = Nothing
                 , bucketHandle          = h }
 
-        use [b]
+        use $ A.fromList B [b]
 {-# NOINLINE bucketToFile #-}
 
 
