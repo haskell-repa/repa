@@ -1,8 +1,8 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
 import Data.Repa.Flow
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic         as G
-
+import Control.Concurrent
 import Control.Monad
 import System.Environment
 import System.IO
@@ -43,13 +43,15 @@ pFields config
         sColumns  <- mapChunks_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        let !fl   =  A.fromList F ['\n']
-        sCat      <- mapChunks_i (mapS B (A.concatWith F fl))
+        let !fl  =  A.fromList F ['\n']
+        sCat      :: Sources B (Array F Char)
+                  <- mapChunks_i (mapS B (A.concatWith F fl))
                                  sColumns
 
         -- Open an output file for each of the columns.
         let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut     <- toFiles filesOut sinkChars
+        ooOut     :: Sinks F Char  
+                  <- toFiles filesOut sinkChars
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.

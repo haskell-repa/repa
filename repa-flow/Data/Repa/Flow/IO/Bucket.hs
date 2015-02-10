@@ -7,6 +7,7 @@ module Data.Repa.Flow.IO.Bucket
 
           -- * Reading
         , bucketsFromFile
+        , bucketsFromFileAt
 
           -- * Writing 
         , bucketsToDir
@@ -111,6 +112,20 @@ bucketsFromFile
         -> IO b
 
 bucketsFromFile n pEnd path use
+        = bucketsFromFileAt n pEnd path 0 use
+{-# INLINE bucketsFromFile #-}
+
+
+-- | Like `bucketsFromFile` but start at the given offset.
+bucketsFromFileAt
+        :: Int                  -- ^ Number of buckets.
+        -> (Word8 -> Bool)      -- ^ Detect the end of a record.
+        -> FilePath             -- ^ File to open.
+        -> Integer              -- ^ Starting offset.
+        -> ([Bucket] -> IO b)   -- ^ Consumer.
+        -> IO b
+
+bucketsFromFileAt n pEnd path offsetStart use
  = do
         -- Open the file first to check its length.
         h0       <- openBinaryFile path ReadMode
@@ -146,7 +161,7 @@ bucketsFromFile n pEnd path use
                   poss          <- loop_advances remain' pos2 (h2 : hs)
                   return $ pos1 : poss
 
-        starts    <- loop_advances lenTotal 0 hh
+        starts    <- loop_advances lenTotal offsetStart hh
 
         -- Ending positions and lengths for each bucket.
         let ends  = tail (starts ++ [lenTotal])
@@ -163,7 +178,7 @@ bucketsFromFile n pEnd path use
                               | h     <- hh ]
 
         use bs
-{-# NOINLINE bucketsFromFile #-}
+{-# NOINLINE bucketsFromFileAt #-}
 --  NOINLINE to avoid polluting the core code of the consumer.
 --  This prevents it from being specialised for the pEnd predicate, 
 --  but we're expecting pEnd to be applied a small number of times,
