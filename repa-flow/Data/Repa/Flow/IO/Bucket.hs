@@ -11,6 +11,7 @@ module Data.Repa.Flow.IO.Bucket
 
           -- * Writing 
         , bucketsToDir
+        , bucketsToDirs
         , bucketToFile
 
           -- * Bucket IO
@@ -23,6 +24,7 @@ module Data.Repa.Flow.IO.Bucket
 where
 import Data.Repa.Array                  as A
 import Data.Repa.Array.Material         as A
+import Data.Repa.Array.RowWise          as A
 import Data.Repa.IO.Array               as A
 import qualified Foreign.Storable       as Foreign
 import qualified Foreign.Marshal.Alloc  as Foreign
@@ -206,7 +208,7 @@ advance h pEnd
 {-# NOINLINE advance #-}
 
 
--- To Files -------------------------------------------------------------------
+-- To Dirs -------------------------------------------------------------------
 -- | Create a new directory of the given name, containing the given number
 --   of buckets. 
 --
@@ -244,6 +246,59 @@ bucketsToDir n path use
 {-# NOINLINE bucketsToDir #-}
 
 
+-- | Given a list of directories, create those directories and open 
+--   the given number of buckets per directory.
+--
+--   * The number of buckets must be greater than zero, else `Nothing`.
+--
+bucketsToDirs 
+        :: Int                  -- ^ Number of buckets to create per directory.
+        -> [FilePath]           -- ^ Path to directories.
+        -> (Array (E B DIM2) Bucket -> IO b)     
+                                -- ^ Consumer.
+        -> IO (Maybe b)
+
+bucketsToDirs nBucketsPerDir paths use
+ | nBucketsPerDir <= 0        
+ = return Nothing
+
+ | otherwise
+ = do   
+        mapM_ createDirectory paths
+
+        let makeName path i 
+                = path </> ((replicate (6 - (P.length $ show i)) '0') ++ show i)
+
+        let newBucket file
+             = do h      <- openBinaryFile file WriteMode
+                  return $  Bucket
+                         { bucketFilePath       = Just file
+                         , bucketStartPos       = 0
+                         , bucketLength         = Nothing
+                         , bucketHandle         = h }
+
+        let newDir path
+             = do createDirectory path
+                  bs    <- mapM newBucket 
+                        $ [makeName path i | i <- [0 .. nBucketsPerDir - 1]]
+
+                  return bs
+
+        -- Make all the buckets, then pack them into a matrix.
+        bs        <- liftM P.concat $ P.mapM newDir paths
+
+        -- Pack the buckets into an array 
+        let Just bsArr 
+                = A.fromListInto 
+                        (A.matrix B (P.length paths) nBucketsPerDir) 
+                        bs
+
+        liftM Just $ use bsArr
+{-# NOINLINE bucketsToDirs #-}
+
+
+
+-- To Files -------------------------------------------------------------------
 -- | Open a file for writing as a bucket.
 bucketToFile 
         :: FilePath                     -- ^ Path to bucket.
