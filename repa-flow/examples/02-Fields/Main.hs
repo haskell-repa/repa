@@ -50,21 +50,15 @@ pFields config
 
         -- Concatenate the fields in each column.
         let !fl    =  A.fromList F ['\n']
-        sCat       :: Sources B (Array F Char)
-                   <- mapChunks_i (mapS B (A.concatWith F fl)) sColumns
+        sCat       <- mapChunks_i (mapS B (A.concatWith F fl)) sColumns
 
         -- Open an output directory for each of the columns.
         let dirsOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        Just ooOut :: Maybe (G.Sinks SH2 IO (Array F Char))
-                   <- G.bucketsToDirs nCaps dirsOut $ G.sinkChars
-
-        ooOut'     <- G.mapIndex_o 
-                        (\(Z :. y :. x) -> (Z :. x :. y))
-                        (\(Z :. y :. x) -> (Z :. x :. y))
-                        ooOut
+        Just ooOut <- G.bucketsToDirs nCaps dirsOut $ G.sinkChars
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.
+        ooOut'     <- G.flipIndex2_o  ooOut
         oOut       <- G.distribute2_o ooOut' dieFields
 
         -- Drain all the input chunks into the output files.
