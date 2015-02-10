@@ -58,7 +58,7 @@ pFields config
         oOut      <- G.distribute_o ooOut dieFields
 
         -- Drain all the input chunks into the output files.
-        sSingle   <- G.project_i (IIx 0 1) sCat
+        sSingle   <- G.project_i 0 sCat
         G.drainS sSingle oOut
 
 
