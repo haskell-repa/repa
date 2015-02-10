@@ -55,7 +55,7 @@ pFields config
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.
-        oOut      <- G.distributes_o ooOut dieFields
+        oOut      <- G.distribute_o ooOut dieFields
 
         -- Drain all the input chunks into the output files.
         sSingle   <- G.project_i (IIx 0 1) sCat

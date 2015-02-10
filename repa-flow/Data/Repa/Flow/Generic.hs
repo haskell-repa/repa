@@ -64,9 +64,13 @@ module Data.Repa.Flow.Generic
         , ignore_o
 
           -- * Vector Flow Operators
-          -- ** Distribution
-        , distributes_o
-        , ddistributes_o)
+          -- ** 1-dimensional distribution
+        , distribute_o
+        , ddistribute_o
+
+          -- ** 2-dimensional distribution
+        , distribute2_o
+        , ddistribute2_o)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
