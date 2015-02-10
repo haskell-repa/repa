@@ -32,9 +32,9 @@ import qualified Data.Repa.Flow.Default.SizedIO  as F
 #include "repa-stream.h"
 
 
--- | The default chunk size of 64kBytes.
+-- | The default chunk size of 256kBytes.
 defaultChunkSize :: Integer
-defaultChunkSize = 64 * 1024
+defaultChunkSize = 256 * 1024
 
 
 -- | Read a file containing Tab-Separated-Values.

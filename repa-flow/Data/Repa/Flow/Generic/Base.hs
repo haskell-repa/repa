@@ -3,6 +3,8 @@ module Data.Repa.Flow.Generic.Base
         ( module Data.Repa.Flow.States
         , Sources       (..)
         , Sinks         (..)
+        , mapIndex_i
+        , mapIndex_o
         , finalize_i
         , finalize_o)
 where
@@ -43,6 +45,43 @@ data Sinks   i m e
           -- | Signal that no more elements will ever be available for this
           --   sink.
         , sinksEject    :: i -> m () }
+
+
+-------------------------------------------------------------------------------
+-- | Transform the stream indexes of a bundle of sources.
+mapIndex_i 
+        :: Monad m
+        => (i1 -> i2)           -- ^ Convert index to new version.
+        -> (i2 -> i1)           -- ^ Convert index from new version.
+        -> Sources i1 m a
+        -> m (Sources i2 m a)
+
+mapIndex_i to from (Sources n pullX)
+ = return $ Sources (to n) pull_mapIndex
+ where 
+        pull_mapIndex i eat eject
+         = pullX (from i) eat eject
+        {-# INLINE pull_mapIndex #-}
+{-# INLINE_FLOW mapIndex_i #-}
+
+
+-- | Transform the stream indexes of a bundle of sinks.
+mapIndex_o 
+        :: Monad m
+        => (i1 -> i2)           -- ^ Convert index to new version.
+        -> (i2 -> i1)           -- ^ Convert index from new version.
+        -> Sinks i1 m a
+        -> m (Sinks i2 m a)
+
+mapIndex_o to from (Sinks n pushX ejectX)
+ = return $ Sinks (to n) push_mapIndex eject_mapIndex
+ where 
+        push_mapIndex i x = pushX (from i) x
+        {-# INLINE push_mapIndex  #-}
+
+        eject_mapIndex i  = ejectX (from i)
+        {-# INLINE eject_mapIndex #-}
+{-# INLINE_FLOW mapIndex_o #-}
 
 
 -------------------------------------------------------------------------------

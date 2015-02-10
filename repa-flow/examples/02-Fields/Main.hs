@@ -2,6 +2,8 @@
 import Data.Repa.Flow
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic         as G
+import qualified Data.Repa.Flow.Generic.IO      as G
+import qualified Data.Repa.Flow.IO.Bucket       as G
 import Control.Concurrent
 import Control.Monad
 import System.Environment
@@ -24,42 +26,49 @@ pFields config
         -- fields there are.
         let Just fileIn = configFileIn config
         hIn       <- openFile fileIn ReadMode
-
         strFirst  <- hGetLine hIn
         let cols  =  P.length $ words strFirst
         hSeek hIn AbsoluteSeek 0
 
-        -- Drop the requested number of lines from the front.
+        -- Drop the requested number of lines from the front,
+        -- to find out the starting position.
         mapM_ (\_ -> hGetLine hIn) [1 .. configDrop config]
+        pStart    <- hTell hIn
+        hClose hIn
 
-        -- Wrap the handle as a bucket.
-        bIn       <- hBucket hIn
+        -- Reopen the file using the same number of buckets
+        -- as we have Haskell capabilities.
+        nCaps      <- getNumCapabilities 
+        let !nl    =  fromIntegral $ ord '\n'
 
-        -- Stream the rest of the file as TSV.
-        sIn       <- sourceTSV [bIn]
+        sIn        <- bucketsFromFileAt nCaps (== nl) fileIn pStart 
+                   $  (\bs -> sourceTSV $ A.toList bs)
 
         -- Do a ragged transpose the chunks, to produce a columnar
         -- representation.
-        sColumns  <- mapChunks_i ragspose3 sIn
+        sColumns   <- mapChunks_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        let !fl  =  A.fromList F ['\n']
-        sCat      :: Sources B (Array F Char)
-                  <- mapChunks_i (mapS B (A.concatWith F fl))
-                                 sColumns
+        let !fl    =  A.fromList F ['\n']
+        sCat       :: Sources B (Array F Char)
+                   <- mapChunks_i (mapS B (A.concatWith F fl)) sColumns
 
-        -- Open an output file for each of the columns.
-        let filesOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        ooOut     :: Sinks F Char  
-                  <- toFiles filesOut sinkChars
+        -- Open an output directory for each of the columns.
+        let dirsOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
+        Just ooOut :: Maybe (G.Sinks SH2 IO (Array F Char))
+                   <- G.bucketsToDirs nCaps dirsOut $ G.sinkChars
+
+        ooOut'     <- G.mapIndex_o 
+                        (\(Z :. y :. x) -> (Z :. x :. y))
+                        (\(Z :. y :. x) -> (Z :. x :. y))
+                        ooOut
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.
-        oOut      <- G.distribute_o ooOut dieFields
+        oOut       <- G.distribute2_o ooOut' dieFields
 
         -- Drain all the input chunks into the output files.
-        sSingle   <- G.project_i 0 sCat
-        G.drainS sSingle oOut
+        G.drainP sCat oOut
 
 
 -------------------------------------------------------------------------------

@@ -21,6 +21,10 @@ module Data.Repa.Flow.Generic
         , toList1
         , takeList1
 
+          -- * Stream indices
+        , mapIndex_i
+        , mapIndex_o
+
           -- * Finalizers
         , finalize_i
         , finalize_o

@@ -138,7 +138,11 @@ bucketsFromFileAt n pEnd path offsetStart use
         -- Open a file handle for each of the buckets.
         -- The handles start at the begining of the file and still need
         -- to be advanced.
-        hh      <- mapM (flip openBinaryFile ReadMode) (replicate n path)
+        -- 
+        -- TODO: check at least one elem in list
+        hh@(h1_ : _)  <- mapM (flip openBinaryFile ReadMode) (replicate n path)
+
+        hSeek h1_ AbsoluteSeek offsetStart
 
         -- Advance all the handles to the start of their part of the file.
         let loop_advances _      _    [] 
@@ -264,8 +268,6 @@ bucketsToDirs nBucketsPerDir paths use
 
  | otherwise
  = do   
-        mapM_ createDirectory paths
-
         let makeName path i 
                 = path </> ((replicate (6 - (P.length $ show i)) '0') ++ show i)
 
@@ -343,7 +345,11 @@ bAtEnd bucket
         -- Check for bogus position before we subtract the startPos.
         -- If this happenes then something has messed with our handle.
         when (posFile < bucketStartPos bucket)
-         $ error "repa-flow.bAtEnd: handle position is outside bucket."
+         $ error $ unlines
+         [ "repa-flow.bAtEnd: handle position is outside bucket."
+         , "  bucket file path = " ++ show (bucketFilePath bucket)
+         , "  bucket start pos = " ++ show (bucketStartPos bucket)
+         , "  pos in file      = " ++ show posFile ]
 
         -- Position in the bucket.
         let posBucket = posFile - bucketStartPos bucket
