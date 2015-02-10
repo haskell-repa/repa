@@ -11,10 +11,11 @@ import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target
+import Control.Monad.Primitive
 import Debug.Trace
 import GHC.Exts
-import qualified Data.Array.Repa.Eval.Par       as Par
-import qualified Data.Array.Repa.Eval.Seq       as Seq
+import qualified Data.Repa.Eval.Generic.Par       as Par
+import qualified Data.Repa.Eval.Generic.Seq       as Seq
 import Prelude hiding (map, zipWith)
 #include "repa-array.h"
 
@@ -23,10 +24,10 @@ import Prelude hiding (map, zipWith)
 -- | Delayed arrays wrap functions from an index to element value.
 --   The index space is specified by an inner layout, @l@.
 --
---   Every time you index into a delayed array the element at that position 
+--   Every time you index into a delayed array the element at that position
 --   is recomputed.
-data D l 
-        = Delayed 
+data D l
+        = Delayed
         { delayedLayout :: l }
 
 deriving instance Eq   l => Eq   (D l)
@@ -57,7 +58,7 @@ deriving instance Show (Name l) => Show (Name (D l))
 -- | Delayed arrays.
 instance Layout l => Bulk (D l) a where
  data Array (D l) a
-        = ADelayed !l (Index l -> a) 
+        = ADelayed !l (Index l -> a)
 
  layout (ADelayed l _)      = Delayed l
  {-# INLINE_ARRAY layout #-}
@@ -74,8 +75,8 @@ instance (Layout l1, Target l2 a)
   = do  let !(I# len)   = size (extent l1)
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
         let get' ix     = get $ fromIndex   l1  (I# ix)
-        Seq.fillLinear  write get' len
-        touchBuffer  buf
+        Seq.fillLinear write get' len
+        touchBuffer buf
  {-# INLINE_ARRAY loadS #-}
 
  loadP gang (ADelayed l1 get) !buf
@@ -83,7 +84,7 @@ instance (Layout l1, Target l2 a)
         let !(I# len)   = size (extent l1)
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
         let get' ix     = get $ fromIndex   l1  (I# ix)
-        Par.fillChunked gang write get' len 
+        Par.fillChunked gang write get' len
         touchBuffer  buf
         traceEventIO "Repa.loadP[Delayed]: end"
  {-# INLINE_ARRAY loadP #-}
@@ -94,10 +95,10 @@ instance (Layout l1, Target l2 a)
 --
 --  @> toList $ fromFunction (Linear 10) (* 2)
 --    = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]@
--- 
+--
 fromFunction :: l -> (Index l -> a) -> Array (D l) a
-fromFunction l f 
-        = ADelayed l f 
+fromFunction l f
+        = ADelayed l f
 {-# INLINE_ARRAY fromFunction #-}
 
 
@@ -118,7 +119,7 @@ delay arr = map id arr
 {-# INLINE delay #-}
 
 
--- | Apply a worker function to each element of an array, 
+-- | Apply a worker function to each element of an array,
 --   yielding a new array with the same extent.
 map     :: Bulk l a
         => (a -> b) -> Array l a -> Array (D l) b
@@ -138,9 +139,9 @@ zipWith :: (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
         -> Array (D (Index l1))  sh c
 
 zipWith f arr1 arr2
- = fromFunction (intersectDim (extent arr1) (extent arr2)) 
+ = fromFunction (intersectDim (extent arr1) (extent arr2))
                 get_zipWith
- where  get_zipWith ix  
+ where  get_zipWith ix
          = f (arr1 `index` ix) (arr2 `index` ix)
         {-# INLINE get_zipWith #-}
 {-# INLINE_ARRAY zipWith #-}

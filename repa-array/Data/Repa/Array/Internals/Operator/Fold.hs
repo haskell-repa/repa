@@ -20,7 +20,7 @@ import System.IO.Unsafe
 --
 --   * The total lengths of all segments need not match the length of the
 --     input elements vector. The returned `C.Folds` state can be inspected
---     to determine whether all segments were completely folded, or the 
+--     to determine whether all segments were completely folded, or the
 --     vector of segment lengths or elements was too short relative to the
 --     other.
 --
@@ -59,7 +59,7 @@ folds nGrp nRes f z vLens vVals
 -- [("white",106),("red",15),("green",45)]
 -- @
 --
-foldsWith   
+foldsWith
         :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
         => Name lGrp             -- ^ Layout for group names.
         -> Name lRes             -- ^ Layout for fold results.
@@ -72,7 +72,7 @@ foldsWith
 
 foldsWith nGrp nRes f z s0 vLens vVals
  = unsafePerformIO
- $ do   
+ $ do
         let f' !x !y = return $ f x y
             {-# INLINE f' #-}
 
@@ -91,8 +91,8 @@ foldsWith nGrp nRes f z s0 vLens vVals
 type FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
       = ( Bulk   lSeg (n, Int)
         , Bulk   lElt a
-        , Target lGrp n 
+        , Target lGrp n
         , Target lRes b
         , Index  lGrp ~ Index lRes
-        , Unpack (Buffer lGrp n) tGrp
-        , Unpack (Buffer lRes b) tRes)
+        , Unpack (IOBuffer lGrp n) tGrp
+        , Unpack (IOBuffer lRes b) tRes)

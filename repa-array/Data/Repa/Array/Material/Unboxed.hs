@@ -33,11 +33,8 @@ import qualified Data.Vector.Unboxed.Mutable            as UM
 --   UNSAFE: Indexing into raw material arrays is not bounds checked.
 --   You may want to wrap this with a Checked layout as well.
 --
-data U  = Unboxed { unboxedLength :: Int }
-
-deriving instance Eq U
-deriving instance Show U
-
+newtype U = Unboxed { unboxedLength :: Int }
+  deriving (Show, Eq)
 
 -------------------------------------------------------------------------------
 -- | Unboxed arrays.
@@ -62,7 +59,7 @@ deriving instance Show (Name U)
 -------------------------------------------------------------------------------
 -- | Unboxed arrays.
 instance U.Unbox a => Bulk U a where
- data Array U a                 = UArray !(U.Vector a)
+ newtype Array U a              = UArray (U.Vector a)
  layout (UArray vec)            = Unboxed (U.length vec)
  index  (UArray vec) ix         = U.unsafeIndex vec ix
  {-# INLINE_ARRAY layout #-}
@@ -82,7 +79,7 @@ deriving instance (Show a, U.Unbox a) => Show (Array U a)
 
 
 instance Unpack (Array U a) (U.Vector a) where
- unpack (UArray vec)    = vec `seq` vec
+ unpack (UArray vec)    = vec
  repack !_ !vec         = UArray vec
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
@@ -106,12 +103,16 @@ instance U.Unbox a => Windowable U a where
 -------------------------------------------------------------------------------
 -- | Unboxed buffers.
 instance U.Unbox a => Target U a where
- data Buffer U a 
-  = UBuffer !(UM.IOVector a)
+ newtype Buffer s U a
+  = UBuffer (UM.MVector s a)
 
  unsafeNewBuffer (Unboxed len)
   = liftM UBuffer (UM.unsafeNew len)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
+
+ unsafeReadBuffer (UBuffer mvec) ix
+  = UM.unsafeRead mvec ix
+ {-# INLINE_ARRAY unsafeReadBuffer #-}
 
  unsafeWriteBuffer (UBuffer mvec) ix
   = UM.unsafeWrite mvec ix
@@ -122,19 +123,26 @@ instance U.Unbox a => Target U a where
         return  $ UBuffer mvec'
  {-# INLINE_ARRAY unsafeGrowBuffer #-}
 
- unsafeFreezeBuffer (UBuffer mvec)     
+ unsafeFreezeBuffer (UBuffer mvec)
   = do  vec     <- U.unsafeFreeze mvec
         return  $  UArray vec
  {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+ unsafeThawBuffer (UArray mvec)
+  = liftM UBuffer (U.unsafeThaw mvec)
+ {-# INLINE_ARRAY unsafeThawBuffer #-}
 
  unsafeSliceBuffer st len (UBuffer mvec)
   = do  let mvec'  = UM.unsafeSlice st len mvec
         return $ UBuffer mvec'
  {-# INLINE_ARRAY unsafeSliceBuffer #-}
 
- touchBuffer _ 
+ touchBuffer _
   = return ()
  {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (UBuffer mvec)
+   = Unboxed (UM.length mvec)
 
  {-# SPECIALIZE instance Target U Int    #-}
  {-# SPECIALIZE instance Target U Float  #-}
@@ -145,7 +153,7 @@ instance U.Unbox a => Target U a where
  {-# SPECIALIZE instance Target U Word64 #-}
 
 
-instance Unpack (Buffer U a) (UM.IOVector a) where
+instance Unpack (Buffer s U a) (UM.MVector s a) where
  unpack (UBuffer vec)  = vec `seq` vec
  repack !_ !vec        = UBuffer vec
  {-# INLINE_ARRAY unpack #-}
