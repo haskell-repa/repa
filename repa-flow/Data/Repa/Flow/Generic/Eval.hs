@@ -15,11 +15,11 @@ import GHC.Exts
 --   * If the `Sources` and `Sinks` have different numbers of streams then
 --     we only evaluate the common subset.
 --
-drainS  :: (Index i, Monad m)
+drainS  :: (Next i, Monad m)
         => Sources i m a -> Sinks i m a -> m ()
 
 drainS (Sources nSources ipull) (Sinks nSinks opush oeject)
- = loop_drain zero
+ = loop_drain first
  where 
         n = min nSources nSinks
 

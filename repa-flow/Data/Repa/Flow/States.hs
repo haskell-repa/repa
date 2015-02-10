@@ -1,7 +1,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Flow.States
-        ( Index   (..)
-        , States  (..), Refs (..))
+        ( Next   (..)
+        , States (..)
+        , Refs   (..))
 where
 import Control.Monad
 import qualified Data.Vector.Mutable            as VM
@@ -9,31 +10,31 @@ import qualified Data.Vector.Mutable            as VM
 
 
 -------------------------------------------------------------------------------
-class (Ord i, Eq i) => Index i where
+class (Ord i, Eq i) => Next i where
 
- -- | Get the zero index for this arity.
- zero      :: i
+ -- | Get the zero for this index type.
+ first     :: i
 
- -- | Take `Just` the index of the next state after this one,
+ -- | Given an index an arity, get the next index after this one,
  --   or `Nothing` if there aren't any more.
  next      :: i -> i -> Maybe i
 
 
 -- | Unit indices.
-instance Index () where
+instance Next () where
 
- zero       = ()
- {-# INLINE zero #-}
+ first      = ()
+ {-# INLINE first #-}
 
  next _ _   = Nothing
  {-# INLINE next #-}
 
 
 -- | Integer indices.
-instance Index Int where
+instance Next Int where
 
- zero   = 0
- {-# INLINE zero #-}
+ first   = 0
+ {-# INLINE first #-}
 
  next i len
   | i + 1 >= len = Nothing
@@ -42,10 +43,10 @@ instance Index Int where
 
 
 -- | Tuple indices.
-instance Index (Int, Int) where
+instance Next (Int, Int) where
 
- zero = (0, 0)
- {-# INLINE zero #-}
+ first = (0, 0)
+ {-# INLINE first #-}
 
  next (ix1, ix0) (a1, a0)
   | ix0 + 1 >= a0
@@ -59,7 +60,7 @@ instance Index (Int, Int) where
 
 
 -------------------------------------------------------------------------------
-class (Ord i, Monad m) => States i m where
+class (Ord i, Next i, Monad m) => States i m where
 
  -- | A collection of mutable references.
  data Refs i m a

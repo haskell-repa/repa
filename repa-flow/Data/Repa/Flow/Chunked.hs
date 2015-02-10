@@ -48,7 +48,7 @@ import qualified Data.Repa.Flow.Generic         as G
 
 
 -- | Pull all available values from the sources and push them to the sinks.
-drainS   :: (G.Index i, Monad m)
+drainS   :: (Next i, Monad m)
         => Sources i m r a -> Sinks i m r a -> m ()
 drainS = G.drainS
 {-# INLINE drainS #-}
