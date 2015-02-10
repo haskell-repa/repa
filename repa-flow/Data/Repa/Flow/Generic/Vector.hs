@@ -15,11 +15,28 @@ import Prelude hiding (length)
 
 
 -------------------------------------------------------------------------------
--- | Given a bundle of sinks, produce a result sink for arrays.
+-- | Given a bundle of sinks indexed by an `Int`, 
+--   produce a result sink for arrays.
 --  
---   Each element pushed to the result sink is pushed to the corresponding
---   element of the bundle. If there are more elements than sinks then then
---   give  them to the spill action.
+--   Each time an array is pushed to the result sink, its elements are
+--   pushed to the corresponding streams of the argument sink. If there
+--   are more elements than sinks then then give  them to the spill action.
+--
+-- @
+-- 
+--   |          ..             |
+--   | [w0,  x0,  y0,  z0]     |   :: Sinks () IO (Array l a)
+--   | [w1,  x1,  y1,  z1, u1] |     (sink for a single stream of arrays)
+--   |          ..             |
+--
+--      |    |    |    |    |
+--      v    v    v    v    .------> spilled
+--
+--    | .. | .. | .. | .. |
+--    | w0 | x0 | y0 | z0 |        :: Sinks Int IO a
+--    | w1 | x1 | y1 | z1 |          (sink for several streams of elements)
+--    | .. | .. | .. | .. |
+-- @
 --
 distribute_o 
         :: BulkI l a 
@@ -84,8 +101,8 @@ ddistribute_o sinks
 --   and the index of the element in its array is used as the second 
 --   component.
 -- 
---   If you want to the components of stream index the other way around then
---   use `flipIndex2_o`
+--   If you want to the components of stream index the other way around
+--   then apply `flipIndex2_o` to the argument sinks.
 --
 distribute2_o 
         :: BulkI l a 
