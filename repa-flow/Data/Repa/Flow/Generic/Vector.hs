@@ -77,6 +77,16 @@ ddistribute_o sinks
 
 
 -------------------------------------------------------------------------------
+-- | Like `distribute_o`, but with 2-d stream indexes.
+--
+--   Given the argument and result sinks, when pushing to the result the 
+--   stream index is used as the first component for the argument sink,
+--   and the index of the element in its array is used as the second 
+--   component.
+-- 
+--   If you want to the components of stream index the other way around then
+--   use `flipIndex2_o`
+--
 distribute2_o 
         :: BulkI l a 
         => Sinks SH2 IO a               -- ^ Sinks to push elements into.

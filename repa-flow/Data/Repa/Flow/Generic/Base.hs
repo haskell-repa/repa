@@ -5,10 +5,13 @@ module Data.Repa.Flow.Generic.Base
         , Sinks         (..)
         , mapIndex_i
         , mapIndex_o
+        , flipIndex2_i
+        , flipIndex2_o
         , finalize_i
         , finalize_o)
 where
 import Data.Repa.Flow.States
+import Data.Repa.Array          as A
 import Control.Monad
 #include "repa-stream.h"
 
@@ -49,10 +52,12 @@ data Sinks   i m e
 
 -------------------------------------------------------------------------------
 -- | Transform the stream indexes of a bundle of sources.
+--  
+--   The given transform functions should be inverses of each other,
+--   else you'll get a confusing result.
 mapIndex_i 
         :: Monad m
-        => (i1 -> i2)           -- ^ Convert index to new version.
-        -> (i2 -> i1)           -- ^ Convert index from new version.
+        => (i1 -> i2) -> (i2 -> i1)
         -> Sources i1 m a
         -> m (Sources i2 m a)
 
@@ -66,10 +71,12 @@ mapIndex_i to from (Sources n pullX)
 
 
 -- | Transform the stream indexes of a bundle of sinks.
+--
+--   The given transform functions should be inverses of each other,
+--   else you'll get a confusing result.
 mapIndex_o 
         :: Monad m
-        => (i1 -> i2)           -- ^ Convert index to new version.
-        -> (i2 -> i1)           -- ^ Convert index from new version.
+        => (i1 -> i2) -> (i2 -> i1)
         -> Sinks i1 m a
         -> m (Sinks i2 m a)
 
@@ -82,6 +89,36 @@ mapIndex_o to from (Sinks n pushX ejectX)
         eject_mapIndex i  = ejectX (from i)
         {-# INLINE eject_mapIndex #-}
 {-# INLINE_FLOW mapIndex_o #-}
+
+
+-- | For a bundle of sources with a 2-d stream index, 
+--   flip the components of the index.
+flipIndex2_i
+        :: Monad m
+        => Sources SH2 m a
+        -> m (Sources SH2 m a)
+
+flipIndex2_i ss
+        = mapIndex_i 
+                (\(Z :. y :. x) -> (Z :. x :. y))
+                (\(Z :. y :. x) -> (Z :. x :. y))
+                ss
+{-# INLINE flipIndex2_i #-}
+
+
+-- | For a bundle of sinks with a 2-d stream index, 
+--   flip the components of the index.
+flipIndex2_o
+        :: Monad m
+        => Sinks SH2 m a
+        -> m (Sinks SH2 m a)
+
+flipIndex2_o ss
+        = mapIndex_o
+                (\(Z :. y :. x) -> (Z :. x :. y))
+                (\(Z :. y :. x) -> (Z :. x :. y))
+                ss
+{-# INLINE flipIndex2_o #-}
 
 
 -------------------------------------------------------------------------------
