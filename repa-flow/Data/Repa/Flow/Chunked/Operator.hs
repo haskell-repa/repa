@@ -71,7 +71,7 @@ mapChunks_o f s = G.smap_o (\_ c -> f c) s
 --   the source index.
 smapChunks_i  
         :: Monad m
-        => (G.Ix i -> Array l1 a -> Array l2 b)
+        => (i -> Array l1 a -> Array l2 b)
         -> Sources i m l1 a -> m (Sources i m l2 b)
 smapChunks_i = G.smap_i
 {-# INLINE smapChunks_i #-}
@@ -81,7 +81,7 @@ smapChunks_i = G.smap_i
 --   the sink index.
 smapChunks_o  
         :: Monad m
-        => (G.Ix i -> Array l1 a -> Array l2 b)
+        => (i -> Array l1 a -> Array l2 b)
         -> Sinks i m l2 b -> m (Sinks i m l1 a)
 smapChunks_o = G.smap_o
 {-# INLINE smapChunks_o #-}
@@ -91,7 +91,7 @@ smapChunks_o = G.smap_o
 -- | Hook a monadic function to some sources, which will be passed every
 --   chunk that is pulled from the result.
 watch_i :: Monad m
-        => (G.Ix i -> Array l a -> m ()) 
+        => (i -> Array l a -> m ()) 
         -> Sources i m l a  -> m (Sources i m l a)
 watch_i = G.watch_i
 {-# INLINE watch_i #-}
@@ -100,7 +100,7 @@ watch_i = G.watch_i
 -- | Hook a monadic function to some sinks, which will be passed every 
 --   chunk that is pushed to the result.
 watch_o :: Monad m
-        => (G.Ix i -> Array l a -> m ())
+        => (i -> Array l a -> m ())
         -> Sinks i m l a ->  m (Sinks i m l a)
 
 watch_o = G.watch_o
@@ -110,7 +110,7 @@ watch_o = G.watch_o
 -- | Like `watch_o` but discard the incoming chunks after they are passed
 --   to the function.
 trigger_o :: Monad m
-          => i -> (G.Ix i -> Array l a -> m ()) -> m (Sinks i m l a)
+          => i -> (i -> Array l a -> m ()) -> m (Sinks i m l a)
 trigger_o = G.trigger_o
 {-# INLINE trigger_o #-}
 

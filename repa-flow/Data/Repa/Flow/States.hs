@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Flow.States
-        ( Index   (..), Ix   (..)
+        ( Index   (..)
         , States  (..), Refs (..))
 where
 import Control.Monad
@@ -9,117 +9,57 @@ import qualified Data.Vector.Mutable            as VM
 
 
 -------------------------------------------------------------------------------
-class (Ord i, Eq i, Eq (Ix i)) => Index i where
- -- | An index into the collection of states. 
- -- 
- --   The representation also carries the size of the collection, 
- --   and the only functions which produce Ix values ensure that 
- --   they are in-bounds.
- data Ix i
+class (Ord i, Eq i) => Index i where
 
  -- | Get the zero index for this arity.
- zero      :: i -> Ix i
+ zero      :: i
 
  -- | Take `Just` the index of the next state after this one,
  --   or `Nothing` if there aren't any more.
- next      :: Ix i -> Maybe (Ix i)
-
- -- | Construct `Just` a new index of the given value, for the same collection
- --   of states as the provided one. Yields `Nothing` if the index would be
- --   out-of-bounds.
- like      :: i -> Ix i -> Maybe (Ix i)
-
- -- | Check that an index is strictly less than the given arity.
- check     :: i -> i -> Maybe (Ix i)
+ next      :: i -> i -> Maybe i
 
 
 -- | Unit indices.
 instance Index () where
 
- data Ix () = UIx
- zero _     = UIx
+ zero       = ()
  {-# INLINE zero #-}
 
- next _     = Nothing
+ next _ _   = Nothing
  {-# INLINE next #-}
-
- like _ _   = Just UIx
- {-# INLINE like #-}
-
- check _ _  = Just UIx
- {-# INLINE check #-}
-
-deriving instance Eq   (Ix ())
-deriving instance Show (Ix ())
 
 
 -- | Integer indices.
 instance Index Int where
 
- data Ix Int            
-        = IIx !Int !Int
-
- zero i = IIx 0 i
+ zero   = 0
  {-# INLINE zero #-}
 
- next (IIx i len)
+ next i len
   | i + 1 >= len = Nothing
-  | otherwise    = Just $ IIx (i + 1) len
+  | otherwise    = Just (i + 1)
  {-# INLINE next #-}
-
- like i (IIx _ len)
-  | i >= len     = Nothing
-  | otherwise    = Just $ IIx i len
- {-# INLINE like #-}
-
- check i n
-  | i >= n       = Nothing
-  | otherwise    = Just $ IIx i n
- {-# INLINE check #-}
-
-deriving instance Eq   (Ix Int)
-deriving instance Show (Ix Int)
 
 
 -- | Tuple indices.
 instance Index (Int, Int) where
 
- data Ix (Int, Int)
-        = I2x 
-        { i2xIx_1       :: !Int
-        , i2xRange_1    :: !Int
-        , i2xIx_0       :: !Int
-        , i2xRange_0    :: !Int }
-
- zero (i1, i0) = I2x 0 i1 0 i0
+ zero = (0, 0)
  {-# INLINE zero #-}
 
- next (I2x ix1 a1 ix0 a0)
+ next (ix1, ix0) (a1, a0)
   | ix0 + 1 >= a0
   = if ix1 + 1 >= a1
         then Nothing
-        else Just $ I2x (ix1 + 1) a1 0 a0
+        else Just (ix1 + 1, 0)
 
   | otherwise
-  = Just $ I2x ix1 a1 0 a0
+  = Just (ix1, ix0 + 1)
  {-# INLINE next #-}
-
- like (i1, i0) (I2x _ a1 _ a0)
-  | i1 >= a1 || i0 >= a0  = Nothing
-  | otherwise             = Just $ I2x i1 a1 i0 a0
- {-# INLINE like #-}
-
- check (i1, i0) (a1, a0)
-  | i1 >= a1 || i0 >= a0  = Nothing
-  | otherwise             = Just $ I2x i1 a1 i0 a0
- {-# INLINE check #-}
-
-deriving instance Eq   (Ix (Int, Int))
-deriving instance Show (Ix (Int, Int))
 
 
 -------------------------------------------------------------------------------
-class (Index i, Monad m) => States i m where
+class (Ord i, Monad m) => States i m where
 
  -- | A collection of mutable references.
  data Refs i m a
@@ -129,35 +69,35 @@ class (Index i, Monad m) => States i m where
  newRefs   :: i -> a -> m (Refs i m a)
 
  -- | Write an element of the state.
- readRefs  :: Refs i m a -> Ix i -> m a
+ readRefs  :: Refs i m a -> i -> m a
 
  -- | Read an element of the state.
- writeRefs :: Refs i m a -> Ix i -> a -> m ()
+ writeRefs :: Refs i m a -> i -> a -> m ()
 
 
 instance States Int IO where
- data Refs Int IO a                     = Refs !(VM.IOVector a)
- newRefs   !n !x                        = liftM Refs $ unsafeNewWithVM n x
+ data Refs Int IO a             = Refs !(VM.IOVector a)
+ newRefs   !n !x                = liftM Refs $ unsafeNewWithVM n x
  {-# NOINLINE newRefs #-}
 
- readRefs  (Refs !refs) (IIx !i _)      = VM.unsafeRead  refs i
+ readRefs  (Refs !refs) !i      = VM.unsafeRead  refs i
  {-# INLINE readRefs #-}
 
- writeRefs (Refs !refs) (IIx !i _) !x   = VM.unsafeWrite refs i x
+ writeRefs (Refs !refs) !i !x   = VM.unsafeWrite refs i x
  {-# INLINE writeRefs #-}
 
 
 instance States Int m => States () m  where
 
- data Refs () m a                       = URefs !(Refs Int m a)
+ data Refs () m a               = URefs !(Refs Int m a)
 
  newRefs _ !x                
   = do  refs    <- newRefs  (1 :: Int) x
         return  $ URefs refs
  {-# NOINLINE newRefs #-}
 
- readRefs  (URefs !refs) _              = readRefs  refs (zero 1)
- writeRefs (URefs !refs) _ !x           = writeRefs refs (zero 1) x
+ readRefs  (URefs !refs) _      = readRefs  refs 0
+ writeRefs (URefs !refs) _ !x   = writeRefs refs 0 x
  {-# INLINE readRefs #-}
  {-# INLINE writeRefs #-}
 

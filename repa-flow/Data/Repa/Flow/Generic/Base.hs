@@ -24,7 +24,7 @@ data Sources i m e
           --   Give it the index of the desired stream, a continuation that 
           --   accepts an element, and a continuation to invoke when no more
           --   elements will ever be available.
-        , sourcesPull   :: Ix i -> (e -> m ()) -> m () -> m () }
+        , sourcesPull   :: i -> (e -> m ()) -> m () -> m () }
 
 
 -- | A bundle of stream sinks, indexed by a value of type @i@, 
@@ -38,11 +38,11 @@ data Sinks   i m e
           sinksArity    :: i
 
           -- | Push an element to one of the streams in the bundle.
-        , sinksPush     :: Ix i -> e -> m ()
+        , sinksPush     :: i -> e -> m ()
 
           -- | Signal that no more elements will ever be available for this
           --   sink.
-        , sinksEject    :: Ix i -> m () }
+        , sinksEject    :: i -> m () }
 
 
 -------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ data Sinks   i m e
 --
 finalize_i 
         :: States i m
-        => (Ix i -> m ())
+        => (i -> m ())
         -> Sources i m a -> m (Sources i m a)
 
 finalize_i f (Sources n pull)
@@ -90,7 +90,7 @@ finalize_i f (Sources n pull)
 --
 finalize_o
         :: States i m
-        => (Ix i -> m ())
+        => (i -> m ())
         -> Sinks i m a -> m (Sinks i m a)
 
 finalize_o f  (Sinks n push eject)

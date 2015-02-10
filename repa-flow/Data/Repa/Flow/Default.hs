@@ -157,7 +157,7 @@ toList1   :: A.BulkI l a
 toList1 ix s  
  | ix >= G.sourcesArity s = return Nothing
  | otherwise             
- = liftM Just $ C.toList1 (IIx ix (G.sourcesArity s)) s 
+ = liftM Just $ C.toList1 ix s 
 {-# INLINE toList1 #-}
 
 
@@ -167,7 +167,7 @@ toLists1  :: A.BulkI l a
 toLists1 ix s
  | ix >= G.sourcesArity s = return Nothing
  | otherwise             
- = liftM Just $ C.toLists1 (IIx ix (G.sourcesArity s)) s 
+ = liftM Just $ C.toLists1 ix s 
 {-# INLINE toLists1 #-}
 
 
@@ -189,7 +189,7 @@ finalize_i
         :: (Int -> IO ())
         -> Sources l a -> IO (Sources l a)
 finalize_i f s 
-        = G.finalize_i (\(IIx i _) -> f i) s
+        = G.finalize_i f s
 {-# INLINE finalize_i #-}
 
 
@@ -209,7 +209,7 @@ finalize_o
         :: (Int -> IO ())
         -> Sinks l a   -> IO (Sinks l a)
 finalize_o f k 
-        = G.finalize_o (\(IIx i _) -> f i) k
+        = G.finalize_o f k
 {-# INLINE finalize_o #-}
 
 
@@ -254,7 +254,7 @@ smapChunks_i
         :: (Int -> Array l1 a -> Array l2 b)
         -> Sources l1 a -> IO (Sources l2 b)
 smapChunks_i f s
-        = G.smap_i (\(IIx i _) vec -> f i vec) s
+        = G.smap_i f s
 {-# INLINE smapChunks_i #-}
 
 
@@ -264,7 +264,7 @@ smapChunks_o
         :: (Int -> Array l1 a -> Array l2 b)
         -> Sinks l2 b -> IO (Sinks l1 a)
 smapChunks_o f k
-        = G.smap_o (\(IIx i _) vec -> f i vec) k
+        = G.smap_o f k
 {-# INLINE smapChunks_o #-}
 
 
@@ -319,7 +319,7 @@ connect_i = G.connect_i
 --
 watch_i :: (Int -> Array l a -> IO ()) 
         -> Sources l a  -> IO (Sources l a)
-watch_i f s = G.watch_i (\(IIx i _) vec -> f i vec) s
+watch_i f s = G.watch_i f s
 {-# INLINE watch_i #-}
 
 
@@ -330,7 +330,7 @@ watch_i f s = G.watch_i (\(IIx i _) vec -> f i vec) s
 --
 watch_o :: (Int -> Array l a -> IO ())
         -> Sinks l a    -> IO (Sinks l a)
-watch_o f k = G.watch_o (\(IIx i _) vec -> f i vec) k
+watch_o f k = G.watch_o f k
 {-# INLINE watch_o #-}
 
 
@@ -343,7 +343,7 @@ watch_o f k = G.watch_o (\(IIx i _) vec -> f i vec) k
 trigger_o :: Int -> (Int -> Array l a -> IO ()) 
           -> IO (Sinks l a)
 trigger_o arity f 
-        = G.trigger_o arity (\(IIx i _) vec -> f i vec)
+        = G.trigger_o arity f
 {-# INLINE trigger_o #-}
 
 
@@ -388,7 +388,7 @@ head_i  :: (A.Windowable l a, A.Index l ~ Int)
 head_i ix len s
  | ix >= G.sourcesArity s = return Nothing
  | otherwise             
- = liftM Just $ C.head_i len s (IIx ix (G.sourcesArity s))
+ = liftM Just $ C.head_i len s ix
 {-# INLINE head_i #-}
 
 

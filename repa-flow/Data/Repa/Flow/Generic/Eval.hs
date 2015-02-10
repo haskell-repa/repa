@@ -19,7 +19,7 @@ drainS  :: (Index i, Monad m)
         => Sources i m a -> Sinks i m a -> m ()
 
 drainS (Sources nSources ipull) (Sinks nSinks opush oeject)
- = loop_drain (zero n)
+ = loop_drain zero
  where 
         n = min nSources nSinks
 
@@ -32,7 +32,7 @@ drainS (Sources nSources ipull) (Sinks nSinks opush oeject)
 
                 eject_drain
                  = do   oeject ix  
-                        case next ix of
+                        case next ix n of
                          Nothing        -> return ()
                          Just ix'       -> loop_drain ix'
                 {-# INLINE eject_drain #-}
@@ -50,25 +50,23 @@ drainS (Sources nSources ipull) (Sinks nSinks opush oeject)
 drainP  :: Sources Int IO a -> Sinks Int IO a -> IO ()
 drainP (Sources nSources ipull) (Sinks nSinks opush oeject)
  = do   
-
         -- Create a new gang.
         gang    <- Eval.forkGang n_
 
         -- Evalaute all the streams in different threads.
         Eval.gangIO gang drainMe
 
-
  where  
-        !n@(I# n_) = min nSources nSinks
+        !(I# n_) = min nSources nSinks
 
         drainMe !ix
-         = ipull (IIx (I# ix) n) eat_drain eject_drain
+         = ipull (I# ix) eat_drain eject_drain
          where  eat_drain v 
-                 = do   opush  (IIx (I# ix) n) v
+                 = do   opush  (I# ix) v
                         drainMe ix
                 {-# INLINE eat_drain #-}
 
-                eject_drain = oeject (IIx (I# ix) n)
+                eject_drain = oeject (I# ix)
                 {-# INLINE eject_drain #-}
         {-# INLINE drainMe #-}
 {-# INLINE_FLOW drainP #-}

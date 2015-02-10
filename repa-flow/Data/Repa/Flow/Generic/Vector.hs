@@ -43,7 +43,7 @@ distribute_o (Sinks nSinks push eject) spill
                          loop_distribute (ix + 1)
 
                     | otherwise  
-                    = do push (IIx ix nx) (index xs ix)
+                    = do push  ix (index xs ix)
                          loop_distribute (ix + 1)
                    {-# INLINE loop_distribute #-}
             {-# INLINE push_distribute #-}
@@ -56,7 +56,7 @@ distribute_o (Sinks nSinks push eject) spill
                      = return ()
 
                      | otherwise 
-                     = do eject (IIx ix nSinks)
+                     = do eject ix
                           loop_distribute (ix + 1)
                     {-# INLINE loop_distribute #-}
             {-# INLINE eject_distribute #-}
@@ -86,7 +86,7 @@ distribute2_o
 
 distribute2_o (Sinks (a1, a0) push eject) spill
  = do   
-        let push_distribute (IIx i1 _) !xs
+        let push_distribute i1 !xs
              = loop_distribute 0
              where !nx = length xs
 
@@ -99,12 +99,12 @@ distribute2_o (Sinks (a1, a0) push eject) spill
                          loop_distribute (ix + 1)
 
                     | otherwise  
-                    = do push (I2x i1 a1 ix a0) (index xs ix)
+                    = do push  (i1, ix) (index xs ix)
                          loop_distribute (ix + 1)
                    {-# INLINE loop_distribute #-}
             {-# INLINE push_distribute #-}
 
-        let eject_distribute (IIx i1 _)
+        let eject_distribute i1
               = loop_distribute 0
               where 
                     loop_distribute !ix
@@ -112,7 +112,7 @@ distribute2_o (Sinks (a1, a0) push eject) spill
                      = return ()
 
                      | otherwise 
-                     = do eject (I2x i1 a1 ix a0)
+                     = do eject (i1, ix)
                           loop_distribute (ix + 1)
                     {-# INLINE loop_distribute #-}
             {-# INLINE eject_distribute #-}

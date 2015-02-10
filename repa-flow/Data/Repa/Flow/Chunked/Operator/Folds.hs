@@ -101,7 +101,7 @@ folds_loadChunkNameLens
     :: States  i m
     => Sources i m l1 (n, Int)
     -> Refs i m (Maybe (Array l1 (n, Int)))
-    -> Ix i 
+    -> i 
     -> m (Maybe (Array l1 (n, Int)))
 
 folds_loadChunkNameLens (G.Sources _ pullLens) refsLens i
@@ -134,7 +134,7 @@ folds_loadChunkVals
         => Sources i m l2 a
         -> Refs i m (Maybe (Array l2 a))
         -> Refs i m Bool
-        -> Ix i 
+        -> i 
         -> m (Maybe (Array l2 a))
 
 folds_loadChunkVals (G.Sources _ pullVals) refsVals refsValsDone i
@@ -172,7 +172,7 @@ folds_update
         => Refs i m (Option3 n Int b)
         -> Refs i m (Maybe (Array l1 (n, Int)))
         -> Refs i m (Maybe (Array l2 a))
-        -> Ix i 
+        -> i
         -> Array l1 (n, Int)
         -> Array l2 a
         -> Folds Int Int n a b

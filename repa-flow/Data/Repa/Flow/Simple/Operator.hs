@@ -69,14 +69,14 @@ prepend_i = G.prepend_i
 -- | Apply a function to every element pulled from some source, 
 --   producing a new source.
 map_i     :: States () m => (a -> b) -> Source m a -> m (Source m b)
-map_i f s =  G.smap_i (\G.UIx x -> f x) s
+map_i f s =  G.smap_i (\_ x -> f x) s
 {-# INLINE map_i #-}
 
 
 -- | Apply a function to every element pushed to some sink,
 --   producing a new sink.
 map_o     :: States () m => (a -> b) -> Sink   m b -> m (Sink   m a)
-map_o f s = G.smap_o (\G.UIx x -> f x) s
+map_o f s = G.smap_o (\_ x -> f x) s
 {-# INLINE map_o #-}
 
 
@@ -130,7 +130,7 @@ head_i  :: States () m
         => Int -> Source m a -> m ([a], Source m a)
 
 head_i len s0 
-        = G.head_i len s0 G.UIx
+        = G.head_i len s0 ()
 {-# INLINE head_i #-}
 
 
@@ -140,7 +140,7 @@ peek_i  :: States () m
         => Int -> Source m a -> m ([a], Source m a)
 peek_i n s0
  = do   (s1, s2) <- G.connect_i s0
-        xs       <- G.takeList1 n G.UIx s1
+        xs       <- G.takeList1 n () s1
         s3       <- G.prepend_i xs s2
         return   (xs, s3)
 {-# INLINE peek_i #-}

@@ -93,7 +93,7 @@ sourceChunks
 sourceChunks len pSep aFail bs
  = return $ Sources (P.length bs) pull_sourceChunks
  where  
-        pull_sourceChunks (IIx i _) eat eject
+        pull_sourceChunks i eat eject
          = let Just b = lix bs i
            in  bAtEnd b >>= \eof ->
             if eof
@@ -146,7 +146,7 @@ sourceBytes :: Integer -> [Bucket] -> IO (Sources Int IO (Array F Word8))
 sourceBytes len bs
  = return $ Sources (P.length bs) pull_sourceBytes
  where
-        pull_sourceBytes (IIx i _) eat eject
+        pull_sourceBytes i eat eject
          = do let Just b  = lix bs i
               op  <- bIsOpen b
               if not op 
@@ -215,11 +215,11 @@ sinkChars !bs
 --
 sinkBytes :: [Bucket] -> IO (Sinks Int IO (Array F Word8))
 sinkBytes !bs
- = do   let push_sinkBytes (IIx i _) !chunk
+ = do   let push_sinkBytes i !chunk
              = bPutArray (bs !! i) chunk
             {-# NOINLINE push_sinkBytes #-}
 
-        let eject_sinkBytes (IIx i _)
+        let eject_sinkBytes i
              = bClose    (bs !! i)
             {-# INLINE eject_sinkBytes #-}
 

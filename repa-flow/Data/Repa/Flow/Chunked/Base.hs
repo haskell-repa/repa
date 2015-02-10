@@ -60,7 +60,7 @@ fromLists nDst n xs
 
 -- | Drain a single source into a list of elements.
 toList1 :: (States i m, A.BulkI l a)
-        => Ix i -> Sources i m l a  -> m [a]
+        => i -> Sources i m l a  -> m [a]
 toList1 i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.concat $ P.map A.toList chunks
@@ -69,7 +69,7 @@ toList1 i sources
 
 -- | Drain a single source into a list of chunks.
 toLists1 :: (States i m, A.BulkI l a)
-         => Ix i -> Sources i m l a -> m [[a]]
+         => i -> Sources i m l a -> m [[a]]
 toLists1 i sources
  = do   chunks  <- G.toList1 i sources
         return  $ P.map A.toList chunks
@@ -85,7 +85,7 @@ toLists1 i sources
 --     in the final chunk are visible in the result `Sources`.
 --
 head_i  :: (States i m, A.Windowable l a, A.Index l ~ Int)
-        => Int -> Sources i m l a -> Ix i -> m ([a], Sources i m l a)
+        => Int -> Sources i m l a -> i -> m ([a], Sources i m l a)
 
 head_i len s0 i
  = do   
@@ -148,7 +148,7 @@ head_i len s0 i
 --
 finalize_i
         :: States i m
-        => (Ix i -> m ())
+        => (i -> m ())
         -> Sources i m l a -> m (Sources i m l a)
 finalize_i = G.finalize_i
 {-# INLINE finalize_i #-}
@@ -163,7 +163,7 @@ finalize_i = G.finalize_i
 --
 finalize_o
         :: States i m
-        => (Ix i -> m ())
+        => (i -> m ())
         -> Sinks i m l a -> m (Sinks i m l a)
 finalize_o = G.finalize_o
 {-# INLINE finalize_o #-}

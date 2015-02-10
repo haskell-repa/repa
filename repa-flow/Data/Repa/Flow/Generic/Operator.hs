@@ -45,8 +45,8 @@ import GHC.Exts
 
 -- Projection -----------------------------------------------------------------
 -- | Project out a single stream source from a bundle.
-project_i :: (Index i, Monad m)
-          => Ix i -> Sources i m a -> m (Sources () m a)
+project_i :: Monad m
+          => i -> Sources i m a -> m (Sources () m a)
 project_i ix (Sources _ pull)
  = return $ Sources () pull_project
  where  pull_project _ eat eject
@@ -55,8 +55,8 @@ project_i ix (Sources _ pull)
 
 
 -- | Project out a single stream source from a bundle.
-project_o :: (Index i, Monad m)
-          => Ix i -> Sinks i m a -> m (Sinks () m a)
+project_o :: Monad m
+          => i -> Sinks i m a -> m (Sinks () m a)
 project_o ix (Sinks _ push eject)
  = return $ Sinks () push_project eject_project
  where
@@ -68,7 +68,7 @@ project_o ix (Sinks _ push eject)
 -- Constructors ---------------------------------------------------------------
 -- | Yield sources that always produce the same value.
 repeat_i :: Monad m
-         => i -> (Ix i -> a) 
+         => i -> (i -> a) 
          -> m (Sources i m a)
 repeat_i n f
  = return $ Sources n pull_repeat
@@ -81,7 +81,7 @@ repeat_i n f
 -- | Yield sources of the given length that always produce the same value.
 replicate_i 
         :: States i m
-        => i -> Int -> (Ix i -> a) 
+        => i -> Int -> (i -> a) 
         -> m (Sources i m a)
 
 replicate_i n len f
@@ -123,7 +123,7 @@ prepend_i xs (Sources n pullX)
 --   that match the given predicate.
 prependOn_i 
         :: States i m
-        => (Ix i -> Bool) -> [a] -> Sources i m a -> m (Sources i m a)
+        => (i -> Bool) -> [a] -> Sources i m a -> m (Sources i m a)
 prependOn_i p xs (Sources n pullX)
  = do   
         refs    <- newRefs n xs
@@ -151,7 +151,7 @@ prependOn_i p xs (Sources n pullX)
 --   producing some new sources. The worker function is also given
 --   the stream index.
 smap_i  :: Monad m
-        => (Ix i -> a -> b) -> Sources i m a -> m (Sources i m b)
+        => (i -> a -> b) -> Sources i m a -> m (Sources i m b)
 smap_i f (Sources n pullsA)
  = return $ Sources n pullsB_map
  where  
@@ -172,7 +172,7 @@ smap_i f (Sources n pullsA)
 --   producing a new sink. The worker function is also given
 --   the stream index.
 smap_o   :: Monad m
-        => (Ix i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
+        => (i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
 smap_o f (Sinks n pushB ejectB)
  = return $ Sinks n pushA_map ejectA_map
  where  
@@ -287,7 +287,7 @@ connect_i (Sources n pullX)
 --   returning those elements in a list, and yielding a new source 
 --   for the rest.
 head_i  :: States i m
-        => Int -> Sources i m a -> Ix i -> m ([a], Sources i m a)
+        => Int -> Sources i m a -> i -> m ([a], Sources i m a)
 head_i len s0 i
  = do   
         (s1, s2) <- connect_i s0
@@ -406,7 +406,7 @@ folds_ii f z (Sources nL pullLen)
 -- | Apply a monadic function to every element pulled from some sources,
 --   producing some new sources.
 watch_i  :: Monad m 
-        => (Ix i -> a -> m ()) 
+        => (i -> a -> m ()) 
         -> Sources i m a  -> m (Sources i m a)
 
 watch_i f (Sources n pullX) 
@@ -423,7 +423,7 @@ watch_i f (Sources n pullX)
 
 -- | Pass elements to the provided action as they are pushed into the sink.
 watch_o :: Monad m 
-        => (Ix i -> a -> m ())
+        => (i -> a -> m ())
         -> Sinks i m a ->  m (Sinks i m a)
 
 watch_o f  (Sinks n push eject)
@@ -436,7 +436,7 @@ watch_o f  (Sinks n push eject)
 
 -- | Like `watch` but doesn't pass elements to another sink.
 trigger_o :: Monad m 
-          => i -> (Ix i -> a -> m ()) -> m (Sinks i m a)
+          => i -> (i -> a -> m ()) -> m (Sinks i m a)
 trigger_o i f
  = discard_o i >>= watch_o f
 {-# INLINE trigger_o #-}

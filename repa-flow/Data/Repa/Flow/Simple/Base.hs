@@ -58,7 +58,7 @@ wrapI_i (G.Sources n pullX)
  | n /= 1       = Nothing
  | otherwise    
  = let  pullX' _ eat eject 
-         = pullX (G.IIx 0 1) eat eject 
+         = pullX 0 eat eject 
         {-# INLINE pullX' #-}
    in   Just $ G.Sources () pullX'
 {-# INLINE_FLOW wrapI_i #-}
@@ -68,8 +68,8 @@ wrapI_o  :: G.Sinks Int m e -> Maybe (Sink m e)
 wrapI_o (G.Sinks n eatX ejectX)
  | n /= 1       = Nothing
  | otherwise    
- = let  eatX' _ x       = eatX   (G.IIx 0 1) x
-        ejectX' _       = ejectX (G.IIx 0 1)
+ = let  eatX' _ x       = eatX   0 x
+        ejectX' _       = ejectX 0
    in   Just $ G.Sinks () eatX' ejectX'
 {-# INLINE_FLOW wrapI_o #-}
 
