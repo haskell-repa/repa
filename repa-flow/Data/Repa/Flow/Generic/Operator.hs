@@ -1,8 +1,11 @@
-
+{-# OPTIONS -fno-warn-unused-imports #-}
 module Data.Repa.Flow.Generic.Operator
         ( -- * Projection
           project_i
         , project_o
+
+          -- * Funneling
+        , funnel_o
 
           -- * Constructors
         , repeat_i
@@ -41,10 +44,12 @@ module Data.Repa.Flow.Generic.Operator
           -- * Tracing
         , trace_o)
 where
+import Data.Repa.Flow.Generic.Eval
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array                          as A
 import Data.IORef
+import Control.Monad
 import Debug.Trace
 import GHC.Exts
 import Prelude                                  as P
@@ -62,7 +67,7 @@ project_i ix (Sources _ pull)
 {-# INLINE_FLOW project_i #-}
 
 
--- | Project out a single stream source from a bundle.
+-- | Project out a single stream sink from a bundle.
 project_o :: Monad m
           => i -> Sinks i m a -> m (Sinks () m a)
 project_o ix (Sinks _ push eject)
@@ -71,6 +76,57 @@ project_o ix (Sinks _ push eject)
         push_project _ v = push  ix v
         eject_project _  = eject ix
 {-# INLINE_FLOW project_o #-}
+
+
+-- Funneling ------------------------------------------------------------------
+-- | Given a bundle of sinks consisting of a single stream, produce a new
+--   bundle of the given arity that sends all data to the former, ignoring
+--   the stream index.
+--
+--   The argument stream is ejected only when all of the streams in the 
+--   result bundle have been ejected.
+-- 
+--   * Using this function in conjunction with parallel operators like
+--     `drainP` introduces non-determinism. Elements pushed to different
+--     streams in the result bundle could enter the single stream in the
+--     argument bundle in any order.
+--
+-- @
+-- > import Data.Repa.Flow.Generic
+-- > import Data.Repa.Array.Material
+-- > import Data.Repa.Nice
+--  
+-- > let things = [(0 :: Int, \"foo\"), (1, \"bar\"), (2, \"baz\")]
+-- > result \<- capture_o B () (\\k -> funnel_o 4 k >>= pushList things)
+-- > nice result
+-- ([((),\"foo\"),((),\"bar\"),((),\"baz\")],())
+-- @
+--
+funnel_o :: States i m
+         => i -> Sinks () m a -> m (Sinks i m a)
+funnel_o nSinks (Sinks _ pushX ejectX)
+ = do
+        -- Refs to track which streams have been ejected.
+        refs    <- newRefs nSinks False
+
+        -- Push all received data into the single stream of the
+        -- argument bundle.
+        let push_funnel _ x 
+             = pushX () x
+            {-# INLINE push_funnel #-}
+
+        -- When all the result streams have been ejected, 
+        -- eject the argument stream.
+        let eject_funnel i
+             = do writeRefs refs i True
+                  done  <- foldRefsM (&&) True refs
+                  when done $ ejectX ()
+            {-# INLINE eject_funnel #-}
+
+        return $ Sinks nSinks push_funnel eject_funnel
+
+
+{-# INLINE_FLOW funnel_o #-}
 
 
 -- Constructors ---------------------------------------------------------------

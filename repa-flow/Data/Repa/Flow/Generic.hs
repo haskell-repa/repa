@@ -42,6 +42,9 @@ module Data.Repa.Flow.Generic
         , project_i
         , project_o
 
+          -- ** Funneling
+        , funnel_o
+
           -- ** Constructors
         , repeat_i
         , replicate_i

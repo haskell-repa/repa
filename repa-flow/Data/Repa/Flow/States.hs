@@ -2,7 +2,8 @@
 module Data.Repa.Flow.States
         ( Next   (..)
         , States (..)
-        , Refs   (..))
+        , Refs   (..)
+        , foldRefsM)
 where
 import Control.Monad
 import qualified Data.Vector.Mutable            as VM
@@ -65,32 +66,55 @@ class (Ord i, Next i, Monad m) => States i m where
  -- | A collection of mutable references.
  data Refs i m a
 
+ -- | Get the extent of the collection.
+ extentRefs :: Refs i m a -> i
+
  -- | Allocate a new state of the given arity, also returning an index to the
  --   first element of the collection.
- newRefs   :: i -> a -> m (Refs i m a)
+ newRefs    :: i -> a -> m (Refs i m a)
 
  -- | Write an element of the state.
- readRefs  :: Refs i m a -> i -> m a
+ readRefs   :: Refs i m a -> i -> m a
 
  -- | Read an element of the state.
- writeRefs :: Refs i m a -> i -> a -> m ()
+ writeRefs  :: Refs i m a -> i -> a -> m ()
+
+
+-- | Fold all the elements in a collection of refs.
+foldRefsM 
+        :: States i m 
+        => (a -> b -> b) -> b -> Refs i m a -> m b
+
+foldRefsM f z refs
+ = loop_foldsRefsM first z
+ where
+        loop_foldsRefsM i acc
+         = do   x       <- readRefs refs i
+                let acc' =  f x acc
+                case next i (extentRefs refs) of
+                 Nothing        -> return acc
+                 Just i'        -> loop_foldsRefsM i' acc'
+        {-# INLINE loop_foldsRefsM #-}       
+{-# INLINE foldRefsM #-}
 
 
 instance States Int IO where
  data Refs Int IO a             = Refs !(VM.IOVector a)
+ extentRefs (Refs !refs)        = VM.length refs
  newRefs   !n !x                = liftM Refs $ unsafeNewWithVM n x
- {-# NOINLINE newRefs #-}
-
  readRefs  (Refs !refs) !i      = VM.unsafeRead  refs i
- {-# INLINE readRefs #-}
-
  writeRefs (Refs !refs) !i !x   = VM.unsafeWrite refs i x
+ {-# NOINLINE newRefs #-}
+ {-# INLINE readRefs #-}
  {-# INLINE writeRefs #-}
 
 
 instance States Int m => States () m  where
 
  data Refs () m a               = URefs !(Refs Int m a)
+
+ extentRefs _                   = ()
+ {-# INLINE extentRefs #-}
 
  newRefs _ !x                
   = do  refs    <- newRefs  (1 :: Int) x
