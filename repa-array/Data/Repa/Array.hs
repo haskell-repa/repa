@@ -219,6 +219,8 @@ module Data.Repa.Array
         , ConcatDict
 
         , partition
+        , partitionBy
+        , partitionByIx
 
           -- ** Grouping
         , groups

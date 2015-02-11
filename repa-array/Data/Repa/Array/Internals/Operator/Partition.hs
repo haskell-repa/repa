@@ -1,7 +1,12 @@
 
 module Data.Repa.Array.Internals.Operator.Partition
-        (partition)
+        ( partition
+        , partitionBy
+        , partitionByIx)
 where
+import Data.Repa.Array.Tuple                    as A
+import Data.Repa.Array.Linear                   as A
+import Data.Repa.Array.Delayed                  as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
@@ -91,4 +96,43 @@ partition nDst iSegs aSrc
 
         return  $ NArray vStarts vLens aElems
 {-# INLINE_ARRAY partition #-}
+
+
+-- | Like `partition` but use the provided function to compute the segment
+--   number for each element. 
+partitionBy
+        :: (BulkI lSrc a, Target lDst a, Index lDst ~ Int, Elt a)
+        => Name lDst            -- ^ Name of destination layout.
+        -> Int                  -- ^ Total number of Segments.
+        -> (a -> Int)    -- ^ Get the segment number for this element.
+        -> Array lSrc a         -- ^ Source values.
+        -> Array N (Array lDst a)
+
+partitionBy nDst iSeg fSeg aSrc
+ = partition nDst iSeg 
+ $ tup2 (A.map fSeg aSrc) aSrc
+{-# INLINE partitionBy #-}
+
+
+-- | Like `partition` but use the provided function to compute the segment
+--   number for each element. The function is given the index of the each 
+--   element, along with the element itself.
+partitionByIx 
+        :: (BulkI lSrc a, Target lDst a, Index lDst ~ Int, Elt a)
+        => Name lDst            -- ^ Name of destination layout.
+        -> Int                  -- ^ Total number of Segments.
+        -> (Int -> a -> Int)    -- ^ Get the segment number for this element.
+        -> Array lSrc a         -- ^ Source values.
+        -> Array N (Array lDst a)
+
+partitionByIx  nDst iSeg fSeg aSrc
+ = partition nDst iSeg 
+ $ tup2 aSegVals aSrc
+ where  
+        fSeg' (ix, x) = fSeg ix x
+        {-# INLINE fSeg' #-}
+
+        aIxSrc        = tup2 (linear $ A.length aSrc) aSrc
+        aSegVals      = A.map fSeg' aIxSrc
+{-# INLINE partitionByIx #-}
 
