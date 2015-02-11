@@ -43,9 +43,11 @@ module Data.Repa.Flow.Generic.Operator
 where
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Array                          as A
 import Data.IORef
 import Debug.Trace
 import GHC.Exts
+import Prelude                                  as P
 #include "repa-stream.h"
 
 
@@ -440,35 +442,43 @@ watch_o f  (Sinks n push eject)
 {-# INLINE_FLOW watch_o #-}
 
 
--- | Yield a bundle of sinks and an `IORef`, so that pushing to the
---   sinks accumulates the data in the `IORef`.
--- 
---   Most recently pushed data is on the front of the list.
---
---   * Use `atomicModifyIORef` to access the `IORef`, as we're in a
---     concurrent environment.
+-- | Create a bundle of sinks of the given arity and capture any 
+--   data pushed to it.
 --
 -- @ 
 -- > import Data.Repa.Flow.Generic
--- > import Data.IORef
--- > (k, ref :: IORef [(Int, String)]) <- capture_o (4 :: Int)
--- > pushList [(0, "foo"), (1, "bar"), (2, "baz")] k
--- > readIORef ref
--- [(2,"baz"),(1,"bar"),(0,"foo")]
+-- > import Data.Repa.Array.Material
+-- > import Data.Repa.Nice
+-- > import Control.Monad
+-- > liftM nice $ capture_o B 4 (\\k -> pushList [(0 :: Int, "foo"), (1, "bar"), (0, "baz")] k)
+-- > ([(0,"foo"),(1,"bar"),(0,"baz")],())
 -- @
 --
-capture_o :: i -> IO (Sinks i IO a, IORef [(i, a)])
-capture_o n 
+--   * TODO: avoid going via lists when accumulating.
+--
+capture_o 
+        :: (Target lDst (i, a), Index lDst ~ Int)
+        => Name lDst               -- ^ Name of desination layout.
+        -> i                       -- ^ Arity of result bundle.
+        -> (Sinks i IO a -> IO b)  -- ^ Function to push data into the sinks.
+        -> IO (Array lDst (i, a), b)
+
+capture_o nDst n use
  = do   
-        ref     <- newIORef []
+        ref      <- newIORef []
 
         let capture_eat i x
              = atomicModifyIORef ref (\old -> ((i, x) : old, ()))
             {-# INLINE capture_eat #-}
 
-        k0      <- discard_o n
-        k1      <- watch_o   capture_eat k0
-        return (k1, ref)
+        k0       <- discard_o n
+        k1       <- watch_o   capture_eat k0
+
+        x        <- use k1
+        result   <- readIORef ref
+        let !arr =  A.fromList nDst $ P.reverse result
+
+        return (arr, x)
 {-# INLINE_FLOW capture_o #-}
 
 

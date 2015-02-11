@@ -1,9 +1,10 @@
-
+{-# OPTIONS -fno-warn-unused-imports #-}
 module Data.Repa.Flow.Generic.Shuffle
         ( shuffle_o
         , dshuffle_o)
 where
 import Data.Repa.Flow.Generic.Base              as F
+import Data.Repa.Flow.Generic.Operator          as F
 import Data.Repa.Array                          as A
 import Data.Repa.Eval.Elt
 #include "repa-stream.h"
@@ -33,6 +34,30 @@ import Data.Repa.Eval.Elt
 --       |       ..       |       ..       | 
 -- @
 --
+--
+--   The following example uses `capture_o` to demonstrate how the
+--   `shuffle_o` operator can be used as one step of a bucket-sort. We start
+--   with  two arrays of key-value pairs. In the result, the values from each
+--   block that had the same key are packed into the same tuple (bucket).
+--
+-- @
+-- > import Data.Repa.Flow.Generic    as G
+-- > import Data.Repa.Array           as A
+-- > import Data.Repa.Array.Material  as A
+-- > import Data.Repa.Nice
+-- > import Control.Monad
+-- 
+-- > let arr1 = A.fromList B [(0, \'a\'), (1, \'b\'), (2, \'c\'), (0, \'d\'), (0, \'c\')]
+-- > let arr2 = A.fromList B [(0, \'A\'), (3, \'B\'), (3, \'C\')]
+-- 
+-- > let feed (k :: Sinks Int IO (Array B Char)) 
+--        =   shuffle_o B k undefined 
+--        >>= pushList [((), arr1), ((), arr2)]
+-- 
+-- > liftM nice $ capture_o B 4 feed
+-- ([(0,\"adc\"),(1,\"b\"),(2,\"c\"),(0,\"A\"),(3,\"BC\")],())
+-- @
+--
 shuffle_o
         :: ( BulkI lDst a, BulkI lSrc (Int, a)
            , Windowable lDst a
@@ -57,11 +82,17 @@ shuffle_o _ (Sinks nSinks opush oeject) aSpill
                      = return ()
 
                      | i >= nSinks         
-                     = do aSpill i  (parts `index` i)
+                     = do let !part = parts `index` i
+                          if A.length part > 0
+                           then aSpill i part
+                           else return ()
                           loop_shuffle_push (i + 1)
 
                      | otherwise
-                     = do opush i   (parts `index` i)
+                     = do let !part = parts `index` i
+                          if A.length part > 0
+                            then opush i part
+                            else return ()
                           loop_shuffle_push (i + 1)
 
                 loop_shuffle_push 0

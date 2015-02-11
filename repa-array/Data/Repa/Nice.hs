@@ -45,6 +45,10 @@ class Nicer a where
 
 
 -- Atomic ---------------------------------------------------------------------
+instance Nicer ()  where
+ type Nice ()           = ()
+ nice x = x
+
 instance Nicer Int where
  type Nice Int          = Int
  nice x = x
