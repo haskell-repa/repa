@@ -18,6 +18,16 @@ import System.IO.Unsafe
 --   number of segments, discarding values where the key falls outside
 --   the given range.
 --
+--   * This function operates by first allocating a buffer of size
+--     (segs * len src) and filling it with a default value. Both the
+--     worst case runtime and memory use will be poor for a large
+--     number of destination segments.
+--
+--   TODO: we need the pre-init because otherwise unused values in the elems
+--   array are undefined. We could avoid this by copying out the used elements
+--   after the partition loop finishes. Use a segmented extract function.
+--   This would also remove the dependency on the `Elt` class.
+
 partition 
         :: (BulkI lSrc (Int, a), Target lDst a, Index lDst ~ Int, Elt a)
         => Name  lDst                   -- ^ Name of destination layout.
@@ -48,6 +58,7 @@ partition nDst iSegs aSrc
              | otherwise
              = do unsafeWriteBuffer buf iDst zero
                   loop_partition_init (iDst + 1)
+            {-# INLINE_INNER loop_partition_init #-}
 
         loop_partition_init 0
 
@@ -71,6 +82,7 @@ partition nDst iSegs aSrc
                         UM.unsafeWrite mLens k (o + 1)
 
                         loop_partition (iSrc + 1)
+            {-# INLINE_INNER loop_partition #-}
 
         loop_partition 0
 
