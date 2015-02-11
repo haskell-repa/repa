@@ -4,7 +4,7 @@ module Data.Repa.Array.Internals.Load
 where
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Array.Internals.Bulk
-import Data.Array.Repa.Eval.Gang
+import Data.Repa.Eval.Gang
 
 
 -- | Compute all elements defined by a delayed array and write them to a

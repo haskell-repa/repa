@@ -9,7 +9,7 @@ module Data.Repa.Flow.Generic
         ( Sources       (..)
         , Sinks         (..)
 
-          -- * States and thread safety
+          -- * States and Thread Safety
 
           -- $threadsafety
 

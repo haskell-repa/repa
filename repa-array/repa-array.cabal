@@ -66,6 +66,7 @@ Library
         Data.Repa.Array.Internals.Operator.Concat
         Data.Repa.Array.Internals.Operator.Fold
         Data.Repa.Array.Internals.Operator.Group
+        Data.Repa.Array.Internals.Operator.Partition
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Check
         Data.Repa.Array.Internals.Layout

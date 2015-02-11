@@ -218,6 +218,8 @@ module Data.Repa.Array
         , intercalate
         , ConcatDict
 
+        , partition
+
           -- ** Grouping
         , groups
         , groupsWith
@@ -242,6 +244,7 @@ import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Operator.Concat        as A
 import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
+import Data.Repa.Array.Internals.Operator.Partition     as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Prelude  hiding (reverse, length, map, zipWith, concat, unlines)
 #include "repa-array.h"

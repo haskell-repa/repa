@@ -13,8 +13,8 @@ import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target
 import Debug.Trace
 import GHC.Exts
-import qualified Data.Array.Repa.Eval.Par       as Par
-import qualified Data.Array.Repa.Eval.Seq       as Seq
+import qualified Data.Repa.Eval.Generic.Par       as Par
+import qualified Data.Repa.Eval.Generic.Seq       as Seq
 import Prelude hiding (map, zipWith)
 #include "repa-array.h"
 
