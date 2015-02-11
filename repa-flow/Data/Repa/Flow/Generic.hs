@@ -75,6 +75,9 @@ module Data.Repa.Flow.Generic
         , discard_o
         , ignore_o
 
+          -- ** Tracing
+        , trace_o
+
           -- * Vector Flow Operators
           -- ** 1-dimensional distribution
         , distribute_o

@@ -35,10 +35,14 @@ module Data.Repa.Flow.Generic.Operator
 
           -- * Ignorance
         , discard_o
-        , ignore_o)
+        , ignore_o
+
+          -- * Tracing
+        , trace_o)
 where
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
+import Debug.Trace
 import GHC.Exts
 #include "repa-stream.h"
 
@@ -405,7 +409,7 @@ folds_ii f z (Sources nL pullLen)
 -- Watch ----------------------------------------------------------------------
 -- | Apply a monadic function to every element pulled from some sources,
 --   producing some new sources.
-watch_i  :: Monad m 
+watch_i :: Monad m 
         => (i -> a -> m ()) 
         -> Sources i m a  -> m (Sources i m a)
 
@@ -434,7 +438,7 @@ watch_o f  (Sinks n push eject)
 {-# INLINE_FLOW watch_o #-}
 
 
--- | Like `watch` but doesn't pass elements to another sink.
+-- | Like `watch_o` but doesn't pass elements to another sink.
 trigger_o :: Monad m 
           => i -> (i -> a -> m ()) -> m (Sinks i m a)
 trigger_o i f
@@ -442,11 +446,12 @@ trigger_o i f
 {-# INLINE trigger_o #-}
 
 
--- Discard --------------------------------------------------------------------
+-- Ignorance-------------------------------------------------------------------
 -- | A sink that drops all data on the floor.
 --
 --   This sink is strict in the elements, so they are demanded before being
---   discarded. Haskell debugging thunks attached to the elements will be demanded.
+--   discarded. Haskell debugging thunks attached to the elements will be
+--   demanded.
 --
 discard_o :: Monad m 
           => i -> m (Sinks i m a)
@@ -474,4 +479,26 @@ ignore_o n
         push_ignore  _ _   = return ()
         eject_ignore _     = return ()
 {-# INLINE_FLOW ignore_o #-}
+
+
+-- Trace ----------------------------------------------------------------------
+-- | Use the `trace` function from "Debug.Trace" to print each element
+--   that is pushed to a sink.
+--
+--   * This function is intended for debugging only, and is not intended
+--     for production code.
+--
+trace_o :: (Show i, Show a, Monad m)
+        => i -> m (Sinks i m a)
+
+trace_o nSinks 
+ = trigger_o nSinks eat
+ where
+        eat i x
+         = trace (unlines [ "repa-flow trace_o: " ++ show i ++ ";" ++ show x])
+                 (return ())
+
+{-# NOINLINE trace_o #-}
+
+
 
