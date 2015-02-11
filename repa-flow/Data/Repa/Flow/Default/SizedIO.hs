@@ -27,7 +27,7 @@ import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
 import Data.Char
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- Sourcing ---------------------------------------------------------------------------------------

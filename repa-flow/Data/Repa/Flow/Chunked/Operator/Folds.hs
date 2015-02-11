@@ -10,7 +10,7 @@ import Data.Repa.Fusion.Unpack
 import Data.Repa.Array                    as A hiding (FoldsDict)
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Dictionaries needed to perform a segmented fold.

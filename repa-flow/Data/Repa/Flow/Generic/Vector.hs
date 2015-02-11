@@ -11,7 +11,7 @@ where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array
 import Prelude hiding (length)
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -------------------------------------------------------------------------------

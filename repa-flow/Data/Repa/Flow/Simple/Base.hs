@@ -8,7 +8,7 @@ module Data.Repa.Flow.Simple.Base
 where
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Source consisting of a single stream.

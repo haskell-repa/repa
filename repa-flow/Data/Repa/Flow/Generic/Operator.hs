@@ -53,7 +53,7 @@ import Control.Monad
 import Debug.Trace
 import GHC.Exts
 import Prelude                                  as P
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- Projection -----------------------------------------------------------------

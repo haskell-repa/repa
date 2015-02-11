@@ -8,7 +8,7 @@ module Data.Repa.Flow.Generic.List
         , pushList1)
 where
 import Data.Repa.Flow.Generic.Base
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -------------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import Data.Repa.Flow.Simple.Base
 import Data.Repa.Array
 import Data.Repa.Eval.Array
 import Data.IORef
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- Chunk ------------------------------------------------------------------------------------------

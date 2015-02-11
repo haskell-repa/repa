@@ -75,7 +75,7 @@ import Data.Repa.Fusion.Unpack           as A
 import qualified Data.Repa.Flow.Chunked  as C hiding (next)
 import qualified Data.Repa.Flow.Generic  as G hiding (next)
 import Control.Monad
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | A bundle of stream sources, where the elements of the stream

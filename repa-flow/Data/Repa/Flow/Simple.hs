@@ -67,7 +67,7 @@ import Data.Repa.Flow.Simple.List
 import Data.Repa.Flow.Simple.Operator
 import Data.Repa.Flow.Simple.IO
 import qualified Data.Repa.Flow.Generic.Eval    as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Pull all available values from the source and push them to the sink.

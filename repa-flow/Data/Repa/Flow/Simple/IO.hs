@@ -12,7 +12,7 @@ import Data.Word
 import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- Source Records ---------------------------------------------------------------------------------

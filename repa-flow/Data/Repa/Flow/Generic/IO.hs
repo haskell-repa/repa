@@ -23,7 +23,7 @@ import Data.Char
 import System.IO
 import Data.Word
 import Prelude                                  as P
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- fromFiles --------------------------------------------------------------------------------------

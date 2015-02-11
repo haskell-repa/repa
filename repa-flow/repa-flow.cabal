@@ -67,6 +67,11 @@ Library
         Data.Repa.Flow.Simple.Operator
         Data.Repa.Flow.Simple.IO
 
+  include-dirs:
+        include
+
+  install-includes:
+        repa-flow.h
 
   ghc-options:
         -threaded

@@ -29,7 +29,7 @@ import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Fusion.Unpack
 import Data.Word
 import qualified Data.Repa.Flow.Default.SizedIO  as F
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | The default chunk size of 64kBytes.

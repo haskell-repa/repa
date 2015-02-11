@@ -31,7 +31,7 @@ import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Array                          as A
 import Data.Repa.Eval.Array                     as A
 import qualified Data.Repa.Flow.Generic         as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- Mapping --------------------------------------------------------------------

@@ -44,7 +44,7 @@ import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Operator
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic         as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Pull all available values from the sources and push them to the sinks.

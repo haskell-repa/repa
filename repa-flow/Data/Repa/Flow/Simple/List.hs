@@ -7,7 +7,7 @@ where
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.States                    (States)
 import qualified Data.Repa.Flow.Generic         as G
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Given an arity and a list of elements, yield a source that produces

@@ -6,7 +6,7 @@ where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Eval.Gang                      as Eval
 import GHC.Exts
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Pull all available values from the sources and push them to the sinks.

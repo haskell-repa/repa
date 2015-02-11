@@ -13,7 +13,7 @@ where
 import Data.Repa.Flow.States
 import Data.Repa.Array          as A
 import Control.Monad
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 -- | A bundle of stream sources, indexed by a value of type @i@,
 --   in some monad @m@, returning elements of type @e@.

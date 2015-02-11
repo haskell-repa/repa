@@ -17,7 +17,7 @@ import Data.Repa.Eval.Array                     as A
 import qualified Data.Repa.Flow.Generic         as G
 import Control.Monad
 import Prelude                                  as P
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | A bundle of sources, where the elements are chunked into arrays.

@@ -7,7 +7,7 @@ import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Flow.Generic.Operator          as F
 import Data.Repa.Array                          as A
 import Data.Repa.Eval.Elt
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 

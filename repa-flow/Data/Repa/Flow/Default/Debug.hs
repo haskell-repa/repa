@@ -22,7 +22,7 @@ import Control.Monad
 import Data.List                        as L
 import Data.Text                        as T
 import Prelude                          as P
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -------------------------------------------------------------------------------

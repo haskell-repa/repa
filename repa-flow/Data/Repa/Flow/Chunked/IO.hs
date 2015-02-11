@@ -21,7 +21,7 @@ import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
-#include "repa-stream.h"
+#include "repa-flow.h"
 
 
 -- | Like `fileSourceRecords`, but taking an existing file handle.
