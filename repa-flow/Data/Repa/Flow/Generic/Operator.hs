@@ -118,7 +118,16 @@ funnel_o nSinks (Sinks _ pushX ejectX)
         -- When all the result streams have been ejected, 
         -- eject the argument stream.
         let eject_funnel i
-             = do writeRefs refs i True
+             = do 
+                  -- RACE: If two concurrent processes eject the final two
+                  -- streams then they will both think they were the last
+                  -- one, and eject the single argument stream. This is ok
+                  -- as we allow the argument sink to be ejected multiple
+                  -- times.
+                  -- 
+                  -- See docs of `Sinks` type in "Data.Repa.Flow.Generic.Base".
+                  --
+                  writeRefs refs i True
                   done  <- foldRefsM (&&) True refs
                   when done $ ejectX ()
             {-# INLINE eject_funnel #-}

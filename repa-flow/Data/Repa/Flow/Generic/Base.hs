@@ -46,7 +46,7 @@ data Sinks   i m e
         , sinksPush     :: i -> e -> m ()
 
           -- | Signal that no more elements will ever be available for this
-          --   sink.
+          --   sink. It is ok to eject the same stream multiple times.
         , sinksEject    :: i -> m () }
 
 
