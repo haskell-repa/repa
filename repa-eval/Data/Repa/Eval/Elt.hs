@@ -77,7 +77,7 @@ instance (GElt a, GElt b) => GElt (a :*: b) where
   gzero = gzero :*: gzero
   {-# INLINE gzero #-}
 
-  gone = gone :*: gone
+  gone  = gone :*: gone
   {-# INLINE gone #-}
 
 instance (GElt a, GElt b) => GElt (a :+: b) where
@@ -88,7 +88,7 @@ instance (GElt a, GElt b) => GElt (a :+: b) where
   gzero = L1 gzero
   {-# INLINE gzero #-}
 
-  gone = R1 gone
+  gone  = R1 gone
   {-# INLINE gone #-}
 
 instance (GElt a) => GElt (M1 i c a) where
@@ -98,7 +98,7 @@ instance (GElt a) => GElt (M1 i c a) where
   gzero = M1 gzero
   {-# INLINE gzero #-}
 
-  gone = M1 gone
+  gone  = M1 gone
   {-# INLINE gone #-}
 
 instance (Elt a) => GElt (K1 i a) where
@@ -111,6 +111,7 @@ instance (Elt a) => GElt (K1 i a) where
   gone = K1 one
   {-# INLINE gone #-}
 
+
 -- Bool -----------------------------------------------------------------------
 instance Elt Bool where
  touch b
@@ -122,6 +123,20 @@ instance Elt Bool where
  {-# INLINE zero #-}
 
  one  = True
+ {-# INLINE one #-}
+
+
+-- Char -----------------------------------------------------------------------
+instance Elt Char where
+ touch c
+  = IO (\state -> case touch# c state of
+                        state' -> (# state', () #))
+ {-# INLINE touch #-}
+
+ zero = '0'
+ {-# INLINE zero #-}
+
+ one  = '1'
  {-# INLINE one #-}
 
 

@@ -88,7 +88,8 @@ module Data.Repa.Flow.Generic
         , ddistribute2_o
 
           -- ** Shuffling
-        , shuffle_o)
+        , shuffle_o
+        , dshuffle_o)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base

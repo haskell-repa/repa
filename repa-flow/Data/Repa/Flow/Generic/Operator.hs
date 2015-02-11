@@ -495,7 +495,7 @@ trace_o nSinks
  = trigger_o nSinks eat
  where
         eat i x
-         = trace (unlines [ "repa-flow trace_o: " ++ show i ++ ";" ++ show x])
+         = trace ("repa-flow trace_o: " ++ show i ++ "; " ++ show x)
                  (return ())
 
 {-# NOINLINE trace_o #-}
