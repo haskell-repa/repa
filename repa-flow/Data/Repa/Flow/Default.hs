@@ -153,21 +153,19 @@ fromLists nDst xss = C.fromLists nDst xss
 
 -- | Drain a single source from a bundle into a list of elements.
 toList1   :: A.BulkI l a
-          => Int -> Sources l a -> IO (Maybe [a])
+          => Int -> Sources l a -> IO [a]
 toList1 ix s  
- | ix >= G.sourcesArity s = return Nothing
- | otherwise             
- = liftM Just $ C.toList1 ix s 
+ | ix >= G.sourcesArity s = return []
+ | otherwise              = C.toList1 ix s 
 {-# INLINE toList1 #-}
 
 
 -- | Drain a single source from a bundle into a list of chunks.
 toLists1  :: A.BulkI l a
-          => Int -> Sources l a -> IO (Maybe [[a]])
+          => Int -> Sources l a -> IO [[a]]
 toLists1 ix s
- | ix >= G.sourcesArity s = return Nothing
- | otherwise             
- = liftM Just $ C.toLists1 ix s 
+ | ix >= G.sourcesArity s = return []
+ | otherwise              = C.toLists1 ix s 
 {-# INLINE toLists1 #-}
 
 

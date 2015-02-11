@@ -2,12 +2,16 @@
 module Data.Repa.Flow.Generic.List
         ( fromList
         , toList1
-        , takeList1)
+        , takeList1
+
+        , pushList
+        , pushList1)
 where
 import Data.Repa.Flow.Generic.Base
 #include "repa-stream.h"
 
 
+-------------------------------------------------------------------------------
 -- | Given an arity and a list of elements, yield sources that each produce
 --   all the elements.
 fromList :: States i m
@@ -64,4 +68,37 @@ takeList1 len i (Sources n pullX)
         xx  <- readRefs refs i
         return xx
 {-# INLINE_FLOW takeList1 #-}
+
+
+-------------------------------------------------------------------------------
+-- | Push elements into the associated streams of a bundle of sinks.
+pushList  :: Monad m => [(i, a)] -> Sinks i m a -> m ()
+pushList xx (Sinks _nSinks eat _eject)
+ = loop_pushList xx
+ where  
+        loop_pushList []
+         = return ()
+
+        loop_pushList ((i, x) : ixs)
+         = do   eat i x
+                loop_pushList ixs
+{-# INLINE_FLOW pushList #-}
+
+
+-- | Push the elements of a list into the given stream of a 
+--   bundle of sinks.
+pushList1 :: Monad m => i -> [a] -> Sinks i m a -> m ()
+pushList1 i xx (Sinks _nSinks eat _eject)
+ = loop_pushList1 xx
+ where  
+        loop_pushList1 []   
+         = return ()
+
+        loop_pushList1 (x : xs)
+         = do   eat i x
+                loop_pushList1 xs
+{-# INLINE_FLOW pushList1 #-}
+
+
+
 

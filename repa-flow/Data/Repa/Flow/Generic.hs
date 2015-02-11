@@ -24,6 +24,9 @@ module Data.Repa.Flow.Generic
         , toList1
         , takeList1
 
+        , pushList
+        , pushList1
+
           -- * Stream Indices
         , mapIndex_i
         , mapIndex_o
