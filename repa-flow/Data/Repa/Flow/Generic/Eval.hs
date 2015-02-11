@@ -4,7 +4,7 @@ module Data.Repa.Flow.Generic.Eval
         , drainP)
 where
 import Data.Repa.Flow.Generic.Base
-import Data.Array.Repa.Eval.Gang                as Eval
+import Data.Repa.Eval.Gang                      as Eval
 import GHC.Exts
 #include "repa-stream.h"
 
@@ -51,13 +51,13 @@ drainP  :: Sources Int IO a -> Sinks Int IO a -> IO ()
 drainP (Sources nSources ipull) (Sinks nSinks opush oeject)
  = do   
         -- Create a new gang.
-        gang    <- Eval.forkGang n_
+        gang    <- Eval.forkGang n
 
         -- Evalaute all the streams in different threads.
         Eval.gangIO gang drainMe
 
  where  
-        !(I# n_) = min nSources nSinks
+        !n      = min nSources nSinks
 
         drainMe !ix
          = ipull (I# ix) eat_drain eject_drain

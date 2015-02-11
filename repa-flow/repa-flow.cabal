@@ -59,6 +59,7 @@ Library
         Data.Repa.Flow.Generic.List
         Data.Repa.Flow.Generic.Operator
         Data.Repa.Flow.Generic.Vector
+        Data.Repa.Flow.Generic.Shuffle
         Data.Repa.Flow.Generic.Eval
 
         Data.Repa.Flow.Simple.Base

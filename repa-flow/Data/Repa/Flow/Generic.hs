@@ -79,13 +79,17 @@ module Data.Repa.Flow.Generic
 
           -- ** 2-dimensional distribution
         , distribute2_o
-        , ddistribute2_o)
+        , ddistribute2_o
+
+          -- ** Shuffling
+        , shuffle_o)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Vector
+import Data.Repa.Flow.Generic.Shuffle
 import Data.Repa.Flow.Generic.Eval
 
 
