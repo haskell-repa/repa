@@ -32,6 +32,7 @@ module Data.Repa.Flow.Generic.Operator
         , watch_i
         , watch_o
         , trigger_o
+        , capture_o
 
           -- * Ignorance
         , discard_o
@@ -42,6 +43,7 @@ module Data.Repa.Flow.Generic.Operator
 where
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Base
+import Data.IORef
 import Debug.Trace
 import GHC.Exts
 #include "repa-stream.h"
@@ -436,6 +438,38 @@ watch_o f  (Sinks n push eject)
         push_watch  !i !x = f i x >> push i x
         eject_watch !i    = eject i
 {-# INLINE_FLOW watch_o #-}
+
+
+-- | Yield a bundle of sinks and an `IORef`, so that pushing to the
+--   sinks accumulates the data in the `IORef`.
+-- 
+--   Most recently pushed data is on the front of the list.
+--
+--   * Use `atomicModifyIORef` to access the `IORef`, as we're in a
+--     concurrent environment.
+--
+-- @ 
+-- > import Data.Repa.Flow.Generic
+-- > import Data.IORef
+-- > (k, ref :: IORef [(Int, String)]) <- capture_o (4 :: Int)
+-- > pushList [(0, "foo"), (1, "bar"), (2, "baz")] k
+-- > readIORef ref
+-- [(2,"baz"),(1,"bar"),(0,"foo")]
+-- @
+--
+capture_o :: i -> IO (Sinks i IO a, IORef [(i, a)])
+capture_o n 
+ = do   
+        ref     <- newIORef []
+
+        let capture_eat i x
+             = atomicModifyIORef ref (\old -> ((i, x) : old, ()))
+            {-# INLINE capture_eat #-}
+
+        k0      <- discard_o n
+        k1      <- watch_o   capture_eat k0
+        return (k1, ref)
+{-# INLINE_FLOW capture_o #-}
 
 
 -- | Like `watch_o` but doesn't pass elements to another sink.

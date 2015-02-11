@@ -98,7 +98,3 @@ pushList1 i xx (Sinks _nSinks eat _eject)
          = do   eat i x
                 loop_pushList1 xs
 {-# INLINE_FLOW pushList1 #-}
-
-
-
-

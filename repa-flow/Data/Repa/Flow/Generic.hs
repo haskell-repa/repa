@@ -70,6 +70,7 @@ module Data.Repa.Flow.Generic
         , watch_i
         , watch_o
         , trigger_o
+        , capture_o
 
           -- ** Ignorance
         , discard_o
