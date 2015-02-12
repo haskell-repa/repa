@@ -5,6 +5,7 @@ module Data.Repa.Flow.Generic.Shuffle
         , dshuffleBy_o)
 where
 import Data.Repa.Flow.Generic.Base              as F
+import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Operator          as F
 import Data.Repa.Array                          as A
 import Data.Repa.Eval.Elt

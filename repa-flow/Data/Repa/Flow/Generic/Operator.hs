@@ -12,13 +12,6 @@ module Data.Repa.Flow.Generic.Operator
         , replicate_i
         , prepend_i,    prependOn_i
 
-          -- * Mapping
-        , smap_i,       smap_o
-
-          -- * Connecting
-        , dup_oo,       dup_io,         dup_oi
-        , connect_i
-
           -- * Splitting
         , head_i
 
@@ -49,6 +42,7 @@ module Data.Repa.Flow.Generic.Operator
 where
 import Data.Repa.Flow.Generic.Eval
 import Data.Repa.Flow.Generic.List
+import Data.Repa.Flow.Generic.Connect
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array                          as A
 import Data.IORef
@@ -136,8 +130,6 @@ funnel_o nSinks (Sinks _ pushX ejectX)
             {-# INLINE eject_funnel #-}
 
         return $ Sinks nSinks push_funnel eject_funnel
-
-
 {-# INLINE_FLOW funnel_o #-}
 
 
@@ -220,142 +212,6 @@ prependOn_i p xs (Sources n pullX)
 
         return (Sources n pull_prependOn)
 {-# INLINE_FLOW prependOn_i #-}
-
-
--- Mapping --------------------------------------------------------------------
--- | Apply a function to every element pulled from some sources, 
---   producing some new sources. The worker function is also given
---   the stream index.
-smap_i  :: Monad m
-        => (i -> a -> b) -> Sources i m a -> m (Sources i m b)
-smap_i f (Sources n pullsA)
- = return $ Sources n pullsB_map
- where  
-        pullsB_map i eat eject
-         = pullsA  i eat_a eject_a
-         where  
-                eat_a v = eat (f i v)
-                {-# INLINE eat_a #-}
-
-                eject_a = eject
-                {-# INLINE eject_a #-}
-
-        {-# INLINE [1] pullsB_map #-}
-{-# INLINE_FLOW smap_i #-}
-
-
--- | Apply a function to every element pushed to some sink,
---   producing a new sink. The worker function is also given
---   the stream index.
-smap_o   :: Monad m
-        => (i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
-smap_o f (Sinks n pushB ejectB)
- = return $ Sinks n pushA_map ejectA_map
- where  
-        pushA_map i a   = pushB  i (f i a)
-        {-# INLINE pushA_map #-}
-
-        ejectA_map i    = ejectB i
-        {-# INLINE ejectA_map #-}
-{-# INLINE_FLOW smap_o #-}
-
-
-
--- Connect --------------------------------------------------------------------
--- | Send the same data to two consumers.
---
---   Given two argument sinks, yield a result sink.
---   Pushing to the result sink causes the same element to be pushed to both
---   argument sinks. 
-dup_oo  :: (Ord i, States i m)
-        => Sinks i m a -> Sinks i m a -> m (Sinks i m a)
-dup_oo (Sinks n1 push1 eject1) (Sinks n2 push2 eject2)
- = return $ Sinks (min n1 n2) push_dup eject_dup
- where  
-        push_dup i x  = push1 i x >> push2 i x
-        {-# INLINE push_dup #-}
-
-        eject_dup i   = eject1 i  >> eject2 i
-        {-# INLINE eject_dup #-}
-{-# INLINE_FLOW dup_oo #-}
-
-
--- | Send the same data to two consumers.
---  
---   Given an argument source and argument sink, yield a result source.
---   Pulling an element from the result source pulls from the argument source,
---   and pushes that element to the sink, as well as returning it via the
---   result source.
---   
-dup_io  :: (Ord i, Monad m)
-        => Sources i m a -> Sinks i m a -> m (Sources i m a)
-dup_io (Sources n1 pull1) (Sinks n2 push2 eject2)
- = return $ Sources (min n1 n2) pull_dup
- where
-        pull_dup i eat eject
-         = pull1 i eat_x eject_x
-           where 
-                 eat_x x = eat x >> push2 i x
-                 {-# INLINE eat_x #-}
-
-                 eject_x = eject >> eject2 i
-                 {-# INLINE eject_x #-}
-        {-# INLINE pull_dup #-}
-{-# INLINE_FLOW dup_io #-}
-
-
--- | Send the same data to two consumers.
---
---   Like `dup_io` but with the arguments flipped.
---
-dup_oi  :: (Ord i, Monad m)
-        => Sinks i m a -> Sources i m a -> m (Sources i m a)
-dup_oi sink1 source2 = dup_io source2 sink1
-{-# INLINE_FLOW dup_oi #-}
-
-
--- | Connect an argument source to two result sources.
---
---   Pulling from either result source pulls from the argument source.
---   Each result source only gets the elements pulled at the time, 
---   so if one side pulls all the elements the other side won't get any.
---
-connect_i 
-        :: States  i m
-        => Sources i m a -> m (Sources i m a, Sources i m a)
-
-connect_i (Sources n pullX)
- = do   
-        refs    <- newRefs n Nothing
-
-        -- IMPORTANT: the pump function is set to NOINLINE so that pullX 
-        -- will not be inlined into both consumers. We do not want to 
-        -- duplicate that code for both result sources. Instead, calling
-        -- pump writes its element into a ref, and then only the code
-        -- that reads the ref is duplicated.
-        let pump_connect i
-             = pullX i pump_eat pump_eject
-             where
-                pump_eat !x = writeRefs refs i (Just x)
-                {-# INLINE pump_eat #-}
-
-                pump_eject
-                 = writeRefs refs i Nothing
-                {-# INLINE pump_eject #-}
-            {-# NOINLINE pump_connect #-}
-
-        let pull_splitAt i eat eject
-             = do pump_connect i
-                  mx <- readRefs refs i
-                  case mx of
-                   Just x    -> eat x
-                   Nothing   -> eject
-            {-# INLINE pull_splitAt #-}
-
-        return ( Sources n pull_splitAt
-               , Sources n pull_splitAt )
-
-{-# INLINE_FLOW connect_i #-}
 
 
 -- Splitting ------------------------------------------------------------------

@@ -14,7 +14,7 @@ module Data.Repa.Flow.Generic.IO
         , sinkLines)
 where
 import Data.Repa.Flow.IO.Bucket
-import Data.Repa.Flow.Generic.Operator          as F
+import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array.Material                 as A

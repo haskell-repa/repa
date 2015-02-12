@@ -101,7 +101,9 @@ module Data.Repa.Flow.Generic
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
+import Data.Repa.Flow.Generic.Connect
 import Data.Repa.Flow.Generic.List
+import Data.Repa.Flow.Generic.Map
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Vector
 import Data.Repa.Flow.Generic.Shuffle

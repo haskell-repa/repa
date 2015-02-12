@@ -56,7 +56,9 @@ Library
         Data.Repa.Flow.Default.IO.TSV
 
         Data.Repa.Flow.Generic.Base
+        Data.Repa.Flow.Generic.Connect
         Data.Repa.Flow.Generic.List
+        Data.Repa.Flow.Generic.Map
         Data.Repa.Flow.Generic.Operator
         Data.Repa.Flow.Generic.Vector
         Data.Repa.Flow.Generic.Shuffle
