@@ -52,6 +52,7 @@ module Data.Repa.Flow.Generic
 
           -- ** Mapping
         , smap_i,       smap_o
+        , szipWith_ii,  szipWith_io,    szipWith_oi
 
           -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
