@@ -1,14 +1,14 @@
 {-# OPTIONS -fno-warn-unused-imports #-}
 module Data.Repa.Flow.Generic.Shuffle
         ( shuffle_o
-        , dshuffle_o)
+        , dshuffle_o
+        , dshuffleBy_o)
 where
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Flow.Generic.Operator          as F
 import Data.Repa.Array                          as A
 import Data.Repa.Eval.Elt
 #include "repa-flow.h"
-
 
 
 -- | Given a bundle of argument sinks, produce a result sink.
@@ -120,11 +120,34 @@ dshuffle_o
            , Windowable lDst a
            , Target lDst a
            , Elt a)
-        => Name lSrc                            -- ^ Name of source layout.
-        -> Sinks Int IO (Array lDst a)          -- ^ Sinks to push results to.
+        => Name lSrc                    -- ^ Name of source layout.
+        -> Sinks Int IO (Array lDst a)  -- ^ Sinks to push results to.
         -> IO (Sinks () IO  (Array lSrc (Int, a)))
 
 dshuffle_o nSrc sinks
         = shuffle_o nSrc sinks (\_ _ -> return ())
 {-# INLINE dshuffle_o #-}
+
+
+-- | Like `dshuffle_o`, but use the given function to decide which stream of
+--   the argument bundle each element should be pushed into.
+dshuffleBy_o
+        :: ( BulkI lDst a, BulkI lSrc a
+           , Windowable lDst a
+           , Target lDst a
+           , Elt a)
+        => Name lSrc                    -- ^ Name of source layout.
+        -> (a -> Int)                   -- ^ Get the stream number for an element.
+        -> Sinks Int IO (Array lDst a)  -- ^ Sinks to push results to.
+        -> IO (Sinks () IO  (Array lSrc a))
+
+dshuffleBy_o _ fBucket sinks
+ = do   kShuf  <- dshuffle_o name sinks
+
+        let chunk _ arr = A.tup2 (A.map fBucket arr) arr
+            {-# INLINE chunk #-}
+
+        smap_o chunk kShuf
+{-# INLINE dshuffleBy_o #-}
+
 
