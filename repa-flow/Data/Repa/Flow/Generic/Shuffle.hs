@@ -45,17 +45,15 @@ import Data.Repa.Eval.Elt
 -- > import Data.Repa.Array           as A
 -- > import Data.Repa.Array.Material  as A
 -- > import Data.Repa.Nice
--- > import Control.Monad
 -- 
 -- > let arr1 = A.fromList B [(0, \'a\'), (1, \'b\'), (2, \'c\'), (0, \'d\'), (0, \'c\')]
 -- > let arr2 = A.fromList B [(0, \'A\'), (3, \'B\'), (3, \'C\')]
+-- > result :: Array B (Int, Array U Char) 
+-- >        \<- capture_o B 4 (\\k ->  shuffle_o B (error \"spilled\") k  
+-- >                             >>= pushList1 () [arr1, arr2]) 
 -- 
--- > let feed (k :: Sinks Int IO (Array B Char)) 
---        =   shuffle_o B k undefined 
---        >>= pushList [((), arr1), ((), arr2)]
--- 
--- > liftM nice $ capture_o B 4 feed
--- ([(0,\"adc\"),(1,\"b\"),(2,\"c\"),(0,\"A\"),(3,\"BC\")],())
+-- > nice result
+-- [(0,\"adc\"),(1,\"b\"),(2,\"c\"),(0,\"A\"),(3,\"BC\")]
 -- @
 --
 shuffle_o
@@ -64,11 +62,11 @@ shuffle_o
            , Target lDst a
            , Elt a)
         => Name lSrc                            -- ^ Name of source layout.
-        -> Sinks Int IO (Array lDst a)          -- ^ Sinks to push results to.
         -> (Int -> Array lDst a -> IO ())       -- ^ Handle spilled elements.
+        -> Sinks Int IO (Array lDst a)          -- ^ Sinks to push results to.
         -> IO (Sinks () IO  (Array lSrc (Int, a)))
 
-shuffle_o _ (Sinks nSinks opush oeject) aSpill
+shuffle_o _ aSpill (Sinks nSinks opush oeject)
  = return $ Sinks () shuffle_push shuffle_eject
  where
         shuffle_push _ !arr
@@ -125,12 +123,29 @@ dshuffle_o
         -> IO (Sinks () IO  (Array lSrc (Int, a)))
 
 dshuffle_o nSrc sinks
-        = shuffle_o nSrc sinks (\_ _ -> return ())
+        = shuffle_o nSrc (\_ _ -> return ()) sinks 
 {-# INLINE dshuffle_o #-}
 
 
 -- | Like `dshuffle_o`, but use the given function to decide which stream of
 --   the argument bundle each element should be pushed into.
+--
+-- @
+-- > import Data.Repa.Flow.Generic   as G
+-- > import Data.Repa.Array          as A
+-- > import Data.Repa.Array.Material as A
+-- > import Data.Repa.Nice
+-- > import Data.Char
+--  
+-- > let arr1 = A.fromList B \"FooBAr\"
+-- > let arr2 = A.fromList B \"BazLIKE\"
+-- > result :: Array B (Int, Array U Char) 
+--          \<- capture_o B 2 (\\k ->  dshuffleBy_o B (\\x -> if isUpper x then 0 else 1) k 
+--                               >>= pushList1 () [arr1, arr2])
+-- > nice result
+-- [(0,\"FBA\"),(1,\"oor\"),(0,\"BLIKE\"),(1,\"az\")]
+-- @
+--
 dshuffleBy_o
         :: ( BulkI lDst a, BulkI lSrc a
            , Windowable lDst a
@@ -149,5 +164,4 @@ dshuffleBy_o _ fBucket sinks
 
         smap_o chunk kShuf
 {-# INLINE dshuffleBy_o #-}
-
 

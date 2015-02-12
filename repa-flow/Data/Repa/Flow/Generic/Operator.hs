@@ -35,7 +35,10 @@ module Data.Repa.Flow.Generic.Operator
         , watch_i
         , watch_o
         , trigger_o
+
+          -- * Capturing
         , capture_o
+        , rcapture_o
 
           -- * Ignorance
         , discard_o
@@ -99,7 +102,7 @@ project_o ix (Sinks _ push eject)
 -- > let things = [(0 :: Int, \"foo\"), (1, \"bar\"), (2, \"baz\")]
 -- > result \<- capture_o B () (\\k -> funnel_o 4 k >>= pushList things)
 -- > nice result
--- ([((),\"foo\"),((),\"bar\"),((),\"baz\")],())
+-- [((),\"foo\"),((),\"bar\"),((),\"baz\")]
 -- @
 --
 funnel_o :: States i m
@@ -515,8 +518,8 @@ watch_o f  (Sinks n push eject)
 -- > import Data.Repa.Array.Material
 -- > import Data.Repa.Nice
 -- > import Control.Monad
--- > liftM nice $ capture_o B 4 (\\k -> pushList [(0 :: Int, "foo"), (1, "bar"), (0, "baz")] k)
--- > ([(0,"foo"),(1,"bar"),(0,"baz")],())
+-- > liftM nice $ capture_o B 4 (\k -> pushList [(0 :: Int, "foo"), (1, "bar"), (0, "baz")] k)
+-- > [(0,"foo"),(1,"bar"),(0,"baz")]
 -- @
 --
 --   * TODO: avoid going via lists when accumulating.
@@ -525,10 +528,23 @@ capture_o
         :: (Target lDst (i, a), Index lDst ~ Int)
         => Name lDst               -- ^ Name of desination layout.
         -> i                       -- ^ Arity of result bundle.
+        -> (Sinks i IO a -> IO ()) -- ^ Function to push data into the sinks.
+        -> IO (Array lDst (i, a))
+
+capture_o nDst n use
+ = liftM fst $ rcapture_o nDst n use
+{-# INLINE capture_o #-}
+
+
+-- | Like `capture_o` but also return the @r@-esult of the push function.
+rcapture_o 
+        :: (Target lDst (i, a), Index lDst ~ Int)
+        => Name lDst               -- ^ Name of desination layout.
+        -> i                       -- ^ Arity of result bundle.
         -> (Sinks i IO a -> IO b)  -- ^ Function to push data into the sinks.
         -> IO (Array lDst (i, a), b)
 
-capture_o nDst n use
+rcapture_o nDst n use
  = do   
         ref      <- newIORef []
 
@@ -544,7 +560,7 @@ capture_o nDst n use
         let !arr =  A.fromList nDst $ P.reverse result
 
         return (arr, x)
-{-# INLINE_FLOW capture_o #-}
+{-# INLINE_FLOW rcapture_o #-}
 
 
 -- | Like `watch_o` but doesn't pass elements to another sink.

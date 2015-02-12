@@ -40,12 +40,12 @@ import Prelude hiding (length)
 --
 distribute_o 
         :: BulkI l a 
-        => Sinks Int IO a       -- ^ Sinks to push elements into.
-        -> (Int -> a -> IO ())  -- ^ Spill action, given the spilled element
+        => (Int -> a -> IO ())  -- ^ Spill action, given the spilled element
                                 --   along with its index in the array.
+        -> Sinks Int IO a       -- ^ Sinks to push elements into.
         -> IO (Sinks () IO (Array l a))
 
-distribute_o (Sinks nSinks push eject) spill
+distribute_o aSpill (Sinks nSinks push eject)
  = do   
         let push_distribute _ !xs
              = loop_distribute 0
@@ -56,7 +56,7 @@ distribute_o (Sinks nSinks push eject) spill
                     = return ()
 
                     | ix >= nSinks
-                    = do spill ix (index xs ix)
+                    = do aSpill ix (index xs ix)
                          loop_distribute (ix + 1)
 
                     | otherwise  
@@ -89,7 +89,7 @@ ddistribute_o
         -> IO (Sinks () IO (Array l a))
 
 ddistribute_o sinks 
-        = distribute_o sinks (\_ _ -> return ())
+        = distribute_o (\_ _ -> return ()) sinks 
 {-# INLINE ddistribute_o #-}
 
 
@@ -106,12 +106,12 @@ ddistribute_o sinks
 --
 distribute2_o 
         :: BulkI l a 
-        => Sinks SH2 IO a               -- ^ Sinks to push elements into.
-        -> (SH2 -> a -> IO ())          -- ^ Spill action, given the spilled element
+        => (SH2 -> a -> IO ())          -- ^ Spill action, given the spilled element
                                         --   along with its index in the array.
+        -> Sinks SH2 IO a               -- ^ Sinks to push elements into.
         -> IO (Sinks Int IO (Array l a))
 
-distribute2_o (Sinks (Z :. a1 :. a0) push eject) spill
+distribute2_o aSpill (Sinks (Z :. a1 :. a0) push eject)
  = do   
         let push_distribute i1 !xs
              = loop_distribute 0
@@ -122,7 +122,7 @@ distribute2_o (Sinks (Z :. a1 :. a0) push eject) spill
                     = return ()
 
                     | ix >= a0
-                    = do spill (ish2 i1 ix) (index xs ix)
+                    = do aSpill (ish2 i1 ix) (index xs ix)
                          loop_distribute (ix + 1)
 
                     | otherwise  
@@ -155,7 +155,7 @@ ddistribute2_o
         -> IO (Sinks Int IO (Array l a))
 
 ddistribute2_o sinks 
-        = distribute2_o sinks (\_ _ -> return ())
+        = distribute2_o (\_ _ -> return ()) sinks 
 {-# INLINE ddistribute2_o #-}
 
 
