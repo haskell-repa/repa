@@ -9,7 +9,7 @@ module Data.Repa.Flow.Generic
         ( Sources       (..)
         , Sinks         (..)
 
-          -- * States and Thread Safety
+          -- * Stream State and Thread Safety
 
           -- $threadsafety
 
@@ -113,32 +113,24 @@ import Data.Repa.Flow.Generic.Eval
 
 -- $threadsafety
 --   As most functions in this library produce `IO` actions, thread safety is not
---   guaranteed by their types. In the current version of the library story is as
---   follows:
+--   guaranteed by their types. 
 --
---    It is /not safe/ to pull from the same stream of a `Sources` bundle 
---     concurrently. The `Source` may hold per-stream state information which
---     is updated each time it is pulled, and pulling the same stream concurrently
---     will cause a race.
+--   It is /not safe/ to concurrently pull from the same stream of a `Sources`
+--   bundle, or concurrently push to the same stream of a `Sinks` bundle.
+--   Both `Sources` and `Sinks` may hold per-stream state information, and 
+--   accessing the same stream concurrently may cause a race condition.
 --
---    It is safe to pull from /different/ streams of a `Sources` bundle 
---     concurrently. The state information for each stream of a source is
---     guaranteed to be separate.
+--   It is safe to concurrently push or pull from /different/ streams of a bundle,
+--   as the state information for each stream is guaranteed to be separate. 
+--   Any inter-stream communication is protected by appropriate locks.
 --
---    It is safe to push to any stream of a `Sinks` bundle concurrently,
---     including pushing to different streams or the same stream at the same time.
---     The state information for each stream in a `Sinks` bundle is protected
---     by appropriate locks.
+--   Unless stated otherwise, any worker function passed to a flow operator may
+--   be invoked concurrently. For example, if you pass an `IO` action to
+--   `trigger_o` then that action may be invoked concurrently.
 --
---    Unless stated otherwise, it is safe to construct multiple
---     `Sources` and `Sinks` concurrently. For example, you can apply
---     `map_o` and `folds_i` concurrently, or apply multiple instances of `map_o`.
---     
---   In practice, if stick with the bulk operators provided by this library,
---   and invoke them from a single threaded program, then you won't have a problem.
---   However, if you construct your own `Sources` and `Sinks` by providing
---   raw push, pull and eject functions then you must obey the above rules.
---   In a future version we may also require that concurrently pulling from the
---   same stream of a `Sources` bundle is also thread safe.
+--   In practice, if you use just the bulk operators provided by this library
+--   then you won't have a problem. However, if you construct your own 
+--   `Sources` or `Sinks` by providing raw @push@, @pull@ and @eject@ functions
+--   then you must obey the above rules.
 --
 
