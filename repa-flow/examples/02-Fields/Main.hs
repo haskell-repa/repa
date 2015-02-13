@@ -46,10 +46,10 @@ pFields config
 
         -- Do a ragged transpose the chunks, to produce a columnar
         -- representation.
-        sColumns   <- mapChunks_i ragspose3 sIn
+        sColumns   <- G.map_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        sCat       <- mapChunks_i (mapS B (A.unlines F)) sColumns
+        sCat       <- G.map_i (mapS B (A.unlines F)) sColumns
 
         -- Open an output directory for each of the columns.
         let dirsOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
@@ -58,7 +58,7 @@ pFields config
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.
         ooOut'     <- G.flipIndex2_o  ooOut
-        oOut       <- G.distribute2_o ooOut' dieFields
+        oOut       <- G.distribute2_o dieFields ooOut' 
 
         -- Drain all the input chunks into the output files,
         -- processing each of the input buckets in parallel.
