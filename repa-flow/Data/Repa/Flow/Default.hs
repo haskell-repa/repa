@@ -216,14 +216,14 @@ finalize_o f k
 -- | Apply a function to all elements pulled from some sources.
 map_i   :: (Flow l1 a, A.TargetI l2 b)
         => Name l2 -> (a -> b) -> Sources l1 a -> IO (Sources l2 b)
-map_i _ f s = C.map_i f s
+map_i _ f s = C.smap_i (\_ x -> f x) s
 {-# INLINE map_i #-}
 
 
 -- | Apply a function to all elements pushed to some sinks.
 map_o   :: (Flow l1 a, A.TargetI l2 b)
         => Name l1 -> (a -> b) -> Sinks l2 b   -> IO (Sinks   l1 a)
-map_o _ f s = C.map_o f s
+map_o _ f s = C.smap_o (\_ x -> f x) s
 {-# INLINE map_o #-}
 
 

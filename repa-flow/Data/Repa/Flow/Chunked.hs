@@ -22,7 +22,8 @@ module Data.Repa.Flow.Chunked
           -- | If you want to work on a chunk at a time then use 
           --   `Data.Repa.Flow.Generic.map_i` and
           --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
-        , map_i,        map_o
+        , smap_i,       smap_o
+        , szipWith_ii
 
           -- ** Splitting
         , head_i

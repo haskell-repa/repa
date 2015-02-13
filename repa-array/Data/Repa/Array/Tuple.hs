@@ -36,8 +36,10 @@ instance ( Index  l1 ~ Index l2
  name                        = T2 name name
  create     (T2 n1 n2)    ix = Tup2 (create n1 ix) (create n2 ix)
  extent     (Tup2 l1 l2)     = intersectDim (extent l1) (extent l2)
- toIndex    (Tup2 l1 _l2) ix = toIndex l1 ix
+ toIndex    (Tup2 l1 _l2) ix = toIndex   l1 ix
  fromIndex  (Tup2 l1 _l2) ix = fromIndex l1 ix
+        -- TODO: using just l1 will be wrong for load functions if 
+        --       the two layouts have different extents.
  {-# INLINE name      #-}
  {-# INLINE create    #-}
  {-# INLINE extent    #-}

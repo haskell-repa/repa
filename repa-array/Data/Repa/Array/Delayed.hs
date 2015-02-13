@@ -4,8 +4,6 @@ module Data.Repa.Array.Delayed
         , fromFunction, toFunction
         , delay
         , map)
---        , zipWith
---        , (+^), (-^), (*^), (/^))
 where
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
@@ -60,11 +58,9 @@ instance Layout l => Bulk (D l) a where
         = ADelayed !l (Index l -> a) 
 
  layout (ADelayed l _)      = Delayed l
- {-# INLINE_ARRAY layout #-}
-
  index  (ADelayed _l f) ix  = f ix
  {-# INLINE_ARRAY index #-}
-
+ {-# INLINE_ARRAY layout #-}
 
 
 -- Load -----------------------------------------------------------------------
@@ -72,8 +68,12 @@ instance (Layout l1, Target l2 a)
       =>  Load (D l1) l2 a where
  loadS (ADelayed l1 get) !buf
   = do  let !(I# len)   = size (extent l1)
+
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
-        let get' ix     = get $ fromIndex   l1  (I# ix)
+            get' ix     = get $ fromIndex   l1  (I# ix)
+            {-# INLINE write #-}
+            {-# INLINE get'  #-}
+
         Seq.fillLinear  write get' len
         touchBuffer  buf
  {-# INLINE_ARRAY loadS #-}
@@ -81,8 +81,12 @@ instance (Layout l1, Target l2 a)
  loadP gang (ADelayed l1 get) !buf
   = do  traceEventIO "Repa.loadP[Delayed]: start"
         let !(I# len)   = size (extent l1)
+
         let write ix x  = unsafeWriteBuffer buf (I# ix) x
-        let get' ix     = get $ fromIndex   l1  (I# ix)
+            get' ix     = get $ fromIndex   l1  (I# ix)
+            {-# INLINE write #-}
+            {-# INLINE get'  #-}
+
         Par.fillChunked gang write get' len 
         touchBuffer  buf
         traceEventIO "Repa.loadP[Delayed]: end"
@@ -109,7 +113,6 @@ toFunction (ADelayed l f) = (l, f)
 {-# INLINE_ARRAY toFunction #-}
 
 
-
 -- Operators ------------------------------------------------------------------
 -- | Wrap an existing array in a delayed one.
 delay   :: Bulk l a
@@ -125,39 +128,3 @@ map     :: Bulk l a
 map f arr
         = ADelayed (layout arr) (f . index arr)
 {-# INLINE_ARRAY map #-}
-
-
--- ZipWith --------------------------------------------------------------------
-{-
--- | Combine two arrays, element-wise, with a binary operator.
---      If the extent of the two array arguments differ,
---      then the resulting array's extent is their intersection.
-zipWith :: (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
-        => (a -> b -> c)
-        -> Array l1 a -> Array l2 b
-        -> Array (D (Index l1))  sh c
-
-zipWith f arr1 arr2
- = fromFunction (intersectDim (extent arr1) (extent arr2)) 
-                get_zipWith
- where  get_zipWith ix  
-         = f (arr1 `index` ix) (arr2 `index` ix)
-        {-# INLINE get_zipWith #-}
-{-# INLINE_ARRAY zipWith #-}
--}
-{-
-infixl 7  *^, /^
-infixl 6  +^, -^
-
-(+^)    = zipWith (+)
-{-# INLINE (+^) #-}
-
-(-^)    = zipWith (-)
-{-# INLINE (-^) #-}
-
-(*^)    = zipWith (*)
-{-# INLINE (*^) #-}
-
-(/^)    = zipWith (/)
-{-# INLINE (/^) #-}
--}

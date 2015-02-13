@@ -60,7 +60,7 @@ smap_o f (Sinks n pushB ejectB)
 {-# INLINE_FLOW smap_o #-}
 
 
--- | Combine the elements of two streams with the given function.
+-- | Combine the elements of two flows with the given function.
 --   The worker function is also given the stream index.
 szipWith_ii 
         :: (Ord i, Monad m)

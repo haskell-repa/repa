@@ -161,6 +161,9 @@ module Data.Repa.Array
         , toFunction
         , delay 
 
+        , D2(..)
+        , delay2
+
           -- ** Windowed arrays
         , W(..)
         , Windowable (..)
@@ -204,8 +207,8 @@ module Data.Repa.Array
         , reverse
 
           -- ** Mapping
-        , map,  mapS
-          -- , zipWith
+        , map,  map2
+        , mapS, map2S
 
           -- ** Searching
         , findIndex
@@ -233,13 +236,14 @@ module Data.Repa.Array
         , Folds(..)
         , FoldsDict)
 where
+import Data.Repa.Array.Index
 import Data.Repa.Array.Linear                           as A
 import Data.Repa.Array.Dense                            as A
 import Data.Repa.Array.RowWise                          as A
 import Data.Repa.Array.Delayed                          as A
+import Data.Repa.Array.Delayed2                         as A
 import Data.Repa.Array.Window                           as A
 import Data.Repa.Array.Tuple                            as A
-import Data.Repa.Array.Index
 import Data.Repa.Eval.Array                             as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
@@ -248,6 +252,7 @@ import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
 import Data.Repa.Array.Internals.Operator.Partition     as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
+import Control.Monad
 import Prelude  hiding (reverse, length, map, zipWith, concat, unlines)
 #include "repa-array.h"
 
@@ -309,5 +314,19 @@ mapS    :: (Bulk lSrc a, Target lDst b, Index lSrc ~ Index lDst)
         -> Array lDst b
 mapS l f xs = computeS l $ A.map f xs
 {-# INLINE mapS #-}
+
+
+-- | Like `A.map2`, but immediately `computeS` the result.
+map2S   :: (Bulk   lSrc1 a, Bulk lSrc2 b, Target lDst c
+           , Index lSrc1 ~ Index lDst
+           , Index lSrc2 ~ Index lDst)
+        => Name lDst            -- ^ Name of destination layout.
+        -> (a -> b -> c )       -- ^ Worker function.
+        -> Array lSrc1 a        -- ^ Source array.
+        -> Array lSrc2 b        -- ^ Source array
+        -> Maybe (Array lDst  c)
+map2S l f xs ys
+ = liftM (computeS l) $ A.map2 f xs ys
+{-# INLINE map2S #-}
 
 
