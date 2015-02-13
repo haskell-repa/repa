@@ -42,6 +42,9 @@ module Data.Repa.Flow.Chunked
         , ignore_o)
 where
 import Data.Repa.Flow.Chunked.Base
+import Data.Repa.Flow.Chunked.Map
+import Data.Repa.Flow.Chunked.Folds
+import Data.Repa.Flow.Chunked.Groups
 import Data.Repa.Flow.Chunked.Operator
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic         as G

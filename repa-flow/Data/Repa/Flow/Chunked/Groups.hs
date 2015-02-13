@@ -1,5 +1,5 @@
 
-module Data.Repa.Flow.Chunked.Operator.Groups
+module Data.Repa.Flow.Chunked.Groups
         ( groupsBy_i
         , GroupsDict)
 where

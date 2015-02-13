@@ -49,9 +49,10 @@ Library
 
   other-modules:
         Data.Repa.Flow.Chunked.Base
+        Data.Repa.Flow.Chunked.Map
+        Data.Repa.Flow.Chunked.Folds
+        Data.Repa.Flow.Chunked.Groups
         Data.Repa.Flow.Chunked.Operator
-        Data.Repa.Flow.Chunked.Operator.Folds
-        Data.Repa.Flow.Chunked.Operator.Groups
 
         Data.Repa.Flow.Default.IO.TSV
 

@@ -1,5 +1,5 @@
 
-module Data.Repa.Flow.Chunked.Operator.Folds
+module Data.Repa.Flow.Chunked.Folds
         ( folds_i
         , FoldsDict)
 where
