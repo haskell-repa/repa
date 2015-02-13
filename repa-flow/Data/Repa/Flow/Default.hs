@@ -30,9 +30,10 @@ module Data.Repa.Flow.Default
 
         -- * Flow Operators
         -- ** Mapping
+        -- | If you want to work on a chunk at a time then use 
+        --   `Data.Repa.Flow.Generic.map_i` and
+        --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
         , map_i,                map_o
-        , mapChunks_i,          mapChunks_o
-        , smapChunks_i,         smapChunks_o
 
         -- ** Connecting
         , dup_oo
@@ -224,46 +225,6 @@ map_o   :: (Flow l1 a, A.TargetI l2 b)
         => Name l1 -> (a -> b) -> Sinks l2 b   -> IO (Sinks   l1 a)
 map_o _ f s = C.map_o f s
 {-# INLINE map_o #-}
-
-
--- | Apply a function to all elements pulled from some sources,
---   a chunk at a time.
-mapChunks_i  
-        :: (Array  l1 a -> Array l2 b)
-        -> Sources l1 a -> IO (Sources l2 b)
-mapChunks_i f s 
-        = G.smap_i (\_ c -> f c) s
-{-# INLINE mapChunks_i #-}
-
-
--- | Apply a function to all elements pushed to some sinks,
---   a chunk at a time.
-mapChunks_o  
-        :: (Array l1 a -> Array l2 b)
-        -> Sinks l2 b -> IO (Sinks l1 a)
-mapChunks_o f s 
-        = G.smap_o (\_ c -> f c) s
-{-# INLINE mapChunks_o #-}
-
-
--- | Like `mapChunks_i`, except that the worker function is also given
---   the source index.
-smapChunks_i  
-        :: (Int -> Array l1 a -> Array l2 b)
-        -> Sources l1 a -> IO (Sources l2 b)
-smapChunks_i f s
-        = G.smap_i f s
-{-# INLINE smapChunks_i #-}
-
-
--- | Like `mapChunks_o`, except that the worker function is also given
---   the sink index.
-smapChunks_o  
-        :: (Int -> Array l1 a -> Array l2 b)
-        -> Sinks l2 b -> IO (Sinks l1 a)
-smapChunks_o f k
-        = G.smap_o f k
-{-# INLINE smapChunks_o #-}
 
 
 -- Connecting -----------------------------------------------------------------

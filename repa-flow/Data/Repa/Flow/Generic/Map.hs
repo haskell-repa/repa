@@ -1,6 +1,8 @@
 
 module Data.Repa.Flow.Generic.Map
-        ( smap_i,       smap_o
+        ( map_i,        map_o
+        , smap_i,       smap_o
+
         , szipWith_ii,  szipWith_io,    szipWith_oi)
 where
 import Data.Repa.Flow.Generic.Base
@@ -11,7 +13,13 @@ import Prelude                                  as P
 
 -- | Apply a function to every element pulled from some sources, 
 --   producing some new sources. 
---   The worker function is also given the stream index.
+map_i   :: Monad m
+        => (a -> b) -> Sources i m a -> m (Sources i m b)
+map_i f s = smap_i (\_ x -> f x) s
+{-# INLINE map_i #-}
+
+
+-- | Like `map_i`, but the worker function is also given the stream index.
 smap_i  :: Monad m
         => (i -> a -> b) -> Sources i m a -> m (Sources i m b)
 smap_i f (Sources n pullsA)
@@ -30,9 +38,15 @@ smap_i f (Sources n pullsA)
 {-# INLINE_FLOW smap_i #-}
 
 
--- | Apply a function to every element pushed to some sink,
---   producing a new sink. 
---   The worker function is also given the stream index.
+-- | Apply a function to every element pulled from some sources, 
+--   producing some new sources. 
+map_o   :: Monad m
+        => (a -> b) -> Sinks i m b -> m (Sinks i m a)
+map_o f k = smap_o (\_ x -> f x) k
+{-# INLINE map_o #-}
+
+
+-- | Like `map_o`, but the worker function is also given the stream index.
 smap_o   :: Monad m
         => (i -> a -> b) -> Sinks i m b -> m (Sinks i m a)
 smap_o f (Sinks n pushB ejectB)

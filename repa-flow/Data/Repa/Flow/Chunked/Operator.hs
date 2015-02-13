@@ -8,8 +8,6 @@
 module Data.Repa.Flow.Chunked.Operator
         ( -- * Mapping
           map_i,        map_o
-        , mapChunks_i,  mapChunks_o
-        , smapChunks_i, smapChunks_o
 
           -- * Watching
         , watch_i,      watch_o
@@ -47,44 +45,6 @@ map_o   :: (Flow i m l1 a, A.TargetI l2 b)
         => (a -> b) -> Sinks i m l2 b -> m (Sinks i m l1 a)
 map_o f s0 = G.smap_o (\_ c -> A.computeS name $ A.map f c) s0
 {-# INLINE map_o #-}
-
-
--- | Map a function over elements pulled from a source, a chunk at a time.
-mapChunks_i  
-        :: Monad m
-        => (Array l1 a -> Array l2 b)
-        -> Sources i m l1 a -> m (Sources i m l2 b)
-mapChunks_i f s = G.smap_i (\_ c -> f c) s
-{-# INLINE mapChunks_i #-}
-
-
--- | Map a function over elements pushed to a sink, a chunk at a time.
-mapChunks_o  
-        :: Monad m
-        => (Array l1 a -> Array l2 b)
-        -> Sinks i m l2 b -> m (Sinks i m l1 a)
-mapChunks_o f s = G.smap_o (\_ c -> f c) s
-{-# INLINE mapChunks_o #-}
-
-
--- | Like `mapChunks_i`, except that the worker function is also given
---   the source index.
-smapChunks_i  
-        :: Monad m
-        => (i -> Array l1 a -> Array l2 b)
-        -> Sources i m l1 a -> m (Sources i m l2 b)
-smapChunks_i = G.smap_i
-{-# INLINE smapChunks_i #-}
-
-
--- | Like `mapChunks_o`, except that the worker function is also given
---   the sink index.
-smapChunks_o  
-        :: Monad m
-        => (i -> Array l1 a -> Array l2 b)
-        -> Sinks i m l2 b -> m (Sinks i m l1 a)
-smapChunks_o = G.smap_o
-{-# INLINE smapChunks_o #-}
 
 
 -- Watch ----------------------------------------------------------------------

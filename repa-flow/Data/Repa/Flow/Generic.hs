@@ -51,6 +51,7 @@ module Data.Repa.Flow.Generic
         , prepend_i,    prependOn_i
 
           -- ** Mapping
+        , map_i,        map_o
         , smap_i,       smap_o
         , szipWith_ii,  szipWith_io,    szipWith_oi
 

@@ -24,6 +24,7 @@ import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array                          as A 
+import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
 import Data.Char
@@ -69,7 +70,7 @@ sourceLines
         -> [Bucket]             -- ^ Buckets.
         -> IO (Sources N (Array F Char))
 sourceLines nChunk fails bs
- =   mapChunks_i chopChunk
+ =   G.map_i chopChunk
  =<< G.sourceRecords nChunk isNewLine fails (A.fromList B bs)
  where
         isNewLine   :: Word8 -> Bool

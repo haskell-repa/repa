@@ -141,9 +141,10 @@ module Data.Repa.Flow
 
         -- * Flow Operators
         -- ** Mapping
+          -- | If you want to work on a chunk at a time then use 
+          --   `Data.Repa.Flow.Generic.map_i` and
+          --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
         , map_i,                map_o
-        , mapChunks_i,          mapChunks_o
-        , smapChunks_i,         smapChunks_o
 
         -- ** Connecting
         , dup_oo
