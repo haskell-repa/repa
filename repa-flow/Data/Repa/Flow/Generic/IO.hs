@@ -1,14 +1,15 @@
 
 module Data.Repa.Flow.Generic.IO
-        ( -- * Sourcing
-          fromFiles
+        ( -- * Buckets
+          module Data.Repa.Flow.IO.Bucket
+
+          -- * Sourcing
         , sourceBytes
         , sourceChars
         , sourceChunks
         , sourceRecords
 
           -- * Sinking
-        , toFiles
         , sinkBytes
         , sinkChars
         , sinkLines)
@@ -24,35 +25,6 @@ import System.IO
 import Data.Word
 import Prelude                                  as P
 #include "repa-flow.h"
-
-
--- fromFiles --------------------------------------------------------------------------------------
--- | Open some files as buckets and use them as `Sources`.
---
---   Finalisers are attached to the `Sources` so that each file will be 
---   closed the first time the consumer tries to an element from the associated
---   stream when no more are available.
---
----
---   TODO: reinstate finalisers
-fromFiles 
-        ::  (Bulk l FilePath, Target l Bucket)
-        =>  Array l FilePath                    -- ^ Files to open.
-        -> (Array l Bucket -> IO (Sources (Index l) IO a))  
-                                                -- ^ Consumer.
-        -> IO (Sources (Index l) IO a)
-
-fromFiles paths use
- = do   
-         -- Open all the files, ending up with a list of buckets.
-        bs             <- mapM (flip openBucket ReadMode) $ A.toList paths
-
-        -- Pack buckets back into an array with the same layout as
-        -- the original.
-        let Just bsArr =  A.fromListInto (A.layout paths) bs
-
-        use bsArr
-{-# NOINLINE fromFiles #-}
 
 
 -- Sourcing ---------------------------------------------------------------------------------------
@@ -176,29 +148,6 @@ sourceBytes len bs
 
 
 -- Sinking ----------------------------------------------------------------------------------------
--- | Open from files for writing and use the handles to create `Sinks`.
---
---   Finalisers are attached to the sinks so that file assocated with
---   each stream is closed when that stream is ejected.
---
-toFiles :: (Bulk l FilePath, Target l Bucket)
-        =>  Array l FilePath            -- ^ File paths.
-        -> (Array l Bucket -> IO (Sinks (Index l) IO a))
-                                        -- ^ Consumer.
-        -> IO (Sinks (Index l) IO a)
-
-toFiles paths use
- = do   -- Open all the files, ending up with a list of buckets.
-        bs             <- mapM (flip openBucket WriteMode) $ A.toList paths
-
-        -- Pack buckets back into an array with the same layout as
-        -- the original.
-        let Just bsArr =  A.fromListInto (A.layout paths) bs
-
-        use bsArr
-{-# NOINLINE toFiles #-}
-
-
 -- | Write vectors of text lines to the given files handles.
 -- 
 --   * Data is copied into a new buffer to insert newlines before being

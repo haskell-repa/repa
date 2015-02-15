@@ -11,7 +11,6 @@ module Data.Repa.Flow.Default.IO
         , module Data.Repa.Flow.IO.Bucket
 
           -- * Sourcing
-        , F.fromFiles
         , sourceTSV
         , sourceRecords
         , sourceLines
@@ -19,7 +18,6 @@ module Data.Repa.Flow.Default.IO
         , sourceBytes
 
           -- * Sinking
-        , F.toFiles
         , sinkChars
         , sinkLines
         , sinkBytes)

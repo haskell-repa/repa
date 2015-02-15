@@ -179,7 +179,6 @@ module Data.Repa.Flow
         , module Data.Repa.Flow.IO.Bucket
 
         -- ** Sourcing
-        , fromFiles
         , sourceTSV
         , sourceRecords
         , sourceLines
@@ -187,7 +186,6 @@ module Data.Repa.Flow
         , sourceBytes
 
         -- ** Sinking
-        , toFiles
         , sinkChars
         , sinkLines
         , sinkBytes)

@@ -4,7 +4,6 @@ module Data.Repa.Flow.Default.SizedIO
         ( module Data.Repa.Flow.IO.Bucket
 
            -- * Sourcing
-        , fromFiles
         , sourceBytes
         , sourceChars
         , sourceLines
@@ -12,7 +11,6 @@ module Data.Repa.Flow.Default.SizedIO
         , sourceTSV
 
           -- * Sinking
-        , toFiles
         , sinkBytes
         , sinkChars
         , sinkLines)
@@ -32,22 +30,6 @@ import Data.Char
 
 
 -- Sourcing ---------------------------------------------------------------------------------------
--- | Open some files as buckets and use them as `Sources`.
---
---   Finalisers are attached to the `Sources` so that each file will be 
---   closed the first time the consumer tries to an element from the associated
---   stream when no more are available.
---
-fromFiles
-        :: [FilePath]           -- ^ Files to open.
-        -> ([Bucket] -> IO (Sources l a))
-        -> IO (Sources l a)
-fromFiles paths use
- = G.fromFiles (A.fromList B paths) use'
- where  use' arr = use (A.toList arr)
-{-# INLINE fromFiles #-}
-
-
 -- | Like `F.sourceBytes`, but with the default chunk size.
 sourceBytes 
         :: Integer -> [Bucket] -> IO (Sources F Word8)
@@ -101,19 +83,6 @@ sourceRecords i pSep aFail bs
 
 
 -- Sinking ----------------------------------------------------------------------------------------
--- | Open from files for writing and use the handles to create `Sinks`.
---
---   Finalisers are attached to the sinks so that file assocated with
---   each stream is closed when that stream is ejected.
-toFiles :: [FilePath]
-        -> ([Bucket] -> IO (Sinks l a))
-        -> IO (Sinks l a)
-toFiles paths use
- = G.toFiles (A.fromList B paths) use'
- where  use' arr = use (A.toList arr)
-{-# INLINE toFiles #-}
-
-
 -- | An alias for `F.sinkBytes`.
 sinkBytes 
         :: [Bucket] -> IO (Sinks F Word8)

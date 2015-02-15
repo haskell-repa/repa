@@ -6,10 +6,12 @@ module Data.Repa.Flow.IO.Bucket
         , hBucket
 
           -- * Reading
+        , fromFiles
         , bucketsFromFile
         , bucketsFromFileAt
 
-          -- * Writing 
+          -- * Writing
+        , toFiles 
         , bucketsToDir
         , bucketsToDirs
         , bucketToFile
@@ -96,6 +98,34 @@ hBucket h
 
 
 -- From Files -----------------------------------------------------------------
+-- | Open some files as buckets and use them as `Sources`.
+--
+--   Finalisers are attached to the `Sources` so that each file will be 
+--   closed the first time the consumer tries to an element from the associated
+--   stream when no more are available.
+--
+---
+--   TODO: reinstate finalisers
+fromFiles 
+        ::  (Bulk l FilePath, Target l Bucket)
+        =>  Array l FilePath                    -- ^ Files to open.
+        -> (Array l Bucket -> IO b)  
+                                                -- ^ Consumer.
+        -> IO b
+
+fromFiles paths use
+ = do   
+         -- Open all the files, ending up with a list of buckets.
+        bs             <- mapM (flip openBucket ReadMode) $ A.toList paths
+
+        -- Pack buckets back into an array with the same layout as
+        -- the original.
+        let Just bsArr =  A.fromListInto (A.layout paths) bs
+
+        use bsArr
+{-# NOINLINE fromFiles #-}
+
+
 -- | Open a file containing atomic records and split it into the given number
 --   of evenly sized buckets. 
 --
@@ -213,6 +243,29 @@ advance h pEnd
 
 
 -- To Dirs -------------------------------------------------------------------
+-- | Open from files for writing and use the handles to create `Sinks`.
+--
+--   Finalisers are attached to the sinks so that file assocated with
+--   each stream is closed when that stream is ejected.
+--
+toFiles :: (Bulk l FilePath, Target l Bucket)
+        =>  Array l FilePath            -- ^ File paths.
+        -> (Array l Bucket -> IO b)
+                                        -- ^ Consumer.
+        -> IO b
+
+toFiles paths use
+ = do   -- Open all the files, ending up with a list of buckets.
+        bs             <- mapM (flip openBucket WriteMode) $ A.toList paths
+
+        -- Pack buckets back into an array with the same layout as
+        -- the original.
+        let Just bsArr =  A.fromListInto (A.layout paths) bs
+
+        use bsArr
+{-# NOINLINE toFiles #-}
+
+
 -- | Create a new directory of the given name, containing the given number
 --   of buckets. 
 --
