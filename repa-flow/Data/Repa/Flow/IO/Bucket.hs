@@ -7,6 +7,7 @@ module Data.Repa.Flow.IO.Bucket
 
           -- * Reading
         , fromFiles,            fromFiles'
+        , fromDir
         , fromSplitFile
         , fromSplitFileAt
 
@@ -98,13 +99,6 @@ hBucket h
 
 -- From Files -----------------------------------------------------------------
 -- | Open some files as buckets and use them as `Sources`.
---
---   Finalisers are attached to the `Sources` so that each file will be 
---   closed the first time the consumer tries to an element from the associated
---   stream when no more are available.
---
----
---   TODO: reinstate finalisers
 fromFiles 
         ::  (Bulk l FilePath, Target l Bucket)
         =>  Array l FilePath                    -- ^ Files to open.
@@ -133,6 +127,20 @@ fromFiles'
 fromFiles' files use 
  = fromFiles (A.fromList B files) use
 {-# INLINE fromFiles' #-}
+
+
+-- | Open all the files in a directory as separate buckets.
+--
+--   This operation may fail with the same exceptions as `getDirectoryContents`.
+--
+fromDir :: FilePath
+        -> (Array B Bucket -> IO b)
+        -> IO b
+
+fromDir dir use
+ = do   fs      <- getDirectoryContents dir
+        fromFiles' fs use
+{-# INLINE fromDir #-}
 
 
 -- | Open a file containing atomic records and split it into the given number
