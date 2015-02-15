@@ -479,5 +479,5 @@ type FoldGroupsDict  lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
         , A.Material lElt a, A.Index lElt ~ Int
         , A.Material lGrp n, A.Index lGrp ~ Int
         , A.Material lRes b, A.Index lRes ~ Int
-        , Unpack (Buffer lGrp n) tGrp
-        , Unpack (Buffer lRes b) tRes)
+        , Unpack (IOBuffer lGrp n) tGrp
+        , Unpack (IOBuffer lRes b) tRes)

@@ -24,8 +24,8 @@ type FoldsDict i m lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
           , TargetI lElt a
           , TargetI lGrp n
           , TargetI lRes b
-          , Unpack (Buffer lGrp n) tGrp
-          , Unpack (Buffer lRes b) tRes)
+          , Unpack (IOBuffer lGrp n) tGrp
+          , Unpack (IOBuffer lRes b) tRes)
 
 
 -- Folds ----------------------------------------------------------------------

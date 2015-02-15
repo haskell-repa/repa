@@ -2,6 +2,7 @@
 module Data.Repa.Eval.Array
         ( -- * Array Targets
           Target    (..),       TargetI
+        , IOBuffer
 
           -- * Array Loading
         , Load      (..)
