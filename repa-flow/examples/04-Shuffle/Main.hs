@@ -30,12 +30,12 @@ pShuffle fiKey fiValue foShuf
  = do
         -- Read keys and values, and funnel data from all buckets
         -- into single streams.
-        iKey     <- fromDir fiKey   sourceLines >>= G.funnel_i
-        iVal     <- fromDir fiValue sourceLines >>= G.funnel_i
+        iKey     <- G.funnel_i =<< fromDir fiKey   sourceLines
+        iVal     <- G.funnel_i =<< fromDir fiValue sourceLines
 
         -- Shuffle the input data based on the first character.
         iKeyHash <- G.map_i (A.mapS U hash) iKey
-        iHashVal <- C.szipWith_ii B (\_ x y -> (x, y))   iKeyHash iVal
+        iHashVal <- C.szipWith_ii B (\_ x y -> (x, y)) iKeyHash iVal
 
         -- We'll output the shuffled result to a new dir.
         oResult  <- toDir   256 foShuf (sinkLines B F)
