@@ -8,6 +8,7 @@ module Data.Repa.Flow.Generic.Connect
         , connect_i
 
           -- * Funnel
+        , funnel_i
         , funnel_o)
 where
 import Data.Repa.Flow.Generic.Base
@@ -115,6 +116,40 @@ connect_i (Sources n pullX)
 
 
 -- Funneling ------------------------------------------------------------------
+-- | Given a bundle of sources containing several streams, produce a new
+--   bundle containing a single stream that gets data from the former.
+--  
+--   Streams from the source are consumed in their natural order, 
+--   and a complete stream is consumed before moving onto the next one.
+--
+funnel_i :: (States i m, States () m)
+         => Sources i m a -> m (Sources () m a)
+
+funnel_i (Sources n pullX)
+ = do
+        -- Ref to hold the current stream index.
+        refCur  <- newRefs () first
+
+        let pull_funnel _ eat eject
+             = do i     <- readRefs refCur ()
+                  pullX i (eat_funnel i) (eject_funnel i)
+
+             where 
+                   eat_funnel _ x = eat x
+                   {-# INLINE eat_funnel #-}
+
+                   eject_funnel i
+                    = case next i n of
+                        Nothing -> eject
+                        Just i'
+                         -> do  writeRefs refCur () i'
+                                pullX i (eat_funnel i) (eject_funnel i)
+                   {-# INLINE eject_funnel #-}
+
+        return $ Sources () pull_funnel
+{-# INLINE funnel_i #-}
+
+
 -- | Given a bundle of sinks consisting of a single stream, produce a new
 --   bundle of the given arity that sends all data to the former, ignoring
 --   the stream index.
