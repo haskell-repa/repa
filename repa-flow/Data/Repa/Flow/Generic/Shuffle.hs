@@ -9,6 +9,7 @@ import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Operator          as F
 import Data.Repa.Array                          as A
 import Data.Repa.Eval.Elt
+import Control.Monad
 #include "repa-flow.h"
 
 
@@ -71,8 +72,7 @@ shuffle_o _ aSpill (Sinks nSinks opush oeject)
  = return $ Sinks () shuffle_push shuffle_eject
  where
         shuffle_push _ !arr
-         = do   
-                -- Partition the elements by segment number.
+         = do   -- Partition the elements by segment number.
                 let !parts   = A.partition name nSinks arr
 
                 -- Push the individual segments into the argument sinks.
@@ -82,16 +82,16 @@ shuffle_o _ aSpill (Sinks nSinks opush oeject)
 
                      | i >= nSinks         
                      = do let !part = parts `index` i
-                          if A.length part > 0
-                           then aSpill i part
-                           else return ()
+                          when (A.length part > 0)
+                           $ aSpill i part
+
                           loop_shuffle_push (i + 1)
 
                      | otherwise
                      = do let !part = parts `index` i
-                          if A.length part > 0
-                            then opush i part
-                            else return ()
+                          when (A.length part > 0)
+                           $ opush i part
+
                           loop_shuffle_push (i + 1)
 
                 loop_shuffle_push 0

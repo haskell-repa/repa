@@ -139,7 +139,10 @@ fromDir :: FilePath
 
 fromDir dir use
  = do   fs      <- getDirectoryContents dir
-        fromFiles' fs use
+        let fsRel       
+                =  P.map (dir </>) 
+                $  P.filter (\f -> f /= "." && f /= "..") fs
+        fromFiles' fsRel use
 {-# INLINE fromDir #-}
 
 

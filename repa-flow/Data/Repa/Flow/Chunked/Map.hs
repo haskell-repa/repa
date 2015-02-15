@@ -45,8 +45,8 @@ szipWith_ii nDst f (G.Sources nA pullA) (G.Sources nB pullB)
         bitsB   <- newRefs nC Nothing
 
         let pullC i eatC ejectC 
-             | i >= nC   = ejectC
-             | otherwise = getA
+             | not $ check i nC = ejectC
+             | otherwise        = getA
              where
                 getA 
                  = do   mA              <- readRefs bitsA i

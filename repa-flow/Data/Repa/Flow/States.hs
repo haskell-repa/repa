@@ -20,14 +20,16 @@ class (Ord i, Eq i) => Next i where
  --   or `Nothing` if there aren't any more.
  next      :: i -> i -> Maybe i
 
+ -- | Check if an index is valid for this arity.
+ check     :: i -> i -> Bool
+
 
 -- | Unit indices.
 instance Next () where
-
  first      = ()
- {-# INLINE first #-}
-
  next _ _   = Nothing
+ check _ _  = True
+ {-# INLINE first #-}
  {-# INLINE next #-}
 
 
@@ -41,6 +43,10 @@ instance Next Int where
   | i + 1 >= len = Nothing
   | otherwise    = Just (i + 1)
  {-# INLINE next #-}
+
+ check i len     
+  = i >= 0 && len >= 0 && i < len
+ {-# INLINE check #-}
 
 
 -- | Tuple indices.
@@ -58,6 +64,10 @@ instance Next (Int, Int) where
   | otherwise
   = Just (ix1, ix0 + 1)
  {-# INLINE next #-}
+
+ check (ix1, ix2) (len1, len2)     
+  = check ix1 len1 && check ix2 len2
+ {-# INLINE check #-}
 
 
 -------------------------------------------------------------------------------
