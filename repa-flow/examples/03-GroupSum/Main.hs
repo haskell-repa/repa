@@ -23,7 +23,7 @@ import Data.Repa.IO.Convert                     as A
 import System.Environment
 import Data.Char
 import Data.Word
-import Prelude
+import Prelude                                  as P
 
 
 main :: IO ()
@@ -40,20 +40,20 @@ pGroupSum :: FilePath -> FilePath -> FilePath -> FilePath -> IO ()
 pGroupSum fiNames fiVals foNames foSums
  = do   
         -- Read names and values from files.
-        iNames  <-  fromFiles [fiNames] sourceLines
+        iNames  <-  fromFiles' [fiNames] sourceLines
 
         iVals   <-  map_i U readDouble 
-                =<< fromFiles [fiVals]  sourceLines
+                =<< fromFiles' [fiVals]  sourceLines
 
         -- Sum up the values segment-wise.
         iAgg    <-  foldGroupsBy_i B U (==) (+) 0 iNames iVals
 
         -- Write group names and sums back to files.
         oNames  <-  map_o name fst
-                =<< toFiles [foNames] (sinkLines B F)
+                =<< toFiles' [foNames] (sinkLines B F)
 
         oSums   <-  map_o name (showDoubleFixed 4 . snd) 
-                =<< toFiles [foSums]  (sinkLines B F)
+                =<< toFiles' [foSums]  (sinkLines B F)
 
         oAgg    <-  dup_oo oNames oSums
 
@@ -62,5 +62,5 @@ pGroupSum fiNames fiVals foNames foSums
 
 
 dieUsage
- = error $ unlines
+ = error $ P.unlines
  [ "flow-groupsum <src_names> <src_vals> <dst_names> <dst_vals>" ]

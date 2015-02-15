@@ -12,12 +12,13 @@ import qualified Data.Repa.Flow.Generic         as G
 #include "repa-flow.h"
 
 
--- | Like `sourceTSV` but take existing file handles.
+-- | Like `sourceTSV` but take existing buckets.
 sourceTSV
-        :: Integer              --  Chunk length.
+        :: BulkI l Bucket
+        => Integer              --  Chunk length.
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
-        -> [Bucket]             --  File paths.
+        -> Array l Bucket       --  File paths.
         -> IO (Sources N (Array N (Array F Char)))
 
 sourceTSV nChunk aFail bs
@@ -33,9 +34,7 @@ sourceTSV nChunk aFail bs
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
-        sChunk  <- G.sourceChunks nChunk (== nl) aFail 
-                $  A.fromList B bs
-
+        sChunk  <- G.sourceChunks nChunk (== nl) aFail bs
         sRows8  <- G.map_i (A.diceSep nt nl) sChunk
 
         -- Convert element data from Word8 to Char.

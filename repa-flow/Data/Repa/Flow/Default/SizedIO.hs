@@ -32,28 +32,31 @@ import Data.Char
 -- Sourcing ---------------------------------------------------------------------------------------
 -- | Like `F.sourceBytes`, but with the default chunk size.
 sourceBytes 
-        :: Integer -> [Bucket] -> IO (Sources F Word8)
-sourceBytes i bs = G.sourceBytes i (A.fromList B bs)
+        :: BulkI l Bucket
+        => Integer -> Array l Bucket -> IO (Sources F Word8)
+sourceBytes i bs = G.sourceBytes i bs
 {-# INLINE sourceBytes #-}
 
 
 -- | Like `F.sourceChars`, but with the default chunk size.
 sourceChars 
-        :: Integer -> [Bucket] -> IO (Sources F Char)
-sourceChars i bs = G.sourceChars i (A.fromList B bs)
+        :: BulkI l Bucket
+        => Integer -> Array l Bucket -> IO (Sources F Char)
+sourceChars i bs = G.sourceChars i bs
 {-# INLINE sourceChars #-}
 
 
 -- | Like `F.sourceLines`, but with the default chunk size and error action.
 sourceLines
-        ::Integer               -- ^ Size of chunk to read in bytes.
+        :: BulkI l Bucket
+        => Integer               -- ^ Size of chunk to read in bytes.
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> [Bucket]             -- ^ Buckets.
+        -> Array l Bucket       -- ^ Buckets.
         -> IO (Sources N (Array F Char))
 sourceLines nChunk fails bs
  =   G.map_i chopChunk
- =<< G.sourceRecords nChunk isNewLine fails (A.fromList B bs)
+ =<< G.sourceRecords nChunk isNewLine fails bs
  where
         isNewLine   :: Word8 -> Bool
         isNewLine x =  x == nl
@@ -71,42 +74,45 @@ sourceLines nChunk fails bs
 
 -- | Like `F.sourceRecords`, but with the default chunk size and error action.
 sourceRecords 
-        :: Integer              -- ^ Size of chunk to read in bytes.
+        :: BulkI l Bucket
+        => Integer              -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> [Bucket]             -- ^ File handles.
+        -> Array l Bucket       -- ^ File handles.
         -> IO (Sources N (Array F Word8))
 sourceRecords i pSep aFail bs 
-        = G.sourceRecords i pSep aFail (A.fromList B bs)
+        = G.sourceRecords i pSep aFail bs
 {-# INLINE sourceRecords #-}
 
 
 -- Sinking ----------------------------------------------------------------------------------------
 -- | An alias for `F.sinkBytes`.
 sinkBytes 
-        :: [Bucket] -> IO (Sinks F Word8)
-sinkBytes bs = G.sinkBytes (A.fromList B bs)
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sinks F Word8)
+sinkBytes bs = G.sinkBytes bs
 {-# INLINE sinkBytes #-}
 
 
 -- | An alias for `F.sinkChars`.
 sinkChars 
-        :: [Bucket] -> IO (Sinks F Char)
-sinkChars bs 
-        = G.sinkChars (A.fromList B bs)
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sinks F Char)
+sinkChars bs = G.sinkChars bs
 {-# INLINE sinkChars #-}
 
 
 -- | An alias for `F.sinkLines`.
 sinkLines 
-        :: ( BulkI l1 (Array l2 Char)
+        :: ( BulkI l  Bucket
+           , BulkI l1 (Array l2 Char)
            , BulkI l2 Char, Unpack (Array l2 Char) t2)
         => Name  l1                     -- ^ Layout for chunks of lines.
         -> Name  l2                     -- ^ Layout for lines.
-        -> [Bucket]                     -- ^ Buckets
+        -> Array l Bucket               -- ^ Buckets
         -> IO (Sinks l1 (Array l2 Char))
 sinkLines n1 n2 bs 
-        = G.sinkLines n1 n2 (A.fromList B bs)
+        = G.sinkLines n1 n2 bs
 {-# INLINE sinkLines #-}
 

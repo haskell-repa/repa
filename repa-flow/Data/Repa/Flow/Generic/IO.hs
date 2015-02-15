@@ -65,10 +65,10 @@ sourceChunks
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a whole record.
         -> Array l Bucket       -- ^ Source buckets.
-        -> IO (Sources Int IO (Array F Word8))
+        -> IO (Sources (Index l) IO (Array F Word8))
 
 sourceChunks len pSep aFail bs
- = return $ Sources (A.length bs) pull_sourceChunks
+ = return $ Sources (A.extent $ A.layout bs) pull_sourceChunks
  where  
         pull_sourceChunks i eat eject
          = let b = bs `index` i
@@ -108,10 +108,10 @@ sourceChunks len pSep aFail bs
 --   * All chunks have the same size, except possibly the last one.
 ----
 sourceChars 
-        :: BulkI l Bucket
+        :: Bulk l Bucket
         => Integer              -- ^ Chunk length in bytes.
         -> Array l Bucket       -- ^ Buckets.
-        -> IO (Sources Int IO (Array F Char))
+        -> IO (Sources (Index l) IO (Array F Char))
 sourceChars len bs
  =   smap_i (\_ !c -> A.computeS F $ A.map (chr . fromIntegral) c)
  =<< sourceBytes len bs
@@ -124,12 +124,12 @@ sourceChars len bs
 --   * All chunks have the same size, except possibly the last one.
 --
 sourceBytes 
-        :: BulkI l Bucket
+        :: Bulk  l Bucket
         => Integer              -- ^ Chunk length in bytes.
         -> Array l Bucket       -- ^ Buckets.
-        -> IO (Sources Int IO (Array F Word8))
+        -> IO (Sources (Index l) IO (Array F Word8))
 sourceBytes len bs
- = return $ Sources (A.length bs) pull_sourceBytes
+ = return $ Sources (A.extent $ A.layout bs) pull_sourceBytes
  where
         pull_sourceBytes i eat eject
          = do let b  = A.index bs i

@@ -41,8 +41,7 @@ pFields config
         nCaps      <- getNumCapabilities 
         let !nl    =  fromIntegral $ ord '\n'
 
-        sIn        <- bucketsFromFileAt nCaps (== nl) fileIn pStart 
-                   $  (\bs -> sourceTSV $ A.toList bs)
+        sIn        <- fromSplitFileAt nCaps (== nl) fileIn pStart sourceTSV
 
         -- Do a ragged transpose the chunks, to produce a columnar
         -- representation.
@@ -53,7 +52,7 @@ pFields config
 
         -- Open an output directory for each of the columns.
         let dirsOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]
-        Just ooOut <- G.bucketsToDirs nCaps dirsOut $ G.sinkChars
+        ooOut      <- G.toDirs' nCaps dirsOut $ G.sinkChars
 
         -- Chunks are distributed into each of the output files.
         -- Die if we find a row that has more fields than the first one.

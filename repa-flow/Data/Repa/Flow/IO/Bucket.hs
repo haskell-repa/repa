@@ -6,15 +6,14 @@ module Data.Repa.Flow.IO.Bucket
         , hBucket
 
           -- * Reading
-        , fromFiles
-        , bucketsFromFile
-        , bucketsFromFileAt
+        , fromFiles,            fromFiles'
+        , fromSplitFile
+        , fromSplitFileAt
 
           -- * Writing
-        , toFiles 
-        , bucketsToDir
-        , bucketsToDirs
-        , bucketToFile
+        , toFiles,              toFiles'
+        , toDir
+        ,                       toDirs'
 
           -- * Bucket IO
         , bClose
@@ -43,9 +42,9 @@ import Prelude                          as P
 --   data to be read or written.
 --  
 --   The bucket could be created from a portion of a single flat file,
---   or be one file of a split data set. The main advantage over a plain
---  `Handle` is that a `Bucket` can represent a small portion of a larger
---   file.
+--   or be one file of a pre-split data set. The main advantage over a
+--   plain `Handle` is that a `Bucket` can represent a small portion
+--   of a single large file.
 --
 data Bucket
         = Bucket
@@ -115,8 +114,8 @@ fromFiles
 
 fromFiles paths use
  = do   
-         -- Open all the files, ending up with a list of buckets.
-        bs             <- mapM (flip openBucket ReadMode) $ A.toList paths
+        -- Open all the files, ending up with a list of buckets.
+        bs      <- mapM (flip openBucket ReadMode) $ A.toList paths
 
         -- Pack buckets back into an array with the same layout as
         -- the original.
@@ -124,6 +123,16 @@ fromFiles paths use
 
         use bsArr
 {-# NOINLINE fromFiles #-}
+
+
+-- | Like `fromFiles`, but take a list of file paths.
+fromFiles'
+        :: [FilePath]
+        -> (Array B Bucket -> IO b)
+        -> IO b
+fromFiles' files use 
+ = fromFiles (A.fromList B files) use
+{-# INLINE fromFiles' #-}
 
 
 -- | Open a file containing atomic records and split it into the given number
@@ -136,20 +145,20 @@ fromFiles paths use
 --   length, in either records or buckets, though we try to give them the
 --   approximatly the same number of bytes.
 --
-bucketsFromFile
+fromSplitFile
         :: Int                          -- ^ Number of buckets.
         -> (Word8 -> Bool)              -- ^ Detect the end of a record.
         -> FilePath                     -- ^ File to open.
         -> (Array B Bucket -> IO b)     -- ^ Consumer.
         -> IO b
 
-bucketsFromFile n pEnd path use
-        = bucketsFromFileAt n pEnd path 0 use
-{-# INLINE bucketsFromFile #-}
+fromSplitFile n pEnd path use
+        = fromSplitFileAt n pEnd path 0 use
+{-# INLINE fromSplitFile #-}
 
 
--- | Like `bucketsFromFile` but start at the given offset.
-bucketsFromFileAt
+-- | Like `fromSplitFile` but start at the given offset.
+fromSplitFileAt
         :: Int                          -- ^ Number of buckets.
         -> (Word8 -> Bool)              -- ^ Detect the end of a record.
         -> FilePath                     -- ^ File to open.
@@ -157,7 +166,7 @@ bucketsFromFileAt
         -> (Array B Bucket -> IO b)     -- ^ Consumer.
         -> IO b
 
-bucketsFromFileAt n pEnd path offsetStart use
+fromSplitFileAt n pEnd path offsetStart use
  = do
         -- Open the file first to check its length.
         h0       <- openBinaryFile path ReadMode
@@ -214,7 +223,7 @@ bucketsFromFileAt n pEnd path offsetStart use
                               | h     <- hh ]
 
         use  $ A.fromList B bs
-{-# NOINLINE bucketsFromFileAt #-}
+{-# NOINLINE fromSplitFileAt #-}
 --  NOINLINE to avoid polluting the core code of the consumer.
 --  This prevents it from being specialised for the pEnd predicate, 
 --  but we're expecting pEnd to be applied a small number of times,
@@ -242,10 +251,11 @@ advance h pEnd
 {-# NOINLINE advance #-}
 
 
--- To Dirs -------------------------------------------------------------------
--- | Open from files for writing and use the handles to create `Sinks`.
+-- Writing --------------------------------------------------------------------
+-- | Open some files for writing as individual buckets and pass
+--   them to the given consumer.
 --
---   Finalisers are attached to the sinks so that file assocated with
+--   TODO: Attached finalizers to the sinks so that file assocated with
 --   each stream is closed when that stream is ejected.
 --
 toFiles :: (Bulk l FilePath, Target l Bucket)
@@ -266,29 +276,36 @@ toFiles paths use
 {-# NOINLINE toFiles #-}
 
 
+-- | Like `toFiles`, but take a list of file paths.
+toFiles' :: [FilePath] 
+         -> (Array B Bucket -> IO b)
+         -> IO b
+
+toFiles' paths use
+        = toFiles (A.fromList B paths) use
+{-# INLINE toFiles' #-}
+
+
 -- | Create a new directory of the given name, containing the given number
 --   of buckets. 
 --
---   If the dir is named @somedir@ then the buckets are named
+--   If the directory is named @somedir@ then the files are named
 --   @somedir/000000@, @somedir/000001@, @somedir/000002@ and so on.
---
---   * The number of buckets must be greater than zero, else `Nothing`.
-bucketsToDir 
-        :: Int                          -- ^ Number of buckets to create.
+toDir   :: Int                          -- ^ Number of buckets to create.
         -> FilePath                     -- ^ Path to directory.
         -> (Array B Bucket -> IO b)     -- ^ Consumer.
-        -> IO (Maybe b)
+        -> IO b
 
-bucketsToDir n path use
- | n <= 0        
- = return Nothing
+toDir nBuckets path use
+ | nBuckets <= 0        
+ = use (A.fromList B [])
 
  | otherwise
  = do   
         createDirectory path
 
         let makeName i = path </> ((replicate (6 - (P.length $ show i)) '0') ++ show i)
-        let names      = [makeName i | i <- [0 .. n - 1]]
+        let names      = [makeName i | i <- [0 .. nBuckets - 1]]
 
         let newBucket file
              = do h      <- openBinaryFile file WriteMode
@@ -299,25 +316,31 @@ bucketsToDir n path use
                          , bucketHandle         = h }
 
         bs <- mapM newBucket names
-        liftM Just $ use (A.fromList B bs)
-{-# NOINLINE bucketsToDir #-}
+        use (A.fromList B bs)
+{-# NOINLINE toDir #-}
 
 
 -- | Given a list of directories, create those directories and open 
---   the given number of buckets per directory.
+--   the given number of output files per directory.
 --
---   * The number of buckets must be greater than zero, else `Nothing`.
+--   In the resulting array of buckets, the outer dimension indexes
+--   each directory, and the inner one indexes each file in its
+--   directory.
 --
-bucketsToDirs 
-        :: Int                  -- ^ Number of buckets to create per directory.
-        -> [FilePath]           -- ^ Path to directories.
+--   For each directory @somedir@ the files are named
+--   @somedir/000000@, @somedir/000001@, @somedir/000002@ and so on.
+--
+toDirs'  :: Int                  -- ^ Number of buckets to create per directory.
+        -> [FilePath]           -- ^ Paths to directories.
         -> (Array (E B DIM2) Bucket -> IO b)     
                                 -- ^ Consumer.
-        -> IO (Maybe b)
+        -> IO b
 
-bucketsToDirs nBucketsPerDir paths use
- | nBucketsPerDir <= 0        
- = return Nothing
+toDirs' nBucketsPerDir paths use
+ | nBucketsPerDir <= 0
+ = do   let Just bsArr 
+                = A.fromListInto (A.matrix B 0 0) []
+        use bsArr
 
  | otherwise
  = do   
@@ -348,28 +371,9 @@ bucketsToDirs nBucketsPerDir paths use
                         (A.matrix B (P.length paths) nBucketsPerDir) 
                         bs
 
-        liftM Just $ use bsArr
-{-# NOINLINE bucketsToDirs #-}
+        use bsArr
+{-# NOINLINE toDirs' #-}
 
-
-
--- To Files -------------------------------------------------------------------
--- | Open a file for writing as a bucket.
-bucketToFile 
-        :: FilePath                     -- ^ Path to bucket.
-        -> (Array B Bucket -> IO b)     -- ^ Consumer
-        -> IO b
-
-bucketToFile file use
- = do   h       <- openBinaryFile file WriteMode
-        let b   = Bucket
-                { bucketFilePath        = Just file
-                , bucketStartPos        = 0
-                , bucketLength          = Nothing
-                , bucketHandle          = h }
-
-        use $ A.fromList B [b]
-{-# NOINLINE bucketToFile #-}
 
 
 -- Bucket IO ------------------------------------------------------------------

@@ -37,7 +37,8 @@ defaultChunkSize = 64 * 1024
 
 -- | Read a file containing Tab-Separated-Values.
 sourceTSV
-        :: [Bucket] -> IO (Sources N (Array N (Array F Char)))
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sources N (Array N (Array F Char)))
 sourceTSV
         = F.sourceTSV defaultChunkSize
         $ error $  "Line exceeds chunk size of "
@@ -66,8 +67,9 @@ sourceTSV
 --     record from the associated stream when no more are available.
 --
 sourceRecords 
-        :: (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> [Bucket]             -- ^ Buckets.
+        :: BulkI l Bucket
+        => (Word8 -> Bool)      -- ^ Detect the end of a record.
+        -> Array l Bucket       -- ^ Buckets.
         -> IO (Sources N (Array F Word8))
 sourceRecords pSep 
         = F.sourceRecords defaultChunkSize pSep
@@ -87,7 +89,8 @@ sourceRecords pSep
 --     from the associated stream when no more are available.
 --
 sourceLines 
-        :: [Bucket] -> IO (Sources N (Array F Char))
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sources N (Array F Char))
 sourceLines     
         = F.sourceLines   defaultChunkSize
         $ error $  "Line exceeds chunk size of "
@@ -97,14 +100,16 @@ sourceLines
 
 -- | Read 8-bit ASCII characters from some files, using the given chunk length.
 sourceChars 
-        :: [Bucket] -> IO (Sources F Char)
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sources F Char)
 sourceChars     = F.sourceChars defaultChunkSize
 {-# INLINE sourceChars #-}
 
 
 -- | Read data from some files, using the given chunk length.
 sourceBytes 
-        :: [Bucket] -> IO (Sources F Word8)
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sources F Word8)
 sourceBytes     = F.sourceBytes defaultChunkSize
 {-# INLINE sourceBytes #-}
 
@@ -115,11 +120,12 @@ sourceBytes     = F.sourceBytes defaultChunkSize
 --     written out.
 --
 sinkLines 
-        :: ( BulkI l1 (Array l2 Char)
+        :: ( BulkI l Bucket
+           , BulkI l1 (Array l2 Char)
            , BulkI l2 Char, Unpack (Array l2 Char) t2)
         => Name l1              -- ^ Layout of chunks.
         -> Name l2              -- ^ Layout of lines in chunks.
-        -> [Bucket]             -- ^ Buckets
+        -> Array l Bucket       -- ^ Buckets
         -> IO (Sinks l1 (Array l2 Char))
 sinkLines       = F.sinkLines
 {-# INLINE sinkLines #-}
@@ -127,13 +133,15 @@ sinkLines       = F.sinkLines
 
 -- | Write 8-bit ASCII characters to some files.
 sinkChars 
-        :: [Bucket] -> IO (Sinks F Char)
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sinks F Char)
 sinkChars =  F.sinkChars
 {-# INLINE sinkChars #-}
 
 
 -- | Write bytes to some file.
 sinkBytes 
-        :: [Bucket] -> IO (Sinks F Word8)
+        :: BulkI l Bucket 
+        => Array l Bucket -> IO (Sinks F Word8)
 sinkBytes =  F.sinkBytes
 {-# INLINE sinkBytes #-}

@@ -1,7 +1,7 @@
 
 import Data.Repa.Flow
 import System.Environment
-
+import Prelude                  as P
 
 main :: IO ()
 main 
@@ -10,7 +10,7 @@ main
          [fileIn, fileOut]      
            -> pcopy  fileIn fileOut
 
-         _ -> putStrLn $ unlines
+         _ -> putStrLn $ P.unlines
                 [ "Usage: flow-copy <source_file> <result_file>" ]
 
 
@@ -19,10 +19,10 @@ pcopy :: FilePath -> FilePath -> IO ()
 pcopy fileIn fileOut
  = do   
         -- Source from the input file.
-        ifile   <- fromFiles [fileIn]  sourceBytes
+        ifile   <- fromFiles' [fileIn]  sourceBytes
 
         -- Sink to the output file.
-        ofile   <- toFiles   [fileOut] sinkBytes
+        ofile   <- toFiles'   [fileOut] sinkBytes
 
         -- Drain the source into the sink.
         drainS ifile ofile
