@@ -122,6 +122,11 @@ connect_i (Sources n pullX)
 --   Streams from the source are consumed in their natural order, 
 --   and a complete stream is consumed before moving onto the next one.
 --
+-- @
+-- > import Data.Repa.Flow.Generic
+-- > toList1 () =<< funnel_i =<< fromList (3 :: Int) [11, 22, 33]
+-- [11,22,33,11,22,33,11,22,33]
+-- @
 funnel_i :: (States i m, States () m)
          => Sources i m a -> m (Sources () m a)
 
@@ -143,7 +148,7 @@ funnel_i (Sources n pullX)
                         Nothing -> eject
                         Just i'
                          -> do  writeRefs refCur () i'
-                                pullX i (eat_funnel i) (eject_funnel i)
+                                pullX i' (eat_funnel i') (eject_funnel i')
                    {-# INLINE eject_funnel #-}
 
         return $ Sources () pull_funnel
