@@ -21,10 +21,10 @@ import Prelude hiding (map, zipWith)
 -- | Delayed arrays wrap functions from an index to element value.
 --   The index space is specified by an inner layout, @l@.
 --
---   Every time you index into a delayed array the element at that position 
+--   Every time you index into a delayed array the element at that position
 --   is recomputed.
-data D l 
-        = Delayed 
+data D l
+        = Delayed
         { delayedLayout :: l }
 
 deriving instance Eq   l => Eq   (D l)
@@ -55,7 +55,7 @@ deriving instance Show (Name l) => Show (Name (D l))
 -- | Delayed arrays.
 instance Layout l => Bulk (D l) a where
  data Array (D l) a
-        = ADelayed !l (Index l -> a) 
+        = ADelayed !l (Index l -> a)
 
  layout (ADelayed l _)      = Delayed l
  index  (ADelayed _l f) ix  = f ix
@@ -87,7 +87,7 @@ instance (Layout l1, Target l2 a)
             {-# INLINE write #-}
             {-# INLINE get'  #-}
 
-        Par.fillChunked gang write get' len 
+        Par.fillChunked gang write get' len
         touchBuffer  buf
         traceEventIO "Repa.loadP[Delayed]: end"
  {-# INLINE_ARRAY loadP #-}
@@ -98,10 +98,10 @@ instance (Layout l1, Target l2 a)
 --
 --  @> toList $ fromFunction (Linear 10) (* 2)
 --    = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]@
--- 
+--
 fromFunction :: l -> (Index l -> a) -> Array (D l) a
-fromFunction l f 
-        = ADelayed l f 
+fromFunction l f
+        = ADelayed l f
 {-# INLINE_ARRAY fromFunction #-}
 
 
@@ -121,7 +121,7 @@ delay arr = map id arr
 {-# INLINE delay #-}
 
 
--- | Apply a worker function to each element of an array, 
+-- | Apply a worker function to each element of an array,
 --   yielding a new array with the same extent.
 map     :: Bulk l a
         => (a -> b) -> Array l a -> Array (D l) b
