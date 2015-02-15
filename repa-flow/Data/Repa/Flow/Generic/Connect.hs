@@ -1,8 +1,14 @@
 module Data.Repa.Flow.Generic.Connect
-        ( dup_oo
+        ( -- * Dup
+          dup_oo
         , dup_io
         , dup_oi
-        , connect_i)
+
+          -- * Connect
+        , connect_i
+
+          -- * Funnel
+        , funnel_o)
 where
 import Data.Repa.Flow.Generic.Base
 import Control.Monad
@@ -10,8 +16,7 @@ import Prelude                                  as P
 #include "repa-flow.h"
 
 
-
--- Connect --------------------------------------------------------------------
+-- Dup ------------------------------------------------------------------------
 -- | Send the same data to two consumers.
 --
 --   Given two argument sinks, yield a result sink.
@@ -33,9 +38,9 @@ dup_oo (Sinks n1 push1 eject1) (Sinks n2 push2 eject2)
 -- | Send the same data to two consumers.
 --  
 --   Given an argument source and argument sink, yield a result source.
---   Pulling an element from the result source pulls from the argument source,
---   and pushes that element to the sink, as well as returning it via the
---   result source.
+--   Pulling an element from the result source pulls from the argument
+--   source, and pushes that element to the sink, as well as returning it
+--   via the result source.
 --   
 dup_io  :: (Ord i, Monad m)
         => Sources i m a -> Sinks i m a -> m (Sources i m a)
@@ -64,6 +69,7 @@ dup_oi sink1 source2 = dup_io source2 sink1
 {-# INLINE_FLOW dup_oi #-}
 
 
+-- Connect --------------------------------------------------------------------
 -- | Connect an argument source to two result sources.
 --
 --   Pulling from either result source pulls from the argument source.
@@ -107,4 +113,61 @@ connect_i (Sources n pullX)
 
 {-# INLINE_FLOW connect_i #-}
 
+
+-- Funneling ------------------------------------------------------------------
+-- | Given a bundle of sinks consisting of a single stream, produce a new
+--   bundle of the given arity that sends all data to the former, ignoring
+--   the stream index.
+--
+--   The argument stream is ejected only when all of the streams in the 
+--   result bundle have been ejected.
+-- 
+--   * Using this function in conjunction with parallel operators like
+--     `drainP` introduces non-determinism. Elements pushed to different
+--     streams in the result bundle could enter the single stream in the
+--     argument bundle in any order.
+--
+-- @
+-- > import Data.Repa.Flow.Generic
+-- > import Data.Repa.Array.Material
+-- > import Data.Repa.Nice
+--  
+-- > let things = [(0 :: Int, \"foo\"), (1, \"bar\"), (2, \"baz\")]
+-- > result \<- capture_o B () (\\k -> funnel_o 4 k >>= pushList things)
+-- > nice result
+-- [((),\"foo\"),((),\"bar\"),((),\"baz\")]
+-- @
+--
+funnel_o :: States i m
+         => i -> Sinks () m a -> m (Sinks i m a)
+funnel_o nSinks (Sinks _ pushX ejectX)
+ = do
+        -- Refs to track which streams have been ejected.
+        refs    <- newRefs nSinks False
+
+        -- Push all received data into the single stream of the
+        -- argument bundle.
+        let push_funnel _ x 
+             = pushX () x
+            {-# INLINE push_funnel #-}
+
+        -- When all the result streams have been ejected, 
+        -- eject the argument stream.
+        let eject_funnel i
+             = do 
+                  -- RACE: If two concurrent processes eject the final two
+                  -- streams then they will both think they were the last
+                  -- one, and eject the single argument stream. This is ok
+                  -- as we allow the argument sink to be ejected multiple
+                  -- times.
+                  -- 
+                  -- See docs of `Sinks` type in "Data.Repa.Flow.Generic.Base".
+                  --
+                  writeRefs refs i True
+                  done  <- foldRefsM (&&) True refs
+                  when done $ ejectX ()
+            {-# INLINE eject_funnel #-}
+
+        return $ Sinks nSinks push_funnel eject_funnel
+{-# INLINE_FLOW funnel_o #-}
 
