@@ -2,15 +2,22 @@
 
 module Data.Repa.IO.Array
         ( hGetArray,   hGetArrayPre
-        , hPutArray)
+        , hPutArray
+        , hGetArrayFromCSV
+        , hPutArrayAsCSV)
 where
+import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Material.Foreign
-import qualified Foreign.Ptr            as F
-import qualified Foreign.ForeignPtr     as F
-import qualified Foreign.Marshal.Alloc  as F
-import qualified Foreign.Marshal.Utils  as F
+import Data.Repa.Array.Material.Boxed           as A
+import Data.Repa.Array.Material.Nested          as A
+import Data.Repa.Array                          as A
+import qualified Foreign.Ptr                    as F
+import qualified Foreign.ForeignPtr             as F
+import qualified Foreign.Marshal.Alloc          as F
+import qualified Foreign.Marshal.Utils          as F
 import System.IO
 import Data.Word
+import Data.Char
 
 
 -- | Get data from a file, up to the given number of bytes.
@@ -59,4 +66,74 @@ hPutArray h (toForeignPtr -> (offset,lenPre,fptr))
         hPutBuf h ptr lenPre
 {-# NOINLINE hPutArray #-}
 
+
+-- | Read a CSV file as a nested array.
+--   We get an array of rows:fields:characters.
+--
+hGetArrayFromCSV 
+        :: Handle 
+        -> IO (Array N (Array N (Array F Char)))
+
+hGetArrayFromCSV hIn
+ = do   
+        -- Find out how much data there is remaining in the file.
+        start   <- hTell hIn
+        hSeek hIn SeekFromEnd 0
+        end     <- hTell hIn
+        let !len        = end - start
+        hSeek hIn AbsoluteSeek start
+
+        -- Read array as Word8s.
+        arr8    <- hGetArray hIn (fromIntegral len)
+
+        -- Rows are separated by new lines, fields are separated by commas.
+        let !nc = fromIntegral $ ord ','
+        let !nl = fromIntegral $ ord '\n'
+        let !nr = fromIntegral $ ord '\r'
+
+        let arrSep :: Array N (Array N (Array F Word8)) 
+                = A.diceSep nc nl arr8
+
+        -- Split TSV file into rows and fields.
+        -- Convert element data from Word8 to Char.
+        -- Chars take 4 bytes each, but are standard Haskell and pretty
+        -- print properly. We've done the dicing on the smaller Word8
+        -- version, and now map across the elements vector in the array
+        -- to do the conversion.
+        let arrChar :: Array N (Array N (Array F Char))
+                = A.mapElems 
+                        (A.mapElems (A.computeS F . A.map (chr . fromIntegral))) 
+                        arrSep
+
+        return arrChar
+
+
+-- | Write a nested array as a CSV file.
+--   The array contains rows:fields:characters.
+--
+hPutArrayAsCSV 
+        :: ( BulkI l1 (Array l2 (Array l3 Char))
+           , BulkI l2 (Array l3 Char)
+           , BulkI l3 Char
+           , Unpack (Array l3 Char) t)
+        => Handle
+        -> Array l1 (Array l2 (Array l3 Char))
+        -> IO ()
+
+hPutArrayAsCSV hOut arrChar
+ = do
+        -- Concat result back into Word8s
+        let !arrC       = A.fromList U [',']
+        let !arrNL      = A.fromList U ['\n']
+
+        let !arrOut     
+                = A.mapS F (fromIntegral . ord) 
+                $ A.concat U 
+                $ A.mapS B (\arrFields
+                                -> A.concat U $ A.fromList B
+                                        [ A.intercalate U arrC arrFields, arrNL])
+                $ arrChar
+
+        hPutArray hOut arrOut
+{-# INLINE hPutArrayAsCSV #-}
 
