@@ -35,8 +35,7 @@ sieve_o diag
                  -> return ()
 
                 Just (path, arr)
-                 -> do  h       <- openBinaryFile path WriteMode
-                        hSeek h SeekFromEnd 0
+                 -> do  h       <- openBinaryFile path AppendMode
                         hPutArray h arr
                         hClose h
 

@@ -210,6 +210,9 @@ module Data.Repa.Array
         , map,  map2
         , mapS, map2S
 
+          -- ** Filtering
+        , filter
+
           -- ** Searching
         , findIndex
 
@@ -253,9 +256,11 @@ import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
 import Data.Repa.Array.Internals.Operator.Partition     as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
+import Data.Repa.Array.Internals.Operator.Filter        as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
-import Prelude  hiding (reverse, length, map, zipWith, concat, unlines, foldl)
+import  Prelude  
+        hiding (reverse, length, map, zipWith, concat, unlines, foldl, filter)
 #include "repa-array.h"
 
 

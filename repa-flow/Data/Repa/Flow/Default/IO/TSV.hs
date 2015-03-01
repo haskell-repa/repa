@@ -19,18 +19,18 @@ sourceTSV
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
         -> Array l Bucket       --  File paths.
-        -> IO (Sources N (Array N (Array F Char)))
+        -> IO (Sources B (Array N (Array F Char)))
 
 sourceTSV nChunk aFail bs
  = do
         -- Rows are separated by new lines, 
         -- fields are separated by tabs.
         let !nl  = fromIntegral $ ord '\n'
-
---      let !nr  = fromIntegral $ ord '\r'
-        -- TODO: what to do about \r?
-
+        let !nr  = fromIntegral $ ord '\r'
         let !nt  = fromIntegral $ ord '\t'
+
+        let isJunk !c = c == nr
+            {-# INLINE isJunk #-}
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 

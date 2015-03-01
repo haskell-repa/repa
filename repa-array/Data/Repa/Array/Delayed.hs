@@ -123,6 +123,10 @@ delay arr = map id arr
 
 -- | Apply a worker function to each element of an array,
 --   yielding a new array with the same extent.
+--
+--   The resulting array is delayed, meaning every time you index into
+--   it the element at that index is recomputed. 
+--
 map     :: Bulk l a
         => (a -> b) -> Array l a -> Array (D l) b
 map f arr
