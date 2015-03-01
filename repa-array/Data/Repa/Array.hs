@@ -231,6 +231,7 @@ module Data.Repa.Array
         , GroupsDict
 
           -- ** Folding
+        , foldl
         , folds
         , foldsWith
         , Folds(..)
@@ -251,9 +252,10 @@ import Data.Repa.Array.Internals.Operator.Concat        as A
 import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
 import Data.Repa.Array.Internals.Operator.Partition     as A
+import Data.Repa.Array.Internals.Operator.Reduce        as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
-import Prelude  hiding (reverse, length, map, zipWith, concat, unlines)
+import Prelude  hiding (reverse, length, map, zipWith, concat, unlines, foldl)
 #include "repa-array.h"
 
 
