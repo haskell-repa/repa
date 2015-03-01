@@ -19,7 +19,7 @@ sourceTSV
         -> IO ()                --  Action to perform if we find line longer
                                 --  than the chunk length.
         -> Array l Bucket       --  File paths.
-        -> IO (Sources B (Array N (Array F Char)))
+        -> IO (Sources N (Array N (Array F Char)))
 
 sourceTSV nChunk aFail bs
  = do
@@ -29,13 +29,10 @@ sourceTSV nChunk aFail bs
         let !nr  = fromIntegral $ ord '\r'
         let !nt  = fromIntegral $ ord '\t'
 
-        let isJunk !c = c == nr
-            {-# INLINE isJunk #-}
-
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
         sChunk  <- G.sourceChunks nChunk (== nl) aFail bs
-        sRows8  <- G.map_i (A.diceSep nt nl) sChunk
+        sRows8  <- G.map_i (A.diceSep nt nl . A.filter U (/= nr)) sChunk
 
         -- Convert element data from Word8 to Char.
         -- Chars take 4 bytes each, but are standard Haskell and pretty

@@ -7,6 +7,7 @@ module Data.Repa.Array.Material.Foreign
 
   -- * Conversions
   , fromForeignPtr,       toForeignPtr
+  , fromStorableVector,   toStorableVector
   , fromByteString,       toByteString)
 where
 import Data.Repa.Array.Delayed
@@ -141,17 +142,33 @@ toForeignPtr :: Storable a => Array F a -> (Int, Int, ForeignPtr a)
 toForeignPtr (FArray (S.unsafeToForeignPtr -> (p,i,n))) = (i,n,p)
 {-# INLINE_ARRAY toForeignPtr #-}
 
+
+-- | O(1). Convert a foreign array to a storable `Vector`.
+toStorableVector :: Array F a -> S.Vector a
+toStorableVector (FArray vec) = vec
+{-# INLINE_ARRAY toStorableVector #-}
+
+
+-- | O(1). Convert a storable `Vector` to a foreign `Array`
+fromStorableVector :: S.Vector a -> Array F a 
+fromStorableVector vec = FArray vec
+{-# INLINE_ARRAY fromStorableVector #-}
+
+
 -- | O(1). Convert a foreign 'Vector' to a `ByteString`.
 toByteString :: Array F Word8 -> ByteString
 toByteString (FArray (S.unsafeToForeignPtr -> (p,i,n)))
  = BS.PS p i n
 {-# INLINE_ARRAY toByteString #-}
 
--- | O(1). Convert a `ByteString` to an foreign `Vector`.
+
+-- | O(1). Convert a `ByteString` to an foreign `Array`.
 fromByteString :: ByteString -> Array F Word8
 fromByteString (BS.PS p i n)
  = FArray (S.unsafeFromForeignPtr p i n)
 {-# INLINE_ARRAY fromByteString #-}
+
+
 
 instance (Eq a, Storable a) => Eq (Array F a) where
   (FArray a1) == (FArray a2) = a1 == a2

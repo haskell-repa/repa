@@ -16,6 +16,7 @@ module Data.Repa.Array.Material
         , F (..)
         , fromForeignPtr,       toForeignPtr
         , fromByteString,       toByteString
+        , fromStorableVector,   toStorableVector
 
 
           -- * Nested arrays

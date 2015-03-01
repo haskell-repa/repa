@@ -14,7 +14,6 @@ import qualified Data.Repa.Flow.Generic         as G
 
 -- | Read a file containing Tab-Separated-Values.
 --
---   TODO: strip '\r' from end.
 --   TODO: handle escaped commas.
 --   TODO: check CSV file standard.
 --
@@ -31,12 +30,13 @@ sourceCSV nChunk aFail bs
         -- Rows are separated by new lines, 
         -- fields are separated by commas.
         let !nl  = fromIntegral $ ord '\n'
+        let !nr  = fromIntegral $ ord '\r'
         let !nt  = fromIntegral $ ord ','
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
         sChunk  <- G.sourceChunks nChunk (== nl) aFail bs
-        sRows8  <- G.map_i (A.diceSep nt nl) sChunk
+        sRows8  <- G.map_i (A.diceSep nt nl . A.filter U (/= nr)) sChunk
 
         -- Convert element data from Word8 to Char.
         -- Chars take 4 bytes each, but are standard Haskell and pretty
