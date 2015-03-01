@@ -37,8 +37,8 @@ Library
         Data.Repa.Flow.Default.SizedIO
 
         Data.Repa.Flow.Generic
+        Data.Repa.Flow.Generic.Debug
         Data.Repa.Flow.Generic.IO
-        Data.Repa.Flow.Generic.IO.Sieve
 
         Data.Repa.Flow.IO.Bucket
 
@@ -68,6 +68,7 @@ Library
         Data.Repa.Flow.Generic.Array.Shuffle
         Data.Repa.Flow.Generic.Array.Chunk
         Data.Repa.Flow.Generic.Array.Unchunk
+        Data.Repa.Flow.Generic.IO.Sieve
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List
