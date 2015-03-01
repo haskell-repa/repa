@@ -3,7 +3,8 @@ module Data.Repa.Flow.States
         ( Next   (..)
         , States (..)
         , Refs   (..)
-        , foldRefsM)
+        , foldRefsM
+        , toListM)
 where
 import Control.Monad
 import qualified Data.Vector.Mutable            as VM
@@ -106,6 +107,13 @@ foldRefsM f z refs
                  Just i'        -> loop_foldsRefsM i' acc'
         {-# INLINE loop_foldsRefsM #-}       
 {-# INLINE foldRefsM #-}
+
+
+toListM :: States i m
+        => Refs i m a -> m [a]
+toListM refs
+ = foldRefsM (:) [] refs
+{-# NOINLINE toListM #-}
 
 
 instance States Int IO where

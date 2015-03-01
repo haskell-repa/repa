@@ -32,6 +32,7 @@ module Data.Repa.Flow.Chunked
         , groupsBy_i,   GroupsDict
 
           -- ** Folding
+        , foldlS_i
         , folds_i,      FoldsDict
 
           -- ** Watching
@@ -44,6 +45,7 @@ module Data.Repa.Flow.Chunked
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Map
+import Data.Repa.Flow.Chunked.Fold
 import Data.Repa.Flow.Chunked.Folds
 import Data.Repa.Flow.Chunked.Groups
 import Data.Repa.Flow.Chunked.Operator

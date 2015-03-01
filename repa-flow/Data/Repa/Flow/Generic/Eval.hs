@@ -25,7 +25,7 @@ drainS (Sources nSources ipull) (Sinks nSinks opush oeject)
 
         loop_drain !ix
          = ipull ix eat_drain eject_drain
-         where  eat_drain  v
+         where  eat_drain v
                  = do   opush ix v
                         loop_drain ix
                 {-# INLINE eat_drain #-}
