@@ -1,36 +1,35 @@
 
-module Data.Repa.Flow.Simple.Chunk
-        ( chunk_i
-        , unchunk_i,    unchunk_o)
+module Data.Repa.Flow.Generic.Array.Unchunk
+        (unchunk_i)
 where
-import Data.Repa.Flow.Simple.Base
-import Data.Repa.Array
-import Data.Repa.Eval.Array
-import Data.IORef
+import Data.Repa.Flow.Generic.Base
+import Data.Repa.Array                  as A
 #include "repa-flow.h"
 
 
--- Unchunk ----------------------------------------------------------------------------------------
--- | Take a flow of chunks and flatten it into a flow of tge individual elements.
-unchunk_i :: Bulk r DIM1 a
-          => Source IO (Vector r a) -> IO (Source IO a)
+-- Unchunk --------------------------------------------------------------------
+-- | Take a flow of chunks and flatten it into a flow of the individual
+--   elements.
+unchunk_i :: (BulkI l a, States i IO)
+          => Sources i IO (Array l a)   -- ^ Chunk sources.
+          -> IO (Sources i IO a)        -- ^ Element sources.
 
-unchunk_i (Source pullC)
+unchunk_i (Sources n pullC)
  = do   
-        -- IORef to hold the current chunk.
+        -- States to hold the current chunk.
         -- INVARIANT: if this holds a chunk then it is non-empty.
-        rmchunk  <- newIORef Nothing
+        rChunks  <- newRefs n Nothing
 
-        -- IORef to hold the current index into the chunk
-        rix      <- newIORef 0
+        -- States to hold the current index in each chunk.
+        rIxs     <- newRefs n 0
 
-        let pullX eat eject
+        let pullX i eat eject
              = pullStart
              where
                 -- If we already have a non-empty chunk then we can return
                 -- the next element from that.
                 pullStart
-                 = do mchunk <- readIORef rmchunk
+                 = do mchunk <- readRefs rChunks i
                       case mchunk of
                        Just chunk -> pullElem chunk
                        Nothing    -> pullSource 
@@ -40,16 +39,16 @@ unchunk_i (Source pullC)
                 -- and then pass on to 'pullElem' which will take the next
                 -- element from it.
                 pullSource
-                 = pullC eat_source eject_source
+                 = pullC i eat_source eject_source
                 {-# INLINE pullSource #-}
 
                 eat_source !chunk
-                 | size (extent chunk) == 0 
+                 | A.length chunk == 0 
                  = pullSource
 
                  | otherwise         
-                 = do   writeIORef rmchunk (Just chunk)
-                        writeIORef rix     0
+                 = do   writeRefs rChunks i (Just chunk)
+                        writeRefs rIxs    i 0
                         pullElem chunk
                 {-# INLINE eat_source #-}
 
@@ -59,28 +58,28 @@ unchunk_i (Source pullC)
 
                 -- We've got a chunk containing some elements
                 pullElem !chunk
-                 = do !ix    <- readIORef rix
+                 = do !ix    <- readRefs rIxs i
 
-                      _      <- if (ix + 1) >= size (extent chunk)
+                      _      <- if (ix + 1) >= A.length chunk
                                  -- This was the last element of the chunk.
                                  -- We need to pull a new one from the source
                                  -- the next time around.
-                                 then do writeIORef rmchunk Nothing
-                                         writeIORef rix     0
+                                 then do writeRefs rChunks i Nothing
+                                         writeRefs rIxs    i 0
 
                                  -- There are still more elements to read
                                  -- from the current chunk.
-                                 else do writeIORef rix     (ix + 1)
+                                 else do writeRefs rIxs    i (ix + 1)
 
-                      let !x  = index chunk (Z :. ix)
+                      let !x  = index chunk ix
                       eat x
                 {-# INLINE pullElem #-}
             {-# INLINE pullX #-}
 
-        return $ Source pullX
+        return $ Sources n pullX
 {-# INLINE_FLOW unchunk_i #-}
 
-
+{-
 -- | Take an argument sink for individual elements, and produce a result sink
 --   for chunks.
 --
@@ -108,4 +107,4 @@ unchunk_o (Sink pushX ejectX)
          = ejectX 
         {-# INLINE eject_unchunk #-}
 {-# INLINE_FLOW unchunk_o #-}
-
+-}

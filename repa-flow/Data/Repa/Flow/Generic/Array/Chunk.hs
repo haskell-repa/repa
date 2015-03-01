@@ -11,10 +11,10 @@ import Data.Repa.Array                  as A
 -- | Take elements from a flow and pack them into chunks of the given
 --   maximum length.
 chunk_i :: (Target lDst a, Index lDst ~ Int, States i IO)
-        => Name lDst            -- ^ Layout for result chunks.
-        -> Int                  -- ^ Maximum chunk length.
-        -> Sources i IO a       -- ^ Stream sources.
-        -> IO (Sources i IO (Array lDst a))
+        => Name lDst                            -- ^ Layout for result chunks.
+        -> Int                                  -- ^ Maximum chunk length.
+        -> Sources i IO a                       -- ^ Element sources.
+        -> IO (Sources i IO (Array lDst a))     -- ^ Chunk sources.
 
 chunk_i nDst !maxLen (Sources n pullX)
  = do

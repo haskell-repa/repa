@@ -67,6 +67,7 @@ Library
         Data.Repa.Flow.Generic.Array.Distribute
         Data.Repa.Flow.Generic.Array.Shuffle
         Data.Repa.Flow.Generic.Array.Chunk
+        Data.Repa.Flow.Generic.Array.Unchunk
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List
