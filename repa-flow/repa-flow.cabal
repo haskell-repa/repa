@@ -55,6 +55,7 @@ Library
         Data.Repa.Flow.Chunked.Operator
 
         Data.Repa.Flow.Default.IO.TSV
+        Data.Repa.Flow.Default.IO.CSV
 
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.Connect

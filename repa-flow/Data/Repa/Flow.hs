@@ -179,6 +179,7 @@ module Data.Repa.Flow
         , module Data.Repa.Flow.IO.Bucket
 
         -- ** Sourcing
+        , sourceCSV
         , sourceTSV
         , sourceRecords
         , sourceLines

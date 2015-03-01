@@ -1,6 +1,6 @@
 
-module Data.Repa.Flow.Default.IO.TSV
-        (sourceTSV)
+module Data.Repa.Flow.Default.IO.CSV
+        (sourceCSV)
 where
 import Data.Repa.Flow.Default
 import Data.Repa.Flow.IO.Bucket
@@ -13,7 +13,12 @@ import qualified Data.Repa.Flow.Generic         as G
 
 
 -- | Read a file containing Tab-Separated-Values.
-sourceTSV
+--
+--   TODO: strip '\r' from end.
+--   TODO: handle escaped commas.
+--   TODO: check CSV file standard.
+--
+sourceCSV
         :: BulkI l Bucket
         => Integer              --  Chunk length.
         -> IO ()                --  Action to perform if we find line longer
@@ -21,16 +26,12 @@ sourceTSV
         -> Array l Bucket       --  File paths.
         -> IO (Sources N (Array N (Array F Char)))
 
-sourceTSV nChunk aFail bs
+sourceCSV nChunk aFail bs
  = do
         -- Rows are separated by new lines, 
-        -- fields are separated by tabs.
+        -- fields are separated by commas.
         let !nl  = fromIntegral $ ord '\n'
-
---      let !nr  = fromIntegral $ ord '\r'
-        -- TODO: what to do about \r?
-
-        let !nt  = fromIntegral $ ord '\t'
+        let !nt  = fromIntegral $ ord ','
 
         -- Stream chunks of data from the input file, where the chunks end
         -- cleanly at line boundaries. 
@@ -48,4 +49,4 @@ sourceTSV nChunk aFail bs
                      sRows8
 
         return sRows
-{-# INLINE sourceTSV #-}
+{-# INLINE sourceCSV #-}

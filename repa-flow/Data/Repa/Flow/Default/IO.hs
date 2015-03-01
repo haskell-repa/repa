@@ -11,6 +11,7 @@ module Data.Repa.Flow.Default.IO
         , module Data.Repa.Flow.IO.Bucket
 
           -- * Sourcing
+        , sourceCSV
         , sourceTSV
         , sourceRecords
         , sourceLines
@@ -33,6 +34,17 @@ import qualified Data.Repa.Flow.Default.SizedIO  as F
 -- | The default chunk size of 64kBytes.
 defaultChunkSize :: Integer
 defaultChunkSize = 64 * 1024
+
+
+-- | Read a file containing Comma-Separated-Values.
+sourceCSV
+        :: BulkI l Bucket
+        => Array l Bucket -> IO (Sources N (Array N (Array F Char)))
+sourceCSV
+        = F.sourceCSV defaultChunkSize
+        $ error $  "Line exceeds chunk size of "
+                ++ show defaultChunkSize ++ "bytes."
+{-# INLINE sourceCSV #-}
 
 
 -- | Read a file containing Tab-Separated-Values.

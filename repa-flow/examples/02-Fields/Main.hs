@@ -27,7 +27,17 @@ pFields config
         let Just fileIn = configFileIn config
         hIn       <- openFile fileIn ReadMode
         strFirst  <- hGetLine hIn
-        let cols  =  P.length $ words strFirst
+
+        -- TODO: Avoid sketchy replacement of commas by tabs.
+        --       Check how CSV standard escapes tab characters.
+        let Just format = configFormat config
+        let cols  
+                =  case format of
+                    FormatTSV -> P.length $ words strFirst
+                    FormatCSV -> P.length $ words
+                               $ (P.map (\c -> if c == ',' then '\t' else c) 
+                                        strFirst)
+
         hSeek hIn AbsoluteSeek 0
 
         -- Drop the requested number of lines from the front,
@@ -41,7 +51,10 @@ pFields config
         nCaps      <- getNumCapabilities 
         let !nl    =  fromIntegral $ ord '\n'
 
-        sIn        <- fromSplitFileAt nCaps (== nl) fileIn pStart sourceTSV
+        sIn        <- fromSplitFileAt nCaps (== nl) fileIn pStart 
+                   $  case format of
+                        FormatTSV -> sourceTSV
+                        FormatCSV -> sourceCSV
 
         -- Do a ragged transpose the chunks, to produce a columnar
         -- representation.
@@ -65,18 +78,29 @@ pFields config
 
 
 -------------------------------------------------------------------------------
+-- | Command-line configuration.
 data Config
         = Config
         { configDrop    :: Int 
-        , configFileIn  :: Maybe FilePath }
+        , configFileIn  :: Maybe FilePath 
+        , configFormat  :: Maybe Format }
 
+data Format
+        = FormatCSV
+        | FormatTSV
+
+
+-- | Starting configuration.
+configZero :: Config
 configZero
         = Config
         { configDrop    = 0
-        , configFileIn  = Nothing }
+        , configFileIn  = Nothing 
+        , configFormat  = Nothing }
 
+
+-- | Parse command-line arguments into a configuration.
 parseArgs :: [String] -> Config -> IO Config
-
 parseArgs [] config 
  | isJust $ configFileIn config
  = return config
@@ -84,9 +108,15 @@ parseArgs [] config
  | otherwise = dieUsage
 
 parseArgs args config
- | "-drop" : sn : rest <- args
+ | "-drop" : sn : rest  <- args
  , all isDigit sn
  = parseArgs rest $ config { configDrop = read sn }
+
+ | "-csv" : rest        <- args
+ = parseArgs rest $ config { configFormat = Just FormatCSV }
+
+ | "-tsv" : rest        <- args
+ = parseArgs rest $ config { configFormat = Just FormatTSV }
 
  | [filePath] <- args
  = return $ config { configFileIn = Just filePath }
@@ -98,8 +128,14 @@ parseArgs args config
 -- | Die on wrong usage at the command line.
 dieUsage
  = error $ P.unlines
- [ "Usage: flow-fields [OPTIONS] <source_file>"
- , "Split a TSV file into separate files, one for each column."
+ [ "Usage: flow-fields FORMAT [OPTIONS] <source_file>"
+ , "Split a file into separate files, one for each column."
+ , ""
+ , "FORMAT:"
+ , " -tsv               Input file contains tab-separated values."
+ , " -csv               Input file contains comma-separated values."
+ , ""
+ , "OPTIONS:"
  , " -drop (n :: Nat)   Drop n lines from the front of the input file." ]
 
 
