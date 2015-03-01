@@ -98,7 +98,10 @@ module Data.Repa.Flow.Generic
           -- ** Shuffling
         , shuffle_o
         , dshuffle_o
-        , dshuffleBy_o)
+        , dshuffleBy_o
+
+          -- ** Chunking
+        , chunk_i)
 where
 import Data.Repa.Flow.States
 import Data.Repa.Flow.Generic.Base
@@ -109,6 +112,7 @@ import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Eval
 import Data.Repa.Flow.Generic.Array.Distribute
 import Data.Repa.Flow.Generic.Array.Shuffle
+import Data.Repa.Flow.Generic.Array.Chunk
 
 
 -- $threadsafety
