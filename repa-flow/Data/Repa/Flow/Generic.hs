@@ -106,9 +106,9 @@ import Data.Repa.Flow.Generic.Connect
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Map
 import Data.Repa.Flow.Generic.Operator
-import Data.Repa.Flow.Generic.Distribute
-import Data.Repa.Flow.Generic.Shuffle
 import Data.Repa.Flow.Generic.Eval
+import Data.Repa.Flow.Generic.Array.Distribute
+import Data.Repa.Flow.Generic.Array.Shuffle
 
 
 -- $threadsafety

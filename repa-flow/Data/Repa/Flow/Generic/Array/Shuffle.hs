@@ -1,5 +1,5 @@
 {-# OPTIONS -fno-warn-unused-imports #-}
-module Data.Repa.Flow.Generic.Shuffle
+module Data.Repa.Flow.Generic.Array.Shuffle
         ( shuffle_o
         , dshuffle_o
         , dshuffleBy_o)

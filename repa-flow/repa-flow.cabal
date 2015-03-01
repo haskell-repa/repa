@@ -63,9 +63,9 @@ Library
         Data.Repa.Flow.Generic.List
         Data.Repa.Flow.Generic.Map
         Data.Repa.Flow.Generic.Operator
-        Data.Repa.Flow.Generic.Distribute
-        Data.Repa.Flow.Generic.Shuffle
         Data.Repa.Flow.Generic.Eval
+        Data.Repa.Flow.Generic.Array.Distribute
+        Data.Repa.Flow.Generic.Array.Shuffle
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List
