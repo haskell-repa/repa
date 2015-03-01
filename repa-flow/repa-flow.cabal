@@ -38,6 +38,7 @@ Library
 
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.IO
+        Data.Repa.Flow.Generic.IO.Sieve
 
         Data.Repa.Flow.IO.Bucket
 
@@ -62,7 +63,7 @@ Library
         Data.Repa.Flow.Generic.List
         Data.Repa.Flow.Generic.Map
         Data.Repa.Flow.Generic.Operator
-        Data.Repa.Flow.Generic.Vector
+        Data.Repa.Flow.Generic.Distribute
         Data.Repa.Flow.Generic.Shuffle
         Data.Repa.Flow.Generic.Eval
 

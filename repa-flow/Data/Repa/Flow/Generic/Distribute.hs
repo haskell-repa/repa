@@ -1,5 +1,5 @@
 
-module Data.Repa.Flow.Generic.Vector
+module Data.Repa.Flow.Generic.Distribute
         ( -- | 1-dimensional distribution.
           distribute_o
         , ddistribute_o

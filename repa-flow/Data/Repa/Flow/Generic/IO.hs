@@ -12,9 +12,13 @@ module Data.Repa.Flow.Generic.IO
           -- * Sinking
         , sinkBytes
         , sinkChars
-        , sinkLines)
+        , sinkLines
+
+          -- * Sieving
+        , sieve_o)
 where
 import Data.Repa.Flow.IO.Bucket
+import Data.Repa.Flow.Generic.IO.Sieve          as F
 import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Fusion.Unpack                  as F
