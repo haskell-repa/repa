@@ -14,7 +14,8 @@ import Data.Word
 -- | Create an output sieve that writes data to an indeterminate number of
 --   output files. Each new element is appended to its associated file.
 --
---   * This function keeps a maximum of 8 files open at once, closing
+--   * TODO: 
+--     This function keeps a maximum of 8 files open at once, closing
 --     and re-opening them in a least-recently-used order.
 --     Due to this behaviour it's fine to create thousands of separate
 --     output files without risking overflowing the process limit on 
@@ -35,7 +36,9 @@ sieve_o diag
                  -> return ()
 
                 Just (path, arr)
-                 -> do  h       <- openBinaryFile path AppendMode
+                 -> do  -- TODO: repeatededly opening and closing the file 
+                        --       will be very slow.
+                        h       <- openBinaryFile path AppendMode
                         hPutArray h arr
                         hClose h
 

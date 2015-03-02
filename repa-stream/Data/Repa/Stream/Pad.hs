@@ -67,6 +67,6 @@ padForwardS ksucc (Stream istep si0 _)
 
                      -- We're still filling the gap.
                      else return $ Yield (kNext,   vPrev)   (si, Some2 kNext   vPrev, sTarget)
-        {-# INLINE_INNNER ostep #-}
+        {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM padForwardS #-}
 
