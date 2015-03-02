@@ -6,12 +6,15 @@ module Data.Repa.Array.Material.Boxed
         , Buffer (..)
 
         -- * Conversions
-        , fromBoxed,    toBoxed)
+        , fromBoxed,    toBoxed
+
+        -- * Utils
+        , decimate)
 where
-import Data.Repa.Array.Window
-import Data.Repa.Array.Index
-import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Window                           as A
+import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Fusion.Unpack
 import Data.Word
 import Control.Monad
@@ -139,4 +142,27 @@ toBoxed   :: Array B a -> V.Vector a
 toBoxed (BArray vec) = vec
 {-# INLINE_ARRAY toBoxed #-}
 
+
+
+-- | Scan through an array from front to back.
+--   For pairs of successive elements, drop the second one when the given
+--   predicate returns true.
+--
+--   This function can be used to remove duplicates from a sorted array.
+--
+--   TODO: generalise to other array types.
+decimate
+        :: (a -> a -> Bool)
+        -> Array B a -> Array B a
+
+decimate f arr
+        | A.length arr == 0        
+        = A.fromList B []
+
+        | otherwise
+        = fromBoxed
+        $ V.cons (arr `A.index` 0)
+                 (V.map  snd
+                        $ V.filter (\(prev,  here) -> not $ f prev here)
+                        $ V.zip (toBoxed arr) (V.tail $ toBoxed arr))
 

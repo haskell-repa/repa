@@ -6,6 +6,7 @@ module Data.Repa.Array.Material
           -- * Boxed arrays
         , B     (..)
         , fromBoxed,            toBoxed
+        , decimate
 
           -- * Unboxed arrays
         , U     (..)
