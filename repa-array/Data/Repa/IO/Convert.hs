@@ -8,6 +8,7 @@ module Data.Repa.IO.Convert
 
           -- * Date conversion
         , packDate32,           unpackDate32
+        , nextDate32
         , readYYYYsMMsDD)
 where
 import Data.Repa.Array.Material.Foreign                 as A
@@ -18,6 +19,8 @@ import Data.Word
 import Data.Bits
 import Data.Char
 import GHC.Ptr
+import GHC.Exts
+import GHC.Word
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
@@ -127,6 +130,47 @@ unpackDate32 date
           , fromIntegral $ (date `shiftR` 8)  .&. 0x0ff
           , fromIntegral $ date               .&. 0x0ff)
 {-# INLINE unpackDate32 #-}
+
+
+-- | Yield the next date in the series.
+--
+--   This assumes leap years occur every four years, 
+--   which is valid before after year 1900 and before year 2100.
+--
+nextDate32  :: Word32 -> Word32
+nextDate32 (W32# date)
+          = W32# (nextDate32' date)
+{-# INLINE nextDate32 #-}
+
+nextDate32' :: Word# -> Word#
+nextDate32' !date
+ | (yy,  mm, dd) <- unpackDate32 (W32# date)
+ , (yy', mm', dd') 
+     <- case mm of
+        1       -> if dd >= 31  then (yy,     2, 1) else (yy, mm, dd + 1)  -- Jan
+
+        2       -> if yy `mod` 4 == 0                                      -- Feb
+                        then if dd >= 29
+                                then (yy,     3,      1) 
+                                else (yy,    mm, dd + 1)
+                        else if dd >= 28
+                                then (yy,     3,      1)
+                                else (yy,    mm, dd + 1)
+
+        3       -> if dd >= 31 then (yy,     4, 1) else (yy, mm, dd + 1)  -- Mar
+        4       -> if dd >= 30 then (yy,     5, 1) else (yy, mm, dd + 1)  -- Apr
+        5       -> if dd >= 31 then (yy,     6, 1) else (yy, mm, dd + 1)  -- May
+        6       -> if dd >= 30 then (yy,     7, 1) else (yy, mm, dd + 1)  -- Jun
+        7       -> if dd >= 31 then (yy,     8, 1) else (yy, mm, dd + 1)  -- Jul
+        8       -> if dd >= 31 then (yy,     9, 1) else (yy, mm, dd + 1)  -- Aug
+        9       -> if dd >= 30 then (yy,    10, 1) else (yy, mm, dd + 1)  -- Sep
+        10      -> if dd >= 31 then (yy,    11, 1) else (yy, mm, dd + 1)  -- Oct
+        11      -> if dd >= 30 then (yy,    12, 1) else (yy, mm, dd + 1)  -- Nov
+        12      -> if dd >= 31 then (yy + 1, 1, 1) else (yy, mm, dd + 1)  -- Dec
+        _       -> (0, 0, 0)
+ = case packDate32 (yy', mm', dd') of
+        W32# w  -> w
+{-# NOINLINE nextDate32' #-}
 
 
 -- | Read a date in ASCII YYYYsMMsDD format, using the given separator

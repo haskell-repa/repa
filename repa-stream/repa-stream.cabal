@@ -38,6 +38,7 @@ Library
         Data.Repa.Stream.Ratchet
         Data.Repa.Stream.Segment
         Data.Repa.Stream.Dice
+        Data.Repa.Stream.Pad
 
   include-dirs:
         include
