@@ -4,6 +4,7 @@ module Data.Repa.Stream
         , findSegmentsS
         , diceSepS
         , startLengthsOfSegsS
+        , padForwardS
 
           -- * Unsafe operators
         , unsafeRatchetS)
@@ -13,4 +14,5 @@ import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
 import Data.Repa.Stream.Dice
+import Data.Repa.Stream.Pad
 

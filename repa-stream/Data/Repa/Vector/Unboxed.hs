@@ -16,6 +16,9 @@ module Data.Repa.Vector.Unboxed
         , findSegmentsFrom
         , diceSep
 
+        -- * Padding
+        , padForward
+
           -- * Scan operators
           -- | These have a scan-like structure,
           --   and are implemented in terms of `scanMaybe`.
@@ -36,6 +39,7 @@ import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
 import Data.Repa.Stream.Dice
+import Data.Repa.Stream.Pad
 import Data.Vector.Unboxed                              (Unbox, Vector)
 import Data.Vector.Unboxed.Mutable                      (MVector)
 import Data.Repa.Chain                                  (Chain)
@@ -296,4 +300,20 @@ folds f zN s0 vLens vVals
 
    in   (vResults, state)
 {-# INLINE folds #-}
+
+
+-------------------------------------------------------------------------------
+-- 
+padForward  
+        :: (Unbox k, Unbox v, Ord k)
+        => (k -> k)
+        -> U.Vector (k, v)
+        -> U.Vector (k, v)
+
+padForward ksucc vec
+        = G.unstream
+        $ padForwardS ksucc
+        $ G.stream vec
+{-# INLINE padForward #-}
+
 
