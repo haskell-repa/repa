@@ -5,19 +5,23 @@ module Data.Repa.Vector.Unboxed
         , unchainToVector
         , unchainToMVector
 
-        -- * Generators
+          -- * Generators
         , ratchet
 
-        -- * Extract
+          -- * Extract
         , extract
 
-        -- * Splitting
+          -- * Merging
+        , merge
+
+          -- * Splitting
         , findSegments
         , findSegmentsFrom
         , diceSep
 
-        -- * Padding
+          -- * Padding
         , padForward
+
 
           -- * Scan operators
           -- | These have a scan-like structure,
@@ -26,6 +30,7 @@ module Data.Repa.Vector.Unboxed
 
           -- ** Grouping
         , groupsBy
+
 
           -- * Weave operators
           -- | These have a weave-like structure,
@@ -39,6 +44,7 @@ import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
 import Data.Repa.Stream.Dice
+import Data.Repa.Stream.Merge
 import Data.Repa.Stream.Pad
 import Data.Vector.Unboxed                              (Unbox, Vector)
 import Data.Vector.Unboxed.Mutable                      (MVector)
@@ -148,6 +154,24 @@ extract :: Unbox a
 extract get vStartLen
  = G.unstream $ extractS get (G.stream vStartLen)
 {-# INLINE extract #-}
+
+
+-------------------------------------------------------------------------------
+-- | Merge two pre-sorted key-value streams.
+merge   :: (Ord k, Unbox k, Unbox a, Unbox b, Unbox c)
+        => (k -> a -> b -> c)   -- ^ Combine two values with the same key.
+        -> (k -> a -> c)        -- ^ Handle a left value without a right value.
+        -> (k -> b -> c)        -- ^ Handle a right value without a left value.
+        -> U.Vector (k, a)      -- ^ Vector of keys and left values.
+        -> U.Vector (k, b)      -- ^ Vector of keys and right values.
+        -> U.Vector (k, c)      -- ^ Vector of keys and results.
+
+merge fBoth fLeft fRight vA vB
+ = G.unstream 
+ $ mergeS fBoth fLeft fRight 
+        (G.stream vA)
+        (G.stream vB)
+{-# INLINE merge #-}
 
 
 -------------------------------------------------------------------------------

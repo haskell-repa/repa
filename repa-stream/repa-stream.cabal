@@ -39,6 +39,7 @@ Library
         Data.Repa.Stream.Segment
         Data.Repa.Stream.Dice
         Data.Repa.Stream.Pad
+        Data.Repa.Stream.Merge
 
   include-dirs:
         include
@@ -61,5 +62,6 @@ Library
         BangPatterns
         FlexibleContexts
         PatternGuards
+        MultiWayIf
 
 

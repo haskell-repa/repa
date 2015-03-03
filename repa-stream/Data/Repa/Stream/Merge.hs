@@ -14,8 +14,8 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --
 mergeS  :: (Monad m, Ord k)
         => (k -> a -> b -> c) -- ^ Combine two values with the same key.
-        -> (k -> a -> c)      -- ^ Handle a left  value without a matching right value.
-        -> (k -> b -> c)      -- ^ Handle a right value without a matching left value.
+        -> (k -> a -> c)      -- ^ Handle a left  value without a right value.
+        -> (k -> b -> c)      -- ^ Handle a right value without a left value.
         -> Stream m (k, a)    -- ^ Stream of keys and left values.
         -> Stream m (k, b)    -- ^ Stream of keys and right values.
         -> Stream m (k, c)    -- ^ Stream of keys and results.
@@ -26,17 +26,14 @@ mergeS fBoth fLeft fRight (Stream istepA sA0 _) (Stream istepB sB0 _)
         -- Merge where both streams match.
         ostep (sA, sB, kxA@(Some2 kA xA), hasA
                      , kxB@(Some2 kB xB), hasB)
-         | kA == kB     
-         = return $ Yield (kA, fBoth kA xA xB) 
-                          (sA, sB, None2, hasA, None2, hasB)
 
-         | kB < kA
-         = return $ Yield (kB, fRight kB xB)
-                          (sA, sB, kxA,   hasA, None2, hasB)
+         = return $ Yield (if | kA == kB  -> (kA, fBoth  kA xA xB)
+                              | kB <  kA  -> (kB, fRight kB xB)
+                              | otherwise -> (kA, fLeft  kA xA))
 
-         | otherwise
-         = return $ Yield (kA, fLeft  kA xA)
-                          (sA, sB, None2, hasA, kxB,   hasB)
+                          (if | kA == kB  -> (sA, sB, None2, hasA, None2, hasB)
+                              | kB <  kA  -> (sA, sB, kxA,   hasA, None2, hasB)
+                              | otherwise -> (sA, sB, None2, hasA, kxB,   hasB))
 
         -- Drain left stream.
         ostep (sA, sB, Some2 kA xA, hasA, kxB@None2, hasB@False)
