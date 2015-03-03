@@ -1,67 +1,83 @@
 
 module Data.Repa.Bits.Date32
-        ( -- * Date conversion
-          packDate32,           unpackDate32
-        , nextDate32
+        ( Date32
+        , pack, unpack
+        , next
+        , range
         , readYYYYsMMsDD)
 where
 import Data.Repa.Array.Material.Foreign                 as A
 import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array                                  as A
+import Data.Repa.Eval.Array                             as A
 import Data.Word
 import Data.Bits
 import GHC.Exts
 import GHC.Word
+import Prelude                                          as P
 
 
--- Dates ----------------------------------------------------------------------
--- | Pack a year, month and day into a `Word32`.
+-- | A date packed into a 32-bit word.
 --
---   Bitwise format is:
---   
--- @
--- 32             16       8      0 
--- | year          | month | day  |
--- @
+--   The bitwise format is:
 --
---   If they components of the date are out-of-range then they will be bit-wise
---   truncate so they fit in their destination fields.
---  
-packDate32   :: (Word, Word, Word) -> Word32
-packDate32 (yy, mm, dd) 
+--   @
+--   32             16       8      0 
+--   | year          | month | day  |
+--   @
+--
+--   Pros: Packing and unpacking a Date32 is simpler than using other formats
+--   that represent dates as a number of days from some epoch. We can also
+--   avoid worrying about what the epoch should be, and the representation
+--   will not overflow until year 65536. 
+--
+--   Cons: Computing a range of dates is slower than with representations
+--   using an epoch, as we cannot simply add one to get to the next valid date.
+--
+type Date32 
+        = Word32
+
+
+-- | Pack a year, month and day into a `Word32`. 
+--
+--   If any components of the date are out-of-range then they will be bit-wise
+--   truncated so they fit in their destination fields.
+--
+pack   :: (Word, Word, Word) -> Date32
+pack (yy, mm, dd) 
         =   ((fromIntegral yy .&. 0x0ffff) `shiftL` 16) 
         .|. ((fromIntegral mm .&. 0x0ff)   `shiftL` 8)
         .|.  (fromIntegral dd .&. 0x0ff)
-{-# INLINE packDate32 #-}
+{-# INLINE pack #-}
 
 
--- | Inverse of `packDate32`.
+-- | Inverse of `pack`.
 --
 --   This function does a simple bit-wise unpacking of the given `Word32`, 
 --   and does not guarantee that the returned fields are within a valid 
 --   range for the given calendar date.
 --
-unpackDate32  :: Word32 -> (Word, Word, Word)
-unpackDate32 date
+unpack  :: Date32 -> (Word, Word, Word)
+unpack date
         = ( fromIntegral $ (date `shiftR` 16) .&. 0x0ffff
           , fromIntegral $ (date `shiftR` 8)  .&. 0x0ff
           , fromIntegral $ date               .&. 0x0ff)
-{-# INLINE unpackDate32 #-}
+{-# INLINE unpack #-}
 
 
 -- | Yield the next date in the series.
 --
 --   This assumes leap years occur every four years, 
---   which is valid before after year 1900 and before year 2100.
+--   which is valid after year 1900 and before year 2100.
 --
-nextDate32  :: Word32 -> Word32
-nextDate32 (W32# date)
-          = W32# (nextDate32' date)
-{-# INLINE nextDate32 #-}
+next  :: Date32 -> Date32
+next (W32# date)
+          = W32# (next' date)
+{-# INLINE next #-}
 
-nextDate32' :: Word# -> Word#
-nextDate32' !date
- | (yy,  mm, dd) <- unpackDate32 (W32# date)
+next' :: Word# -> Word#
+next' !date
+ | (yy,  mm, dd) <- unpack (W32# date)
  , (yy', mm', dd') 
      <- case mm of
         1       -> if dd >= 31  then (yy,     2, 1) else (yy, mm, dd + 1)  -- Jan
@@ -85,23 +101,42 @@ nextDate32' !date
         11      -> if dd >= 30 then (yy,    12, 1) else (yy, mm, dd + 1)  -- Nov
         12      -> if dd >= 31 then (yy + 1, 1, 1) else (yy, mm, dd + 1)  -- Dec
         _       -> (0, 0, 0)
- = case packDate32 (yy', mm', dd') of
+ = case pack (yy', mm', dd') of
         W32# w  -> w
-{-# NOINLINE nextDate32' #-}
+{-# NOINLINE next' #-}
 
 
--- | Read a date in ASCII YYYYsMMsDD format, using the given separator
+-- | Yield an array containing a range of dates, inclusive of the end points.
+--
+--   TODO: avoid going via lists.
+--
+range   :: TargetI l Date32
+        => Name l -> Date32 -> Date32 -> Array l Date32
+
+range n from to 
+ | to < from    = A.fromList n []
+ | otherwise    = A.fromList n $ go [] from
+ where
+        go !acc !d   
+                | d > to        = P.reverse acc
+                | otherwise     = go (d : acc) (next d)
+{-# NOINLINE range #-}
+
+
+-- | Read a `Date32` in ASCII YYYYsMMsDD format, using the given separator
 --   character 's'.
 --
 --   TODO: avoid going via lists.
 --
 readYYYYsMMsDD 
         :: BulkI l Char
-        => Char -> Array l Char -> Maybe (Word, Word, Word)
+        => Char -> Array l Char -> Maybe Date32
+
 readYYYYsMMsDD sep arr
  = case words 
         $ A.toList
         $ A.mapS U (\c -> if c == sep then ' ' else c) arr of
-                [yy, mm, dd]    -> Just (read yy, read mm, read dd)
+                [yy, mm, dd]    -> Just $ pack (read yy, read mm, read dd)
                 _               -> Nothing
 {-# INLINE readYYYYsMMsDD #-}
+
