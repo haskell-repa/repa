@@ -28,7 +28,7 @@ import qualified Data.Vector.Mutable                    as VM
 --   UNSAFE: Indexing into raw material arrays is not bounds checked.
 --   You may want to wrap this with a Checked layout as well.
 --
-data B = Boxed { boxedLength :: Int }
+data B = Boxed { boxedLength :: !Int }
   deriving (Show, Eq)
 
 ------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ deriving instance Show (Name B)
 ------------------------------------------------------------------------------
 -- | Boxed arrays.
 instance Bulk B a where
- data Array B a                  = BArray (V.Vector a)
+ data Array B a                  = BArray !(V.Vector a)
  layout (BArray vec)             = Boxed (V.length vec)
  index  (BArray vec) ix          = V.unsafeIndex vec ix
  {-# INLINE_ARRAY layout  #-}

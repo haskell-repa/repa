@@ -152,7 +152,7 @@ extract :: Unbox a
         -> U.Vector a           -- ^ Result elements.
 
 extract get vStartLen
- = G.unstream $ extractS get (G.stream vStartLen)
+ = G.unstream $ extractS get $ G.stream vStartLen
 {-# INLINE extract #-}
 
 
@@ -167,10 +167,10 @@ merge   :: (Ord k, Unbox k, Unbox a, Unbox b, Unbox c)
         -> U.Vector (k, c)      -- ^ Vector of keys and results.
 
 merge fBoth fLeft fRight vA vB
- = G.unstream 
- $ mergeS fBoth fLeft fRight 
-        (G.stream vA)
-        (G.stream vB)
+        = G.unstream 
+        $ mergeS fBoth fLeft fRight 
+                (G.stream vA) 
+                (G.stream vB)
 {-# INLINE merge #-}
 
 

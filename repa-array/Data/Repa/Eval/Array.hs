@@ -25,10 +25,10 @@ import System.IO.Unsafe
 --
 computeS     :: (Load lSrc lDst a, Index lSrc ~ Index lDst)
              =>  Name lDst -> Array lSrc a -> Array lDst a
-computeS nDst aSrc
- = let  lDst       = create nDst (extent $ layout aSrc)
+computeS !nDst !aSrc
+ = let  !lDst      = create nDst (extent $ layout aSrc)
         Just aDst  = computeIntoS lDst aSrc
-   in   aDst
+   in   aDst `seq` aDst
 {-# INLINE computeS #-}
 
 
@@ -39,12 +39,12 @@ computeS nDst aSrc
 --
 computeIntoS :: Load lSrc lDst a
              => lDst -> Array lSrc a -> Maybe (Array lDst a)
-computeIntoS lDst aSrc
+computeIntoS !lDst !aSrc
  | (A.size $ A.extent lDst) == A.length aSrc
  = unsafePerformIO
- $ do   buf     <- unsafeNewBuffer lDst
+ $ do   !buf     <- unsafeNewBuffer lDst
         loadS aSrc buf
-        arr     <- unsafeFreezeBuffer buf
+        !arr     <- unsafeFreezeBuffer buf
         return  $ Just arr
 
  | otherwise

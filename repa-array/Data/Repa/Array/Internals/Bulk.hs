@@ -52,15 +52,15 @@ length !arr = size (extent (layout arr))
 -- | Convert an array to a list.
 toList  :: Bulk  l a
         => Array l a -> [a]
-toList arr
+toList !arr
  = loop_fromList [] 0
  where  !lo     = layout arr
         !len    = length arr
         loop_fromList !acc !ix
          | ix >= len    = reverse acc
          | otherwise    
-         = loop_fromList (arr `index` (fromIndex lo ix) : acc) 
-                         (ix + 1)
+         = let !x       = arr `index`  (fromIndex lo ix)
+           in  loop_fromList (x : acc) (ix + 1)
 {-# INLINE_ARRAY toList #-}
 
 
@@ -70,7 +70,7 @@ toLists  :: ( Bulk l1 (Array l2 a)
          => Array  l1 (Array l2 a)              -- ^ Source array.
          -> [[a]]                               -- ^ Result list.
 toLists arr
- = let  ll'    =  toList arr
+ = let  !ll'    =  toList arr
    in   map toList ll'
 {-# INLINE_ARRAY toLists #-}
 
@@ -82,7 +82,7 @@ toListss :: ( Bulk l1 (Array l2 (Array l3 a))
          => Array  l1 (Array l2 (Array l3 a))   -- ^ Source array.
          -> [[[a]]]                             -- ^ Result list.
 toListss arr
- = let  ll'    = toLists arr
+ = let  !ll'    = toLists arr
    in   map (map toList) ll'
 {-# INLINE_ARRAY toListss #-}
 

@@ -19,7 +19,7 @@ import Prelude                          hiding (zip, unzip)
 -- | Tupled arrays where the components are unpacked and can have
 --   separate representations.
 data T2 l1 l2
-        = Tup2 l1 l2
+        = Tup2 !l1 !l2
 
 
 deriving instance (Eq   l1, Eq   l2) => Eq   (T2 l1 l2)
@@ -31,7 +31,7 @@ instance ( Index  l1 ~ Index l2
          , Layout l1, Layout l2)
         => Layout (T2 l1 l2) where
 
- data Name  (T2 l1 l2)       = T2 (Name l1) (Name l2)
+ data Name  (T2 l1 l2)       = T2 !(Name l1) !(Name l2)
  type Index (T2 l1 l2)       = Index l1
  name                        = T2 name name
  create     (T2 n1 n2)    ix = Tup2 (create n1 ix) (create n2 ix)
@@ -62,7 +62,7 @@ instance (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
        => Bulk (T2 l1 l2) (a, b) where
 
  data Array (T2 l1 l2) (a, b)
-        = T2Array (Array l1 a) (Array l2 b)
+        = T2Array !(Array l1 a) !(Array l2 b)
 
  layout (T2Array arr1 arr2)     = Tup2 (layout arr1)  (layout arr2)
  index  (T2Array arr1 arr2) ix  = (index  arr1 ix, index  arr2 ix)

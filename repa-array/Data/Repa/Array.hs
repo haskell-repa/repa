@@ -319,7 +319,7 @@ mapS    :: (Bulk lSrc a, Target lDst b, Index lSrc ~ Index lDst)
         -> (a -> b)     -- ^ Worker function.
         -> Array lSrc a -- ^ Source array.
         -> Array lDst b
-mapS l f xs = computeS l $ A.map f xs
+mapS l f !xs = computeS l $! A.map f xs
 {-# INLINE mapS #-}
 
 
@@ -333,7 +333,7 @@ map2S   :: (Bulk   lSrc1 a, Bulk lSrc2 b, Target lDst c
         -> Array lSrc2 b        -- ^ Source array
         -> Maybe (Array lDst  c)
 map2S l f xs ys
- = liftM (computeS l) $ A.map2 f xs ys
+ = liftM (computeS l) $! A.map2 f xs ys
 {-# INLINE map2S #-}
 
 

@@ -33,7 +33,7 @@ import qualified Data.Vector.Unboxed.Mutable            as UM
 --   UNSAFE: Indexing into raw material arrays is not bounds checked.
 --   You may want to wrap this with a Checked layout as well.
 --
-data U = Unboxed { unboxedLength :: Int }
+data U = Unboxed { unboxedLength :: !Int }
   deriving (Show, Eq)
 
 -------------------------------------------------------------------------------

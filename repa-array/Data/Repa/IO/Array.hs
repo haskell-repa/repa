@@ -74,7 +74,7 @@ hGetArrayFromCSV
         :: Handle 
         -> IO (Array N (Array N (Array F Char)))
 
-hGetArrayFromCSV hIn
+hGetArrayFromCSV !hIn
  = do   
         -- Find out how much data there is remaining in the file.
         start   <- hTell hIn
@@ -84,14 +84,13 @@ hGetArrayFromCSV hIn
         hSeek hIn AbsoluteSeek start
 
         -- Read array as Word8s.
-        arr8    <- hGetArray hIn (fromIntegral len)
+        !arr8   <- hGetArray hIn (fromIntegral len)
 
         -- Rows are separated by new lines, fields are separated by commas.
         let !nc = fromIntegral $ ord ','
         let !nl = fromIntegral $ ord '\n'
 
-        let arrSep :: Array N (Array N (Array F Word8)) 
-                = A.diceSep nc nl arr8
+        let !arrSep = A.diceSep nc nl arr8
 
         -- Split CSV file into rows and fields.
         -- Convert element data from Word8 to Char.
@@ -99,7 +98,7 @@ hGetArrayFromCSV hIn
         -- print properly. We've done the dicing on the smaller Word8
         -- version, and now map across the elements vector in the array
         -- to do the conversion.
-        let arrChar :: Array N (Array N (Array F Char))
+        let !arrChar 
                 = A.mapElems 
                         (A.mapElems (A.computeS F . A.map (chr . fromIntegral))) 
                         arrSep
@@ -119,7 +118,7 @@ hPutArrayAsCSV
         -> Array l1 (Array l2 (Array l3 Char))
         -> IO ()
 
-hPutArrayAsCSV hOut arrChar
+hPutArrayAsCSV !hOut !arrChar
  = do
         -- Concat result back into Word8s
         let !arrC       = A.fromList U [',']

@@ -67,7 +67,7 @@ import Prelude  hiding (concat)
 --   You may want to wrap this with a Checked layout as well.
 --
 data N  = Nested 
-        { nestedLength  :: Int }
+        { nestedLength  :: !Int }
 
 deriving instance Eq N
 deriving instance Show N
@@ -209,10 +209,10 @@ concats :: Array N (Array N (Array l a))
 
 concats (NArray starts1 lengths1 (NArray starts2 lengths2 elems))
  = let
-        starts2'        = U.extract (U.unsafeIndex starts2)
+        !starts2'       = U.extract (U.unsafeIndex starts2)
                         $ U.zip starts1 lengths1
 
-        lengths2'       = U.extract (U.unsafeIndex lengths2)
+        !lengths2'      = U.extract (U.unsafeIndex lengths2)
                         $ U.zip starts1 lengths1
 
    in   NArray starts2' lengths2' elems
