@@ -89,12 +89,11 @@ hGetArrayFromCSV hIn
         -- Rows are separated by new lines, fields are separated by commas.
         let !nc = fromIntegral $ ord ','
         let !nl = fromIntegral $ ord '\n'
-        let !nr = fromIntegral $ ord '\r'
 
         let arrSep :: Array N (Array N (Array F Word8)) 
                 = A.diceSep nc nl arr8
 
-        -- Split TSV file into rows and fields.
+        -- Split CSV file into rows and fields.
         -- Convert element data from Word8 to Char.
         -- Chars take 4 bytes each, but are standard Haskell and pretty
         -- print properly. We've done the dicing on the smaller Word8

@@ -47,6 +47,8 @@ Library
         Data.Repa.Array.RowWise
         Data.Repa.Array.Linear
 
+        Data.Repa.Bits.Date32
+
         Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
         Data.Repa.Eval.Stream
@@ -109,5 +111,6 @@ Library
         FunctionalDependencies
         ConstraintKinds
         ForeignFunctionInterface
+        ViewPatterns
 
 
