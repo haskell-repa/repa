@@ -34,6 +34,7 @@ foldlS_i nDst f z (G.Sources n pull)
                  = do   s       <- readRefs refsState ix 
                         let !s' =  A.foldl f s arr 
                         writeRefs refsState ix s'
+                        loop_foldlS ix
                 {-# INLINE eat_foldlS #-}
 
                 eject_foldlS 

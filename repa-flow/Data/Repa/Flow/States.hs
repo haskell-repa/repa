@@ -103,7 +103,7 @@ foldRefsM f z refs
          = do   x       <- readRefs refs i
                 let acc' =  f x acc
                 case next i (extentRefs refs) of
-                 Nothing        -> return acc
+                 Nothing        -> return acc'
                  Just i'        -> loop_foldsRefsM i' acc'
         {-# INLINE loop_foldsRefsM #-}       
 {-# INLINE foldRefsM #-}
