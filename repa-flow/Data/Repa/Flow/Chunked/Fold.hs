@@ -1,7 +1,7 @@
 
 module Data.Repa.Flow.Chunked.Fold
-        ( foldlS_i
-        , foldlAllS_i )
+        ( foldlS
+        , foldlAllS )
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States                    as S
@@ -10,9 +10,10 @@ import qualified Data.Repa.Flow.Generic         as G
 #include "repa-flow.h"
 
 
+-------------------------------------------------------------------------------
 -- | Fold all elements of all streams in a bundle individually,
 --   returning an array of per-stream results.
-foldlS_i  
+foldlS  
         :: ( States Int m
            , A.Target lDst a, A.Index lDst ~ Int
            , A.BulkI  lSrc b)
@@ -22,7 +23,7 @@ foldlS_i
         -> Sources Int m lSrc b         -- ^ Input elements to fold.
         -> m (A.Array lDst a)
 
-foldlS_i nDst f z (G.Sources n pull)
+foldlS nDst f z (G.Sources n pull)
  = do  
         -- Refs to hold partial fold states between chunks.
         refsState       <- newRefs n z
@@ -48,12 +49,12 @@ foldlS_i nDst f z (G.Sources n pull)
 
         ls      <- S.toListM refsState
         return  $ A.fromList nDst ls
-{-# INLINE_FLOW foldlS_i #-}
+{-# INLINE_FLOW foldlS #-}
 
 
 -- | Fold all elements of all streams in a bundle together,
 --   one stream after the other, returning the single final value.
-foldlAllS_i
+foldlAllS
         :: ( States () m
            , A.BulkI   lSrc b)
         => (a -> b -> a)                -- ^ Combining function.
@@ -61,7 +62,7 @@ foldlAllS_i
         -> Sources Int m lSrc b          -- ^ Input elements to fold.
         -> m a
 
-foldlAllS_i f z (G.Sources n pull)
+foldlAllS f z (G.Sources n pull)
  = do   
         ref <- newRefs () Nothing
 
@@ -83,6 +84,6 @@ foldlAllS_i f z (G.Sources n pull)
         loop_foldlAllS z first
         Just x  <- readRefs ref ()
         return x
-{-# INLINE_FLOW foldlAllS_i #-}
+{-# INLINE_FLOW foldlAllS #-}
 
 
