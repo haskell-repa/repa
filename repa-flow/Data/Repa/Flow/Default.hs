@@ -58,7 +58,7 @@ module Data.Repa.Flow.Default
         , GroupsDict
 
         -- ** Folding
-        , foldlS_i
+        , foldlS_i,             foldlAllS_i
         , folds_i,              FoldsDict
         , foldGroupsBy_i,       FoldGroupsDict)
 where
@@ -398,19 +398,32 @@ type GroupsDict lVal lGrp tGrp lLen tLen a
 -- Folding --------------------------------------------------------------------
 -- | Fold all the elements of each stream in a bundle, one stream after the
 --   other, returning an array of fold results.
---
 foldlS_i  
         :: ( A.Target lDst a, A.Index lDst ~ Int
            , A.BulkI  lSrc b)
-        => A.Name lDst
-        -> (a -> b -> a)
-        -> a
-        -> Sources lSrc b
+        => A.Name lDst                  -- ^ Layout for result.
+        -> (a -> b -> a)                -- ^ Combining funtion.
+        -> a                            -- ^ Starting value.
+        -> Sources lSrc b               -- ^ Input elements to fold.
         -> IO (A.Array lDst a)
 
 foldlS_i n f z ss
         = C.foldlS_i n f z ss
 {-# INLINE foldlS_i #-}
+
+
+-- | Fold all the elements of each stream in a bundle, one stream after the
+--   other, returning an array of fold results.
+foldlAllS_i  
+        :: A.BulkI lSrc b
+        => (a -> b -> a)                -- ^ Combining funtion.
+        -> a                            -- ^ Starting value.
+        -> Sources lSrc b               -- ^ Input elements to fold.
+        -> IO a
+
+foldlAllS_i f z ss
+        = C.foldlAllS_i f z ss
+{-# INLINE foldlAllS_i #-}
 
 
 -- | Given streams of lengths and values, perform a segmented fold where

@@ -32,7 +32,7 @@ module Data.Repa.Flow.Chunked
         , groupsBy_i,   GroupsDict
 
           -- ** Folding
-        , foldlS_i
+        , foldlS_i,     foldlAllS_i
         , folds_i,      FoldsDict
 
           -- ** Watching

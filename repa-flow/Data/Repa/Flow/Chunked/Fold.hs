@@ -1,6 +1,7 @@
 
 module Data.Repa.Flow.Chunked.Fold
-        ( foldlS_i )
+        ( foldlS_i
+        , foldlAllS_i )
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States                    as S
@@ -9,17 +10,16 @@ import qualified Data.Repa.Flow.Generic         as G
 #include "repa-flow.h"
 
 
--- | Fold all the elements of each stream in a bundle, one stream after the
---   other, returning an array of fold results.
---
+-- | Fold all elements of all streams in a bundle individually,
+--   returning an array of per-stream results.
 foldlS_i  
         :: ( States Int m
            , A.Target lDst a, A.Index lDst ~ Int
            , A.BulkI  lSrc b)
-        => A.Name lDst
-        -> (a -> b -> a)
-        -> a
-        -> Sources Int m lSrc b
+        => A.Name lDst                  -- ^ Destination layout.
+        -> (a -> b -> a)                -- ^ Combining function.
+        -> a                            -- ^ Starting value for fold.
+        -> Sources Int m lSrc b         -- ^ Input elements to fold.
         -> m (A.Array lDst a)
 
 foldlS_i nDst f z (G.Sources n pull)
@@ -39,8 +39,8 @@ foldlS_i nDst f z (G.Sources n pull)
 
                 eject_foldlS 
                  = case next ix n of
-                    Nothing     -> return ()
-                    Just ix'    -> loop_foldlS ix'
+                        Nothing     -> return ()
+                        Just ix'    -> loop_foldlS ix'
                 {-# INLINE eject_foldlS #-}
             {-# INLINE loop_foldlS #-}
 
@@ -48,5 +48,41 @@ foldlS_i nDst f z (G.Sources n pull)
 
         ls      <- S.toListM refsState
         return  $ A.fromList nDst ls
-{-# INLINE foldlS_i #-}
+{-# INLINE_FLOW foldlS_i #-}
+
+
+-- | Fold all elements of all streams in a bundle together,
+--   one stream after the other, returning the single final value.
+foldlAllS_i
+        :: ( States () m
+           , A.BulkI   lSrc b)
+        => (a -> b -> a)                -- ^ Combining function.
+        -> a                            -- ^ Starting value for fold.
+        -> Sources Int m lSrc b          -- ^ Input elements to fold.
+        -> m a
+
+foldlAllS_i f z (G.Sources n pull)
+ = do   
+        ref <- newRefs () Nothing
+
+        let loop_foldlAllS !s !ix
+             = pull ix eat_foldlAllS eject_foldlAllS
+             where
+                eat_foldlAllS arr
+                 = do   let s'  = A.foldl f s arr
+                        loop_foldlAllS s' ix
+                {-# INLINE eat_foldlAllS #-}
+
+                eject_foldlAllS
+                 = case next ix n of
+                        Nothing     -> writeRefs ref () (Just s)
+                        Just ix'    -> loop_foldlAllS s ix'
+                {-# INLINE eject_foldlAllS #-}
+            {-# INLINE loop_foldlAllS #-}
+
+        loop_foldlAllS z first
+        Just x  <- readRefs ref ()
+        return x
+{-# INLINE_FLOW foldlAllS_i #-}
+
 

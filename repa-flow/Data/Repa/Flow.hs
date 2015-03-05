@@ -169,7 +169,7 @@ module Data.Repa.Flow
         , GroupsDict
 
         -- ** Folding
-        , foldlS_i
+        , foldlS_i,             foldlAllS_i
         , folds_i,              FoldsDict
         , foldGroupsBy_i,       FoldGroupsDict
 
