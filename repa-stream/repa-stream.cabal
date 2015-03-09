@@ -2,22 +2,27 @@ Name:           repa-stream
 Version:        4.0.0.1
 License:        BSD3
 License-file:   LICENSE
-Author:         The DPH Team
+Author:         The Repa Development Team
 Maintainer:     Ben Lippmeier <benl@ouroborus.net>
 Build-Type:     Simple
 Cabal-Version:  >=1.6
 Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
+Source-repo:    
 Bug-reports:    repa@ouroborus.net
 Description:    Stream functions not present in the vector library.
 Synopsis:       Stream functions not present in the vector library.
+
+source-repository head
+  type:     git
+  location: https://github.com/DDCSF/repa.git
 
 Library
   build-Depends: 
         base            == 4.7.*,
         vector          == 0.10.*,
-        primitive       == 0.5.4.0,
+        primitive       == 0.5.4.*,
         mtl             == 2.2.*
 
   exposed-modules:
