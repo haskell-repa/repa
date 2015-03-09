@@ -107,7 +107,7 @@ next' !date
 
 
 -- | Yield an array containing a range of dates, inclusive of the end points.
---
+---
 --   TODO: avoid going via lists.
 --
 range   :: TargetI l Date32
@@ -125,7 +125,7 @@ range n from to
 
 -- | Read a `Date32` in ASCII YYYYsMMsDD format, using the given separator
 --   character 's'.
---
+---
 --   TODO: avoid going via lists.
 --
 readYYYYsMMsDD 

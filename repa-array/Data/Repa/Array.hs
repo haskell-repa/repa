@@ -1,5 +1,9 @@
-{-# LANGUAGE CPP #-}
--- | A Repa array is a wrapper around an underlying container structure that
+--
+-- | NOTE: This is an ALPHA version of Repa 4. The API is not yet complete with
+--   respect to Repa 3. Some important functions are still missing, and the 
+--   docs may not be up-to-date.
+-- 
+--   A Repa array is a wrapper around an underlying container structure that
 --   holds the array elements.
 --
 --  In the type (`Array` @l@ @a@), the @l@ specifies the `Layout` of data,

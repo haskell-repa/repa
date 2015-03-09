@@ -7,15 +7,11 @@ module Data.Repa.IO.Convert
         , showDoubleFixed,      showDoubleFixedAsBytes)
 where
 import Data.Repa.Array.Material.Foreign                 as A
-import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array                                  as A
 import System.IO.Unsafe
 import Data.Word
-import Data.Bits
 import Data.Char
 import GHC.Ptr
-import GHC.Exts
-import GHC.Word
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
