@@ -98,5 +98,5 @@ fillCursoredBlock2
                         fillLine1 (x +# 1#)
                 {-# INLINE fillLine1 #-}
         {-# INLINE fillBlock #-}
-
 {-# INLINE [0] fillCursoredBlock2 #-}
+

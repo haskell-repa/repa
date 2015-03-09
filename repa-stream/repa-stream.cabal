@@ -9,7 +9,6 @@ Cabal-Version:  >=1.6
 Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
-Source-repo:    
 Bug-reports:    repa@ouroborus.net
 Description:    Stream functions not present in the vector library.
 Synopsis:       Stream functions not present in the vector library.

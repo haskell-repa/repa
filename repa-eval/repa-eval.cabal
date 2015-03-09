@@ -1,5 +1,5 @@
 Name:           repa-eval
-Version:        4.0.0.0
+Version:        4.0.0.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -10,11 +10,12 @@ Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
-Description:    
-        Low-level parallel operators on bulk random-accessble arrays.
+Description:    Low-level parallel operators on bulk random-accessble arrays.
+Synopsis:       Low-level parallel operators on bulk random-accessble arrays.
 
-Synopsis:
-        Low-level parallel operators on bulk random-accessble arrays.
+source-repository head
+  type:     git
+  location: https://github.com/DDCSF/repa.git
 
 Library
   Build-Depends: 
@@ -38,12 +39,8 @@ Library
         Data.Repa.Eval.Generic.Par.Interleaved
 
   ghc-options:
-        -Wall 
-        -fno-warn-missing-signatures
+        -Wall -fno-warn-missing-signatures
         -O2
-        -fcpr-off
-        -fno-spec-constr
-        -funbox-strict-fields
 
   extensions:
         NoMonomorphismRestriction
