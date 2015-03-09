@@ -2,7 +2,7 @@ Name:           repa-flow
 Version:        4.0.0.0
 License:        BSD3
 License-file:   LICENSE
-Author:         The DPH Team
+Author:         The Repa Development Team
 Maintainer:     Ben Lippmeier <benl@ouroborus.net>
 Build-Type:     Simple
 Cabal-Version:  >=1.6
