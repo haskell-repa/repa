@@ -18,6 +18,10 @@ Description:
 Synopsis:
         Bulk array representations and operators.
 
+source-repository head
+  type:     git
+  location: https://github.com/DDCSF/repa.git
+
 Library
   build-Depends: 
         base               == 4.7.*,
@@ -27,8 +31,8 @@ Library
         mtl                == 2.2.*,
         double-conversion  == 2.0.*,
         text               == 1.2.*,
-        repa-eval          == 4.0.0.0,
-        repa-stream        == 4.0.0.0
+        repa-eval          == 4.0.0.*,
+        repa-stream        == 4.0.0.*
 
 
   exposed-modules:
@@ -90,8 +94,6 @@ Library
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -O2
-        -fcpr-off
-        -funbox-strict-fields
 
   extensions:
         CPP

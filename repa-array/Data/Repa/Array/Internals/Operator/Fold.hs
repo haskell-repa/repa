@@ -11,7 +11,7 @@ import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Eval.Chain                     as A
 import Data.Repa.Fusion.Unpack                  as A
 import qualified Data.Repa.Chain                as C
-import Data.Repa.Fusion.Option
+import Data.Repa.Option
 import System.IO.Unsafe
 #include "repa-array.h"
 
