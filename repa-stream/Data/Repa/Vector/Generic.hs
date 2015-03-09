@@ -1,10 +1,14 @@
-{-# LANGUAGE CPP #-}
+
+-- | Converting `Stream`s and `Chain`s to and from generic `Vector`s.
+--
+--   * NOTE: Support for streams of unknown length is not complete.
+--
 module Data.Repa.Vector.Generic
         ( -- * Stream functions
           unstreamToVector2
         , unstreamToMVector2
 
-          -- * Chain functions.
+          -- * Chain functions
         , chainOfVector
         , unchainToVector
         , unchainToMVector)
@@ -17,11 +21,17 @@ import qualified Data.Vector.Fusion.Stream.Size         as S
 import Control.Monad.Primitive
 #include "repa-stream.h"
 
+
 -------------------------------------------------------------------------------
+-- | Unstream some elements to two separate vectors.
+--
+--   `Nothing` values are ignored.
+--
 unstreamToVector2
         :: (PrimMonad m, GV.Vector v a, GV.Vector v b)
         => S.Stream m (Maybe a, Maybe b)
-        -> m (v a, v b)
+                                -- ^ Source data.
+        -> m (v a, v b)         -- ^ Resulting vectors.
 
 unstreamToVector2 s
  = do   (mvec1, mvec2) <- unstreamToMVector2 s
@@ -31,11 +41,16 @@ unstreamToVector2 s
 {-# INLINE_STREAM unstreamToVector2 #-}
 
 
--- | Compute two vectors of differing lengths.
+-- | Unstream some elements to two separate mutable vectors.
+--
+--   `Nothing` values are ignored.
+--
 unstreamToMVector2
         :: (PrimMonad m, GM.MVector v a, GM.MVector v b)
-        => S.Stream m (Maybe a, Maybe b)
-        -> m (v (PrimState m) a, v (PrimState m) b)
+        => S.Stream m (Maybe a, Maybe b)                
+                                -- ^ Source data.
+        -> m (v (PrimState m) a, v (PrimState m) b)     
+                                -- ^ Resulting vectors.
 
 unstreamToMVector2 (S.Stream step s0 sz)
  = case sz of
@@ -96,7 +111,7 @@ chainOfVector vec
 
 
 -------------------------------------------------------------------------------
--- | Compute a chain into a vector.
+-- | Compute a chain into a generic vector.
 unchainToVector
         :: (PrimMonad m, GV.Vector v a)
         => C.Chain m s a  -> m (v a, s)
@@ -107,7 +122,7 @@ unchainToVector chain
 {-# INLINE_STREAM unchainToVector #-}
 
 
--- | Compute a chain into a mutable vector.
+-- | Compute a chain into a generic mutable vector.
 unchainToMVector
         :: (PrimMonad m, GM.MVector v a)
         => Chain m s a

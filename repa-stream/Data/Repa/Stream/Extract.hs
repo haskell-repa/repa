@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 module Data.Repa.Stream.Extract
         (extractS)
 where
@@ -6,18 +6,12 @@ import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 
+
 -- | Extract segments from some source array and concatenate them.
--- 
--- @
---    let arr = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
---    in  extractS (index arr) [(0, 1), (3, 3), (2, 6)]
---    
---     => [10, 13, 14, 15, 12, 13, 14, 15, 16, 17]
--- @
 extractS
         :: Monad m
         => (Int -> a)           -- ^ Function to get elements from the source.
-        -> Stream m (Int, Int)  -- ^ Segment starts and lengths.
+        -> Stream m (Int, Int)  -- ^ Segment start positions and lengths.
         -> Stream m a           -- ^ Result elements.
 
 extractS get (Stream istep si0 _)

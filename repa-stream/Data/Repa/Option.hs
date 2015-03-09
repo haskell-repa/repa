@@ -1,17 +1,27 @@
 
-module Data.Repa.Fusion.Option
-        ( Option  (..)
+-- | Data types used during low-level fusion optimisations.
+-- 
+--   These types are synonyms for @Maybe (a, b)@, which are strict in the
+--   components. They can be used to ensure that we do not suspend the
+--   computation that produces these components in fused code.
+--
+module Data.Repa.Option
+        ( -- * Single component
+          Option  (..)
         , fromOption,  toOption
 
+          -- * Two components
         , Option2 (..)
         , fromOption2, toOption2
 
+          -- * Three components
         , Option3 (..)
         , fromOption3, toOption3)
 where
 
 
 -------------------------------------------------------------------------------
+-- | A strict `Maybe` type.
 data Option a
         = Some !a
         | None 
@@ -32,6 +42,7 @@ fromOption (Some x)     = Just x
 
 
 -------------------------------------------------------------------------------
+-- | A strict `Maybe` type, with two parameters.
 data Option2 a b
         = Some2 !a !b
         | None2 
@@ -53,6 +64,7 @@ fromOption2 (Some2 x y)  = Just (x, y)
 
 
 -------------------------------------------------------------------------------
+-- | A strict `Maybe` type with three parameters.
 data Option3 a b c
         = Some3 !a !b !c
         | None3 

@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 module Data.Repa.Chain.Scan
         ( scanMaybeC
         , groupsByC)
@@ -40,13 +40,6 @@ scanMaybeC f k0 (Chain sz s0 istep)
 -------------------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
--- 
--- @
---  groupsBy (==) (Just ('a', 4)) 
---                [\'a\', \'a\', \'a\', \'b\', \'b\', \'c\', \'d\', \'d\'] 
---   => ([('a', 7), ('b', 2), ('c', 1)], Just (\'d\', 2))
--- @
---
 groupsByC
         :: Monad m
         => (a -> a -> m Bool)           -- ^ Comparison function.

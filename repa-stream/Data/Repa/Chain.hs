@@ -1,4 +1,6 @@
 
+-- | * See the "Data.Repa.Vector.Unboxed" module for examples of how these
+--     functions can be used.
 module Data.Repa.Chain  
         ( -- * Chain Fusion
           Chain  (..)
@@ -6,21 +8,17 @@ module Data.Repa.Chain
         , liftChain
         , resumeChain
 
-        -- * Scan Operators
-        -- | These have a scan-like structure, 
-        --   and are implemented in terms of `scanMaybeC`.
-        , scanMaybeC
-
-        -- ** Grouping
-        , groupsByC
-
-        -- * Weave Operators
-        -- | These have a weave-like structure, 
-        --   and are implemented in terms of `weaveC`.
+        -- * Weaves
         , weaveC, Weave, Turn (..), Move(..), move
 
-        -- ** Folding
-        , foldsC, Folds(..))
+        -- * Folding
+        , foldsC, Folds(..)
+
+        -- * Scanning
+        , scanMaybeC
+
+        -- * Grouping
+        , groupsByC)
 where
 import Data.Repa.Chain.Base
 import Data.Repa.Chain.Scan

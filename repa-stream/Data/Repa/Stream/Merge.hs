@@ -3,7 +3,7 @@ module Data.Repa.Stream.Merge
         (mergeS)
 where
 import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
-import Data.Repa.Fusion.Option
+import Data.Repa.Option
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 

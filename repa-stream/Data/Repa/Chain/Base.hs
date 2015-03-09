@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 module Data.Repa.Chain.Base
         ( Step  (..)
         , Chain (..)

@@ -3,7 +3,7 @@ module Data.Repa.Stream.Pad
         (padForwardS)
 where
 import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
-import Data.Repa.Fusion.Option
+import Data.Repa.Option
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 
@@ -11,12 +11,6 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 -- | Given a stream of keys and values, and a successor function for keys, 
 --   if the stream is has keys missing in the sequence then insert 
 --   the missing key, copying forward the the previous value.
---
--- @
---    let arr = [(1, 10), (2, 20), (3, 30), (5, 40), (6, 50), (8, 90)]
---    in  padForward (+ 1) arr
---     => [(1, 10), (2, 20), (3, 30), (4, 30), (5, 40), (6, 50), (7, 50), (8, 90) ]
--- @
 --
 padForwardS
         :: (Monad m, Ord k)

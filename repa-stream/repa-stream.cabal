@@ -1,5 +1,5 @@
 Name:           repa-stream
-Version:        4.0.0.0
+Version:        4.0.0.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The DPH Team
@@ -22,11 +22,11 @@ Library
 
   exposed-modules:
         Data.Repa.Chain
+        Data.Repa.Option
         Data.Repa.Stream
         Data.Repa.Vector.Generic
         Data.Repa.Vector.Unboxed
 
-        Data.Repa.Fusion.Option
 
   other-modules:
         Data.Repa.Chain.Base
@@ -48,12 +48,8 @@ Library
         repa-stream.h
 
   ghc-options:
-        -Wall 
-        -fno-warn-missing-signatures
+        -Wall -fno-warn-missing-signatures
         -O2
-        -fcpr-off
-        -fno-spec-constr
-        -funbox-strict-fields
 
   extensions:
         CPP

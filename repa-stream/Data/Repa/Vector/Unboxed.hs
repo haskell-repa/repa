@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 module Data.Repa.Vector.Unboxed
         ( -- * Conversion
           chainOfVector
@@ -23,23 +23,16 @@ module Data.Repa.Vector.Unboxed
         , padForward
 
 
-          -- * Scan operators
-          -- | These have a scan-like structure,
-          --   and are implemented in terms of `scanMaybe`.
+          -- * Scanning
         , scanMaybe
 
-          -- ** Grouping
+          -- * Grouping
         , groupsBy
 
-
-          -- * Weave operators
-          -- | These have a weave-like structure,
-          --   and are implemented in terms of `weave`.
-
-          -- ** Folding
+          -- * Folding
         , folds, C.Folds(..))
 where
-import Data.Repa.Fusion.Option
+import Data.Repa.Option
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Segment
@@ -327,11 +320,13 @@ folds f zN s0 vLens vVals
 
 
 -------------------------------------------------------------------------------
--- 
+-- | Given a stream of keys and values, and a successor function for keys, 
+--   if the stream is has keys missing in the sequence then insert 
+--   the missing key, copying forward the the previous value.
 padForward  
         :: (Unbox k, Unbox v, Ord k)
-        => (k -> k)
-        -> U.Vector (k, v)
+        => (k -> k)             -- ^ Successor function.
+        -> U.Vector (k, v)      -- ^ Input keys and values.
         -> U.Vector (k, v)
 
 padForward ksucc vec
@@ -339,5 +334,4 @@ padForward ksucc vec
         $ padForwardS ksucc
         $ G.stream vec
 {-# INLINE padForward #-}
-
 

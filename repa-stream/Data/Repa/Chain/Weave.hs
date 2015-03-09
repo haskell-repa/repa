@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 module Data.Repa.Chain.Weave
         ( weaveC
         , Weave (..)
@@ -6,10 +6,11 @@ module Data.Repa.Chain.Weave
         , Move  (..), move
         , Option (..))
 where
-import Data.Repa.Fusion.Option
+import Data.Repa.Option
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
+
 
 -- | A weave is a generalized merge of two input chains.
 --

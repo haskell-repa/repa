@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+
 module Data.Repa.Stream.Ratchet
         ( unsafeRatchetS)
 where
@@ -42,9 +42,9 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --           but this is not checked.
 --
 unsafeRatchetS 
-        :: UM.IOVector Int              -- ^ Starting values. Overwritten duing computation.
-        ->  U.Vector   Int              -- ^ Ending values
-        -> IORef (UM.IOVector Int)      -- ^ Vector holding segment lengths.
+        :: UM.IOVector Int         -- ^ Starting values. Overwritten duing computation.
+        ->  U.Vector   Int         -- ^ Ending values
+        -> IORef (UM.IOVector Int) -- ^ Vector holding segment lengths.
         -> Stream IO   Int
 
 unsafeRatchetS !mvStarts !vMax !rmvLens
