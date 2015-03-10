@@ -1,0 +1,63 @@
+Name:           repa-tools
+Version:        4.0.0.1
+License:        BSD3
+License-file:   LICENSE
+Author:         The Repa Development Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:    General purpose tools written with the Repa library.
+Synopsis:       General purpose tools written with the Repa library.
+
+
+Source-repository head
+  Type:     git
+  Location: https://github.com/DDCSF/repa.git
+
+
+Executable repa-fields
+  Build-depends: 
+        base            == 4.7.*,
+        repa-array      == 4.0.0.*,
+        repa-flow       == 4.0.0.*
+
+  Main-is:              Main.hs
+  HS-source-dirs:       tools/fields
+  Other-modules:        Config
+
+  Extensions:
+        PatternGuards
+        BangPatterns
+
+  GHC-options: 
+        -Wall -fno-warn-missing-signatures
+        -rtsopts -threaded 
+        -O2
+
+
+
+Executable repa-sieve
+  Build-depends: 
+        base            == 4.7.*,
+        directory       == 1.2.*,
+        filepath        == 1.3.*,
+        repa-array      == 4.0.0.*,
+        repa-flow       == 4.0.0.*
+
+  Main-is:              Main.hs
+  HS-source-dirs:       tools/sieve
+  Other-modules:        Config
+
+  Extensions:
+        PatternGuards
+        BangPatterns
+        MultiWayIf
+
+  GHC-options: 
+        -Wall -fno-warn-missing-signatures
+        -rtsopts -threaded 
+        -O2
