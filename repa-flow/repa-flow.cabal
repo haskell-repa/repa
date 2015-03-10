@@ -1,5 +1,5 @@
 Name:           repa-flow
-Version:        4.0.0.0
+Version:        4.0.0.2
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -23,9 +23,9 @@ Library
         primitive               == 0.5.4.*,
         containers              == 0.5.*,
         text                    == 1.2.*,
-        repa-stream             == 4.0.0.0,
-        repa-eval               == 4.0.0.0,
-        repa-array              == 4.0.0.0
+        repa-stream             == 4.0.0.*,
+        repa-eval               == 4.0.0.*,
+        repa-array              == 4.0.0.*
 
   exposed-modules:
         Data.Repa.Flow.Chunked
@@ -51,6 +51,7 @@ Library
   other-modules:
         Data.Repa.Flow.Chunked.Base
         Data.Repa.Flow.Chunked.Map
+        Data.Repa.Flow.Chunked.Fold
         Data.Repa.Flow.Chunked.Folds
         Data.Repa.Flow.Chunked.Groups
         Data.Repa.Flow.Chunked.Operator
@@ -83,11 +84,9 @@ Library
 
   ghc-options:
         -threaded
-        -Wall 
+        -Wall -fno-warn-missing-signatures
         -O2
         -fcpr-off
-        -funbox-strict-fields
-        -fno-warn-missing-signatures
 
   extensions:
         CPP
@@ -108,4 +107,3 @@ Library
         ParallelListComp
 
         
-

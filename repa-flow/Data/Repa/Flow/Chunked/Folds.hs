@@ -5,8 +5,8 @@ module Data.Repa.Flow.Chunked.Folds
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
-import Data.Repa.Fusion.Option
 import Data.Repa.Fusion.Unpack
+import Data.Repa.Option
 import Data.Repa.Array                    as A hiding (FoldsDict)
 import Data.Repa.Eval.Array               as A
 import qualified Data.Repa.Flow.Generic   as G

@@ -183,6 +183,7 @@ toLists1 ix s
 --   * The finalizer will be run after any finalizers already attached
 --     to the source.
 --
+---
 --     TODO: make the finalizer run just the first time.
 --
 finalize_i
@@ -203,6 +204,7 @@ finalize_i f s
 --   * The finalizer will be run after any finalizers already attached
 --     to the sink.
 --
+---
 --     TODO: make the finalizer run just the first time.
 --
 finalize_o

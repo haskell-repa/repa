@@ -266,9 +266,6 @@ advance h pEnd
 -- | Open some files for writing as individual buckets and pass
 --   them to the given consumer.
 --
---   TODO: Attached finalizers to the sinks so that file assocated with
---   each stream is closed when that stream is ejected.
---
 toFiles :: (Bulk l FilePath, Target l Bucket)
         =>  Array l FilePath            -- ^ File paths.
         -> (Array l Bucket -> IO b)
@@ -285,6 +282,9 @@ toFiles paths use
 
         use bsArr
 {-# NOINLINE toFiles #-}
+---
+--   TODO: Attached finalizers to the sinks so that file assocated with
+--   each stream is closed when that stream is ejected.
 
 
 -- | Like `toFiles`, but take a list of file paths.

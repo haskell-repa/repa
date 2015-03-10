@@ -320,7 +320,8 @@ watch_o f  (Sinks n push eject)
 -- > [(0,"foo"),(1,"bar"),(0,"baz")]
 -- @
 --
---   * TODO: avoid going via lists when accumulating.
+---
+--   TODO: avoid going via lists when accumulating.
 --
 capture_o 
         :: (Target lDst (i, a), Index lDst ~ Int)
