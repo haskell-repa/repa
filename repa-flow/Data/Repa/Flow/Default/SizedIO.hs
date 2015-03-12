@@ -8,8 +8,8 @@ module Data.Repa.Flow.Default.SizedIO
         , sourceChars
         , sourceLines
         , sourceRecords
-        , sourceTSV
-        , sourceCSV
+        , G.sourceTSV
+        , G.sourceCSV
 
           -- * Sinking
         , sinkBytes
@@ -18,8 +18,6 @@ module Data.Repa.Flow.Default.SizedIO
 where
 import Data.Repa.Flow.Default
 import Data.Repa.Flow.IO.Bucket
-import Data.Repa.Flow.Default.IO.TSV            as F
-import Data.Repa.Flow.Default.IO.CSV            as F
 import Data.Repa.Eval.Array                     as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Fusion.Unpack                  as F

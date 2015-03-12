@@ -6,6 +6,7 @@ module Data.Repa.Bits.Date32
         , range
         , readYYYYsMMsDD)
 where
+import Data.Repa.IO.Convert                             as A
 import Data.Repa.Array.Material.Foreign                 as A
 import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array                                  as A
@@ -123,11 +124,9 @@ range n from to
 {-# NOINLINE range #-}
 
 
+-------------------------------------------------------------------------------
 -- | Read a `Date32` in ASCII YYYYsMMsDD format, using the given separator
 --   character 's'.
----
---   TODO: avoid going via lists.
---
 readYYYYsMMsDD 
         :: BulkI l Char
         => Char -> Array l Char -> Maybe Date32
@@ -138,5 +137,39 @@ readYYYYsMMsDD sep arr
         $ A.mapS U (\c -> if c == sep then ' ' else c) arr of
                 [yy, mm, dd]    -> Just $ pack (read yy, read mm, read dd)
                 _               -> Nothing
-{-# INLINE readYYYYsMMsDD #-}
+{-# INLINE [0] readYYYYsMMsDD #-}
+
+
+-- | Hand specialised version for reading out of foreign memory.
+readYYYYsMMsDD_foreign :: Char -> Array F Char -> Maybe Date32
+readYYYYsMMsDD_foreign !c !arr
+ | I# len               <- A.length arr
+
+ -- year part
+ , (# 1#, yy, ix1 #)    <- readIntFromOffset# arr 0#
+
+ -- month part
+ , 1# <- ix1 <# len
+ , arr `index` (I# ix1) == c
+ , (# 1#, mm, ix2 #)    <- readIntFromOffset# arr (ix1 +# 1#)
+
+ -- day part
+ , 1# <- ix2 <# len
+ , arr `index` (I# ix2) == c
+ , (# 1#, dd, _   #)    <- readIntFromOffset# arr (ix2 +# 1#)
+
+ = Just (pack   ( fromIntegral (I# yy)
+                , fromIntegral (I# mm)
+                , fromIntegral (I# dd)))
+
+ | otherwise
+ = Nothing
+{-# INLINE [0] readYYYYsMMsDD_foreign #-}
+
+
+{-# RULES "readYYYYsMMsDD_foreign" 
+    forall c (arr :: Array F Char) 
+    . readYYYYsMMsDD c arr = readYYYYsMMsDD_foreign c arr 
+ #-}
+
 

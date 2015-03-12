@@ -56,9 +56,6 @@ Library
         Data.Repa.Flow.Chunked.Groups
         Data.Repa.Flow.Chunked.Operator
 
-        Data.Repa.Flow.Default.IO.TSV
-        Data.Repa.Flow.Default.IO.CSV
-
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.Connect
         Data.Repa.Flow.Generic.List
@@ -69,7 +66,9 @@ Library
         Data.Repa.Flow.Generic.Array.Shuffle
         Data.Repa.Flow.Generic.Array.Chunk
         Data.Repa.Flow.Generic.Array.Unchunk
+        Data.Repa.Flow.Generic.IO.Base
         Data.Repa.Flow.Generic.IO.Sieve
+        Data.Repa.Flow.Generic.IO.XSV
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List

@@ -1,8 +1,11 @@
 
 module Data.Repa.IO.Convert
-        ( -- * Conversion
+        ( -- * Int Conversion
+          readIntFromOffset,    readIntFromOffset#
+
+          -- * Double Conversion
           -- | Read and Show `Double`s for a reasonable runtime cost.
-          readDouble,           readDoubleFromBytes
+        , readDouble,           readDoubleFromBytes
         , showDouble,           showDoubleAsBytes
         , showDoubleFixed,      showDoubleFixedAsBytes)
 where
@@ -12,6 +15,7 @@ import System.IO.Unsafe
 import Data.Word
 import Data.Char
 import GHC.Ptr
+import GHC.Exts
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
@@ -19,6 +23,87 @@ import qualified Foreign.Marshal.Utils                  as F
 import qualified Data.Double.Conversion.ByteString      as DC
 
 
+-------------------------------------------------------------------------------
+-- | Try to read an `Int` from the given offset in an array.
+-- 
+--   If the conversion succeeded then you get the value, 
+--   along with the index of the next character, 
+--   otherwise `Nothing`.
+--
+readIntFromOffset  :: Array F Char -> Int -> Maybe (Int, Int)
+readIntFromOffset arr (I# ix0)
+ = case readIntFromOffset# arr ix0 of
+        (# 0#, _, _  #)  -> Nothing
+        (# _ , n, ix #)  -> Just (I# n, I# ix)
+{-# INLINE readIntFromOffset #-}
+
+
+-- | Unboxed version of `readIntFromOffset`.
+--
+--   We still pay to unbox the input array, 
+--   but avoid boxing the result by construction.
+--
+readIntFromOffset# :: Array F Char -> Int# -> (# Int#, Int#, Int# #)
+readIntFromOffset# !arr !ix0_
+ = start ix0
+ where
+        !ix0    = I# ix0_
+        !len    = A.length arr
+
+        start !ix
+         | ix >= len    = (# 0#, 0#, 0# #)
+         | otherwise    = sign ix
+
+        -- Check for explicit sign character,
+        -- and encode what it was as an integer.
+        sign !ix
+         | !s   <- A.index arr 0
+         = case s of
+                '-'     -> loop 1 (ix + 1) 0
+                '+'     -> loop 2 (ix + 1) 0
+                _       -> loop 0  ix      0
+
+        loop !(neg :: Int) !ix !n 
+         -- We've hit the end of the array.
+         | ix >= len   
+         = end neg ix n
+
+         | otherwise
+         = case ord $ A.index arr ix of
+               -- Current character is a digit, so add it to the accmulator.
+             w |  w >= 0x30 && w <= 0x039
+               -> loop neg (ix + 1) (n * 10 + (fromIntegral w - 0x30))
+
+               -- Current character is not a digit.
+               | otherwise
+               -> end neg ix n
+
+        end !neg !ix !n
+         -- We didn't find any digits, and there was no explicit sign.
+         | ix  == ix0
+         , neg == 0  
+         = (# 0#, 0#, 0# #)
+
+         -- We didn't find any digits, but there was an explicit sign.
+         | ix  == (ix0 + 1)
+         , neg /= 0  
+         = (# 0#, 0#, 0# #)
+
+         -- Number was explicitly negated.
+         | neg == 1                    
+         , I# n'        <- negate n
+         , I# ix'       <- ix
+         = (# 1#, n', ix' #)
+
+         -- Number was not negated.
+         | otherwise
+         , I# n'        <- n
+         , I# ix'       <- ix
+         = (# 1#, n', ix' #)
+{-# NOINLINE readIntFromOffset# #-}
+
+
+-------------------------------------------------------------------------------
 -- | Convert a foreign vector of characters to a Double.
 --
 --   * The standard Haskell `Char` type is four bytes in length.
