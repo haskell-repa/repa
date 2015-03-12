@@ -4,10 +4,8 @@ module Data.Repa.Flow.Generic.IO.XSV
         , sourceTSV)
 where
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Map
 import Data.Repa.Flow.Generic.IO.Base
-import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array                          as A
 import Data.Repa.Array.Material                 as A
 import Data.Char

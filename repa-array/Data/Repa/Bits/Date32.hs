@@ -125,8 +125,8 @@ range n from to
 
 
 -------------------------------------------------------------------------------
--- | Read a `Date32` in ASCII YYYYsMMsDD format, using the given separator
---   character 's'.
+-- | Read a `Date32` in ASCII YYYYsMMsDD format, 
+--   using the given separator character 's'.
 readYYYYsMMsDD 
         :: BulkI l Char
         => Char -> Array l Char -> Maybe Date32

@@ -23,5 +23,4 @@ module Data.Repa.Flow.Generic.IO
 where
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Generic.IO.Base           as F
-import Data.Repa.Flow.Generic.IO.Sieve          as F
-import Data.Repa.Flow.Generic.IO.XSV          as F
+import Data.Repa.Flow.Generic.IO.XSV            as F
