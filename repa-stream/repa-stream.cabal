@@ -1,5 +1,5 @@
 Name:           repa-stream
-Version:        4.0.0.1
+Version:        4.0.1.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -44,6 +44,7 @@ Library
         Data.Repa.Stream.Dice
         Data.Repa.Stream.Pad
         Data.Repa.Stream.Merge
+        Data.Repa.Stream.Concat
 
   include-dirs:
         include

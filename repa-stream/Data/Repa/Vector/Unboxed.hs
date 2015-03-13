@@ -5,14 +5,15 @@ module Data.Repa.Vector.Unboxed
         , unchainToVector
         , unchainToMVector
 
-          -- * Generators
+          -- * Generating
         , ratchet
 
-          -- * Extract
+          -- * Extracting
         , extract
 
           -- * Merging
         , merge
+        , mergeMaybe
 
           -- * Splitting
         , findSegments
@@ -21,7 +22,6 @@ module Data.Repa.Vector.Unboxed
 
           -- * Padding
         , padForward
-
 
           -- * Scanning
         , scanMaybe
@@ -33,12 +33,13 @@ module Data.Repa.Vector.Unboxed
         , folds, C.Folds(..))
 where
 import Data.Repa.Option
-import Data.Repa.Stream.Extract
-import Data.Repa.Stream.Ratchet
-import Data.Repa.Stream.Segment
+import Data.Repa.Stream.Concat
 import Data.Repa.Stream.Dice
+import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Merge
 import Data.Repa.Stream.Pad
+import Data.Repa.Stream.Ratchet
+import Data.Repa.Stream.Segment
 import Data.Vector.Unboxed                              (Unbox, Vector)
 import Data.Vector.Unboxed.Mutable                      (MVector)
 import Data.Repa.Chain                                  (Chain)
@@ -165,6 +166,32 @@ merge fBoth fLeft fRight vA vB
                 (G.stream vA) 
                 (G.stream vB)
 {-# INLINE merge #-}
+
+
+-- | Like `merge`, but only produce the elements where the worker functions
+--   return `Just`.
+mergeMaybe 
+        :: (Ord k, Unbox k, Unbox a, Unbox b, Unbox c)
+        => (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
+        -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.
+        -> (k -> b -> Maybe c)      -- ^ Handle a right value without a left value.
+        -> U.Vector (k, a)          -- ^ Vector of keys and left values.
+        -> U.Vector (k, b)          -- ^ Vector of keys and right values.
+        -> U.Vector (k, c)          -- ^ Vector of keys and results.
+
+mergeMaybe fBoth fLeft fRight vA vB
+        = G.unstream
+        $ catMaybesS
+        $ S.map  munge_mergeMaybe
+        $ mergeS fBoth fLeft fRight
+                (G.stream vA)
+                (G.stream vB)
+
+        where   munge_mergeMaybe (_k, Nothing)   = Nothing
+                munge_mergeMaybe (k,  Just x)    = Just (k, x)
+                {-# INLINE munge_mergeMaybe #-}
+
+{-# INLINE mergeMaybe #-}
 
 
 -------------------------------------------------------------------------------
