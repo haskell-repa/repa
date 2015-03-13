@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 
 -- | Concatenation operators on arrays.
 module Data.Repa.Array.Internals.Operator.Concat

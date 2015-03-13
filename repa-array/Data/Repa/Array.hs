@@ -238,7 +238,10 @@ module Data.Repa.Array
         , GroupsDict
 
           -- ** Folding
-        , foldl
+          -- *** Complete fold
+        , foldl, sum, prod, mean, std
+
+          -- *** Segmented fold
         , folds
         , foldsWith
         , Folds(..)
@@ -264,7 +267,9 @@ import Data.Repa.Array.Internals.Operator.Filter        as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
 import  Prelude  
-        hiding (reverse, length, map, zipWith, concat, unlines, foldl, filter)
+        hiding  ( reverse, length, map, zipWith, concat, unlines
+                , foldl, sum
+                , filter)
 #include "repa-array.h"
 
 

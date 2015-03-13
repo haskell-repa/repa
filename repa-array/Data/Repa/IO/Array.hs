@@ -1,4 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
 
 module Data.Repa.IO.Array
         ( hGetArray,   hGetArrayPre

@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+
 module Data.Repa.Array.Material.Foreign
   ( F      (..)
   , Name   (..)
