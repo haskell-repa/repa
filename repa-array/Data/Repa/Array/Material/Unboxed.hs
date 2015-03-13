@@ -8,6 +8,7 @@ module Data.Repa.Array.Material.Unboxed
 
         -- * Conversions
         , fromUnboxed,  toUnboxed)
+
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Delayed
@@ -36,7 +37,8 @@ import qualified Data.Vector.Unboxed.Mutable            as UM
 data U = Unboxed { unboxedLength :: !Int }
   deriving (Show, Eq)
 
--------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
 -- | Unboxed arrays.
 instance Layout U where
  data Name  U                   = U
@@ -56,7 +58,7 @@ deriving instance Eq   (Name U)
 deriving instance Show (Name U)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Unboxed arrays.
 instance U.Unbox a => Bulk U a where
  data Array U a                 = UArray !(U.Vector a)
@@ -85,7 +87,7 @@ instance Unpack (Array U a) (U.Vector a) where
  {-# INLINE_ARRAY repack #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Windowing Unboxed arrays.
 instance U.Unbox a => Windowable U a where
  window st len (UArray vec)
@@ -100,7 +102,7 @@ instance U.Unbox a => Windowable U a where
  {-# SPECIALIZE instance Windowable U Word64  #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Unboxed buffers.
 instance U.Unbox a => Target U a where
  data Buffer s U a
@@ -160,7 +162,7 @@ instance Unpack (Buffer s U a) (UM.MVector s a) where
  {-# INLINE_ARRAY repack #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
 fromUnboxed :: U.Unbox a
             => U.Vector a -> Array U a

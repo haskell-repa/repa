@@ -196,7 +196,6 @@ module Data.Repa.Array
         , fromList,     fromListInto
         , toList
 
-
           -- * Computation
         , Load
         , Target
@@ -244,6 +243,7 @@ module Data.Repa.Array
           -- ** Folding
           -- *** Complete fold
         , foldl, sum, prod, mean, std
+        , correlate
 
           -- *** Segmented fold
         , folds

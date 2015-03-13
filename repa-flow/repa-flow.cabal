@@ -1,5 +1,5 @@
 Name:           repa-flow
-Version:        4.0.0.2
+Version:        4.0.1.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -23,9 +23,9 @@ Library
         primitive               == 0.5.4.*,
         containers              == 0.5.*,
         text                    == 1.2.*,
-        repa-stream             == 4.0.0.*,
+        repa-stream             == 4.0.1.*,
         repa-eval               == 4.0.0.*,
-        repa-array              == 4.0.0.*
+        repa-array              == 4.0.1.*
 
   exposed-modules:
         Data.Repa.Flow.Chunked

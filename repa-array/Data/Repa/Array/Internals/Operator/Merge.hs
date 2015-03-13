@@ -3,9 +3,9 @@ module Data.Repa.Array.Internals.Operator.Merge
         ( merge
         , mergeMaybe)
 where
-import Data.Repa.Array.Index                    as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
+import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Stream                         as S
 import Data.Repa.Eval.Stream                    as A
 import Data.Repa.Fusion.Unpack                  as A
@@ -13,7 +13,7 @@ import qualified Data.Vector.Fusion.Stream      as S
 #include "repa-array.h"
 
 
--- | Merge two pre-sorted key-value streams.
+-- | Merge two sorted key-value streams.
 merge   :: ( Ord k
            , BulkI l1 (k, a), BulkI l2 (k, b)
            , TargetI lDst (k, c)
@@ -61,3 +61,5 @@ mergeMaybe nDst fBoth fLeft fRight arrA arrB
                 munge_mergeMaybe (k,  Just x)    = Just (k, x)
                 {-# INLINE munge_mergeMaybe #-}
 {-# INLINE_ARRAY mergeMaybe #-}
+
+

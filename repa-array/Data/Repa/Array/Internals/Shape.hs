@@ -70,7 +70,7 @@ instance Shape Int where
         rank _                  = 1
         zeroDim                 = 0
         unitDim                 = 1
-        intersectDim s1 s2      = max s1 s2
+        intersectDim s1 s2      = min s1 s2
         addDim       s1 s2      = s1 + s2
         size s                  = s
         inShapeRange i1 i2 i    = i >= i1 && i <= i2

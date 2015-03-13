@@ -4,10 +4,12 @@ module Data.Repa.Array.Internals.Operator.Reduce
 
           -- | Specialised reductions.
         , prod, sum
-        , mean, std)
+        , mean, std
+        , correlate)
 where
 import Data.Repa.Array.Index                            as A
 import Data.Repa.Array.Delayed                          as A
+import Data.Repa.Array.Tuple                            as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Eval.Stream                            as A
 import qualified Data.Vector.Fusion.Stream              as S
@@ -52,3 +54,37 @@ std arr
  = let  !u      = mean arr
    in   sqrt $ mean $ A.map (\x -> (x - u) ^ (2 :: Int)) arr
 {-# INLINE std #-}
+
+
+-- | Compute the Pearson correlation of two arrays.
+--
+--   If the arrays differ in length then only the common
+--   prefix is correlated.
+--
+correlate 
+        :: ( BulkI l1 a, BulkI l2 a
+           , Floating a)
+        => Array l1 a
+        -> Array l2 a
+        -> a
+
+correlate arr1 arr2
+ = let
+        (sX, sX2, sY, sY2, sXY)
+         = foldl (\  ( sXa, sX2a, sYa, sY2a, sXYa) (x, y)
+                  -> ( sXa + x, sX2a + (x * x)
+                     , sYa + y, sY2a + (y * y)
+                              , sXYa + (x * y)))
+                 (0, 0, 0, 0, 0)
+         $ tup2 arr1 arr2
+
+        !n     = min (A.length arr1) (A.length arr2)
+        !n'    = fromIntegral n
+
+        !corr  = (/) ((n' * sXY) - (sX * sY)) 
+                     ((*) (sqrt ((n' * sX2) - (sX * sX)))
+                          (sqrt ((n' * sY2) - (sY * sY))))
+
+  in    corr
+{-# INLINE correlate #-}
+
