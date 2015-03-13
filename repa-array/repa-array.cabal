@@ -1,5 +1,5 @@
 Name:           repa-array
-Version:        4.0.0.2
+Version:        4.0.1.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -32,7 +32,7 @@ Library
         double-conversion  == 2.0.*,
         text               == 1.2.*,
         repa-eval          == 4.0.0.*,
-        repa-stream        == 4.0.0.*
+        repa-stream        == 4.0.1.*
 
 
   exposed-modules:
@@ -75,6 +75,7 @@ Library
         Data.Repa.Array.Internals.Operator.Concat
         Data.Repa.Array.Internals.Operator.Fold
         Data.Repa.Array.Internals.Operator.Group
+        Data.Repa.Array.Internals.Operator.Merge
         Data.Repa.Array.Internals.Operator.Partition
         Data.Repa.Array.Internals.Operator.Reduce
         Data.Repa.Array.Internals.Operator.Filter

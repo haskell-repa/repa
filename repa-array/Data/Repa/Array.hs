@@ -214,6 +214,10 @@ module Data.Repa.Array
         , map,  map2
         , mapS, map2S
 
+          -- ** Merging
+        , merge
+        , mergeMaybe
+
           -- ** Filtering
         , filter
 
@@ -259,11 +263,12 @@ import Data.Repa.Eval.Array                             as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Operator.Concat        as A
-import Data.Repa.Array.Internals.Operator.Group         as A
+import Data.Repa.Array.Internals.Operator.Filter        as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
+import Data.Repa.Array.Internals.Operator.Group         as A
+import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Partition     as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
-import Data.Repa.Array.Internals.Operator.Filter        as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
 import  Prelude  
