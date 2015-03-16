@@ -3,6 +3,7 @@
 --     functions can be used.
 module Data.Repa.Stream
         ( extractS
+        , insertS
         , mergeS
         , catMaybesS
         , findSegmentsS
@@ -17,6 +18,7 @@ where
 import Data.Repa.Stream.Concat
 import Data.Repa.Stream.Dice
 import Data.Repa.Stream.Extract
+import Data.Repa.Stream.Insert
 import Data.Repa.Stream.Merge
 import Data.Repa.Stream.Pad
 import Data.Repa.Stream.Ratchet

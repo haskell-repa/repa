@@ -39,6 +39,7 @@ Library
         Data.Repa.Chain.Folds
 
         Data.Repa.Stream.Extract
+        Data.Repa.Stream.Insert
         Data.Repa.Stream.Ratchet
         Data.Repa.Stream.Segment
         Data.Repa.Stream.Dice

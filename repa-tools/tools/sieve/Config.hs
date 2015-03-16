@@ -1,26 +1,29 @@
 
 module Config where
 import System.Exit
-
+import Data.Char
 
 -- | Command-line configuration.
 data Config
         = Config
-        { 
-          -- | Input files to sieve.
-          configInFiles  :: [FilePath] 
+        { -- | Input files to sieve.
+          configInFiles         :: [FilePath] 
 
           -- | Directory to write output buckets to,
           --   or `Nothing` to write to the current directory.
-        , configOutDir  :: Maybe FilePath }
+        , configOutDir          :: Maybe FilePath 
+
+          -- | Index, name, and value of extra columns to insert in the output.
+        , configInsertColumn    :: [(Int, String, String)] }
 
 
 -- | Starting configuration.
 configZero :: Config
 configZero
         = Config
-        { configInFiles = [] 
-        , configOutDir  = Nothing }
+        { configInFiles         = [] 
+        , configOutDir          = Nothing 
+        , configInsertColumn    = [] }
 
 
 -- | Parse command-line arguments into a configuration.
@@ -36,7 +39,18 @@ parseArgs args config
  = parseArgs rest
  $ config { configOutDir  = Just dir}
 
- | filePath : rest      <- args
+ | "-insert-column" : spec : rest <- args
+ , (sNum,  (':' : spec2))  <- break (== ':') spec
+ , (sName, (':' : sValue)) <- break (== ':') spec2
+ , all isDigit sNum
+ = parseArgs rest
+ $ config { configInsertColumn 
+                = configInsertColumn config
+                ++ [(read sNum, sName, sValue)] }
+
+ | filePath : rest       <- args
+ , c : _                 <- filePath
+ , c /= '-'
  = parseArgs rest
  $ config { configInFiles = (configInFiles config) ++ [filePath] }
 
@@ -51,7 +65,8 @@ dieUsage
          [ "Usage: repa-sieve [OPTIONS] <source_file>"
          , ""
          , "OPTIONS:"
-         , "  -out-dir PATH   Write output buckets to this directory (default '.')"
+         , "  -out-dir PATH                    Write output buckets to this directory (default '.')"
+         , "  -insert-column  NUM:NAME:VALUE   Insert a new column into the output"
          , ""
          , "SYNPOSIS:"
          , "  Split a .csv or .tsv file row-wise, based on the first field."

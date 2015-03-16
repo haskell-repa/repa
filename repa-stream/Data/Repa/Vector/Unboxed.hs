@@ -11,6 +11,9 @@ module Data.Repa.Vector.Unboxed
           -- * Extracting
         , extract
 
+          -- * Inserting
+        , insert
+
           -- * Merging
         , merge
         , mergeMaybe
@@ -36,6 +39,7 @@ import Data.Repa.Option
 import Data.Repa.Stream.Concat
 import Data.Repa.Stream.Dice
 import Data.Repa.Stream.Extract
+import Data.Repa.Stream.Insert
 import Data.Repa.Stream.Merge
 import Data.Repa.Stream.Pad
 import Data.Repa.Stream.Ratchet
@@ -148,6 +152,18 @@ extract :: Unbox a
 extract get vStartLen
  = G.unstream $ extractS get $ G.stream vStartLen
 {-# INLINE extract #-}
+
+
+-------------------------------------------------------------------------------
+-- | Insert elements produced by the given function into a vector.
+insert   :: Unbox a
+        => (Int -> Maybe a)     -- ^ Produce a new element for this index.
+        -> U.Vector a           -- ^ Source vector.
+        -> U.Vector a
+
+insert fNew vec
+ = G.unstream $ insertS fNew $ G.stream vec
+{-# INLINE insert #-}
 
 
 -------------------------------------------------------------------------------

@@ -13,6 +13,7 @@ import System.FilePath
 import System.IO
 import Control.Monad
 import Data.Maybe
+import Data.Word
 import Data.Char
 import Prelude                                  as P
 
@@ -46,14 +47,38 @@ pSieve config fileIn
         let !dirOut     = fromMaybe "." $ configOutDir config
         createDirectoryIfMissing True dirOut
 
-        let !arrC       = A.fromList U [',']
-        let !arrNL      = A.fromList U ['\n']
-        let sieve arr   
-                = Just  ( dirOut </> A.toList (arr `index` 0)
-                        , A.mapS F (fromIntegral . ord) 
-                           $ A.concat U 
-                           $ A.fromList B [ A.intercalate U arrC arr, arrNL])
-            {-# INLINE sieve #-}
 
-        oSieve  <- G.sieve_o sieve 
+        oSieve  <- G.sieve_o (sieveRow config dirOut)
         G.drainS sRows oSieve
+
+
+sieveRow 
+        :: Config 
+        -> FilePath
+        -> Array N (Array F Char)
+        -> Maybe (FilePath, Array F Word8)
+
+sieveRow config dirOut arrFields
+ = let  
+        !arrC   = A.fromList U ['\t']
+        !arrNL  = A.fromList U ['\n']
+
+        file    = dirOut </> A.toList (arrFields `index` 0)
+
+        arrIns  = A.insert B
+                        (\ix' -> case configInsertColumn config of
+                                  []                  -> Nothing
+                                  (ix, _name, val) : _ 
+                                   | ix == ix'        -> Just $ A.fromList F val
+                                   | otherwise        -> Nothing
+                                  _ -> error "TODO: multi inserts not handled yet")
+                        arrFields
+
+        arrFlat = A.concat U
+                $ A.fromList B [ A.intercalate U arrC arrIns, arrNL ]
+
+   in   Just ( file
+             , A.mapS F (fromIntegral . ord) arrFlat)
+{-# INLINE sieveRow #-}
+
+
