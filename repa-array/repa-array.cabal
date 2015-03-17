@@ -73,6 +73,7 @@ Library
         
   other-modules:
         Data.Repa.Array.Internals.Operator.Concat
+        Data.Repa.Array.Internals.Operator.Compact
         Data.Repa.Array.Internals.Operator.Fold
         Data.Repa.Array.Internals.Operator.Group
         Data.Repa.Array.Internals.Operator.Merge

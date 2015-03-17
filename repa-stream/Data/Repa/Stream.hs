@@ -5,6 +5,8 @@ module Data.Repa.Stream
         ( extractS
         , insertS
         , mergeS
+        , compactS
+        , compactInS
         , catMaybesS
         , findSegmentsS
         , diceSepS
@@ -16,6 +18,7 @@ module Data.Repa.Stream
 
 where
 import Data.Repa.Stream.Concat
+import Data.Repa.Stream.Compact
 import Data.Repa.Stream.Dice
 import Data.Repa.Stream.Extract
 import Data.Repa.Stream.Insert
