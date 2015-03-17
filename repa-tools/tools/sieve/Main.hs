@@ -46,39 +46,41 @@ pSieve config fileIn
         -- first field in each row.
         let !dirOut     = fromMaybe "." $ configOutDir config
         createDirectoryIfMissing True dirOut
-
-
         oSieve  <- G.sieve_o (sieveRow config dirOut)
         G.drainS sRows oSieve
 
 
+-- | Produde the filename and output for a single row.
 sieveRow 
-        :: Config 
-        -> FilePath
-        -> Array N (Array F Char)
+        :: Config                               -- ^ Sieve Configuration.
+        -> FilePath                             -- ^ Output directory.
+        -> Array N (Array F Char)               -- ^ Row of fields of data.
         -> Maybe (FilePath, Array F Word8)
 
 sieveRow config dirOut arrFields
  = let  
-        !arrC   = A.fromList U ['\t']
-        !arrNL  = A.fromList U ['\n']
-
+        -- The file to write this row to.
         file    = dirOut </> A.toList (arrFields `index` 0)
 
-        arrIns  = A.insert B
-                        (\ix' -> case configInsertColumn config of
-                                  []                  -> Nothing
-                                  (ix, _name, val) : _ 
-                                   | ix == ix'        -> Just $ A.fromList F val
-                                   | otherwise        -> Nothing
-                                  _ -> error "TODO: multi inserts not handled yet")
-                        arrFields
+        -- Insert any extra fields into the row.
+        fInsert ix'
+         = case configInsertColumn config of
+                []                   -> Nothing
+                (ix, _name, val) : []
+                  | ix == ix'        -> Just $ A.fromList F val
+                  | otherwise        -> Nothing
+                _ -> error "TODO: multi inserts not handled"
+        {-# INLINE fInsert #-}
 
-        arrFlat = A.concat U
-                $ A.fromList B [ A.intercalate U arrC arrIns, arrNL ]
+        !arrIns  = A.insert B fInsert arrFields
+
+        -- Concatenate fields back into a flat array.
+        !arrC    = A.fromList U ['\t']
+        !arrNL   = A.fromList U ['\n']
+
+        !arrFlat = A.concat U 
+                 $ A.fromList B [ A.intercalate U arrC arrIns, arrNL ]
 
    in   Just ( file
              , A.mapS F (fromIntegral . ord) arrFlat)
 {-# INLINE sieveRow #-}
-
-
