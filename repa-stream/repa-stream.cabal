@@ -38,14 +38,15 @@ Library
         Data.Repa.Chain.Weave
         Data.Repa.Chain.Folds
 
+        Data.Repa.Stream.Compact
+        Data.Repa.Stream.Concat
+        Data.Repa.Stream.Dice
         Data.Repa.Stream.Extract
         Data.Repa.Stream.Insert
+        Data.Repa.Stream.Merge
+        Data.Repa.Stream.Pad
         Data.Repa.Stream.Ratchet
         Data.Repa.Stream.Segment
-        Data.Repa.Stream.Dice
-        Data.Repa.Stream.Pad
-        Data.Repa.Stream.Merge
-        Data.Repa.Stream.Concat
 
   include-dirs:
         include

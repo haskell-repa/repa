@@ -23,6 +23,10 @@ module Data.Repa.Vector.Unboxed
         , findSegmentsFrom
         , diceSep
 
+          -- * Compacting
+        , compact
+        , compactIn
+
           -- * Padding
         , padForward
 
@@ -36,6 +40,7 @@ module Data.Repa.Vector.Unboxed
         , folds, C.Folds(..))
 where
 import Data.Repa.Option
+import Data.Repa.Stream.Compact
 import Data.Repa.Stream.Concat
 import Data.Repa.Stream.Dice
 import Data.Repa.Stream.Extract
@@ -325,6 +330,37 @@ diceSep pEndInner pEndBoth vec
         $ S.liftStream
         $ G.stream vec
 {-# INLINE diceSep #-}
+
+
+-------------------------------------------------------------------------------
+-- | Combination of `fold` and `filter`. 
+--   
+--   We walk over the stream front to back, maintaining an accumulator.
+--   At each point we can chose to emit an element (or not)
+--
+compact
+        :: (Unbox a, Unbox b)
+        => (s -> a -> (Maybe b, s))     -- ^ Worker function
+        -> s                            -- ^ Starting state
+        -> Vector a                     -- ^ Input vector
+        -> Vector b
+
+compact f s0 vec
+        = G.unstream $ compactS f s0 $ G.stream vec
+{-# INLINE compact #-}
+
+
+-- | Like `compact` but use the first value of the stream as the 
+--   initial state, and add the final state to the end of the output.
+compactIn
+        :: Unbox a
+        => (a -> a -> (Maybe a, a))     -- ^ Worker function.
+        -> Vector a                     -- ^ Input elements.
+        -> Vector a
+
+compactIn f vec
+        = G.unstream $ compactInS f $ G.stream vec
+{-# INLINE compactIn #-}
 
 
 -------------------------------------------------------------------------------

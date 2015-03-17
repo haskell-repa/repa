@@ -49,7 +49,7 @@ groups nGrp nLen arr
 groupsWith
         :: GroupsDict lElt lGrp tGrp lLen tLen n
         => Name lGrp           -- ^ Layout for group names.
-        -> Name lLen           -- ^ Layour for group lengths.
+        -> Name lLen           -- ^ Layout for group lengths.
         -> (n -> n -> Bool)    -- ^ Comparison function.
         -> Maybe  (n, Int)     -- ^ Starting element and count.
         -> Array  lElt n       -- ^ Input elements.

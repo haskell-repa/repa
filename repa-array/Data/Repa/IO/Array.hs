@@ -1,9 +1,15 @@
 
 module Data.Repa.IO.Array
-        ( hGetArray,   hGetArrayPre
+        ( -- * Raw Array IO
+          hGetArray,   hGetArrayPre
         , hPutArray
-        , hGetArrayFromCSV
-        , hPutArrayAsCSV)
+
+          -- * XSV files
+          -- ** Reading
+        , getArrayFromXSV,      hGetArrayFromXSV
+
+          -- ** Writing
+        , putArrayAsXSV,        hPutArrayAsXSV)
 where
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Material.Foreign
@@ -66,32 +72,46 @@ hPutArray h (toForeignPtr -> (offset,lenPre,fptr))
 {-# NOINLINE hPutArray #-}
 
 
--- | Read a CSV file as a nested array.
+---------------------------------------------------------------------------------------------------
+-- | Read a XSV file as a nested array.
 --   We get an array of rows:fields:characters.
---
-hGetArrayFromCSV 
-        :: Handle 
+getArrayFromXSV
+        :: Char                 -- ^ Field separator character, eg '|', ',' or '\t'.
+        -> FilePath             -- ^ Source file handle.
         -> IO (Array N (Array N (Array F Char)))
 
-hGetArrayFromCSV !hIn
+getArrayFromXSV !cSep !filePath
+ = do   h       <- openFile filePath ReadMode
+        arr     <- hGetArrayFromXSV cSep h
+        hClose h
+        return arr
+
+
+-- | Read an XSV file as a nested array.
+--   We get an array of rows:fields:characters.
+hGetArrayFromXSV 
+        :: Char                 -- ^ Field separator character, eg '|', ',' or '\t'.
+        -> Handle               -- ^ Source file handle.
+        -> IO (Array N (Array N (Array F Char)))
+
+hGetArrayFromXSV !cSep !hIn
  = do   
         -- Find out how much data there is remaining in the file.
-        start   <- hTell hIn
+        start     <- hTell hIn
         hSeek hIn SeekFromEnd 0
-        end     <- hTell hIn
-        let !len        = end - start
+        end       <- hTell hIn
+        let !len  =  end - start
         hSeek hIn AbsoluteSeek start
 
         -- Read array as Word8s.
         !arr8   <- hGetArray hIn (fromIntegral len)
 
-        -- Rows are separated by new lines, fields are separated by commas.
-        let !nc = fromIntegral $ ord ','
+        -- Rows are separated by new lines,
+        -- fields are separated by the given separator character.
         let !nl = fromIntegral $ ord '\n'
+        let !nc = fromIntegral $ ord cSep
 
-        let !arrSep = A.diceSep nc nl arr8
-
-        -- Split CSV file into rows and fields.
+        -- Split XSV file into rows and fields.
         -- Convert element data from Word8 to Char.
         -- Chars take 4 bytes each, but are standard Haskell and pretty
         -- print properly. We've done the dicing on the smaller Word8
@@ -100,27 +120,50 @@ hGetArrayFromCSV !hIn
         let !arrChar 
                 = A.mapElems 
                         (A.mapElems (A.computeS F . A.map (chr . fromIntegral))) 
-                        arrSep
+                        (A.diceSep nc nl arr8)
 
         return arrChar
 
 
--- | Write a nested array as a CSV file.
---   The array contains rows:fields:characters.
+--------------------------------------------------------------------------------------------------
+-- | Write a nested array as an XSV file.
 --
-hPutArrayAsCSV 
+--   The array contains rows:fields:characters.
+putArrayAsXSV
         :: ( BulkI l1 (Array l2 (Array l3 Char))
            , BulkI l2 (Array l3 Char)
            , BulkI l3 Char
            , Unpack (Array l3 Char) t)
-        => Handle
+        => Char                 -- ^ Separator character, eg '|', ',' or '\t'
+        -> FilePath             -- ^ Source file handle.
         -> Array l1 (Array l2 (Array l3 Char))
+                                -- ^ Array of row, field, character.
         -> IO ()
 
-hPutArrayAsCSV !hOut !arrChar
+putArrayAsXSV !cSep !filePath !arrChar
+ = do   h       <- openFile filePath WriteMode
+        hPutArrayAsXSV cSep h arrChar
+        hClose h
+
+
+-- | Write a nested array as an XSV file.
+--
+--   The array contains rows:fields:characters.
+hPutArrayAsXSV
+        :: ( BulkI l1 (Array l2 (Array l3 Char))
+           , BulkI l2 (Array l3 Char)
+           , BulkI l3 Char
+           , Unpack (Array l3 Char) t)
+        => Char                 -- ^ Separator character, eg '|', ',' or '\t'
+        -> Handle               -- ^ Source file handle.
+        -> Array l1 (Array l2 (Array l3 Char))
+                                -- ^ Array of row, field, character.
+        -> IO ()
+
+hPutArrayAsXSV !cSep !hOut !arrChar
  = do
         -- Concat result back into Word8s
-        let !arrC       = A.fromList U [',']
+        let !arrC       = A.fromList U [cSep]
         let !arrNL      = A.fromList U ['\n']
 
         let !arrOut     
@@ -132,5 +175,5 @@ hPutArrayAsCSV !hOut !arrChar
                 $ arrChar
 
         hPutArray hOut arrOut
-{-# INLINE hPutArrayAsCSV #-}
+{-# INLINE hPutArrayAsXSV #-}
 

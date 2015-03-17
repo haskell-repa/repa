@@ -84,3 +84,5 @@ sieveRow config dirOut arrFields
    in   Just ( file
              , A.mapS F (fromIntegral . ord) arrFlat)
 {-# INLINE sieveRow #-}
+
+
