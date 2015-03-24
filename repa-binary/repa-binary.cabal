@@ -23,6 +23,7 @@ Library
 
   exposed-modules:
         Data.Repa.Binary.Format
+        Data.Repa.Binary.Packable
 
   other-modules:
 
@@ -41,5 +42,6 @@ Library
         MultiWayIf
         TypeFamilies
         TypeOperators
+        ScopedTypeVariables
 
 

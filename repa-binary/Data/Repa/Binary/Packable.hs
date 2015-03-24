@@ -4,7 +4,6 @@ where
 import Data.Word
 import Data.Int
 import Data.Bits
-import Control.Monad
 import System.IO.Unsafe
 import Data.Repa.Binary.Format                  as F
 import qualified Foreign.Storable               as S
@@ -219,7 +218,7 @@ instance Packable (FixString ASCII) where
                 mapM_ (\(o, x) -> S.pokeByteOff buf o x) 
                         $ zip [0 .. lenChars - 1] xs
 
-                mapM_ (\o      -> S.pokeByteOff buf (lenChars + o) (w8 0))
+                mapM_ (\o      -> S.pokeByteOff buf (lenChars + o) (0 :: Word8))
                         $ [0 .. lenPad - 1]
 
                 k lenField
@@ -244,7 +243,7 @@ instance Packable (VarString ASCII) where
         k lenChars
   {-# NOINLINE pack #-}
 
-  unpack buf  (VarString ASCII) k
+  unpack _   (VarString ASCII) _
    = return Nothing
   {-# NOINLINE unpack #-}
 
