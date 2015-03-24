@@ -1,5 +1,8 @@
 
 module Data.Repa.Binary.Packable
+        ( Packable (..)
+        , packToList
+        , unpackFromList)
 where
 import Data.Word
 import Data.Int
