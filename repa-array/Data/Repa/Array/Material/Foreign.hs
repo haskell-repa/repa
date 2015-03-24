@@ -137,7 +137,7 @@ instance Unpack (Buffer s F a) (M.MVector s a) where
 
 
 -------------------------------------------------------------------------------
--- | O(1). Cast a foreign array from on element type to another.
+-- | O(1). Cast a foreign array from one element type to another.
 unsafeCast 
         :: (Storable a, Storable b)
         => Array F a -> Array F b

@@ -5,15 +5,16 @@ module Data.Repa.Array.Material.Strided
         , Array  (..)
 
         -- * Conversions
+        , unsafeCast
         , fromForeignPtr,       toForeignPtr)
 where
 import Data.Repa.Array.Window
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Layout
 import Data.Repa.Fusion.Unpack
-import Foreign.ForeignPtr
 import Data.Word
 import qualified Foreign.Storable               as S
+import qualified Foreign.ForeignPtr             as F
 import qualified Data.ByteString.Internal       as BS
 #include "repa-array.h"
 
@@ -55,14 +56,14 @@ instance S.Storable a => Bulk S a where
         { sArrayStartBytes   :: !Int
         , sArrayStrideBytes  :: !Int
         , sArrayLenElems     :: !Int 
-        , sArrayPtr          :: !(ForeignPtr a) }
+        , sArrayPtr          :: !(F.ForeignPtr a) }
 
   layout (SArray _ _ len _)  
    = Strided len
 
   index  (SArray start stride len fptr) ix
    = BS.inlinePerformIO
-         $ withForeignPtr fptr
+         $ F.withForeignPtr fptr
          $ \ptr -> S.peekByteOff ptr 
                       (start + (toIndex (Strided len) ix) * stride)
   {-# INLINE_ARRAY layout #-}
@@ -80,7 +81,7 @@ instance S.Storable a => Bulk S a where
 deriving instance (S.Storable a, Show a) => Show (Array S a)
 
 
-instance Unpack (Array S a) (Int, Int, Int, ForeignPtr a) where
+instance Unpack (Array S a) (Int, Int, Int, F.ForeignPtr a) where
   unpack   (SArray start stride len fptr)  = (start, stride, len, fptr)
   repack _ (start, stride, len, fptr)      = (SArray start stride len fptr)
   {-# INLINE unpack #-}
@@ -106,12 +107,20 @@ instance S.Storable a => Windowable S a where
 
 
 -------------------------------------------------------------------------------
+-- | O(1). Cast a foreign array from one element type to another.
+unsafeCast
+        :: (S.Storable a, S.Storable b)
+        => Array S a -> Array S b
+unsafeCast (SArray startBytes strideBytes lenElems fptr)
+        =  (SArray startBytes strideBytes lenElems $ F.castForeignPtr fptr)
+
+
 -- | O(1). Wrap a `ForeignPtr` as a strided array.
 fromForeignPtr 
-        :: Int          -- ^ Starting position in bytes.
-        -> Int          -- ^ Stride to get to next element, in bytes.
-        -> Int          -- ^ Length of array in elements.
-        -> ForeignPtr a -- ^ `ForeignPtr` holding the data.
+        :: Int            -- ^ Starting position in bytes.
+        -> Int            -- ^ Stride to get to next element, in bytes.
+        -> Int            -- ^ Length of array in elements.
+        -> F.ForeignPtr a -- ^ `ForeignPtr` holding the data.
         -> Array S a
 
 fromForeignPtr startBytes strideBytes lenElems fptr
@@ -122,7 +131,7 @@ fromForeignPtr startBytes strideBytes lenElems fptr
 -- | O(1). Unwrap a `ForeignPtr` from a strided array.
 toForeignPtr
         :: Array S a
-        -> (Int, Int, Int, ForeignPtr a)
+        -> (Int, Int, Int, F.ForeignPtr a)
 toForeignPtr (SArray startBytes strideBytes lenElems fptr)
         = (startBytes, strideBytes, lenElems, fptr)
 {-# INLINE_ARRAY toForeignPtr #-}
