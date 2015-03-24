@@ -1,14 +1,15 @@
 
 module Data.Repa.Array.Material.Foreign
-  ( F      (..)
-  , Name   (..)
-  , Array  (..)
-  , Buffer (..)
+        ( F      (..)
+        , Name   (..)
+        , Array  (..)
+        , Buffer (..)
 
-  -- * Conversions
-  , fromForeignPtr,       toForeignPtr
-  , fromStorableVector,   toStorableVector
-  , fromByteString,       toByteString)
+        -- * Conversions
+        , unsafeCast
+        , fromForeignPtr,       toForeignPtr
+        , fromStorableVector,   toStorableVector
+        , fromByteString,       toByteString)
 where
 import Data.Repa.Array.Delayed
 import Data.Repa.Array.Window
@@ -31,13 +32,14 @@ import Control.Monad.Primitive
 #include "repa-array.h"
 
 
--- | Layout for Foreign arrays.
+-- | Layout for dense Foreign arrays.
 --
 --   UNSAFE: Indexing into raw material arrays is not bounds checked.
 --   You may want to wrap this with a Checked layout as well.
 --
 data F = Foreign { foreignLength :: Int }
   deriving (Show, Eq)
+
 
 ------------------------------------------------------------------------------
 -- | Foreign arrays.
@@ -57,6 +59,7 @@ instance Layout F where
 
 deriving instance Eq   (Name F)
 deriving instance Show (Name F)
+
 
 -------------------------------------------------------------------------------
 -- | Foreign arrays.
@@ -83,6 +86,7 @@ instance Unpack (Array F a) (S.Vector a) where
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
 
+
 -------------------------------------------------------------------------------
 -- | Windowing Foreign arrays.
 instance Storable a => Windowable F a where
@@ -101,16 +105,15 @@ instance Storable a => Windowable F a where
 
 -------------------------------------------------------------------------------
 -- | Foreign buffers
-
 instance Storable a => Target F a where
   data Buffer s F a = FBuffer !(M.MVector s a)
 
-  unsafeNewBuffer (Foreign n)           = FBuffer `liftM` M.unsafeNew n
-  unsafeReadBuffer (FBuffer mv) i       = M.unsafeRead mv i
-  unsafeWriteBuffer (FBuffer mv) i a    = M.unsafeWrite mv i a
-  unsafeGrowBuffer (FBuffer mv) x       = FBuffer `liftM` M.unsafeGrow mv x
-  unsafeThawBuffer (FArray v)           = FBuffer `liftM` S.unsafeThaw v
-  unsafeFreezeBuffer (FBuffer mv)       = FArray `liftM` S.unsafeFreeze mv
+  unsafeNewBuffer    (Foreign n)        = FBuffer `liftM` M.unsafeNew n
+  unsafeReadBuffer   (FBuffer mv) i     = M.unsafeRead mv i
+  unsafeWriteBuffer  (FBuffer mv) i a   = M.unsafeWrite mv i a
+  unsafeGrowBuffer   (FBuffer mv) x     = FBuffer `liftM` M.unsafeGrow mv x
+  unsafeThawBuffer   (FArray v)         = FBuffer `liftM` S.unsafeThaw v
+  unsafeFreezeBuffer (FBuffer mv)       = FArray  `liftM` S.unsafeFreeze mv
   unsafeSliceBuffer i n (FBuffer mv)    = return $ FBuffer (M.unsafeSlice i n mv)
   touchBuffer (FBuffer (M.MVector _ p)) = unsafePrimToPrim $ touchForeignPtr p
   bufferLayout (FBuffer mv)             = Foreign $ M.length mv
@@ -124,6 +127,7 @@ instance Storable a => Target F a where
   {-# INLINE touchBuffer        #-}
   {-# INLINE bufferLayout       #-}
 
+
 -- | Unpack Foreign buffers
 instance Unpack (Buffer s F a) (M.MVector s a) where
  unpack (FBuffer mv)  = mv
@@ -131,13 +135,24 @@ instance Unpack (Buffer s F a) (M.MVector s a) where
  {-# INLINE_ARRAY unpack #-}
  {-# INLINE_ARRAY repack #-}
 
+
 -------------------------------------------------------------------------------
+-- | O(1). Cast a foreign array from on element type to another.
+unsafeCast 
+        :: (Storable a, Storable b)
+        => Array F a -> Array F b
+unsafeCast (FArray vec) 
+        = FArray $ S.unsafeCast vec
+{-# INLINE_ARRAY unsafeCast #-}
+
+
 -- | O(1). Wrap a `ForeignPtr` as an array.
 fromForeignPtr :: Storable a => Int -> ForeignPtr a -> Array F a
 fromForeignPtr n p = FArray $ S.unsafeFromForeignPtr p 0 n
 {-# INLINE_ARRAY fromForeignPtr #-}
 
 
+-- | O(1). Unwrap a `ForeignPtr` from an array.
 toForeignPtr :: Storable a => Array F a -> (Int, Int, ForeignPtr a)
 toForeignPtr (FArray (S.unsafeToForeignPtr -> (p,i,n))) = (i,n,p)
 {-# INLINE_ARRAY toForeignPtr #-}
@@ -167,7 +182,6 @@ fromByteString :: ByteString -> Array F Word8
 fromByteString (BS.PS p i n)
  = FArray (S.unsafeFromForeignPtr p i n)
 {-# INLINE_ARRAY fromByteString #-}
-
 
 
 instance (Eq a, Storable a) => Eq (Array F a) where
