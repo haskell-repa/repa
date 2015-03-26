@@ -20,10 +20,12 @@ source-repository head
 Library
   build-Depends: 
         base            == 4.7.*,
-        primitive       == 0.5.4.*
+        primitive       == 0.5.4.*,
+        vector          == 0.10.*
 
   exposed-modules:
         Data.Repa.Binary.Format
+        Data.Repa.Binary.Product
         Data.Repa.Binary.Packable
 
   other-modules:
@@ -44,5 +46,6 @@ Library
         TypeFamilies
         TypeOperators
         ScopedTypeVariables
+        MultiParamTypeClasses
 
 

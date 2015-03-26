@@ -32,12 +32,14 @@ Library
         double-conversion  == 2.0.*,
         text               == 1.2.*,
         repa-eval          == 4.0.0.*,
-        repa-stream        == 4.0.1.*
+        repa-stream        == 4.0.1.*,
+        repa-binary        == 4.0.1.*
 
 
   exposed-modules:
         Data.Repa.Array.Index.Slice
 
+        Data.Repa.Array.Material.Auto
         Data.Repa.Array.Material.Boxed
         Data.Repa.Array.Material.Foreign
         Data.Repa.Array.Material.Strided

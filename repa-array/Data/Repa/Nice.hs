@@ -5,6 +5,7 @@ module Data.Repa.Nice
         , Tok   (..))
 where
 import Data.Repa.Array          as A
+import Data.Repa.Binary.Product as B
 import Control.Monad
 import Data.Word
 import Prelude                  as P
@@ -133,6 +134,11 @@ instance (Nicer a, Nicer b)
  type Nice (a, b)       = (Nice a, Nice b)
  nice (x, y)            = (nice x, nice y)
 
+instance (Nicer a, Nicer b) 
+      => Nicer (a :*: b) where
+ type Nice (a :*: b)    = (Nice a :*: Nice b)
+ nice (x :*: y)         = (nice x :*: nice y)
+
 instance (Bulk l a, Nicer [a]) 
       => Nicer (Array l a) where
  type Nice (Array l a)  = Nice [a]
@@ -146,6 +152,11 @@ instance Nicer a
 instance (Nicer a, Nicer b) 
       => Nicer [(a, b)] where
  type Nice [(a, b)]     = [Nice (a, b)]
+ nice xs                = P.map nice xs
+
+instance (Nicer a, Nicer b) 
+      => Nicer [(a :*: b)] where
+ type Nice [(a :*: b)]  = [Nice (a :*: b)]
  nice xs                = P.map nice xs
 
 instance (Bulk l a, Nicer [a])

@@ -3,6 +3,9 @@ module Data.Repa.Array.Material
         ( Name  (..)
         , Array (..)
 
+          -- * Auto arrays
+        , A     (..)
+
           -- * Boxed arrays
         , B     (..)
         , fromBoxed,            toBoxed
@@ -51,6 +54,7 @@ module Data.Repa.Array.Material
           -- ** Transpose
         , ragspose3)
 where
+import Data.Repa.Array.Material.Auto
 import Data.Repa.Array.Material.Boxed
 import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign

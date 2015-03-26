@@ -9,6 +9,7 @@ import Data.Int
 import Data.Bits
 import Data.Char
 import System.IO.Unsafe
+import Data.Repa.Binary.Product
 import Data.Repa.Binary.Format                  as F
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S

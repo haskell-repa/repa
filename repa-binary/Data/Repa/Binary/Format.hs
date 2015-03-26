@@ -11,9 +11,6 @@ module Data.Repa.Binary.Format
         , Float32be (..)
         , Float64be (..)
 
-        -- * Products
-        , (:*:)(..)
-
         -- * Lists
         , FixList(..)
         , VarList(..)
@@ -23,6 +20,7 @@ module Data.Repa.Binary.Format
         , VarString     (..)
         , ASCII         (..))
 where
+import Data.Repa.Binary.Product
 import qualified Data.Int       as V
 import qualified Data.Word      as V
 
@@ -112,6 +110,7 @@ instance Format Word64be                where
  packedSize _ _         = Just 8
 
 
+-- | Big-endian 32-bit IEEE 754 float.
 data Float32be  = Float32be             deriving (Eq, Show)
 instance Format Float32be               where
  type Value Float32be   = Float
@@ -119,6 +118,7 @@ instance Format Float32be               where
  packedSize _ _         = Just 4
 
 
+-- | Big-endian 64-bit IEEE 754 float.
 data Float64be  = Float64be             deriving (Eq, Show)
 instance Format Float64be               where
  type Value Float64be   = Double
@@ -127,9 +127,6 @@ instance Format Float64be               where
 
 
 -------------------------------------------------------------------------------
--- | Generic product type.
-data a :*: b    = !a :*: !b             deriving (Eq, Show)
-
 instance (Format a, Format b) 
        => Format (a :*: b) where
  type Value (a :*: b) = Value a :*: Value b
