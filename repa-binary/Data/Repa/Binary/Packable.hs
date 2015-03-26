@@ -7,11 +7,13 @@ where
 import Data.Word
 import Data.Int
 import Data.Bits
+import Data.Char
 import System.IO.Unsafe
 import Data.Repa.Binary.Format                  as F
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
 import qualified Foreign.Ptr                    as S
+import qualified Control.Monad.Primitive        as Prim
 
 
 ---------------------------------------------------------------------------------------------------
@@ -191,7 +193,72 @@ i64 = fromIntegral
 {-# INLINE i64 #-}
 
 
--------------------------------------------------------------------------------------------- Double
+----------------------------------------------------------------------------------------- Float32be
+instance Packable Float32be where
+ pack      buf Float32be x k
+  = pack   buf Word32be (floatToWord32 x) k
+ {-# INLINE pack #-}
+
+ unpack    buf Float32be k
+  = unpack buf Word32be (\(v, i) -> k (word32ToFloat v, i))
+ {-# INLINE unpack #-}
+
+
+-- | Bitwise cast of `Float` to `Word32`.
+--
+--   The resulting `Word32` contains the representation of the `Float`, 
+--   rather than it's value.
+floatToWord32 :: Float -> Word32
+floatToWord32 d
+ = Prim.unsafeInlineIO
+ $ S.alloca $ \buf -> 
+ do     S.poke (S.castPtr buf) d
+        S.peek buf
+{-# INLINE floatToWord32 #-}
+
+
+-- | Inverse of `doubleToFloat32`
+word32ToFloat :: Word32 -> Float
+word32ToFloat w
+ = Prim.unsafeInlineIO
+ $ S.alloca $ \buf ->
+ do     S.poke (S.castPtr buf) w
+        S.peek buf
+{-# INLINE word32ToFloat #-}
+
+
+----------------------------------------------------------------------------------------- Float64be
+instance Packable Float64be where
+ pack      buf Float64be x k
+  = pack   buf Word64be (doubleToWord64 x) k
+ {-# INLINE pack #-}
+
+ unpack    buf Float64be k
+  = unpack buf Word64be (\(v, i) -> k (word64ToDouble v, i))
+ {-# INLINE unpack #-}
+
+
+-- | Bitwise cast of `Double` to `Word64`.
+--
+--   The resulting `Word64` contains the representation of the `Double`, 
+--   rather than it's value.
+doubleToWord64 :: Double -> Word64
+doubleToWord64 d
+ = Prim.unsafeInlineIO
+ $ S.alloca $ \buf -> 
+ do     S.poke (S.castPtr buf) d
+        S.peek buf
+{-# INLINE doubleToWord64 #-}
+
+
+-- | Inverse of `doubleToWord64`
+word64ToDouble :: Word64 -> Double
+word64ToDouble w
+ = Prim.unsafeInlineIO
+ $ S.alloca $ \buf ->
+ do     S.poke (S.castPtr buf) w
+        S.peek buf
+{-# INLINE word64ToDouble #-}
 
 
 --------------------------------------------------------------------------------------------- (:*:)
@@ -221,7 +288,7 @@ instance Packable (FixString ASCII) where
         if lenChars > lenField
          then return False
          else do
-                mapM_ (\(o, x) -> S.pokeByteOff buf o x) 
+                mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
                         $ zip [0 .. lenChars - 1] xs
 
                 mapM_ (\o      -> S.pokeByteOff buf (lenChars + o) (0 :: Word8))
@@ -231,7 +298,13 @@ instance Packable (FixString ASCII) where
   {-# NOINLINE pack #-}
 
   unpack buf (FixString ASCII lenField) k
-   = do xs      <- mapM (S.peekByteOff buf) [0 .. lenField - 1]
+   = do 
+        let load_unpackChar o
+                = do    x :: Word8 <- S.peekByteOff buf o
+                        return $ chr $ fromIntegral x
+            {-# INLINE load_unpackChar #-}
+
+        xs      <- mapM load_unpackChar [0 .. lenField - 1]
         let (pre, _) = break (== '\0') xs
         k (pre, lenField)
   {-# NOINLINE unpack #-}
@@ -243,7 +316,7 @@ instance Packable (VarString ASCII) where
   pack buf   (VarString ASCII) xs k
    = do let !lenChars   = length xs
 
-        mapM_ (\(o, x) -> S.pokeByteOff buf o x)
+        mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
                 $ zip [0 .. lenChars - 1] xs
 
         k lenChars

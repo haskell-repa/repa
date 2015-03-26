@@ -3,10 +3,13 @@ module Data.Repa.Binary.Format
         ( Format (..)
 
         -- * Atomic formats
-        , Word8be  (..),        Int8be  (..)
-        , Word16be (..),        Int16be (..)
-        , Word32be (..),        Int32be (..)
-        , Word64be (..),        Int64be (..)
+        , Word8be   (..),        Int8be  (..)
+        , Word16be  (..),        Int16be (..)
+        , Word32be  (..),        Int32be (..)
+        , Word64be  (..),        Int64be (..)
+
+        , Float32be (..)
+        , Float64be (..)
 
         -- * Products
         , (:*:)(..)
@@ -109,6 +112,20 @@ instance Format Word64be                where
  packedSize _ _         = Just 8
 
 
+data Float32be  = Float32be             deriving (Eq, Show)
+instance Format Float32be               where
+ type Value Float32be   = Float
+ fixedSize  _           = Just 4
+ packedSize _ _         = Just 4
+
+
+data Float64be  = Float64be             deriving (Eq, Show)
+instance Format Float64be               where
+ type Value Float64be   = Double
+ fixedSize  _           = Just 8
+ packedSize _ _         = Just 8
+
+
 -------------------------------------------------------------------------------
 -- | Generic product type.
 data a :*: b    = !a :*: !b             deriving (Eq, Show)
@@ -121,11 +138,13 @@ instance (Format a, Format b)
   = do  sa      <- fixedSize xa
         sb      <- fixedSize xb
         return  $  sa + sb
+ {-# INLINE fixedSize #-}
 
  packedSize (fa :*: fb) (xa :*: xb)
   = do  sa      <- packedSize fa xa
         sb      <- packedSize fb xb
         return  $  sa + sb
+ {-# INLINE packedSize #-}
 
 
 -------------------------------------------------------------------------------

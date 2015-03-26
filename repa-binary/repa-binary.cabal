@@ -19,7 +19,8 @@ source-repository head
 
 Library
   build-Depends: 
-        base            == 4.7.*
+        base            == 4.7.*,
+        primitive       == 0.5.4.*
 
   exposed-modules:
         Data.Repa.Binary.Format
