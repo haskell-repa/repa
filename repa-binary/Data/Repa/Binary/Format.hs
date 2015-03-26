@@ -1,6 +1,7 @@
 
 module Data.Repa.Binary.Format
         ( Format (..)
+        , (:*:)(..)
 
         -- * Atomic formats
         , Word8be   (..),        Int8be  (..)

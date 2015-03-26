@@ -13,7 +13,6 @@ module Data.Repa.IO.Array
 where
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Material.Foreign
-import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Nested          as A
 import Data.Repa.Array                          as A
 import qualified Foreign.Ptr                    as F

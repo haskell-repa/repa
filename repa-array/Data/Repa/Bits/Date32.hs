@@ -10,7 +10,6 @@ module Data.Repa.Bits.Date32
 where
 import Data.Repa.IO.Convert                             as A
 import Data.Repa.Array.Material.Foreign                 as A
-import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array                                  as A
 import Data.Repa.Eval.Array                             as A
 import Data.Word

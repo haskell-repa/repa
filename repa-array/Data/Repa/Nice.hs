@@ -8,6 +8,7 @@ import Data.Repa.Array          as A
 import Data.Repa.Binary.Product as B
 import Control.Monad
 import Data.Word
+import Data.Int
 import Prelude                  as P
 
 
@@ -50,10 +51,12 @@ instance Nicer ()  where
  type Nice ()           = ()
  nice x = x
 
-instance Nicer Int where
- type Nice Int          = Int
+-- Chars
+instance Nicer Char where
+ type Nice Char         = Char
  nice x = x
 
+-- Floats
 instance Nicer Float where
  type Nice Float        = Float
  nice x = x
@@ -62,8 +65,30 @@ instance Nicer Double where
  type Nice Double       = Double
  nice x = x
 
-instance Nicer Char where
- type Nice Char         = Char
+-- Ints
+instance Nicer Int where
+ type Nice Int          = Int
+ nice x = x
+
+instance Nicer Int8 where
+ type Nice Int8         = Int8
+ nice x = x
+
+instance Nicer Int16 where
+ type Nice Int16        = Int16
+ nice x = x
+
+instance Nicer Int32 where
+ type Nice Int32        = Int32
+ nice x = x
+
+instance Nicer Int64 where
+ type Nice Int64        = Int64
+ nice x = x
+
+-- Words
+instance Nicer Word where
+ type Nice Word         = Word
  nice x = x
 
 instance Nicer Word8 where
@@ -106,6 +131,22 @@ instance Nicer [Double] where
  type Nice [Double]     = [Double]
  nice xs                = xs
 
+instance Nicer [Int8] where
+ type Nice [Int8]       = [Int8]
+ nice xs                = xs
+
+instance Nicer [Int16] where
+ type Nice [Int16]      = [Int16]
+ nice xs                = xs
+
+instance Nicer [Int32] where
+ type Nice [Int32]      = [Int32]
+ nice xs                = xs
+
+instance Nicer [Int64] where
+ type Nice [Int64]      = [Int64]
+ nice xs                = xs
+
 instance Nicer [Word8] where
  type Nice [Word8]      = [Word8]
  nice xs                = xs
@@ -143,6 +184,7 @@ instance (Bulk l a, Nicer [a])
       => Nicer (Array l a) where
  type Nice (Array l a)  = Nice [a]
  nice vec               = nice $ toList vec
+
 
 instance Nicer a 
       => Nicer [Maybe a] where

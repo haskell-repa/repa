@@ -11,6 +11,9 @@ module Data.Repa.Array.Material
         , fromBoxed,            toBoxed
         , decimate
 
+          -- * Nested arrays
+        , N (..)
+
           -- * Unboxed arrays
         , U     (..)
         , Unbox
@@ -22,9 +25,11 @@ module Data.Repa.Array.Material
         , fromByteString,       toByteString
         , fromStorableVector,   toStorableVector
 
-
-          -- * Nested arrays
-        , N (..)
+          -- ** Ingestion
+        , module Data.Repa.Binary.Format
+        , Packable
+        , packForeign
+        , unpackForeign
 
           -- ** Conversion
         , fromLists
@@ -59,6 +64,6 @@ import Data.Repa.Array.Material.Boxed
 import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign
 import Data.Repa.Array.Material.Nested
-
+import Data.Repa.Binary.Format
 
 

@@ -12,11 +12,17 @@ import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Unboxed         as A
 import Data.Repa.Binary.Product                 as B
+import Data.Int
 import Control.Monad
 #include "repa-array.h"
 
 -- | Automatic layout of array elements in some reasonably efficient
---   representation.
+--   representation. 
+--
+--   The implementation uses type families to chose unboxed representations
+--   for all elements that can be unboxed. In particular, arrays of unboxed
+--   tuples are represented as tuples of unboxed arrays.
+--
 data A  = Auto { autoLength :: Int }
         deriving (Show, Eq)
 
@@ -91,6 +97,230 @@ instance Target A Int where
  {-# INLINE_ARRAY touchBuffer #-}
 
  bufferLayout (ABuffer_Int buf)
+  = Auto $ A.extent $ bufferLayout buf
+ {-# INLINE_ARRAY bufferLayout #-}
+
+
+--------------------------------------------------------------------------------------------- Int8
+instance Bulk A Int8 where
+ data Array A Int8               = AArray_Int8 !(Array U Int8)
+ layout (AArray_Int8 arr)        = Auto (A.length arr)
+ index  (AArray_Int8 arr) ix     = A.index arr ix
+ {-# INLINE_ARRAY layout #-}
+ {-# INLINE_ARRAY index  #-}
+
+deriving instance Show (Array A Int8)
+
+instance Windowable A Int8 where
+ window st len (AArray_Int8 arr) 
+  = AArray_Int8 (window st len arr)
+ {-# INLINE_ARRAY window #-}
+
+instance Target A Int8 where
+ data Buffer s A Int8            
+  = ABuffer_Int8 !(Buffer s U Int8)
+
+ unsafeNewBuffer (Auto len)     
+  = liftM ABuffer_Int8 $ unsafeNewBuffer (Unboxed len)
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
+
+ unsafeReadBuffer   (ABuffer_Int8 arr) ix
+  = unsafeReadBuffer arr ix
+ {-# INLINE_ARRAY unsafeReadBuffer #-}
+
+ unsafeWriteBuffer  (ABuffer_Int8 arr) ix x
+  = unsafeWriteBuffer arr ix x
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer   (ABuffer_Int8 arr) bump
+  = liftM ABuffer_Int8 $ unsafeGrowBuffer arr bump
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
+
+ unsafeFreezeBuffer (ABuffer_Int8 arr)
+  = liftM AArray_Int8  $ unsafeFreezeBuffer arr 
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+ unsafeThawBuffer   (AArray_Int8 arr)
+  = liftM ABuffer_Int8 $ unsafeThawBuffer  arr
+ {-# INLINE_ARRAY unsafeThawBuffer #-}
+
+ unsafeSliceBuffer st len (ABuffer_Int8 buf)
+  = liftM ABuffer_Int8 $ unsafeSliceBuffer st len buf
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
+
+ touchBuffer (ABuffer_Int8 buf)
+  = touchBuffer buf
+ {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (ABuffer_Int8 buf)
+  = Auto $ A.extent $ bufferLayout buf
+ {-# INLINE_ARRAY bufferLayout #-}
+
+
+--------------------------------------------------------------------------------------------- Int16
+instance Bulk A Int16 where
+ data Array A Int16               = AArray_Int16 !(Array U Int16)
+ layout (AArray_Int16 arr)        = Auto (A.length arr)
+ index  (AArray_Int16 arr) ix     = A.index arr ix
+ {-# INLINE_ARRAY layout #-}
+ {-# INLINE_ARRAY index  #-}
+
+deriving instance Show (Array A Int16)
+
+instance Windowable A Int16 where
+ window st len (AArray_Int16 arr) 
+  = AArray_Int16 (window st len arr)
+ {-# INLINE_ARRAY window #-}
+
+instance Target A Int16 where
+ data Buffer s A Int16            
+  = ABuffer_Int16 !(Buffer s U Int16)
+
+ unsafeNewBuffer (Auto len)     
+  = liftM ABuffer_Int16 $ unsafeNewBuffer (Unboxed len)
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
+
+ unsafeReadBuffer   (ABuffer_Int16 arr) ix
+  = unsafeReadBuffer arr ix
+ {-# INLINE_ARRAY unsafeReadBuffer #-}
+
+ unsafeWriteBuffer  (ABuffer_Int16 arr) ix x
+  = unsafeWriteBuffer arr ix x
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer   (ABuffer_Int16 arr) bump
+  = liftM ABuffer_Int16 $ unsafeGrowBuffer arr bump
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
+
+ unsafeFreezeBuffer (ABuffer_Int16 arr)
+  = liftM AArray_Int16  $ unsafeFreezeBuffer arr 
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+ unsafeThawBuffer   (AArray_Int16 arr)
+  = liftM ABuffer_Int16 $ unsafeThawBuffer  arr
+ {-# INLINE_ARRAY unsafeThawBuffer #-}
+
+ unsafeSliceBuffer st len (ABuffer_Int16 buf)
+  = liftM ABuffer_Int16 $ unsafeSliceBuffer st len buf
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
+
+ touchBuffer (ABuffer_Int16 buf)
+  = touchBuffer buf
+ {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (ABuffer_Int16 buf)
+  = Auto $ A.extent $ bufferLayout buf
+ {-# INLINE_ARRAY bufferLayout #-}
+
+
+--------------------------------------------------------------------------------------------- Int32
+instance Bulk A Int32 where
+ data Array A Int32               = AArray_Int32 !(Array U Int32)
+ layout (AArray_Int32 arr)        = Auto (A.length arr)
+ index  (AArray_Int32 arr) ix     = A.index arr ix
+ {-# INLINE_ARRAY layout #-}
+ {-# INLINE_ARRAY index  #-}
+
+deriving instance Show (Array A Int32)
+
+instance Windowable A Int32 where
+ window st len (AArray_Int32 arr) 
+  = AArray_Int32 (window st len arr)
+ {-# INLINE_ARRAY window #-}
+
+instance Target A Int32 where
+ data Buffer s A Int32            
+  = ABuffer_Int32 !(Buffer s U Int32)
+
+ unsafeNewBuffer (Auto len)     
+  = liftM ABuffer_Int32 $ unsafeNewBuffer (Unboxed len)
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
+
+ unsafeReadBuffer   (ABuffer_Int32 arr) ix
+  = unsafeReadBuffer arr ix
+ {-# INLINE_ARRAY unsafeReadBuffer #-}
+
+ unsafeWriteBuffer  (ABuffer_Int32 arr) ix x
+  = unsafeWriteBuffer arr ix x
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer   (ABuffer_Int32 arr) bump
+  = liftM ABuffer_Int32 $ unsafeGrowBuffer arr bump
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
+
+ unsafeFreezeBuffer (ABuffer_Int32 arr)
+  = liftM AArray_Int32  $ unsafeFreezeBuffer arr 
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+ unsafeThawBuffer   (AArray_Int32 arr)
+  = liftM ABuffer_Int32 $ unsafeThawBuffer  arr
+ {-# INLINE_ARRAY unsafeThawBuffer #-}
+
+ unsafeSliceBuffer st len (ABuffer_Int32 buf)
+  = liftM ABuffer_Int32 $ unsafeSliceBuffer st len buf
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
+
+ touchBuffer (ABuffer_Int32 buf)
+  = touchBuffer buf
+ {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (ABuffer_Int32 buf)
+  = Auto $ A.extent $ bufferLayout buf
+ {-# INLINE_ARRAY bufferLayout #-}
+
+
+--------------------------------------------------------------------------------------------- Int64
+instance Bulk A Int64 where
+ data Array A Int64               = AArray_Int64 !(Array U Int64)
+ layout (AArray_Int64 arr)        = Auto (A.length arr)
+ index  (AArray_Int64 arr) ix     = A.index arr ix
+ {-# INLINE_ARRAY layout #-}
+ {-# INLINE_ARRAY index  #-}
+
+deriving instance Show (Array A Int64)
+
+instance Windowable A Int64 where
+ window st len (AArray_Int64 arr) 
+  = AArray_Int64 (window st len arr)
+ {-# INLINE_ARRAY window #-}
+
+instance Target A Int64 where
+ data Buffer s A Int64            
+  = ABuffer_Int64 !(Buffer s U Int64)
+
+ unsafeNewBuffer (Auto len)     
+  = liftM ABuffer_Int64 $ unsafeNewBuffer (Unboxed len)
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
+
+ unsafeReadBuffer   (ABuffer_Int64 arr) ix
+  = unsafeReadBuffer arr ix
+ {-# INLINE_ARRAY unsafeReadBuffer #-}
+
+ unsafeWriteBuffer  (ABuffer_Int64 arr) ix x
+  = unsafeWriteBuffer arr ix x
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer   (ABuffer_Int64 arr) bump
+  = liftM ABuffer_Int64 $ unsafeGrowBuffer arr bump
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
+
+ unsafeFreezeBuffer (ABuffer_Int64 arr)
+  = liftM AArray_Int64  $ unsafeFreezeBuffer arr 
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+ unsafeThawBuffer   (AArray_Int64 arr)
+  = liftM ABuffer_Int64 $ unsafeThawBuffer  arr
+ {-# INLINE_ARRAY unsafeThawBuffer #-}
+
+ unsafeSliceBuffer st len (ABuffer_Int64 buf)
+  = liftM ABuffer_Int64 $ unsafeSliceBuffer st len buf
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
+
+ touchBuffer (ABuffer_Int64 buf)
+  = touchBuffer buf
+ {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (ABuffer_Int64 buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
 
@@ -345,7 +575,7 @@ instance (Target A a, Target A b)
  data Buffer s A (a :*: b)            
   = ABuffer_Prod !(Buffer s A a) !(Buffer s A b)
 
- unsafeNewBuffer l@(Auto len)     
+ unsafeNewBuffer l     
   = liftM2 ABuffer_Prod (unsafeNewBuffer l) (unsafeNewBuffer l)
  {-# INLINE_ARRAY unsafeNewBuffer #-}
 
