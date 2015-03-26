@@ -36,8 +36,9 @@ import Prelude                                          as P
 --   Cons: Computing a range of dates is slower than with representations
 --   using an epoch, as we cannot simply add one to get to the next valid date.
 --
-type Date32 
-        = Word32
+newtype Date32 
+        = Date32 Word32
+        deriving (Eq, Ord, Show)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -48,7 +49,8 @@ type Date32
 --
 pack   :: (Word, Word, Word) -> Date32
 pack (yy, mm, dd) 
-        =   ((fromIntegral yy .&. 0x0ffff) `shiftL` 16) 
+        = Date32
+        $   ((fromIntegral yy .&. 0x0ffff) `shiftL` 16) 
         .|. ((fromIntegral mm .&. 0x0ff)   `shiftL` 8)
         .|.  (fromIntegral dd .&. 0x0ff)
 {-# INLINE pack #-}
@@ -61,7 +63,7 @@ pack (yy, mm, dd)
 --   range for the given calendar date.
 --
 unpack  :: Date32 -> (Word, Word, Word)
-unpack date
+unpack (Date32 date)
         = ( fromIntegral $ (date `shiftR` 16) .&. 0x0ffff
           , fromIntegral $ (date `shiftR` 8)  .&. 0x0ff
           , fromIntegral $ date               .&. 0x0ff)
@@ -75,13 +77,13 @@ unpack date
 --   which is valid after year 1900 and before year 2100.
 --
 next  :: Date32 -> Date32
-next (W32# date)
-          = W32# (next' date)
+next (Date32 (W32# date))
+          = Date32 (W32# (next' date))
 {-# INLINE next #-}
 
 next' :: Word# -> Word#
 next' !date
- | (yy,  mm, dd) <- unpack (W32# date)
+ | (yy,  mm, dd) <- unpack (Date32 (W32# date))
  , (yy', mm', dd') 
      <- case mm of
         1       -> if dd >= 31  then (yy,     2, 1) else (yy, mm, dd + 1)  -- Jan
@@ -106,7 +108,7 @@ next' !date
         12      -> if dd >= 31 then (yy + 1, 1, 1) else (yy, mm, dd + 1)  -- Dec
         _       -> (0, 0, 0)
  = case pack (yy', mm', dd') of
-        W32# w  -> w
+        Date32 (W32# w)  -> w
 {-# NOINLINE next' #-}
 
 
