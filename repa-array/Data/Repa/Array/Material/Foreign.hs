@@ -12,8 +12,7 @@ module Data.Repa.Array.Material.Foreign
         , fromByteString,       toByteString
 
         -- * Binary Ingestion
-        , module Data.Repa.Binary.Format
-        , Packable
+        , module Data.Repa.Convert.Format
         , packForeign
         , unpackForeign)
 where
@@ -26,8 +25,7 @@ import Data.Repa.Array.Material.Auto            as A
 
 import Data.Repa.Fusion.Unpack
 
-import Data.Repa.Binary.Packable
-import Data.Repa.Binary.Format
+import Data.Repa.Convert.Format
 
 import Foreign.ForeignPtr
 import Foreign.Storable
@@ -233,7 +231,7 @@ packForeign !format !arrElems
                      = return True
 
                      | otherwise
-                     = Data.Repa.Binary.Packable.pack   
+                     = Data.Repa.Convert.Format.pack   
                                 (plusPtr ptr ixDst) format (A.index arrElems ixSrc)
                      $ \oElem   -> loop (ixSrc + 1) (ixDst + oElem)
 
@@ -280,7 +278,7 @@ unpackForeign !format !arrBytes
                      = return $ Just ixSrc
 
                      | otherwise
-                     = Data.Repa.Binary.Packable.unpack 
+                     = Data.Repa.Convert.Format.unpack 
                                 (plusPtr ptr ixSrc) format 
                      $ \(value, oElem) -> do
                         unsafeWriteBuffer buf ixDst value

@@ -33,7 +33,7 @@ Library
         text               == 1.2.*,
         repa-eval          == 4.0.0.*,
         repa-stream        == 4.0.1.*,
-        repa-binary        == 4.0.1.*
+        repa-convert       == 4.0.1.*
 
 
   exposed-modules:

@@ -9,7 +9,6 @@ module Data.Repa.Bits.Date32
         , readDDsMMsYYYY)
 where
 import Data.Repa.IO.Convert                             as A
-import Data.Repa.Array.Material.Foreign                 as A
 import Data.Repa.Array                                  as A
 import Data.Repa.Eval.Array                             as A
 import Data.Word
@@ -17,6 +16,7 @@ import Data.Bits
 import GHC.Exts
 import GHC.Word
 import Prelude                                          as P
+import Data.Repa.Array.Material.Foreign                 hiding (pack, unpack)
 
 
 -- | A date packed into a 32-bit word.

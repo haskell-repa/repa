@@ -26,8 +26,7 @@ module Data.Repa.Array.Material
         , fromStorableVector,   toStorableVector
 
           -- ** Ingestion
-        , module Data.Repa.Binary.Format
-        , Packable
+        , module Data.Repa.Convert.Format
         , packForeign
         , unpackForeign
 
@@ -64,6 +63,6 @@ import Data.Repa.Array.Material.Boxed
 import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign
 import Data.Repa.Array.Material.Nested
-import Data.Repa.Binary.Format
+import Data.Repa.Convert.Format
 
 

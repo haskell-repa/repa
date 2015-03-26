@@ -11,7 +11,7 @@ import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Unboxed         as A
-import Data.Repa.Binary.Product                 as B
+import Data.Repa.Product                        as B
 import Data.Int
 import Control.Monad
 #include "repa-array.h"

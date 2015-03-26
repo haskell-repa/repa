@@ -5,7 +5,7 @@ module Data.Repa.Nice
         , Tok   (..))
 where
 import Data.Repa.Array          as A
-import Data.Repa.Binary.Product as B
+import Data.Repa.Product        as B
 import Control.Monad
 import Data.Word
 import Data.Int
