@@ -1,4 +1,4 @@
-Name:           repa-binary
+Name:           repa-convert
 Version:        4.0.1.0
 License:        BSD3
 License-file:   LICENSE
@@ -24,11 +24,12 @@ Library
         vector          == 0.10.*
 
   exposed-modules:
-        Data.Repa.Binary.Format
-        Data.Repa.Binary.Product
-        Data.Repa.Binary.Packable
+        Data.Repa.Product
+        Data.Repa.Convert.Format
 
   other-modules:
+        Data.Repa.Convert.Format.Base
+        Data.Repa.Convert.Format.Binary
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

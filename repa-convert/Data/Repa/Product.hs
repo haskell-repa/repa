@@ -1,5 +1,5 @@
 
-module Data.Repa.Binary.Product
+module Data.Repa.Product
         ((:*:)(..))
 where
 import qualified Data.Vector.Unboxed            as U

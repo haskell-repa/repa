@@ -1,49 +1,49 @@
 
-module Data.Repa.Binary.Packable
-        ( Packable (..)
-        , packToList
-        , unpackFromList)
+-- | Atomic binary formats.
+module Data.Repa.Convert.Format.Binary
+        ( Format    (..)
+
+        , Word8be   (..),       Int8be  (..)
+        , Word16be  (..),       Int16be (..)
+        , Word32be  (..),       Int32be (..)
+        , Word64be  (..),       Int64be (..)
+
+        , Float32be (..)
+        , Float64be (..))
 where
-import Data.Word
-import Data.Int
-import Data.Bits
-import Data.Char
-import System.IO.Unsafe
-import Data.Repa.Binary.Product
-import Data.Repa.Binary.Format                  as F
+import Data.Repa.Convert.Format.Base
+import Data.Bits                
+import Data.Int                                 as V
+import Data.Word                                as V
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
 import qualified Foreign.Ptr                    as S
 import qualified Control.Monad.Primitive        as Prim
 
 
----------------------------------------------------------------------------------------------------
-class Format   format 
-   => Packable format where
+------------------------------------------------------------------------------------------- Int8be
+-- | Big-endian 8-bit signed integer.
+data Int8be     = Int8be                deriving (Eq, Show)
+instance Format Int8be                  where
+ type Value Int8be      = V.Int8
+ fixedSize  _           = Just 1
+ packedSize _ _         = Just 1
 
- -- | Pack a value into a buffer using the given format.
- -- 
- --   If the format contains fixed width fields and the corresponding
- --   value has too many elements, then this function returns `False`, 
- --   otherwise `True`.
- --
- pack   :: S.Ptr Word8                  -- ^ Buffer.
-        -> format                       -- ^ Format of buffer.
-        -> Value format                 -- ^ Value to pack.
-        -> (Int -> IO Bool)             -- ^ Accept the next offset.
-        -> IO Bool
 
- -- | Unpack a value from a buffer using the given format.
- --
- --   This is the inverse of `pack` above.
- unpack :: S.Ptr Word8                  -- ^ Buffer.
-        -> format                       -- ^ Format of buffer.
-        -> ((Value format, Int) -> IO (Maybe a)) 
-                                        -- ^ Accept the value and next offset. 
-        -> IO (Maybe a)
+i8  :: Integral a => a -> Int8
+i8 = fromIntegral
+{-# INLINE i8  #-}
 
 
 ------------------------------------------------------------------------------------------- Word8be
+-- | Big-endian 8-bit unsigned word.
+data Word8be     = Word8be              deriving (Eq, Show)
+instance Format Word8be                 where
+ type Value Word8be     = V.Word8
+ fixedSize  _           = Just 1
+ packedSize _ _         = Just 1
+
+
 instance Packable Word8be where
  pack   buf Word8be x k
   = do  S.poke buf (fromIntegral x)
@@ -67,12 +67,31 @@ w8  :: Integral a => a -> Word8
 w8 = fromIntegral
 {-# INLINE w8  #-}
 
-i8  :: Integral a => a -> Int8
-i8 = fromIntegral
-{-# INLINE i8  #-}
+
+------------------------------------------------------------------------------------------- Int16be
+--- | Big-endian 16-bit signed integer.
+data Int16be    = Int16be               deriving (Eq, Show)
+instance Format Int16be                 where
+ type Value Int16be     = V.Int16
+ fixedSize _            = Just 2
+ packedSize _ _         = Just 2
+
+
+
+i16 :: Integral a => a -> Int16
+i16 = fromIntegral
+{-# INLINE i16 #-}
 
 
 ------------------------------------------------------------------------------------------ Word16be
+-- | Big-endian 32-bit unsigned word.
+data Word16be    = Word16be             deriving (Eq, Show)
+instance Format Word16be                where
+ type Value Word16be    = V.Word16
+ fixedSize _            = Just 2
+ packedSize _ _         = Just 2
+
+
 instance Packable Word16be where
  pack   buf Word16be x k
   = do  S.poke  buf          (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
@@ -99,12 +118,37 @@ w16 :: Integral a => a -> Word16
 w16 = fromIntegral
 {-# INLINE w16 #-}
 
-i16 :: Integral a => a -> Int16
-i16 = fromIntegral
-{-# INLINE i16 #-}
+
+------------------------------------------------------------------------------------------- Int32be
+-- | Big-endian 32-bit signed integer.
+data Int32be    = Int32be               deriving (Eq, Show)
+instance Format Int32be                 where
+ type Value Int32be     = V.Int32
+ fixedSize _            = Just 4
+ packedSize _ _         = Just 4
+
+
+instance Packable Int32be where
+ pack   buf  Int32be x k  = pack   buf Word32be (w32 x) k
+ unpack buf  Int32be k    = unpack buf Word32be (\(x, o) -> k (i32 x, o))
+ {-# INLINE pack   #-}
+ {-# INLINE unpack #-}
+
+
+i32 :: Integral a => a -> Int32
+i32 = fromIntegral
+{-# INLINE i32 #-}
 
 
 ------------------------------------------------------------------------------------------ Word32be
+-- | Big-endian 32-bit unsigned word.
+data Word32be    = Word32be             deriving (Eq, Show)
+instance Format Word32be                where
+ type Value Word32be    = V.Word32
+ fixedSize _            = Just 4
+ packedSize _ _         = Just 4
+
+
 instance Packable Word32be where
  pack   buf Word32be x k
   = do  S.poke        buf    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
@@ -127,23 +171,40 @@ instance Packable Word32be where
  {-# INLINE unpack #-}
 
 
-instance Packable Int32be where
- pack   buf  Int32be x k  = pack   buf Word32be (w32 x) k
- unpack buf  Int32be k    = unpack buf Word32be (\(x, o) -> k (i32 x, o))
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
-
-
 w32 :: Integral a => a -> Word32
 w32 = fromIntegral
 {-# INLINE w32 #-}
 
-i32 :: Integral a => a -> Int32
-i32 = fromIntegral
-{-# INLINE i32 #-}
+------------------------------------------------------------------------------------------- Int64be
+-- | Big-endian 64-bit signed integer.
+data Int64be    = Int64be               deriving (Eq, Show)
+instance Format Int64be                 where
+ type Value Int64be     = V.Int64
+ fixedSize _            = Just 8
+ packedSize _ _         = Just 8
+
+
+instance Packable Int64be where
+ pack   buf  Int64be x k  = pack   buf Word64be (w64 x) k
+ unpack buf  Int64be k    = unpack buf Word64be (\(x, o) -> k (i64 x, o))
+ {-# INLINE pack   #-}
+ {-# INLINE unpack #-}
+
+
+i64 :: Integral a => a -> Int64
+i64 = fromIntegral
+{-# INLINE i64 #-}
 
 
 ------------------------------------------------------------------------------------------ Word64be
+-- | Big-endian 64-bit unsigned word.
+data Word64be    = Word64be             deriving (Eq, Show)
+instance Format Word64be                where
+ type Value Word64be    = V.Word64
+ fixedSize _            = Just 8
+ packedSize _ _         = Just 8
+
+
 instance Packable Word64be where
  pack   buf Word64be x k
   = do  S.poke        buf    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
@@ -178,23 +239,20 @@ instance Packable Word64be where
  {-# INLINE unpack #-}
 
 
-instance Packable Int64be where
- pack   buf  Int64be x k  = pack   buf Word64be (w64 x) k
- unpack buf  Int64be k    = unpack buf Word64be (\(x, o) -> k (i64 x, o))
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
-
-
 w64 :: Integral a => a -> Word64
 w64 = fromIntegral
 {-# INLINE w64 #-}
 
-i64 :: Integral a => a -> Int64
-i64 = fromIntegral
-{-# INLINE i64 #-}
-
 
 ----------------------------------------------------------------------------------------- Float32be
+-- | Big-endian 32-bit IEEE 754 float.
+data Float32be  = Float32be             deriving (Eq, Show)
+instance Format Float32be               where
+ type Value Float32be   = Float
+ fixedSize  _           = Just 4
+ packedSize _ _         = Just 4
+
+
 instance Packable Float32be where
  pack      buf Float32be x k
   = pack   buf Word32be (floatToWord32 x) k
@@ -229,6 +287,14 @@ word32ToFloat w
 
 
 ----------------------------------------------------------------------------------------- Float64be
+-- | Big-endian 64-bit IEEE 754 float.
+data Float64be  = Float64be             deriving (Eq, Show)
+instance Format Float64be               where
+ type Value Float64be   = Double
+ fixedSize  _           = Just 8
+ packedSize _ _         = Just 8
+
+
 instance Packable Float64be where
  pack      buf Float64be x k
   = pack   buf Word64be (doubleToWord64 x) k
@@ -261,104 +327,4 @@ word64ToDouble w
         S.peek buf
 {-# INLINE word64ToDouble #-}
 
-
---------------------------------------------------------------------------------------------- (:*:)
-instance (Packable fa, Packable fb) 
-      =>  Packable (fa :*: fb) where
-
- pack   buf (fa :*: fb) (xa :*: xb) k
-  =  pack buf                  fa xa $ \oa 
-  -> pack (S.plusPtr buf oa)   fb xb $ \ob
-  -> k (oa + ob)
- {-# INLINE pack #-}
-
- unpack buf (fa :*: fb) k
-  =  unpack buf                fa    $ \(xa, oa)
-  -> unpack (S.plusPtr buf oa) fb    $ \(xb, ob)
-  -> k (xa :*: xb, oa + ob)
- {-# INLINE unpack #-}
-
-
------------------------------------------------------------------------------------------ FixString
-instance Packable (FixString ASCII) where
- 
-  pack buf   (FixString ASCII lenField) xs k
-   = do let !lenChars   = length xs
-        let !lenPad     = lenField - lenChars
-
-        if lenChars > lenField
-         then return False
-         else do
-                mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
-                        $ zip [0 .. lenChars - 1] xs
-
-                mapM_ (\o      -> S.pokeByteOff buf (lenChars + o) (0 :: Word8))
-                        $ [0 .. lenPad - 1]
-
-                k lenField
-  {-# NOINLINE pack #-}
-
-  unpack buf (FixString ASCII lenField) k
-   = do 
-        let load_unpackChar o
-                = do    x :: Word8 <- S.peekByteOff buf o
-                        return $ chr $ fromIntegral x
-            {-# INLINE load_unpackChar #-}
-
-        xs      <- mapM load_unpackChar [0 .. lenField - 1]
-        let (pre, _) = break (== '\0') xs
-        k (pre, lenField)
-  {-# NOINLINE unpack #-}
-
-
------------------------------------------------------------------------------------------ VarString
-instance Packable (VarString ASCII) where
-
-  pack buf   (VarString ASCII) xs k
-   = do let !lenChars   = length xs
-
-        mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
-                $ zip [0 .. lenChars - 1] xs
-
-        k lenChars
-  {-# NOINLINE pack #-}
-
-  unpack _   (VarString ASCII) _
-   = return Nothing
-  {-# NOINLINE unpack #-}
-
-
----------------------------------------------------------------------------------------------------
--- | Pack a value into a list of `Word8`.
-packToList 
-        :: Packable format
-        => format -> Value format -> Maybe [Word8]
-packToList f x
- | Just size    <- packedSize f x
- = unsafePerformIO
- $ do   buf     <- S.mallocBytes size
-        success <- pack buf f x (\_ -> return True)
-        case success of
-         False  -> return Nothing
-         True   -> do
-                xs      <- mapM (S.peekByteOff buf) [0..size - 1]
-                S.free buf
-                return $ Just xs
-
- | otherwise
- = Nothing
-
-
--- | Unpack a value from a list of `Word8`.
-unpackFromList
-        :: Packable format
-        => format -> [Word8] -> Maybe (Value format)
-
-unpackFromList f xs
- = unsafePerformIO
- $ do   let len = length xs
-        buf     <- S.mallocBytes len
-        mapM_ (\(o, x) -> S.pokeByteOff buf o x)
-                $ zip [0 .. len - 1] xs
-        unpack buf f $ \(v, _) -> return (Just v)
 
