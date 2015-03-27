@@ -5,7 +5,7 @@
 --   This is a re-export of the module "Data.Repa.Array".
 --
 module Data.Repa.Array.Auto
-        ( Array
+        ( Array (..)
         , Elem, Build
 
         -- * Basics
@@ -607,17 +607,32 @@ foldsWith f z start lens vals
 
 
 -- Conversion -------------------------------------------------------------------------------------
--- | O(1). Wrap an auto array around a foreign array of bytes.
-fromForeign :: A.Array F.F Word8 -> Array Word8
-fromForeign arr
-        = A.AArray_Word8 arr
+-- | O(1). Wrap a foreign array to an auto array.
+--
+--   * Arrays of atomic values like `Word8` and `Float` are stored as flat
+--     buffers in foreign memory.
+--
+--   * Use this function in conjunction with "Data.Repa.Array.Material.Foreign"
+--     for constant-time conversion from other Haskell array types.
+--
+--   * Arrays of more complex element type can be manually wrapped
+--     using the constructors in "Data.Repa.Array.Material.Auto". 
+--     For example, use `A.AArray_T2` to wrap the representation of
+--     arrays of pairs.
+--
+fromForeign 
+        :: A.Foreign (A.Array A) a
+        => A.Array F.F a -> Array a
+fromForeign = A.fromForeign
 {-# INLINE fromForeign #-}
 
 
--- | O(1). Strip off the auto constructor from an array of bytes.
-toForeign :: Array Word8 -> A.Array F.F Word8
-toForeign (A.AArray_Word8 arr) 
-        = arr
+-- | O(1). Unwrap an auto array to a foreign array. Opposite of `fromForeign`.
+--
+toForeign 
+        :: A.Foreign (A.Array A) a
+        => Array a -> A.Array F.F a
+toForeign  = A.toForeign
 {-# INLINE toForeign #-}
 
 

@@ -2,7 +2,8 @@
 module Data.Repa.Array.Material.Auto
         ( A             (..)
         , Name          (..)
-        , Array         (..))
+        , Array         (..)
+        , Foreign       (..))
 where
 import Data.Repa.Array.Material.Auto.Base
 

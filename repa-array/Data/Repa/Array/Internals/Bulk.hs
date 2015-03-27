@@ -13,6 +13,7 @@ import Prelude hiding (length)
 #include "repa-array.h"
 
 
+
 -- Bulk -----------------------------------------------------------------------
 -- | Class of array representations that we can read elements from in a 
 --   random-access manner. 
