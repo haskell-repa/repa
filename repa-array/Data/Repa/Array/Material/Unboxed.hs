@@ -10,9 +10,9 @@ module Data.Repa.Array.Material.Unboxed
         , fromUnboxed,  toUnboxed)
 
 where
-import Data.Repa.Array.Index                            as A
 import Data.Repa.Array.Meta.Window                      as A
 import Data.Repa.Array.Meta.Delayed                     as A
+import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Fusion.Unpack

@@ -6,7 +6,7 @@ module Data.Repa.Array.Material.AutoUnpack
 where
 import Data.Repa.Array.Material.Auto            as A
 import Data.Repa.Array.Material.Foreign         as A
-import Data.Repa.Array.Index                    as A
+import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Convert.Format

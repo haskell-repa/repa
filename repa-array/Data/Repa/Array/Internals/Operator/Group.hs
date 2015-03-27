@@ -4,7 +4,7 @@ module Data.Repa.Array.Internals.Operator.Group
         , groupsWith
         , GroupsDict)
 where
-import Data.Repa.Array.Index                    as A
+import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A

@@ -3,7 +3,7 @@ module Data.Repa.Array.Internals.Operator.Compact
         ( compact
         , compactIn )
 where
-import Data.Repa.Array.Material                 as A
+import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Eval.Stream                    as A

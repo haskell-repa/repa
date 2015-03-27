@@ -4,7 +4,7 @@ module Data.Repa.Array.Internals.Check
         , Safe   (..)
         , Unsafe (..))
 where
-import Data.Repa.Array.Index
+import Data.Repa.Array.Generic.Index                    as A
 
 
 class Check m where

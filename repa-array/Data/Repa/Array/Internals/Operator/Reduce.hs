@@ -7,7 +7,7 @@ module Data.Repa.Array.Internals.Operator.Reduce
         , mean, std
         , correlate)
 where
-import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Meta.Delayed                     as A
 import Data.Repa.Array.Meta.Tuple                       as A
 import Data.Repa.Array.Internals.Bulk                   as A

@@ -11,7 +11,7 @@ module Data.Repa.Array.Meta.Dense
         , cube)
 where
 import Data.Repa.Array.Meta.RowWise
-import Data.Repa.Array.Index
+import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack

@@ -1,5 +1,5 @@
 
-module Data.Repa.IO.Convert
+module Data.Repa.Array.Material.Foreign.Convert
         ( -- * Int Conversion
           readIntFromOffset,    readIntFromOffset#
 
@@ -9,8 +9,9 @@ module Data.Repa.IO.Convert
         , showDouble,           showDoubleAsBytes
         , showDoubleFixed,      showDoubleFixedAsBytes)
 where
-import Data.Repa.Array.Material.Foreign                 as A
-import Data.Repa.Array                                  as A
+import Data.Repa.Array.Material.Foreign.Base            as A
+import Data.Repa.Array.Meta                             as A
+import Data.Repa.Array.Generic                          as A
 import System.IO.Unsafe
 import Data.Word
 import Data.Char

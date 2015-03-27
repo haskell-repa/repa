@@ -1,19 +1,13 @@
 
-module Data.Repa.Eval.Array
-        ( -- * Array Targets
-          Target    (..),       TargetI
-        , IOBuffer
-
-          -- * Array Loading
-        , Load      (..)
-
+module Data.Repa.Array.Generic.Load
+        ( Load (..)
         , computeS
         , computeIntoS)
 where
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Load           as A
 import Data.Repa.Array.Internals.Bulk           as A
-import Data.Repa.Array.Index                    as A
+import Data.Repa.Array.Generic.Index            as A
 import System.IO.Unsafe
 #include "repa-array.h"
 

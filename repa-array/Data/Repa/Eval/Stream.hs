@@ -6,7 +6,7 @@ module Data.Repa.Eval.Stream
         , unstreamToArrayIO)
 where
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
 import qualified Data.Vector.Fusion.Stream              as SS

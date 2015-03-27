@@ -1,6 +1,14 @@
 
 -- | Generic array API.
 --
+--  A Repa array is a wrapper around an underlying container structure that
+--  holds the array elements.
+--
+--  In the type (`Array` @l@ @a@), the @l@ specifies the `Layout` of data,
+--  which includes the type of the underlying container, as well as how 
+--  the elements should be arranged in that container. The @a@ specifies 
+--  the element type.
+--
 --   The operators provided by this module do not depend on any particular
 --   array representation.
 --
@@ -8,14 +16,13 @@ module Data.Repa.Array.Generic
         ( Name
 
           -- * Array Access
-        , Bulk  (..)
-        , BulkI
+        , Bulk  (..),   BulkI
         , (!)
         , length
 
           -- * Array Computation
         , Load
-        , Target
+        , Target,       TargetI
         , computeS,     computeIntoS
 
          -- * Operators
@@ -67,10 +74,10 @@ module Data.Repa.Array.Generic
         , Folds(..)
         , FoldsDict)
 where
-
-import Data.Repa.Array.Index
-import Data.Repa.Array.Meta
-import Data.Repa.Array.Internals.Target                 as A
+import Data.Repa.Array.Generic.Target                   as A
+import Data.Repa.Array.Generic.Load                     as A
+import Data.Repa.Array.Generic.Index                    as A
+import Data.Repa.Array.Meta                             as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Operator.Concat        as A
 import Data.Repa.Array.Internals.Operator.Compact       as A
@@ -80,7 +87,6 @@ import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Insert        as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
-import Data.Repa.Eval.Array                             as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
 import Prelude  
@@ -132,6 +138,8 @@ map2S   :: (Bulk   lSrc1 a, Bulk lSrc2 b, Target lDst c
 map2S l f xs ys
  = liftM (computeS l) $! map2 f xs ys
 {-# INLINE map2S #-}
+
+
 
 
 

@@ -6,7 +6,7 @@ module Data.Repa.Array.Meta.Window
         , windowed
         , entire)
 where
-import Data.Repa.Array.Index
+import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
 #include "repa-array.h"
 

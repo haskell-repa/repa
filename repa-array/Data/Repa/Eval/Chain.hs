@@ -7,7 +7,7 @@ module Data.Repa.Eval.Chain
 where
 import Data.Repa.Chain                 (Chain(..), Step(..))
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as S

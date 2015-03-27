@@ -1,6 +1,6 @@
 
 -- | Shapes and Indices
-module Data.Repa.Array.Index
+module Data.Repa.Array.Generic.Index
 	( -- * Shapes
           Shape (..)
         , inShape

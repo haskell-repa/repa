@@ -1,7 +1,10 @@
 
--- | Default Repa Array API that automatically choses an array layout based
+-- | Repa Array API that automatically choses an array layout based
 --   on the element type.
-module Data.Repa.Array.Default
+--
+--   This is a re-export of the module "Data.Repa.Array".
+--
+module Data.Repa.Array.Auto
         ( Array
         , Elem, Build
 
@@ -73,13 +76,24 @@ module Data.Repa.Array.Default
         , segmentOn
         , dice
         , diceSep
-        )
+
+        -- ** Conversion
+        -- *** Foreign arrays
+        , fromForeign, toForeign
+
+        -- *** Int Conversion
+        , readIntFromOffset
+        , readIntFromOffset# )
 where
+import Data.Repa.Array.Auto.Base
 import Data.Repa.Array.Material.Auto                    (A(..), Name(..))
+import Data.Word
 import Control.Monad
+import GHC.Exts                                         hiding (fromList, toList)
 import qualified Data.Repa.Array.Generic                as G
 import qualified Data.Repa.Array.Material.Auto          as A
 import qualified Data.Repa.Array.Material.Nested        as N
+import qualified Data.Repa.Array.Material.Foreign       as F
 import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Array.Meta.Delayed           as A
 import qualified Data.Repa.Array.Meta.Delayed2          as A
@@ -90,22 +104,6 @@ import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U
 import Prelude 
        hiding (map, length, reverse, filter, concat, unlines, foldl, sum)
-
-
--- | Arrays of elements using an automatic layout.
-type Array a    =  G.Array A a
-
--- | Class of elements that can be automatically organised into arrays.
-type Elem  a    
-        = ( G.Bulk  A a
-          , A.Windowable A a)
-
--- | Class of elements of which arrays of those elements can be built
---   in parallel.
-type Build a t
-        = ( G.Bulk   A a
-          , G.Target A a
-          , F.Unpack (G.IOBuffer A a) t)
 
 
 -- Basic ------------------------------------------------------------------------------------------
@@ -608,4 +606,40 @@ foldsWith f z start lens vals
 {-# INLINE foldsWith #-}
 
 
+-- Conversion -------------------------------------------------------------------------------------
+-- | O(1). Wrap an auto array around a foreign array of bytes.
+fromForeign :: A.Array F.F Word8 -> Array Word8
+fromForeign arr
+        = A.AArray_Word8 arr
+{-# INLINE fromForeign #-}
+
+
+-- | O(1). Strip off the auto constructor from an array of bytes.
+toForeign :: Array Word8 -> A.Array F.F Word8
+toForeign (A.AArray_Word8 arr) 
+        = arr
+{-# INLINE toForeign #-}
+
+
+-- | Try to read an `Int` from the given offset in an array.
+-- 
+--   If the conversion succeeded then you get the value, 
+--   along with the index of the next character, 
+--   otherwise `Nothing`.
+--
+readIntFromOffset  :: Array Char -> Int -> Maybe (Int, Int)
+readIntFromOffset (A.AArray_Char arr) ix
+        = F.readIntFromOffset arr ix
+{-# INLINE readIntFromOffset #-}
+
+
+-- | Unboxed version of `readIntFromOffset`.
+--
+--   We still pay to unbox the input array, 
+--   but avoid boxing the result by construction.
+--
+readIntFromOffset# :: Array Char -> Int# -> (# Int#, Int#, Int# #)
+readIntFromOffset# (A.AArray_Char arr) ix
+        = F.readIntFromOffset# arr ix
+{-# INLINE readIntFromOffset# #-}
 

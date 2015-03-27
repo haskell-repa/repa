@@ -4,7 +4,7 @@ module Data.Repa.Nice
         , Str   (..)
         , Tok   (..))
 where
-import Data.Repa.Array          as A
+import Data.Repa.Array.Generic  as A
 import Data.Repa.Product        as B
 import Control.Monad
 import Data.Word

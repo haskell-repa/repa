@@ -1,25 +1,31 @@
-
-module Data.Repa.IO.Array
+module Data.Repa.Array.Auto.IO
         ( -- * Raw Array IO
           hGetArray,   hGetArrayPre
         , hPutArray
 
+{-
           -- * XSV files
           -- ** Reading
         , getArrayFromXSV,      hGetArrayFromXSV
 
           -- ** Writing
-        , putArrayAsXSV,        hPutArrayAsXSV)
+        , putArrayAsXSV,        hPutArrayAsXSV
+-}
+        )
 where
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Array.Material.Boxed
-import Data.Repa.Array.Material.Foreign
-import Data.Repa.Array.Material.Nested          as A
-import Data.Repa.Array                          as A
-import qualified Foreign.Ptr                    as F
-import qualified Foreign.ForeignPtr             as F
-import qualified Foreign.Marshal.Alloc          as F
-import qualified Foreign.Marshal.Utils          as F
+import Data.Repa.Array.Auto.Base               
+
+import qualified Data.Repa.Array.Material.Auto          as A
+import qualified Data.Repa.Array.Material.Boxed         as A
+import qualified Data.Repa.Array.Material.Foreign.Base  as A
+import qualified Data.Repa.Array.Material.Nested        as A
+import qualified Data.Repa.Array.Meta                   as A
+import qualified Data.Repa.Array.Generic                as A
+import qualified Foreign.Ptr                            as F
+import qualified Foreign.ForeignPtr                     as F
+import qualified Foreign.Marshal.Alloc                  as F
+import qualified Foreign.Marshal.Utils                  as F
 import System.IO
 import Data.Word
 import Data.Char
@@ -29,13 +35,12 @@ import Data.Char
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
-hGetArray :: Handle -> Int -> IO (Array F Word8)
+hGetArray :: Handle -> Int -> IO (Array Word8)
 hGetArray h len
- = do
-        buf :: F.Ptr Word8 <- F.mallocBytes len
+ = do   buf :: F.Ptr Word8 <- F.mallocBytes len
         bytesRead          <- hGetBuf h buf len
         fptr               <- F.newForeignPtr F.finalizerFree buf
-        return  $ fromForeignPtr bytesRead fptr
+        return  $! A.AArray_Word8 $! A.fromForeignPtr bytesRead fptr
 {-# NOINLINE hGetArray #-}
 
 
@@ -44,8 +49,9 @@ hGetArray h len
 --
 --   * Data is read into foreign memory without copying it through the GHC heap.
 --
-hGetArrayPre :: Handle -> Int -> Array F Word8 -> IO (Array F Word8)
-hGetArrayPre h len (toForeignPtr -> (offset,lenPre,fptrPre))
+hGetArrayPre :: Handle -> Int -> Array Word8 -> IO (Array Word8)
+hGetArrayPre h len (A.AArray_Word8 arr)
+ | (offset, lenPre, fptrPre)   <- A.toForeignPtr arr
  = F.withForeignPtr fptrPre
  $ \ptrPre' -> do
         let ptrPre      = F.plusPtr ptrPre' offset
@@ -54,7 +60,7 @@ hGetArrayPre h len (toForeignPtr -> (offset,lenPre,fptrPre))
         lenRead         <- hGetBuf h (F.plusPtr ptrBuf lenPre) len
         let bytesTotal  = lenPre + lenRead
         fptrBuf         <- F.newForeignPtr F.finalizerFree ptrBuf
-        return  $ fromForeignPtr bytesTotal fptrBuf
+        return  $ A.AArray_Word8 $! A.fromForeignPtr bytesTotal fptrBuf
 {-# NOINLINE hGetArrayPre #-}
 
 
@@ -63,15 +69,16 @@ hGetArrayPre h len (toForeignPtr -> (offset,lenPre,fptrPre))
 --   * Data is written to file directly from foreign memory,
 --     without copying it through the GHC heap.
 --
-hPutArray :: Handle -> Array F Word8 -> IO ()
-hPutArray h (toForeignPtr -> (offset,lenPre,fptr))
- = F.withForeignPtr fptr
+hPutArray :: Handle -> Array Word8 -> IO ()
+hPutArray h (A.AArray_Word8 arr)
+ | (offset, lenPre, fptrPre)     <- A.toForeignPtr arr
+ = F.withForeignPtr fptrPre
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset
         hPutBuf h ptr lenPre
 {-# NOINLINE hPutArray #-}
 
-
+{-}
 ---------------------------------------------------------------------------------------------------
 -- | Read a XSV file as a nested array.
 --   We get an array of rows:fields:characters.
@@ -125,6 +132,7 @@ hGetArrayFromXSV !cSep !hIn
         return arrChar
 
 
+
 --------------------------------------------------------------------------------------------------
 -- | Write a nested array as an XSV file.
 --
@@ -176,4 +184,4 @@ hPutArrayAsXSV !cSep !hOut !arrChar
 
         hPutArray hOut arrOut
 {-# INLINE hPutArrayAsXSV #-}
-
+-}

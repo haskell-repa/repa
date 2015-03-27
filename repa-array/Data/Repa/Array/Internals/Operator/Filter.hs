@@ -2,8 +2,7 @@
 module Data.Repa.Array.Internals.Operator.Filter
         ( filter)
 where
-import Data.Repa.Array.Material                         as A
-import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import System.IO.Unsafe

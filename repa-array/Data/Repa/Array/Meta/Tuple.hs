@@ -7,7 +7,7 @@ module Data.Repa.Array.Meta.Tuple
         , tup2, untup2)
 where
 import Data.Repa.Array.Meta.Window
-import Data.Repa.Array.Index
+import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
 import Data.Repa.Fusion.Unpack

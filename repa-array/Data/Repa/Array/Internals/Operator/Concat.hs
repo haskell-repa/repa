@@ -7,12 +7,13 @@ module Data.Repa.Array.Internals.Operator.Concat
         , unlines
         , ConcatDict)
 where
-import Data.Repa.Array.Material                         as A
+import Data.Repa.Array.Material.Unboxed                 as A
+import Data.Repa.Array.Material.Foreign.Base            as A
 import Data.Repa.Array.Meta.Delayed                     as A
-import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Generic.Index                    as A
+import Data.Repa.Array.Generic.Load                     as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
-import Data.Repa.Eval.Array                             as A
 import qualified Data.Repa.Fusion.Unpack                as Fusion
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Fusion.Stream.Monadic      as V

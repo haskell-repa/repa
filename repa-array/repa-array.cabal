@@ -37,10 +37,14 @@ Library
 
 
   exposed-modules:
-        Data.Repa.Array.Default
-        Data.Repa.Array.Generic
+        Data.Repa.Array.Auto
+        Data.Repa.Array.Auto.IO
 
-        Data.Repa.Array.Index.Slice
+        Data.Repa.Array.Generic.Index
+        Data.Repa.Array.Generic.Load
+        Data.Repa.Array.Generic.Slice
+        Data.Repa.Array.Generic.Target
+        Data.Repa.Array.Generic
 
         Data.Repa.Array.Material.Auto
         Data.Repa.Array.Material.AutoUnpack
@@ -60,18 +64,12 @@ Library
         Data.Repa.Array.Meta.Window
         Data.Repa.Array.Meta
 
-        Data.Repa.Array.Index
-
         Data.Repa.Bits.Date32
 
-        Data.Repa.Eval.Array
         Data.Repa.Eval.Chain
         Data.Repa.Eval.Stream
 
         Data.Repa.Fusion.Unpack
-
-        Data.Repa.IO.Array
-        Data.Repa.IO.Convert
 
         Data.Repa.Nice.Display
         Data.Repa.Nice.Tabulate
@@ -81,6 +79,13 @@ Library
         Data.Repa.Nice
         
   other-modules:
+        Data.Repa.Array.Auto.Base
+
+        Data.Repa.Array.Material.Auto.Base
+
+        Data.Repa.Array.Material.Foreign.Base
+        Data.Repa.Array.Material.Foreign.Convert
+
         Data.Repa.Array.Internals.Operator.Concat
         Data.Repa.Array.Internals.Operator.Compact
         Data.Repa.Array.Internals.Operator.Fold
@@ -90,6 +95,7 @@ Library
         Data.Repa.Array.Internals.Operator.Partition
         Data.Repa.Array.Internals.Operator.Reduce
         Data.Repa.Array.Internals.Operator.Filter
+
         Data.Repa.Array.Internals.Bulk
         Data.Repa.Array.Internals.Check
         Data.Repa.Array.Internals.Layout

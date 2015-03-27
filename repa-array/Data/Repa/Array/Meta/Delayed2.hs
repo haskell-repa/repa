@@ -4,7 +4,7 @@ module Data.Repa.Array.Meta.Delayed2
         , delay2
         , map2)
 where
-import Data.Repa.Array.Index
+import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Load
 import Data.Repa.Array.Internals.Target
