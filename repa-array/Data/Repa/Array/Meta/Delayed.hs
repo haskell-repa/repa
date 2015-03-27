@@ -3,7 +3,8 @@ module Data.Repa.Array.Meta.Delayed
         ( D(..), Array(..)
         , fromFunction, toFunction
         , delay
-        , map)
+        , map
+        , reverse)
 where
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
@@ -13,7 +14,7 @@ import Debug.Trace
 import GHC.Exts
 import qualified Data.Repa.Eval.Generic.Par       as Par
 import qualified Data.Repa.Eval.Generic.Seq       as Seq
-import Prelude hiding (map, zipWith)
+import Prelude hiding (map, zipWith, reverse)
 #include "repa-array.h"
 
 
@@ -132,3 +133,19 @@ map     :: Bulk l a
 map f arr
         = ADelayed (layout arr) (f . index arr)
 {-# INLINE_ARRAY map #-}
+
+
+-- | O(1). View the elements of a vector in reverse order.
+--
+-- @
+-- > toList $ reverse $ fromList U [0..10 :: Int]
+-- [10,9,8,7,6,5,4,3,2,1,0]
+-- @
+reverse   :: BulkI  l a
+          => Array l a -> Array (D l) a
+
+reverse !arr
+ = let  !len    = size (extent $ layout arr)
+        get ix  = arr `index` (len - ix - 1)
+   in   fromFunction (layout arr) get
+{-# INLINE_ARRAY reverse #-}

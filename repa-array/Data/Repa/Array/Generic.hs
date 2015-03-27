@@ -1,38 +1,27 @@
 
+-- | Generic array API.
+--
+--   The operators provided by this module do not depend on any particular
+--   array representation.
+--
 module Data.Repa.Array.Generic
         ( Name
+
+          -- * Array Access
         , Bulk  (..)
         , BulkI
         , (!)
         , length
 
-          -- * Material arrays
-          -- | Material arrays are represented as concrete data in memory
-          --   and are defined in "Data.Repa.Array.Material". Indexing into these
-          --   arrays is not bounds checked, so you may want to use them in
-          --   conjunction with a @C@hecked layout.
-        , Material
-
-         -- * Meta arrays
-        , module Data.Repa.Array.Meta
-        
+          -- * Array Computation
+        , Load
+        , Target
+        , computeS,     computeIntoS
 
          -- * Operators
          -- ** Conversion
         , fromList,     fromListInto
         , toList
-
-          -- ** Computation
-        , Load
-        , Target
-        , computeS,     computeIntoS
-
-          -- ** Index space
-          -- | Index space transforms view the elements of an array in a different
-          --   order, but do not compute new elements. They are all constant time
-          --   operations as the location of the required element in the source
-          --   array is computed on demand.
-        , reverse
 
           -- ** Mapping
         , mapS, map2S
@@ -62,10 +51,6 @@ module Data.Repa.Array.Generic
         , intercalate
         , ConcatDict
 
-        , partition
-        , partitionBy
-        , partitionByIx
-
           -- ** Grouping
         , groups
         , groupsWith
@@ -94,7 +79,6 @@ import Data.Repa.Array.Internals.Operator.Fold          as A
 import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Insert        as A
-import Data.Repa.Array.Internals.Operator.Partition     as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
 import Data.Repa.Eval.Array                             as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
@@ -104,35 +88,6 @@ import Prelude
                 , foldl, sum
                 , filter)
 #include "repa-array.h"
-
-
--- | Classes supported by all material representations.
---
---   We can index them in a random-access manner, 
---   window them in constant time, 
---   and use them as targets for a computation.
--- 
---   In particular, delayed arrays are not material as we cannot use them
---   as targets for a computation.
---
-type Material l a
-        = (Bulk l a, Windowable l a, Target l a)
-
-
--- | O(1). View the elements of a vector in reverse order.
---
--- @
--- > toList $ reverse $ fromList U [0..10 :: Int]
--- [10,9,8,7,6,5,4,3,2,1,0]
--- @
-reverse   :: BulkI  l a
-          => Array l a -> Array (D l) a
-
-reverse !arr
- = let  !len    = size (extent $ layout arr)
-        get ix  = arr `index` (len - ix - 1)
-   in   fromFunction (layout arr) get
-{-# INLINE_ARRAY reverse #-}
 
 
 -- | O(len src) Yield `Just` the index of the first element matching the predicate

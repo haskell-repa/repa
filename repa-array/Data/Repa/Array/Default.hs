@@ -80,6 +80,9 @@ import Control.Monad
 import qualified Data.Repa.Array.Generic                as G
 import qualified Data.Repa.Array.Material.Auto          as A
 import qualified Data.Repa.Array.Material.Nested        as N
+import qualified Data.Repa.Array.Meta.Window            as A
+import qualified Data.Repa.Array.Meta.Delayed           as A
+import qualified Data.Repa.Array.Meta.Delayed2          as A
 import qualified Data.Repa.Array.Internals.Bulk         as G
 import qualified Data.Repa.Array.Internals.Target       as G
 import qualified Data.Repa.Fusion.Unpack                as F
@@ -95,7 +98,7 @@ type Array a    =  G.Array A a
 -- | Class of elements that can be automatically organised into arrays.
 type Elem  a    
         = ( G.Bulk  A a
-          , G.Windowable A a)
+          , A.Windowable A a)
 
 -- | Class of elements of which arrays of those elements can be built
 --   in parallel.
@@ -181,7 +184,7 @@ toListss = G.toListss
 -- @
 --
 reverse :: Build a at => Array a -> Array a
-reverse arr = G.computeS A $! G.reverse arr
+reverse arr = G.computeS A $! A.reverse arr
 {-# INLINE reverse #-}
 
 
@@ -190,7 +193,7 @@ reverse arr = G.computeS A $! G.reverse arr
 map     :: (Elem a, Build b bt)
         => (a -> b) -> Array a -> Array b
 map f arr
- = G.computeS A $! G.map f arr
+ = G.computeS A $! A.map f arr
 {-# INLINE map #-}
 
 
@@ -201,7 +204,7 @@ map f arr
 map2    :: (Elem a, Elem b, Build c ct)
         => (a -> b -> c) -> Array a -> Array b -> Maybe (Array c)
 map2 f xs ys
- = liftM (G.computeS A) $! G.map2 f xs ys
+ = liftM (G.computeS A) $! A.map2 f xs ys
 {-# INLINE map2 #-}
 
 
