@@ -20,12 +20,41 @@ module Data.Repa.Array.Default
         , toListss
 
         -- * Operators
-        -- ** Index space
-        , reverse
 
         -- ** Mapping
         , map
         , map2
+        , mapElems
+
+        -- ** Folding
+        , foldl
+        , sum,  prod
+        , mean, std
+        , correlate
+        , folds
+        , foldsWith
+
+        -- ** Filtering
+        , filter
+        , slices
+        , trims
+        , trimEnds
+        , trimStarts
+
+        -- ** Sloshing
+        , reverse
+        , concat
+        , concatWith
+        , intercalate
+        , unlines
+        , concats
+        , ragspose3
+
+        -- ** Inserting
+        , insert
+
+        -- ** Searching
+        , findIndex
 
         -- ** Merging
         , merge
@@ -35,35 +64,15 @@ module Data.Repa.Array.Default
         , compact
         , compactIn
 
-        -- ** Filtering
-        , filter
-
-        -- ** Inserting
-        , insert
-
-        -- ** Searching
-        , findIndex
-
-        -- ** Sloshing
-        , concat
-        , concatWith
-        , intercalate
-        , unlines
-
         -- ** Grouping
         , groups
         , groupsWith
 
-        -- ** Folding
-        -- ** Complete Fold
-        , foldl
-        , sum,  prod
-        , mean, std
-        , correlate
-
-        -- ** Segmented Fold
-        , folds
-        , foldsWith
+        -- ** Splitting
+        , segment
+        , segmentOn
+        , dice
+        , diceSep
         )
 where
 import Data.Repa.Array.Material.Auto                    (A(..), Name(..))
@@ -75,6 +84,7 @@ import qualified Data.Repa.Array.Internals.Bulk         as G
 import qualified Data.Repa.Array.Internals.Target       as G
 import qualified Data.Repa.Fusion.Unpack                as F
 import qualified Data.Repa.Chain                        as C
+import qualified Data.Vector.Unboxed                    as U
 import Prelude 
        hiding (map, length, reverse, filter, concat, unlines, foldl, sum)
 
@@ -171,7 +181,7 @@ toListss = G.toListss
 -- @
 --
 reverse :: Build a at => Array a -> Array a
-reverse arr = G.computeS A $ G.reverse arr
+reverse arr = G.computeS A $! G.reverse arr
 {-# INLINE reverse #-}
 
 
@@ -185,11 +195,33 @@ map f arr
 
 
 -- | Combine two arrays of the same length element-wise.
+--
+--   If the arrays don't have the same length then `Nothing`.
+--
 map2    :: (Elem a, Elem b, Build c ct)
         => (a -> b -> c) -> Array a -> Array b -> Maybe (Array c)
 map2 f xs ys
  = liftM (G.computeS A) $! G.map2 f xs ys
 {-# INLINE map2 #-}
+
+
+-- | Apply a function to all the elements of a doubly nested
+--   array, preserving the nesting structure. 
+--
+--   * This function has a non-standard time complexity.
+--     As nested arrays use a segment descriptor based representation,
+--     detatching and reattaching the nesting structure is a constant time
+--     operation. However, the array passed to the worker function will
+--     also contain any elements in the array representation that are 
+--     not reachable from the segment descriptor. This matters if the 
+--     source array was produced by a function that filters the segments
+--     directly, like `slices`.
+--
+mapElems :: (Array a -> Array b)
+         -> Array (Array a) -> (Array (Array b))
+mapElems f (A.AArray_Array arr)
+ = A.AArray_Array (N.mapElems f arr)
+{-# INLINE mapElems #-}
 
 
 -- Merging ----------------------------------------------------------------------------------------
@@ -246,11 +278,61 @@ compactIn = G.compactIn A
 
 
 -- Filtering --------------------------------------------------------------------------------------
--- | Keep the elements of an array that match the given predicate.
+-- | O(len src) Keep the elements of an array that match the given predicate.
 filter  :: Build a at
         => (a -> Bool) -> Array a -> Array a
 filter = G.filter A
 {-# INLINE filter #-}
+
+
+-- | O(1). Produce a nested array by taking slices from some array of elements.
+--   
+--  * This is a constant time operation, as the representation for nested 
+--    vectors just wraps the starts, lengths and elements vectors.
+--
+slices  :: Array Int            -- ^ Segment starting positions.
+        -> Array Int            -- ^ Segment lengths.
+        -> Array a              -- ^ Array elements.
+        -> Array (Array a)
+
+slices (A.AArray_Int starts) (A.AArray_Int lens) elems
+        = A.AArray_Array $! N.slices starts lens elems
+{-# INLINE slices #-}
+
+
+-- | For each segment of a nested vector, trim elements off the start
+--   and end of the segment that match the given predicate.
+trims   :: Elem a
+        => (a -> Bool)
+        -> Array (Array a)
+        -> Array (Array a)
+
+trims f (A.AArray_Array arr)
+        = A.AArray_Array $! N.trims f arr
+{-# INLINE trims #-}
+
+
+-- | For each segment of a nested array, trim elements off the end of 
+--   the segment that match the given predicate.
+trimEnds :: Elem a
+         => (a -> Bool)
+         -> Array (Array a)
+         -> Array (Array a)
+
+trimEnds f (A.AArray_Array arr)
+        = A.AArray_Array $! N.trimEnds f arr
+{-# INLINE trimEnds #-}
+
+
+-- | For each segment of a nested array, trim elements off the start of
+--   the segment that match the given predicate.
+trimStarts :: Elem a
+           => (a -> Bool)
+           -> Array (Array a)
+           -> Array (Array a)
+trimStarts f (A.AArray_Array arr)
+        = A.AArray_Array $! N.trimStarts f arr
+{-# INLINE trimStarts #-}
 
 
 -- Inserting --------------------------------------------------------------------------------------
@@ -267,6 +349,74 @@ insert = G.insert A
 findIndex :: Elem a => (a -> Bool) -> Array a -> Maybe Int
 findIndex = G.findIndex 
 {-# INLINE findIndex #-}
+
+
+-- Splitting --------------------------------------------------------------------------------------
+-- | O(len src). Given predicates which detect the start and end of a segment, 
+--   split an vector into the indicated segments.
+segment :: (Elem a, U.Unbox a)
+        => (a -> Bool)  -- ^ Detect the start of a segment.
+        -> (a -> Bool)  -- ^ Detect the end of a segment.
+        -> Array a      -- ^ Array to segment.
+        -> Array (Array a)  
+
+segment pStart pEnd elems
+        = A.AArray_Array $! N.segment pStart pEnd elems
+{-# INLINE segment #-}
+
+
+-- | O(len src). Given a terminating value, split an vector into segments.
+--
+--   The result segments do not include the terminator.
+segmentOn 
+        :: (Elem a, Eq a, U.Unbox a)
+        => (a -> Bool)  -- ^ Detect the end of a segment.
+        -> Array a      -- ^ Array to segment.
+        -> Array (Array a)
+
+segmentOn pEnd arr
+        = A.AArray_Array $! N.segmentOn pEnd arr
+{-# INLINE segmentOn #-}
+
+
+-- | O(len src). Like `segment`, but cut the source array twice.
+dice    :: (Elem a, U.Unbox a)
+        => (a -> Bool)  -- ^ Detect the start of an inner segment.
+        -> (a -> Bool)  -- ^ Detect the end   of an inner segment.
+        -> (a -> Bool)  -- ^ Detect the start of an outer segment.
+        -> (a -> Bool)  -- ^ Detect the end   of an outer segment.
+        -> Array a      -- ^ Array to dice.
+        -> Array (Array (Array a))
+
+dice pStart1 pEnd1 pStart2 pEnd2 arr
+ = let  N.NArray starts1 elems1 (N.NArray starts2 elems2 arr')
+                = N.dice pStart1 pEnd1 pStart2 pEnd2 arr
+  
+   in   A.AArray_Array 
+                $! N.NArray starts1 elems1
+                $! A.AArray_Array 
+                $! N.NArray starts2 elems2 arr'
+{-# INLINE dice #-}
+
+
+-- | O(len src). Given field and row terminating values, 
+--   split an array into rows and fields.
+--
+diceSep :: (Elem a, Eq a, U.Unbox a)
+        => a            -- ^ Terminating element for inner segments.
+        -> a            -- ^ Terminating element for outer segments.
+        -> Array a      -- ^ Vector to dice.
+        -> Array (Array (Array a))
+
+diceSep xEndCol xEndRow arr
+ = let  N.NArray starts1 elems1 (N.NArray starts2 elems2 arr')
+                = N.diceSep xEndCol xEndRow arr
+  
+   in   A.AArray_Array 
+                $! N.NArray starts1 elems1
+                $! A.AArray_Array 
+                $! N.NArray starts2 elems2 arr'
+{-# INLINE diceSep #-}
 
 
 -- Sloshing ---------------------------------------------------------------------------------------
@@ -289,6 +439,21 @@ concatWith = G.concatWith A
 {-# INLINE concatWith #-}
 
 
+-- | O(len result) Concatenate the outer two layers of a triply nested array.
+--   (Segmented concatenation).
+--
+--   * The operation is performed entirely on the segment descriptors of the 
+--     array, and does not require the inner array elements to be copied.
+--   * This version is faster than plain `concat` on triply nested arrays.
+--
+concats :: Array (Array (Array a))
+        -> Array (Array a)
+
+concats (A.AArray_Array (N.NArray starts1 lens1 (A.AArray_Array arr)))
+ = A.AArray_Array $ N.concats (N.NArray starts1 lens1 arr)
+{-# INLINE concats #-}
+
+
 -- | O(len result) Perform a `concatWith`, adding a newline character to
 --   the end of each inner array.
 unlines :: F.Unpack (Array Char) aat
@@ -306,6 +471,26 @@ intercalate
         -> Array a
 intercalate = G.intercalate A
 {-# INLINE intercalate #-}
+
+
+-- | Ragged transpose of a triply nested array.
+-- 
+--   * This operation is performed entirely on the segment descriptors
+--     of the nested arrays, and does not require the inner array elements
+--     to be copied.
+--
+ragspose3 :: Array (Array (Array a)) 
+          -> Array (Array (Array a))
+
+ragspose3 (A.AArray_Array (N.NArray starts0 lens0 (A.AArray_Array arr)))
+ = let  N.NArray starts1 elems1 (N.NArray starts2 elems2 arr')
+                = N.ragspose3 (N.NArray starts0 lens0 arr)
+
+   in   A.AArray_Array 
+                $! N.NArray starts1 elems1
+                $! A.AArray_Array 
+                $! N.NArray starts2 elems2 arr'
+{-# INLINE ragspose3 #-}
 
 
 -- Grouping ---------------------------------------------------------------------------------------

@@ -784,3 +784,9 @@ instance (Bulk A a, Windowable A a)
 
 deriving instance Show (Array A a) => Show (Array A (Array A a))
 
+instance (Bulk A a, Windowable A a)
+       => Windowable A (Array A a) where
+ window st len (AArray_Array arr) 
+  = AArray_Array (window st len arr)
+ {-# INLINE_ARRAY window #-}
+

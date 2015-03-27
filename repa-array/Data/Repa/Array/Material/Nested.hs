@@ -320,7 +320,7 @@ diceSep !xEndCol !xEndRow !arr
 
 
 -------------------------------------------------------------------------------
--- | For each segment of a nested vector, trim elements off the start
+-- | For each segment of a nested array, trim elements off the start
 --   and end of the segment that match the given predicate.
 trims   :: BulkI l a
         => (a -> Bool)
@@ -350,7 +350,7 @@ trims pTrim (NArray starts lengths elems)
 {-# INLINE_ARRAY trims #-}
 
 
--- | For each segment of a nested vector, trim elements off the end of 
+-- | For each segment of a nested array, trim elements off the end of 
 --   the segment that match the given predicate.
 trimEnds :: BulkI l a
          => (a -> Bool)
@@ -372,7 +372,7 @@ trimEnds pTrim (NArray starts lengths elems)
 {-# INLINE_ARRAY trimEnds #-}
 
 
--- | For each segment of a nested vector, trim elements off the start of
+-- | For each segment of a nested array, trim elements off the start of
 --   the segment that match the given predicate.
 trimStarts :: BulkI l a
            => (a -> Bool)
