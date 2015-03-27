@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Repa.Array.Linear
+module Data.Repa.Array.Meta.Linear
         ( L(..)
         , Name  (..)
         , Array (..)

@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Repa.Array.Delayed
+module Data.Repa.Array.Meta.Delayed
         ( D(..), Array(..)
         , fromFunction, toFunction
         , delay

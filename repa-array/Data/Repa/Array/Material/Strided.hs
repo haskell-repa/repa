@@ -8,7 +8,7 @@ module Data.Repa.Array.Material.Strided
         , unsafeCast
         , fromForeignPtr,       toForeignPtr)
 where
-import Data.Repa.Array.Window
+import Data.Repa.Array.Meta.Window
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Layout
 import Data.Repa.Fusion.Unpack

@@ -8,7 +8,7 @@ module Data.Repa.Array.Internals.Operator.Concat
         , ConcatDict)
 where
 import Data.Repa.Array.Material                         as A
-import Data.Repa.Array.Delayed                          as A
+import Data.Repa.Array.Meta.Delayed                     as A
 import Data.Repa.Array.Index                            as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A

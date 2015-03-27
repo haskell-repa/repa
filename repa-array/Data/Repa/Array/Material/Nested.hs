@@ -33,9 +33,9 @@ module Data.Repa.Array.Material.Nested
         -- * Transpose
         , ragspose3)
 where
-import Data.Repa.Array.Delayed
-import Data.Repa.Array.Window
 import Data.Repa.Array.Index
+import Data.Repa.Array.Meta.Delayed                     as A
+import Data.Repa.Array.Meta.Window                      as A
 import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A

@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Repa.Array.Delayed2
+module Data.Repa.Array.Meta.Delayed2
         ( D2(..), Array(..)
         , delay2
         , map2)

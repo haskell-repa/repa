@@ -10,11 +10,11 @@ module Data.Repa.Array.Material.Unboxed
         , fromUnboxed,  toUnboxed)
 
 where
-import Data.Repa.Array.Window
-import Data.Repa.Array.Delayed
-import Data.Repa.Array.Index
-import Data.Repa.Array.Internals.Bulk
-import Data.Repa.Array.Internals.Target
+import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Meta.Window                      as A
+import Data.Repa.Array.Meta.Delayed                     as A
+import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Fusion.Unpack
 import Control.Monad
 import Data.Word

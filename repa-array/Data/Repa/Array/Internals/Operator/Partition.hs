@@ -4,9 +4,9 @@ module Data.Repa.Array.Internals.Operator.Partition
         , partitionBy
         , partitionByIx)
 where
-import Data.Repa.Array.Tuple                    as A
-import Data.Repa.Array.Linear                   as A
-import Data.Repa.Array.Delayed                  as A
+import Data.Repa.Array.Meta.Delayed             as A
+import Data.Repa.Array.Meta.Linear              as A
+import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A

@@ -259,14 +259,13 @@ module Data.Repa.Array
         , FoldsDict)
 where
 import Data.Repa.Array.Index
-import Data.Repa.Array.Linear                           as A
-import Data.Repa.Array.Dense                            as A
-import Data.Repa.Array.RowWise                          as A
-import Data.Repa.Array.Delayed                          as A
-import Data.Repa.Array.Delayed2                         as A
-import Data.Repa.Array.Window                           as A
-import Data.Repa.Array.Tuple                            as A
-import Data.Repa.Eval.Array                             as A
+import Data.Repa.Array.Meta.Delayed                     as A
+import Data.Repa.Array.Meta.Delayed2                    as A
+import Data.Repa.Array.Meta.Dense                       as A
+import Data.Repa.Array.Meta.Linear                      as A
+import Data.Repa.Array.Meta.RowWise                     as A
+import Data.Repa.Array.Meta.Tuple                       as A
+import Data.Repa.Array.Meta.Window                      as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Operator.Concat        as A
@@ -278,10 +277,11 @@ import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Insert        as A
 import Data.Repa.Array.Internals.Operator.Partition     as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
+import Data.Repa.Eval.Array                             as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
-import  Prelude  
-        hiding  ( reverse, length, map, zipWith, concat, unlines
+import Prelude  
+       hiding   ( reverse, length, map, zipWith, concat, unlines
                 , foldl, sum
                 , filter)
 #include "repa-array.h"

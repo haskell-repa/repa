@@ -69,8 +69,8 @@ class Format   format
  pack   :: S.Ptr Word8                  -- ^ Target Buffer.
         -> format                       -- ^ Storage format.
         -> Value format                 -- ^ Value to pack.
-        -> (Int -> IO Bool)             -- ^ Continue, given the number of bytes written.
-        -> IO Bool
+        -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
+        -> IO (Maybe a)
 
  -- | Unpack a value from a buffer using the given format.
  --
@@ -92,10 +92,10 @@ packToList f x
  | Just size    <- packedSize f x
  = unsafePerformIO
  $ do   buf     <- S.mallocBytes size
-        success <- pack buf f x (\_ -> return True)
-        case success of
-         False  -> return Nothing
-         True   -> do
+        mResult <- pack buf f x (\_ -> return (Just ()))
+        case mResult of
+         Nothing -> return Nothing
+         Just _  -> do
                 xs      <- mapM (S.peekByteOff buf) [0..size - 1]
                 S.free buf
                 return $ Just xs
@@ -210,7 +210,7 @@ instance Packable (FixString ASCII) where
         let !lenPad     = lenField - lenChars
 
         if lenChars > lenField
-         then return False
+         then return Nothing
          else do
                 mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
                         $ zip [0 .. lenChars - 1] xs

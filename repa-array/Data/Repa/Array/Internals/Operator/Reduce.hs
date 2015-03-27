@@ -8,8 +8,8 @@ module Data.Repa.Array.Internals.Operator.Reduce
         , correlate)
 where
 import Data.Repa.Array.Index                            as A
-import Data.Repa.Array.Delayed                          as A
-import Data.Repa.Array.Tuple                            as A
+import Data.Repa.Array.Meta.Delayed                     as A
+import Data.Repa.Array.Meta.Tuple                       as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Eval.Stream                            as A
 import qualified Data.Vector.Fusion.Stream              as S

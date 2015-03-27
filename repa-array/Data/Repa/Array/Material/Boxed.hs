@@ -11,8 +11,8 @@ module Data.Repa.Array.Material.Boxed
         -- * Utils
         , decimate)
 where
-import Data.Repa.Array.Window                           as A
 import Data.Repa.Array.Index                            as A
+import Data.Repa.Array.Meta.Window                      as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Fusion.Unpack

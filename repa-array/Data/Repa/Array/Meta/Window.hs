@@ -1,5 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Repa.Array.Window
+module Data.Repa.Array.Meta.Window
         ( W          (..)
         , Array      (..)
         , Windowable (..)

@@ -1,5 +1,5 @@
 
-module Data.Repa.Array.RowWise
+module Data.Repa.Array.Meta.RowWise
         ( RW    (..)
         , Name  (..)
         , Array (..)

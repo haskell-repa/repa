@@ -5,7 +5,7 @@ module Data.Repa.Array.Internals.Operator.Fold
         , C.Folds(..), FoldsDict)
 where
 import Data.Repa.Array.Index                    as A
-import Data.Repa.Array.Tuple                    as A
+import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Eval.Chain                     as A

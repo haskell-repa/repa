@@ -4,8 +4,8 @@ module Data.Repa.Array.Material.Auto
         , Name          (..)
         , Array         (..))
 where
-import Data.Repa.Array.Tuple                    as A
-import Data.Repa.Array.Window                   as A
+import Data.Repa.Array.Meta.Tuple               as A
+import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A

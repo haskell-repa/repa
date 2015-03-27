@@ -1,12 +1,12 @@
 {-# LANGUAGE UndecidableInstances #-}
-module Data.Repa.Array.Tuple
+module Data.Repa.Array.Meta.Tuple
         ( T2     (..)
         , Name   (..)
         , Array  (..)
         , Buffer (..)
         , tup2, untup2)
 where
-import Data.Repa.Array.Window
+import Data.Repa.Array.Meta.Window
 import Data.Repa.Array.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
