@@ -217,7 +217,7 @@ module Data.Repa.Array
         , merge
         , mergeMaybe
 
-          -- ** Splitting
+          -- ** Compacting
         , compact
         , compactIn
 

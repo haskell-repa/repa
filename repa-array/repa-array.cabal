@@ -37,6 +37,7 @@ Library
 
 
   exposed-modules:
+        Data.Repa.Array.Default
         Data.Repa.Array.Generic
 
         Data.Repa.Array.Index.Slice
@@ -126,5 +127,6 @@ Library
         ConstraintKinds
         ForeignFunctionInterface
         ViewPatterns
+        ExistentialQuantification
 
 

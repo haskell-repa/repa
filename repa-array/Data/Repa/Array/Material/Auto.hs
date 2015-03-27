@@ -11,6 +11,8 @@ import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Unboxed         as A
+import Data.Repa.Array.Material.Nested          as A
+import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Product                        as B
 import Data.Int
 import Control.Monad
@@ -101,6 +103,14 @@ instance Target A Int where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
+instance (Unpack (Buffer s U Int)) t 
+      => (Unpack (Buffer s A Int)) t where
+ unpack (ABuffer_Int buf)   = unpack buf
+ repack (ABuffer_Int x) buf = ABuffer_Int (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
+
 --------------------------------------------------------------------------------------------- Int8
 instance Bulk A Int8 where
  data Array A Int8               = AArray_Int8 !(Array U Int8)
@@ -155,6 +165,14 @@ instance Target A Int8 where
  bufferLayout (ABuffer_Int8 buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
+
+
+instance (Unpack (Buffer s U Int8)) t 
+      => (Unpack (Buffer s A Int8)) t where
+ unpack (ABuffer_Int8 buf)   = unpack buf
+ repack (ABuffer_Int8 x) buf = ABuffer_Int8 (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 --------------------------------------------------------------------------------------------- Int16
@@ -213,6 +231,14 @@ instance Target A Int16 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
+instance (Unpack (Buffer s U Int16)) t 
+      => (Unpack (Buffer s A Int16)) t where
+ unpack (ABuffer_Int16 buf)   = unpack buf
+ repack (ABuffer_Int16 x) buf = ABuffer_Int16 (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
+
 --------------------------------------------------------------------------------------------- Int32
 instance Bulk A Int32 where
  data Array A Int32               = AArray_Int32 !(Array U Int32)
@@ -267,6 +293,14 @@ instance Target A Int32 where
  bufferLayout (ABuffer_Int32 buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
+
+
+instance (Unpack (Buffer s U Int32)) t 
+      => (Unpack (Buffer s A Int32)) t where
+ unpack (ABuffer_Int32 buf)   = unpack buf
+ repack (ABuffer_Int32 x) buf = ABuffer_Int32 (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 --------------------------------------------------------------------------------------------- Int64
@@ -325,6 +359,14 @@ instance Target A Int64 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
+instance (Unpack (Buffer s U Int64)) t 
+      => (Unpack (Buffer s A Int64)) t where
+ unpack (ABuffer_Int64 buf)   = unpack buf
+ repack (ABuffer_Int64 x) buf = ABuffer_Int64 (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
+
 --------------------------------------------------------------------------------------------- Float
 instance Bulk A Float where
  data Array A Float             = AArray_Float !(Array U Float)
@@ -379,6 +421,14 @@ instance Target A Float where
  bufferLayout (ABuffer_Float buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
+
+
+instance (Unpack (Buffer s U Float)) t 
+      => (Unpack (Buffer s A Float)) t where
+ unpack (ABuffer_Float buf)   = unpack buf
+ repack (ABuffer_Float x) buf = ABuffer_Float (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 -------------------------------------------------------------------------------------------- Double
@@ -437,6 +487,14 @@ instance Target A Double where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
+instance (Unpack (Buffer s U Double)) t 
+      => (Unpack (Buffer s A Double)) t where
+ unpack (ABuffer_Double buf)   = unpack buf
+ repack (ABuffer_Double x) buf = ABuffer_Double (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
+
 ---------------------------------------------------------------------------------------------- Char
 instance Bulk A Char where
  data Array A Char              = AArray_Char !(Array U Char)
@@ -491,6 +549,14 @@ instance Target A Char where
  bufferLayout (ABuffer_Char buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
+
+
+instance (Unpack (Buffer s U Char)) t 
+      => (Unpack (Buffer s A Char)) t where
+ unpack (ABuffer_Char buf)   = unpack buf
+ repack (ABuffer_Char x) buf = ABuffer_Char (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 ----------------------------------------------------------------------------------------------- (,)
@@ -550,6 +616,14 @@ instance (Target A a, Target A b)
  bufferLayout (ABuffer_T2 buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
+
+
+instance Unpack (Buffer s (T2 A A) (a, b)) t
+      => Unpack (Buffer s A (a, b)) t where
+ unpack (ABuffer_T2 buf)   = unpack buf
+ repack (ABuffer_T2 x) buf = ABuffer_T2 (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
 
 
 ----------------------------------------------------------------------------------------------- :*:
@@ -624,6 +698,18 @@ instance (Target A a, Target A b)
  {-# INLINE_ARRAY bufferLayout #-}
 
 
+instance ( Unpack (Buffer s A a) tA
+         , Unpack (Buffer s A b) tB)
+      =>   Unpack (Buffer s A (a :*: b)) (tA, tB) where
+ unpack (ABuffer_Prod bufA bufB)            
+        = (unpack bufA, unpack bufB)
+
+ repack (ABuffer_Prod xA   xB) (bufA, bufB) 
+        = ABuffer_Prod (repack xA bufA) (repack xB bufB)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
+
 ----------------------------------------------------------------------------------------------- []
 instance Bulk A a => Bulk A [a] where
  data Array A [a]               = AArray_List !(Array B [a])
@@ -680,21 +766,21 @@ instance  Target A [a] where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
+instance Unpack (Buffer s A String) (Buffer s A String) where
+ unpack buf   = buf
+ repack _ buf = buf
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
+
 --------------------------------------------------------------------------------------------- Array
 instance (Bulk A a, Windowable A a) 
        => Bulk A (Array A a) where
- data Array A (Array A a)       = AArray_Array !(Array B (Array A a))
+ data Array A (Array A a)       = AArray_Array !(Array N (Array A a))
  layout (AArray_Array arr)      = Auto (A.length arr)
  index  (AArray_Array arr) ix   = A.index arr ix
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index #-}
 
+deriving instance Show (Array A a) => Show (Array A (Array A a))
 
--- 
--- unpack :: Target A (Value format)
---        => format
---        -> Array F Word8
---        -> Array A (Value format)
---
--- unpack (Int32be :*: FixString ASCII 4 :*: Double32be) arr
-        

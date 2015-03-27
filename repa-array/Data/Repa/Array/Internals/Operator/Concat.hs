@@ -3,8 +3,8 @@
 module Data.Repa.Array.Internals.Operator.Concat
         ( concat
         , concatWith
-        , unlines
         , intercalate
+        , unlines
         , ConcatDict)
 where
 import Data.Repa.Array.Material                         as A
@@ -172,8 +172,8 @@ concatWith nDst !is !vs
 {-# INLINE_ARRAY concatWith #-}
 
 
--- | Perform a `concatWith`, adding a newline character to the end of each
---   inner array.
+-- | O(len result). Perform a `concatWith`, adding a newline character to the
+--   end of each inner array.
 unlines :: ( ConcatDict lOut lIn tIn lDst Char)
         => Name  lDst                  -- ^ Result representation.
         -> Array lOut (Array lIn Char) -- ^ Arrays to concatenate.
