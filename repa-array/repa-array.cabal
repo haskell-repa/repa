@@ -43,6 +43,7 @@ Library
         Data.Repa.Array.Index.Slice
 
         Data.Repa.Array.Material.Auto
+        Data.Repa.Array.Material.AutoUnpack
         Data.Repa.Array.Material.Boxed
         Data.Repa.Array.Material.Foreign
         Data.Repa.Array.Material.Strided

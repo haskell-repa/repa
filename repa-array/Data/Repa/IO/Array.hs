@@ -12,6 +12,7 @@ module Data.Repa.IO.Array
         , putArrayAsXSV,        hPutArrayAsXSV)
 where
 import Data.Repa.Fusion.Unpack
+import Data.Repa.Array.Material.Boxed
 import Data.Repa.Array.Material.Foreign
 import Data.Repa.Array.Material.Nested          as A
 import Data.Repa.Array                          as A

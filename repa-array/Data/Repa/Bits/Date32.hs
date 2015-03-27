@@ -16,6 +16,7 @@ import Data.Bits
 import GHC.Exts
 import GHC.Word
 import Prelude                                          as P
+import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign                 hiding (pack, unpack)
 
 

@@ -9,10 +9,11 @@ module Data.Repa.Array.Material
           -- * Boxed arrays
         , B     (..)
         , fromBoxed,            toBoxed
-        , decimate
 
           -- * Nested arrays
         , N (..)
+        , fromLists
+        , fromListss
 
           -- * Unboxed arrays
         , U     (..)
@@ -25,17 +26,15 @@ module Data.Repa.Array.Material
         , fromByteString,       toByteString
         , fromStorableVector,   toStorableVector
 
-          -- ** Ingestion
-        , module Data.Repa.Convert.Format
-        , packForeign
-        , unpackForeign
-
-          -- ** Conversion
-        , fromLists
-        , fromListss
+          -- * Material operators
+          -- | These operators work on particular material representations, 
+          --   rather than being generic like the ones in "Data.Repa.Array.Generic"
 
           -- ** Mapping
         , mapElems
+
+          -- ** Filtering
+        , decimate
 
           -- ** Slicing
         , slices
@@ -56,9 +55,15 @@ module Data.Repa.Array.Material
         , trimStarts
 
           -- ** Transpose
-        , ragspose3)
+        , ragspose3
+
+          -- ** Ingestion
+        , module Data.Repa.Convert.Format
+        , packForeign
+        , unpackForeign)
 where
 import Data.Repa.Array.Material.Auto
+import Data.Repa.Array.Material.AutoUnpack
 import Data.Repa.Array.Material.Boxed
 import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign

@@ -11,6 +11,7 @@ import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Unboxed         as A
+import Data.Repa.Array.Material.Foreign         as A
 import Data.Repa.Array.Material.Nested          as A
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Product                        as B
