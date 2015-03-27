@@ -296,7 +296,8 @@ slices  :: Array Int            -- ^ Segment starting positions.
         -> Array (Array a)
 
 slices (A.AArray_Int starts) (A.AArray_Int lens) elems
-        = A.AArray_Array $! N.slices starts lens elems
+        =  A.AArray_Array 
+        $! N.slices starts lens elems
 {-# INLINE slices #-}
 
 

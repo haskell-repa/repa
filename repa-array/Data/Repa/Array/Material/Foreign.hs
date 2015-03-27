@@ -19,20 +19,15 @@ import Data.Repa.Array.Internals.Bulk           as A
 
 import Data.Repa.Fusion.Unpack
 
-import Data.Repa.Convert.Format
-
 import Foreign.ForeignPtr
 import Foreign.Storable
-import Foreign.Ptr
 
 import Control.Monad
 import Control.Monad.Primitive
-import System.IO.Unsafe
 import Data.Word
 
 import Data.ByteString                          (ByteString)
 import qualified Data.ByteString.Internal       as BS
-import qualified Data.Vector.Storable.Mutable   as SM
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Storable.Mutable as M
 #include "repa-array.h"

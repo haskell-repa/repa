@@ -17,7 +17,7 @@ import GHC.Exts
 import GHC.Word
 import Prelude                                          as P
 import Data.Repa.Array.Material.Unboxed
-import Data.Repa.Array.Material.Foreign                 hiding (pack, unpack)
+import Data.Repa.Array.Material.Foreign
 
 
 -- | A date packed into a 32-bit word.

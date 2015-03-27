@@ -37,11 +37,13 @@ import Data.Repa.Array.Index
 import Data.Repa.Array.Meta.Delayed                     as A
 import Data.Repa.Array.Meta.Window                      as A
 import Data.Repa.Array.Material.Unboxed                 as A
+import Data.Repa.Array.Material.Foreign                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Eval.Stream                            as A
 import Data.Repa.Stream                                 as S
 import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Generic                    as V
 import qualified Data.Vector.Fusion.Stream              as S
 import qualified Data.Repa.Vector.Generic               as G
 import qualified Data.Repa.Vector.Unboxed               as U
@@ -180,13 +182,15 @@ mapElems f (NArray starts lengths elems)
 --   This is a constant time operation, as the representation for nested 
 --   vectors just wraps the starts, lengths and elements vectors.
 --
-slices  :: Array U Int                  -- ^ Segment starting positions.
-        -> Array U Int                  -- ^ Segment lengths.
+slices  :: Array F Int                  -- ^ Segment starting positions.
+        -> Array F Int                  -- ^ Segment lengths.
         -> Array l a                    -- ^ Array elements.
         -> Array N (Array l a)
 
-slices (UArray starts) (UArray lens) !elems
- = NArray starts lens elems
+slices (FArray starts) (FArray lens) !elems
+ = NArray (V.convert starts)
+          (V.convert lens)
+          elems
 {-# INLINE_ARRAY slices #-}
 
 
