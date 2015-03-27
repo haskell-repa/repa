@@ -4,10 +4,12 @@ module Data.Repa.Array.Meta
           D(..)
         , fromFunction
         , toFunction
-        , delay 
+        , delay
+        , map
 
         , D2(..)
         , delay2
+        , map2
 
           -- * Dense arrays
         , E (..)
@@ -41,4 +43,7 @@ import Data.Repa.Array.Meta.Linear
 import Data.Repa.Array.Meta.RowWise
 import Data.Repa.Array.Meta.Tuple
 import Data.Repa.Array.Meta.Window
+
+import Prelude
+       hiding (map)
 

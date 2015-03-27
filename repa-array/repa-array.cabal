@@ -37,6 +37,8 @@ Library
 
 
   exposed-modules:
+        Data.Repa.Array.Generic
+
         Data.Repa.Array.Index.Slice
 
         Data.Repa.Array.Material.Auto
