@@ -2,8 +2,7 @@
 module Data.Repa.Array.Material.Auto
         ( A             (..)
         , Name          (..)
-        , Array         (..)
-        , Foreign       (..))
+        , Array         (..))
 where
 import Data.Repa.Array.Material.Auto.Base
 import Data.Repa.Array.Material.Auto.InstFloat

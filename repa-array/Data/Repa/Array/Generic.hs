@@ -139,7 +139,3 @@ map2S l f xs ys
  = liftM (computeS l) $! map2 f xs ys
 {-# INLINE map2S #-}
 
-
-
-
-

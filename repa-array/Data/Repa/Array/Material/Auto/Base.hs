@@ -2,11 +2,11 @@
 module Data.Repa.Array.Material.Auto.Base
         ( A             (..)
         , Name          (..)
-        , Array         (..)
-        , Foreign       (..))
+        , Array         (..))
 where
 import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Meta.Window              as A
+import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
@@ -48,13 +48,6 @@ deriving instance Eq   (Name A)
 deriving instance Show (Name A)
 
 
--- | Class of array types where the elements are stored in foreign memory.
-class Foreign arr a where
- toForeign   :: arr a -> Array F a
- fromForeign :: Array F a -> arr a
-
-
-
 ---------------------------------------------------------------------------------------------- Char
 instance Bulk A Char where
  data Array A Char              = AArray_Char !(Array F Char)
@@ -64,6 +57,12 @@ instance Bulk A Char where
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show (Array A Char)
+
+instance A.Convert F A Char where
+ convert arr = AArray_Char arr
+
+instance A.Convert A F Char where
+ convert (AArray_Char arr) = arr
 
 instance Windowable A Char where
  window st len (AArray_Char arr) 

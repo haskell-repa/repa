@@ -2,6 +2,7 @@
 {-# LANGUAGE    UndecidableInstances #-}
 module Data.Repa.Array.Material.Auto.InstFloat
 where
+import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Foreign         as A
@@ -22,6 +23,12 @@ instance Bulk A Float where
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show (Array A Float)
+
+instance Convert F A Float where
+ convert arr = AArray_Float arr
+
+instance Convert A F Float where
+ convert (AArray_Float arr) = arr
 
 instance Windowable A Float where
  window st len (AArray_Float arr) 
@@ -86,6 +93,12 @@ instance Bulk A Double where
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show (Array A Double)
+
+instance Convert F A Double where
+ convert arr = AArray_Double arr
+
+instance Convert A F Double where
+ convert (AArray_Double arr) = arr
 
 instance Windowable A Double where
  window st len (AArray_Double arr) 

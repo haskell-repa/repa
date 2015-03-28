@@ -73,8 +73,6 @@ module Data.Repa.Array.Auto
         , diceSep
 
         -- ** Conversion
-        -- *** Foreign arrays
-        , fromForeign, toForeign
 
         -- *** Int Conversion
         , readIntFromOffset

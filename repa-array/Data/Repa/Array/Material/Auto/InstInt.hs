@@ -5,6 +5,7 @@ where
 import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Foreign         as A
+import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
@@ -23,11 +24,13 @@ instance Bulk A Int where
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
-instance Foreign (Array A) Int where
- toForeign  (AArray_Int arr)    = arr
- fromForeign arr                = AArray_Int arr
-
 deriving instance Show (Array A Int)
+
+instance Convert F A Int where
+ convert arr = AArray_Int arr
+
+instance Convert A F Int where
+ convert (AArray_Int arr) = arr
 
 instance Windowable A Int where
  window st len (AArray_Int arr) 
@@ -93,6 +96,12 @@ instance Bulk A Int8 where
 
 deriving instance Show (Array A Int8)
 
+instance Convert F A Int8 where
+ convert arr = AArray_Int8 arr
+
+instance Convert A F Int8 where
+ convert (AArray_Int8 arr) = arr
+
 instance Windowable A Int8 where
  window st len (AArray_Int8 arr) 
   = AArray_Int8 (window st len arr)
@@ -156,6 +165,12 @@ instance Bulk A Int16 where
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show (Array A Int16)
+
+instance Convert F A Int16 where
+ convert arr = AArray_Int16 arr
+
+instance Convert A F Int16 where
+ convert (AArray_Int16 arr) = arr
 
 instance Windowable A Int16 where
  window st len (AArray_Int16 arr) 
@@ -221,6 +236,12 @@ instance Bulk A Int32 where
 
 deriving instance Show (Array A Int32)
 
+instance Convert F A Int32 where
+ convert arr = AArray_Int32 arr
+
+instance Convert A F Int32 where
+ convert (AArray_Int32 arr) = arr
+
 instance Windowable A Int32 where
  window st len (AArray_Int32 arr) 
   = AArray_Int32 (window st len arr)
@@ -284,6 +305,12 @@ instance Bulk A Int64 where
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show (Array A Int64)
+
+instance Convert F A Int64 where
+ convert arr = AArray_Int64 arr
+
+instance Convert A F Int64 where
+ convert (AArray_Int64 arr) = arr
 
 instance Windowable A Int64 where
  window st len (AArray_Int64 arr) 

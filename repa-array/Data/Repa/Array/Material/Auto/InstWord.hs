@@ -5,6 +5,7 @@ where
 import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Foreign         as A
+import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
@@ -24,6 +25,12 @@ instance Bulk A Word8 where
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show (Array A Word8)
+
+instance Convert F A Word8 where
+ convert arr = AArray_Word8 arr
+
+instance Convert A F Word8 where
+ convert (AArray_Word8 arr) = arr
 
 instance Windowable A Word8 where
  window st len (AArray_Word8 arr) 

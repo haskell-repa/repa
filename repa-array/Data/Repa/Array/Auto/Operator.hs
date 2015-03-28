@@ -78,15 +78,13 @@ module Data.Repa.Array.Auto.Operator
         , diceSep
 
         -- ** Conversion
-        -- *** Foreign arrays
-        , fromForeign, toForeign
 
         -- *** Int Conversion
         , readIntFromOffset
         , readIntFromOffset# )
 where
 import Data.Repa.Array.Auto.Base
-import Data.Repa.Array.Material.Auto                    (A(..), Name(..))
+import Data.Repa.Array.Material.Auto                    (Name(..))
 import Control.Monad
 import GHC.Exts                                         hiding (fromList, toList)
 import qualified Data.Repa.Array.Generic                as G
@@ -604,35 +602,6 @@ foldsWith f z start lens vals
 
 
 -- Conversion -------------------------------------------------------------------------------------
--- | O(1). Wrap a foreign array to an auto array.
---
---   * Arrays of atomic values like `Word8` and `Float` are stored as flat
---     buffers in foreign memory.
---
---   * Use this function in conjunction with "Data.Repa.Array.Material.Foreign"
---     for constant-time conversion from other Haskell array types.
---
---   * Arrays of more complex element type can be manually wrapped
---     using the constructors in "Data.Repa.Array.Material.Auto". 
---     For example, use `A.AArray_T2` to wrap the representation of
---     arrays of pairs.
---
-fromForeign 
-        :: A.Foreign (A.Array A) a
-        => A.Array F.F a -> Array a
-fromForeign = A.fromForeign
-{-# INLINE fromForeign #-}
-
-
--- | O(1). Unwrap an auto array to a foreign array. Opposite of `fromForeign`.
---
-toForeign 
-        :: A.Foreign (A.Array A) a
-        => Array a -> A.Array F.F a
-toForeign  = A.toForeign
-{-# INLINE toForeign #-}
-
-
 -- | Try to read an `Int` from the given offset in an array.
 -- 
 --   If the conversion succeeded then you get the value, 
