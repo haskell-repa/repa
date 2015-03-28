@@ -5,7 +5,9 @@
 --   "Data.Repa.Flow.Default.SizedIO" that use a default chunk size of
 --   64kBytes and just call `error` if the source file appears corruped. 
 module Data.Repa.Flow.Auto.IO
-        ( defaultChunkSize
+        ( 
+{-
+          defaultChunkSize
 
           -- * Buckets
         , module Data.Repa.Flow.IO.Bucket
@@ -21,8 +23,11 @@ module Data.Repa.Flow.Auto.IO
           -- * Sinking
         , sinkChars
         , sinkLines
-        , sinkBytes)
+        , sinkBytes
+-}
+        )
 where
+{-
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Fusion.Unpack
@@ -157,3 +162,5 @@ sinkBytes
         => Array l Bucket -> IO (Sinks F Word8)
 sinkBytes =  F.sinkBytes
 {-# INLINE sinkBytes #-}
+
+-}

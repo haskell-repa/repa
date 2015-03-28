@@ -136,6 +136,20 @@ instance (Bulk A a, Bulk A b) => Bulk A (a, b) where
 deriving instance (Show (Array (T2 A A) (a, b)))
                 => Show (Array A (a, b))
 
+instance ( A.Convert A a1 A a2
+         , A.Convert A b1 A b2)
+        => A.Convert (T2 A A) (a1, b1) A (a2, b2) where
+ convert (T2Array arrA arrB)    
+  = AArray_T2 (T2Array (convert arrA) (convert arrB))
+ {-# INLINE convert #-}
+
+instance ( A.Convert A a1 A a2
+         , A.Convert A b1 A b2)
+        => A.Convert A (a1, b1) (T2 A A) (a2, b2) where
+ convert (AArray_T2 (T2Array arrA arrB))
+  = T2Array (convert arrA) (convert arrB)
+ {-# INLINE convert #-}
+
 instance (Windowable A a, Windowable A b)
       =>  Windowable A (a, b) where
  window st len (AArray_T2 arr) 

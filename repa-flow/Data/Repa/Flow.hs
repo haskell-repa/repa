@@ -122,11 +122,6 @@ module Data.Repa.Flow
         , sourcesArity
         , sinksArity
 
-        -- * States and Arrays
-        , module Data.Repa.Flow.States
-        , module Data.Repa.Array.Generic
-        , module Data.Repa.Array.Material
-
         -- * Evaluation
         , drainS
         , drainP
@@ -168,10 +163,14 @@ module Data.Repa.Flow
         , GroupsDict
 
         -- ** Folding
+        -- *** Complete
         , foldlS,               foldlAllS
+
+        -- *** Segmented
         , folds_i,              FoldsDict
         , foldGroupsBy_i,       FoldGroupsDict
 
+{-
         -- * Flow I/O
         , defaultChunkSize
 
@@ -189,7 +188,9 @@ module Data.Repa.Flow
         -- ** Sinking
         , sinkChars
         , sinkLines
-        , sinkBytes)
+        , sinkBytes
+-}
+        )
 where
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.Auto.Debug

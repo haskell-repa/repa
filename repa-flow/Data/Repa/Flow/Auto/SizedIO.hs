@@ -1,7 +1,9 @@
 
 -- | Read and write files.
 module Data.Repa.Flow.Auto.SizedIO
-        ( module Data.Repa.Flow.IO.Bucket
+        ( 
+{-
+          module Data.Repa.Flow.IO.Bucket
 
            -- * Sourcing
         , sourceBytes
@@ -14,8 +16,11 @@ module Data.Repa.Flow.Auto.SizedIO
           -- * Sinking
         , sinkBytes
         , sinkChars
-        , sinkLines)
+        , sinkLines
+-}
+        )
 where
+{-
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Fusion.Unpack                  as F
@@ -117,3 +122,4 @@ sinkLines n1 n2 bs
         = G.sinkLines n1 n2 bs
 {-# INLINE sinkLines #-}
 
+-}

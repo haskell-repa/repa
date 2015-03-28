@@ -1,6 +1,8 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
 module Data.Repa.Flow.Auto.Debug
-        (-- * More
+        (
+{-
+        -- * More
           more,         more'
 
         -- * More (tabular)
@@ -11,8 +13,10 @@ module Data.Repa.Flow.Auto.Debug
 
         -- * Nicer
         , Nicer         (..)
-        , Presentable   (..))
+        , Presentable   (..)
+-}      )
 where
+{-
 import Data.Repa.Nice.Present
 import Data.Repa.Nice.Tabulate
 import Data.Repa.Nice
@@ -90,6 +94,6 @@ morer'   :: (A.Windowable l a, A.Index l ~ Int)
 morer' ix len s
         = liftM (liftM fst) $ head_i ix len s
 {-# INLINE_FLOW morer' #-}
-
+-}
 
 
