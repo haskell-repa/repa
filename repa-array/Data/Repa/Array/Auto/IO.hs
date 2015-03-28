@@ -3,32 +3,33 @@ module Data.Repa.Array.Auto.IO
           hGetArray,   hGetArrayPre
         , hPutArray
 
-{-
+{-}
           -- * XSV files
           -- ** Reading
         , getArrayFromXSV,      hGetArrayFromXSV
+
 
           -- ** Writing
         , putArrayAsXSV,        hPutArrayAsXSV
 -}
         )
 where
-import Data.Repa.Fusion.Unpack
+-- import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Auto.Base               
 
 import qualified Data.Repa.Array.Material.Auto          as A
-import qualified Data.Repa.Array.Material.Boxed         as A
+-- import qualified Data.Repa.Array.Material.Boxed         as A
 import qualified Data.Repa.Array.Material.Foreign.Base  as A
-import qualified Data.Repa.Array.Material.Nested        as A
-import qualified Data.Repa.Array.Meta                   as A
-import qualified Data.Repa.Array.Generic                as A
+-- import qualified Data.Repa.Array.Material.Nested        as A
+-- import qualified Data.Repa.Array.Meta                   as A
+-- import qualified Data.Repa.Array.Generic                as A
 import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Marshal.Alloc                  as F
 import qualified Foreign.Marshal.Utils                  as F
 import System.IO
 import Data.Word
-import Data.Char
+-- import Data.Char
 
 
 -- | Get data from a file, up to the given number of bytes.
@@ -78,8 +79,9 @@ hPutArray h (A.AArray_Word8 arr)
         hPutBuf h ptr lenPre
 {-# NOINLINE hPutArray #-}
 
-{-}
+
 ---------------------------------------------------------------------------------------------------
+{-
 -- | Read a XSV file as a nested array.
 --   We get an array of rows:fields:characters.
 getArrayFromXSV

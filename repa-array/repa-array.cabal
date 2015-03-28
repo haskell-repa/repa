@@ -80,8 +80,12 @@ Library
         
   other-modules:
         Data.Repa.Array.Auto.Base
+        Data.Repa.Array.Auto.Operator
 
         Data.Repa.Array.Material.Auto.Base
+        Data.Repa.Array.Material.Auto.InstFloat
+        Data.Repa.Array.Material.Auto.InstInt
+        Data.Repa.Array.Material.Auto.InstWord
 
         Data.Repa.Array.Material.Foreign.Base
         Data.Repa.Array.Material.Foreign.Convert

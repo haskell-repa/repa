@@ -49,11 +49,13 @@ module Data.Repa.Array
 
         -- ** Folding
         , foldl
+        , folds
+        , foldsWith
+
+        -- *** Special Folds
         , sum,  prod
         , mean, std
         , correlate
-        , folds
-        , foldsWith
 
         -- ** Filtering
         , filter
@@ -65,10 +67,10 @@ module Data.Repa.Array
         -- ** Sloshing
         , reverse
         , concat
-        , concatWith
-        , intercalate
-        , unlines
         , concats
+        , concatWith
+        , unlines
+        , intercalate
         , ragspose3
 
         -- ** Inserting
