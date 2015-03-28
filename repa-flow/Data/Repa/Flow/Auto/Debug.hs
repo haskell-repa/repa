@@ -1,5 +1,5 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
-module Data.Repa.Flow.Default.Debug
+module Data.Repa.Flow.Auto.Debug
         (-- * More
           more,         more'
 
@@ -18,7 +18,7 @@ import Data.Repa.Nice.Tabulate
 import Data.Repa.Nice
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Meta.Window              as A
-import Data.Repa.Flow.Default                   hiding (next)
+import Data.Repa.Flow.Auto                      hiding (next)
 import Control.Monad
 import Data.List                                as L
 import Data.Text                                as T

@@ -4,7 +4,7 @@
 --   The functions in this module are wrappers for the ones in 
 --   "Data.Repa.Flow.Default.SizedIO" that use a default chunk size of
 --   64kBytes and just call `error` if the source file appears corruped. 
-module Data.Repa.Flow.Default.IO
+module Data.Repa.Flow.Auto.IO
         ( defaultChunkSize
 
           -- * Buckets
@@ -23,11 +23,11 @@ module Data.Repa.Flow.Default.IO
         , sinkLines
         , sinkBytes)
 where
-import Data.Repa.Flow.Default
+import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Fusion.Unpack
 import Data.Word
-import qualified Data.Repa.Flow.Default.SizedIO  as F
+import qualified Data.Repa.Flow.Auto.SizedIO  as F
 #include "repa-flow.h"
 
 

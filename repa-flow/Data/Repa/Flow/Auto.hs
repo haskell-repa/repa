@@ -3,7 +3,7 @@
 --   appears in "Data.Repa.Flow". Each stream in the bundle is indexed
 --   by a single integer, and stream state is stored using the IO monad.
 --
-module Data.Repa.Flow.Default
+module Data.Repa.Flow.Auto
         ( -- * Flow types
           Sources
         , Sinks

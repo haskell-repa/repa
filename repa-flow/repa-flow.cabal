@@ -28,13 +28,13 @@ Library
         repa-array              == 4.0.1.*
 
   exposed-modules:
+        Data.Repa.Flow.Auto
+        Data.Repa.Flow.Auto.Debug
+        Data.Repa.Flow.Auto.IO
+        Data.Repa.Flow.Auto.SizedIO
+
         Data.Repa.Flow.Chunked
         Data.Repa.Flow.Chunked.IO
-
-        Data.Repa.Flow.Default
-        Data.Repa.Flow.Default.Debug
-        Data.Repa.Flow.Default.IO
-        Data.Repa.Flow.Default.SizedIO
 
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.Debug

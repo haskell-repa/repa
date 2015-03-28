@@ -191,12 +191,11 @@ module Data.Repa.Flow
         , sinkLines
         , sinkBytes)
 where
-import Data.Repa.Flow.Default
-import Data.Repa.Flow.Default.Debug
-import Data.Repa.Flow.Default.IO
+import Data.Repa.Flow.Auto
+import Data.Repa.Flow.Auto.Debug
+import Data.Repa.Flow.Auto.IO
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.States
-
 
 import Data.Repa.Array.Generic
         hiding (fromList, GroupsDict, FoldsDict)

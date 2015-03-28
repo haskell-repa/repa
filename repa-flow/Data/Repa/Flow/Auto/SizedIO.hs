@@ -1,6 +1,6 @@
 
 -- | Read and write files.
-module Data.Repa.Flow.Default.SizedIO
+module Data.Repa.Flow.Auto.SizedIO
         ( module Data.Repa.Flow.IO.Bucket
 
            -- * Sourcing
@@ -16,7 +16,7 @@ module Data.Repa.Flow.Default.SizedIO
         , sinkChars
         , sinkLines)
 where
-import Data.Repa.Flow.Default
+import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array.Generic                  as A
