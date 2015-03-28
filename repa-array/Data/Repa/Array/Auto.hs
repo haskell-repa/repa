@@ -70,13 +70,7 @@ module Data.Repa.Array.Auto
         , segment
         , segmentOn
         , dice
-        , diceSep
-
-        -- ** Conversion
-
-        -- *** Int Conversion
-        , readIntFromOffset
-        , readIntFromOffset# )        
+        , diceSep)
 where
 import Data.Repa.Array.Auto.Base
 import Data.Repa.Array.Auto.Operator

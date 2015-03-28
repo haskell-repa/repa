@@ -1,58 +1,49 @@
+
+-- | Array IO
 module Data.Repa.Array.Auto.IO
         ( -- * Raw Array IO
           hGetArray,   hGetArrayPre
         , hPutArray
 
-{-}
           -- * XSV files
           -- ** Reading
         , getArrayFromXSV,      hGetArrayFromXSV
 
-
           -- ** Writing
-        , putArrayAsXSV,        hPutArrayAsXSV
--}
-        )
+        , putArrayAsXSV,        hPutArrayAsXSV)
 where
--- import Data.Repa.Fusion.Unpack
-import Data.Repa.Array.Auto.Base               
-
+import Data.Repa.Array.Auto.Base
+import Data.Repa.Array.Generic.Convert
+import System.IO
+import Data.Word
+import Data.Char
 import qualified Data.Repa.Array.Material.Auto          as A
--- import qualified Data.Repa.Array.Material.Boxed         as A
-import qualified Data.Repa.Array.Material.Foreign.Base  as A
--- import qualified Data.Repa.Array.Material.Nested        as A
--- import qualified Data.Repa.Array.Meta                   as A
--- import qualified Data.Repa.Array.Generic                as A
+import qualified Data.Repa.Array.Material.Foreign       as A
+import qualified Data.Repa.Array.Material.Nested        as A
+import qualified Data.Repa.Array.Meta                   as A
+import qualified Data.Repa.Array.Generic                as A
 import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Marshal.Alloc                  as F
 import qualified Foreign.Marshal.Utils                  as F
-import System.IO
-import Data.Word
--- import Data.Char
 
 
 -- | Get data from a file, up to the given number of bytes.
---
---   * Data is read into foreign memory without copying it through the GHC heap.
---
 hGetArray :: Handle -> Int -> IO (Array Word8)
 hGetArray h len
  = do   buf :: F.Ptr Word8 <- F.mallocBytes len
         bytesRead          <- hGetBuf h buf len
         fptr               <- F.newForeignPtr F.finalizerFree buf
-        return  $! A.AArray_Word8 $! A.fromForeignPtr bytesRead fptr
+        return  $! convert $! A.fromForeignPtr bytesRead fptr
 {-# NOINLINE hGetArray #-}
 
 
 -- | Get data from a file, up to the given number of bytes, also
 --   copying the given data to the front of the new buffer.
---
---   * Data is read into foreign memory without copying it through the GHC heap.
---
 hGetArrayPre :: Handle -> Int -> Array Word8 -> IO (Array Word8)
-hGetArrayPre h len (A.AArray_Word8 arr)
- | (offset, lenPre, fptrPre)   <- A.toForeignPtr arr
+hGetArrayPre h len arr
+ | (offset, lenPre, fptrPre :: F.ForeignPtr Word8)   
+        <- A.toForeignPtr $ convert arr
  = F.withForeignPtr fptrPre
  $ \ptrPre' -> do
         let ptrPre      = F.plusPtr ptrPre' offset
@@ -61,18 +52,15 @@ hGetArrayPre h len (A.AArray_Word8 arr)
         lenRead         <- hGetBuf h (F.plusPtr ptrBuf lenPre) len
         let bytesTotal  = lenPre + lenRead
         fptrBuf         <- F.newForeignPtr F.finalizerFree ptrBuf
-        return  $ A.AArray_Word8 $! A.fromForeignPtr bytesTotal fptrBuf
+        return  $ convert $! A.fromForeignPtr bytesTotal fptrBuf
 {-# NOINLINE hGetArrayPre #-}
 
 
 -- | Write data into a file.
---
---   * Data is written to file directly from foreign memory,
---     without copying it through the GHC heap.
---
 hPutArray :: Handle -> Array Word8 -> IO ()
-hPutArray h (A.AArray_Word8 arr)
- | (offset, lenPre, fptrPre)     <- A.toForeignPtr arr
+hPutArray h arr
+ | (offset, lenPre, fptrPre :: F.ForeignPtr Word8)     
+        <- A.toForeignPtr $ convert arr
  = F.withForeignPtr fptrPre
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset
@@ -81,13 +69,12 @@ hPutArray h (A.AArray_Word8 arr)
 
 
 ---------------------------------------------------------------------------------------------------
-{-
 -- | Read a XSV file as a nested array.
 --   We get an array of rows:fields:characters.
 getArrayFromXSV
         :: Char                 -- ^ Field separator character, eg '|', ',' or '\t'.
         -> FilePath             -- ^ Source file handle.
-        -> IO (Array N (Array N (Array F Char)))
+        -> IO (Array (Array (Array Char)))
 
 getArrayFromXSV !cSep !filePath
  = do   h       <- openFile filePath ReadMode
@@ -101,7 +88,7 @@ getArrayFromXSV !cSep !filePath
 hGetArrayFromXSV 
         :: Char                 -- ^ Field separator character, eg '|', ',' or '\t'.
         -> Handle               -- ^ Source file handle.
-        -> IO (Array N (Array N (Array F Char)))
+        -> IO (Array (Array (Array Char)))
 
 hGetArrayFromXSV !cSep !hIn
  = do   
@@ -128,11 +115,10 @@ hGetArrayFromXSV !cSep !hIn
         -- to do the conversion.
         let !arrChar 
                 = A.mapElems 
-                        (A.mapElems (A.computeS F . A.map (chr . fromIntegral))) 
+                        (A.mapElems (A.computeS A.F . A.map (chr . fromIntegral))) 
                         (A.diceSep nc nl arr8)
 
-        return arrChar
-
+        return $ convert arrChar
 
 
 --------------------------------------------------------------------------------------------------
@@ -140,14 +126,9 @@ hGetArrayFromXSV !cSep !hIn
 --
 --   The array contains rows:fields:characters.
 putArrayAsXSV
-        :: ( BulkI l1 (Array l2 (Array l3 Char))
-           , BulkI l2 (Array l3 Char)
-           , BulkI l3 Char
-           , Unpack (Array l3 Char) t)
-        => Char                 -- ^ Separator character, eg '|', ',' or '\t'
-        -> FilePath             -- ^ Source file handle.
-        -> Array l1 (Array l2 (Array l3 Char))
-                                -- ^ Array of row, field, character.
+        :: Char                         -- ^ Separator character, eg '|', ',' or '\t'
+        -> FilePath                     -- ^ Source file handle.
+        -> Array (Array (Array Char))   -- ^ Array of row, field, character.
         -> IO ()
 
 putArrayAsXSV !cSep !filePath !arrChar
@@ -160,30 +141,25 @@ putArrayAsXSV !cSep !filePath !arrChar
 --
 --   The array contains rows:fields:characters.
 hPutArrayAsXSV
-        :: ( BulkI l1 (Array l2 (Array l3 Char))
-           , BulkI l2 (Array l3 Char)
-           , BulkI l3 Char
-           , Unpack (Array l3 Char) t)
-        => Char                 -- ^ Separator character, eg '|', ',' or '\t'
-        -> Handle               -- ^ Source file handle.
-        -> Array l1 (Array l2 (Array l3 Char))
-                                -- ^ Array of row, field, character.
+        :: Char                         -- ^ Separator character, eg '|', ',' or '\t'
+        -> Handle                       -- ^ Source file handle.
+        -> Array (Array (Array Char))   -- ^ Array of row, field, character.
         -> IO ()
 
 hPutArrayAsXSV !cSep !hOut !arrChar
  = do
         -- Concat result back into Word8s
-        let !arrC       = A.fromList U [cSep]
-        let !arrNL      = A.fromList U ['\n']
+        let !arrC       = A.fromList A.U [cSep]
+        let !arrNL      = A.fromList A.U ['\n']
 
         let !arrOut     
-                = A.mapS F (fromIntegral . ord) 
-                $ A.concat U 
-                $ A.mapS B (\arrFields
-                                -> A.concat U $ A.fromList B
-                                        [ A.intercalate U arrC arrFields, arrNL])
+                = A.mapS A.A (fromIntegral . ord) 
+                $ A.concat A.U 
+                $ A.mapS A.B (\arrFields
+                                -> A.concat A.U $ A.fromList A.B
+                                        [ A.intercalate A.U arrC arrFields, arrNL])
                 $ arrChar
 
         hPutArray hOut arrOut
 {-# INLINE hPutArrayAsXSV #-}
--}
+

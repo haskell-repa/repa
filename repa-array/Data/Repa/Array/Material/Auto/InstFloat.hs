@@ -24,10 +24,10 @@ instance Bulk A Float where
 
 deriving instance Show (Array A Float)
 
-instance Convert F A Float where
+instance Convert F Float A Float where
  convert arr = AArray_Float arr
 
-instance Convert A F Float where
+instance Convert A Float F Float where
  convert (AArray_Float arr) = arr
 
 instance Windowable A Float where
@@ -94,10 +94,10 @@ instance Bulk A Double where
 
 deriving instance Show (Array A Double)
 
-instance Convert F A Double where
+instance Convert F Double A Double where
  convert arr = AArray_Double arr
 
-instance Convert A F Double where
+instance Convert A Double F Double where
  convert (AArray_Double arr) = arr
 
 instance Windowable A Double where

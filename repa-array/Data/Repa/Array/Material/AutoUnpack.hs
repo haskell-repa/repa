@@ -47,7 +47,7 @@ packForeign !format !arrElems
 
                 let loop !ixSrc !ixDst
                      | ixSrc >= lenElems
-                     = return True
+                     = return $ Just ()
 
                      | otherwise
                      = Data.Repa.Convert.Format.pack   
@@ -56,8 +56,8 @@ packForeign !format !arrElems
 
                 mFinal <- loop 0 0
                 case mFinal of
-                 False       -> return Nothing
-                 True        -> liftM Just $ unsafeFreezeBuffer buf
+                 Nothing       -> return Nothing
+                 Just _        -> liftM Just $ unsafeFreezeBuffer buf
 
  | otherwise
  = Nothing

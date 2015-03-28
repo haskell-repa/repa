@@ -9,15 +9,6 @@ module Data.Repa.Array.Material.Foreign
         , unsafeCast
         , fromForeignPtr,       toForeignPtr
         , fromStorableVector,   toStorableVector
-        , fromByteString,       toByteString
-
-        -- * Int conversion
-        , readIntFromOffset,    readIntFromOffset#
-
-        -- * Double conversion
-        , readDouble,           readDoubleFromBytes
-        , showDouble,           showDoubleAsBytes
-        , showDoubleFixed,      showDoubleFixedAsBytes)
+        , fromByteString,       toByteString)
 where
 import Data.Repa.Array.Material.Foreign.Base
-import Data.Repa.Array.Material.Foreign.Convert

@@ -26,10 +26,10 @@ instance Bulk A Int where
 
 deriving instance Show (Array A Int)
 
-instance Convert F A Int where
+instance Convert F Int A Int where
  convert arr = AArray_Int arr
 
-instance Convert A F Int where
+instance Convert A Int F Int where
  convert (AArray_Int arr) = arr
 
 instance Windowable A Int where
@@ -96,10 +96,10 @@ instance Bulk A Int8 where
 
 deriving instance Show (Array A Int8)
 
-instance Convert F A Int8 where
+instance Convert F Int8 A Int8 where
  convert arr = AArray_Int8 arr
 
-instance Convert A F Int8 where
+instance Convert A Int8 F Int8 where
  convert (AArray_Int8 arr) = arr
 
 instance Windowable A Int8 where
@@ -166,10 +166,10 @@ instance Bulk A Int16 where
 
 deriving instance Show (Array A Int16)
 
-instance Convert F A Int16 where
+instance Convert F Int16 A Int16 where
  convert arr = AArray_Int16 arr
 
-instance Convert A F Int16 where
+instance Convert A Int16 F Int16 where
  convert (AArray_Int16 arr) = arr
 
 instance Windowable A Int16 where
@@ -236,10 +236,10 @@ instance Bulk A Int32 where
 
 deriving instance Show (Array A Int32)
 
-instance Convert F A Int32 where
+instance Convert F Int32 A Int32 where
  convert arr = AArray_Int32 arr
 
-instance Convert A F Int32 where
+instance Convert A Int32 F Int32 where
  convert (AArray_Int32 arr) = arr
 
 instance Windowable A Int32 where
@@ -306,10 +306,10 @@ instance Bulk A Int64 where
 
 deriving instance Show (Array A Int64)
 
-instance Convert F A Int64 where
+instance Convert F Int64 A Int64 where
  convert arr = AArray_Int64 arr
 
-instance Convert A F Int64 where
+instance Convert A Int64 F Int64 where
  convert (AArray_Int64 arr) = arr
 
 instance Windowable A Int64 where

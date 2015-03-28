@@ -19,12 +19,14 @@ import Data.Repa.Product                        as B
 import Control.Monad
 #include "repa-array.h"
 
--- | Automatic layout of array elements in some reasonably efficient
---   representation. 
+-- | Arrays where the elements that are automatically layed out into some
+--   efficient runtime representation.
 --
 --   The implementation uses type families to chose unboxed representations
---   for all elements that can be unboxed. In particular, arrays of unboxed
---   tuples are represented as tuples of unboxed arrays.
+--   for all elements that can be unboxed. In particular: arrays of unboxed
+--   tuples are represented as tuples of unboxed arrays, and nested arrays
+--   are represented using a segment descriptor and a single single flat
+--   vector containing all the elements.
 --
 data A  = Auto { autoLength :: Int }
         deriving (Show, Eq)
@@ -58,16 +60,21 @@ instance Bulk A Char where
 
 deriving instance Show (Array A Char)
 
-instance A.Convert F A Char where
+instance A.Convert F Char A Char where
  convert arr = AArray_Char arr
 
-instance A.Convert A F Char where
+instance A.Convert A Char F Char where
  convert (AArray_Char arr) = arr
 
 instance Windowable A Char where
  window st len (AArray_Char arr) 
   = AArray_Char (window st len arr)
  {-# INLINE_ARRAY window #-}
+
+instance Unpack (Array F Char) t 
+      => Unpack (Array A Char) t where
+ unpack (AArray_Char arr)   = unpack arr
+ repack (AArray_Char x) arr = AArray_Char (repack x arr)
 
 instance Target A Char where
  data Buffer s A Char            
@@ -333,15 +340,32 @@ instance Unpack (Buffer s A String) (Buffer s A String) where
 
 
 --------------------------------------------------------------------------------------------- Array
-instance (Bulk A a, Windowable A a) 
-       => Bulk A (Array A a) where
- data Array A (Array A a)       = AArray_Array !(Array N (Array A a))
+instance (Bulk A a, Windowable r a, Index r ~ Int)
+       => Bulk A (Array r a) where
+ data Array A (Array r a)       = AArray_Array !(Array N (Array r a))
  layout (AArray_Array arr)      = Auto (A.length arr)
  index  (AArray_Array arr) ix   = A.index arr ix
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index #-}
 
 deriving instance Show (Array A a) => Show (Array A (Array A a))
+
+
+instance Convert r1 a1 r2 a2
+      => Convert A  (Array r1 a1)  N (Array r2 a2) where
+ convert :: Array A (Array r1 a1) -> Array N (Array r2 a2)
+ convert (AArray_Array (NArray starts lens arr)) 
+        = NArray starts lens (convert arr)
+ {-# INLINE convert #-}
+
+
+instance Convert r1 a1 r2 a2
+      => Convert N  (Array r1 a1)  A (Array r2 a2) where
+ convert :: Array N (Array r1 a1)  -> Array A (Array r2 a2)
+ convert (NArray starts lens arr)
+        = AArray_Array (NArray starts lens (convert arr))
+ {-# INLINE convert #-}
+
 
 instance (Bulk A a, Windowable A a)
        => Windowable A (Array A a) where

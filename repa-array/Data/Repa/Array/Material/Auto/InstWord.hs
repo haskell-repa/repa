@@ -26,10 +26,10 @@ instance Bulk A Word8 where
 
 deriving instance Show (Array A Word8)
 
-instance Convert F A Word8 where
+instance Convert F Word8 A Word8 where
  convert arr = AArray_Word8 arr
 
-instance Convert A F Word8 where
+instance Convert A Word8 F Word8 where
  convert (AArray_Word8 arr) = arr
 
 instance Windowable A Word8 where

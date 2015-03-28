@@ -75,22 +75,16 @@ module Data.Repa.Array.Auto.Operator
         , segment
         , segmentOn
         , dice
-        , diceSep
-
-        -- ** Conversion
-
-        -- *** Int Conversion
-        , readIntFromOffset
-        , readIntFromOffset# )
+        , diceSep)
 where
 import Data.Repa.Array.Auto.Base
 import Data.Repa.Array.Material.Auto                    (Name(..))
+import Data.Repa.Array.Generic.Convert                  as A
 import Control.Monad
 import GHC.Exts                                         hiding (fromList, toList)
 import qualified Data.Repa.Array.Generic                as G
 import qualified Data.Repa.Array.Material.Auto          as A
 import qualified Data.Repa.Array.Material.Nested        as N
-import qualified Data.Repa.Array.Material.Foreign       as F
 import qualified Data.Repa.Array.Meta.Delayed           as A
 import qualified Data.Repa.Array.Meta.Delayed2          as A
 import qualified Data.Repa.Array.Internals.Bulk         as G
@@ -134,17 +128,14 @@ fromList = G.fromList A
 -- | Convert a nested list to an array.
 fromLists :: Build a at
           => [[a]] -> Array (Array a)
-fromLists xs = A.AArray_Array (N.fromLists A xs)
+fromLists xs  = convert $! N.fromLists A xs
 {-# INLINE fromLists #-}
 
 
 -- | Convert a triply nested list to a triply nested array.
 fromListss :: Build a at
            => [[[a]]] -> Array (Array (Array a))
-fromListss xs 
-        = A.AArray_Array
-        $ N.mapElems A.AArray_Array
-        $ N.fromListss A xs
+fromListss xs = convert $! N.fromListss A xs
 {-# INLINE fromListss #-}
 
 
@@ -600,26 +591,3 @@ foldsWith f z start lens vals
    in   (A.AArray_T2 arr', result)
 {-# INLINE foldsWith #-}
 
-
--- Conversion -------------------------------------------------------------------------------------
--- | Try to read an `Int` from the given offset in an array.
--- 
---   If the conversion succeeded then you get the value, 
---   along with the index of the next character, 
---   otherwise `Nothing`.
---
-readIntFromOffset  :: Array Char -> Int -> Maybe (Int, Int)
-readIntFromOffset (A.AArray_Char arr) ix
-        = F.readIntFromOffset arr ix
-{-# INLINE readIntFromOffset #-}
-
-
--- | Unboxed version of `readIntFromOffset`.
---
---   We still pay to unbox the input array, 
---   but avoid boxing the result by construction.
---
-readIntFromOffset# :: Array Char -> Int# -> (# Int#, Int#, Int# #)
-readIntFromOffset# (A.AArray_Char arr) ix
-        = F.readIntFromOffset# arr ix
-{-# INLINE readIntFromOffset# #-}

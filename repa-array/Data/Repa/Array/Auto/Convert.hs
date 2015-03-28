@@ -1,5 +1,5 @@
 
-module Data.Repa.Array.Material.Foreign.Convert
+module Data.Repa.Array.Auto.Convert
         ( -- * Int Conversion
           readIntFromOffset,    readIntFromOffset#
 
@@ -9,19 +9,25 @@ module Data.Repa.Array.Material.Foreign.Convert
         , showDouble,           showDoubleAsBytes
         , showDoubleFixed,      showDoubleFixedAsBytes)
 where
-import Data.Repa.Array.Material.Foreign.Base            as A
-import Data.Repa.Array.Meta                             as A
-import Data.Repa.Array.Generic                          as A
+import Data.Repa.Array.Auto.Base
+import Data.Repa.Array.Generic.Convert
 import System.IO.Unsafe
 import Data.Word
 import Data.Char
 import GHC.Ptr
 import GHC.Exts
+
+import qualified Data.Repa.Array.Material.Auto          as A
+import qualified Data.Repa.Array.Material.Foreign       as A
+import qualified Data.Repa.Array.Meta                   as A
+import qualified Data.Repa.Array.Generic                as A
+
+import qualified Data.Double.Conversion.ByteString      as DC
+
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
 import qualified Foreign.Marshal.Utils                  as F
-import qualified Data.Double.Conversion.ByteString      as DC
 
 
 -------------------------------------------------------------------------------
@@ -31,7 +37,7 @@ import qualified Data.Double.Conversion.ByteString      as DC
 --   along with the index of the next character, 
 --   otherwise `Nothing`.
 --
-readIntFromOffset  :: Array F Char -> Int -> Maybe (Int, Int)
+readIntFromOffset  :: Array Char -> Int -> Maybe (Int, Int)
 readIntFromOffset arr (I# ix0)
  = case readIntFromOffset# arr ix0 of
         (# 0#, _, _  #)  -> Nothing
@@ -44,10 +50,11 @@ readIntFromOffset arr (I# ix0)
 --   We still pay to unbox the input array, 
 --   but avoid boxing the result by construction.
 --
-readIntFromOffset# :: Array F Char -> Int# -> (# Int#, Int#, Int# #)
+readIntFromOffset# :: Array Char -> Int# -> (# Int#, Int#, Int# #)
 readIntFromOffset# !arr !ix0_
  = start ix0
  where
+
         !ix0    = I# ix0_
         !len    = A.length arr
 
@@ -111,16 +118,17 @@ readIntFromOffset# !arr !ix0_
 --     If you already have a vector of `Word8` then use `readDoubleFromBytes`
 --     instead to avoid the conversion.
 --
-readDouble :: Array F Char -> Double
+readDouble :: Array Char -> Double
 readDouble vec
         = readDoubleFromBytes
-        $ A.computeS F $ A.map (fromIntegral . ord) vec
+        $ A.computeS A.A $ A.map (fromIntegral . ord) vec
 {-# INLINE readDouble #-}
 
 
 -- | Convert a foreign vector of bytes to a Double.
-readDoubleFromBytes :: Array F Word8 -> Double
-readDoubleFromBytes (toForeignPtr -> (start,len,fptr))
+readDoubleFromBytes :: Array Word8 -> Double
+readDoubleFromBytes 
+   (A.toForeignPtr . convert -> (start, len, fptr :: F.ForeignPtr Word8))
  = unsafePerformIO
  $ F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->
@@ -138,38 +146,42 @@ readDoubleFromBytes (toForeignPtr -> (start,len,fptr))
         return d
 {-# NOINLINE readDoubleFromBytes #-}
 
+
 foreign import ccall unsafe
  strtod :: Ptr Word8 -> Ptr (Ptr Word8) -> Double
 
 
+-------------------------------------------------------------------------------
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
-showDouble :: Double -> Array F Char
+showDouble :: Double -> Array Char
 showDouble !d
-        = A.computeS F $ A.map (chr . fromIntegral)
+        = A.computeS A.A $ A.map (chr . fromIntegral)
         $ showDoubleAsBytes d
 {-# INLINE showDouble #-}
 
 
 -- | Convert a `Double` to ASCII text packed into a foreign `Vector`.
-showDoubleAsBytes :: Double -> Array F Word8
+showDoubleAsBytes :: Double -> Array Word8
 showDoubleAsBytes !d
-        = fromByteString $ DC.toShortest d
+        = convert
+        $ A.fromByteString $ DC.toShortest d
 {-# INLINE showDoubleAsBytes #-}
 
 
 -- | Like `showDouble`, but use a fixed number of digits after
 --   the decimal point.
-showDoubleFixed :: Int -> Double -> Array F Char
+showDoubleFixed :: Int -> Double -> Array Char
 showDoubleFixed !prec !d
-        = A.computeS F $ A.map (chr . fromIntegral)
+        = A.computeS A.A $ A.map (chr . fromIntegral)
         $ showDoubleFixedAsBytes prec d
 {-# INLINE showDoubleFixed #-}
 
 
 -- | Like `showDoubleAsBytes`, but use a fixed number of digits after
 --   the decimal point.
-showDoubleFixedAsBytes :: Int -> Double -> Array F Word8
+showDoubleFixedAsBytes :: Int -> Double -> Array Word8
 showDoubleFixedAsBytes !prec !d
-        = fromByteString $ DC.toFixed prec d
+        = convert
+        $ A.fromByteString $ DC.toFixed prec d
 {-# INLINE showDoubleFixedAsBytes #-}
 

@@ -39,6 +39,7 @@ Library
   exposed-modules:
         Data.Repa.Array.Auto
         Data.Repa.Array.Auto.IO
+        Data.Repa.Array.Auto.Convert
 
         Data.Repa.Array.Generic.Convert
         Data.Repa.Array.Generic.Index
@@ -89,7 +90,6 @@ Library
         Data.Repa.Array.Material.Auto.InstWord
 
         Data.Repa.Array.Material.Foreign.Base
-        Data.Repa.Array.Material.Foreign.Convert
 
         Data.Repa.Array.Internals.Operator.Concat
         Data.Repa.Array.Internals.Operator.Compact
@@ -140,5 +140,6 @@ Library
         ForeignFunctionInterface
         ViewPatterns
         ExistentialQuantification
+        InstanceSigs
 
 
