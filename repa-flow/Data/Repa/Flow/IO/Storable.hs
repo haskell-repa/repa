@@ -3,13 +3,13 @@ module Data.Repa.Flow.IO.Storable
         ( Storable      (..)
         , Spec          (..))
 where
-import Data.Repa.Array.Tuple            as A
-import Data.Repa.Array.Material         as A
-import Data.Repa.Array.Material.Foreign as AF
-import Data.Repa.Array.Material.Strided as AS
-import Data.Repa.Array                  as A
-import Data.Repa.Flow.IO.Bucket         as F
-import qualified Foreign.Storable       as S
+import Data.Repa.Array.Meta                     as A
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Material                 as A
+import Data.Repa.Array.Material.Foreign         as AF
+import Data.Repa.Array.Material.Strided         as AS
+import Data.Repa.Flow.IO.Bucket                 as F
+import qualified Foreign.Storable               as S
 import Data.Int
 #include "repa-flow.h"
 

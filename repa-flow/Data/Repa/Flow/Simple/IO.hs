@@ -8,9 +8,9 @@ module Data.Repa.Flow.Simple.IO
 where
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Simple.Base
-import Data.Word
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
+import Data.Word
 import qualified Data.Repa.Flow.Generic.IO      as G
 #include "repa-flow.h"
 

@@ -13,8 +13,7 @@ module Data.Repa.Flow.Default
 
         -- * States and Arrays
         , module Data.Repa.Flow.States
-        , module Data.Repa.Eval.Array
-        , module Data.Repa.Array
+        , module Data.Repa.Array.Generic
         , module Data.Repa.Array.Material
 
         -- * Evaluation
@@ -63,13 +62,23 @@ module Data.Repa.Flow.Default
         , foldGroupsBy_i,       FoldGroupsDict)
 where
 import Data.Repa.Flow.States
-import Data.Repa.Eval.Array
-import Data.Repa.Eval.Array              as A
+-- import Data.Repa.Eval.Array
+-- import Data.Repa.Eval.Array              as A
 
-import Data.Repa.Array                   
-        hiding (FoldsDict, GroupsDict, Index, fromList)
+import Data.Repa.Array.Meta.Window              as A
+import Data.Repa.Array.Meta.Tuple               as A
+import Data.Repa.Array.Generic.Index            as A
 
-import Data.Repa.Array                   as A 
+import Data.Repa.Array.Material                 as A
+        hiding (fromLists)
+
+import Data.Repa.Array.Generic.Target           as A
+        hiding (fromList)
+
+import Data.Repa.Array.Generic
+        hiding (FoldsDict, GroupsDict, fromList)
+
+import Data.Repa.Array.Generic                  as A 
         hiding (FoldsDict, GroupsDict, fromList)
 
 import Data.Repa.Array.Material          hiding (fromLists)

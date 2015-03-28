@@ -7,7 +7,10 @@ where
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Operator          as F
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Material                 as A
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Generic.Index            as A
+import Data.Repa.Array.Meta                     as A
 import Data.Repa.Eval.Elt
 import Control.Monad
 #include "repa-flow.h"

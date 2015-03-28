@@ -24,18 +24,20 @@ module Data.Repa.Flow.IO.Bucket
         , bGetArray
         , bPutArray)
 where
-import Data.Repa.Array                  as A
-import Data.Repa.Array.Material         as A
-import Data.Repa.Array.RowWise          as A
-import Data.Repa.IO.Array               as A
-import qualified Foreign.Storable       as Foreign
-import qualified Foreign.Marshal.Alloc  as Foreign
+import Data.Repa.Array.Material                 as A
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Generic.Convert          as A
+import Data.Repa.Array.Meta.Dense               as A
+import Data.Repa.Array.Meta.RowWise             as A
+import Data.Repa.Array.Auto.IO                  as A
+import qualified Foreign.Storable               as Foreign
+import qualified Foreign.Marshal.Alloc          as Foreign
 import Control.Monad
 import Data.Word
 import System.IO
 import System.FilePath
 import System.Directory
-import Prelude                          as P
+import Prelude                                  as P
 
 
 -- | A bucket represents portion of a whole data-set on disk,
@@ -491,7 +493,8 @@ bGetArray bucket lenWanted
                             -> let lenRemain = lenMax - posBucket
                                in  min lenWanted lenRemain
 
-        hGetArray (bucketHandle bucket) 
+        liftM convert 
+         $ hGetArray (bucketHandle bucket) 
          $ fromIntegral len
 {-# NOINLINE bGetArray #-}
 
@@ -499,6 +502,6 @@ bGetArray bucket lenWanted
 -- | Put some data in a bucket.
 bPutArray :: Bucket -> Array F Word8 -> IO ()
 bPutArray bucket arr
-        = hPutArray (bucketHandle bucket) arr
+        = hPutArray (bucketHandle bucket) (convert arr)
 {-# NOINLINE bPutArray #-}
 

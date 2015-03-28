@@ -44,7 +44,8 @@ import Data.Repa.Flow.Generic.Eval
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Connect
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Generic.Index            as A
+import Data.Repa.Array.Generic                  as A
 import Data.IORef
 import Control.Monad
 import Debug.Trace

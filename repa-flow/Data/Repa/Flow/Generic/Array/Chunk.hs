@@ -3,8 +3,9 @@ module Data.Repa.Flow.Generic.Array.Chunk
         (chunk_i)
 where
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Eval.Array             as A
-import Data.Repa.Array                  as A
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Generic.Target           as A
+import Data.Repa.Array.Generic.Index            as A
 #include "repa-flow.h"
 
 

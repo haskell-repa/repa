@@ -124,8 +124,7 @@ module Data.Repa.Flow
 
         -- * States and Arrays
         , module Data.Repa.Flow.States
-        , module Data.Repa.Eval.Array
-        , module Data.Repa.Array
+        , module Data.Repa.Array.Generic
         , module Data.Repa.Array.Material
 
         -- * Evaluation
@@ -198,10 +197,9 @@ import Data.Repa.Flow.Default.IO
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.States
 
-import Data.Repa.Eval.Array
 
-import Data.Repa.Array                  
-        hiding (fromList, Index, GroupsDict, FoldsDict)
+import Data.Repa.Array.Generic
+        hiding (fromList, GroupsDict, FoldsDict)
 
 import Data.Repa.Array.Material
         hiding (fromLists)

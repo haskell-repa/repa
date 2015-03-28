@@ -17,7 +17,7 @@ module Data.Repa.Flow.Chunked.IO
 where
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Chunked.Base
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word

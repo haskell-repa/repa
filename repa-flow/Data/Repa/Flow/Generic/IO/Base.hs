@@ -23,7 +23,10 @@ import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array.Material                 as A
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Meta.Delayed             as A
+import Data.Repa.Array.Meta.Window              as A
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Generic.Index            as A
 import Data.Char
 import System.IO
 import Data.Word

@@ -15,7 +15,7 @@ module Data.Repa.Flow.Chunked.Operator
         , ignore_o)
 where
 import Data.Repa.Flow.Chunked.Base
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Generic                  as A
 import qualified Data.Repa.Flow.Generic         as G
 #include "repa-flow.h"
 

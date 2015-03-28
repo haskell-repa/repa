@@ -11,7 +11,7 @@ module Data.Repa.Flow.Generic.Base
         , finalize_o)
 where
 import Data.Repa.Flow.States
-import Data.Repa.Array          as A
+import Data.Repa.Array.Generic.Index    as A
 import Control.Monad
 #include "repa-flow.h"
 

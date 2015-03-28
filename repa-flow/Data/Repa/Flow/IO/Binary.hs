@@ -3,7 +3,7 @@ module Data.Repa.Flow.IO.Binary
         ( sourceBinary )
 where
 import Data.Repa.Array.Material         as A
-import Data.Repa.Array                  as A
+import Data.Repa.Array.Generic          as A
 import Data.Repa.Flow.IO.Storable       as F
 import Data.Repa.Flow.IO.Bucket         as F
 import Data.Repa.Flow.Generic           as G

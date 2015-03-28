@@ -9,13 +9,14 @@ module Data.Repa.Flow.Chunked.Base
         , head_i
         , finalize_i,    finalize_o)
 where
+import Data.Repa.Flow.States                    as F
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Generic.Index            as A
+import Data.Repa.Array.Meta.Window              as A
+import Control.Monad
+import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Sequence                  as Q
 import qualified Data.Foldable                  as Q
-import Data.Repa.Flow.States
-import Data.Repa.Array                          as A
-import Data.Repa.Eval.Array                     as A
-import qualified Data.Repa.Flow.Generic         as G
-import Control.Monad
 import Prelude                                  as P
 #include "repa-flow.h"
 

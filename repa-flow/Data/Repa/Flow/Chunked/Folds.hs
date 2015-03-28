@@ -7,9 +7,12 @@ import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
 import Data.Repa.Fusion.Unpack
 import Data.Repa.Option
-import Data.Repa.Array                    as A hiding (FoldsDict)
-import Data.Repa.Eval.Array               as A
-import qualified Data.Repa.Flow.Generic   as G
+import Data.Repa.Array.Generic.Index            as A
+import Data.Repa.Array.Generic.Target           as A
+import Data.Repa.Array.Generic                  as A hiding (FoldsDict)
+import Data.Repa.Array.Meta.Window              as A
+import Data.Repa.Array.Meta.Tuple               as A
+import qualified Data.Repa.Flow.Generic         as G
 #include "repa-flow.h"
 
 

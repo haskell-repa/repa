@@ -3,9 +3,9 @@ module Data.Repa.Flow.Generic.IO.Sieve
         (sieve_o)
 where
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Array                  as A
 import Data.Repa.Array.Material         as A
-import Data.Repa.IO.Array               as A
+import Data.Repa.Array.Generic.Convert  as A
+import Data.Repa.Array.Auto.IO          as A
 import System.IO
 import Data.Word
 #include "repa-flow.h"
@@ -39,7 +39,7 @@ sieve_o diag
                  -> do  -- TODO: repeatededly opening and closing the file 
                         --       will be very slow.
                         h       <- openBinaryFile path AppendMode
-                        hPutArray h arr
+                        hPutArray h (convert arr)
                         hClose h
 
         -- TODO: ignore any more incoming data after being ejected.

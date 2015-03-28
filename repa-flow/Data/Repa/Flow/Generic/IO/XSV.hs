@@ -6,7 +6,8 @@ where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Flow.Generic.Map
 import Data.Repa.Flow.Generic.IO.Base
-import Data.Repa.Array                          as A
+import Data.Repa.Array.Meta.Delayed             as A
+import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
 import Data.Char
 #include "repa-flow.h"

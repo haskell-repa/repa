@@ -18,10 +18,11 @@ module Data.Repa.Flow.Default.SizedIO
 where
 import Data.Repa.Flow.Default
 import Data.Repa.Flow.IO.Bucket
-import Data.Repa.Eval.Array                     as A
-import Data.Repa.Array.Material                 as A
 import Data.Repa.Fusion.Unpack                  as F
-import Data.Repa.Array                          as A 
+import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Material                 as A
+import Data.Repa.Array.Meta.Delayed             as A
+import Data.Repa.Array.Generic.Index            as A
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word

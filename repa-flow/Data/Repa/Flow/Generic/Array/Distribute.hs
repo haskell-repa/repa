@@ -9,7 +9,8 @@ module Data.Repa.Flow.Generic.Array.Distribute
         , ddistribute2_o)
 where
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Array
+import Data.Repa.Array.Generic
+import Data.Repa.Array.Generic.Index
 import Prelude hiding (length)
 #include "repa-flow.h"
 

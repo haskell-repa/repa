@@ -3,7 +3,7 @@ module Data.Repa.Flow.Generic.Array.Unchunk
         (unchunk_i)
 where
 import Data.Repa.Flow.Generic.Base
-import Data.Repa.Array                  as A
+import Data.Repa.Array.Generic                  as A
 #include "repa-flow.h"
 
 
