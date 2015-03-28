@@ -60,7 +60,7 @@ module Data.Repa.Flow.Auto
         , finalize_i,           finalize_o
         )
 where
-import Data.Repa.Array.Auto
+import Data.Repa.Array.Auto                    
         hiding (fromList, fromLists)
 
 import Data.Repa.Array.Material.Auto                    (A(..), Name(..))

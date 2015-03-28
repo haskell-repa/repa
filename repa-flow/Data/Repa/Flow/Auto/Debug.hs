@@ -1,28 +1,22 @@
 {-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
 module Data.Repa.Flow.Auto.Debug
-        (
-{-
-        -- * More
+        ( -- * More
           more,         more'
 
-        -- * More (tabular)
+          -- * More (tabular)
         , moret,        moret'
 
-        -- * More (raw)
+          -- * More (raw)
         , morer,        morer'
 
-        -- * Nicer
+          -- * Nicer
         , Nicer         (..)
-        , Presentable   (..)
--}      )
+        , Presentable   (..))
 where
-{-
 import Data.Repa.Nice.Present
 import Data.Repa.Nice.Tabulate
 import Data.Repa.Nice
-import Data.Repa.Array.Generic.Index            as A
-import Data.Repa.Array.Meta.Window              as A
-import Data.Repa.Flow.Auto                      hiding (next)
+import Data.Repa.Flow.Auto
 import Control.Monad
 import Data.List                                as L
 import Data.Text                                as T
@@ -38,17 +32,17 @@ import Prelude                                  as P
 --   * This function is intended for interactive debugging.
 --     If you want to retain the rest of the final chunk then use `head_i`.
 --
-more    :: (Windowable l a, A.Index l ~ Int, Nicer a)
+more    :: (Flow a, Nicer a)
         => Int          -- ^ Index  of source in bundle.
-        -> Sources l a  -- ^ Bundle of sources.
+        -> Sources a    -- ^ Bundle of sources.
         -> IO (Maybe [Nice a])
 more i ss = more' i 20 ss
 {-# INLINE more #-}
 
 
 -- | Like `more` but also specify now many elements you want.
-more'   :: (Windowable l a, A.Index l ~ Int, Nicer a)
-        => Int -> Int -> Sources l a -> IO (Maybe [Nice a])
+more'   :: (Flow a, Nicer a)
+        => Int -> Int -> Sources a -> IO (Maybe [Nice a])
 more' ix len s
         = liftM (liftM (L.map nice . fst)) $ head_i ix len s
 {-# INLINE_FLOW more' #-}
@@ -56,10 +50,9 @@ more' ix len s
 
 -------------------------------------------------------------------------------
 -- | Like `more`, but print results in a tabular form to the console.
-moret   :: ( A.Windowable l a, A.Index l ~ Int
-           , Nicer [a], Presentable (Nice [a]))
+moret   :: (Flow a, Nicer [a], Presentable (Nice [a]))
         => Int          -- ^ Index of source in bundle.
-        -> Sources l a  -- ^ Bundle of sources.
+        -> Sources a    -- ^ Bundle of sources.
         -> IO ()
 
 moret i ss = moret' i 20 ss
@@ -67,9 +60,8 @@ moret i ss = moret' i 20 ss
 
 
 -- | Like `more'`, but print results in tabular form to the console.
-moret'  :: ( A.Windowable l a, A.Index l ~ Int
-           , Nicer [a], Presentable (Nice [a]))
-        => Int -> Int -> Sources l a -> IO ()
+moret'  :: ( Flow a, Nicer [a], Presentable (Nice [a]))
+        => Int -> Int -> Sources a -> IO ()
 
 moret' ix len s
  = do   Just (vals, _) <- head_i ix len s
@@ -79,9 +71,9 @@ moret' ix len s
 
 -------------------------------------------------------------------------------
 -- | Like `more`, but show elements in their raw format.
-morer   :: (A.Windowable l a, A.Index l ~ Int)
+morer   :: Flow a
         => Int          -- ^ Index  of source in bundle.
-        -> Sources l a  -- ^ Bundle of sources.
+        -> Sources a    -- ^ Bundle of sources.
         -> IO (Maybe [a])
 
 morer i ss = morer' i 20 ss
@@ -89,11 +81,10 @@ morer i ss = morer' i 20 ss
 
 
 -- | Like `more'`, but show elements in their raw format.
-morer'   :: (A.Windowable l a, A.Index l ~ Int)
-        => Int -> Int -> Sources l a -> IO (Maybe [a])
+morer'  :: Flow a
+        => Int -> Int -> Sources a -> IO (Maybe [a])
 morer' ix len s
         = liftM (liftM fst) $ head_i ix len s
 {-# INLINE_FLOW morer' #-}
--}
 
 

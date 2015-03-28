@@ -1,33 +1,29 @@
 
 -- | Read and write files.
 module Data.Repa.Flow.Auto.SizedIO
-        ( 
-{-
+        ( -- * Buckets
           module Data.Repa.Flow.IO.Bucket
 
-           -- * Sourcing
+          -- * Sourcing
         , sourceBytes
         , sourceChars
         , sourceLines
         , sourceRecords
-        , G.sourceTSV
-        , G.sourceCSV
+        , sourceTSV
+        , sourceCSV
 
           -- * Sinking
         , sinkBytes
         , sinkChars
         , sinkLines
--}
         )
 where
-{-
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
-import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array.Generic                  as A
+import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Meta.Delayed             as A
-import Data.Repa.Array.Generic.Index            as A
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
@@ -38,30 +34,32 @@ import Data.Char
 -- Sourcing ---------------------------------------------------------------------------------------
 -- | Like `F.sourceBytes`, but with the default chunk size.
 sourceBytes 
-        :: BulkI l Bucket
-        => Integer -> Array l Bucket -> IO (Sources F Word8)
-sourceBytes i bs = G.sourceBytes i bs
+        :: Integer -> Array B Bucket -> IO (Sources Word8)
+sourceBytes i bs 
+        =   G.map_i A.convert
+        =<< G.sourceBytes i bs
 {-# INLINE sourceBytes #-}
 
 
 -- | Like `F.sourceChars`, but with the default chunk size.
 sourceChars 
-        :: BulkI l Bucket
-        => Integer -> Array l Bucket -> IO (Sources F Char)
-sourceChars i bs = G.sourceChars i bs
+        :: Integer -> Array B Bucket -> IO (Sources Char)
+sourceChars i bs 
+        =   G.map_i A.convert
+        =<< G.sourceChars i bs
 {-# INLINE sourceChars #-}
 
 
 -- | Like `F.sourceLines`, but with the default chunk size and error action.
 sourceLines
-        :: BulkI l Bucket
-        => Integer               -- ^ Size of chunk to read in bytes.
+        :: Integer              -- ^ Size of chunk to read in bytes.
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> Array l Bucket       -- ^ Buckets.
-        -> IO (Sources N (Array F Char))
+        -> Array B Bucket       -- ^ Buckets.
+        -> IO (Sources (Array A Char))
+
 sourceLines nChunk fails bs
- =   G.map_i chopChunk
+ =   G.map_i (A.convert . chopChunk)
  =<< G.sourceRecords nChunk isNewLine fails bs
  where
         isNewLine   :: Word8 -> Bool
@@ -69,7 +67,7 @@ sourceLines nChunk fails bs
         {-# INLINE isNewLine #-}
   
         chopChunk chunk
-         = A.mapElems (A.computeS name . A.map (chr . fromIntegral)) 
+         = A.mapElems (A.computeS A . A.map (chr . fromIntegral)) 
          $ A.trimEnds (== nl) chunk
         {-# INLINE chopChunk #-}
 
@@ -80,46 +78,66 @@ sourceLines nChunk fails bs
 
 -- | Like `F.sourceRecords`, but with the default chunk size and error action.
 sourceRecords 
-        :: BulkI l Bucket
-        => Integer              -- ^ Size of chunk to read in bytes.
+        :: Integer              -- ^ Size of chunk to read in bytes.
         -> (Word8 -> Bool)      -- ^ Detect the end of a record.        
         -> IO ()                -- ^ Action to perform if we can't get a
                                 --   whole record.
-        -> Array l Bucket       -- ^ File handles.
-        -> IO (Sources N (Array F Word8))
+        -> Array B Bucket       -- ^ File handles.
+        -> IO (Sources (Array A Word8))
+
 sourceRecords i pSep aFail bs 
-        = G.sourceRecords i pSep aFail bs
+        =   G.map_i A.convert
+        =<< G.sourceRecords i pSep aFail bs
 {-# INLINE sourceRecords #-}
+
+
+-- | Read a file containing Comma-Separated-Values.
+sourceCSV
+        :: Integer              -- ^ Chunk length.
+        -> IO ()                -- ^ Action to perform if we find line longer
+                                --   than the chunk length.
+        -> Array B Bucket       -- ^ Buckets
+        -> IO (Sources (Array A (Array A Char)))
+
+sourceCSV i aFail bs
+        =   G.map_i A.convert
+        =<< G.sourceCSV i aFail bs
+{-# INLINE sourceCSV #-}
+
+
+-- | Read a file containing Tab-Separated-Values.
+sourceTSV
+        :: Integer              -- ^ Chunk length.
+        -> IO ()                -- ^ Action to perform if we find line longer
+                                --   than the chunk length.
+        -> Array B Bucket       -- ^ Buckets
+        -> IO (Sources (Array A (Array A Char)))
+
+sourceTSV i aFail bs
+        =   G.map_i A.convert
+        =<< G.sourceTSV i aFail bs
+{-# INLINE sourceTSV #-}
 
 
 -- Sinking ----------------------------------------------------------------------------------------
 -- | An alias for `F.sinkBytes`.
-sinkBytes 
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sinks F Word8)
-sinkBytes bs = G.sinkBytes bs
+sinkBytes :: Array B Bucket -> IO (Sinks Word8)
+sinkBytes bs 
+        =   G.map_o A.convert
+        =<< G.sinkBytes bs
 {-# INLINE sinkBytes #-}
 
 
 -- | An alias for `F.sinkChars`.
-sinkChars 
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sinks F Char)
-sinkChars bs = G.sinkChars bs
+sinkChars  :: Array B Bucket -> IO (Sinks Char)
+sinkChars bs 
+        = G.sinkChars bs
 {-# INLINE sinkChars #-}
 
 
 -- | An alias for `F.sinkLines`.
-sinkLines 
-        :: ( BulkI l  Bucket
-           , BulkI l1 (Array l2 Char)
-           , BulkI l2 Char, Unpack (Array l2 Char) t2)
-        => Name  l1                     -- ^ Layout for chunks of lines.
-        -> Name  l2                     -- ^ Layout for lines.
-        -> Array l Bucket               -- ^ Buckets
-        -> IO (Sinks l1 (Array l2 Char))
-sinkLines n1 n2 bs 
-        = G.sinkLines n1 n2 bs
+sinkLines  :: Array B Bucket
+           -> IO (Sinks (Array A Char))
+sinkLines bs 
+        = G.sinkLines A A bs
 {-# INLINE sinkLines #-}
-
--}

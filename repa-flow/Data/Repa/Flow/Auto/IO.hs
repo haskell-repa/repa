@@ -4,35 +4,32 @@
 --   The functions in this module are wrappers for the ones in 
 --   "Data.Repa.Flow.Default.SizedIO" that use a default chunk size of
 --   64kBytes and just call `error` if the source file appears corruped. 
+--
 module Data.Repa.Flow.Auto.IO
-        ( 
-{-
-          defaultChunkSize
+        ( defaultChunkSize
 
           -- * Buckets
         , module Data.Repa.Flow.IO.Bucket
 
           -- * Sourcing
-        , sourceCSV
-        , sourceTSV
-        , sourceRecords
-        , sourceLines
-        , sourceChars
         , sourceBytes
+        , sourceChars
+        , sourceLines
+        , sourceRecords
+        , sourceTSV
+        , sourceCSV
 
           -- * Sinking
-        , sinkChars
-        , sinkLines
         , sinkBytes
--}
+        , sinkLines
+        , sinkChars
         )
 where
-{-
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
-import Data.Repa.Fusion.Unpack
+import Data.Repa.Array.Material                 as A
 import Data.Word
-import qualified Data.Repa.Flow.Auto.SizedIO  as F
+import qualified Data.Repa.Flow.Auto.SizedIO    as F
 #include "repa-flow.h"
 
 
@@ -42,9 +39,8 @@ defaultChunkSize = 64 * 1024
 
 
 -- | Read a file containing Comma-Separated-Values.
-sourceCSV
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sources N (Array N (Array F Char)))
+sourceCSV :: Array B Bucket 
+          -> IO (Sources (Array A (Array A Char)))
 sourceCSV
         = F.sourceCSV defaultChunkSize
         $ error $  "Line exceeds chunk size of "
@@ -53,9 +49,8 @@ sourceCSV
 
 
 -- | Read a file containing Tab-Separated-Values.
-sourceTSV
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sources N (Array N (Array F Char)))
+sourceTSV :: Array B Bucket 
+          -> IO (Sources (Array A (Array A Char)))
 sourceTSV
         = F.sourceTSV defaultChunkSize
         $ error $  "Line exceeds chunk size of "
@@ -84,10 +79,9 @@ sourceTSV
 --     record from the associated stream when no more are available.
 --
 sourceRecords 
-        :: BulkI l Bucket
-        => (Word8 -> Bool)      -- ^ Detect the end of a record.
-        -> Array l Bucket       -- ^ Buckets.
-        -> IO (Sources N (Array F Word8))
+        :: (Word8 -> Bool)      -- ^ Detect the end of a record.
+        -> Array B Bucket       -- ^ Buckets.
+        -> IO (Sources (Array A Word8))
 sourceRecords pSep 
         = F.sourceRecords defaultChunkSize pSep
         $ error $  "Record exceeds chunk size of " 
@@ -106,8 +100,7 @@ sourceRecords pSep
 --     from the associated stream when no more are available.
 --
 sourceLines 
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sources N (Array F Char))
+        :: Array B Bucket -> IO (Sources (Array A Char))
 sourceLines     
         = F.sourceLines   defaultChunkSize
         $ error $  "Line exceeds chunk size of "
@@ -116,18 +109,14 @@ sourceLines
 
 
 -- | Read 8-bit ASCII characters from some files, using the given chunk length.
-sourceChars 
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sources F Char)
-sourceChars     = F.sourceChars defaultChunkSize
+sourceChars :: Array B Bucket -> IO (Sources Char)
+sourceChars = F.sourceChars defaultChunkSize
 {-# INLINE sourceChars #-}
 
 
 -- | Read data from some files, using the given chunk length.
-sourceBytes 
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sources F Word8)
-sourceBytes     = F.sourceBytes defaultChunkSize
+sourceBytes :: Array B Bucket -> IO (Sources Word8)
+sourceBytes = F.sourceBytes defaultChunkSize
 {-# INLINE sourceBytes #-}
 
 
@@ -136,31 +125,18 @@ sourceBytes     = F.sourceBytes defaultChunkSize
 --   * Data is copied into a new buffer to insert newlines before being
 --     written out.
 --
-sinkLines 
-        :: ( BulkI l Bucket
-           , BulkI l1 (Array l2 Char)
-           , BulkI l2 Char, Unpack (Array l2 Char) t2)
-        => Name l1              -- ^ Layout of chunks.
-        -> Name l2              -- ^ Layout of lines in chunks.
-        -> Array l Bucket       -- ^ Buckets
-        -> IO (Sinks l1 (Array l2 Char))
-sinkLines       = F.sinkLines
+sinkLines :: Array B Bucket -> IO (Sinks (Array A Char))
+sinkLines = F.sinkLines
 {-# INLINE sinkLines #-}
 
 
 -- | Write 8-bit ASCII characters to some files.
-sinkChars 
-        :: BulkI l Bucket
-        => Array l Bucket -> IO (Sinks F Char)
+sinkChars :: Array B Bucket -> IO (Sinks Char)
 sinkChars =  F.sinkChars
 {-# INLINE sinkChars #-}
 
 
 -- | Write bytes to some file.
-sinkBytes 
-        :: BulkI l Bucket 
-        => Array l Bucket -> IO (Sinks F Word8)
+sinkBytes :: Array B Bucket -> IO (Sinks Word8)
 sinkBytes =  F.sinkBytes
 {-# INLINE sinkBytes #-}
-
--}

@@ -10,7 +10,7 @@
 -- @
 -- > import Data.Repa.Flow
 -- > import Data.Repa.Flow.Default.Debug
--- > ws <- fromFiles [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
+-- > ws <- fromFiles' [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
 -- @
 --
 --   Show the first few elements of the first chunk of the first file.
@@ -170,7 +170,6 @@ module Data.Repa.Flow
         , folds_i,              FoldsDict
         , foldGroupsBy_i,       FoldGroupsDict
 
-{-
         -- * Flow I/O
         , defaultChunkSize
 
@@ -189,7 +188,6 @@ module Data.Repa.Flow
         , sinkChars
         , sinkLines
         , sinkBytes
--}
         )
 where
 import Data.Repa.Flow.Auto
