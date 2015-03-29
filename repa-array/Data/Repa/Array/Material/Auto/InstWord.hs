@@ -38,8 +38,8 @@ instance Windowable A Word8 where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Word8 where
- data Buffer s A Word8            
-  = ABuffer_Word8 !(Buffer s F Word8)
+ data Buffer A Word8            
+  = ABuffer_Word8 !(Buffer F Word8)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Word8 $ unsafeNewBuffer (Foreign len)
@@ -78,8 +78,8 @@ instance Target A Word8 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Word8)) t 
-      => (Unpack (Buffer s A Word8)) t where
+instance (Unpack (Buffer F Word8)) t 
+      => (Unpack (Buffer A Word8)) t where
  unpack (ABuffer_Word8 buf)   = unpack buf
  repack (ABuffer_Word8 x) buf = ABuffer_Word8 (repack x buf)
  {-# INLINE unpack #-}

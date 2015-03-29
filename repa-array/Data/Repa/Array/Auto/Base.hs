@@ -35,4 +35,4 @@ type Elem  a
 type Build a t
         = ( G.Bulk   A a
           , G.Target A a
-          , F.Unpack (G.IOBuffer A a) t)
+          , F.Unpack (G.Buffer A a) t)

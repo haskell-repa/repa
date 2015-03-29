@@ -94,5 +94,5 @@ type FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
         , Target lGrp n
         , Target lRes b
         , Index  lGrp ~ Index lRes
-        , Unpack (IOBuffer lGrp n) tGrp
-        , Unpack (IOBuffer lRes b) tRes)
+        , Unpack (Buffer lGrp n) tGrp
+        , Unpack (Buffer lRes b) tRes)

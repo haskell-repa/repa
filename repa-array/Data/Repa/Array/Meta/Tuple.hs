@@ -90,8 +90,8 @@ instance ( Target l1 a, Target l2 b
          , Index l1 ~ Index l2)
       =>   Target (T2 l1 l2) (a, b) where
 
- data Buffer s (T2 l1 l2) (a, b)
-        = T2Buffer !(Buffer s l1 a) !(Buffer s l2 b)
+ data Buffer (T2 l1 l2) (a, b)
+        = T2Buffer !(Buffer l1 a) !(Buffer l2 b)
 
  unsafeNewBuffer (Tup2 l1 l2)
   = liftM2 T2Buffer (unsafeNewBuffer l1) (unsafeNewBuffer l2)
@@ -140,8 +140,8 @@ instance ( Target l1 a, Target l2 b
  bufferLayout (T2Buffer buf1 buf2)
   = Tup2 (bufferLayout buf1) (bufferLayout buf2)
 
-instance (Unpack (Buffer s r1 a) t1, Unpack (Buffer s r2 b) t2)
-       => Unpack (Buffer s (T2 r1 r2) (a, b)) (t1, t2) where
+instance (Unpack (Buffer r1 a) t1, Unpack (Buffer r2 b) t2)
+       => Unpack (Buffer (T2 r1 r2) (a, b)) (t1, t2) where
  unpack  (T2Buffer buf1 buf2)
    = buf1 `seq` buf2 `seq` (unpack buf1, unpack buf2)
  {-# INLINE_ARRAY unpack #-}

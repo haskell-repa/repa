@@ -107,7 +107,7 @@ instance Storable a => Windowable F a where
 -------------------------------------------------------------------------------
 -- | Foreign buffers
 instance Storable a => Target F a where
-  data Buffer s F a = FBuffer !(M.MVector s a)
+  data Buffer F a = FBuffer !(M.IOVector a)
 
   unsafeNewBuffer    (Foreign n)        = FBuffer `liftM` M.unsafeNew n
   unsafeReadBuffer   (FBuffer mv) i     = M.unsafeRead mv i
@@ -130,7 +130,7 @@ instance Storable a => Target F a where
 
 
 -- | Unpack Foreign buffers
-instance Unpack (Buffer s F a) (M.MVector s a) where
+instance Unpack (Buffer F a) (M.IOVector a) where
  unpack (FBuffer mv)  = mv
  repack _ mv          = FBuffer mv
  {-# INLINE_ARRAY unpack #-}

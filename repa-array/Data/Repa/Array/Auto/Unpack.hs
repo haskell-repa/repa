@@ -39,7 +39,7 @@ packForeign !format !arrElems
  
  = unsafePerformIO
  $ do   
-        buf@(A.FBuffer mvec) :: A.IOBuffer A.F Word8
+        buf@(A.FBuffer mvec) :: A.Buffer A.F Word8
                 <- A.unsafeNewBuffer (A.Foreign lenBytes)
 
         let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 

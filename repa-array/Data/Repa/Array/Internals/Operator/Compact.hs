@@ -17,7 +17,7 @@ import Data.Repa.Stream                         as S
 --   We walk over the stream front to back, maintaining an accumulator.
 --   At each point we can chose to emit an element (or not)
 compact :: ( BulkI lSrc a, TargetI lDst b
-           , Unpack (IOBuffer lDst b) t0)
+           , Unpack (Buffer lDst b) t0)
         => Name lDst
         -> (s -> a -> (Maybe b, s))
         -> s
@@ -35,7 +35,7 @@ compact nDst f s0 arr
 --   initial state, and add the final state to the end of the output.
 compactIn
         :: ( BulkI lSrc a, TargetI lDst a
-           , Unpack (IOBuffer lDst a) t0)
+           , Unpack (Buffer lDst a) t0)
         => Name lDst
         -> (a -> a -> (Maybe a, a))
         -> Array lSrc a

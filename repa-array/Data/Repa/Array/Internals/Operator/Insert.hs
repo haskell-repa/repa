@@ -14,7 +14,7 @@ import qualified Data.Repa.Stream               as S
 
 -- | Insert elements produced by the given function in to an array.
 insert  :: ( BulkI lSrc a, TargetI lDst a
-           , Unpack (IOBuffer lDst a) t0)
+           , Unpack (Buffer lDst a) t0)
         => Name lDst            -- ^ Name of destination layout.
         -> (Int -> Maybe a)     -- ^ Produce an element for this index.
         -> Array lSrc a         -- ^ Array of source elements.

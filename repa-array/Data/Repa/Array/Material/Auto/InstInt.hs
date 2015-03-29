@@ -38,8 +38,8 @@ instance Windowable A Int where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Int where
- data Buffer s A Int            
-  = ABuffer_Int !(Buffer s F Int)
+ data Buffer A Int            
+  = ABuffer_Int !(Buffer F Int)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Int $ unsafeNewBuffer (Foreign len)
@@ -78,8 +78,8 @@ instance Target A Int where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Int)) t 
-      => (Unpack (Buffer s A Int)) t where
+instance (Unpack (Buffer F Int)) t 
+      => (Unpack (Buffer A Int)) t where
  unpack (ABuffer_Int buf)   = unpack buf
  repack (ABuffer_Int x) buf = ABuffer_Int (repack x buf)
  {-# INLINE unpack #-}
@@ -108,8 +108,8 @@ instance Windowable A Int8 where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Int8 where
- data Buffer s A Int8            
-  = ABuffer_Int8 !(Buffer s F Int8)
+ data Buffer A Int8            
+  = ABuffer_Int8 !(Buffer F Int8)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Int8 $ unsafeNewBuffer (Foreign len)
@@ -148,8 +148,8 @@ instance Target A Int8 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Int8)) t 
-      => (Unpack (Buffer s A Int8)) t where
+instance (Unpack (Buffer F Int8)) t 
+      => (Unpack (Buffer A Int8)) t where
  unpack (ABuffer_Int8 buf)   = unpack buf
  repack (ABuffer_Int8 x) buf = ABuffer_Int8 (repack x buf)
  {-# INLINE unpack #-}
@@ -178,8 +178,8 @@ instance Windowable A Int16 where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Int16 where
- data Buffer s A Int16            
-  = ABuffer_Int16 !(Buffer s F Int16)
+ data Buffer A Int16            
+  = ABuffer_Int16 !(Buffer F Int16)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Int16 $ unsafeNewBuffer (Foreign len)
@@ -218,8 +218,8 @@ instance Target A Int16 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Int16)) t 
-      => (Unpack (Buffer s A Int16)) t where
+instance (Unpack (Buffer F Int16)) t 
+      => (Unpack (Buffer A Int16)) t where
  unpack (ABuffer_Int16 buf)   = unpack buf
  repack (ABuffer_Int16 x) buf = ABuffer_Int16 (repack x buf)
  {-# INLINE unpack #-}
@@ -248,8 +248,8 @@ instance Windowable A Int32 where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Int32 where
- data Buffer s A Int32            
-  = ABuffer_Int32 !(Buffer s F Int32)
+ data Buffer A Int32            
+  = ABuffer_Int32 !(Buffer F Int32)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Int32 $ unsafeNewBuffer (Foreign len)
@@ -288,8 +288,8 @@ instance Target A Int32 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Int32)) t 
-      => (Unpack (Buffer s A Int32)) t where
+instance (Unpack (Buffer F Int32)) t 
+      => (Unpack (Buffer A Int32)) t where
  unpack (ABuffer_Int32 buf)   = unpack buf
  repack (ABuffer_Int32 x) buf = ABuffer_Int32 (repack x buf)
  {-# INLINE unpack #-}
@@ -318,8 +318,8 @@ instance Windowable A Int64 where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Int64 where
- data Buffer s A Int64            
-  = ABuffer_Int64 !(Buffer s F Int64)
+ data Buffer A Int64            
+  = ABuffer_Int64 !(Buffer F Int64)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Int64 $ unsafeNewBuffer (Foreign len)
@@ -358,8 +358,8 @@ instance Target A Int64 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Int64)) t 
-      => (Unpack (Buffer s A Int64)) t where
+instance (Unpack (Buffer F Int64)) t 
+      => (Unpack (Buffer A Int64)) t where
  unpack (ABuffer_Int64 buf)   = unpack buf
  repack (ABuffer_Int64 x) buf = ABuffer_Int64 (repack x buf)
  {-# INLINE unpack #-}

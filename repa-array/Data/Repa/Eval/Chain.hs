@@ -49,7 +49,7 @@ liftChain (Chain sz s step)
 -- | Compute the elements of a pure `Chain`,
 --   writing them into a new array `Array`.
 unchainToArray
-        :: (Target l a, Unpack (IOBuffer l a) t)
+        :: (Target l a, Unpack (Buffer l a) t)
         => Name l -> Chain S.Id s a -> (Array l a, s)
 unchainToArray nDst c
         = unsafePerformIO
@@ -61,7 +61,7 @@ unchainToArray nDst c
 -- | Compute the elements of an `IO` `Chain`,
 --   writing them to a new `Array`.
 unchainToArrayIO
-        :: (Target l a, Unpack (IOBuffer l a) t)
+        :: (Target l a, Unpack (Buffer l a) t)
         => Name l -> Chain IO s a -> IO (Array l a, s)
 
 unchainToArrayIO nDst (Chain sz s0 step)

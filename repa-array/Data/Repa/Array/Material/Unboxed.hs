@@ -105,8 +105,8 @@ instance U.Unbox a => Windowable U a where
 ---------------------------------------------------------------------------------------------------
 -- | Unboxed buffers.
 instance U.Unbox a => Target U a where
- data Buffer s U a
-  = UBuffer !(UM.MVector s a)
+ data Buffer U a
+  = UBuffer !(UM.IOVector a)
 
  unsafeNewBuffer (Unboxed len)
   = liftM UBuffer (UM.unsafeNew len)
@@ -155,7 +155,7 @@ instance U.Unbox a => Target U a where
  {-# SPECIALIZE instance Target U Word64 #-}
 
 
-instance Unpack (Buffer s U a) (UM.MVector s a) where
+instance Unpack (Buffer U a) (UM.IOVector a) where
  unpack (UBuffer vec)  = vec `seq` vec
  repack !_ !vec        = UBuffer vec
  {-# INLINE_ARRAY unpack #-}

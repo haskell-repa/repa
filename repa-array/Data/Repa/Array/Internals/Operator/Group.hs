@@ -75,7 +75,7 @@ type GroupsDict  lElt lGrp tGrp lLen tLen n
         , Target lGrp n
         , Target lLen Int
         , Index  lGrp ~ Index lLen
-        , Unpack (IOBuffer lLen Int) tLen
-        , Unpack (IOBuffer lGrp n)   tGrp)
+        , Unpack (Buffer lLen Int) tLen
+        , Unpack (Buffer lGrp n)   tGrp)
 
 

@@ -83,8 +83,8 @@ instance Unpack (Array F Char) t
 
 
 instance Target A Char where
- data Buffer s A Char            
-  = ABuffer_Char !(Buffer s F Char)
+ data Buffer A Char            
+  = ABuffer_Char !(Buffer F Char)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Char $ unsafeNewBuffer (Foreign len)
@@ -123,8 +123,8 @@ instance Target A Char where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Char)) t 
-      => (Unpack (Buffer s A Char)) t where
+instance (Unpack (Buffer F Char)) t 
+      => (Unpack (Buffer A Char)) t where
  unpack (ABuffer_Char buf)   = unpack buf
  repack (ABuffer_Char x) buf = ABuffer_Char (repack x buf)
  {-# INLINE unpack #-}
@@ -169,8 +169,8 @@ instance (Windowable A a, Windowable A b)
 
 instance (Target A a, Target A b)
        => Target A (a, b) where
- data Buffer s A (a, b)            
-  = ABuffer_T2 !(Buffer s (T2 A A) (a, b))
+ data Buffer A (a, b)            
+  = ABuffer_T2 !(Buffer (T2 A A) (a, b))
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_T2 $ unsafeNewBuffer (Tup2 (Auto len) (Auto len))
@@ -209,8 +209,8 @@ instance (Target A a, Target A b)
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance Unpack (Buffer s (T2 A A) (a, b)) t
-      => Unpack (Buffer s A (a, b)) t where
+instance Unpack (Buffer (T2 A A) (a, b)) t
+      => Unpack (Buffer A (a, b)) t where
  unpack (ABuffer_T2 buf)   = unpack buf
  repack (ABuffer_T2 x) buf = ABuffer_T2 (repack x buf)
  {-# INLINE unpack #-}
@@ -239,8 +239,8 @@ instance (Windowable A a, Windowable A b)
 
 instance (Target A a, Target A b)
        => Target A (a :*: b) where
- data Buffer s A (a :*: b)            
-  = ABuffer_Prod !(Buffer s A a) !(Buffer s A b)
+ data Buffer A (a :*: b)            
+  = ABuffer_Prod !(Buffer A a) !(Buffer A b)
 
  unsafeNewBuffer l     
   = liftM2 ABuffer_Prod (unsafeNewBuffer l) (unsafeNewBuffer l)
@@ -291,9 +291,9 @@ instance (Target A a, Target A b)
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance ( Unpack (Buffer s A a) tA
-         , Unpack (Buffer s A b) tB)
-      =>   Unpack (Buffer s A (a :*: b)) (tA, tB) where
+instance ( Unpack (Buffer A a) tA
+         , Unpack (Buffer A b) tB)
+      =>   Unpack (Buffer A (a :*: b)) (tA, tB) where
  unpack (ABuffer_Prod bufA bufB)            
         = (unpack bufA, unpack bufB)
 
@@ -321,8 +321,8 @@ instance Bulk A a => Windowable A [a] where
 
 
 instance  Target A [a] where
- data Buffer s A [a]
-  = ABuffer_List !(Buffer s B [a])
+ data Buffer A [a]
+  = ABuffer_List !(Buffer B [a])
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_List $ unsafeNewBuffer (Boxed len)
@@ -361,7 +361,7 @@ instance  Target A [a] where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance Unpack (Buffer s A String) (Buffer s A String) where
+instance Unpack (Buffer A String) (Buffer A String) where
  unpack buf   = buf
  repack _ buf = buf
  {-# INLINE unpack #-}
@@ -398,8 +398,8 @@ instance Convert r1 a1 r2 a2
 
 instance (Bulk l a, Target l a, Index l ~ Int) 
        => Target A (Array l a) where
- data Buffer s A (Array l a)
-  = ABuffer_Array !(Buffer s N (Array l a))
+ data Buffer A (Array l a)
+  = ABuffer_Array !(Buffer N (Array l a))
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Array $ unsafeNewBuffer (Nested len)
@@ -438,8 +438,8 @@ instance (Bulk l a, Target l a, Index l ~ Int)
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance Unpack (Buffer s N (Array l a)) t
-      => Unpack (Buffer s A (Array l a)) t where
+instance Unpack (Buffer N (Array l a)) t
+      => Unpack (Buffer A (Array l a)) t where
  unpack (ABuffer_Array buf)   = unpack buf
  repack (ABuffer_Array x) buf = ABuffer_Array (repack x buf)
  {-# INLINE unpack #-}

@@ -17,7 +17,7 @@ import qualified Data.Vector.Fusion.Stream      as S
 merge   :: ( Ord k
            , BulkI l1 (k, a), BulkI l2 (k, b)
            , TargetI lDst (k, c)
-           , Unpack (IOBuffer lDst (k, c)) t0)
+           , Unpack (Buffer lDst (k, c)) t0)
         => Name lDst            -- ^ Name of destination layout.
         -> (k -> a -> b -> c)   -- ^ Combine two values with the same key.
         -> (k -> a -> c)        -- ^ Handle a left value without a right value.
@@ -40,7 +40,7 @@ mergeMaybe
         :: ( Ord k
            , BulkI l1 (k, a), BulkI l2 (k, b)
            , TargetI lDst (k, c)
-           , Unpack (IOBuffer lDst (k, c)) t0)
+           , Unpack (Buffer lDst (k, c)) t0)
         => Name lDst
         -> (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
         -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.

@@ -33,7 +33,7 @@ streamOfArray vec
 -- | Compute the elements of a pure `Stream`,
 --   writing them into a new array `Array`.
 unstreamToArray
-        :: (Target l a, Unpack (IOBuffer l a) t)
+        :: (Target l a, Unpack (Buffer l a) t)
         => Name l -> S.Stream S.Id a -> Array l a
 
 unstreamToArray nDst s
@@ -46,7 +46,7 @@ unstreamToArray nDst s
 -- | Compute the elements of an `IO` `Stream`,
 --   writing them to a new `Array`.
 unstreamToArrayIO
-        :: (Target l a, Unpack (IOBuffer l a) t)
+        :: (Target l a, Unpack (Buffer l a) t)
         => Name l -> S.Stream IO a -> IO (Array l a)
 
 unstreamToArrayIO nDst (S.Stream step s0 sz)

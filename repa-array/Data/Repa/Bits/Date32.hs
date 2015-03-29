@@ -75,9 +75,10 @@ instance A.Windowable A.A Date32 where
   = AArray_Date32 (A.window st len arr)
  {-# INLINE_ARRAY window #-}
 
+
 instance A.Target A.A Date32 where
- data Buffer s A.A Date32            
-  = ABuffer_Date32 !(A.Buffer s A.F Date32)
+ data Buffer A.A Date32            
+  = ABuffer_Date32 !(A.Buffer A.F Date32)
 
  unsafeNewBuffer    (A.Auto len)     
   = liftM ABuffer_Date32 $ A.unsafeNewBuffer (A.Foreign len)
@@ -116,8 +117,8 @@ instance A.Target A.A Date32 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (A.Unpack (A.Buffer s A.F Date32)) t 
-      => (A.Unpack (A.Buffer s A.A Date32)) t where
+instance (A.Unpack (A.Buffer A.F Date32)) t 
+      => (A.Unpack (A.Buffer A.A Date32)) t where
  unpack (ABuffer_Date32 buf)   = A.unpack buf
  repack (ABuffer_Date32 x) buf = ABuffer_Date32 (A.repack x buf)
  {-# INLINE unpack #-}

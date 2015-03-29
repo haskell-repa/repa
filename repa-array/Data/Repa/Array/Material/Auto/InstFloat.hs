@@ -36,8 +36,8 @@ instance Windowable A Float where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Float where
- data Buffer s A Float            
-  = ABuffer_Float !(Buffer s F Float)
+ data Buffer A Float            
+  = ABuffer_Float !(Buffer F Float)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Float $ unsafeNewBuffer (Foreign len)
@@ -76,8 +76,8 @@ instance Target A Float where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Float)) t 
-      => (Unpack (Buffer s A Float)) t where
+instance (Unpack (Buffer F Float)) t 
+      => (Unpack (Buffer A Float)) t where
  unpack (ABuffer_Float buf)   = unpack buf
  repack (ABuffer_Float x) buf = ABuffer_Float (repack x buf)
  {-# INLINE unpack #-}
@@ -106,8 +106,8 @@ instance Windowable A Double where
  {-# INLINE_ARRAY window #-}
 
 instance Target A Double where
- data Buffer s A Double            
-  = ABuffer_Double !(Buffer s F Double)
+ data Buffer A Double            
+  = ABuffer_Double !(Buffer F Double)
 
  unsafeNewBuffer (Auto len)     
   = liftM ABuffer_Double $ unsafeNewBuffer (Foreign len)
@@ -146,8 +146,8 @@ instance Target A Double where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer s F Double)) t 
-      => (Unpack (Buffer s A Double)) t where
+instance (Unpack (Buffer F Double)) t 
+      => (Unpack (Buffer A Double)) t where
  unpack (ABuffer_Double buf)   = unpack buf
  repack (ABuffer_Double x) buf = ABuffer_Double (repack x buf)
  {-# INLINE unpack #-}

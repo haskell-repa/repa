@@ -86,8 +86,8 @@ instance (Index r ~ Int, Layout l, Bulk r a)
 instance (Layout l, Index r ~ Int, Target r a)
  => Target (E r l) a where
 
- data Buffer s (E r l) a
-  = EBuffer !l !(Buffer s r a)
+ data Buffer (E r l) a
+  = EBuffer !l !(Buffer r a)
 
  unsafeNewBuffer   (Dense r l)
   = do   buf     <- unsafeNewBuffer r
@@ -128,8 +128,8 @@ instance (Layout l, Index r ~ Int, Target r a)
  {-# INLINE bufferLayout       #-}
 
 
-instance Unpack (Buffer s r a) tBuf
-      => Unpack (Buffer s (E r l) a) (l, tBuf) where
+instance Unpack (Buffer r a) tBuf
+      => Unpack (Buffer (E r l) a) (l, tBuf) where
 
  unpack (EBuffer l buf)             = (l, unpack buf)
  repack (EBuffer _ buf) (l, ubuf)   = EBuffer l (repack buf ubuf)

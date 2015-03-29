@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Internals.Target
-        ( Target (..),  IOBuffer, TargetI
+        ( Target (..),  TargetI
         , fromList,     fromListInto)
 where
 import Data.Repa.Array.Generic.Index            as A
@@ -18,56 +18,52 @@ import Prelude                                  as P
 class Layout l => Target l a where
 
  -- | Mutable buffer for some array representation.
- data Buffer s l a
+ data Buffer l a
 
  -- | Allocate a new mutable buffer for the given layout.
  --
  --   UNSAFE: The integer must be positive, but this is not checked.
- unsafeNewBuffer    :: PrimMonad m => l -> m (Buffer (PrimState m) l a)
+ unsafeNewBuffer    :: l -> IO (Buffer l a)
 
  -- | Read an element from the mutable buffer.
  --
  --   UNSAFE: The index bounds are not checked.
- unsafeReadBuffer  :: PrimMonad m => Buffer (PrimState m) l a -> Int -> m a
+ unsafeReadBuffer   ::  Buffer l a -> Int -> IO a
 
  -- | Write an element into the mutable buffer.
  --
  --   UNSAFE: The index bounds are not checked.
- unsafeWriteBuffer  :: PrimMonad m => Buffer (PrimState m) l a -> Int -> a -> m ()
+ unsafeWriteBuffer  ::  Buffer l a -> Int -> a -> IO ()
 
  -- | O(n). Copy the contents of a buffer that is larger by the given
  --   number of elements.
  --
  --   UNSAFE: The integer must be positive, but this is not checked.
- unsafeGrowBuffer   :: PrimMonad m => Buffer (PrimState m) l a -> Int
-                                   -> m (Buffer (PrimState m) l a)
+ unsafeGrowBuffer   :: Buffer l a -> Int -> IO (Buffer l a)
 
  -- | O(1). Yield a slice of the buffer without copying.
  --
  --   UNSAFE: The given starting position and length must be within the bounds
  --   of the of the source buffer, but this is not checked.
- unsafeSliceBuffer  :: PrimMonad m => Int -> Int -> Buffer (PrimState m) l a
-                                   -> m (Buffer (PrimState m) l a)
+ unsafeSliceBuffer  :: Int -> Int -> Buffer l a -> IO (Buffer l a)
 
  -- | O(1). Freeze a mutable buffer into an immutable Repa array.
  --
  --   UNSAFE: If the buffer is mutated further then the result of reading from
  --           the returned array will be non-deterministic.
- unsafeFreezeBuffer :: PrimMonad m => Buffer (PrimState m) l a -> m (Array l a)
+ unsafeFreezeBuffer :: Buffer l a -> IO (Array l a)
 
  -- | O(1). Thaw an Array into a mutable buffer.
  --
  --   UNSAFE: The Array is no longer safe to use.
- unsafeThawBuffer   :: PrimMonad m => Array l a -> m (Buffer (PrimState m) l a)
+ unsafeThawBuffer   :: Array l a -> IO (Buffer l a)
 
  -- | Ensure the array is still live at this point.
  --   Sometimes needed when the mutable buffer is a ForeignPtr with a finalizer.
- touchBuffer        :: PrimMonad m => Buffer (PrimState m) l a -> m ()
+ touchBuffer        :: Buffer l a -> IO ()
 
  -- | O(1). Get the layout from a Buffer.
- bufferLayout       :: Buffer s l a -> l
-
-type IOBuffer = Buffer RealWorld
+ bufferLayout       :: Buffer l a -> l
 
 -- | Constraint synonym that requires an integer index space.
 type TargetI l a  = (Target l a, Index l ~ Int)

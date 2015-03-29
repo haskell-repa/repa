@@ -52,6 +52,7 @@ import qualified Data.Vector                            as VV
 import Control.Monad.ST
 import Control.Monad
 import Control.Monad.Primitive
+import GHC.Exts hiding (fromList)
 import Prelude                                          as P
 import Prelude  hiding (concat)
 #include "repa-array.h"
@@ -137,8 +138,8 @@ deriving instance Show (Array l a)
 instance (Bulk l a, Target l a, Index l ~ Int) 
        => Target N (Array l a) where
 
-  data Buffer s N (Array l a)
-   = NBuffer !(VM.MVector s (Array l a))
+  data Buffer N (Array l a)
+   = NBuffer !(VM.IOVector (Array l a))
 
   unsafeNewBuffer    (Nested n)          
    = NBuffer `liftM` VM.unsafeNew n
@@ -181,65 +182,40 @@ instance (Bulk l a, Target l a, Index l ~ Int)
         -- lengths vector.
         let !(lengths :: U.Vector Int)  = U.convert    $ VV.map A.length vec
         let !(starts  :: U.Vector Int)  = U.unsafeInit $ U.scanl (+) 0 lengths
-        let !lenElems                   = U.sum lengths
-        let !lenArrs                    = VV.length vec
+        let !(I# lenElems)              = U.sum lengths
+        let !(I# lenArrs)               = VV.length vec
 
-        !bufElems <- unsafeNewBuffer (create name lenElems)
+        !bufElems <- unsafeNewBuffer (create name (I# lenElems))
 
         -- Concatenate all the elements from the source arrays
         -- into a single, flat elements buffer.
-{-        let loop_freeze !iDst !iSrcArr !arrSrc !iSrcArrIx !lenArrSrc
-             -- We've finished copying all the arrays.
-             | iSrcArr   >= lenArrs     
-             = return ()
-
-             -- We've finished copying all the elements in the current array,
-             | iSrcArrIx >= lenArrSrc
-             = if iSrcArr + 1 >= lenArrs 
-                then return ()
-                else let !arr   = VV.unsafeIndex vec (iSrcArr + 1)
-                     in  loop_freeze iDst (iSrcArr + 1) arr 0 (A.length arr)
-
-             | otherwise
-             = do let !x = A.index arrSrc iSrcArrIx
-                  unsafeWriteBuffer bufElems iDst x
-                  loop_freeze (iDst + 1) iSrcArr arrSrc (iSrcArrIx + 1) lenArrSrc
-            {-# INLINE_INNER loop_freeze #-}
--}
-
         let loop_freeze !iDst !iSrcArr
                 -- We've finished copying all the arrays
-                | iSrcArr >= lenArrs
+                | I# iSrcArr >= I# lenArrs
                 = return ()
 
                 | otherwise
-                = do let !arrSrc = VV.unsafeIndex vec iSrcArr
-                     let !lenSrc = A.length arrSrc
+                = do let !arrSrc      = VV.unsafeIndex vec (I# iSrcArr)
+                     let !(I# lenSrc) = A.length arrSrc
 
                      let loop_freeze_copy iDst' iSrc'
-                          | iSrc' >= lenSrc
-                          =     loop_freeze iDst' (iSrcArr + 1)
+                          | I# iSrc' >= I# lenSrc
+                          =     loop_freeze iDst' (iSrcArr +# 1#)
 
                           | otherwise
-                          = do  let !x = A.index arrSrc iSrc'
-                                unsafeWriteBuffer bufElems iDst' x
-                                loop_freeze_copy (iDst' + 1) (iSrc' + 1)
-                         {-# INLINE_INNER loop_freeze_copy #-}
+                          = do  let !x = A.index arrSrc (I# iSrc')
+                                unsafeWriteBuffer bufElems (I# iDst') x
+                                loop_freeze_copy (iDst' +# 1#) (iSrc' +# 1#)
+                         {-# INLINE loop_freeze_copy #-}
 
-                     loop_freeze_copy iDst 0
+                     loop_freeze_copy iDst 0#
 
             {-# INLINE_INNER loop_freeze #-}
 
-
         -- If there are no inner arrays then we can't take the length
         -- of the first one.
-        loop_freeze 0 0
-{-
-        (if VV.length vec == 0 
-           then   return ()
-           else let arr0    = VV.unsafeIndex vec 0
-                in  loop_freeze 0 0 arr0 0 (A.length arr0))
--}
+        loop_freeze 0# 0#
+
         !arrElems <- unsafeFreezeBuffer bufElems
         return $ NArray starts lengths arrElems
   {-# INLINE_ARRAY unsafeFreezeBuffer #-}
@@ -249,8 +225,8 @@ instance (Bulk l a, Target l a, Index l ~ Int)
 --  {-# INLINE unsafeThawBuffer   #-}
 
 
-instance Unpack (Buffer s N (Array l a)) 
-                (VM.MVector s (Array l a)) where
+instance Unpack (Buffer N (Array l a)) 
+                (VM.IOVector (Array l a)) where
  unpack (NBuffer mv)    = mv
  repack _ mv            = NBuffer mv
  {-# INLINE_ARRAY unpack #-}

@@ -74,8 +74,8 @@ instance Windowable B a where
 -------------------------------------------------------------------------------
 -- | Boxed buffers.
 instance Target B a where
- data Buffer s B a
-  = BBuffer !(VM.MVector s a)
+ data Buffer B a
+  = BBuffer !(VM.IOVector a)
 
  unsafeNewBuffer (Boxed len)
   = liftM BBuffer (VM.unsafeNew len)
@@ -123,7 +123,7 @@ instance Target B a where
  {-# SPECIALIZE instance Target B Word64 #-}
 
 
-instance Unpack (Buffer s B a) (VM.MVector s a) where
+instance Unpack (Buffer B a) (VM.IOVector a) where
  unpack (BBuffer vec) = vec
  repack _ vec         = BBuffer vec
  {-# INLINE_ARRAY unpack #-}
