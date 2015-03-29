@@ -2,11 +2,12 @@
 -- Split the rows in a CSV or TSV file into separate files based on 
 -- the first field. See `Config.hs` for an example.
 import Config
-import Data.Repa.Flow                           as F
-import Data.Repa.Array                          as A
-import qualified Data.Repa.Flow.Default.IO      as D
-import qualified Data.Repa.Flow.Generic         as G
-import qualified Data.Repa.Flow.Generic.IO      as G
+import Data.Repa.Flow                                   as F
+import Data.Repa.Array                                  as A
+import qualified Data.Repa.Flow.Generic                 as G
+import qualified Data.Repa.Flow.Generic.IO              as G
+import qualified Data.Repa.Array.Generic                as G
+import qualified Data.Repa.Array.Material.Foreign       as G
 import System.Environment
 import System.Directory
 import System.FilePath
@@ -35,8 +36,8 @@ pSieve config fileIn
 
         sIn     <-  G.project_i 0
                 =<< (fromFiles' [fileIn]
-                      $ (if | ext == ".tsv" -> D.sourceTSV
-                            | ext == ".csv" -> D.sourceCSV
+                      $ (if | ext == ".tsv" -> F.sourceTSV
+                            | ext == ".csv" -> F.sourceCSV
                             | otherwise     -> error $ "unknown format " ++ show ext))
 
         -- Flatten the stream of chunks into a stream of rows.
@@ -54,8 +55,8 @@ pSieve config fileIn
 sieveRow 
         :: Config                               -- ^ Sieve Configuration.
         -> FilePath                             -- ^ Output directory.
-        -> Array N (Array F Char)               -- ^ Row of fields of data.
-        -> Maybe (FilePath, Array F Word8)
+        -> Array (Array Char)                   -- ^ Row of fields of data.
+        -> Maybe (FilePath, G.Array G.F Word8)
 
 sieveRow config dirOut arrFields
  = let  
@@ -67,22 +68,21 @@ sieveRow config dirOut arrFields
          = case configInsertColumn config of
                 []                   -> Nothing
                 (ix, _name, val) : []
-                  | ix == ix'        -> Just $ A.fromList F val
+                  | ix == ix'        -> Just $ A.fromList val
                   | otherwise        -> Nothing
                 _ -> error "TODO: multi inserts not handled"
         {-# INLINE fInsert #-}
 
-        !arrIns  = A.insert B fInsert arrFields
+        !arrIns  = A.insert fInsert arrFields
 
         -- Concatenate fields back into a flat array.
-        !arrC    = A.fromList U ['\t']
-        !arrNL   = A.fromList U ['\n']
+        !arrC    = A.fromList ['\t']
+        !arrNL   = A.fromList ['\n']
 
-        !arrFlat = A.concat U 
-                 $ A.fromList B [ A.intercalate U arrC arrIns, arrNL ]
+        !arrFlat = A.concat $ A.fromList [ A.intercalate arrC arrIns, arrNL ]
 
    in   Just ( file
-             , A.mapS F (fromIntegral . ord) arrFlat)
+             , G.mapS G.F (fromIntegral . ord) arrFlat)
 {-# INLINE sieveRow #-}
 
 
