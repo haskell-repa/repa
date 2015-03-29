@@ -272,7 +272,7 @@ connect_i = G.connect_i
 --
 --   * The worker is also passed the source index of the chunk that was pulled.
 --
-watch_i :: (Int -> Array a -> IO ()) 
+watch_i :: (Int -> A.Array A a -> IO ()) 
         -> Sources a  -> IO (Sources a)
 watch_i f s = G.watch_i f s
 {-# INLINE watch_i #-}
@@ -283,7 +283,7 @@ watch_i f s = G.watch_i f s
 --
 --   * The worker is also passed the source index of the chunk that was pushed.
 --
-watch_o :: (Int -> Array a -> IO ())
+watch_o :: (Int -> A.Array A a -> IO ())
         -> Sinks a    -> IO (Sinks a)
 watch_o f k = G.watch_o f k
 {-# INLINE watch_o #-}
@@ -295,7 +295,7 @@ watch_o f k = G.watch_o f k
 --   * This is like `watch_o`, except that the incoming chunks are discarded
 --     after they are passed to the worker function
 --
-trigger_o :: Int -> (Int -> Array a -> IO ()) 
+trigger_o :: Int -> (Int -> A.Array A a -> IO ()) 
           -> IO (Sinks a)
 trigger_o arity f 
         = G.trigger_o arity f
@@ -396,7 +396,7 @@ foldlS
         => (a -> b -> a)                -- ^ Combining funtion.
         -> a                            -- ^ Starting value.
         -> Sources b                    -- ^ Input elements to fold.
-        -> IO (Array a)
+        -> IO (A.Array A a)
 
 foldlS f z ss
         = C.foldlS A f z ss
@@ -424,6 +424,7 @@ foldlAllS f z ss
 -- @
 -- > sSegs <- fromList 1 [(\'a\', 1), (\'b\', 2), (\'c\', 4), (\'d\', 0), (\'e\', 1), (\'f\', 5 :: Int)]
 -- > sVals <- fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90 :: Int]
+--
 -- > toList1 0 =<< folds_i (+) 0 sSegs sVals
 -- Just [(\'a\',10),(\'b\',50),(\'c\',220),(\'d\',0),(\'e\',80)]
 -- @
@@ -435,6 +436,7 @@ foldlAllS f z ss
 -- @
 -- > sSegs <- fromList 1 [(\'a\', 1), (\'b\', 2), (\'c\', 0), (\'d\', 0), (\'e\', 0 :: Int)]
 -- > sVals <- fromList 1 [10, 20, 30 :: Int]
+--
 -- > toList1 0 =<< folds_i (*) 1 sSegs sVals
 -- Just [(\'a\',10),(\'b\',600),(\'c\',1),(\'d\',1),(\'e\',1)]
 -- @
@@ -464,9 +466,8 @@ type FoldsDict n a b u1 u2 u3 u4
 --   we can take the average of some groups of values:
 --
 -- @
--- > import Data.Repa.Flow
--- > sKeys   <-  fromList 1 "waaaabllle"
--- > sVals   <-  fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Double]
+-- > sKeys <- fromList 1 "waaaabllle"
+-- > sVals <- fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Double]
 -- 
 -- > sResult \<-  map_i (\\(key, (acc, n)) -\> (key, acc / n))
 --           =\<\< foldGroupsBy_i (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0) sKeys sVals

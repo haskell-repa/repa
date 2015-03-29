@@ -78,16 +78,10 @@ module Data.Repa.Array.Material
         , trimStarts
 
           -- ** Transpose
-        , ragspose3
-
-          -- ** Ingestion
-        , module Data.Repa.Convert.Format
-        , packForeign
-        , unpackForeign)
+        , ragspose3)
 where
 import Data.Repa.Array.Internals.Operator.Partition
 import Data.Repa.Array.Material.Auto
-import Data.Repa.Array.Material.AutoUnpack
 import Data.Repa.Array.Material.Boxed
 import Data.Repa.Array.Material.Unboxed
 import Data.Repa.Array.Material.Foreign
@@ -95,7 +89,6 @@ import Data.Repa.Array.Material.Nested
 import Data.Repa.Array.Meta.Window
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
-import Data.Repa.Convert.Format
 
 
 -- | Classes supported by all material representations.

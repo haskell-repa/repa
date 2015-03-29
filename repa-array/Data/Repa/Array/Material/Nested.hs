@@ -40,19 +40,23 @@ import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array.Material.Foreign.Base            as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
+import Data.Repa.Fusion.Unpack                          as A
 import Data.Repa.Eval.Stream                            as A
 import Data.Repa.Stream                                 as S
-import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector.Generic                    as V
-import qualified Data.Vector.Fusion.Stream              as S
 import qualified Data.Repa.Vector.Generic               as G
 import qualified Data.Repa.Vector.Unboxed               as U
+import qualified Data.Vector.Unboxed                    as U
+import qualified Data.Vector.Fusion.Stream              as S
+import qualified Data.Vector.Mutable                    as VM
+import qualified Data.Vector                            as VV
 import Control.Monad.ST
+import Control.Monad
 import Prelude                                          as P
 import Prelude  hiding (concat)
 #include "repa-array.h"
 
 
+-------------------------------------------------------------------------------------------- Layout
 -- | Nested array represented as a flat array of elements, and a segment
 --   descriptor that describes how the elements are partitioned into
 --   the sub-arrays. Using this representation for multidimentional arrays
@@ -75,7 +79,6 @@ deriving instance Eq N
 deriving instance Show N
 
 
--------------------------------------------------------------------------------
 -- | Nested arrays.
 instance Layout N where
  data Name  N           = N
@@ -94,15 +97,17 @@ deriving instance Eq   (Name N)
 deriving instance Show (Name N)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------- Bulk
 -- | Nested arrays.
 instance (BulkI l a, Windowable l a)
       =>  Bulk N (Array l a) where
 
  data Array N (Array l a)
-        = NArray !(U.Vector Int)        -- segment start positions.
-                 !(U.Vector Int)        -- segment lengths.
-                 !(Array l a)           -- data values
+        = NArray 
+        { nArrayStarts  :: !(U.Vector Int)      -- ^ Segment start positions.
+        , nArrayLengths :: !(U.Vector Int)      -- ^ Segment lengths.
+        , nArrayElems   :: !(Array l a)         -- ^ Element values.
+        }
 
  layout (NArray starts _lengths _elems)
         = Nested (U.length starts)
@@ -115,10 +120,115 @@ instance (BulkI l a, Windowable l a)
  {-# INLINE_ARRAY index #-}
 
 
-deriving instance Show (Array l a) => Show (Array N (Array l a))
+deriving instance Show (Array l a) 
+  => Show (Array N (Array l a))
 
 
--------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------- Target
+-- Nested arrays cannot be constructed directly when the array elements
+-- are supplied in random order, as we don't know where each array should
+-- be placed in the underlying vector of elements.
+-- 
+-- We handle this problem by recording all the elements in a boxed vector
+-- as they are provided, then concatenating them down to the usual nested
+-- array representation on freezing.
+--
+instance (Bulk l a, Target l a, Index l ~ Int) 
+       => Target N (Array l a) where
+
+  data Buffer s N (Array l a)
+   = NBuffer !(VM.MVector s (Array l a))
+
+  unsafeNewBuffer    (Nested n)          
+   = NBuffer `liftM` VM.unsafeNew n
+  {-# INLINE_ARRAY unsafeNewBuffer    #-}
+
+  unsafeReadBuffer   (NBuffer mv) i
+   = VM.unsafeRead mv i
+  {-# INLINE_ARRAY unsafeReadBuffer   #-}
+
+  -- IMPORTANT: the write functinon is strict in the element value so that
+  -- we don't write lazy thunks into the buffer. When the buffer is frozen
+  -- we'll demanand all the elements anyway, so we want the producer thread
+  -- to be responsible for evaluating them.
+  unsafeWriteBuffer  (NBuffer mv) i !x
+   = VM.unsafeWrite mv i x
+  {-# INLINE_ARRAY unsafeWriteBuffer  #-}
+
+  unsafeGrowBuffer   (NBuffer mv) x
+   = NBuffer `liftM` VM.unsafeGrow mv x
+  {-# INLINE_ARRAY unsafeGrowBuffer   #-}
+
+  unsafeSliceBuffer i n (NBuffer mv)
+   = return $ NBuffer (VM.unsafeSlice i n mv)
+  {-# INLINE_ARRAY unsafeSliceBuffer  #-}
+
+  touchBuffer _
+   = return ()
+  {-# INLINE_ARRAY touchBuffer        #-}
+
+  bufferLayout (NBuffer mv)
+   = Nested $ VM.length mv
+  {-# INLINE_ARRAY bufferLayout       #-}
+
+  unsafeFreezeBuffer (NBuffer mvec)
+   = do 
+        -- Freeze the mutable vector so we can use the usual boxed vector API.
+        !(vec :: VV.Vector (Array l a)) <- VV.unsafeFreeze mvec
+
+        -- Scan through all the boxed array elements to produce the 
+        -- lengths vector.
+        let !(lengths :: U.Vector Int)  = U.convert    $ VV.map A.length vec
+        let !(starts  :: U.Vector Int)  = U.unsafeInit $ U.scanl (+) 0 lengths
+        let !lenElems                   = U.sum lengths
+        let !lenArrs                    = VV.length vec
+
+        !bufElems <- unsafeNewBuffer (create name lenElems)
+
+        -- Concatenate all the elements from the source arrays
+        -- into a single, flat elements buffer.
+        let loop_freeze !iDst !iSrcArr !arrSrc !iSrcArrIx !lenArrSrc
+             -- We've finished copying all the arrays.
+             | iSrcArr   >= lenArrs     = return ()
+
+             -- We've finished copying all the elements in the current array,
+             | iSrcArrIx >= lenArrSrc
+             = if iSrcArr + 1 >= lenArrs 
+                then return ()
+                else let !arr   = VV.unsafeIndex vec (iSrcArr + 1)
+                     in  loop_freeze iDst (iSrcArr + 1) arr 0 (A.length arr)
+
+             | otherwise
+             = do let !x = A.index arrSrc iSrcArrIx
+                  unsafeWriteBuffer bufElems iDst x
+                  loop_freeze (iDst + 1) iSrcArr arrSrc (iSrcArrIx + 1) lenArrSrc
+            {-# INLINE_INNER loop_freeze #-}
+
+        -- If there are no inner arrays then we can't take the length
+        -- of the first one.
+        (if VV.length vec == 0 
+           then   return ()
+           else let arr0    = VV.unsafeIndex vec 0
+                in  loop_freeze 0 0 arr0 0 (A.length arr0))
+
+        !arrElems <- unsafeFreezeBuffer bufElems
+        return $ NArray starts lengths arrElems
+  {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+--  unsafeThawBuffer   (NArray v)         
+--      = FBuffer `liftM` S.unsafeThaw v
+--  {-# INLINE unsafeThawBuffer   #-}
+
+
+instance Unpack (Buffer s N (Array l a)) 
+                (VM.MVector s (Array l a)) where
+ unpack (NBuffer mv)    = mv
+ repack _ mv            = NBuffer mv
+ {-# INLINE_ARRAY unpack #-}
+ {-# INLINE_ARRAY repack #-}
+
+
+---------------------------------------------------------------------------------------- Windowable
 -- | Windowing Nested arrays.
 instance (BulkI l a, Windowable l a)
       => Windowable N (Array l a) where
@@ -129,7 +239,7 @@ instance (BulkI l a, Windowable l a)
  {-# INLINE_ARRAY window #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(size src) Convert some lists to a nested array.
 fromLists 
         :: TargetI l a
@@ -164,7 +274,7 @@ fromListss nDst xs
 {-# INLINE_ARRAY fromListss #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Apply a function to all the elements of a doubly nested array,
 --   preserving the nesting structure.
 mapElems :: (Array l1 a -> Array l2 b)
@@ -176,7 +286,7 @@ mapElems f (NArray starts lengths elems)
 {-# INLINE_ARRAY mapElems #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(1). Produce a nested array by taking slices from some array of elements.
 --   
 --   This is a constant time operation, as the representation for nested 
@@ -188,13 +298,13 @@ slices  :: Array F Int                  -- ^ Segment starting positions.
         -> Array N (Array l a)
 
 slices (FArray starts) (FArray lens) !elems
- = NArray (V.convert starts)
-          (V.convert lens)
+ = NArray (VV.convert starts)
+          (VV.convert lens)
           elems
 {-# INLINE_ARRAY slices #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Segmented concatenation.
 --   Concatenate triply nested vector, producing a doubly nested vector.
 --
@@ -223,13 +333,13 @@ concats (NArray starts1 lengths1 (NArray starts2 lengths2 elems))
 {-# INLINE_ARRAY concats #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(len src). Given predicates which detect the start and end of a segment, 
 --   split an vector into the indicated segments.
 segment :: (BulkI l a, U.Unbox a)
-        => (a -> Bool)  -- ^ Detect the start of a segment.
-        -> (a -> Bool)  -- ^ Detect the end of a segment.
-        -> Array l a    -- ^ Vector to segment.
+        => (a -> Bool)          -- ^ Detect the start of a segment.
+        -> (a -> Bool)          -- ^ Detect the end of a segment.
+        -> Array l a            -- ^ Vector to segment.
         -> Array N (Array l a)  
 
 segment pStart pEnd !elems
@@ -254,8 +364,8 @@ segment pStart pEnd !elems
 --
 segmentOn 
         :: (BulkI l a, Eq a, U.Unbox a)
-        => (a -> Bool)  -- ^ Detect the end of a segment.
-        -> Array l a    -- ^ Vector to segment.
+        => (a -> Bool)          -- ^ Detect the end of a segment.
+        -> Array l a            -- ^ Vector to segment.
         -> Array N (Array l a)
 
 segmentOn !pEnd !arr
@@ -263,14 +373,14 @@ segmentOn !pEnd !arr
 {-# INLINE_ARRAY segmentOn #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | O(len src). Like `segment`, but cut the source array twice.
 dice    :: (BulkI l a, Windowable l a, U.Unbox a)
-        => (a -> Bool)  -- ^ Detect the start of an inner segment.
-        -> (a -> Bool)  -- ^ Detect the end   of an inner segment.
-        -> (a -> Bool)  -- ^ Detect the start of an outer segment.
-        -> (a -> Bool)  -- ^ Detect the end   of an outer segment.
-        -> Array l a    -- ^ Array to dice.
+        => (a -> Bool)          -- ^ Detect the start of an inner segment.
+        -> (a -> Bool)          -- ^ Detect the end   of an inner segment.
+        -> (a -> Bool)          -- ^ Detect the start of an outer segment.
+        -> (a -> Bool)          -- ^ Detect the end   of an outer segment.
+        -> Array l a            -- ^ Array to dice.
         -> Array N (Array N (Array l a))
 
 dice pStart1 pEnd1 pStart2 pEnd2 !arr
@@ -323,7 +433,7 @@ diceSep !xEndCol !xEndRow !arr
 {-# INLINE_ARRAY diceSep #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | For each segment of a nested array, trim elements off the start
 --   and end of the segment that match the given predicate.
 trims   :: BulkI l a
@@ -393,13 +503,13 @@ trimStarts pTrim (NArray starts lengths elems)
         {-# INLINE_INNER loop_trimStarts #-}
 
         (starts', lengths')
-                = U.unzip $ U.zipWith loop_trimStarts starts lengths
+          = U.unzip $ U.zipWith loop_trimStarts starts lengths
 
    in   NArray starts' lengths' elems
 {-# INLINE_ARRAY trimStarts #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Ragged transpose of a triply nested array.
 -- 
 --   * This operation is performed entirely on the segment descriptors

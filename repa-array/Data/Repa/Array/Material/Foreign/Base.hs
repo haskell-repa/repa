@@ -28,8 +28,8 @@ import Data.Word
 
 import Data.ByteString                          (ByteString)
 import qualified Data.ByteString.Internal       as BS
-import qualified Data.Vector.Storable as S
-import qualified Data.Vector.Storable.Mutable as M
+import qualified Data.Vector.Storable           as S
+import qualified Data.Vector.Storable.Mutable   as M
 #include "repa-array.h"
 
 

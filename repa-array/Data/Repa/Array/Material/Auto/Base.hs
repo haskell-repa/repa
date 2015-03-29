@@ -58,23 +58,29 @@ instance Bulk A Char where
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
+
 deriving instance Show (Array A Char)
+
 
 instance A.Convert F Char A Char where
  convert arr = AArray_Char arr
 
+
 instance A.Convert A Char F Char where
  convert (AArray_Char arr) = arr
+
 
 instance Windowable A Char where
  window st len (AArray_Char arr) 
   = AArray_Char (window st len arr)
  {-# INLINE_ARRAY window #-}
 
+
 instance Unpack (Array F Char) t 
       => Unpack (Array A Char) t where
  unpack (AArray_Char arr)   = unpack arr
  repack (AArray_Char x) arr = AArray_Char (repack x arr)
+
 
 instance Target A Char where
  data Buffer s A Char            
@@ -133,8 +139,10 @@ instance (Bulk A a, Bulk A b) => Bulk A (a, b) where
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
+
 deriving instance (Show (Array (T2 A A) (a, b)))
                 => Show (Array A (a, b))
+
 
 instance ( A.Convert A a1 A a2
          , A.Convert A b1 A b2)
@@ -143,6 +151,7 @@ instance ( A.Convert A a1 A a2
   = AArray_T2 (T2Array (convert arrA) (convert arrB))
  {-# INLINE convert #-}
 
+
 instance ( A.Convert A a1 A a2
          , A.Convert A b1 A b2)
         => A.Convert A (a1, b1) (T2 A A) (a2, b2) where
@@ -150,11 +159,13 @@ instance ( A.Convert A a1 A a2
   = T2Array (convert arrA) (convert arrB)
  {-# INLINE convert #-}
 
+
 instance (Windowable A a, Windowable A b)
       =>  Windowable A (a, b) where
  window st len (AArray_T2 arr) 
   = AArray_T2 (window st len arr)
  {-# INLINE_ARRAY window #-}
+
 
 instance (Target A a, Target A b)
        => Target A (a, b) where
@@ -214,8 +225,10 @@ instance (Bulk A a, Bulk A b) => Bulk A (a :*: b) where
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
+
 deriving instance (Show (Array A a), Show (Array A b))
                 => Show (Array A (a :*: b))
+
 
 instance (Windowable A a, Windowable A b)
       =>  Windowable A (a :*: b) where
@@ -300,10 +313,12 @@ instance Bulk A a => Bulk A [a] where
 
 deriving instance Show a => Show (Array A [a])
 
+
 instance Bulk A a => Windowable A [a] where
  window st len (AArray_List arr) 
   = AArray_List (window st len arr)
  {-# INLINE_ARRAY window #-}
+
 
 instance  Target A [a] where
  data Buffer s A [a]
@@ -379,6 +394,57 @@ instance Convert r1 a1 r2 a2
  convert (NArray starts lens arr)
         = AArray_Array (NArray starts lens (convert arr))
  {-# INLINE convert #-}
+
+
+instance (Bulk l a, Target l a, Index l ~ Int) 
+       => Target A (Array l a) where
+ data Buffer s A (Array l a)
+  = ABuffer_Array !(Buffer s N (Array l a))
+
+ unsafeNewBuffer (Auto len)     
+  = liftM ABuffer_Array $ unsafeNewBuffer (Nested len)
+ {-# INLINE_ARRAY unsafeNewBuffer #-}
+
+ unsafeReadBuffer   (ABuffer_Array arr) ix
+  = unsafeReadBuffer arr ix
+ {-# INLINE_ARRAY unsafeReadBuffer #-}
+
+ unsafeWriteBuffer  (ABuffer_Array arr) ix x
+  = unsafeWriteBuffer arr ix x
+ {-# INLINE_ARRAY unsafeWriteBuffer #-}
+
+ unsafeGrowBuffer   (ABuffer_Array arr) bump
+  = liftM ABuffer_Array $ unsafeGrowBuffer arr bump
+ {-# INLINE_ARRAY unsafeGrowBuffer #-}
+
+ unsafeFreezeBuffer (ABuffer_Array arr)
+  = liftM AArray_Array  $ unsafeFreezeBuffer arr 
+ {-# INLINE_ARRAY unsafeFreezeBuffer #-}
+
+ unsafeThawBuffer   (AArray_Array arr)
+  = liftM ABuffer_Array $ unsafeThawBuffer  arr
+ {-# INLINE_ARRAY unsafeThawBuffer #-}
+
+ unsafeSliceBuffer st len (ABuffer_Array buf)
+  = liftM ABuffer_Array $ unsafeSliceBuffer st len buf
+ {-# INLINE_ARRAY unsafeSliceBuffer #-}
+
+ touchBuffer (ABuffer_Array buf)
+  = touchBuffer buf
+ {-# INLINE_ARRAY touchBuffer #-}
+
+ bufferLayout (ABuffer_Array buf)
+  = Auto $ A.extent $ bufferLayout buf
+ {-# INLINE_ARRAY bufferLayout #-}
+
+
+instance Unpack (Buffer s N (Array l a)) t
+      => Unpack (Buffer s A (Array l a)) t where
+ unpack (ABuffer_Array buf)   = unpack buf
+ repack (ABuffer_Array x) buf = ABuffer_Array (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
 
 
 instance (Bulk A a, Windowable A a)

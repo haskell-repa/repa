@@ -1,14 +1,15 @@
 
-module Data.Repa.Array.Material.AutoUnpack
+module Data.Repa.Array.Auto.Unpack
         ( module Data.Repa.Convert.Format
         , packForeign
         , unpackForeign)
 where
-import Data.Repa.Array.Material.Auto            as A
-import Data.Repa.Array.Material.Foreign         as A
-import Data.Repa.Array.Generic.Index            as A
-import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Array.Internals.Bulk           as A
+import Data.Repa.Array.Auto.Base                        as A
+import Data.Repa.Array.Generic.Convert                  as A
+import qualified Data.Repa.Array.Material.Auto          as A
+import qualified Data.Repa.Array.Material.Foreign       as A
+import qualified Data.Repa.Array.Internals.Target       as A
+import qualified Data.Repa.Array.Internals.Bulk         as A
 import Data.Repa.Convert.Format
 
 import Foreign.ForeignPtr
@@ -26,10 +27,10 @@ import qualified Data.Vector.Storable.Mutable   as SM
 -- | Pack some array elements into a foreign buffer using the given binary
 --   format.
 packForeign    
-        :: (Packable format, Bulk l (Value format), Index l ~ Int)
+        :: (Packable format, A.Bulk A.A (Value format))
         => format                       -- ^ Binary format for each element.
-        -> Array l (Value format)       -- ^ Source elements.
-        -> Maybe (Array F Word8)        -- ^ Packed binary data.
+        -> Array (Value format)         -- ^ Source elements.
+        -> Maybe (Array Word8)          -- ^ Packed binary data.
 
 packForeign !format !arrElems
  | Just rowSize <- fixedSize format
@@ -38,9 +39,10 @@ packForeign !format !arrElems
  
  = unsafePerformIO
  $ do   
-        buf@(FBuffer mvec)     
-                <- unsafeNewBuffer (Foreign lenBytes)
-        let (fptr, oStart, _) = SM.unsafeToForeignPtr mvec 
+        buf@(A.FBuffer mvec) :: A.IOBuffer A.F Word8
+                <- A.unsafeNewBuffer (A.Foreign lenBytes)
+
+        let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
 
         withForeignPtr fptr $ \ptr_
          -> do  let ptr = plusPtr ptr_ oStart
@@ -57,7 +59,7 @@ packForeign !format !arrElems
                 mFinal <- loop 0 0
                 case mFinal of
                  Nothing       -> return Nothing
-                 Just _        -> liftM Just $ unsafeFreezeBuffer buf
+                 Just _        -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
 
  | otherwise
  = Nothing
@@ -73,10 +75,10 @@ packForeign !format !arrElems
 --   automagically based on the type of the elements.
 --
 unpackForeign 
-        :: (Packable format, Target A (Value format))
-        => format                         -- ^ Binary format for each element.
-        -> Array F Word8                  -- ^ Packed binary data.
-        -> Maybe (Array A (Value format)) -- ^ Unpacked elements.
+        :: (Packable format, A.Target A.A (Value format))
+        => format                       -- ^ Binary format for each element.
+        -> Array Word8                  -- ^ Packed binary data.
+        -> Maybe (Array (Value format)) -- ^ Unpacked elements.
 
 unpackForeign !format !arrBytes
  | Just rowSize <- fixedSize format
@@ -85,12 +87,12 @@ unpackForeign !format !arrBytes
  , lenElems     <- lenBytes `div` rowSize
  = unsafePerformIO
  $ do   
-        let (oStart, _, fptr) 
-                = toForeignPtr arrBytes
+        let (oStart, _, fptr :: ForeignPtr Word8) 
+                = A.toForeignPtr $ A.convert arrBytes
 
         withForeignPtr fptr $ \ptr_
          -> do  let ptr =  plusPtr ptr_ oStart
-                buf     <- unsafeNewBuffer (Auto lenElems)
+                buf     <- A.unsafeNewBuffer (A.Auto lenElems)
 
                 let loop !ixSrc !ixDst 
                      | ixDst >= lenElems
@@ -100,13 +102,13 @@ unpackForeign !format !arrBytes
                      = Data.Repa.Convert.Format.unpack 
                                 (plusPtr ptr ixSrc) format 
                      $ \(value, oElem) -> do
-                        unsafeWriteBuffer buf ixDst value
+                        A.unsafeWriteBuffer buf ixDst value
                         loop (ixSrc + oElem) (ixDst + 1)
 
                 mFinal <- loop 0 0
                 case mFinal of
                  Nothing        -> return Nothing
-                 Just _         -> liftM Just $ unsafeFreezeBuffer buf
+                 Just _         -> liftM Just $ A.unsafeFreezeBuffer buf
 
  | otherwise
  = Nothing
