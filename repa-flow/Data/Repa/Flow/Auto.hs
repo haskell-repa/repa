@@ -497,5 +497,5 @@ type FoldGroupsDict  n a b u1 u2
         , A.Material A a
         , A.Material A n
         , A.Material A b
-        , Unpack (A.IOBuffer A n) u1
-        , Unpack (A.IOBuffer A b) u2)
+        , Unpack  (A.Buffer A n) u1
+        , Unpack  (A.Buffer A b) u2)

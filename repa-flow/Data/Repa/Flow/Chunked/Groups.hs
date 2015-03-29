@@ -19,8 +19,8 @@ type GroupsDict  i m lVal lGrp tGrp lLen tLen a
         = ( Flow i m lVal a, A.Index lVal ~ Int
           , TargetI  lGrp  a
           , TargetI  lLen Int
-          , Unpack  (IOBuffer lGrp a)   tGrp
-          , Unpack  (IOBuffer lLen Int) tLen)
+          , Unpack  (Buffer lGrp a)   tGrp
+          , Unpack  (Buffer lLen Int) tLen)
 
 
 -- Grouping -------------------------------------------------------------------
