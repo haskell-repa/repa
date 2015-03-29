@@ -5,6 +5,10 @@ module Data.Repa.Convert.Format.Base
         , packToList
         , unpackFromList
 
+        -- * Constraints
+        , forFormat
+        , listFormat
+
         -- * Strict products
         , (:*:)(..)
 
@@ -116,6 +120,25 @@ unpackFromList f xs
         mapM_ (\(o, x) -> S.pokeByteOff buf o x)
                 $ zip [0 .. len - 1] xs
         unpack buf f $ \(v, _) -> return (Just v)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Constrain the type of a value to match the given format.
+-- 
+--   The value itself is not used.
+--
+forFormat :: format -> Value format  -> Value format
+forFormat _ v = v
+{-# INLINE forFormat #-}
+
+
+-- | Constrain the type of some values to match the given format.
+--
+--   The value itself is not used.
+--
+listFormat :: format -> [Value format] -> [Value format]
+listFormat _ v = v
+{-# INLINE listFormat #-}
 
 
 ---------------------------------------------------------------------------------------------------

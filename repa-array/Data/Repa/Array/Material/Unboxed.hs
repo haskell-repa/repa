@@ -80,6 +80,11 @@ instance U.Unbox a => Bulk U a where
 deriving instance (Show a, U.Unbox a) => Show (Array U a)
 
 
+instance (UM.Unbox a, Eq a) => Eq (Array U a) where
+ (==) (UArray arr1) (UArray arr2) = arr1 == arr2
+ {-# INLINE_ARRAY (==) #-}
+
+
 instance Unpack (Array U a) (U.Vector a) where
  unpack (UArray vec)    = vec
  repack !_ !vec         = UArray vec

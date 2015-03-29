@@ -44,6 +44,10 @@ module Data.Repa.Array.Auto.Operator
         , trimEnds
         , trimStarts
 
+        -- ** Zipping
+        , zip
+        , unzip
+
         -- ** Sloshing
         , reverse
         , concat
@@ -85,6 +89,8 @@ import GHC.Exts                                         hiding (fromList, toList
 import qualified Data.Repa.Array.Generic                as G
 import qualified Data.Repa.Array.Material.Auto          as A
 import qualified Data.Repa.Array.Material.Nested        as N
+import qualified Data.Repa.Array.Meta.Tuple             as A
+import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Array.Meta.Delayed           as A
 import qualified Data.Repa.Array.Meta.Delayed2          as A
 import qualified Data.Repa.Array.Internals.Bulk         as G
@@ -92,7 +98,7 @@ import qualified Data.Repa.Fusion.Unpack                as F
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U
 import Prelude 
-       hiding (map, length, reverse, filter, concat, unlines, foldl, sum)
+       hiding (map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip)
 
 
 -- Basic ------------------------------------------------------------------------------------------
@@ -211,57 +217,86 @@ mapElems f (A.AArray_Array arr)
 {-# INLINE mapElems #-}
 
 
--- Merging ----------------------------------------------------------------------------------------
--- | Merge two sorted key-value streams.
-merge   :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
-        => (k -> a -> b -> c)   -- ^ Combine two values with the same key.
-        -> (k -> a -> c)        -- ^ Handle a left value without a right value.
-        -> (k -> b -> c)        -- ^ Handle a right value without a left value.
-        -> Array (k, a)         -- ^ Array of keys and left values.
-        -> Array (k, b)         -- ^ Array of keys and right values.
-        -> Array (k, c)         -- ^ Array of keys and results.
-merge = G.merge A
-{-# INLINE merge #-}
+-- Folding ----------------------------------------------------------------------------------------
+-- | Left fold of all elements in an array.
+foldl   :: Elem b
+        => (a -> b -> a) -> a -> Array b -> a
+foldl = G.foldl
+{-# INLINE foldl #-}
 
 
--- | Like `merge`, but only produce the elements where the worker functions
---   return `Just`.
-mergeMaybe 
-        :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
-        => (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
-        -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.
-        -> (k -> b -> Maybe c)      -- ^ Handle a right value without a left value.
-        -> Array (k, a)             -- ^ Array of keys and left values.
-        -> Array (k, b)             -- ^ Array of keys and right values.
-        -> Array (k, c)             -- ^ Array of keys and results.
-mergeMaybe = G.mergeMaybe A
-{-# INLINE mergeMaybe #-}
+-- | Yield the sum of the elements of an array.
+sum    :: (Elem a, Num a) => Array a -> a
+sum   = G.sum
+{-# INLINE sum #-}
 
 
--- Splitting --------------------------------------------------------------------------------------
--- | Combination of `fold` and `filter`. 
---   
---   We walk over the stream front to back, maintaining an accumulator.
---   At each point we can chose to emit an element (or not)
+-- | Yield the product of the elements of an array.
+prod   :: (Elem a, Num a) => Array a -> a
+prod   = G.prod
+{-# INLINE prod #-}
+
+
+-- | Yield the mean value of the elements of an array.
+mean   :: (Elem a, Fractional a) 
+        => Array a -> a
+mean   = G.mean
+{-# INLINE mean #-}
+
+
+-- | Yield the standard deviation of the elements of an array
+std    ::  (Elem a, Floating a)
+        => Array a -> a
+std     = G.std
+{-# INLINE std #-}
+
+
+-- | Compute the Pearson correlation of two arrays.
 --
-compact :: (Elem a, Build b bt)
-        => (s -> a -> (Maybe b, s))
-        -> s
-        -> Array a
-        -> Array b
-compact = G.compact A
-{-# INLINE compact #-}
+--   If the arrays differ in length then only the common
+--   prefix is correlated.
+--
+correlate 
+        :: ( Elem a, Floating a)
+        => Array a -> Array a -> a
+correlate = G.correlate
+{-# INLINE correlate #-}
 
 
--- | Like `compact` but use the first value of the stream as the 
---   initial state, and add the final state to the end of the output.
-compactIn
-        :: Build a at
-        => (a -> a -> (Maybe a, a))
-        -> Array a
-        -> Array a
-compactIn = G.compactIn A
-{-# INLINE compactIn #-}
+-- | Segmented fold over vectors of segment lengths and input values.
+--
+--   * The total lengths of all segments need not match the length of the
+--     input elements vector. The returned `C.Folds` state can be inspected
+--     to determine whether all segments were completely folded, or the
+--     vector of segment lengths or elements was too short relative to the
+--     other.
+--
+folds   :: (Elem a, Build n nt, Build b bt)
+        => (a -> b -> b)        -- ^ Worker function.
+        -> b                    -- ^ Initial state when folding segments.
+        -> Array (n, Int)       -- ^ Segment names and lengths.
+        -> Array a              -- ^ Elements.
+        -> (Array (n, b), C.Folds Int Int n a b)
+folds f z lens vals
+ = let  (arr', result) = G.folds A A f z lens vals
+   in   (A.AArray_T2 arr', result)
+{-# INLINE folds #-}
+
+
+-- | Like `folds`, but take an initial state for the first segment.
+--
+foldsWith
+        :: (Elem a, Build n nt, Build b bt)
+        => (a -> b -> b)         -- ^ Worker function.
+        -> b                     -- ^ Initial state when folding segments.
+        -> Maybe (n, Int, b)     -- ^ Name, length and initial state for first segment.
+        -> Array (n, Int)        -- ^ Segment names and lengths.
+        -> Array a               -- ^ Elements.
+        -> (Array (n, b), C.Folds Int Int n a b)
+foldsWith f z start lens vals
+ = let  (arr', result)  = G.foldsWith A A f z start lens vals
+   in   (A.AArray_T2 arr', result)
+{-# INLINE foldsWith #-}
 
 
 -- Filtering --------------------------------------------------------------------------------------
@@ -321,6 +356,82 @@ trimStarts :: Elem a
 trimStarts f (A.AArray_Array arr)
         = A.AArray_Array $! N.trimStarts f arr
 {-# INLINE trimStarts #-}
+
+
+-- Zipping ----------------------------------------------------------------------------------------
+-- | O(1). Pack a pair of arrays to an array of pairs.
+zip     :: (Elem a, Elem b) 
+        => Array a -> Array b -> Array (a, b)
+zip arr1 arr2
+ = let  len     = max (length arr1) (length arr2)
+        arr1'   = A.window 0 len arr1
+        arr2'   = A.window 0 len arr2
+   in   A.AArray_T2 (A.tup2 arr1' arr2')
+{-# INLINE zip #-}
+
+
+-- | O(1). Unpack an array of pairs to a pair of arrays.
+unzip   :: (Elem a, Elem b)
+        => Array (a, b) -> (Array a, Array b)
+unzip arr@(A.AArray_T2 arr')
+ = let  len     = length arr
+        (arr1, arr2) = A.untup2 arr'
+        arr1'   = A.window 0 len arr1
+        arr2'   = A.window 0 len arr2
+   in   (arr1', arr2')
+
+
+-- Merging ----------------------------------------------------------------------------------------
+-- | Merge two sorted key-value streams.
+merge   :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
+        => (k -> a -> b -> c)   -- ^ Combine two values with the same key.
+        -> (k -> a -> c)        -- ^ Handle a left value without a right value.
+        -> (k -> b -> c)        -- ^ Handle a right value without a left value.
+        -> Array (k, a)         -- ^ Array of keys and left values.
+        -> Array (k, b)         -- ^ Array of keys and right values.
+        -> Array (k, c)         -- ^ Array of keys and results.
+merge = G.merge A
+{-# INLINE merge #-}
+
+
+-- | Like `merge`, but only produce the elements where the worker functions
+--   return `Just`.
+mergeMaybe 
+        :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
+        => (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
+        -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.
+        -> (k -> b -> Maybe c)      -- ^ Handle a right value without a left value.
+        -> Array (k, a)             -- ^ Array of keys and left values.
+        -> Array (k, b)             -- ^ Array of keys and right values.
+        -> Array (k, c)             -- ^ Array of keys and results.
+mergeMaybe = G.mergeMaybe A
+{-# INLINE mergeMaybe #-}
+
+
+-- Splitting --------------------------------------------------------------------------------------
+-- | Combination of `fold` and `filter`. 
+--   
+--   We walk over the stream front to back, maintaining an accumulator.
+--   At each point we can chose to emit an element (or not)
+--
+compact :: (Elem a, Build b bt)
+        => (s -> a -> (Maybe b, s))
+        -> s
+        -> Array a
+        -> Array b
+compact = G.compact A
+{-# INLINE compact #-}
+
+
+-- | Like `compact` but use the first value of the stream as the 
+--   initial state, and add the final state to the end of the output.
+compactIn
+        :: Build a at
+        => (a -> a -> (Maybe a, a))
+        -> Array a
+        -> Array a
+compactIn = G.compactIn A
+{-# INLINE compactIn #-}
 
 
 -- Inserting --------------------------------------------------------------------------------------
@@ -509,85 +620,4 @@ groupsWith f start arr
    in   (A.AArray_T2 arr', result)
 {-# INLINE groupsWith #-}
 
-
--- Folding ----------------------------------------------------------------------------------------
--- | Left fold of all elements in an array.
-foldl   :: Elem b
-        => (a -> b -> a) -> a -> Array b -> a
-foldl = G.foldl
-{-# INLINE foldl #-}
-
-
--- | Yield the sum of the elements of an array.
-sum    :: (Elem a, Num a) => Array a -> a
-sum   = G.sum
-{-# INLINE sum #-}
-
-
--- | Yield the product of the elements of an array.
-prod   :: (Elem a, Num a) => Array a -> a
-prod   = G.prod
-{-# INLINE prod #-}
-
-
--- | Yield the mean value of the elements of an array.
-mean   :: (Elem a, Fractional a) 
-        => Array a -> a
-mean   = G.mean
-{-# INLINE mean #-}
-
-
--- | Yield the standard deviation of the elements of an array
-std    ::  (Elem a, Floating a)
-        => Array a -> a
-std     = G.std
-{-# INLINE std #-}
-
-
--- | Compute the Pearson correlation of two arrays.
---
---   If the arrays differ in length then only the common
---   prefix is correlated.
---
-correlate 
-        :: ( Elem a, Floating a)
-        => Array a -> Array a -> a
-correlate = G.correlate
-{-# INLINE correlate #-}
-
-
--- | Segmented fold over vectors of segment lengths and input values.
---
---   * The total lengths of all segments need not match the length of the
---     input elements vector. The returned `C.Folds` state can be inspected
---     to determine whether all segments were completely folded, or the
---     vector of segment lengths or elements was too short relative to the
---     other.
---
-folds   :: (Elem a, Build n nt, Build b bt)
-        => (a -> b -> b)        -- ^ Worker function.
-        -> b                    -- ^ Initial state when folding segments.
-        -> Array (n, Int)       -- ^ Segment names and lengths.
-        -> Array a              -- ^ Elements.
-        -> (Array (n, b), C.Folds Int Int n a b)
-folds f z lens vals
- = let  (arr', result) = G.folds A A f z lens vals
-   in   (A.AArray_T2 arr', result)
-{-# INLINE folds #-}
-
-
--- | Like `folds`, but take an initial state for the first segment.
---
-foldsWith
-        :: (Elem a, Build n nt, Build b bt)
-        => (a -> b -> b)         -- ^ Worker function.
-        -> b                     -- ^ Initial state when folding segments.
-        -> Maybe (n, Int, b)     -- ^ Name, length and initial state for first segment.
-        -> Array (n, Int)        -- ^ Segment names and lengths.
-        -> Array a               -- ^ Elements.
-        -> (Array (n, b), C.Folds Int Int n a b)
-foldsWith f z start lens vals
- = let  (arr', result)  = G.foldsWith A A f z start lens vals
-   in   (A.AArray_T2 arr', result)
-{-# INLINE foldsWith #-}
 

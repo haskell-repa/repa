@@ -7,7 +7,6 @@ import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Internals.Bulk           as A
 import System.IO.Unsafe
 import Control.Monad
-import Control.Monad.Primitive
 import Prelude                                  as P
 
 

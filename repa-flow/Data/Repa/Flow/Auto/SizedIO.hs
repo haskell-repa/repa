@@ -11,19 +11,14 @@ module Data.Repa.Flow.Auto.SizedIO
         , sourceRecords
         , sourceTSV
         , sourceCSV
-
-          -- * Sinking
-        , sinkBytes
-        , sinkChars
-        , sinkLines
         )
 where
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array.Generic                  as A
-import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Meta.Delayed             as A
+import Data.Repa.Array.Generic.Convert          as A
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
@@ -118,26 +113,3 @@ sourceTSV i aFail bs
         =<< G.sourceTSV i aFail bs
 {-# INLINE sourceTSV #-}
 
-
--- Sinking ----------------------------------------------------------------------------------------
--- | An alias for `F.sinkBytes`.
-sinkBytes :: Array B Bucket -> IO (Sinks Word8)
-sinkBytes bs 
-        =   G.map_o A.convert
-        =<< G.sinkBytes bs
-{-# INLINE sinkBytes #-}
-
-
--- | An alias for `F.sinkChars`.
-sinkChars  :: Array B Bucket -> IO (Sinks Char)
-sinkChars bs 
-        = G.sinkChars bs
-{-# INLINE sinkChars #-}
-
-
--- | An alias for `F.sinkLines`.
-sinkLines  :: Array B Bucket
-           -> IO (Sinks (Array A Char))
-sinkLines bs 
-        = G.sinkLines A A bs
-{-# INLINE sinkLines #-}

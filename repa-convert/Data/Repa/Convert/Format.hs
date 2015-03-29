@@ -29,6 +29,10 @@ module Data.Repa.Convert.Format
         , packToList
         , unpackFromList
 
+          -- * Constraints
+        , forFormat
+        , listFormat
+
           -- * Products
         , (:*:)(..)
 

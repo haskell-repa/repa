@@ -63,6 +63,11 @@ instance Bulk B a where
 deriving instance Show a => Show (Array B a)
 
 
+instance Eq a => Eq (Array B a) where
+ (==) (BArray arr1) (BArray arr2) = arr1 == arr2
+ {-# INLINE_ARRAY (==) #-}
+
+
 -------------------------------------------------------------------------------
 -- | Boxed windows.
 instance Windowable B a where

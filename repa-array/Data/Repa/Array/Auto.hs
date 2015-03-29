@@ -39,6 +39,10 @@ module Data.Repa.Array.Auto
         , trimEnds
         , trimStarts
 
+        -- ** Zipping
+        , zip
+        , unzip
+
         -- ** Sloshing
         , reverse
         , concat
@@ -75,5 +79,5 @@ where
 import Data.Repa.Array.Auto.Base
 import Data.Repa.Array.Auto.Operator
 import Prelude 
-       hiding (map, length, reverse, filter, concat, unlines, foldl, sum)
+       hiding (map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip)
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances, IncoherentInstances #-}
 module Data.Repa.Array.Material.Auto.Base
         ( A             (..)
         , Name          (..)
@@ -131,6 +131,11 @@ instance (Unpack (Buffer F Char)) t
  {-# INLINE repack #-}
 
 
+instance Eq (Array A Char) where
+ (==) (AArray_Char arr1) (AArray_Char arr2) = arr1 == arr2
+ {-# INLINE (==) #-}
+
+
 ----------------------------------------------------------------------------------------------- (,)
 instance (Bulk A a, Bulk A b) => Bulk A (a, b) where
  data Array A (a, b)            = AArray_T2 !(Array (T2 A A) (a, b))
@@ -215,6 +220,12 @@ instance Unpack (Buffer (T2 A A) (a, b)) t
  repack (ABuffer_T2 x) buf = ABuffer_T2 (repack x buf)
  {-# INLINE unpack #-}
  {-# INLINE repack #-}
+
+
+instance Eq (Array (T2 A A) (a, b))
+      => Eq (Array A (a, b)) where
+ (==) (AArray_T2 arr1) (AArray_T2 arr2) = arr1 == arr2
+ {-# INLINE (==) #-}
 
 
 ----------------------------------------------------------------------------------------------- :*:
@@ -303,6 +314,13 @@ instance ( Unpack (Buffer A a) tA
  {-# INLINE repack #-}
 
 
+instance (Eq (Array A a), Eq (Array A b))
+       => Eq (Array A (a :*: b)) where
+ (==) (AArray_Prod arrA1 arrA2) (AArray_Prod arrB1 arrB2) 
+        = arrA1 == arrB1 && arrA2 == arrB2
+ {-# INLINE (==) #-}
+
+
 ----------------------------------------------------------------------------------------------- []
 instance Bulk A a => Bulk A [a] where
  data Array A [a]               = AArray_List !(Array B [a])
@@ -368,6 +386,12 @@ instance Unpack (Buffer A String) (Buffer A String) where
  {-# INLINE repack #-}
 
 
+instance Eq a
+      => Eq (Array A [a]) where
+ (==) (AArray_List arr1) (AArray_List arr2) = arr1 == arr2
+ {-# INLINE (==) #-}
+
+
 --------------------------------------------------------------------------------------------- Array
 instance (Bulk A a, Windowable r a, Index r ~ Int)
        => Bulk A (Array r a) where
@@ -381,17 +405,22 @@ deriving instance Show (Array A a) => Show (Array A (Array A a))
 
 
 instance Convert r1 a1 r2 a2
-      => Convert A  (Array r1 a1)  N (Array r2 a2) where
- convert :: Array A (Array r1 a1) -> Array N (Array r2 a2)
+      => Convert  A (Array r1 a1)  N (Array r2 a2) where
  convert (AArray_Array (NArray starts lens arr)) 
         = NArray starts lens (convert arr)
  {-# INLINE convert #-}
 
 
 instance Convert r1 a1 r2 a2
-      => Convert N  (Array r1 a1)  A (Array r2 a2) where
- convert :: Array N (Array r1 a1)  -> Array A (Array r2 a2)
+      => Convert  N (Array r1 a1)  A (Array r2 a2) where
  convert (NArray starts lens arr)
+        = AArray_Array (NArray starts lens (convert arr))
+ {-# INLINE convert #-}
+
+
+instance Convert r1 a1 r2 a2
+      => Convert A  (Array r1 a1) A (Array r2 a2) where
+ convert (AArray_Array (NArray starts lens arr))
         = AArray_Array (NArray starts lens (convert arr))
  {-# INLINE convert #-}
 
@@ -446,9 +475,9 @@ instance Unpack (Buffer N (Array l a)) t
  {-# INLINE repack #-}
 
 
-
-instance (Bulk A a, Windowable A a)
-       => Windowable A (Array A a) where
+instance (Bulk A a, Windowable l a, Index l ~ Int)
+       => Windowable A (Array l a) where
  window st len (AArray_Array arr) 
   = AArray_Array (window st len arr)
  {-# INLINE_ARRAY window #-}
+
