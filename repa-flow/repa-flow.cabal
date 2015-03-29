@@ -1,5 +1,5 @@
 Name:           repa-flow
-Version:        4.0.1.0
+Version:        4.1.0.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -25,7 +25,7 @@ Library
         text                    == 1.2.*,
         repa-stream             == 4.0.1.*,
         repa-eval               == 4.0.0.*,
-        repa-array              == 4.0.1.*
+        repa-array              == 4.1.0.*
 
   exposed-modules:
         Data.Repa.Flow.Auto
