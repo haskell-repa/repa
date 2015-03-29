@@ -353,9 +353,8 @@ head_i ix len s
 --   and count the lengths of those runs.
 --
 -- @  
--- > import Data.Repa.Flow
--- > toList1 0 =<< groups_i U U =<< fromList U 1 "waabbbblle"
--- Just [(\'w\',1),(\'a\',2),(\'b\',4),(\'l\',2),(\'e\',1)]
+-- > F.toList1 0 =<< F.groups_i =<< F.fromList 1 "waabbbblle"
+-- [(\'w\',1),(\'a\',2),(\'b\',4),(\'l\',2),(\'e\',1)]
 -- @
 --
 groups_i
@@ -422,11 +421,11 @@ foldlAllS f z ss
 --   together.
 --
 -- @
--- > sSegs <- fromList 1 [(\'a\', 1), (\'b\', 2), (\'c\', 4), (\'d\', 0), (\'e\', 1), (\'f\', 5 :: Int)]
--- > sVals <- fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90 :: Int]
+-- > sSegs <- F.fromList 1 [(\'a\', 1), (\'b\', 2), (\'c\', 4), (\'d\', 0), (\'e\', 1), (\'f\', 5 :: Int)]
+-- > sVals <- F.fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90 :: Int]
 --
--- > toList1 0 =<< folds_i (+) 0 sSegs sVals
--- Just [(\'a\',10),(\'b\',50),(\'c\',220),(\'d\',0),(\'e\',80)]
+-- > F.toList1 0 =<< F.folds_i (+) 0 sSegs sVals
+-- [(\'a\',10),(\'b\',50),(\'c\',220),(\'d\',0),(\'e\',80)]
 -- @
 --
 --   If not enough input elements are available to fold a complete segment
@@ -434,11 +433,11 @@ foldlAllS f z ss
 --   length segments still produce the initial value for the fold.
 --
 -- @
--- > sSegs <- fromList 1 [(\'a\', 1), (\'b\', 2), (\'c\', 0), (\'d\', 0), (\'e\', 0 :: Int)]
--- > sVals <- fromList 1 [10, 20, 30 :: Int]
+-- > sSegs <- F.fromList 1 [(\'a\', 1), (\'b\', 2), (\'c\', 0), (\'d\', 0), (\'e\', 0 :: Int)]
+-- > sVals <- F.fromList 1 [10, 20, 30 :: Int]
 --
--- > toList1 0 =<< folds_i (*) 1 sSegs sVals
--- Just [(\'a\',10),(\'b\',600),(\'c\',1),(\'d\',1),(\'e\',1)]
+-- > F.toList1 0 =<< F.folds_i (*) 1 sSegs sVals
+-- [(\'a\',10),(\'b\',600),(\'c\',1),(\'d\',1),(\'e\',1)]
 -- @
 --
 folds_i :: FoldsDict n a b u1 u2 u3 u4
@@ -466,14 +465,14 @@ type FoldsDict n a b u1 u2 u3 u4
 --   we can take the average of some groups of values:
 --
 -- @
--- > sKeys <- fromList 1 "waaaabllle"
--- > sVals <- fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Double]
+-- > sKeys <- F.fromList 1 "waaaabllle"
+-- > sVals <- F.fromList 1 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100 :: Double]
 -- 
--- > sResult \<-  map_i (\\(key, (acc, n)) -\> (key, acc / n))
---           =\<\< foldGroupsBy_i (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0) sKeys sVals
+-- > sResult \<-  F.map_i (\\(key, (acc, n)) -\> (key, acc / n))
+--           =\<\< F.foldGroupsBy_i (==) (\\x (acc, n) -> (acc + x, n + 1)) (0, 0) sKeys sVals
 --
--- > toList1 0 sResult
--- Just [10.0,35.0,60.0,80.0,100.0]
+-- > F.toList1 0 sResult
+-- [10.0,35.0,60.0,80.0,100.0]
 -- @
 --
 foldGroupsBy_i

@@ -8,8 +8,10 @@
 --   be read in chunks, using the default chunk size of 64kBytes.
 --
 -- @
--- > import Data.Repa.Flow
--- > import Data.Repa.Flow.Default.Debug
+-- > import Data.Repa.Array           as A
+-- > import Data.Repa.Flow            as F
+-- > import Data.Repa.Flow.Auto.Debug as F
+--
 -- > ws <- fromFiles' [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
 -- @
 --
@@ -51,16 +53,10 @@
 --
 -- @
 -- > import Data.Char
--- > up <- map_i B (mapS U toUpper) ws
+-- > up <- F.map_i (A.map toUpper) ws
 -- > more 0 up
 -- Just [\"UTOPIAN\",\"UTOPIAN'S\",\"UTOPIANS\",\"UTOPIAS\",\"UTRECHT\" ...]
 -- @ 
---
---   The `B` and `U` are `Layout` names that indicate how the chunks for the
---   result streams should be arranged in memory. In this case the chunks
---   are `B`-oxed arrays of `U`-nboxed arrays of characters. Other useful
---   layouts are `F` which stores data in foreign memory, and `N` for nested
---   arrays.
 --
 --   Flows are data-parallel, which means operators like `map_i` apply to all
 --   streams in the  bundle. The second stream has been converted to upper-case
@@ -75,7 +71,7 @@
 --   so open a file for each stream:
 --
 -- @
--- > out <- toFiles ["out1.txt", "out2.txt"] $ sinkLines B U
+-- > out <- toFiles' ["out1.txt", "out2.txt"] sinkLines
 -- @
 --
 --   Note that the @ws@ and @up@ we used before were bundles of stream 
@@ -88,7 +84,7 @@
 --   we can `drainS` all of the data from the former into the latter.
 --
 -- @
--- > drainS up out
+-- > F.drainS up out
 -- @
 --
 --   At this point we can run an external shell command to check the output.
