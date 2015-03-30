@@ -66,5 +66,6 @@ Library
         FlexibleContexts
         PatternGuards
         MultiWayIf
+        ScopedTypeVariables
 
 

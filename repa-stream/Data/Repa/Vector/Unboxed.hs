@@ -40,29 +40,13 @@ module Data.Repa.Vector.Unboxed
         , folds, C.Folds(..))
 where
 import Data.Repa.Option
-import Data.Repa.Stream.Compact
-import Data.Repa.Stream.Concat
-import Data.Repa.Stream.Dice
-import Data.Repa.Stream.Extract
-import Data.Repa.Stream.Insert
-import Data.Repa.Stream.Merge
-import Data.Repa.Stream.Pad
-import Data.Repa.Stream.Ratchet
-import Data.Repa.Stream.Segment
 import Data.Vector.Unboxed                              (Unbox, Vector)
 import Data.Vector.Unboxed.Mutable                      (MVector)
 import Data.Repa.Chain                                  (Chain)
 import qualified Data.Repa.Vector.Generic               as G
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U
-import qualified Data.Vector.Unboxed.Mutable            as UM
-import qualified Data.Vector.Generic                    as G
-import qualified Data.Vector.Generic.Mutable            as GM
-import qualified Data.Vector.Fusion.Stream              as S
-import Control.Monad.ST
 import Control.Monad.Primitive
-import System.IO.Unsafe
-import Data.IORef
 #include "repa-stream.h"
 
 
@@ -92,7 +76,6 @@ unchainToMVector = G.unchainToMVector
 {-# INLINE unchainToMVector #-}
 
 
-
 -------------------------------------------------------------------------------
 -- | Interleaved `enumFromTo`. 
 --
@@ -117,25 +100,7 @@ unchainToMVector = G.unchainToMVector
 --
 ratchet :: U.Vector (Int, Int)          -- ^ Starting and ending values.
         -> (U.Vector Int, U.Vector Int) -- ^ Elements and Lengths vectors.
-ratchet vStartsMax 
- = unsafePerformIO
- $ do   
-        -- Make buffers for the start values and unpack the max values.
-        let (vStarts, vMax) = U.unzip vStartsMax
-        mvStarts   <- U.thaw vStarts
-
-        -- Make a vector for the output lengths.
-        mvLens     <- UM.unsafeNew (U.length vStartsMax)
-        rmvLens    <- newIORef mvLens
-
-        -- Run the computation
-        mvStarts'  <- GM.munstream $ unsafeRatchetS mvStarts vMax rmvLens
-
-        -- Read back the output segment lengths and freeze everything.
-        mvLens'    <- readIORef rmvLens
-        vStarts'   <- G.unsafeFreeze mvStarts'
-        vLens'     <- G.unsafeFreeze mvLens'
-        return (vStarts', vLens')
+ratchet = G.ratchet 
 {-# INLINE ratchet #-}
 
 
@@ -154,8 +119,7 @@ extract :: Unbox a
         -> U.Vector (Int, Int)  -- ^ Segment starts and lengths.
         -> U.Vector a           -- ^ Result elements.
 
-extract get vStartLen
- = G.unstream $ extractS get $ G.stream vStartLen
+extract = G.extract
 {-# INLINE extract #-}
 
 
@@ -166,8 +130,7 @@ insert   :: Unbox a
         -> U.Vector a           -- ^ Source vector.
         -> U.Vector a
 
-insert fNew vec
- = G.unstream $ insertS fNew $ G.stream vec
+insert = G.insert
 {-# INLINE insert #-}
 
 
@@ -181,11 +144,7 @@ merge   :: (Ord k, Unbox k, Unbox a, Unbox b, Unbox c)
         -> U.Vector (k, b)      -- ^ Vector of keys and right values.
         -> U.Vector (k, c)      -- ^ Vector of keys and results.
 
-merge fBoth fLeft fRight vA vB
-        = G.unstream 
-        $ mergeS fBoth fLeft fRight 
-                (G.stream vA) 
-                (G.stream vB)
+merge = G.merge
 {-# INLINE merge #-}
 
 
@@ -200,18 +159,7 @@ mergeMaybe
         -> U.Vector (k, b)          -- ^ Vector of keys and right values.
         -> U.Vector (k, c)          -- ^ Vector of keys and results.
 
-mergeMaybe fBoth fLeft fRight vA vB
-        = G.unstream
-        $ catMaybesS
-        $ S.map  munge_mergeMaybe
-        $ mergeS fBoth fLeft fRight
-                (G.stream vA)
-                (G.stream vB)
-
-        where   munge_mergeMaybe (_k, Nothing)   = Nothing
-                munge_mergeMaybe (k,  Just x)    = Just (k, x)
-                {-# INLINE munge_mergeMaybe #-}
-
+mergeMaybe = G.mergeMaybe
 {-# INLINE mergeMaybe #-}
 
 
@@ -226,14 +174,7 @@ scanMaybe
         ->  U.Vector a                  -- ^ Input elements.
         -> (U.Vector b, s)              -- ^ Output elements.
 
-scanMaybe f k0 vec0
- = (vec1, snd k1)
- where  
-        f' s x = return $ f s x
-
-        (vec1, k1)
-         = runST $ unchainToVector     $ C.liftChain 
-                 $ C.scanMaybeC f' k0  $ chainOfVector vec0
+scanMaybe = G.scanMaybe
 {-# INLINE scanMaybe #-}
 
 
@@ -254,14 +195,7 @@ groupsBy
         ->  U.Vector a                  -- ^ Input elements.
         -> (U.Vector (a, Int), Maybe (a, Int))
 
-groupsBy f !c !vec0
- = (vec1, snd k1)
- where  
-        f' x y = return $ f x y
-
-        (vec1, k1)
-         = runST $ unchainToVector   $ C.liftChain 
-                 $ C.groupsByC f' c  $ chainOfVector vec0
+groupsBy = G.groupsBy
 {-# INLINE groupsBy #-}
 
 
@@ -281,13 +215,7 @@ findSegments
         ->  U.Vector a          -- ^ Input vector.
         -> (U.Vector Int, U.Vector Int)
 
-findSegments pStart pEnd src
-        = U.unzip
-        $ G.unstream
-        $ startLengthsOfSegsS
-        $ findSegmentsS pStart pEnd (U.length src - 1)
-        $ S.indexed 
-        $ G.stream src
+findSegments = G.findSegments
 {-# INLINE findSegments #-}
 
 
@@ -303,13 +231,7 @@ findSegmentsFrom
         -> (Int -> a)           -- ^ Get an element from the input.
         -> (U.Vector Int, U.Vector Int)
 
-findSegmentsFrom pStart pEnd len get
-        = U.unzip
-        $ G.unstream
-        $ startLengthsOfSegsS
-        $ findSegmentsS pStart pEnd (len - 1)
-        $ S.map         (\ix -> (ix, get ix))
-        $ S.enumFromStepN 0 1 len
+findSegmentsFrom = G.findSegmentsFrom
 {-# INLINE findSegmentsFrom #-}
 
 
@@ -323,12 +245,7 @@ diceSep :: Unbox a
         -> (U.Vector (Int, Int), U.Vector (Int, Int))
                         -- ^ Segment starts   and lengths
 
-diceSep pEndInner pEndBoth vec
-        = runST
-        $ G.unstreamToVector2
-        $ diceSepS pEndInner pEndBoth 
-        $ S.liftStream
-        $ G.stream vec
+diceSep = G.diceSep
 {-# INLINE diceSep #-}
 
 
@@ -345,8 +262,7 @@ compact
         -> Vector a                     -- ^ Input vector
         -> Vector b
 
-compact f s0 vec
-        = G.unstream $ compactS f s0 $ G.stream vec
+compact = G.compact
 {-# INLINE compact #-}
 
 
@@ -358,8 +274,7 @@ compactIn
         -> Vector a                     -- ^ Input elements.
         -> Vector a
 
-compactIn f vec
-        = G.unstream $ compactInS f $ G.stream vec
+compactIn = G.compactIn
 {-# INLINE compactIn #-}
 
 
@@ -383,18 +298,7 @@ folds   :: (Unbox n, Unbox a, Unbox b)
         -> U.Vector a           -- ^ Elements.
         -> (U.Vector (n, b), C.Folds Int Int n a b)
 
-folds f zN s0 vLens vVals
- = let  
-        f' x y = return $ f x y
-        {-# INLINE f' #-}
-
-        (vResults, state) 
-          = runST $ unchainToVector
-                  $ C.foldsC f' zN s0
-                        (chainOfVector vLens)
-                        (chainOfVector vVals)
-
-   in   (vResults, state)
+folds = G.folds
 {-# INLINE folds #-}
 
 
@@ -408,9 +312,6 @@ padForward
         -> U.Vector (k, v)      -- ^ Input keys and values.
         -> U.Vector (k, v)
 
-padForward ksucc vec
-        = G.unstream
-        $ padForwardS ksucc
-        $ G.stream vec
+padForward = G.padForward
 {-# INLINE padForward #-}
 
