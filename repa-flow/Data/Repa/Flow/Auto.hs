@@ -68,7 +68,6 @@ import Data.Repa.Fusion.Unpack                          as A
 import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Array.Material               as A
 import qualified Data.Repa.Array.Generic.Target         as A
-import qualified Data.Repa.Array.Generic.Convert        as A
 import qualified Data.Repa.Array.Generic                as A
 import qualified Data.Repa.Flow.Chunked                 as C hiding (next)
 import qualified Data.Repa.Flow.Generic                 as G hiding (next)
@@ -377,7 +376,7 @@ groupsBy_i
         -> IO (Sources (a, Int)) 
                                 -- ^ Starting element and length of groups.
 groupsBy_i f s
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< C.groupsBy_i A A f s
 {-# INLINE groupsBy_i #-}
 
@@ -448,7 +447,7 @@ folds_i :: FoldsDict n a b u1 u2 u3 u4
         -> IO (Sources  (n, b))   -- ^ Result elements.
 
 folds_i f z sLen sVal
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< C.folds_i A A f z sLen sVal
 {-# INLINE folds_i #-}
 

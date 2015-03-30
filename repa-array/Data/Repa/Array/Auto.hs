@@ -53,6 +53,9 @@ module Data.Repa.Array.Auto
         , intercalate
         , ragspose3
 
+        -- ** Slicing
+        , slice
+
         -- ** Inserting
         , insert
 

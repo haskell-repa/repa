@@ -78,6 +78,9 @@ module Data.Repa.Array
         , intercalate
         , ragspose3
 
+        -- ** Slicing
+        , slice
+
         -- ** Inserting
         , insert
 

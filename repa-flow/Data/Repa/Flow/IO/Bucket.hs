@@ -25,7 +25,6 @@ module Data.Repa.Flow.IO.Bucket
 where
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Generic                  as A
-import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Meta.Dense               as A
 import Data.Repa.Array.Meta.RowWise             as A
 import Data.Repa.Array.Auto.IO                  as A
@@ -493,7 +492,7 @@ bGetArray bucket lenWanted
                             -> let lenRemain = lenMax - posBucket
                                in  min lenWanted lenRemain
 
-        liftM convert 
+        liftM (convert F)
          $ hGetArray (bucketHandle bucket) 
          $ fromIntegral len
 {-# NOINLINE bGetArray #-}
@@ -502,6 +501,6 @@ bGetArray bucket lenWanted
 -- | Put some data in a bucket.
 bPutArray :: Bucket -> Array F Word8 -> IO ()
 bPutArray bucket arr
-        = hPutArray (bucketHandle bucket) (convert arr)
+        = hPutArray (bucketHandle bucket) (convert A arr)
 {-# NOINLINE bPutArray #-}
 

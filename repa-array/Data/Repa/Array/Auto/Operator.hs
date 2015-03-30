@@ -60,6 +60,9 @@ module Data.Repa.Array.Auto.Operator
         , intercalate
         , ragspose3
 
+        -- ** Slicing
+        , slice
+
         -- ** Inserting
         , insert
 
@@ -405,6 +408,93 @@ unzip arr@(A.AArray_T2 arr')
    in   (arr1', arr2')
 
 
+-- Sloshing ---------------------------------------------------------------------------------------
+-- | Concatenate nested arrays.
+concat  :: (Elem a, Build a at, F.Unpack (Array a) aat)
+        => Array (Array a)      -- ^ Arrays to concatenate.
+        -> Array a
+concat = G.concat A
+{-# INLINE concat #-}
+
+
+-- | O(len result) Concatenate the elements of some nested vector,
+--   inserting a copy of the provided separator array between each element.
+concatWith
+        :: (Elem a, Build a at, F.Unpack (Array a) aat)
+        => Array a              -- ^ Separator array.
+        -> Array (Array a)      -- ^ Arrays to concatenate.
+        -> Array a
+concatWith = G.concatWith A
+{-# INLINE concatWith #-}
+
+
+-- | O(len result) Concatenate the outer two layers of a triply nested array.
+--   (Segmented concatenation).
+--
+--   * The operation is performed entirely on the segment descriptors of the 
+--     array, and does not require the inner array elements to be copied.
+--   * This version is faster than plain `concat` on triply nested arrays.
+--
+concats :: Array (Array (Array a))
+        -> Array (Array a)
+
+concats (A.AArray_Array (N.NArray starts1 lens1 (A.AArray_Array arr)))
+ = A.AArray_Array $ N.concats (N.NArray starts1 lens1 arr)
+{-# INLINE concats #-}
+
+
+-- | O(len result) Perform a `concatWith`, adding a newline character to
+--   the end of each inner array.
+unlines :: F.Unpack (Array Char) aat
+        => Array (Array Char) -> Array Char
+unlines = G.unlines A
+{-# INLINE unlines #-}
+
+
+-- | O(len result) Insert a copy of the separator array between the elements of
+--   the second and concatenate the result.
+intercalate 
+        :: (Elem a, Build a at, F.Unpack (Array a) aat)
+        => Array a              -- ^ Separator array.
+        -> Array (Array a)      -- ^ Arrays to concatenate.
+        -> Array a
+intercalate = G.intercalate A
+{-# INLINE intercalate #-}
+
+
+-- | Ragged transpose of a triply nested array.
+-- 
+--   * This operation is performed entirely on the segment descriptors
+--     of the nested arrays, and does not require the inner array elements
+--     to be copied.
+--
+ragspose3 :: Array (Array (Array a)) 
+          -> Array (Array (Array a))
+
+ragspose3 (A.AArray_Array (N.NArray starts0 lens0 (A.AArray_Array arr)))
+ = let  N.NArray starts1 elems1 (N.NArray starts2 elems2 arr')
+                = N.ragspose3 (N.NArray starts0 lens0 arr)
+
+   in   A.AArray_Array 
+                $! N.NArray starts1 elems1
+                $! A.AArray_Array 
+                $! N.NArray starts2 elems2 arr'
+{-# INLINE ragspose3 #-}
+
+
+-- Slicing ----------------------------------------------------------------------------------------
+-- | Take a slice out of an array, given a starting position and length.
+slice   :: Elem a => Int -> Int -> Array a -> Maybe (Array a)
+slice from len arr
+        | from >= 0, len >= 0
+        , len  <= G.length arr - from
+        = Just $ A.window from len arr
+
+        | otherwise
+        = Nothing
+{-# INLINE slice #-}
+
+
 -- Merging ----------------------------------------------------------------------------------------
 -- | Merge two sorted key-value streams.
 merge   :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
@@ -540,80 +630,6 @@ diceSep xEndCol xEndRow arr
                 $! A.AArray_Array 
                 $! N.NArray starts2 elems2 arr'
 {-# INLINE diceSep #-}
-
-
--- Sloshing ---------------------------------------------------------------------------------------
--- | Concatenate nested arrays.
-concat  :: (Elem a, Build a at, F.Unpack (Array a) aat)
-        => Array (Array a)      -- ^ Arrays to concatenate.
-        -> Array a
-concat = G.concat A
-{-# INLINE concat #-}
-
-
--- | O(len result) Concatenate the elements of some nested vector,
---   inserting a copy of the provided separator array between each element.
-concatWith
-        :: (Elem a, Build a at, F.Unpack (Array a) aat)
-        => Array a              -- ^ Separator array.
-        -> Array (Array a)      -- ^ Arrays to concatenate.
-        -> Array a
-concatWith = G.concatWith A
-{-# INLINE concatWith #-}
-
-
--- | O(len result) Concatenate the outer two layers of a triply nested array.
---   (Segmented concatenation).
---
---   * The operation is performed entirely on the segment descriptors of the 
---     array, and does not require the inner array elements to be copied.
---   * This version is faster than plain `concat` on triply nested arrays.
---
-concats :: Array (Array (Array a))
-        -> Array (Array a)
-
-concats (A.AArray_Array (N.NArray starts1 lens1 (A.AArray_Array arr)))
- = A.AArray_Array $ N.concats (N.NArray starts1 lens1 arr)
-{-# INLINE concats #-}
-
-
--- | O(len result) Perform a `concatWith`, adding a newline character to
---   the end of each inner array.
-unlines :: F.Unpack (Array Char) aat
-        => Array (Array Char) -> Array Char
-unlines = G.unlines A
-{-# INLINE unlines #-}
-
-
--- | O(len result) Insert a copy of the separator array between the elements of
---   the second and concatenate the result.
-intercalate 
-        :: (Elem a, Build a at, F.Unpack (Array a) aat)
-        => Array a              -- ^ Separator array.
-        -> Array (Array a)      -- ^ Arrays to concatenate.
-        -> Array a
-intercalate = G.intercalate A
-{-# INLINE intercalate #-}
-
-
--- | Ragged transpose of a triply nested array.
--- 
---   * This operation is performed entirely on the segment descriptors
---     of the nested arrays, and does not require the inner array elements
---     to be copied.
---
-ragspose3 :: Array (Array (Array a)) 
-          -> Array (Array (Array a))
-
-ragspose3 (A.AArray_Array (N.NArray starts0 lens0 (A.AArray_Array arr)))
- = let  N.NArray starts1 elems1 (N.NArray starts2 elems2 arr')
-                = N.ragspose3 (N.NArray starts0 lens0 arr)
-
-   in   A.AArray_Array 
-                $! N.NArray starts1 elems1
-                $! A.AArray_Array 
-                $! N.NArray starts2 elems2 arr'
-{-# INLINE ragspose3 #-}
 
 
 -- Grouping ---------------------------------------------------------------------------------------

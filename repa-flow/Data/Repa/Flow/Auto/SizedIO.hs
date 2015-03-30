@@ -18,7 +18,6 @@ import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Meta.Delayed             as A
-import Data.Repa.Array.Generic.Convert          as A
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
 import Data.Word
@@ -31,7 +30,7 @@ import Data.Char
 sourceBytes 
         :: Integer -> Array B Bucket -> IO (Sources Word8)
 sourceBytes i bs 
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< G.sourceBytes i bs
 {-# INLINE sourceBytes #-}
 
@@ -40,7 +39,7 @@ sourceBytes i bs
 sourceChars 
         :: Integer -> Array B Bucket -> IO (Sources Char)
 sourceChars i bs 
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< G.sourceChars i bs
 {-# INLINE sourceChars #-}
 
@@ -54,7 +53,7 @@ sourceLines
         -> IO (Sources (Array A Char))
 
 sourceLines nChunk fails bs
- =   G.map_i (A.convert . chopChunk)
+ =   G.map_i ((A.convert A). chopChunk)
  =<< G.sourceRecords nChunk isNewLine fails bs
  where
         isNewLine   :: Word8 -> Bool
@@ -81,7 +80,7 @@ sourceRecords
         -> IO (Sources (Array A Word8))
 
 sourceRecords i pSep aFail bs 
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< G.sourceRecords i pSep aFail bs
 {-# INLINE sourceRecords #-}
 
@@ -95,7 +94,7 @@ sourceCSV
         -> IO (Sources (Array A (Array A Char)))
 
 sourceCSV i aFail bs
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< G.sourceCSV i aFail bs
 {-# INLINE sourceCSV #-}
 
@@ -109,7 +108,7 @@ sourceTSV
         -> IO (Sources (Array A (Array A Char)))
 
 sourceTSV i aFail bs
-        =   G.map_i A.convert
+        =   G.map_i (A.convert A)
         =<< G.sourceTSV i aFail bs
 {-# INLINE sourceTSV #-}
 

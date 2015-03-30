@@ -29,6 +29,7 @@ module Data.Repa.Array.Generic
          -- ** Conversion
         , fromList,     fromListInto
         , toList
+        , convert,      copy
 
           -- ** Mapping
         , mapS, map2S
@@ -87,6 +88,7 @@ import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Insert        as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
+import qualified Data.Repa.Array.Generic.Convert        as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
 import Prelude  
@@ -138,4 +140,23 @@ map2S   :: (Bulk   lSrc1 a, Bulk lSrc2 b, Target lDst c
 map2S l f xs ys
  = liftM (computeS l) $! map2 f xs ys
 {-# INLINE map2S #-}
+
+
+-- | O(1). Constant time conversion of one array representation to another.
+convert :: A.Convert l1 a1 l2 a2 
+        => Name l2 -> Array l1 a1 -> Array l2 a2
+convert _ = A.convert
+{-# INLINE convert #-}
+
+
+-- | O(n). Linear time copy of one array representation to another.
+-- 
+--   This function must be used instead of `convert` when the bit-wise 
+--   layout of the two array representations are different.
+--
+copy    :: (Bulk l1 a, Target l2 a, Index l1 ~ Index l2)
+        => Name l2 -> Array l1 a -> Array l2 a
+copy n2 arr  = computeS n2 $! delay arr
+{-# INLINE copy #-} 
+
 

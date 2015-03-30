@@ -35,7 +35,6 @@ import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Auto.Unpack              as A
-import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Generic                  as A
 import System.Directory
 import System.FilePath
@@ -174,7 +173,7 @@ sourcePacked format aFail bs
                  then eject
                  else do
                         !chunk  <- bGetArray b defaultChunkSize
-                        case A.unpackForeign format (A.convert chunk) of
+                        case A.unpackForeign format (A.convert A chunk) of
                          Nothing        -> aFail
                          Just vals      -> eat vals
         {-# INLINE pull_sourcePacked #-}
@@ -185,7 +184,7 @@ sourcePacked format aFail bs
 -- | Write 8-bit bytes to some files.
 sinkBytes :: Array B Bucket -> IO (Sinks Word8)
 sinkBytes bs
-        =   G.map_o A.convert
+        =   G.map_o (A.convert F)
         =<< G.sinkBytes bs
 {-# INLINE sinkBytes #-}
 
@@ -234,7 +233,7 @@ sinkPacked format aFail bs
         push_sinkPacked i !chunk
          = case A.packForeign format chunk of
                 Nothing   -> aFail
-                Just buf  -> bPutArray (bs `index` i) (A.convert buf)
+                Just buf  -> bPutArray (bs `index` i) (A.convert F buf)
         {-# INLINE push_sinkPacked #-}
 
         eject_sinkPacked i 
