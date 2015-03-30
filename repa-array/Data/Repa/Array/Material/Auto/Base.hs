@@ -379,7 +379,7 @@ instance  Target A [a] where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance Unpack (Buffer A String) (Buffer A String) where
+instance Unpack (Buffer A [a]) (Buffer A [a]) where
  unpack buf   = buf
  repack _ buf = buf
  {-# INLINE unpack #-}
