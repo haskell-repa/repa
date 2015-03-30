@@ -1,7 +1,6 @@
 
 module Data.Repa.Flow.IO.Bucket
-        ( Bucket
-        , bucketLength
+        ( Bucket (..)
         , openBucket
         , hBucket
 
@@ -304,6 +303,7 @@ toFiles' paths use
 --
 --   If the directory is named @somedir@ then the files are named
 --   @somedir/000000@, @somedir/000001@, @somedir/000002@ and so on.
+--
 toDir   :: Int                          -- ^ Number of buckets to create.
         -> FilePath                     -- ^ Path to directory.
         -> (Array B Bucket -> IO b)     -- ^ Consumer.

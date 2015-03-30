@@ -25,6 +25,10 @@ module Data.Repa.Flow.Auto.IO
         , sinkLines
         , sinkChars
         , sinkPacked
+
+          -- * Table IO
+        , toTable
+        , fromTable
         )
 where
 import Data.Repa.Flow.Auto
@@ -33,10 +37,14 @@ import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Auto.Unpack              as A
 import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Generic                  as A
+import System.Directory
+import System.FilePath
+import System.IO
 import Data.Word
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
 import qualified Data.Repa.Flow.Auto.SizedIO    as F
+import Prelude                                  as P
 #include "repa-flow.h"
 
 
@@ -136,11 +144,12 @@ sourceTSV
 -- @
 -- > import Data.Repa.Flow            as F
 -- > import Data.Repa.Convert.Format  as F
+-- > :{
+--   do let format = FixString ASCII 10 :*: Float64be :*: Int16be
+--      ss <- fromFiles' [\"colors.bin\"] $ sourcePacked format (error \"convert failed\")
+--      toList1 0 ss
+--   :}
 --
--- > let format = FixString ASCII 10 :*: Float64be :*: Int16be
--- > ss <- fromFiles' [\"colors.bin\"] $ sourcePacked format (error \"convert failed\")
---
--- > toList1 0 ss
 -- [\"red\" :*: (5.3 :*: 100), \"green\" :*: (2.8 :*: 93), \"blue\" :*: (0.99 :*: 42)]
 -- @
 --
@@ -193,28 +202,29 @@ sinkLines = G.sinkLines A A
 {-# INLINE sinkLines #-}
 
 
--- | Convert values to a packed binary format and write them
+-- | Create sinks that convert values to a packed binary format and writes
 --   them to some buckets.
 --
 -- @
 -- > import Data.Repa.Flow           as F
 -- > import Data.Repa.Convert.Format as F
+-- > :{
+--   do let format = FixString ASCII 10 :*: Float64be :*: Int16be
+--      let vals   = listFormat format
+--                    [ \"red\"   :*: 5.3    :*: 100
+--                    , \"green\" :*: 2.8    :*: 93 
+--                    , \"blue\"  :*: 0.99   :*: 42 ]
 --
--- > let format = FixString ASCII 10 :*: Float64be :*: Int16be
--- > let vals   = listFormat format
---                 [ \"red\"   :*: 5.3    :*: 100
---                 , \"green\" :*: 2.8    :*: 93 
---                 , \"blue\"  :*: 0.99   :*: 42 ]
---
--- > ss  <- F.fromList 1 vals
--- > out <- toFiles' [\"colors.bin\"] $ sinkPacked format (error \"convert failed\")
--- > drainS ss out
+--      ss  <- F.fromList 1 vals
+--      out <- toFiles' [\"colors.bin\"] $ sinkPacked format (error \"convert failed\")
+--      drainS ss out
+--   :}
 -- @
 --
 sinkPacked 
         :: (Packable format, Bulk A (Value format))
         => format                       -- ^ Binary format for each value.
-        -> IO ()                        -- ^ Action when a value cannot be converted.
+        -> IO ()                        -- ^ Action when a value cannot be serialized.
         -> Array B Bucket               -- ^ Output buckets.
         -> IO (Sinks (Value format))
 
@@ -232,4 +242,74 @@ sinkPacked format aFail bs
         {-# INLINE eject_sinkPacked #-}
 
 {-# INLINE_FLOW sinkPacked #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Create sinks that write values from some binary Repa table.
+toTable :: (Packable format, Bulk A (Value format))
+        => FilePath             -- ^ Directory holding table.
+        -> Int                  -- ^ Number of buckets to use.
+        -> format               -- ^ Format of data.
+        -> IO ()                -- ^ Action when a value cannot be serialised.
+        -> IO (Maybe (Sinks (Value format)))
+
+toTable path nBuckets format aFail
+ | nBuckets <= 0
+ = return $ Nothing
+
+ | otherwise
+ = do   
+        createDirectory path
+
+        -- Create all the bucket files.
+        let makeName i  = path </> ((replicate (6 - (P.length $ show i)) '0') ++ show i)
+        let names       = [makeName i | i <- [0 .. nBuckets - 1]]
+        let newBucket file
+             = do h  <- openBinaryFile file WriteMode
+                  return $ Bucket
+                         { bucketFilePath       = Just file 
+                         , bucketStartPos       = 0
+                         , bucketLength         = Nothing
+                         , bucketHandle         = h }
+
+        bs <- mapM newBucket names
+
+        -- Create a sink bundle for the buckets.
+        kk <- sinkPacked format aFail (A.fromList B bs)
+        return $ Just kk
+{-# INLINE_FLOW toTable #-}
+
+
+-- | Create sources that read values from some binary Repa table.
+fromTable
+        :: (Packable format, Target A (Value format))
+        => FilePath             -- ^ Directory holding table.
+        -> format               -- ^ Format of data.
+        -> IO ()                -- ^ Action when a value cannot be deserialised.
+        -> IO (Maybe (Sources (Value format)))
+
+fromTable path format aFail
+ = do
+        -- All the files in the table directory.
+        fs      <- getDirectoryContents path
+
+        -- Filter out special file names and make them relative to the dir stem.
+        let fsRel
+                = P.map (path </>)
+                $ P.filter (\f -> f /= "." && f /= "..") fs
+
+        let newBucket file
+             = do h <- openBinaryFile file ReadMode
+                  return $ Bucket
+                         { bucketFilePath       = Just file
+                         , bucketStartPos       = 0
+                         , bucketLength         = Nothing
+                         , bucketHandle         = h }
+
+        bs <- mapM newBucket fsRel
+
+        -- Create a source bundle for the buckets.
+        ss <- sourcePacked format aFail (A.fromList B bs)
+        return $ Just ss
+{-# INLINE_FLOW fromTable #-}
 
