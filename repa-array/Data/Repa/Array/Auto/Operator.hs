@@ -12,6 +12,7 @@ module Data.Repa.Array.Auto.Operator
         , index
         , (!)
         , length
+        , head, tail, init
 
         -- * Conversion
         , fromList
@@ -33,6 +34,8 @@ module Data.Repa.Array.Auto.Operator
         , foldl
         , sum,  prod
         , mean, std
+
+        -- *** Special Folds
         , correlate
         , folds
         , foldsWith
@@ -98,7 +101,8 @@ import qualified Data.Repa.Fusion.Unpack                as F
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U
 import Prelude 
-       hiding (map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip)
+       hiding   ( map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip
+                , head, tail, init)
 
 
 -- Basic ------------------------------------------------------------------------------------------
@@ -121,6 +125,26 @@ index  = (G.!)
 length :: Elem a => Array a -> Int
 length = G.length
 {-# INLINE length #-}
+
+
+-- | O(1). Take the head of an array, or `Nothing` if it's empty.
+head    :: Elem a => Array a -> Maybe a
+head arr   = if G.length arr < 1
+                then Nothing
+                else Just (arr `index` 0)
+{-# INLINE head #-}
+
+
+-- | O(1). Take the tail of an array, or `Nothing` if it's empty.
+tail    :: Elem a => Array a -> Maybe (Array a)
+tail    = A.tail
+{-# INLINE tail #-}
+
+
+-- | O(1). Take the initial elements of an array, or `Nothing` if it's empty.
+init    :: Elem a => Array a -> Maybe (Array a)
+init    = A.init
+{-# INLINE init #-}
 
 
 -- Conversion -------------------------------------------------------------------------------------

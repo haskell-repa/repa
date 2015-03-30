@@ -30,6 +30,7 @@ module Data.Repa.Array
         , index
         , (!)
         , length
+        , head, tail, init
 
         -- * Conversion
         , fromList
@@ -63,6 +64,10 @@ module Data.Repa.Array
         , trims
         , trimEnds
         , trimStarts
+
+        -- ** Zipping
+        , zip
+        , unzip
 
         -- ** Sloshing
         , reverse
@@ -100,6 +105,7 @@ module Data.Repa.Array
 where
 import Data.Repa.Array.Auto
 import Prelude 
-       hiding (map, length, reverse, filter, concat, unlines, foldl, sum)
+       hiding   ( map, length, reverse, filter, concat, unlines, foldl, sum
+                , head, init, tail, zip, unzip)
 
 

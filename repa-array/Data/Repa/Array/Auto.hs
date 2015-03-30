@@ -7,6 +7,7 @@ module Data.Repa.Array.Auto
         , index
         , (!)
         , length
+        , head, init, tail
 
         -- * Conversion
         , fromList
@@ -79,5 +80,6 @@ where
 import Data.Repa.Array.Auto.Base
 import Data.Repa.Array.Auto.Operator
 import Prelude 
-       hiding (map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip)
+       hiding   ( map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip
+                , head, init, tail)
 

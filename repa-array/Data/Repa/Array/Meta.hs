@@ -115,6 +115,7 @@ module Data.Repa.Array.Meta
         , Windowable (..)
         , windowed
         , entire
+        , tail, init
 
           -- * Dense arrays
         , E (..)
@@ -136,5 +137,5 @@ import Data.Repa.Array.Meta.Tuple
 import Data.Repa.Array.Meta.Window
 
 import Prelude
-       hiding (map)
+       hiding (map, tail, init)
 

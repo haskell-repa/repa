@@ -4,10 +4,13 @@ module Data.Repa.Array.Meta.Window
         , Array      (..)
         , Windowable (..)
         , windowed
-        , entire)
+        , entire
+        , tail
+        , init)
 where
 import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
+import Prelude hiding (length, tail, init)
 #include "repa-array.h"
 
 
@@ -93,4 +96,22 @@ instance Bulk l a => Windowable (W l) a where
         = WArray (addDim wStart start) wShape arr
  {-# INLINE_ARRAY window #-}
 
+
+-------------------------------------------------------------------------------
+-- | O(1). Take the tail of an array, or `Nothing` if it's empty.
+tail    :: (Windowable l a, Index l ~ Int)
+        => Array l a -> Maybe (Array l a)
+tail arr
+        | length arr == 0       = Nothing
+        | otherwise             = Just $! window 1 (length arr - 1) arr
+{-# INLINE tail #-}
+
+
+-- | O(1). Take the initial elements of an array, or `Nothing` if it's empty.
+init    :: (Windowable l a, Index l ~ Int)
+        => Array l a -> Maybe (Array l a)
+init arr
+        | length arr == 0       = Nothing
+        | otherwise             = Just $! window 0 (length arr - 1) arr
+{-# INLINE init #-}
 
