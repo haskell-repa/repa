@@ -30,6 +30,7 @@ Library
   other-modules:
         Data.Repa.Convert.Format.Base
         Data.Repa.Convert.Format.Binary
+        Data.Repa.Convert.Format.Fields
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

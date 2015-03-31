@@ -21,27 +21,16 @@ import qualified Foreign.Ptr                    as S
 import qualified Control.Monad.Primitive        as Prim
 
 
-------------------------------------------------------------------------------------------- Int8be
--- | Big-endian 8-bit signed integer.
-data Int8be     = Int8be                deriving (Eq, Show)
-instance Format Int8be                  where
- type Value Int8be      = V.Int8
- fixedSize  _           = Just 1
- packedSize _ _         = Just 1
-
-
-i8  :: Integral a => a -> Int8
-i8 = fromIntegral
-{-# INLINE i8  #-}
-
-
 ------------------------------------------------------------------------------------------- Word8be
 -- | Big-endian 8-bit unsigned word.
 data Word8be     = Word8be              deriving (Eq, Show)
 instance Format Word8be                 where
- type Value Word8be     = V.Word8
+ type Value Word8be     = Word8
+ fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word8be where
@@ -56,6 +45,25 @@ instance Packable Word8be where
  {-# INLINE unpack #-}
 
 
+instance Packables sep Word8be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+
+
+w8  :: Integral a => a -> Word8
+w8 = fromIntegral
+{-# INLINE w8  #-}
+
+
+------------------------------------------------------------------------------------------- Int8be
+-- | Big-endian 8-bit signed integer.
+data Int8be     = Int8be                deriving (Eq, Show)
+instance Format Int8be                  where
+ type Value Int8be      = V.Int8
+ fixedSize  _           = Just 1
+ packedSize _ _         = Just 1
+
+
 instance Packable Int8be where
  pack   buf  Int8be x k  = pack   buf Word8be (w8 x) k
  unpack buf  Int8be k    = unpack buf Word8be (\(x, o) -> k (i8 x, o))
@@ -63,9 +71,9 @@ instance Packable Int8be where
  {-# INLINE unpack #-}
 
 
-w8  :: Integral a => a -> Word8
-w8 = fromIntegral
-{-# INLINE w8  #-}
+i8  :: Integral a => a -> Int8
+i8 = fromIntegral
+{-# INLINE i8  #-}
 
 
 ------------------------------------------------------------------------------------------- Int16be
@@ -75,7 +83,8 @@ instance Format Int16be                 where
  type Value Int16be     = V.Int16
  fixedSize _            = Just 2
  packedSize _ _         = Just 2
-
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 i16 :: Integral a => a -> Int16
@@ -90,6 +99,8 @@ instance Format Word16be                where
  type Value Word16be    = V.Word16
  fixedSize _            = Just 2
  packedSize _ _         = Just 2
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word16be where
@@ -126,6 +137,8 @@ instance Format Int32be                 where
  type Value Int32be     = V.Int32
  fixedSize _            = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int32be where
@@ -147,6 +160,8 @@ instance Format Word32be                where
  type Value Word32be    = V.Word32
  fixedSize _            = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word32be where
@@ -182,6 +197,8 @@ instance Format Int64be                 where
  type Value Int64be     = V.Int64
  fixedSize _            = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int64be where
@@ -203,6 +220,8 @@ instance Format Word64be                where
  type Value Word64be    = V.Word64
  fixedSize _            = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word64be where
@@ -251,6 +270,8 @@ instance Format Float32be               where
  type Value Float32be   = Float
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Float32be where
@@ -293,6 +314,8 @@ instance Format Float64be               where
  type Value Float64be   = Double
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Float64be where

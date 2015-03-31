@@ -2,6 +2,7 @@
 module Data.Repa.Convert.Format.Base
         ( Format   (..)
         , Packable (..)
+        , Packables(..)
         , packToList
         , unpackFromList
 
@@ -20,11 +21,11 @@ module Data.Repa.Convert.Format.Base
         , FixString     (..)
         , VarString     (..)
         , ASCII         (..))
-
 where
 import Data.Repa.Product
 import Data.Word
 import Data.Char
+import Control.Monad
 import System.IO.Unsafe
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
@@ -38,6 +39,9 @@ class Format f where
 
  -- | Get the type of a value with this format.
  type Value f  
+
+ -- | Yield the number of separate fields in this format.
+ fieldCount :: f -> Maybe Int
 
  -- | For fixed size storage formats, yield their size (length) in bytes.
  --
@@ -53,7 +57,7 @@ class Format f where
  --
  packedSize :: f -> Value f -> Maybe Int
 
-
+  
 ---------------------------------------------------------------------------------------------------
 -- | Class of storage formats that can have values packed and unpacked
 --   from foreign bufferes. 
@@ -84,6 +88,25 @@ class Format   format
         -> ((Value format, Int) -> IO (Maybe a)) 
                                         -- ^ Continue, given the unpacked value and the 
                                         --   number of bytes read. 
+        -> IO (Maybe a)
+
+
+-- | Class of field containers, eg comma or pipe-separated fields.
+--
+class Packables container format where
+
+ packs  :: S.Ptr Word8                  -- ^ Target Buffer.
+        -> container                    -- ^ Field container.
+        -> format                       -- ^ Storage format.
+        -> Value format                 -- ^ Value to pack.
+        -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
+        -> IO (Maybe a)
+
+ unpacks:: S.Ptr Word8                  -- ^ Target Buffer.
+        -> container                    -- ^ Field container.
+        -> format                       -- ^ Storage format.
+        -> ((Value format, Int) -> IO (Maybe a))        
+                                        -- ^ Continue, given the number of bytes written.
         -> IO (Maybe a)
 
 
@@ -142,43 +165,9 @@ listFormat _ v = v
 
 
 ---------------------------------------------------------------------------------------------------
-instance (Format a, Format b) 
-       => Format (a :*: b) where
- type Value (a :*: b) = Value a :*: Value b
-
- fixedSize  (xa :*: xb)
-  = do  sa      <- fixedSize xa
-        sb      <- fixedSize xb
-        return  $  sa + sb
- {-# INLINE fixedSize #-}
-
- packedSize (fa :*: fb) (xa :*: xb)
-  = do  sa      <- packedSize fa xa
-        sb      <- packedSize fb xb
-        return  $  sa + sb
- {-# INLINE packedSize #-}
-
-
-instance (Packable fa, Packable fb) 
-      =>  Packable (fa :*: fb) where
-
- pack   buf (fa :*: fb) (xa :*: xb) k
-  =  pack buf                  fa xa $ \oa 
-  -> pack (S.plusPtr buf oa)   fb xb $ \ob
-  -> k (oa + ob)
- {-# INLINE pack #-}
-
- unpack buf (fa :*: fb) k
-  =  unpack buf                fa    $ \(xa, oa)
-  -> unpack (S.plusPtr buf oa) fb    $ \(xb, ob)
-  -> k (xa :*: xb, oa + ob)
- {-# INLINE unpack #-}
-
-
----------------------------------------------------------------------------------------------------
 -- | Fixed length list.
 --
-data FixList   f = FixList   f Int      deriving (Eq, Show)
+data FixList    f = FixList   f Int      deriving (Eq, Show)
 instance Format f => Format (FixList   f) where
  type Value (FixList f)         = [Value f]
 
@@ -196,6 +185,8 @@ instance Format f => Format (FixList   f) where
 
   | otherwise 
   = Nothing
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 -- | Variable length list.
@@ -211,6 +202,8 @@ instance Format f => Format (VarList f) where
 
  packedSize _ []
   =     return 0
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -224,6 +217,8 @@ instance Format (FixString ASCII)       where
  type Value (FixString ASCII)       = String
  fixedSize  (FixString ASCII len)   = Just len
  packedSize (FixString ASCII len) _ = Just len
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable (FixString ASCII) where
@@ -263,6 +258,8 @@ instance Format (VarString ASCII)       where
  type Value (VarString ASCII)       = String
  fixedSize  (VarString ASCII)       = Nothing
  packedSize (VarString ASCII) xs    = Just $ length xs
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable (VarString ASCII) where
@@ -285,8 +282,8 @@ instance Packable (VarString ASCII) where
 data ASCII       = ASCII                deriving (Eq, Show)
 
 
----------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
 {-# INLINE w8  #-}
+
 
