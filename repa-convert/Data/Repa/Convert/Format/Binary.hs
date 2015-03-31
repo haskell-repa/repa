@@ -42,15 +42,15 @@ instance Packable Word8be where
         k 1
  {-# INLINE pack #-}
 
- unpack buf Word8be k
+ unpack buf _ Word8be k
   = do  x       <- S.peek buf
         k (fromIntegral x, 1)
  {-# INLINE unpack #-}
 
 
 instance Packables sep Word8be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -76,15 +76,15 @@ instance Format Int8be                  where
 
 
 instance Packable Int8be where
- pack   buf  Int8be x k  = pack   buf Word8be (w8 x) k
- unpack buf  Int8be k    = unpack buf Word8be (\(x, o) -> k (i8 x, o))
+ pack    buf     Int8be x k  = pack   buf     Word8be (w8 x) k
+ unpack  buf len Int8be k    = unpack buf len Word8be (\(x, o) -> k (i8 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
 
 instance Packables sep Int8be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k     = pack   buf     f x k
+ unpacks buf len _ f k       = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -116,7 +116,7 @@ instance Packable Word16be where
         k 2
  {-# INLINE pack #-}
 
- unpack buf Word16be k
+ unpack buf _ Word16be k
   = do  x0 :: Word8  <- S.peek        buf 
         x1 :: Word8  <- S.peekByteOff buf 1
         let !x  =  w16 ((w16 x0 `shiftL` 8) .|. w16 x1)
@@ -125,8 +125,8 @@ instance Packable Word16be where
 
 
 instance Packables sep Word16be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -152,15 +152,15 @@ instance Format Int16be                 where
 
 
 instance Packable Int16be where
- pack   buf  Int16be x k  = pack   buf Word16be (w16 x) k
- unpack buf  Int16be k    = unpack buf Word16be (\(x, o) -> k (i16 x, o))
+ pack   buf     Int16be x k  = pack   buf     Word16be (w16 x) k
+ unpack buf len Int16be k    = unpack buf len Word16be (\(x, o) -> k (i16 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
 
 instance Packables sep Int16be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -194,7 +194,7 @@ instance Packable Word32be where
         k 4
  {-# INLINE pack #-}
 
- unpack buf Word32be k
+ unpack buf _ Word32be k
   = do  x0 :: Word8  <- S.peek        buf 
         x1 :: Word8  <- S.peekByteOff buf 1
         x2 :: Word8  <- S.peekByteOff buf 2
@@ -208,8 +208,8 @@ instance Packable Word32be where
 
 
 instance Packables sep Word32be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -235,15 +235,15 @@ instance Format Int32be                 where
 
 
 instance Packable Int32be where
- pack   buf  Int32be x k  = pack   buf Word32be (w32 x) k
- unpack buf  Int32be k    = unpack buf Word32be (\(x, o) -> k (i32 x, o))
+ pack   buf     Int32be x k  = pack   buf     Word32be (w32 x) k
+ unpack buf len Int32be k    = unpack buf len Word32be (\(x, o) -> k (i32 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
 
 instance Packables sep Int32be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k     = pack   buf     f x k
+ unpacks buf len _ f k       = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -281,7 +281,7 @@ instance Packable Word64be where
         k 8
  {-# INLINE pack #-}
 
- unpack buf Word64be k
+ unpack buf _ Word64be k
   = do  x0 :: Word8  <- S.peek        buf 
         x1 :: Word8  <- S.peekByteOff buf 1
         x2 :: Word8  <- S.peekByteOff buf 2
@@ -303,8 +303,8 @@ instance Packable Word64be where
 
 
 instance Packables sep Word64be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -330,15 +330,15 @@ instance Format Int64be                 where
 
 
 instance Packable Int64be where
- pack   buf  Int64be x k  = pack   buf Word64be (w64 x) k
- unpack buf  Int64be k    = unpack buf Word64be (\(x, o) -> k (i64 x, o))
+ pack   buf     Int64be x k  = pack   buf     Word64be (w64 x) k
+ unpack buf len Int64be k    = unpack buf len Word64be (\(x, o) -> k (i64 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
 
 instance Packables sep Int64be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k     = pack   buf     f x k
+ unpacks buf len _ f k       = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -368,14 +368,14 @@ instance Packable Float32be where
   = pack   buf Word32be (floatToWord32 x) k
  {-# INLINE pack #-}
 
- unpack    buf Float32be k
-  = unpack buf Word32be (\(v, i) -> k (word32ToFloat v, i))
+ unpack    buf len Float32be k
+  = unpack buf len Word32be (\(v, i) -> k (word32ToFloat v, i))
  {-# INLINE unpack #-}
 
 
 instance Packables sep Float32be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 
@@ -423,14 +423,14 @@ instance Packable Float64be where
   = pack   buf Word64be (doubleToWord64 x) k
  {-# INLINE pack #-}
 
- unpack    buf Float64be k
-  = unpack buf Word64be (\(v, i) -> k (word64ToDouble v, i))
+ unpack    buf len Float64be k
+  = unpack buf len Word64be (\(v, i) -> k (word64ToDouble v, i))
  {-# INLINE unpack #-}
 
 
 instance Packables sep Float64be where
- packs   buf _ f x k = pack   buf f x k
- unpacks buf _ f k   = unpack buf f k
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
 

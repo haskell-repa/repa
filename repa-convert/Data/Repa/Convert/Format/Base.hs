@@ -89,7 +89,14 @@ class Format   format
  -- | Unpack a value from a buffer using the given format.
  --
  --   This is the inverse of `pack` above.
+ -- 
+ --   PRECONDITION: The length of the buffer must be at least the
+ --   minimum size required of the format (minSize). This allows
+ --   us to avoid repeatedly checking for buffer overrun when
+ --   unpacking fixed size formats.
+ --
  unpack :: S.Ptr Word8                  -- ^ Source buffer.
+        -> Int                          -- ^ Length of buffer.
         -> format                       -- ^ Format of buffer.
         -> ((Value format, Int) -> IO (Maybe a)) 
                                         -- ^ Continue, given the unpacked value and the 
@@ -98,7 +105,8 @@ class Format   format
 
 
 -- | Class of field containers, eg comma or pipe-separated fields.
-class Packables container format where
+class Format format 
+   => Packables container format where
 
  packs  :: S.Ptr Word8                  -- ^ Target Buffer.
         -> container                    -- ^ Field container.
@@ -107,7 +115,9 @@ class Packables container format where
         -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
         -> IO (Maybe a)
 
- unpacks:: S.Ptr Word8                  -- ^ Target Buffer.
+ unpacks
+        :: S.Ptr Word8                  -- ^ Target Buffer.
+        -> Int                          -- ^ Length of buffer.
         -> container                    -- ^ Field container.
         -> format                       -- ^ Storage format.
         -> ((Value format, Int) -> IO (Maybe a))        
@@ -132,8 +142,7 @@ packToList f x
                 S.free buf
                 return $ Just xs
 
- | otherwise
- = Nothing
+ | otherwise    = Nothing
 
 
 -- | Unpack a value from a list of `Word8`.
@@ -147,7 +156,7 @@ unpackFromList f xs
         buf     <- S.mallocBytes len
         mapM_ (\(o, x) -> S.pokeByteOff buf o x)
                 $ zip [0 .. len - 1] xs
-        unpack buf f $ \(v, _) -> return (Just v)
+        unpack buf len f $ \(v, _) -> return (Just v)
 
 
 ---------------------------------------------------------------------------------------------------

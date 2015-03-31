@@ -9,6 +9,7 @@ module Data.Repa.Convert.Format.Lists
         , VarString     (..)
         , ASCII         (..))
 where
+import Control.Monad
 import Data.Repa.Convert.Format.Base
 import Data.Word
 import Data.Char
@@ -112,7 +113,7 @@ instance Packable (FixString ASCII) where
                 k lenField
   {-# NOINLINE pack #-}
 
-  unpack buf (FixString ASCII lenField) k
+  unpack buf _ (FixString ASCII lenField) k
    = do 
         let load_unpackChar o
                 = do    x :: Word8 <- S.peekByteOff buf o
@@ -141,7 +142,7 @@ instance Format (VarString ASCII)       where
 
 instance Packable (VarString ASCII) where
 
-  pack buf   (VarString ASCII) xs k
+  pack buf       (VarString ASCII) xs k
    = do let !lenChars   = length xs
 
         mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
@@ -150,9 +151,27 @@ instance Packable (VarString ASCII) where
         k lenChars
   {-# NOINLINE pack #-}
 
-  unpack _   (VarString ASCII) _
-   = return Nothing
+  unpack buf len (VarString ASCII) k
+   = do 
+        -- We don't locally know what the stopping point should
+        -- for the string, so just decode all the way to the end.
+        -- If the caller knows the field should be shorter then
+        -- it should pass in a shorter length.
+        let load_unpackChar o
+                = do    x :: Word8      <- S.peekByteOff buf o
+                        return $ chr $ fromIntegral x
+            {-# INLINE load_unpackChar #-}
+                        
+        xs      <- mapM load_unpackChar [0 .. len - 1]
+        k (xs, len)
   {-# NOINLINE unpack #-}
+
+
+instance Packables sep (VarString ASCII) where
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
 
 
 -- | String is encoded as 8-bit ASCII characters.
