@@ -83,5 +83,6 @@ where
 import Data.Repa.Product
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Binary
+import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Fields
 
