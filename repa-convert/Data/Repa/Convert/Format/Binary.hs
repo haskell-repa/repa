@@ -26,9 +26,11 @@ import qualified Control.Monad.Primitive        as Prim
 data Word8be     = Word8be              deriving (Eq, Show)
 instance Format Word8be                 where
  type Value Word8be     = Word8
+ minSize    _           = 1
  fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -63,9 +65,11 @@ w8 = fromIntegral
 data Int8be     = Int8be                deriving (Eq, Show)
 instance Format Int8be                  where
  type Value Int8be      = V.Int8
+ minSize    _           = 1
  fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -95,9 +99,11 @@ i8 = fromIntegral
 data Word16be    = Word16be             deriving (Eq, Show)
 instance Format Word16be                where
  type Value Word16be    = V.Word16
+ minSize    _           = 2
  fieldCount _           = Just 1
- fixedSize _            = Just 2
+ fixedSize  _           = Just 2
  packedSize _ _         = Just 2
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -135,12 +141,14 @@ w16 = fromIntegral
 data Int16be    = Int16be               deriving (Eq, Show)
 instance Format Int16be                 where
  type Value Int16be     = V.Int16
+ minSize    _           = 2
  fieldCount _           = Just 1
- fixedSize _            = Just 2
+ fixedSize  _           = Just 2
  packedSize _ _         = Just 2
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
- {-# INLINE fieldCount #-}
 
 
 instance Packable Int16be where
@@ -167,9 +175,11 @@ i16 = fromIntegral
 data Word32be    = Word32be             deriving (Eq, Show)
 instance Format Word32be                where
  type Value Word32be    = V.Word32
+ minSize    _           = 4
  fieldCount _           = Just 1
- fixedSize _            = Just 4
+ fixedSize  _           = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -214,9 +224,11 @@ w32 = fromIntegral
 data Int32be    = Int32be               deriving (Eq, Show)
 instance Format Int32be                 where
  type Value Int32be     = V.Int32
+ minSize    _           = 4
  fieldCount _           = Just 1
- fixedSize _            = Just 4
+ fixedSize  _           = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -246,9 +258,11 @@ i32 = fromIntegral
 data Word64be    = Word64be             deriving (Eq, Show)
 instance Format Word64be                where
  type Value Word64be    = V.Word64
+ minSize    _           = 8
  fieldCount _           = Just 1
- fixedSize _            = Just 8
+ fixedSize  _           = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -305,9 +319,11 @@ w64 = fromIntegral
 data Int64be    = Int64be               deriving (Eq, Show)
 instance Format Int64be                 where
  type Value Int64be     = V.Int64
+ minSize    _           = 8
  fieldCount _           = Just 1
- fixedSize _            = Just 8
+ fixedSize  _           = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -337,9 +353,11 @@ i64 = fromIntegral
 data Float32be  = Float32be             deriving (Eq, Show)
 instance Format Float32be               where
  type Value Float32be   = Float
+ minSize    _           = 4
  fieldCount _           = Just 1
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -390,9 +408,11 @@ word32ToFloat w
 data Float64be  = Float64be             deriving (Eq, Show)
 instance Format Float64be               where
  type Value Float64be   = Double
+ minSize    _           = 8
  fieldCount _           = Just 1
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}

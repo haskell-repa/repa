@@ -17,11 +17,13 @@ import qualified Foreign.Storable               as S
 
 ---------------------------------------------------------------------------------------------------
 -- | Fixed length list.
---
 data FixList    f = FixList   f Int      deriving (Eq, Show)
 instance Format f => Format (FixList   f) where
  type Value (FixList f)         
   = [Value f]
+
+ minSize    (FixList f len)
+        = minSize f * len
 
  fieldCount _ 
   = Just 1
@@ -40,6 +42,7 @@ instance Format f => Format (FixList   f) where
 
   | otherwise 
   = Nothing
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -50,6 +53,9 @@ data VarList   f = VarList   f          deriving (Eq, Show)
 instance Format f => Format (VarList f) where
  type Value (VarList f)
         = [Value f]
+
+ minSize _ 
+  = 0
 
  fieldCount _
   = Just 1
@@ -63,6 +69,7 @@ instance Format f => Format (VarList f) where
 
  packedSize _ []
   =     return 0
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -77,9 +84,11 @@ instance Format f => Format (VarList f) where
 data FixString t = FixString t Int      deriving (Eq, Show)
 instance Format (FixString ASCII)       where
  type Value (FixString ASCII)       = String
+ minSize    (FixString ASCII len)   = len
  fieldCount _                       = Just 1
  fixedSize  (FixString ASCII len)   = Just len
  packedSize (FixString ASCII len) _ = Just len
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -120,9 +129,11 @@ instance Packable (FixString ASCII) where
 data VarString t = VarString t          deriving (Eq, Show)
 instance Format (VarString ASCII)       where
  type Value (VarString ASCII)       = String
+ minSize    _                       = 0
  fieldCount _                       = Just 1
  fixedSize  (VarString ASCII)       = Nothing
  packedSize (VarString ASCII) xs    = Just $ length xs
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}

@@ -29,14 +29,23 @@ class Format f where
  -- | Get the type of a value with this format.
  type Value f  
 
+ -- | Yield the minumum number of bytes that a value of this
+ --   format will take up. Packing a value into this format
+ --   is guaranteed to use at least this many bytes.
+ --   This is exact for fixed-size formats.
+ minSize    :: f -> Int
+
+
  -- | Yield the number of separate fields in this format.
  fieldCount :: f -> Maybe Int
 
- -- | For fixed size storage formats, yield their size (length) in bytes.
+
+ -- | For fixed size formats, yield their size (length) in bytes.
  --
  --   Yields `Nothing` if this is not a fixed size format.
  --
  fixedSize  :: f -> Maybe Int
+
 
  -- | Yield the size of a value in the given format.
  --
@@ -44,7 +53,10 @@ class Format f where
  --   fixed length format, but the size of the collection does not match
  --   the format.
  --
+ --   If `fixedSize` returns a size then `packedSize` returns the same size.
+ --
  packedSize :: f -> Value f -> Maybe Int
+
 
   
 ---------------------------------------------------------------------------------------------------
@@ -57,7 +69,11 @@ class Format f where
 class Format   format 
    => Packable format where
 
+
  -- | Pack a value into a buffer using the given format.
+ -- 
+ --   The buffer must be at least as long as the size returned by
+ --   `fixedSize` / `packedSize`. 
  -- 
  --   If the format contains fixed width fields and the corresponding
  --   value has too many elements, then this function returns `False`, 
@@ -68,6 +84,7 @@ class Format   format
         -> Value format                 -- ^ Value to pack.
         -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
         -> IO (Maybe a)
+
 
  -- | Unpack a value from a buffer using the given format.
  --
@@ -81,7 +98,6 @@ class Format   format
 
 
 -- | Class of field containers, eg comma or pipe-separated fields.
---
 class Packables container format where
 
  packs  :: S.Ptr Word8                  -- ^ Target Buffer.

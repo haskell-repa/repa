@@ -5,6 +5,7 @@ module Data.Repa.Convert.Format.Fields
 where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Binary
+import Data.Maybe
 import Data.Word
 import Data.Char
 import qualified Foreign.Ptr                    as S
@@ -15,6 +16,10 @@ import qualified Foreign.Ptr                    as S
 instance (Format a, Format b) 
        => Format (a :*: b) where
  type Value (a :*: b) = Value a :*: Value b
+
+ minSize    (fa :*: fb)
+  = minSize fa + minSize fb
+ {-# INLINE minSize #-}
 
  fieldCount (fa :*: fb)
   = do  ca      <- fieldCount fa 
@@ -65,9 +70,11 @@ data CApp       = CApp
 instance Format f 
       => Format (App f) where
  type Value (App f)     = Value f
+ minSize    (App f)     = minSize f
  fieldCount _           = Nothing
  fixedSize  (App f)     = fixedSize f
  packedSize (App f) x   = packedSize f x
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
@@ -76,6 +83,7 @@ instance Format f
 -- | Packing appended fields.
 instance (Packable fa, Packables CApp fb)
        => Packables CApp (fa :*: fb) where
+
  packs buf sep (fa :*: fb) (xa :*: xb) k
   =  pack  buf                    fa xa $ \oa 
   -> packs (S.plusPtr buf oa) sep fb xb $ \ob
@@ -108,7 +116,12 @@ data CSep       = CSep Char
 instance Format f
       => Format (Sep f) where
  type Value (Sep f)     = Value f
- fieldCount _           = Nothing
+
+ minSize    (Sep   f)
+  = minSize f + (fromMaybe 0 $ fieldCount f) 
+
+ fieldCount _          
+  = Nothing
 
  fixedSize  (Sep _ f)
   = do  n       <- fieldCount f
@@ -119,6 +132,7 @@ instance Format f
   = do  n       <- fieldCount f
         s       <- packedSize f x
         return  $ s + (if n == 0 then 0 else n - 1)
+ {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
