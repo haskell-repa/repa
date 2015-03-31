@@ -15,8 +15,6 @@ module Data.Repa.Convert.Format.Base
 where
 import Data.Repa.Product
 import Data.Word
-import Data.Char
-import Control.Monad
 import System.IO.Unsafe
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S

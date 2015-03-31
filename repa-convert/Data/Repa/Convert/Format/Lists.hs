@@ -10,12 +10,9 @@ module Data.Repa.Convert.Format.Lists
         , ASCII         (..))
 where
 import Data.Repa.Convert.Format.Base
-import Data.Repa.Convert.Format.Binary
 import Data.Word
 import Data.Char
 import qualified Foreign.Storable               as S
-import qualified Foreign.Marshal.Alloc          as S
-import qualified Foreign.Ptr                    as S
 
 
 ---------------------------------------------------------------------------------------------------
@@ -23,7 +20,11 @@ import qualified Foreign.Ptr                    as S
 --
 data FixList    f = FixList   f Int      deriving (Eq, Show)
 instance Format f => Format (FixList   f) where
- type Value (FixList f)         = [Value f]
+ type Value (FixList f)         
+  = [Value f]
+
+ fieldCount _ 
+  = Just 1
 
  fixedSize  (FixList f len)           
   = do  lenElem <- fixedSize f
@@ -39,6 +40,7 @@ instance Format f => Format (FixList   f) where
 
   | otherwise 
   = Nothing
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -46,9 +48,14 @@ instance Format f => Format (FixList   f) where
 -- | Variable length list.
 data VarList   f = VarList   f          deriving (Eq, Show)
 instance Format f => Format (VarList f) where
- type Value (VarList f)          = [Value f]
+ type Value (VarList f)
+        = [Value f]
 
- fixedSize  (VarList _)          = Nothing
+ fieldCount _
+  = Just 1
+
+ fixedSize  (VarList _)
+  = Nothing
 
  packedSize (VarList f) xs@(x : _)
   = do  lenElem <- packedSize f x
@@ -56,6 +63,7 @@ instance Format f => Format (VarList f) where
 
  packedSize _ []
   =     return 0
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -69,8 +77,10 @@ instance Format f => Format (VarList f) where
 data FixString t = FixString t Int      deriving (Eq, Show)
 instance Format (FixString ASCII)       where
  type Value (FixString ASCII)       = String
+ fieldCount _                       = Just 1
  fixedSize  (FixString ASCII len)   = Just len
  packedSize (FixString ASCII len) _ = Just len
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -110,8 +120,10 @@ instance Packable (FixString ASCII) where
 data VarString t = VarString t          deriving (Eq, Show)
 instance Format (VarString ASCII)       where
  type Value (VarString ASCII)       = String
+ fieldCount _                       = Just 1
  fixedSize  (VarString ASCII)       = Nothing
  packedSize (VarString ASCII) xs    = Just $ length xs
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 

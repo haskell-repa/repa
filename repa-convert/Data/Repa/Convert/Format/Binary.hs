@@ -29,6 +29,7 @@ instance Format Word8be                 where
  fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -48,6 +49,8 @@ instance Packable Word8be where
 instance Packables sep Word8be where
  packs   buf _ f x k = pack   buf f x k
  unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
 
 
 w8  :: Integral a => a -> Word8
@@ -60,8 +63,12 @@ w8 = fromIntegral
 data Int8be     = Int8be                deriving (Eq, Show)
 instance Format Int8be                  where
  type Value Int8be      = V.Int8
+ fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int8be where
@@ -71,25 +78,16 @@ instance Packable Int8be where
  {-# INLINE unpack #-}
 
 
+instance Packables sep Int8be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
+
+
 i8  :: Integral a => a -> Int8
 i8 = fromIntegral
 {-# INLINE i8  #-}
-
-
-------------------------------------------------------------------------------------------- Int16be
---- | Big-endian 16-bit signed integer.
-data Int16be    = Int16be               deriving (Eq, Show)
-instance Format Int16be                 where
- type Value Int16be     = V.Int16
- fixedSize _            = Just 2
- packedSize _ _         = Just 2
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
-
-
-i16 :: Integral a => a -> Int16
-i16 = fromIntegral
-{-# INLINE i16 #-}
 
 
 ------------------------------------------------------------------------------------------ Word16be
@@ -97,8 +95,10 @@ i16 = fromIntegral
 data Word16be    = Word16be             deriving (Eq, Show)
 instance Format Word16be                where
  type Value Word16be    = V.Word16
+ fieldCount _           = Just 1
  fixedSize _            = Just 2
  packedSize _ _         = Just 2
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -118,11 +118,11 @@ instance Packable Word16be where
  {-# INLINE unpack #-}
 
 
-instance Packable Int16be where
- pack   buf  Int16be x k  = pack   buf Word16be (w16 x) k
- unpack buf  Int16be k    = unpack buf Word16be (\(x, o) -> k (i16 x, o))
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+instance Packables sep Word16be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
 
 
 w16 :: Integral a => a -> Word16
@@ -130,27 +130,36 @@ w16 = fromIntegral
 {-# INLINE w16 #-}
 
 
-------------------------------------------------------------------------------------------- Int32be
--- | Big-endian 32-bit signed integer.
-data Int32be    = Int32be               deriving (Eq, Show)
-instance Format Int32be                 where
- type Value Int32be     = V.Int32
- fixedSize _            = Just 4
- packedSize _ _         = Just 4
+------------------------------------------------------------------------------------------- Int16be
+--- | Big-endian 16-bit signed integer.
+data Int16be    = Int16be               deriving (Eq, Show)
+instance Format Int16be                 where
+ type Value Int16be     = V.Int16
+ fieldCount _           = Just 1
+ fixedSize _            = Just 2
+ packedSize _ _         = Just 2
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
+ {-# INLINE fieldCount #-}
 
 
-instance Packable Int32be where
- pack   buf  Int32be x k  = pack   buf Word32be (w32 x) k
- unpack buf  Int32be k    = unpack buf Word32be (\(x, o) -> k (i32 x, o))
+instance Packable Int16be where
+ pack   buf  Int16be x k  = pack   buf Word16be (w16 x) k
+ unpack buf  Int16be k    = unpack buf Word16be (\(x, o) -> k (i16 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
 
-i32 :: Integral a => a -> Int32
-i32 = fromIntegral
-{-# INLINE i32 #-}
+instance Packables sep Int16be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
+
+
+i16 :: Integral a => a -> Int16
+i16 = fromIntegral
+{-# INLINE i16 #-}
 
 
 ------------------------------------------------------------------------------------------ Word32be
@@ -158,8 +167,10 @@ i32 = fromIntegral
 data Word32be    = Word32be             deriving (Eq, Show)
 instance Format Word32be                where
  type Value Word32be    = V.Word32
+ fieldCount _           = Just 1
  fixedSize _            = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -186,31 +197,48 @@ instance Packable Word32be where
  {-# INLINE unpack #-}
 
 
+instance Packables sep Word32be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
+
+
 w32 :: Integral a => a -> Word32
 w32 = fromIntegral
 {-# INLINE w32 #-}
 
-------------------------------------------------------------------------------------------- Int64be
--- | Big-endian 64-bit signed integer.
-data Int64be    = Int64be               deriving (Eq, Show)
-instance Format Int64be                 where
- type Value Int64be     = V.Int64
- fixedSize _            = Just 8
- packedSize _ _         = Just 8
+
+------------------------------------------------------------------------------------------- Int32be
+-- | Big-endian 32-bit signed integer.
+data Int32be    = Int32be               deriving (Eq, Show)
+instance Format Int32be                 where
+ type Value Int32be     = V.Int32
+ fieldCount _           = Just 1
+ fixedSize _            = Just 4
+ packedSize _ _         = Just 4
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
 
-instance Packable Int64be where
- pack   buf  Int64be x k  = pack   buf Word64be (w64 x) k
- unpack buf  Int64be k    = unpack buf Word64be (\(x, o) -> k (i64 x, o))
+instance Packable Int32be where
+ pack   buf  Int32be x k  = pack   buf Word32be (w32 x) k
+ unpack buf  Int32be k    = unpack buf Word32be (\(x, o) -> k (i32 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
 
-i64 :: Integral a => a -> Int64
-i64 = fromIntegral
-{-# INLINE i64 #-}
+instance Packables sep Int32be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
+
+
+i32 :: Integral a => a -> Int32
+i32 = fromIntegral
+{-# INLINE i32 #-}
 
 
 ------------------------------------------------------------------------------------------ Word64be
@@ -218,8 +246,10 @@ i64 = fromIntegral
 data Word64be    = Word64be             deriving (Eq, Show)
 instance Format Word64be                where
  type Value Word64be    = V.Word64
+ fieldCount _           = Just 1
  fixedSize _            = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -258,9 +288,48 @@ instance Packable Word64be where
  {-# INLINE unpack #-}
 
 
+instance Packables sep Word64be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
+
+
 w64 :: Integral a => a -> Word64
 w64 = fromIntegral
 {-# INLINE w64 #-}
+
+
+------------------------------------------------------------------------------------------- Int64be
+-- | Big-endian 64-bit signed integer.
+data Int64be    = Int64be               deriving (Eq, Show)
+instance Format Int64be                 where
+ type Value Int64be     = V.Int64
+ fieldCount _           = Just 1
+ fixedSize _            = Just 8
+ packedSize _ _         = Just 8
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
+
+
+instance Packable Int64be where
+ pack   buf  Int64be x k  = pack   buf Word64be (w64 x) k
+ unpack buf  Int64be k    = unpack buf Word64be (\(x, o) -> k (i64 x, o))
+ {-# INLINE pack   #-}
+ {-# INLINE unpack #-}
+
+
+instance Packables sep Int64be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
+
+
+i64 :: Integral a => a -> Int64
+i64 = fromIntegral
+{-# INLINE i64 #-}
 
 
 ----------------------------------------------------------------------------------------- Float32be
@@ -268,8 +337,10 @@ w64 = fromIntegral
 data Float32be  = Float32be             deriving (Eq, Show)
 instance Format Float32be               where
  type Value Float32be   = Float
+ fieldCount _           = Just 1
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -282,6 +353,13 @@ instance Packable Float32be where
  unpack    buf Float32be k
   = unpack buf Word32be (\(v, i) -> k (word32ToFloat v, i))
  {-# INLINE unpack #-}
+
+
+instance Packables sep Float32be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
 
 
 -- | Bitwise cast of `Float` to `Word32`.
@@ -312,8 +390,10 @@ word32ToFloat w
 data Float64be  = Float64be             deriving (Eq, Show)
 instance Format Float64be               where
  type Value Float64be   = Double
+ fieldCount _           = Just 1
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
+ {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
@@ -326,6 +406,13 @@ instance Packable Float64be where
  unpack    buf Float64be k
   = unpack buf Word64be (\(v, i) -> k (word64ToDouble v, i))
  {-# INLINE unpack #-}
+
+
+instance Packables sep Float64be where
+ packs   buf _ f x k = pack   buf f x k
+ unpacks buf _ f k   = unpack buf f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
 
 
 -- | Bitwise cast of `Double` to `Word64`.

@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.Repa.Convert.Format.Fields
         ( App (..)
         , Sep (..))
@@ -7,8 +7,6 @@ import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Binary
 import Data.Word
 import Data.Char
-import qualified Foreign.Storable               as S
-import qualified Foreign.Marshal.Alloc          as S
 import qualified Foreign.Ptr                    as S
 
 
@@ -70,6 +68,9 @@ instance Format f
  fieldCount _           = Nothing
  fixedSize  (App f)     = fixedSize f
  packedSize (App f) x   = packedSize f x
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 -- | Packing appended fields.
@@ -112,6 +113,9 @@ instance Format f
   = do  n       <- fieldCount f
         s       <- packedSize f x
         return  $ s + (if n == 0 then 0 else n - 1)
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 -- | Packing separated fields.
