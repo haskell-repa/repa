@@ -82,6 +82,12 @@ instance (Packable fa, Packables CApp fb)
   -> k (oa + ob)
  {-# INLINE packs #-}
 
+ unpack buf (fa :*: fb) k
+  =  unpack buf                   fa    $ \(xa, oa)
+  -> unpack (S.plusPtr buf oa)    fb    $ \(xb, ob)
+  -> k (xa :*: xb, oa + ob)
+ {-# INLINE unpack #-}
+
 
 -- | Packing appended fields.
 instance (Packable f1, Packable f2, Packables CApp f2) 
@@ -127,13 +133,14 @@ instance (Packable f1, Packable f2, Packables CSep f2)
 -- | Packing separated fields.
 instance (Packable fa, Packables CSep fb)
        => Packables CSep    (fa :*: fb) where
- packs buf sep@(CSep c) (fa :*: fb) (xa :*: xb) k
+ packs   buf sep@(CSep c) (fa :*: fb) (xa :*: xb) k
   =  pack  buf                            fa       xa          $ \oa 
   -> pack  (S.plusPtr buf oa)             Word8be (w8 $ ord c) $ \os
   -> packs (S.plusPtr buf (oa + os)) sep  fb       xb          $ \ob
   -> k (oa + os + ob)
  {-# INLINE packs #-}
 
+ 
 
 ---------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8
