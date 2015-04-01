@@ -9,7 +9,6 @@ module Data.Repa.Convert.Format.Lists
         , VarString     (..)
         , ASCII         (..))
 where
-import Control.Monad
 import Data.Repa.Convert.Format.Base
 import Data.Word
 import Data.Char

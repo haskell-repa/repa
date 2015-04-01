@@ -48,13 +48,13 @@ instance (Format a, Format b)
 instance (Packable fa, Packable fb) 
       =>  Packable (fa :*: fb) where
 
- pack   buf (fa :*: fb) (xa :*: xb) k
+ pack   !buf (fa :*: fb) (xa :*: xb) k
   =  pack buf                  fa xa $ \oa 
   -> pack (S.plusPtr buf oa)   fb xb $ \ob
   -> k (oa + ob)
  {-# INLINE pack #-}
 
- unpack buf len (fa :*: fb) k
+ unpack !buf !len (fa :*: fb) k
   =  unpack buf len                       fa $ \(xa, oa)
   -> unpack (S.plusPtr buf oa) (len - oa) fb $ \(xb, ob)
   -> k (xa :*: xb, oa + ob)
@@ -88,13 +88,13 @@ instance Format f
 instance (Packable fa, Packables CApp fb)
        => Packables CApp (fa :*: fb) where
 
- packs buf sep (fa :*: fb) (xa :*: xb) k
+ packs !buf !sep (fa :*: fb) (xa :*: xb) k
   =  pack  buf                    fa xa $ \oa 
   -> packs (S.plusPtr buf oa) sep fb xb $ \ob
   -> k (oa + ob)
  {-# INLINE packs #-}
 
- unpacks buf len sep (fa :*: fb) k
+ unpacks !buf !len !sep (fa :*: fb) k
   =  unpack  buf                 len           fa  $ \(xa, oa)
   -> unpacks (S.plusPtr buf oa) (len - oa) sep fb  $ \(xb, ob)
   -> k (xa :*: xb, oa + ob)
@@ -105,8 +105,8 @@ instance (Packable fa, Packables CApp fb)
 instance (Packable f1, Packable f2, Packables CApp f2) 
        => Packable (App (f1 :*: f2)) where
 
- pack   buf     (App f) x k     = packs   buf     CApp f x k
- unpack buf len (App f)   k     = unpacks buf len CApp f   k
+ pack   !buf      (App f) x k     = packs   buf     CApp f x k
+ unpack !buf !len (App f)   k     = unpacks buf len CApp f   k
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
@@ -151,8 +151,8 @@ instance Format f
 instance (Packable f1, Packable f2, Packables CSep f2) 
        => Packable (Sep (f1 :*: f2)) where
 
- pack   buf     (Sep c f) x k   = packs   buf     (CSep c) f x k
- unpack buf len (Sep c f)   k   = unpacks buf len (CSep c) f   k
+ pack   !buf      (Sep c f) x k   = packs   buf     (CSep c) f x k
+ unpack !buf !len (Sep c f)   k   = unpacks buf len (CSep c) f   k
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
@@ -161,14 +161,14 @@ instance (Packable f1, Packable f2, Packables CSep f2)
 instance (Packable fa, Packables CSep fb)
        => Packables CSep (fa :*: fb) where
 
- packs   buf     sep@(CSep c) (fa :*: fb) (xa :*: xb) k
+ packs   !buf     sep@(CSep c) (fa :*: fb) (xa :*: xb) k
   =  pack  buf                            fa       xa          $ \oa 
   -> pack  (S.plusPtr buf  oa)            Word8be (w8 $ ord c) $ \os
   -> packs (S.plusPtr buf (oa + os)) sep  fb       xb          $ \ob
   -> k (oa + os + ob)
  {-# INLINE packs #-}
 
- unpacks buf len sep@(CSep c) (fa :*: fb) k
+ unpacks !buf !len sep@(CSep c) (fa :*: fb) k
   = findSep (w8 $ ord c) buf len $ \pos
   -> let
         -- The following size code should be evaluated statically via
@@ -178,12 +178,12 @@ instance (Packable fa, Packables CSep fb)
         !sb = minSize fb
         !nb = fromMaybe 0 (liftM (\x -> x - 1) $ fieldCount fb)
 
-     in if   (minSize fb > 0)
+     in if   (minSize fb > 0)               -- TODO: do we really need this?
           && (sa <= pos)
-          && (sa + na + 1 + sb + nb <= len)
+          && (sa + na + 1 + sb + nb <= len) -- Needed when last field is fixed-size.
           then unpack  buf                       pos               fa  $ \(xa, oa)
             -> unpacks (S.plusPtr buf (oa + 1)) (len - oa - 1) sep fb  $ \(xb, ob)
-            -> k (xa :*: xb, oa + ob + 1)
+            -> k (xa :*: xb, oa + 1 + ob)
           else return Nothing
  {-# INLINE unpacks #-}
 
@@ -216,6 +216,5 @@ findSep !sep !buf !len k
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
 {-# INLINE w8  #-}
-
 
 
