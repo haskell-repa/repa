@@ -11,9 +11,10 @@ module Data.Repa.Nice.Present
 where
 import Data.Monoid
 import Data.Word
-import Data.Text                (Text)
-import qualified Data.Text      as T
-import Data.Repa.Nice           (Str(..), Tok(..))
+import Data.Text                        (Text)
+import qualified Data.Text              as T
+import Data.Repa.Product                ((:*:) (..))
+import Data.Repa.Nice                   (Str(..), Tok(..))
 
 -- | A value, wrapped up nicely.
 data Present
@@ -69,54 +70,85 @@ flatten (Some ps)
 class Presentable a where
  present :: a -> Present 
 
+
 instance Presentable Char where
  present = Atom . T.pack . show
+
 
 instance Presentable Int where
  present = Atom . T.pack . show
 
+
 instance Presentable Float where
  present = Atom . T.pack . show
+
 
 instance Presentable Double where
  present = Atom . T.pack . show
 
+
 instance Presentable Word8 where
  present = Atom . T.pack . show
+
 
 instance Presentable Word16 where
  present = Atom . T.pack . show
 
+
 instance Presentable Word32 where
  present = Atom . T.pack . show
+
 
 instance Presentable Word64 where
  present = Atom . T.pack . show
 
+
 instance Presentable Str where
  present (Str xs) = Atom $ T.pack (show xs)
+
 
 instance Presentable Tok where
  present (Tok xs) = Atom $ T.pack xs
 
+
 instance Presentable a 
       => Presentable [a] where
  present xs = Many $ map present xs
+
+
+instance (Presentable a, Presentable b)
+       => Presentable (a :*: b) where
+
+ present (xa :*: xb)
+  = let aa      = case present xa of
+                        Atom x   -> [Atom x]
+                        Many xx  -> xx
+                        Some xx  -> xx
+
+        bb      = case present xb of
+                        Atom x  -> [Atom x]
+                        Many xx -> xx
+                        Some xx -> xx
+  in  Some (aa ++ bb)
+
 
 instance (Presentable a, Presentable b)
        => Presentable (a, b) where
  present (a, b) 
         = Some [present a, present b]
 
+
 instance (Presentable a, Presentable b, Presentable c)
        => Presentable (a, b, c) where
  present (a, b, c) 
         = Some [present a, present b, present c]
 
+
 instance (Presentable a, Presentable b, Presentable c, Presentable d)
        => Presentable (a, b, c, d) where
  present (a, b, c, d)
         = Some [present a, present b, present c, present d]
+
 
 instance (Presentable a, Presentable b, Presentable c, Presentable d, Presentable e)
        => Presentable (a, b, c, d, e) where
