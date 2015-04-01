@@ -178,8 +178,7 @@ instance (Packable fa, Packables CSep fb)
         !sb = minSize fb
         !nb = fromMaybe 0 (liftM (\x -> x - 1) $ fieldCount fb)
 
-     in if   (minSize fb > 0)               -- TODO: do we really need this?
-          && (sa <= pos)
+     in if   (sa <= pos)
           && (sa + na + 1 + sb + nb <= len) -- Needed when last field is fixed-size.
           then unpack  buf                       pos               fa  $ \(xa, oa)
             -> unpacks (S.plusPtr buf (oa + 1)) (len - oa - 1) sep fb  $ \(xb, ob)
