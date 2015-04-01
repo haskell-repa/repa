@@ -18,13 +18,14 @@ module Data.Repa.Flow.Auto.IO
         , sourceRecords
         , sourceTSV
         , sourceCSV
-        , sourcePacked
+        , sourceFixedFormat
+        , sourceLinesFormat
 
           -- * Sinking
         , sinkBytes
         , sinkLines
         , sinkChars
-        , sinkPacked
+        , sinkFixedFormat
 
           -- * Table IO
         , toTable
@@ -145,24 +146,26 @@ sourceTSV
 -- > import Data.Repa.Convert.Format  as F
 -- > :{
 --   do let format = FixString ASCII 10 :*: Float64be :*: Int16be
---      ss <- fromFiles' [\"colors.bin\"] $ sourcePacked format (error \"convert failed\")
+--      ss <- fromFiles' [\"colors.bin\"] 
+--         $  sourceFixedFormat format (error \"convert failed\")
 --      toList1 0 ss
 --   :}
 --
 -- [\"red\" :*: (5.3 :*: 100), \"green\" :*: (2.8 :*: 93), \"blue\" :*: (0.99 :*: 42)]
 -- @
 --
-sourcePacked
-        :: (Packable format, Target A (Value format))
+sourceFixedFormat
+        :: ( Packable format
+           , Target A (Value format))
         => format                       -- ^ Binary format for each value.
         -> IO ()                        -- ^ Action when a value cannot be converted.
         -> Array B Bucket               -- ^ Input buckets.
         -> IO (Sources (Value format))
 
-sourcePacked format aFail bs
- = return $ G.Sources (A.length bs) pull_sourcePacked
+sourceFixedFormat format aFail bs
+ = return $ G.Sources (A.length bs) pull_sourceFixedFormat
  where
-        pull_sourcePacked i eat eject
+        pull_sourceFixedFormat i eat eject
          = do let b = A.index bs i
               op <- bIsOpen b
               if not op 
@@ -176,8 +179,24 @@ sourcePacked format aFail bs
                         case A.unpacksFixedFromArray format (A.convert A chunk) of
                          Nothing        -> aFail
                          Just vals      -> eat vals
-        {-# INLINE pull_sourcePacked #-}
-{-# INLINE_FLOW sourcePacked #-}
+        {-# INLINE pull_sourceFixedFormat #-}
+{-# INLINE_FLOW sourceFixedFormat #-}
+
+
+-- | Read the lines of a text file,
+--   converting each line to values with the given format.
+sourceLinesFormat
+        :: ( Packable format
+           , Target A (Value format))
+        => Integer                      -- ^ Chunk length.
+        -> IO ()                        -- ^ Action when a line is too long.
+        -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a value.
+        -> format                       -- ^ Format of each line.
+        -> Array B Bucket               -- ^ Source buckets.
+        -> IO (Sources (Value format))
+
+sourceLinesFormat = G.sourceLinesFormat
+{-# INLINE sourceLinesFormat #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -215,36 +234,38 @@ sinkLines = G.sinkLines A A
 --                    , \"blue\"  :*: 0.99   :*: 42 ]
 --
 --      ss  <- F.fromList 1 vals
---      out <- toFiles' [\"colors.bin\"] $ sinkPacked format (error \"convert failed\")
+--      out <- toFiles' [\"colors.bin\"] 
+--          $  sinkFixedFormat format (error \"convert failed\")
 --      drainS ss out
 --   :}
 -- @
 --
-sinkPacked 
+sinkFixedFormat
         :: (Packable format, Bulk A (Value format))
         => format                       -- ^ Binary format for each value.
         -> IO ()                        -- ^ Action when a value cannot be serialized.
         -> Array B Bucket               -- ^ Output buckets.
         -> IO (Sinks (Value format))
 
-sinkPacked format aFail bs
- = return $ G.Sinks (A.length bs) push_sinkPacked eject_sinkPacked
+sinkFixedFormat format aFail bs
+ = return $ G.Sinks (A.length bs) 
+                    push_sinkFixedFormat eject_sinkFixedFormat
  where  
-        push_sinkPacked i !chunk
+        push_sinkFixedFormat i !chunk
          = case A.packsFixedToArray format chunk of
                 Nothing   -> aFail
                 Just buf  -> bPutArray (bs `index` i) (A.convert F buf)
-        {-# INLINE push_sinkPacked #-}
+        {-# INLINE push_sinkFixedFormat #-}
 
-        eject_sinkPacked i 
+        eject_sinkFixedFormat i 
          = bClose (bs `index` i)
-        {-# INLINE eject_sinkPacked #-}
-
-{-# INLINE_FLOW sinkPacked #-}
+        {-# INLINE eject_sinkFixedFormat #-}
+{-# INLINE_FLOW sinkFixedFormat #-}
 
 
 ---------------------------------------------------------------------------------------------------
--- | Create sinks that write values from some binary Repa table.
+-- | Create sinks that write values from some binary Repa table,
+--   where all the values have a fixed length.
 toTable :: (Packable format, Bulk A (Value format))
         => FilePath             -- ^ Directory holding table.
         -> Int                  -- ^ Number of buckets to use.
@@ -274,12 +295,13 @@ toTable path nBuckets format aFail
         bs <- mapM newBucket names
 
         -- Create a sink bundle for the buckets.
-        kk <- sinkPacked format aFail (A.fromList B bs)
+        kk <- sinkFixedFormat format aFail (A.fromList B bs)
         return $ Just kk
 {-# INLINE_FLOW toTable #-}
 
 
--- | Create sources that read values from some binary Repa table.
+-- | Create sources that read values from some binary Repa table,
+--   where all the values have a fixed length.
 fromTable
         :: (Packable format, Target A (Value format))
         => FilePath             -- ^ Directory holding table.
@@ -308,6 +330,6 @@ fromTable path format aFail
         bs <- mapM newBucket fsRel
 
         -- Create a source bundle for the buckets.
-        ss <- sourcePacked format aFail (A.fromList B bs)
+        ss <- sourceFixedFormat format aFail (A.fromList B bs)
         return $ Just ss
 {-# INLINE_FLOW fromTable #-}
