@@ -100,7 +100,7 @@ unpackForeign !format !arrBytes
 
                      | otherwise
                      = Data.Repa.Convert.Format.unpack 
-                                (plusPtr ptr ixSrc) format 
+                                (plusPtr ptr ixSrc) (lenBytes - ixSrc) format 
                      $ \(value, oElem) -> do
                         A.unsafeWriteBuffer buf ixDst value
                         loop (ixSrc + oElem) (ixDst + 1)
