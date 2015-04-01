@@ -1,8 +1,12 @@
 
 module Data.Repa.Array.Auto.Unpack
         ( module Data.Repa.Convert.Format
-        , packForeign
-        , unpackForeign)
+        
+        , packToArray
+        , packsFixedToArray
+
+        , unpackFromArray
+        , unpacksFixedFromArray)
 where
 import Data.Repa.Array.Auto.Base                        as A
 import Data.Repa.Array.Generic.Convert                  as A
@@ -10,6 +14,7 @@ import qualified Data.Repa.Array.Material.Auto          as A
 import qualified Data.Repa.Array.Material.Foreign       as A
 import qualified Data.Repa.Array.Internals.Target       as A
 import qualified Data.Repa.Array.Internals.Bulk         as A
+import qualified Data.Repa.Convert.Format               as C
 import Data.Repa.Convert.Format
 
 import Foreign.ForeignPtr
@@ -26,14 +31,38 @@ import qualified Data.Vector.Storable.Mutable   as SM
 ---------------------------------------------------------------------------------------------------
 -- | Pack some array elements into a foreign buffer using the given binary
 --   format.
-packForeign    
-        :: (Packable format, A.Bulk A.A (Value format))
+packToArray    
+        :: C.Packable format
         => format                       -- ^ Binary format for each element.
-        -> Array (Value format)         -- ^ Source elements.
+        -> Value format                 -- ^ Source element.
         -> Maybe (Array Word8)          -- ^ Packed binary data.
 
-packForeign !format !arrElems
- | Just rowSize <- fixedSize format
+packToArray !format !v
+ | Just lenBytes    <- packedSize format v
+ = unsafePerformIO
+ $ do   
+        buf@(A.FBuffer mvec) :: A.Buffer A.F Word8
+                <- A.unsafeNewBuffer (A.Foreign lenBytes)
+
+        let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
+
+        withForeignPtr fptr $ \ptr
+         -> C.pack (plusPtr ptr oStart) format v
+         $  \o -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
+
+ | otherwise = Nothing
+{-# INLINE_ARRAY packToArray #-}
+
+
+-- | Pack an array of fixed-length elements to a buffer.
+packsFixedToArray    
+        :: (C.Packable format, A.Bulk A.A (C.Value format))
+        => format                       -- ^ Binary format for each element.
+        -> Array (C.Value format)       -- ^ Source elements.
+        -> Maybe (Array Word8)          -- ^ Packed binary data.
+
+packsFixedToArray !format !arrElems
+ | Just rowSize <- C.fixedSize format
  , lenElems     <- A.length arrElems
  , lenBytes     <- rowSize * lenElems
  
@@ -52,9 +81,8 @@ packForeign !format !arrElems
                      = return $ Just ()
 
                      | otherwise
-                     = Data.Repa.Convert.Format.pack   
-                                (plusPtr ptr ixDst) format (A.index arrElems ixSrc)
-                     $ \oElem   -> loop (ixSrc + 1) (ixDst + oElem)
+                     = C.pack (plusPtr ptr ixDst) format (A.index arrElems ixSrc)
+                     $ \oElem -> loop (ixSrc + 1) (ixDst + oElem)
 
                 mFinal <- loop 0 0
                 case mFinal of
@@ -63,7 +91,7 @@ packForeign !format !arrElems
 
  | otherwise
  = Nothing
-{-# INLINE_ARRAY packForeign #-}
+{-# INLINE_ARRAY packsFixedToArray #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -74,17 +102,36 @@ packForeign !format !arrElems
 --   format specififier, while the in-memory representation is chosen
 --   automagically based on the type of the elements.
 --
-unpackForeign 
-        :: (Packable format, A.Target A.A (Value format))
+unpackFromArray  
+        :: C.Packable format
         => format                       -- ^ Binary format for each element.
         -> Array Word8                  -- ^ Packed binary data.
-        -> Maybe (Array (Value format)) -- ^ Unpacked elements.
+        -> Maybe (C.Value format)       -- ^ Unpacked elements.
 
-unpackForeign !format !arrBytes
- | Just rowSize <- fixedSize format
- , lenBytes     <- A.length arrBytes
- , lenBytes `mod` rowSize == 0
- , lenElems     <- lenBytes `div` rowSize
+unpackFromArray !format !arrBytes
+ | lenBytes       <- A.length arrBytes
+ = unsafePerformIO
+ $ let  (oStart, _, fptr :: ForeignPtr Word8) 
+         = A.toForeignPtr $ A.convert arrBytes
+   in   withForeignPtr fptr $ \ptr_
+         -> C.unpack (plusPtr ptr_ oStart) lenBytes format 
+          $ \(v, _) -> return (Just v)
+
+ | otherwise = Nothing
+{-# INLINE_ARRAY unpackFromArray #-}
+
+
+-- | Unpack an array of fixed length elements from a buffer, 
+--   into their standard in-memory representation.
+unpacksFixedFromArray
+        :: (Packable format, A.Target A.A (Value format))
+        => format                         -- ^ Binary format for each element.
+        -> Array Word8                    -- ^ Packed binary data.
+        -> Maybe (Array (Value format))   -- ^ Unpacked elements.
+
+unpacksFixedFromArray !format !arrBytes
+ | lenBytes       <- A.length arrBytes
+ , Just lenElems  <- fieldCount format
  = unsafePerformIO
  $ do   
         let (oStart, _, fptr :: ForeignPtr Word8) 
@@ -99,17 +146,16 @@ unpackForeign !format !arrBytes
                      = return $ Just ixSrc
 
                      | otherwise
-                     = Data.Repa.Convert.Format.unpack 
-                                (plusPtr ptr ixSrc) (lenBytes - ixSrc) format 
-                     $ \(value, oElem) -> do
-                        A.unsafeWriteBuffer buf ixDst value
-                        loop (ixSrc + oElem) (ixDst + 1)
+                     = C.unpack (plusPtr ptr ixSrc) (lenBytes - ixSrc) format 
+                     $ \(value, oElem) 
+                     -> do A.unsafeWriteBuffer buf ixDst value
+                           loop (ixSrc + oElem) (ixDst + 1)
 
                 mFinal <- loop 0 0
                 case mFinal of
                  Nothing        -> return Nothing
                  Just _         -> liftM Just $ A.unsafeFreezeBuffer buf
 
- | otherwise
- = Nothing
-{-# INLINE_ARRAY unpackForeign #-}
+ | otherwise = Nothing
+{-# INLINE_ARRAY unpacksFixedFromArray #-}
+

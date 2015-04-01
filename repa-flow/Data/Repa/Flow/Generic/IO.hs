@@ -8,6 +8,7 @@ module Data.Repa.Flow.Generic.IO
         , sourceChars
         , sourceChunks
         , sourceRecords
+        , sourceLinesFormat
 
           -- * Sinking
         , sinkBytes
@@ -24,3 +25,4 @@ where
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Generic.IO.Base           as F
 import Data.Repa.Flow.Generic.IO.XSV            as F
+import Data.Repa.Flow.Generic.IO.Lines          as F

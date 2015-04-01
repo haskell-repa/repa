@@ -18,17 +18,17 @@ module Data.Repa.Flow.Auto.IO
         , sourceRecords
         , sourceTSV
         , sourceCSV
-        , sourcePacked
+--        , sourcePacked
 
           -- * Sinking
         , sinkBytes
         , sinkLines
         , sinkChars
-        , sinkPacked
+--        , sinkPacked
 
           -- * Table IO
-        , toTable
-        , fromTable
+--         , toTable
+--        , fromTable
         )
 where
 import Data.Repa.Flow.Auto
@@ -152,6 +152,7 @@ sourceTSV
 -- [\"red\" :*: (5.3 :*: 100), \"green\" :*: (2.8 :*: 93), \"blue\" :*: (0.99 :*: 42)]
 -- @
 --
+{-
 sourcePacked
         :: (Packable format, Target A (Value format))
         => format                       -- ^ Binary format for each value.
@@ -178,7 +179,7 @@ sourcePacked format aFail bs
                          Just vals      -> eat vals
         {-# INLINE pull_sourcePacked #-}
 {-# INLINE_FLOW sourcePacked #-}
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | Write 8-bit bytes to some files.
@@ -220,6 +221,7 @@ sinkLines = G.sinkLines A A
 --   :}
 -- @
 --
+{-
 sinkPacked 
         :: (Packable format, Bulk A (Value format))
         => format                       -- ^ Binary format for each value.
@@ -241,10 +243,11 @@ sinkPacked format aFail bs
         {-# INLINE eject_sinkPacked #-}
 
 {-# INLINE_FLOW sinkPacked #-}
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | Create sinks that write values from some binary Repa table.
+{-}
 toTable :: (Packable format, Bulk A (Value format))
         => FilePath             -- ^ Directory holding table.
         -> Int                  -- ^ Number of buckets to use.
@@ -311,4 +314,4 @@ fromTable path format aFail
         ss <- sourcePacked format aFail (A.fromList B bs)
         return $ Just ss
 {-# INLINE_FLOW fromTable #-}
-
+-}

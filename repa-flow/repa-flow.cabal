@@ -25,7 +25,8 @@ Library
         text                    == 1.2.*,
         repa-eval               == 4.0.0.*,
         repa-stream             == 4.1.0.*,
-        repa-array              == 4.1.0.*
+        repa-array              == 4.1.0.*,
+        repa-convert            == 4.1.0.*
 
   exposed-modules:
         Data.Repa.Flow.Auto
@@ -71,6 +72,7 @@ Library
         Data.Repa.Flow.Generic.IO.Base
         Data.Repa.Flow.Generic.IO.Sieve
         Data.Repa.Flow.Generic.IO.XSV
+        Data.Repa.Flow.Generic.IO.Lines
 
         Data.Repa.Flow.Simple.Base
         Data.Repa.Flow.Simple.List

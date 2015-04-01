@@ -179,13 +179,13 @@ module Data.Repa.Flow
         , sourceLines
         , sourceChars
         , sourceBytes
-        , sourcePacked
+--        , sourcePacked
 
         -- ** Sinking
         , sinkChars
         , sinkLines
         , sinkBytes
-        , sinkPacked
+--        , sinkPacked
         )
 where
 import Data.Repa.Flow.Auto

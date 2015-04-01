@@ -73,10 +73,10 @@ data CApp       = CApp          deriving Show
 -- | Appended fields.
 instance Format f 
       => Format (App f) where
- type Value (App f)     = Value f
- minSize    (App f)     = minSize f
- fieldCount _           = Nothing
- fixedSize  (App f)     = fixedSize f
+ type Value (App f)     = Value      f
+ minSize    (App f)     = minSize    f
+ fieldCount (App f)     = fieldCount f
+ fixedSize  (App f)     = fixedSize  f
  packedSize (App f) x   = packedSize f x
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
@@ -129,8 +129,8 @@ instance Format f
   = let !n      = fromMaybe 0 $ fieldCount f
     in  minSize f   + (if n == 0  then 0 else n - 1)
 
- fieldCount _          
-  = Nothing
+ fieldCount (Sep _ f)
+  = fieldCount f
 
  fixedSize  (Sep _ f)
   = do  n       <- fieldCount f
