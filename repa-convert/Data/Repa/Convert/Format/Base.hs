@@ -34,14 +34,12 @@ class Format f where
  type Value f  
 
  -- | Yield the minumum number of bytes that a value of this
- --   format will take up. Packing a value into this format
+ --   format will take up. 
+ -- 
+ --   Packing a value into this format
  --   is guaranteed to use at least this many bytes.
  --   This is exact for fixed-size formats.
  minSize    :: f -> Int
-
-
- -- | Yield the number of separate fields in this format.
- fieldCount :: f -> Maybe Int
 
 
  -- | For fixed size formats, yield their size (length) in bytes.
@@ -61,6 +59,9 @@ class Format f where
  --
  packedSize :: f -> Value f -> Maybe Int
 
+
+ -- | Yield the number of separate fields in this format.
+ fieldCount :: f -> Maybe Int
 
   
 ---------------------------------------------------------------------------------------------------

@@ -1,18 +1,20 @@
 
--- | Convert Haskell values to and from a compact binary representation.
+-- | Convert tuples of Haskell values to and from packed binary or
+--   ASCII representations.
 --
 --   This package is intended for cheap and cheerful serialisation and
 --   deserialisation of flat tables, where each row has a fixed format.
---   It is not intended for parsing of general context-free, 
---   or context-sensitive languages. If you want a real parser then try
---   the @parsec@ or @attoparsec@ packages. If you have binary data that
---   does not have a fixed format then try the @binary@ or @cereal@ packages.
 --   If you have a table consisting of a couple hundred megs of
 --   Pipe-Separated-Variables issued by some filthy enterprise system,
 --   then this package is for you.
 --
---   For testing purposes, use `packToList` which takes a format, a record,
---   and returns a list of bytes.
+--   If you want to parse context-free, or context-sensitive
+--   languages then try the @parsec@ or @attoparsec@ packages.
+--   If you have binary data that does not have a fixed format then
+--   try the @binary@ or @cereal@ packages.
+--
+--   For testing purposes, use `packToList` which takes a format,
+--   a record, and returns a list of bytes.
 --
 -- @
 -- > import Data.Repa.Convert.Format
