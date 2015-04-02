@@ -19,13 +19,16 @@ source-repository head
 
 Library
   build-Depends: 
-        base            == 4.7.*,
-        primitive       == 0.5.4.*,
-        vector          == 0.10.*
+        base              == 4.7.*,
+        primitive         == 0.5.4.*,
+        vector            == 0.10.*,
+        bytestring        == 0.10.*,
+        double-conversion == 2.0.*
 
   exposed-modules:
         Data.Repa.Product
         Data.Repa.Convert.Format
+        Data.Repa.Convert.Numeric
 
   other-modules:
         Data.Repa.Convert.Format.Base
@@ -34,15 +37,19 @@ Library
         Data.Repa.Convert.Format.Fields
 
 
+
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -O2
 
   extensions:
         CPP
+        ForeignFunctionInterface
         NoMonomorphismRestriction
         ExistentialQuantification
         BangPatterns
+        MagicHash
+        UnboxedTuples
         FlexibleContexts
         FlexibleInstances
         PatternGuards
