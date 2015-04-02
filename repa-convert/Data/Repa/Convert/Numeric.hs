@@ -2,6 +2,7 @@
 module Data.Repa.Convert.Numeric
         ( -- * Int conversion
           readIntBuf
+        , readIntBuf#
         , readIntWith#
         , showIntBuf
 

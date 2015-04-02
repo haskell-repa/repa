@@ -29,6 +29,8 @@ Library
         Data.Repa.Product
         Data.Repa.Convert.Format
         Data.Repa.Convert.Numeric
+        Data.Repa.Convert.Date32
+        Data.Repa.Bits.Date32
 
   other-modules:
         Data.Repa.Convert.Format.Base
