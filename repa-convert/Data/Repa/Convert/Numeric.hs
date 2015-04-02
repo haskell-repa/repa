@@ -3,10 +3,11 @@ module Data.Repa.Convert.Numeric
         ( -- * Int conversion
           readIntBuf
         , readIntWith#
+        , showIntBuf
 
           -- * Double conversion
         , readDoubleBuf
-        , showDoubleBuf 
+        , showDoubleShortestBuf 
         , showDoubleFixedBuf)
 where
 import Data.Word
@@ -16,6 +17,7 @@ import GHC.Exts
 import qualified Data.ByteString.Internal               as BS
 import qualified Data.Double.Conversion.ByteString      as DC
 
+import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
@@ -114,9 +116,21 @@ readIntWith# !get len
 {-# INLINE readIntWith# #-}
 
 
+-- | Show an `Int` as an ASCII string, allocating a new buffer.
+showIntBuf :: Int -> IO (F.ForeignPtr Word8)
+showIntBuf i
+ = case DC.toFixed 0 (fromIntegral i) of
+        BS.PS p _ _     -> return p
+{-# INLINE showIntBuf #-}
+
+
 -- Double -----------------------------------------------------------------------------------------
 -- | Read a double from a foreign buffer.
-readDoubleBuf :: Ptr Word8 -> Int -> IO Double
+-- 
+--   The whole buffer of the given length contains the ASCII
+--   representation of the double.
+--
+readDoubleBuf :: Ptr Word8 -> Int -> IO (Double, Int)
 readDoubleBuf pIn len
  = F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->
@@ -130,27 +144,40 @@ readDoubleBuf pIn len
         -- Call the C strtod function
         let !d  = strtod pBuf pRes
 
-        return d
+        -- Read back the end pointer.
+        res     <- F.peek pRes
+
+        return (d, res `F.minusPtr` pBuf)
 {-# INLINE readDoubleBuf #-}
 
+
+-- TODO: strtod will skip whitespace before the actual double, 
+-- but we probably want to avoid this to be consistent.
 foreign import ccall unsafe
  strtod :: Ptr Word8 -> Ptr (Ptr Word8) -> Double
 
 
 
--- | Show a double as an ASCII string, allocating a new buffer.
-showDoubleBuf :: Double -> IO (F.ForeignPtr Word8)
-showDoubleBuf d
+-- | Show a `Double` as an ASCII string, 
+--   yielding a freshly allocated buffer and its length.
+--
+--   * The value is printed as either (sign)digits.digits,
+--     or in exponential format, depending on which is shorted.
+--
+--   * The result is buffer not null terminated.
+--
+showDoubleShortestBuf :: Double -> IO (F.ForeignPtr Word8, Int)
+showDoubleShortestBuf d
  = case DC.toShortest d of
-        BS.PS p _ _  -> return p
-{-# INLINE showDoubleBuf #-}
+        BS.PS p _ n  -> return (p, n)
+{-# INLINE showDoubleShortestBuf #-}
 
 
--- | Like `showDoubleAsBytes`, but use a fixed number of digits after
+-- | Like `showDoubleShortestBuf`, but use a fixed number of digits after
 --   the decimal point.
-showDoubleFixedBuf :: Int -> Double -> IO (F.ForeignPtr Word8)
+showDoubleFixedBuf :: Int -> Double -> IO (F.ForeignPtr Word8, Int)
 showDoubleFixedBuf !prec !d
  = case DC.toFixed prec d of
-        BS.PS p _ _  -> return p
+        BS.PS p _ n  -> return (p, n)
 {-# INLINE showDoubleFixedBuf #-}
 

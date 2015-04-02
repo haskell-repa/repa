@@ -131,14 +131,14 @@ packToList
         :: Packable format
         => format -> Value format -> Maybe [Word8]
 packToList f x
- | Just size    <- packedSize f x
+ | Just lenMax  <- packedSize f x
  = unsafePerformIO
- $ do   buf     <- S.mallocBytes size
-        mResult <- pack buf f x (\_ -> return (Just ()))
+ $ do   buf     <- S.mallocBytes lenMax
+        mResult <- pack buf f x (\o -> return (Just o))
         case mResult of
-         Nothing -> return Nothing
-         Just _  -> do
-                xs      <- mapM (S.peekByteOff buf) [0..size - 1]
+         Nothing      -> return Nothing
+         Just lenUsed -> do
+                xs      <- mapM (S.peekByteOff buf) [0 .. lenUsed - 1]
                 S.free buf
                 return $ Just xs
 

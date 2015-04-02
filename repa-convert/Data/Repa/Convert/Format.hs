@@ -64,17 +64,21 @@ module Data.Repa.Convert.Format
         , ASCII         (..)
 
           -- * Atomic values
-          -- ** 8-bit
+          -- ** ASCII
+        , IntAsc    (..)
+        , DoubleAsc (..)
+
+          -- ** 8-bit binary
         , Word8be   (..),       Int8be  (..)
 
-          -- ** 16-bit
+          -- ** 16-bit binary
         , Word16be  (..),       Int16be (..)
 
-          -- ** 32-bit
+          -- ** 32-bit binary
         , Word32be  (..),       Int32be (..)
         , Float32be (..)
 
-          -- ** 64-bit
+          -- ** 64-bit binary
         , Word64be  (..),       Int64be (..)
         , Float64be (..))
 
@@ -85,4 +89,5 @@ import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Fields
+import Data.Repa.Convert.Format.Numeric
 

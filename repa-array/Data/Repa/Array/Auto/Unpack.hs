@@ -46,6 +46,8 @@ packToArray !format !v
 
         let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
 
+        -- TODO: allow packed size to be an upper bound on size actually used.
+
         withForeignPtr fptr $ \ptr
          -> C.pack (plusPtr ptr oStart) format v
          $  \o -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
