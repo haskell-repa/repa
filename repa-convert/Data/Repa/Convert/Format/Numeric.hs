@@ -7,6 +7,9 @@ import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Numeric
 
+import qualified Foreign.ForeignPtr             as F
+import qualified Foreign.Marshal.Utils          as F
+
 
 ------------------------------------------------------------------------------------------- IntAsc
 -- | Human-readable ASCII Integer.
@@ -66,10 +69,22 @@ instance Format DoubleAsc where
 
 instance Packable DoubleAsc where
 
+ pack   buf DoubleAsc v k
+  = do  (fptr, len)  <- showDoubleShortestBuf v
+        F.withForeignPtr fptr $ \ptr
+         -> F.copyBytes buf ptr len
+        k len
+ {-# INLINE pack   #-}
+
  unpack buf len DoubleAsc k
   = do  (v, o)    <- readDoubleBuf buf len
         k (v, o)
  {-# INLINE unpack #-}
 
 
+instance Packables sep DoubleAsc where
+ packs   buf     _ f x k = pack   buf     f x k
+ unpacks buf len _ f k   = unpack buf len f k
+ {-# INLINE packs   #-}
+ {-# INLINE unpacks #-}
 
