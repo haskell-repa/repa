@@ -5,9 +5,8 @@ module Data.Repa.Convert.Format.Lists
         , VarList(..)
 
           -- * ASCII Strings
-        , FixString     (..)
-        , VarString     (..)
-        , ASCII         (..))
+        , FixAsc (..)
+        , VarAsc (..))
 where
 import Data.Repa.Convert.Format.Base
 import Data.Word
@@ -81,22 +80,22 @@ instance Format f => Format (VarList f) where
 --   * When packing, if the provided string is shorter than the fixed length
 --     then the extra bytes are zero-filled. 
 --
-data FixString t = FixString t Int      deriving (Eq, Show)
-instance Format (FixString ASCII)       where
- type Value (FixString ASCII)       = String
- minSize    (FixString ASCII len)   = len
- fieldCount _                       = Just 1
- fixedSize  (FixString ASCII len)   = Just len
- packedSize (FixString ASCII len) _ = Just len
+data FixAsc     = FixAsc Int            deriving (Eq, Show)
+instance Format FixAsc where
+ type Value (FixAsc)            = String
+ minSize    (FixAsc len)        = len
+ fieldCount _                   = Just 1
+ fixedSize  (FixAsc len)        = Just len
+ packedSize (FixAsc len) _      = Just len
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
 
-instance Packable (FixString ASCII) where
+instance Packable FixAsc where
  
-  pack buf   (FixString ASCII lenField) xs k
+  pack buf   (FixAsc lenField) xs k
    = do let !lenChars   = length xs
         let !lenPad     = lenField - lenChars
 
@@ -112,7 +111,7 @@ instance Packable (FixString ASCII) where
                 k lenField
   {-# NOINLINE pack #-}
 
-  unpack buf _ (FixString ASCII lenField) k
+  unpack buf _ (FixAsc lenField) k
    = do 
         let load_unpackChar o
                 = do    x :: Word8 <- S.peekByteOff buf o
@@ -126,22 +125,22 @@ instance Packable (FixString ASCII) where
 
 
 -- | Variable length string.
-data VarString t = VarString t          deriving (Eq, Show)
-instance Format (VarString ASCII)       where
- type Value (VarString ASCII)       = String
- minSize    _                       = 0
- fieldCount _                       = Just 1
- fixedSize  (VarString ASCII)       = Nothing
- packedSize (VarString ASCII) xs    = Just $ length xs
+data VarAsc = VarAsc            deriving (Eq, Show)
+instance Format (VarAsc)        where
+ type Value VarAsc              = String
+ minSize    _                   = 0
+ fieldCount _                   = Just 1
+ fixedSize  VarAsc              = Nothing
+ packedSize VarAsc xs           = Just $ length xs
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
 
-instance Packable (VarString ASCII) where
+instance Packable VarAsc where
 
-  pack buf       (VarString ASCII) xs k
+  pack buf       VarAsc xs k
    = do let !lenChars   = length xs
 
         mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
@@ -150,7 +149,7 @@ instance Packable (VarString ASCII) where
         k lenChars
   {-# NOINLINE pack #-}
 
-  unpack buf len (VarString ASCII) k
+  unpack buf len VarAsc k
    = do 
         -- We don't locally know what the stopping point should
         -- for the string, so just decode all the way to the end.
@@ -166,15 +165,11 @@ instance Packable (VarString ASCII) where
   {-# NOINLINE unpack #-}
 
 
-instance Packables sep (VarString ASCII) where
+instance Packables sep VarAsc where
  packs   buf     _ f x k = pack   buf     f x k
  unpacks buf len _ f k   = unpack buf len f k
  {-# INLINE packs   #-}
  {-# INLINE unpacks #-}
-
-
--- | String is encoded as 8-bit ASCII characters.
-data ASCII       = ASCII                deriving (Eq, Show)
 
 
 w8  :: Integral a => a -> Word8

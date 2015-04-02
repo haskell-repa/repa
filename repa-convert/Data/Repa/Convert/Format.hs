@@ -59,9 +59,8 @@ module Data.Repa.Convert.Format
         , VarList(..)
 
           -- * Strings
-        , FixString     (..)
-        , VarString     (..)
-        , ASCII         (..)
+        , FixAsc
+        , VarAsc
 
           -- * Atomic values
           -- ** ASCII

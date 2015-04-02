@@ -39,7 +39,7 @@ instance Packable IntAsc where
 
  -- TODO: This is very slow. Avoid going via lists.
  pack   buf IntAsc v k
-  = pack buf (VarString ASCII) (show v) k
+  = pack buf VarAsc (show v) k
  {-# INLINE pack #-}
 
 
