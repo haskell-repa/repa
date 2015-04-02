@@ -33,8 +33,8 @@
 --
 module Data.Repa.Convert.Format
         ( -- * Conversion
-          packToList
-        , unpackFromList
+          packToList,   unpackFromList
+        , packToString, unpackFromString
 
           -- * Data formats
         , Format   (..)
@@ -59,29 +59,31 @@ module Data.Repa.Convert.Format
         , VarList(..)
 
           -- * Strings
-        , FixAsc
-        , VarAsc
+        , FixAsc (..)
+        , VarAsc (..)
 
           -- * Atomic values
-          -- ** ASCII
-        , IntAsc    (..)
-        , DoubleAsc (..)
+          -- ** ASCII numeric
+        , IntAsc     (..)
+        , DoubleAsc  (..)
+
+          -- ** ASCII dates
+        , YYYYsMMsDD (..)
+        , DDsMMsYYYY (..)
 
           -- ** 8-bit binary
-        , Word8be   (..),       Int8be  (..)
+        , Word8be    (..),       Int8be  (..)
 
           -- ** 16-bit binary
-        , Word16be  (..),       Int16be (..)
+        , Word16be   (..),       Int16be (..)
 
           -- ** 32-bit binary
-        , Word32be  (..),       Int32be (..)
-        , Float32be (..)
+        , Word32be   (..),       Int32be (..)
+        , Float32be  (..)
 
           -- ** 64-bit binary
-        , Word64be  (..),       Int64be (..)
-        , Float64be (..))
-
-
+        , Word64be   (..),       Int64be (..)
+        , Float64be  (..))
 where
 import Data.Repa.Product
 import Data.Repa.Convert.Format.Base
@@ -89,4 +91,5 @@ import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Fields
 import Data.Repa.Convert.Format.Numeric
+import Data.Repa.Convert.Format.Date32
 

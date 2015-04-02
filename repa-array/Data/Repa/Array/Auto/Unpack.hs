@@ -50,7 +50,7 @@ packToArray !format !v
 
         withForeignPtr fptr $ \ptr
          -> C.pack (plusPtr ptr oStart) format v
-         $  \o -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
+         $  \_ -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
 
  | otherwise = Nothing
 {-# INLINE_ARRAY packToArray #-}

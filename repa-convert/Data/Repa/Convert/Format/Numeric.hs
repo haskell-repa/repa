@@ -6,7 +6,6 @@ where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Numeric
-
 import qualified Foreign.ForeignPtr             as F
 import qualified Foreign.Marshal.Utils          as F
 
@@ -31,7 +30,7 @@ instance Format IntAsc where
 instance Packable IntAsc where
 
  unpack buf len IntAsc k 
-  = do  r       <- readIntBuf buf len
+  = do  r       <- loadInt buf len
         case r of
           Just (n, o)     -> k (n, o)
           _               -> return Nothing
@@ -70,14 +69,14 @@ instance Format DoubleAsc where
 instance Packable DoubleAsc where
 
  pack   buf DoubleAsc v k
-  = do  (fptr, len)  <- showDoubleShortestBuf v
+  = do  (fptr, len)  <- storeDoubleShortest v
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
         k len
  {-# INLINE pack   #-}
 
  unpack buf len DoubleAsc k
-  = do  (v, o)    <- readDoubleBuf buf len
+  = do  (v, o)       <- loadDouble buf len
         k (v, o)
  {-# INLINE unpack #-}
 

@@ -3,8 +3,10 @@ module Data.Repa.Convert.Format.Base
         ( Format   (..)
         , Packable (..)
         , Packables(..)
-        , packToList
-        , unpackFromList
+
+        -- * Conversion
+        , packToList,   unpackFromList
+        , packToString, unpackFromString
 
         -- * Constraints
         , forFormat
@@ -14,7 +16,9 @@ module Data.Repa.Convert.Format.Base
         , (:*:)(..))
 where
 import Data.Repa.Product
+import Data.Char
 import Data.Word
+import Control.Monad
 import System.IO.Unsafe
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
@@ -157,6 +161,22 @@ unpackFromList f xs
         mapM_ (\(o, x) -> S.pokeByteOff buf o x)
                 $ zip [0 .. len - 1] xs
         unpack buf len f $ \(v, _) -> return (Just v)
+
+
+-- | Pack a value to a String.
+packToString
+        :: Packable format
+        => format -> Value format -> Maybe String
+packToString f v
+        = liftM (map (chr . fromIntegral)) $ packToList f v
+
+
+-- | Unpack a value from a String.
+unpackFromString 
+        :: Packable format
+        => format -> String -> Maybe (Value format)
+unpackFromString f s
+        = unpackFromList f $ map (fromIntegral . ord) s
 
 
 ---------------------------------------------------------------------------------------------------

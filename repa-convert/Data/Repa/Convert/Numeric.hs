@@ -1,15 +1,15 @@
 
 module Data.Repa.Convert.Numeric
         ( -- * Int conversion
-          readIntBuf
-        , readIntBuf#
-        , readIntWith#
-        , showIntBuf
+          loadInt
+        , loadInt#
+        , loadIntWith#
+        , storeInt
 
           -- * Double conversion
-        , readDoubleBuf
-        , showDoubleShortestBuf 
-        , showDoubleFixedBuf)
+        , loadDouble
+        , storeDoubleShortest
+        , storeDoubleFixed)
 where
 import Data.Word
 import Data.Char
@@ -26,43 +26,43 @@ import qualified Foreign.Marshal.Utils                  as F
 
 
 -- Int --------------------------------------------------------------------------------------------
--- | Try to read an `Int` from the front of the given buffer.
-readIntBuf 
-        :: Ptr Word8                    -- ^ Buffer holding digits.
+-- | Load an ASCII `Int` from a foreign buffer,
+--   returning the value and number of characters read.
+loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int                          -- ^ Length of buffer.
         -> IO (Maybe (Int, Int))        -- ^ Int read, and length of digits.
  
-readIntBuf ptr (I# len)
- = case readIntBuf# ptr len of
+loadInt ptr (I# len)
+ = case loadInt# ptr len of
         (# 0#, _, _  #) -> return $ Nothing
         (# _,  n, ix #) -> return $ Just (I# n, I# ix)
-{-# INLINE readIntBuf #-}
+{-# INLINE loadInt #-}
 
 
--- | Specialise readIntWith# to foreign buffers.
-readIntBuf#
+-- | Specialise `loadIntWith#` to foreign buffers.
+loadInt#
         :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int#                         -- ^ Length of buffer.
         -> (# Int#, Int#, Int# #)       -- ^ Convert success?, value, length read.
 
-readIntBuf# buf len
+loadInt# buf len
  = let peek8 ix
          = case BS.inlinePerformIO (F.peekByteOff buf (I# ix)) of
                 (w8 :: Word8) -> case fromIntegral w8 of
                                         I# i    -> i
        {-# INLINE peek8 #-}
 
-   in  readIntWith# peek8 len
-{-# NOINLINE readIntBuf# #-}
+   in  loadIntWith# peek8 len
+{-# NOINLINE loadInt# #-}
 
 
--- | Read an integer from an abstract buffer.
-readIntWith# 
+-- | Load an ASCII `Int` from an abstract buffer.
+loadIntWith# 
         :: (Int# -> Int#)               -- ^ Function to get a byte from the source.
         -> Int#                         -- ^ Length of buffer
         -> (# Int#, Int#, Int# #)       -- ^ Convert success?, value, length read.
 
-readIntWith# !get len
+loadIntWith# !get len
  = start 0#
  where
         start !ix
@@ -114,25 +114,22 @@ readIntWith# !get len
          -- Number was not negated.
          | otherwise
          = (# 1#, n, ix #)
-{-# INLINE readIntWith# #-}
+{-# INLINE loadIntWith# #-}
 
 
--- | Show an `Int` as an ASCII string, allocating a new buffer.
-showIntBuf :: Int -> IO (F.ForeignPtr Word8)
-showIntBuf i
+-- | Store an ASCII `Int`, allocating a new buffer.
+storeInt :: Int -> IO (F.ForeignPtr Word8)
+storeInt i
  = case DC.toFixed 0 (fromIntegral i) of
         BS.PS p _ _     -> return p
-{-# INLINE showIntBuf #-}
+{-# INLINE storeInt #-}
 
 
 -- Double -----------------------------------------------------------------------------------------
--- | Read a double from a foreign buffer.
--- 
---   The whole buffer of the given length contains the ASCII
---   representation of the double.
---
-readDoubleBuf :: Ptr Word8 -> Int -> IO (Double, Int)
-readDoubleBuf pIn len
+-- | Load an ASCII `Double` from a foreign buffer
+--   returning the value and number of characters read.
+loadDouble :: Ptr Word8 -> Int -> IO (Double, Int)
+loadDouble pIn len
  = F.allocaBytes (len + 1) $ \pBuf ->
    F.alloca                $ \pRes ->
     do
@@ -149,7 +146,7 @@ readDoubleBuf pIn len
         res     <- F.peek pRes
 
         return (d, res `F.minusPtr` pBuf)
-{-# INLINE readDoubleBuf #-}
+{-# INLINE loadDouble #-}
 
 
 -- TODO: strtod will skip whitespace before the actual double, 
@@ -159,26 +156,26 @@ foreign import ccall unsafe
 
 
 
--- | Show a `Double` as an ASCII string, 
---   yielding a freshly allocated buffer and its length.
+-- | Store an ASCII `Double`, yielding a freshly allocated buffer
+--   and its length.
 --
 --   * The value is printed as either (sign)digits.digits,
 --     or in exponential format, depending on which is shorted.
 --
 --   * The result is buffer not null terminated.
 --
-showDoubleShortestBuf :: Double -> IO (F.ForeignPtr Word8, Int)
-showDoubleShortestBuf d
+storeDoubleShortest :: Double -> IO (F.ForeignPtr Word8, Int)
+storeDoubleShortest d
  = case DC.toShortest d of
         BS.PS p _ n  -> return (p, n)
-{-# INLINE showDoubleShortestBuf #-}
+{-# INLINE storeDoubleShortest #-}
 
 
--- | Like `showDoubleShortestBuf`, but use a fixed number of digits after
+-- | Like `showDoubleShortest`, but use a fixed number of digits after
 --   the decimal point.
-showDoubleFixedBuf :: Int -> Double -> IO (F.ForeignPtr Word8, Int)
-showDoubleFixedBuf !prec !d
+storeDoubleFixed :: Int -> Double -> IO (F.ForeignPtr Word8, Int)
+storeDoubleFixed !prec !d
  = case DC.toFixed prec d of
         BS.PS p _ n  -> return (p, n)
-{-# INLINE showDoubleFixedBuf #-}
+{-# INLINE storeDoubleFixed #-}
 

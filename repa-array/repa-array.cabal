@@ -66,8 +66,6 @@ Library
         Data.Repa.Array.Meta.Window
         Data.Repa.Array.Meta
 
-        Data.Repa.Bits.Date32
-
         Data.Repa.Eval.Chain
         Data.Repa.Eval.Stream
 
@@ -88,6 +86,7 @@ Library
         Data.Repa.Array.Material.Auto.InstFloat
         Data.Repa.Array.Material.Auto.InstInt
         Data.Repa.Array.Material.Auto.InstWord
+        Data.Repa.Array.Material.Auto.InstDate32
 
         Data.Repa.Array.Material.Foreign.Base
 

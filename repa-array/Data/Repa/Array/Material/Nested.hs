@@ -51,7 +51,6 @@ import qualified Data.Vector.Mutable                    as VM
 import qualified Data.Vector                            as VV
 import Control.Monad.ST
 import Control.Monad
-import Control.Monad.Primitive
 import GHC.Exts hiding (fromList)
 import Prelude                                          as P
 import Prelude  hiding (concat)
