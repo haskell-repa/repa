@@ -24,8 +24,8 @@ source-repository head
 
 Library
   build-Depends: 
-        base               == 4.7.*,
-        primitive          == 0.5.*,
+        base               == 4.8.*,
+        primitive          == 0.6.*,
         vector             == 0.10.*,
         bytestring         == 0.10.*,
         mtl                == 2.2.*,

@@ -15,12 +15,12 @@ Synopsis:       Data-parallel data flows.
 
 Library
   build-Depends: 
-        base                    == 4.7.*,
+        base                    == 4.8.*,
         directory               == 1.2.*,
-        filepath                == 1.3.*,
+        filepath                == 1.4.*,
         vector                  == 0.10.*,
         bytestring              == 0.10.*,
-        primitive               == 0.5.4.*,
+        primitive               == 0.6.*,
         containers              == 0.5.*,
         text                    == 1.2.*,
         repa-eval               == 4.0.0.*,

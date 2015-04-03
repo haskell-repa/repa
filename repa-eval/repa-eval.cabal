@@ -19,8 +19,8 @@ source-repository head
 
 Library
   Build-Depends: 
-        base            == 4.7.*,
-        ghc-prim        == 0.3.*
+        base            == 4.8.*,
+        ghc-prim        == 0.4.*
 
   Exposed-modules:
         Data.Repa.Eval.Elt

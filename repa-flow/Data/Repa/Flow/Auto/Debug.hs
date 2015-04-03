@@ -1,4 +1,4 @@
-{-# LANGUAGE OverlappingInstances, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Data.Repa.Flow.Auto.Debug
         ( -- * More
           more,         more'

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, OverlappingInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Data.Repa.Nice.Present
         ( Presentable   (..)
         , Present       (..)

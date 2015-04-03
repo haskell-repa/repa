@@ -16,7 +16,7 @@ import Data.Repa.Array.Meta.Window              as A
 import Control.Monad
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Sequence                  as Q
-import qualified Data.Foldable                  as Q
+import qualified Data.Foldable                  as D
 import Prelude                                  as P
 #include "repa-flow.h"
 
@@ -127,13 +127,13 @@ head_i len s0 i
 
         -- As we've pulled whole chunks from the input stream,
         -- we now prepend the remaining ones back on.
-        let start  =  Q.length has - Q.length rest
+        let start  = Q.length has - Q.length rest
         let stash  = case mFinal of
                         Nothing -> []
                         Just c  -> [A.window start (Q.length rest) c]
 
         s2'        <- G.prependOn_i (\i' -> i' == i) stash s2
-        return  (Q.toList here, s2')
+        return  (D.toList here, s2')
 {-# INLINE_FLOW head_i #-}
 
 

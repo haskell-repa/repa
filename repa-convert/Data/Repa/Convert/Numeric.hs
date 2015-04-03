@@ -47,7 +47,10 @@ loadInt#
 
 loadInt# buf len
  = let peek8 ix
-         = case BS.inlinePerformIO (F.peekByteOff buf (I# ix)) of
+           -- accursed .. may increase sharing of the result value, 
+           -- but this isn't a problem here because the result is not
+           -- mutable, and will be unboxed by the simplifier anyway.
+         = case BS.accursedUnutterablePerformIO (F.peekByteOff buf (I# ix)) of
                 (w8 :: Word8) -> case fromIntegral w8 of
                                         I# i    -> i
        {-# INLINE peek8 #-}
