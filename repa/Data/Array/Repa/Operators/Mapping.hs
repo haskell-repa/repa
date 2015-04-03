@@ -37,8 +37,8 @@ map f arr
 
 -- ZipWith --------------------------------------------------------------------
 -- | Combine two arrays, element-wise, with a binary operator.
---	If the extent of the two array arguments differ,
---	then the resulting array's extent is their intersection.
+--      If the extent of the two array arguments differ,
+--      then the resulting array's extent is their intersection.
 --
 zipWith :: (Shape sh, Source r1 a, Source r2 b)
         => (a -> b -> c)
@@ -56,16 +56,16 @@ zipWith f arr1 arr2
 infixl 7  *^, /^
 infixl 6  +^, -^
 
-(+^)	= zipWith (+)
+(+^)    = zipWith (+)
 {-# INLINE (+^) #-}
 
-(-^)	= zipWith (-)
+(-^)    = zipWith (-)
 {-# INLINE (-^) #-}
 
-(*^)	= zipWith (*)
+(*^)    = zipWith (*)
 {-# INLINE (*^) #-}
 
-(/^)	= zipWith (/)
+(/^)    = zipWith (/)
 {-# INLINE (/^) #-}
 
 

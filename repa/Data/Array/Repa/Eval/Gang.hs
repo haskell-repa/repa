@@ -3,7 +3,7 @@
 -- | Gang Primitives.
 module Data.Array.Repa.Eval.Gang
         ( theGang
-	, Gang, forkGang, gangSize, gangIO, gangST)	
+        , Gang, forkGang, gangSize, gangIO, gangST)     
 where
 import GHC.IO
 import GHC.ST
@@ -11,7 +11,7 @@ import GHC.Conc                 (forkOn)
 import Control.Concurrent.MVar
 import Control.Exception        (assert)
 import Control.Monad
-import GHC.Conc			(numCapabilities)
+import GHC.Conc                 (numCapabilities)
 import System.IO
 
 
@@ -48,18 +48,18 @@ theGang
 -- | The 'Req' type encapsulates work requests for individual members of a gang.
 data Req
         -- | Instruct the worker to run the given action.
-        = ReqDo	       (Int -> IO ())
+        = ReqDo        (Int -> IO ())
 
-	-- | Tell the worker that we're shutting the gang down.
+        -- | Tell the worker that we're shutting the gang down.
         --   The worker should signal that it's receieved the request by
         --   writing to its result var before returning to the caller (forkGang).
-	| ReqShutdown
+        | ReqShutdown
 
 
 -- Gang -----------------------------------------------------------------------
 -- | A 'Gang' is a group of threads that execute arbitrary work requests.
 data Gang
-	= Gang 
+        = Gang 
         { -- | Number of threads in the gang.
           _gangThreads           :: !Int           
 
@@ -75,7 +75,7 @@ data Gang
 
 instance Show Gang where
   showsPrec p (Gang n _ _ _)
-	= showString "<<"
+        = showString "<<"
         . showsPrec p n
         . showString " threads>>"
 
@@ -122,21 +122,21 @@ gangWorker :: Int -> MVar Req -> MVar () -> IO ()
 gangWorker threadId varRequest varDone
  = do   
         -- Wait for a request 
-        req	<- takeMVar varRequest
+        req     <- takeMVar varRequest
 
-	case req of
-	 ReqDo action
-	  -> do	-- Run the action we were given.
+        case req of
+         ReqDo action
+          -> do -- Run the action we were given.
                 action threadId
 
                 -- Signal that the action is complete.
-		putMVar varDone ()
+                putMVar varDone ()
 
                 -- Wait for more requests.
-		gangWorker threadId varRequest varDone
+                gangWorker threadId varRequest varDone
 
-	 ReqShutdown
-	  ->    putMVar varDone ()
+         ReqShutdown
+          ->    putMVar varDone ()
 
 
 -- | Finaliser for worker threads.
@@ -160,22 +160,22 @@ gangWorker threadId varRequest varDone
 finaliseWorker :: MVar Req -> MVar () -> IO ()
 finaliseWorker varReq varDone 
  = do   putMVar varReq ReqShutdown
-	takeMVar varDone
-	return ()
+        takeMVar varDone
+        return ()
 
 
 -- | Issue work requests for the 'Gang' and wait until they complete.
 --
 --   If the gang is already busy then print a warning to `stderr` and just
 --   run the actions sequentially in the requesting thread.
-gangIO	:: Gang
-	-> (Int -> IO ())
-	-> IO ()
+gangIO  :: Gang
+        -> (Int -> IO ())
+        -> IO ()
 
 {-# NOINLINE gangIO #-}
 gangIO gang@(Gang _ _ _ busy) action
  = do   b <- swapMVar busy True
-	if b
+        if b
          then do
                 seqIO gang action
 
@@ -202,12 +202,12 @@ seqIO (Gang n _ _ _) action
 -- | Run an action on the gang in parallel.
 parIO   :: Gang -> (Int -> IO ()) -> IO ()
 parIO (Gang _ mvsRequest mvsResult _) action
- = do	
+ = do   
         -- Send requests to all the threads.
         mapM_ (\v -> putMVar v (ReqDo action)) mvsRequest
 
         -- Wait for all the requests to complete.
-	mapM_ takeMVar mvsResult
+        mapM_ takeMVar mvsResult
 
 
 -- | Same as 'gangIO' but in the 'ST' monad.

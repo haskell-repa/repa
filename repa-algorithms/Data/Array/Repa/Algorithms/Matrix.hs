@@ -15,7 +15,7 @@ module Data.Array.Repa.Algorithms.Matrix
         , col
 
           -- * Matrix Multiplication.
-	, mmultP,      mmultS
+        , mmultP,      mmultS
 
           -- * Transposition.
         , transpose2P, transpose2S

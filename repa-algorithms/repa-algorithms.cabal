@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             3.3.1.2
+Version:             3.4.0.1
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -18,9 +18,9 @@ Synopsis:
 
 Library
   Build-Depends: 
-        base                 == 4.7.*,
+        base                 == 4.8.*,
         vector               == 0.10.*,
-        repa                 == 3.3.1.*
+        repa                 == 3.4.0.*
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
@@ -44,7 +44,6 @@ Library
         StandaloneDeriving
         ScopedTypeVariables
         PatternGuards
-        OverlappingInstances
 
   Exposed-modules:
         Data.Array.Repa.Algorithms.DFT.Center

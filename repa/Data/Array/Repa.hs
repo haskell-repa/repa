@@ -125,52 +125,52 @@ module Data.Array.Repa
         , fromUnboxed
         , toUnboxed
                 
-	-- from Data.Array.Repa.Operators.IndexSpace ----------------
+        -- from Data.Array.Repa.Operators.IndexSpace ----------------
         -- * Operators
-	-- ** Index space transformations
-	, reshape
-	, append, (++)
+        -- ** Index space transformations
+        , reshape
+        , append, (++)
         , extract
-	, transpose
-	, backpermute
-	, backpermuteDft
+        , transpose
+        , backpermute
+        , backpermuteDft
 
         -- ** Slice transformations
-	, module Data.Array.Repa.Slice
-	, slice
+        , module Data.Array.Repa.Slice
+        , slice
         , extend
 
-	-- from Data.Array.Repa.Operators.Mapping -------------------
+        -- from Data.Array.Repa.Operators.Mapping -------------------
         -- ** Structure preserving operations
-	, map
-	, zipWith
-	, (+^), (-^), (*^), (/^)
+        , map
+        , zipWith
+        , (+^), (-^), (*^), (/^)
         , Structured(..)
 
-	-- from Data.Array.Repa.Operators.Traversal ------------------
-	-- ** Generic traversal
-	, traverse 
-	, traverse2
-	, traverse3
-	, traverse4
-	
-	-- from Data.Array.Repa.Operators.Interleave -----------------
-	-- ** Interleaving
-	, interleave2
-	, interleave3
-	, interleave4
-	
-	-- from Data.Array.Repa.Operators.Reduction ------------------
-	-- ** Reduction
-	, foldP,    foldS
-	, foldAllP, foldAllS
-	, sumP,     sumS
-	, sumAllP,  sumAllS
+        -- from Data.Array.Repa.Operators.Traversal ------------------
+        -- ** Generic traversal
+        , traverse 
+        , traverse2
+        , traverse3
+        , traverse4
+        
+        -- from Data.Array.Repa.Operators.Interleave -----------------
+        -- ** Interleaving
+        , interleave2
+        , interleave3
+        , interleave4
+        
+        -- from Data.Array.Repa.Operators.Reduction ------------------
+        -- ** Reduction
+        , foldP,    foldS
+        , foldAllP, foldAllS
+        , sumP,     sumS
+        , sumAllP,  sumAllS
         , equalsP,  equalsS
-	
-	-- from Data.Array.Repa.Operators.Selection ------------------
+        
+        -- from Data.Array.Repa.Operators.Selection ------------------
         -- ** Selection
-	, selectP)
+        , selectP)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Shape

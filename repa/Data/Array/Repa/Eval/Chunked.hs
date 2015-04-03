@@ -2,16 +2,16 @@
 -- | Evaluate an array by breaking it up into linear chunks and filling
 --   each chunk in parallel.
 module Data.Array.Repa.Eval.Chunked
-	( fillLinearS
+        ( fillLinearS
         , fillBlock2S
         , fillChunkedP
-	, fillChunkedIOP)
+        , fillChunkedIOP)
 where
 import Data.Array.Repa.Index
 import Data.Array.Repa.Eval.Gang
 
 import GHC.Exts
-import Prelude		as P
+import Prelude          as P
 
 -------------------------------------------------------------------------------
 -- | Fill something sequentially.
@@ -19,20 +19,20 @@ import Prelude		as P
 --   * The array is filled linearly from start to finish.  
 -- 
 fillLinearS
-	:: Int                  -- ^ Number of elements.
-	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
-	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
-	-> IO ()
+        :: Int                  -- ^ Number of elements.
+        -> (Int -> a -> IO ())  -- ^ Update function to write into result buffer.
+        -> (Int -> a)           -- ^ Fn to get the value at a given index.
+        -> IO ()
 
 fillLinearS !(I# len) write getElem
  = fill 0#
- where	fill !ix
-	 | 1# <- ix >=# len
+ where  fill !ix
+         | 1# <- ix >=# len
          = return ()
 
-	 | otherwise
-	 = do	write (I# ix) (getElem (I# ix))
-		fill (ix +# 1#)
+         | otherwise
+         = do   write (I# ix) (getElem (I# ix))
+                fill (ix +# 1#)
 {-# INLINE [0] fillLinearS #-}
 
 
@@ -92,42 +92,42 @@ fillBlock2S
 -- 
 fillChunkedP
         :: Int                  -- ^ Number of elements.
-	-> (Int -> a -> IO ())	-- ^ Update function to write into result buffer.
-	-> (Int -> a)	        -- ^ Fn to get the value at a given index.
-	-> IO ()
+        -> (Int -> a -> IO ())  -- ^ Update function to write into result buffer.
+        -> (Int -> a)           -- ^ Fn to get the value at a given index.
+        -> IO ()
 
 fillChunkedP !(I# len) write getElem
- = 	gangIO theGang
-	 $  \(I# thread) -> 
+ =      gangIO theGang
+         $  \(I# thread) -> 
               let !start   = splitIx thread
                   !end     = splitIx (thread +# 1#)
               in  fill start end
 
  where
-	-- Decide now to split the work across the threads.
-	-- If the length of the vector doesn't divide evenly among the threads,
-	-- then the first few get an extra element.
-	!(I# threads) 	= gangSize theGang
-	!chunkLen 	= len `quotInt#` threads
-	!chunkLeftover	= len `remInt#`  threads
+        -- Decide now to split the work across the threads.
+        -- If the length of the vector doesn't divide evenly among the threads,
+        -- then the first few get an extra element.
+        !(I# threads)   = gangSize theGang
+        !chunkLen       = len `quotInt#` threads
+        !chunkLeftover  = len `remInt#`  threads
 
-	{-# INLINE splitIx #-}
-	splitIx thread
-	 | 1# <- thread <# chunkLeftover 
+        {-# INLINE splitIx #-}
+        splitIx thread
+         | 1# <- thread <# chunkLeftover 
          = thread *# (chunkLen +# 1#)
 
-	 | otherwise	
+         | otherwise    
          = thread *# chunkLen  +# chunkLeftover
 
-	-- Evaluate the elements of a single chunk.
-	{-# INLINE fill #-}
-	fill !ix !end
-	 | 1# <- ix >=# end	
+        -- Evaluate the elements of a single chunk.
+        {-# INLINE fill #-}
+        fill !ix !end
+         | 1# <- ix >=# end     
          = return ()
 
-	 | otherwise
-	 = do	write (I# ix) (getElem (I# ix))
-		fill (ix +# 1#) end
+         | otherwise
+         = do   write (I# ix) (getElem (I# ix))
+                fill (ix +# 1#) end
 {-# INLINE [0] fillChunkedP #-}
 
 
@@ -148,24 +148,24 @@ fillChunkedIOP
         -> IO ()
 
 fillChunkedIOP !(I# len) write mkGetElem
- = 	gangIO theGang
-	 $  \(I# thread) -> 
+ =      gangIO theGang
+         $  \(I# thread) -> 
               let !start = splitIx thread
                   !end   = splitIx (thread +# 1#)
               in fillChunk thread start end 
 
  where
-	-- Decide now to split the work across the threads.
-	-- If the length of the vector doesn't divide evenly among the threads,
-	-- then the first few get an extra element.
-	!(I# threads) 	= gangSize theGang
-	!chunkLen 	= len `quotInt#` threads
-	!chunkLeftover	= len `remInt#`  threads
+        -- Decide now to split the work across the threads.
+        -- If the length of the vector doesn't divide evenly among the threads,
+        -- then the first few get an extra element.
+        !(I# threads)   = gangSize theGang
+        !chunkLen       = len `quotInt#` threads
+        !chunkLeftover  = len `remInt#`  threads
 
-	{-# INLINE splitIx #-}
-	splitIx thread
-	 | 1# <- thread <# chunkLeftover = thread *# (chunkLen +# 1#)
-	 | otherwise		         = thread *# chunkLen  +# chunkLeftover
+        {-# INLINE splitIx #-}
+        splitIx thread
+         | 1# <- thread <# chunkLeftover = thread *# (chunkLen +# 1#)
+         | otherwise                     = thread *# chunkLen  +# chunkLeftover
 
         -- Given the threadId, starting and ending indices. 
         --      Make a function to get each element for this chunk
@@ -177,16 +177,16 @@ fillChunkedIOP !(I# len) write mkGetElem
                 
         -- Call the provided getElem function for every element
         --      in a chunk, and feed the result to the write function.
-	{-# INLINE fill #-}
-	fill !getElem !ix0 !end
-	 = go ix0 
-	 where  go !ix
-	         | 1# <- ix >=# end
+        {-# INLINE fill #-}
+        fill !getElem !ix0 !end
+         = go ix0 
+         where  go !ix
+                 | 1# <- ix >=# end
                  = return ()
 
- 	         | otherwise
-	         = do	x       <- getElem (I# ix)
-	                write (I# ix) x
+                 | otherwise
+                 = do   x       <- getElem (I# ix)
+                        write (I# ix) x
                         go (ix +# 1#)
 {-# INLINE [0] fillChunkedIOP #-}
 

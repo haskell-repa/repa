@@ -1,13 +1,13 @@
 
 -- | Timing utilities used for benchmarks in the @repa-examples@ package.
 module Data.Array.Repa.IO.Timing
-	( Time
-	, milliseconds
+        ( Time
+        , milliseconds
         , microseconds
         , cpuTime, wallTime
-	, time, minus, plus
-	, showTime
-	, prettyTime)
+        , time, minus, plus
+        , showTime
+        , prettyTime)
 where
 import System.CPUTime
 import System.Time
@@ -16,14 +16,14 @@ import System.Time
 -- Time -----------------------------------------------------------------------
 -- | Abstract representation of process time.
 data Time 
-	= Time 
-	{ cpu_time  :: Integer
+        = Time 
+        { cpu_time  :: Integer
         , wall_time :: Integer
         }
 
 zipT :: (Integer -> Integer -> Integer) -> Time -> Time -> Time
 zipT f (Time cpu1 wall1) (Time cpu2 wall2) 
-	= Time (f cpu1 cpu2) (f wall1 wall2)
+        = Time (f cpu1 cpu2) (f wall1 wall2)
 
 -- | Subtract second time from the first.
 minus :: Time -> Time -> Time
@@ -38,7 +38,7 @@ plus  = zipT (+)
 -- TimeUnit -------------------------------------------------------------------
 -- | Conversion 
 type TimeUnit 
-	= Integer -> Integer
+        = Integer -> Integer
 
 microseconds :: TimeUnit 
 microseconds n = n `div` 1000000
@@ -71,9 +71,9 @@ showTime t = (show $ wallTime milliseconds t)
 -- | Pretty print the times, in milliseconds.
 prettyTime :: Time -> String
 prettyTime t
-	= unlines
-	[ "elapsedTimeMS   = " ++ (show $ wallTime milliseconds t)
-	, "cpuTimeMS       = " ++ (show $ cpuTime  milliseconds t) ]
+        = unlines
+        [ "elapsedTimeMS   = " ++ (show $ wallTime milliseconds t)
+        , "cpuTimeMS       = " ++ (show $ cpuTime  milliseconds t) ]
 
 -- Timing benchmarks ----------------------------------------------------------
 

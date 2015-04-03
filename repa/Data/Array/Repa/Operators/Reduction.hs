@@ -1,10 +1,10 @@
 {-# LANGUAGE BangPatterns, ExplicitForAll, TypeOperators, MagicHash #-}
 {-# OPTIONS -fno-warn-orphans #-}
 module Data.Array.Repa.Operators.Reduction
-	( foldS,        foldP
-	, foldAllS,     foldAllP
-	, sumS,         sumP
-	, sumAllS,      sumAllP
+        ( foldS,        foldP
+        , foldAllS,     foldAllP
+        , sumS,         sumP
+        , sumAllS,      sumAllP
         , equalsS,      equalsP)
 where
 import Data.Array.Repa.Base
@@ -12,10 +12,10 @@ import Data.Array.Repa.Index
 import Data.Array.Repa.Eval
 import Data.Array.Repa.Repr.Unboxed
 import Data.Array.Repa.Operators.Mapping        as R
-import Data.Array.Repa.Shape		        as S
-import qualified Data.Vector.Unboxed	        as V
+import Data.Array.Repa.Shape                    as S
+import qualified Data.Vector.Unboxed            as V
 import qualified Data.Vector.Unboxed.Mutable    as M
-import Prelude				        hiding (sum)
+import Prelude                                  hiding (sum)
 import qualified Data.Array.Repa.Eval.Reduction as E
 import System.IO.Unsafe
 import GHC.Exts
@@ -101,10 +101,10 @@ foldP f z arr
 --   associated arbitrarily.
 --
 foldAllS :: (Shape sh, Source r a, Elt a, Unbox a)
-	=> (a -> a -> a)
-	-> a
-	-> Array r sh a
-	-> a
+        => (a -> a -> a)
+        -> a
+        -> Array r sh a
+        -> a
 
 foldAllS f z arr 
  = arr `deepSeqArray`
@@ -129,10 +129,10 @@ foldAllS f z arr
 --
 foldAllP 
         :: (Shape sh, Source r a, Elt a, Unbox a, Monad m)
-	=> (a -> a -> a)
-	-> a
-	-> Array r sh a
-	-> m a
+        => (a -> a -> a)
+        -> a
+        -> Array r sh a
+        -> m a
 
 foldAllP f z arr 
  = arr `deepSeqArray`
@@ -146,34 +146,34 @@ foldAllP f z arr
 
 -- sum ------------------------------------------------------------------------
 -- | Sequential sum the innermost dimension of an array.
-sumS	:: (Shape sh, Source r a, Num a, Elt a, Unbox a)
-	=> Array r (sh :. Int) a
-	-> Array U sh a
+sumS    :: (Shape sh, Source r a, Num a, Elt a, Unbox a)
+        => Array r (sh :. Int) a
+        -> Array U sh a
 sumS = foldS (+) 0
 {-# INLINE [3] sumS #-}
 
 
 -- | Parallel sum the innermost dimension of an array.
-sumP	:: (Shape sh, Source r a, Num a, Elt a, Unbox a, Monad m)
-	=> Array r (sh :. Int) a
-	-> m (Array U sh a)
+sumP    :: (Shape sh, Source r a, Num a, Elt a, Unbox a, Monad m)
+        => Array r (sh :. Int) a
+        -> m (Array U sh a)
 sumP = foldP (+) 0 
 {-# INLINE [3] sumP #-}
 
 
 -- sumAll ---------------------------------------------------------------------
 -- | Sequential sum of all the elements of an array.
-sumAllS	:: (Shape sh, Source r a, Elt a, Unbox a, Num a)
-	=> Array r sh a
-	-> a
+sumAllS :: (Shape sh, Source r a, Elt a, Unbox a, Num a)
+        => Array r sh a
+        -> a
 sumAllS = foldAllS (+) 0
 {-# INLINE [3] sumAllS #-}
 
 
 -- | Parallel sum all the elements of an array.
-sumAllP	:: (Shape sh, Source r a, Elt a, Unbox a, Num a, Monad m)
-	=> Array r sh a
-	-> m a
+sumAllP :: (Shape sh, Source r a, Elt a, Unbox a, Num a, Monad m)
+        => Array r sh a
+        -> m a
 sumAllP = foldAllP (+) 0
 {-# INLINE [3] sumAllP #-}
 
