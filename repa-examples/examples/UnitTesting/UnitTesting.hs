@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell, ScopedTypeVariables, FlexibleContexts #-}
 module Main where
 import Data.Array.Repa
 import Data.Array.Repa.Arbitrary(forAll2UShaped, forAll2VShaped)

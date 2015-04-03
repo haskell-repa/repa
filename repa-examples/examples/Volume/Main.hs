@@ -42,20 +42,20 @@ run fileIn fileOut depth width height sliceNum low high
 
 -- | Dump a numbered slice of this array to a BMP file.
 dumpSlice 
-	:: FilePath             -- output base name
-	-> Array F DIM3 Word16  -- source data
-	-> Int                  -- array slice number
-	-> Int                  -- low value for color ramp
-	-> Int                  -- high value for color ramp
-	-> IO ()
+        :: FilePath             -- output base name
+        -> Array F DIM3 Word16  -- source data
+        -> Int                  -- array slice number
+        -> Int                  -- low value for color ramp
+        -> Int                  -- high value for color ramp
+        -> IO ()
 
 dumpSlice fileBase arr sliceNum low high
- = do	-- slice out the part that we want from the cube 
-        let arrSlice	= slice arr (Any :. sliceNum :. All :. All)
+ = do   -- slice out the part that we want from the cube 
+        let arrSlice    = slice arr (Any :. sliceNum :. All :. All)
 
         -- select a part of the large dynamic range
-	let arrBrack    :: Array D DIM2 Word16
-	    arrBrack	= R.map (bracket low high . fromIntegral . flip16) arrSlice
+        let arrBrack    :: Array D DIM2 Word16
+            arrBrack    = R.map (bracket low high . fromIntegral . flip16) arrSlice
 
         -- invert the y coordinate so the image is the correct way around
         let (Z :. height :. _) = R.extent arrSlice
@@ -63,7 +63,7 @@ dumpSlice fileBase arr sliceNum low high
                                 (\get (Z :. y :. x) -> get (Z :. (height - 1) - y :. x))
 
         -- dump the slice back as word16
-	R.writeArrayToStorableFile (fileBase P.++ ".w16") arrInv
+        R.writeArrayToStorableFile (fileBase P.++ ".w16") arrInv
 
         -- colorise and write to BMP file
         let arrColor :: Array D DIM2 (Double, Double, Double)
