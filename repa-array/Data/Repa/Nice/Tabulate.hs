@@ -10,7 +10,6 @@ import Data.Repa.Nice.Display   as A
 import Data.List                as L
 import qualified Data.Text      as T
 import Data.Text                (Text)
-import Data.Monoid
 import Data.Maybe
 
 
