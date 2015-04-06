@@ -2,6 +2,7 @@
 module Main where
 import Data.Repa.Flow
 import Data.Repa.Array                  as A
+import Data.Repa.Array.Material         as A
 import qualified Data.Repa.Flow.Chunked as C
 import qualified Data.Repa.Flow.Generic as G
 import Prelude                          as P
@@ -11,11 +12,12 @@ import Data.Bits
 
 import Data.Repa.Eval.Elt
 
+{-
 instance (TargetI l a, Elt a) => Elt (Array l a) where
  zero    = A.fromList name []
  one     = A.fromList name [one]
  touch _ = return ()
-
+-}
 
 main :: IO ()
 main 
@@ -34,7 +36,7 @@ pShuffle fiKey fiValue foShuf
         iVal     <- G.funnel_i =<< fromDir fiValue sourceLines
 
         -- Shuffle the input data based on the first character.
-        iKeyHash <- G.map_i (A.mapS U hash) iKey
+        iKeyHash <- G.map_i (A.map U hash) iKey
         iHashVal <- C.szipWith_ii B (\_ x y -> (x, y)) iKeyHash iVal
 
         -- We'll output the shuffled result to a new dir.
@@ -48,7 +50,7 @@ pShuffle fiKey fiValue foShuf
 hash arr
         | A.length arr  == 0  = 0
         | otherwise           
-        = sum (P.map (fromIntegral . ord) $ A.toList arr) .&. 0x0ff
+        = P.sum (P.map (fromIntegral . ord) $ A.toList arr) .&. 0x0ff
 {-# INLINE hash #-}
 
 

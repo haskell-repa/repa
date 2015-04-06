@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
-import Data.Repa.Flow
+import Data.Repa.Flow                           as A
 import Data.Repa.Array                          as A
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Flow.Generic.IO      as G
@@ -61,7 +61,7 @@ pFields config
         sColumns   <- G.map_i ragspose3 sIn
 
         -- Concatenate the fields in each column.
-        sCat       <- G.map_i (mapS B (A.unlines F)) sColumns
+        sCat       <- G.map_i (A.map A.unlines) sColumns
 
         -- Open an output directory for each of the columns.
         let dirsOut = [fileIn ++ "." ++ show n | n <- [0 .. cols - 1]]

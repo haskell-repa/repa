@@ -1,5 +1,5 @@
 
-import Data.Repa.Flow
+import Data.Repa.Flow           as F
 import System.Environment
 import Prelude                  as P
 

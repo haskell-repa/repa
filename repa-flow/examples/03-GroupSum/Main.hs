@@ -19,7 +19,7 @@
 --
 module Main where
 import Data.Repa.Flow                           as F
-import Data.Repa.IO.Convert                     as A
+import Data.Repa.Array.Auto.Convert             as A
 import System.Environment
 import Data.Char
 import Data.Word
@@ -42,18 +42,18 @@ pGroupSum fiNames fiVals foNames foSums
         -- Read names and values from files.
         iNames  <-  fromFiles' [fiNames] sourceLines
 
-        iVals   <-  map_i U readDouble 
+        iVals   <-  map_i readDouble 
                 =<< fromFiles' [fiVals]  sourceLines
 
         -- Sum up the values segment-wise.
-        iAgg    <-  foldGroupsBy_i B U (==) (+) 0 iNames iVals
+        iAgg    <-  foldGroupsBy_i (==) (+) 0 iNames iVals
 
         -- Write group names and sums back to files.
-        oNames  <-  map_o name fst
-                =<< toFiles' [foNames] (sinkLines B F)
+        oNames  <-  map_o fst
+                =<< toFiles' [foNames] sinkLines
 
-        oSums   <-  map_o name (showDoubleFixed 4 . snd) 
-                =<< toFiles' [foSums]  (sinkLines B F)
+        oSums   <-  map_o (showDoubleFixed 4 . snd) 
+                =<< toFiles' [foSums]  sinkLines
 
         oAgg    <-  dup_oo oNames oSums
 
