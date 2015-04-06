@@ -13,7 +13,7 @@ module Data.Repa.Flow.IO.Bucket
           -- * Writing
         , toFiles,              toFiles'
         , toDir
-        ,                       toDirs'
+        , toDirs
 
           -- * Bucket IO
         , bClose
@@ -99,14 +99,14 @@ hBucket h
 
 -- From Files -----------------------------------------------------------------
 -- | Open some files as buckets and use them as `Sources`.
-fromFiles 
+fromFiles' 
         ::  (Bulk l FilePath, Target l Bucket)
         =>  Array l FilePath                    -- ^ Files to open.
         -> (Array l Bucket -> IO b)  
                                                 -- ^ Consumer.
         -> IO b
 
-fromFiles paths use
+fromFiles' paths use
  = do   
         -- Open all the files, ending up with a list of buckets.
         bs      <- mapM (flip openBucket ReadMode) $ A.toList paths
@@ -116,17 +116,17 @@ fromFiles paths use
         let Just bsArr =  A.fromListInto (A.layout paths) bs
 
         use bsArr
-{-# NOINLINE fromFiles #-}
+{-# NOINLINE fromFiles' #-}
 
 
 -- | Like `fromFiles`, but take a list of file paths.
-fromFiles'
+fromFiles
         :: [FilePath]
         -> (Array B Bucket -> IO b)
         -> IO b
-fromFiles' files use 
- = fromFiles (A.fromList B files) use
-{-# INLINE fromFiles' #-}
+fromFiles files use 
+ = fromFiles' (A.fromList B files) use
+{-# INLINE fromFiles #-}
 
 
 -- | Open all the files in a directory as separate buckets.
@@ -142,7 +142,7 @@ fromDir dir use
         let fsRel       
                 =  P.map (dir </>) 
                 $  P.filter (\f -> f /= "." && f /= "..") fs
-        fromFiles' fsRel use
+        fromFiles fsRel use
 {-# INLINE fromDir #-}
 
 
@@ -266,13 +266,13 @@ advance h pEnd
 -- | Open some files for writing as individual buckets and pass
 --   them to the given consumer.
 --
-toFiles :: (Bulk l FilePath, Target l Bucket)
-        =>  Array l FilePath            -- ^ File paths.
-        -> (Array l Bucket -> IO b)
+toFiles' :: (Bulk l FilePath, Target l Bucket)
+         =>  Array l FilePath            -- ^ File paths.
+         -> (Array l Bucket -> IO b)
                                         -- ^ Consumer.
-        -> IO b
+         -> IO b
 
-toFiles paths use
+toFiles' paths use
  = do   -- Open all the files, ending up with a list of buckets.
         bs             <- mapM (flip openBucket WriteMode) $ A.toList paths
 
@@ -281,20 +281,20 @@ toFiles paths use
         let Just bsArr =  A.fromListInto (A.layout paths) bs
 
         use bsArr
-{-# NOINLINE toFiles #-}
+{-# NOINLINE toFiles' #-}
 ---
 --   TODO: Attached finalizers to the sinks so that file assocated with
 --   each stream is closed when that stream is ejected.
 
 
 -- | Like `toFiles`, but take a list of file paths.
-toFiles' :: [FilePath] 
-         -> (Array B Bucket -> IO b)
-         -> IO b
+toFiles :: [FilePath] 
+        -> (Array B Bucket -> IO b)
+        -> IO b
 
-toFiles' paths use
-        = toFiles (A.fromList B paths) use
-{-# INLINE toFiles' #-}
+toFiles paths use
+        = toFiles' (A.fromList B paths) use
+{-# INLINE toFiles #-}
 
 
 -- | Create a new directory of the given name, containing the given number
@@ -342,13 +342,13 @@ toDir nBuckets path use
 --   For each directory @somedir@ the files are named
 --   @somedir/000000@, @somedir/000001@, @somedir/000002@ and so on.
 --
-toDirs'  :: Int                  -- ^ Number of buckets to create per directory.
+toDirs  :: Int                  -- ^ Number of buckets to create per directory.
         -> [FilePath]           -- ^ Paths to directories.
         -> (Array (E B DIM2) Bucket -> IO b)     
                                 -- ^ Consumer.
         -> IO b
 
-toDirs' nBucketsPerDir paths use
+toDirs nBucketsPerDir paths use
  | nBucketsPerDir <= 0
  = do   let Just bsArr 
                 = A.fromListInto (A.matrix B 0 0) []
@@ -384,7 +384,7 @@ toDirs' nBucketsPerDir paths use
                         bs
 
         use bsArr
-{-# NOINLINE toDirs' #-}
+{-# NOINLINE toDirs #-}
 
 
 

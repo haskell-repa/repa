@@ -12,7 +12,7 @@
 -- > import Data.Repa.Flow            as F
 -- > import Data.Repa.Flow.Auto.Debug as F
 --
--- > ws <- fromFiles' [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
+-- > ws <- fromFiles [\"\/usr\/share\/dict\/words\", \"\/usr\/share\/dict\/cracklib-small\"] sourceLines
 -- @
 --
 --   Show the first few elements of the first chunk of the first file.
@@ -71,7 +71,7 @@
 --   so open a file for each stream:
 --
 -- @
--- > out <- toFiles' ["out1.txt", "out2.txt"] sinkLines
+-- > out <- toFiles ["out1.txt", "out2.txt"] sinkLines
 -- @
 --
 --   Note that the @ws@ and @up@ we used before were bundles of stream 
