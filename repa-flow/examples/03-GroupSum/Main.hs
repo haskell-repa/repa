@@ -40,20 +40,20 @@ pGroupSum :: FilePath -> FilePath -> FilePath -> FilePath -> IO ()
 pGroupSum fiNames fiVals foNames foSums
  = do   
         -- Read names and values from files.
-        iNames  <-  fromFiles' [fiNames] sourceLines
+        iNames  <-  fromFiles [fiNames] sourceLines
 
         iVals   <-  map_i readDouble 
-                =<< fromFiles' [fiVals]  sourceLines
+                =<< fromFiles [fiVals]  sourceLines
 
         -- Sum up the values segment-wise.
         iAgg    <-  foldGroupsBy_i (==) (+) 0 iNames iVals
 
         -- Write group names and sums back to files.
         oNames  <-  map_o fst
-                =<< toFiles' [foNames] sinkLines
+                =<< toFiles [foNames] sinkLines
 
         oSums   <-  map_o (showDoubleFixed 4 . snd) 
-                =<< toFiles' [foSums]  sinkLines
+                =<< toFiles [foSums]  sinkLines
 
         oAgg    <-  dup_oo oNames oSums
 

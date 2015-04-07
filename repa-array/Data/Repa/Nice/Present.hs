@@ -12,9 +12,13 @@ where
 import Data.Monoid
 import Data.Word
 import Data.Text                        (Text)
-import qualified Data.Text              as T
 import Data.Repa.Product                ((:*:) (..))
 import Data.Repa.Nice                   (Str(..), Tok(..))
+import qualified Data.Text              as T
+import Data.Repa.Bits.Date32            (Date32)
+import qualified Data.Repa.Bits.Date32  as Date32
+import Prelude                          as P
+
 
 -- | A value, wrapped up nicely.
 data Present
@@ -101,6 +105,16 @@ instance Presentable Word32 where
 
 instance Presentable Word64 where
  present = Atom . T.pack . show
+
+
+instance Presentable Date32 where
+ present d
+  | (yy, mm, dd)        <- Date32.unpack d
+  = let cSep    = '/'
+        yy'     = show yy       
+        mm'     = if mm < 10 then "0" ++ show mm else show mm
+        dd'     = if dd < 10 then "0" ++ show dd else show dd
+    in  Atom $ T.pack $ P.concat [yy', [cSep], mm', [cSep], dd']
 
 
 instance Presentable Str where

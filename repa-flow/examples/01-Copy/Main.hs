@@ -19,10 +19,10 @@ pcopy :: FilePath -> FilePath -> IO ()
 pcopy fileIn fileOut
  = do   
         -- Source from the input file.
-        ifile   <- fromFiles' [fileIn]  sourceBytes
+        ifile   <- fromFiles [fileIn]  sourceBytes
 
         -- Sink to the output file.
-        ofile   <- toFiles'   [fileOut] sinkBytes
+        ofile   <- toFiles   [fileOut] sinkBytes
 
         -- Drain the source into the sink.
         drainS ifile ofile

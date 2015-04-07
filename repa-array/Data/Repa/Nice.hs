@@ -9,6 +9,7 @@ import Data.Repa.Product        as B
 import Control.Monad
 import Data.Word
 import Data.Int
+import Data.Repa.Bits.Date32            (Date32)
 import Prelude                  as P
 
 
@@ -106,6 +107,12 @@ instance Nicer Word32 where
 instance Nicer Word64 where
  type Nice Word64       = Word64
  nice x = x
+
+-- Dates
+instance Nicer Date32 where
+ type Nice Date32       = Date32
+ nice x = x
+
 
 
 -- Lists ----------------------------------------------------------------------

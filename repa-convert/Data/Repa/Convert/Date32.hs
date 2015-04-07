@@ -79,7 +79,7 @@ loadDDsMMsYYYY !sep !buf (I# len_)
          | otherwise    = return Nothing
 
         sep1 ix dd
-         |  1# <- ix <# len_    
+         | 1# <- ix <# len_    
          =  F.peekByteOff buf (I# ix) >>= \(r :: Word8)
          -> if r == sep
                 then month (ix +# 1#) dd
@@ -88,7 +88,7 @@ loadDDsMMsYYYY !sep !buf (I# len_)
          | otherwise    = return Nothing
 
         month ix dd
-         |  1# <- ix <# len_    
+         | 1# <- ix <# len_    
          , (# 1#, mm, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
          = sep2 (ix +# o) dd mm
          | otherwise    = return Nothing
