@@ -1,0 +1,32 @@
+Name:           repa-query
+Version:        4.1.0.1
+License:        BSD3
+License-file:   LICENSE
+Author:         The Repa Development Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:    Data-parallel data flows.
+Synopsis:       Data-parallel data flows.
+
+Library
+  build-Depends: 
+        base                    == 4.8.*,
+
+  exposed-modules:
+        Data.Repa.Query.Graph
+
+  ghc-options:
+        -threaded
+        -Wall -fno-warn-missing-signatures
+        -O2
+
+  extensions:
+        BangPatterns
+        PatternGuards
+
+        
