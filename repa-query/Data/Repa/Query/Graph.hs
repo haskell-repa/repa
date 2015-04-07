@@ -7,43 +7,42 @@ module Data.Repa.Query.Graph
         , Exp           (..)
         , ScalarOp      (..))
 where
-import qualified Data.Repa.Convert.Format       as Format
 
 
 -- | Operator graph for a query.
-data Graph a nFlow nValue
-        = Graph [Node a nFlow nValue]
+data Graph a nF bV nV
+        = Graph [Node a nF bV nV]
 
 
 -- | A single node in the graph.
-data Node a nFlow nValue
+data Node a nF bV nV
         -- | A flow source.
-        = NodeSource    (Source a nFlow)
+        = NodeSource    (Source a nF)
 
         -- | A flow operator.
-        | NodeOp        (FlowOp a nFlow nValue)
+        | NodeOp        (FlowOp a nF bV nV)
         deriving Show
 
 
 -- | Flow operators.
-data FlowOp a nFlow nValue
+data FlowOp a nF bV nV
         -- | Apply a function to every element of a flow.
         = FopMapI
-        { fopInput      :: nFlow
-        , fopOutput     :: nFlow
-        , fopExp        :: Exp a nValue }
+        { fopInput      :: nF
+        , fopOutput     :: nF
+        , fopExp        :: Exp a bV nV }
 
         -- | Group sequences of values by the given predicate,
         --   returning lengths of each group.
         | FopGroupsI
-        { fopInput      :: nFlow
-        , fopOuput      :: nFlow
-        , fopExp        :: Exp a nValue }
+        { fopInput      :: nF
+        , fopOuput      :: nF
+        , fopExp        :: Exp a bV nV }
         deriving Show
 
 
 -- | Flow sources.
-data Source a nFlow
+data Source a nF
         -- | Source data from a named table.
         = SourceTable
         { -- | Annotation
@@ -52,15 +51,16 @@ data Source a nFlow
           -- | Name of table.
         , sourceTableName       :: String 
 
-        , sourceOutput          :: nFlow }
+        , sourceOutput          :: nF }
         deriving Show
 
 
 -- | Scalar expressions.
-data Exp a nValue
-        = XVar  a nValue                  -- ^ Scalar Variable
-        | XOp   a ScalarOp [Exp a nValue] -- ^ Scalar operator.
-        | XLit  a Lit                     -- ^ Scalar literal.
+data Exp a bV nV
+        = XLit  a Lit                    -- ^ Scalar literal.
+        | XVar  a nV                     -- ^ Scalar variable.
+        | XLam  a bV (Exp a bV nV)       -- ^ Scalar binder.
+        | XOp   a ScalarOp [Exp a bV nV] -- ^ Scalar operator.
         deriving (Eq, Show)
 
 

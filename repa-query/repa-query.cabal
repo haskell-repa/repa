@@ -15,10 +15,12 @@ Synopsis:       Data-parallel data flows.
 
 Library
   build-Depends: 
-        base                    == 4.8.*,
+        base            == 4.8.*,
+        mtl             == 2.2.1
 
   exposed-modules:
         Data.Repa.Query.Graph
+        Data.Repa.Query.EDSL
 
   ghc-options:
         -threaded
