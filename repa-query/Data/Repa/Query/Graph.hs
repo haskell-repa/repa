@@ -1,6 +1,7 @@
 
 module Data.Repa.Query.Graph
-        ( Graph         (..)
+        ( Query         (..)
+        , Graph         (..)
         , Node          (..)
         , FlowOp        (..)
         , Source        (..)
@@ -8,6 +9,12 @@ module Data.Repa.Query.Graph
         , ScalarOp      (..)
         , Lit           (..))
 where
+
+
+-- | A query consisting of an graph, and the name of the output flow.
+data Query a nF bV nV
+        = Query nF (Graph a nF bV nV)
+        deriving Show
 
 
 -- | Operator graph for a query.

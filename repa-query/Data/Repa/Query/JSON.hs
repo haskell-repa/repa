@@ -5,15 +5,36 @@ import Control.Monad
 import Data.Repa.Query.Graph
 import Data.Aeson                               as Aeson
 import qualified Data.Text                      as T
-import qualified Data.ByteString.Lazy.Char8     as BS
 import qualified Data.HashMap.Strict            as H
 import Data.Text                                (Text)
 
 
+--------------------------------------------------------------------------------------------- Query
+instance (ToJSON nF, ToJSON bV, ToJSON nV)
+      => (ToJSON (Query a nF bV nV)) where
+ toJSON xx
+  = case xx of
+        Query f g
+         -> object [ "type"     .= text "query"
+                   , "out"      .= toJSON f
+                   , "graph"    .= toJSON g ]
+
+
+instance (FromJSON nF, FromJSON bV, FromJSON nV)
+      => (FromJSON (Query () nF bV nV)) where
+ parseJSON (Object hh)
+
+        | Just (String "query") <- H.lookup "type"  hh
+        , Just jOut             <- H.lookup "out"   hh
+        , Just jGraph           <- H.lookup "graph" hh
+        = do    out     <- parseJSON jOut
+                graph   <- parseJSON jGraph
+                return  $ Query out graph
+ 
+
 --------------------------------------------------------------------------------------------- Graph
 instance (ToJSON nF, ToJSON bV, ToJSON nV)
       => (ToJSON (Graph a nF bV nV)) where
-
  toJSON xx
   = case xx of
         Graph ns
@@ -28,6 +49,8 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
         , Just jNodes           <- H.lookup "nodes" hh
         = do    nodes  <- parseJSON jNodes
                 return  $ Graph nodes 
+
+ parseJSON _ = mzero
 
 
 ---------------------------------------------------------------------------------------------- Node
@@ -61,6 +84,8 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
         , Just jOp              <- H.lookup "op"       hh
         = do    op      <- parseJSON jOp
                 return  $ NodeOp op
+
+ parseJSON _ = mzero
 
 
 -------------------------------------------------------------------------------------------- FlowOp
@@ -172,6 +197,8 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
                 fun     <- parseJSON jFun
                 return  $  FopFilterI fin fout fun
 
+ parseJSON _ = mzero
+
 
 -------------------------------------------------------------------------------------------- Source
 instance (ToJSON nF)
@@ -195,6 +222,8 @@ instance  FromJSON nF
         , Just  jOut            <- H.lookup "output" hh
         = do  out     <- parseJSON jOut
               return  $ SourceTable () (T.unpack name) out
+
+ parseJSON _ = mzero
 
 
 ----------------------------------------------------------------------------------------------- Exp
@@ -282,7 +311,7 @@ instance (FromJSON bV, FromJSON nV)
         = do  args      <- parseJSON jArgs
               return $ XOp  () sop args
 
-        | otherwise     =  mzero
+ parseJSON _ = mzero
 
 
 ------------------------------------------------------------------------------------------ ScalarOp

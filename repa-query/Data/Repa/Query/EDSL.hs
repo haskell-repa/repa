@@ -2,7 +2,6 @@
 module Data.Repa.Query.EDSL
         ( -- * Operator graphs.
           Q, runQ
-        , Graph
 
         -- * Variables
         , Flow  (..)
@@ -44,6 +43,7 @@ import Prelude
         , (==), (/=)
         , (>),  (>=), (<), (<=))
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Flows of the given element type.
 --
@@ -80,20 +80,18 @@ type Q a
         = State S a
 
 
--- | Query operator graph, using `String` for flow variables,
---   anonymous binders and debruijn indices for value variables.
-type Graph
-        = G.Graph () String () Int
-
-
 -- | Run a query builder.
-runQ :: Q a -> (a, Graph)
+-- 
+--   The operator graph in the result query uses strings for flow variables
+--   and debruijn indices for value variables.
+--
+runQ :: Q (Flow a) -> G.Query () String () Int
 runQ f
- = let (x, s')  = runState f
+ = let (Flow x, s')  = runState f
                 $ S { sNodes        = []
                     , sGenFlow      = 0
                     , sGenScalar    = 0 }
-   in  (x, G.Graph (sNodes s'))
+   in  G.Query x (G.Graph (sNodes s'))
 
 
 -- | State used when building the operator graph.
