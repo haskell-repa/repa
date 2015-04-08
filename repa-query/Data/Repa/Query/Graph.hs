@@ -32,20 +32,20 @@ data FlowOp a nF bV nV
         = FopMapI
         { fopInput      :: nF
         , fopOutput     :: nF
-        , fopExp        :: Exp a bV nV }
+        , fopFun        :: Exp a bV nV }
 
         -- | Keep only the elements that match the given predicate.
         | FopFilterI
         { fopInput      :: nF
         , fopOutput     :: nF
-        , fopExp        :: Exp a bV nV }
+        , fopFun        :: Exp a bV nV }
 
         -- | Fold all the elements of a flow, 
         --   yielding a new flow of a single result element.
         | FopFoldI      
         { fopInput      :: nF
         , fopOutput     :: nF
-        , fopExp        :: Exp a bV nV 
+        , fopFun        :: Exp a bV nV 
         , fopNeutral    :: Exp a bV nV }
 
         -- | Segmented fold of the elements of a flow.
@@ -53,7 +53,7 @@ data FlowOp a nF bV nV
         { fopInputLens  :: nF
         , fopInputElems :: nF
         , fopOutput     :: nF
-        , fopExp        :: Exp a bV nV
+        , fopFun        :: Exp a bV nV
         , fopNeutral    :: Exp a bV nV }
 
         -- | Group sequences of values by the given predicate,
@@ -61,7 +61,7 @@ data FlowOp a nF bV nV
         | FopGroupsI
         { fopInput      :: nF
         , fopOuput      :: nF
-        , fopExp        :: Exp a bV nV }
+        , fopFun        :: Exp a bV nV }
         deriving Show
 
 

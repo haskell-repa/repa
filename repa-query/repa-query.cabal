@@ -16,11 +16,15 @@ Synopsis:       Data-parallel data flows.
 Library
   build-Depends: 
         base            == 4.8.*,
-        mtl             == 2.2.1
+        mtl             == 2.2.1,
+        text            == 1.2.*,
+        aeson           == 0.8.*
+
 
   exposed-modules:
         Data.Repa.Query.Graph
         Data.Repa.Query.EDSL
+        Data.Repa.Query.JSON
 
   ghc-options:
         -threaded
@@ -28,6 +32,7 @@ Library
         -O2
 
   extensions:
+        OverloadedStrings
         BangPatterns
         PatternGuards
         FlexibleContexts
