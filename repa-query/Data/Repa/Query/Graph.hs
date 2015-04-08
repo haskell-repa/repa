@@ -5,13 +5,15 @@ module Data.Repa.Query.Graph
         , FlowOp        (..)
         , Source        (..)
         , Exp           (..)
-        , ScalarOp      (..))
+        , ScalarOp      (..)
+        , Lit           (..))
 where
 
 
 -- | Operator graph for a query.
 data Graph a nF bV nV
         = Graph [Node a nF bV nV]
+        deriving Show
 
 
 -- | A single node in the graph.
@@ -31,6 +33,28 @@ data FlowOp a nF bV nV
         { fopInput      :: nF
         , fopOutput     :: nF
         , fopExp        :: Exp a bV nV }
+
+        -- | Keep only the elements that match the given predicate.
+        | FopFilterI
+        { fopInput      :: nF
+        , fopOutput     :: nF
+        , fopExp        :: Exp a bV nV }
+
+        -- | Fold all the elements of a flow, 
+        --   yielding a new flow of a single result element.
+        | FopFoldI      
+        { fopInput      :: nF
+        , fopOutput     :: nF
+        , fopExp        :: Exp a bV nV 
+        , fopNeutral    :: Exp a bV nV }
+
+        -- | Segmented fold of the elements of a flow.
+        | FopFoldsI     
+        { fopInputLens  :: nF
+        , fopInputElems :: nF
+        , fopOutput     :: nF
+        , fopExp        :: Exp a bV nV
+        , fopNeutral    :: Exp a bV nV }
 
         -- | Group sequences of values by the given predicate,
         --   returning lengths of each group.
