@@ -30,6 +30,8 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
         = do    out     <- parseJSON jOut
                 graph   <- parseJSON jGraph
                 return  $ Query out graph
+
+ parseJSON _ = mzero
  
 
 --------------------------------------------------------------------------------------------- Graph

@@ -25,8 +25,9 @@ Library
 
   exposed-modules:
         Data.Repa.Query.Graph
-        Data.Repa.Query.EDSL
+        Data.Repa.Query.Builder
         Data.Repa.Query.JSON
+        Data.Repa.Query.EDSL
 
   ghc-options:
         -threaded
