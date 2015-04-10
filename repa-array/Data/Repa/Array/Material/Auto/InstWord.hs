@@ -24,6 +24,13 @@ instance Bulk A Word8 where
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
+instance (Unpack (Array F Word8)) t 
+      => (Unpack (Array A Word8)) t where
+ unpack (AArray_Word8 buf)   = unpack buf
+ repack (AArray_Word8 x) buf = AArray_Word8 (repack x buf)
+ {-# INLINE unpack #-}
+ {-# INLINE repack #-}
+
 deriving instance Show (Array A Word8)
 
 instance Convert F Word8 A Word8 where
