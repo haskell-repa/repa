@@ -41,16 +41,22 @@ packToArray !format !v
  | Just lenBytes    <- packedSize format v
  = unsafePerformIO
  $ do   
+        -- The 'lenBytes' we get above is an upper bound on the
+        -- number of used by the serialised data.
         buf@(A.FBuffer mvec) :: A.Buffer A.F Word8
                 <- A.unsafeNewBuffer (A.Foreign lenBytes)
 
         let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
 
-        -- TODO: allow packed size to be an upper bound on size actually used.
-
+        -- When we pack the data into the buffer we get the number
+        -- of bytes actually used, then slice the original buffer
+        -- down to this size.
         withForeignPtr fptr $ \ptr
          -> C.pack (plusPtr ptr oStart) format v
-         $  \_ -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
+         $  \len -> do
+                buf'    <- A.unsafeSliceBuffer 0 len buf
+                arr     <- A.unsafeFreezeBuffer buf'
+                return  $ Just $ A.convert arr
 
  | otherwise = Nothing
 {-# INLINE_ARRAY packToArray #-}
