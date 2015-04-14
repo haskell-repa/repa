@@ -33,6 +33,21 @@ data Node a nF bV nV
         deriving Show
 
 
+-- | Flow sources.
+data Source a nF
+        -- | Source data from a named table.
+        = SourceTable
+        { -- | Annotation
+          sourceAnnot           :: a
+
+          -- | Name of table.
+        , sourceTableName       :: String 
+
+          -- | Output flow.
+        , sourceOutput          :: nF }
+        deriving Show
+
+
 -- | Flow operators.
 data FlowOp a nF bV nV
         -- | Apply a function to every element of a flow.
@@ -69,20 +84,6 @@ data FlowOp a nF bV nV
         { fopInput      :: nF
         , fopOuput      :: nF
         , fopFun        :: Exp a bV nV }
-        deriving Show
-
-
--- | Flow sources.
-data Source a nF
-        -- | Source data from a named table.
-        = SourceTable
-        { -- | Annotation
-          sourceAnnot           :: a
-
-          -- | Name of table.
-        , sourceTableName       :: String 
-
-        , sourceOutput          :: nF }
         deriving Show
 
 
