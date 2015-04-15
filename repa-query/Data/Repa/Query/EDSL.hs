@@ -243,12 +243,12 @@ instance Num (Value Int) where
  negate         = undefined
  abs            = undefined
  signum         = undefined
- fromInteger x  = Value $ G.XLit () (G.LitInt x)
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt x))
 
 
 ---------------------------------------------------------------------------------------------------
 xVar i          = G.XVar () i
-xLam x          = G.XLam () () x
+xLam x          = G.XVal () (G.VLam () () x)
 xOp s args      = G.XOp  () s args
 
 

@@ -28,6 +28,8 @@ Library
         Data.Repa.Query.Builder
         Data.Repa.Query.JSON
         Data.Repa.Query.EDSL
+        Data.Repa.Query.Exp
+        Data.Repa.Query.Eval.Exp
 
   ghc-options:
         -threaded
@@ -40,5 +42,7 @@ Library
         PatternGuards
         FlexibleContexts
         FlexibleInstances
+        TypeFamilies
+        MultiParamTypeClasses
 
         

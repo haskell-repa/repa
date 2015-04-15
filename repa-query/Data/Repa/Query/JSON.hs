@@ -3,6 +3,7 @@ module Data.Repa.Query.JSON
 where
 import Control.Monad
 import Data.Repa.Query.Graph
+import Data.Repa.Query.Exp
 import Data.Aeson                               as Aeson
 import qualified Data.Text                      as T
 import qualified Data.HashMap.Strict            as H
@@ -234,23 +235,36 @@ instance (ToJSON bV, ToJSON nV)
  toJSON xx
   = case xx of
         -- literals
-        XLit _ (LitInt i)
+        XVal _ (VLit _ (LBool b))
+         -> object [ "type"     .= text "exp"
+                   , "exp"      .= text "lit"
+                   , "lit"      .= text "bool"
+                   , "value"    .= T.pack (show b) ]
+
+        XVal _ (VLit _ (LInt i))
          -> object [ "type"     .= text "exp"
                    , "exp"      .= text "lit"
                    , "lit"      .= text "int"
                    , "value"    .= T.pack (show i) ]
 
-        XLit _ (LitFloat f)
+        XVal _ (VLit _ (LFloat f))
          -> object [ "type"     .= text "exp"
                    , "exp"      .= text "lit"
                    , "lit"      .= text "float"
                    , "value"    .= T.pack (show f) ]
 
-        XLit _ (LitString s)
+        XVal _ (VLit _ (LString s))
          -> object [ "type"     .= text "exp"
                    , "exp"      .= text "lit"
                    , "lit"      .= text "string"
                    , "value"    .= T.pack s ]
+
+        -- lambdas
+        XVal _ (VLam _ bV x)
+         -> object [ "type"     .= text "exp"
+                   , "exp"      .= text "lam"
+                   , "binder"   .= toJSON bV
+                   , "body"     .= toJSON x ]
 
         -- variables
         XVar _ v
@@ -258,12 +272,12 @@ instance (ToJSON bV, ToJSON nV)
                    , "exp"      .= text "var"
                    , "var"      .= toJSON v ]
 
-        -- lambdas
-        XLam _ bV x
+        -- applications
+        XApp _ xFun xArg
          -> object [ "type"     .= text "exp"
-                   , "exp"      .= text "lam"
-                   , "binder"   .= toJSON bV
-                   , "body"     .= toJSON x ]
+                   , "exp"      .= text "app"
+                   , "fun"      .= toJSON xFun
+                   , "arg"      .= toJSON xArg ]
 
         -- operators
         XOp  _ sOp xsArgs
@@ -283,9 +297,9 @@ instance (FromJSON bV, FromJSON nV)
         , Just (String  lit)    <- H.lookup "lit"   hh
         , Just (String  value)  <- H.lookup "value" hh
         = case T.unpack lit of
-              "int"             -> return $ XLit () (LitInt    $ read $ T.unpack value)
-              "float"           -> return $ XLit () (LitFloat  $ read $ T.unpack value)
-              "string"          -> return $ XLit () (LitString $ T.unpack value)
+              "int"             -> return $ xInt    () $ read $ T.unpack value
+              "float"           -> return $ xFloat  () $ read $ T.unpack value
+              "string"          -> return $ xString () $ T.unpack value
               _                 -> mzero
 
         -- variables
@@ -302,7 +316,7 @@ instance (FromJSON bV, FromJSON nV)
         , Just jBody            <- H.lookup "body"   hh
         = do  binder    <- parseJSON jBinder
               body      <- parseJSON jBody
-              return $ XLam () binder body
+              return $ XVal () (VLam () binder body)
 
         -- operators
         | Just (String "exp")   <- H.lookup "type"   hh

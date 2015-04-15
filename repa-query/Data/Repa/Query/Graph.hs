@@ -6,9 +6,11 @@ module Data.Repa.Query.Graph
         , FlowOp        (..)
         , Source        (..)
         , Exp           (..)
-        , ScalarOp      (..)
-        , Lit           (..))
+        , Val           (..)
+        , Lit           (..)
+        , ScalarOp      (..))
 where
+import Data.Repa.Query.Exp
 
 
 -- | A query consisting of an graph, and the name of the output flow.
@@ -85,38 +87,4 @@ data FlowOp a nF bV nV
         , fopOuput      :: nF
         , fopFun        :: Exp a bV nV }
         deriving Show
-
-
--- | Scalar expressions.
-data Exp a bV nV
-        = XLit  a Lit                    -- ^ Scalar literal.
-        | XVar  a nV                     -- ^ Scalar variable.
-        | XLam  a bV (Exp a bV nV)       -- ^ Scalar binder.
-        | XOp   a ScalarOp [Exp a bV nV] -- ^ Scalar operator.
-        deriving (Eq, Show)
-
-
--- | Scalar operators.
-data ScalarOp
-        = SopNeg                        -- ^ Negation.
-        | SopAdd                        -- ^ Addition.
-        | SopSub                        -- ^ Subtraction.
-        | SopMul                        -- ^ Multiplication.
-        | SopDiv                        -- ^ Division.
-        | SopEq                         -- ^ Equality.
-        | SopNeq                        -- ^ Negated equality.
-        | SopGt                         -- ^ Greater-than.
-        | SopGe                         -- ^ Greater-than or equal.
-        | SopLt                         -- ^ Less-than.
-        | SopLe                         -- ^ Less-than or equal.
-        deriving (Eq, Show)
-
-
--- | Literals.
-data Lit
-        = LitInt        Integer         -- ^ Literal integer.
-        | LitFloat      Double          -- ^ Literal float.
-        | LitString     String          -- ^ Literal string.
-        deriving (Eq, Show)
-
 
