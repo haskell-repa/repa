@@ -1,5 +1,5 @@
 
-module Data.Repa.Merge.Transition
+module Data.Repa.Machine.Transition
         (Transition (..))
 where
 import Data.Repa.Query.Graph

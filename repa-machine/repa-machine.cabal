@@ -1,0 +1,49 @@
+Name:           repa-machine
+Version:        4.1.0.1
+License:        BSD3
+License-file:   LICENSE
+Author:         The Repa Development Team
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Data Structures
+Homepage:       http://repa.ouroborus.net
+Bug-reports:    repa@ouroborus.net
+Description:    Machine fusion.
+Synopsis:       Machine fusion.
+
+Library
+  build-Depends: 
+        base                 == 4.8.*,
+        mtl                  == 2.2.1,
+        text                 == 1.2.*,
+        aeson                == 0.8.*,
+        bytestring           >= 0.10.6 && < 0.11, 
+        unordered-containers >= 0.2.5  && < 0.3,
+        containers           >= 0.5.6  && < 0.6,
+        repa-query           >= 4.1.0  && < 4.2
+
+
+  exposed-modules:
+        Data.Repa.Machine.Base
+        Data.Repa.Machine.Step
+        Data.Repa.Machine.Eval
+        Data.Repa.Machine.Transition
+
+  ghc-options:
+        -threaded
+        -Wall -fno-warn-missing-signatures
+        -O2
+
+  extensions:
+        OverloadedStrings
+        BangPatterns
+        PatternGuards
+        FlexibleContexts
+        FlexibleInstances
+        TypeFamilies
+        MultiParamTypeClasses
+        RankNTypes
+        GADTs
+        ScopedTypeVariables

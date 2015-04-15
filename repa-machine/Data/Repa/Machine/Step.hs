@@ -1,60 +1,20 @@
 
-module Data.Repa.Merge.Machine
-        (Machine (..))
+module Data.Repa.Machine.Step
+        ( step
+        , ErrorStep (..))
 where
+import Data.Repa.Machine.Base
 import Data.Repa.Query.Eval.Env                 as Env
 import Data.Repa.Query.Eval.Exp
-import qualified Data.Repa.Merge.Transition     as T
-import qualified Data.Repa.Query.Graph          as G
+import qualified Data.Repa.Machine.Transition   as T
 import qualified Data.Map.Strict                as Map
-import Data.Map                                 (Map)
-
-
--------------------------------------------------------------------------------
--- | An expression closed by some environment.
-type Exp env
-        = G.Exp () (Bind env) (Bound env)
-
-
--- | A value closed by some environment.
-type Val env
-        = G.Val () (Bind env) (Bound env)
-
-
--- | A transition with between states with some label, 
---   where the expressions are closed with some environment.
-type Transition label env
-        = T.Transition label (Bound env) () (Bind env) (Bound env)
-
-
--------------------------------------------------------------------------------
--- | A state machine that reads data from some input streams and
---   writes to some output streams.
-data Machine label env
-        = Machine
-        { -- | State the machine is currently in.
-          machineState  :: label
-
-          -- | Whether the machine has already finished and halted.
-        , machineHalt   :: Bool
-
-          -- | Machine transitions.
-        , machineTrans  :: Map label (Transition label env) 
-
-          -- | State value attached to each output stream.
-        , machineEnv    :: env (Exp env)
-
-          -- | Input value buffered from each input stream.
-        , machineElems  :: env (Maybe (Val env)) }
 
 
 -------------------------------------------------------------------------------
 -- | Take a single transition.
 step    :: forall label env m
         .  ( Ord label, Ord (Bound env)
-           , Monad m
-           , Env env (Val env)
-           , Env env (Maybe (Val env)))
+           , Monad m)
 
         => (Bound env -> m (Maybe (Val env)))   
                         -- ^ Get a value from an input stream.
@@ -69,7 +29,7 @@ step    :: forall label env m
         -> m (Either (ErrorStep label (Bound env))
                      (Machine   label env))
 
-step get put mm
+step get put mm@(Machine{})
  | lStart       <- machineState mm
  , Just trans   <- Map.lookup (machineState mm) (machineTrans mm)
  = case trans of
@@ -78,7 +38,7 @@ step get put mm
         T.TrPull nInput lSome lNone
          -- Cannot pull a new value while we have one buffered
          -- for the same stream.
-         | Just{}       <- Env.lookup nInput (machineElems mm)
+         | Just (Just {}) <- Env.lookup nInput (machineElems mm)
          -> return $ Left $ ErrorStepPullFull lStart nInput
 
          -- Pull a new value from an input.
@@ -114,7 +74,7 @@ step get put mm
                 let env :: env (Val env) = Env.fromList nvsInput
                 case evalExp env xFun of
                  Nothing        
-                  ->    return $ Left $ ErrorEvalStuck lStart
+                  ->    return $ Left $ ErrorStepEvalStuck lStart
 
                  Just vResult   
                   -> do put nOutput (Just vResult)
@@ -136,10 +96,15 @@ step get put mm
         T.TrHalt 
          -> return $ Right $ mm { machineHalt  = True  }
 
+        _ -> error "step: finish transitions"
+
+ | otherwise
+ = return $ Left $ ErrorStepInvalidState (machineState mm)
 
 data ErrorStep lState nStream
         = ErrorStepPullFull      lState nStream
         | ErrorStepReleaseEmpty  lState nStream
-        | ErrorEvalStuck         lState
-
+        | ErrorStepEvalStuck     lState
+        | ErrorStepInvalidState  lState
+        deriving Show
 
