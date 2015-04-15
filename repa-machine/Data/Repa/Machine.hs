@@ -4,7 +4,8 @@ module Data.Repa.Machine
         , Transition    (..)
         , Exp, Val, Lit
         , step
-        , eval)
+        , eval
+        , ErrorStep (..))
 where
 import Data.Repa.Machine.Base
 import Data.Repa.Machine.Step

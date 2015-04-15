@@ -11,6 +11,7 @@ import qualified Data.Repa.Query.Eval.Env       as Env
 import qualified Data.Repa.Query.Exp            as Exp
 
 
+-- | Evaluate a machine to completion.
 eval    :: ( Ord label, Env env [Lit]
            , Ord (Env.Bound env)
            , Show label, Show (Env.Bound env))

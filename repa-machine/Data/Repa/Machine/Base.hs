@@ -3,7 +3,7 @@
 module Data.Repa.Machine.Base
         ( Machine       (..)
         , Transition
-        , Exp, Val, Lit)
+        , Exp, Val, G.Lit)
 where
 import Data.Repa.Query.Eval.Env                 as Env
 import qualified Data.Repa.Machine.Transition   as T
@@ -22,8 +22,6 @@ type Val env
         = G.Val () (Bind env) (Bound env)
 
 
-type Lit
-        = G.Lit
 
 -- | A transition with between states with some label, 
 --   where the expressions are closed with some environment.

@@ -26,10 +26,13 @@ Library
 
 
   exposed-modules:
+        Data.Repa.Machine
+        Data.Repa.Machine.Transition
+
+  other-modules:
         Data.Repa.Machine.Base
         Data.Repa.Machine.Step
         Data.Repa.Machine.Eval
-        Data.Repa.Machine.Transition
 
   ghc-options:
         -threaded

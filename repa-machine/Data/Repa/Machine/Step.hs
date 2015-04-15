@@ -101,10 +101,22 @@ step get put mm@(Machine{})
  | otherwise
  = return $ Left $ ErrorStepInvalidState (machineState mm)
 
+
+-- | Things that can go wrong when stepping a machine.
 data ErrorStep lState nStream
+        -- | Tried to pull from an input stream when the associated
+        --   buffer already contained an element.
         = ErrorStepPullFull      lState nStream
+
+        -- | Tried to release an input value when we weren't holding it.
         | ErrorStepReleaseEmpty  lState nStream
+
+        -- | Evaluation of scalar expression got stuck.
         | ErrorStepEvalStuck     lState
+
+        -- | Machine ended up in some unknown state.
         | ErrorStepInvalidState  lState
         deriving Show
+
+
 
