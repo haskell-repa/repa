@@ -6,16 +6,10 @@ module Data.Repa.Query.Eval.Exp
         , ValEnv
         , evalExp)
 where
+import Data.Repa.Query.Eval.Env
 import Data.Repa.Query.Exp
 import Control.Monad
 import Prelude hiding (lookup)
-
-
-class Env env v where
- data Bind  env  
- data Bound env
- lookup         :: env v -> Bound env -> Maybe v
- insert         :: env v -> Bind  env -> v -> env v
 
 
 -- | An expression closed by the given environment type.
@@ -26,7 +20,6 @@ type ExpEnv a env
 -- | A value closed by the given environment type.
 type ValEnv a env
         = Val a (Bind env) (Bound env)
-
 
 
 -- | Evaluate an expression in some environment.
@@ -41,12 +34,12 @@ evalExp env xx
          -> Just val
 
         XVar _ bound
-         -> case lookup env bound of 
+         -> case lookup bound env of 
                 Nothing         -> Nothing
                 Just val        -> Just val
 
         XApp _ (XVal _ (VLam _ bV xBody)) (XVal _ val)
-         ->     evalExp (insert env bV val) xBody
+         ->     evalExp (insert bV val env) xBody
 
         XApp a xFun@(XVal _ VLam{}) xArg
          -> do  xArg'    <- evalExp env xArg

@@ -7,8 +7,16 @@ import Data.Repa.Query.Graph
 
 -- | Machine transition.
 data Transition lState nStream aExp bVal uVal
+        -- | Halt the machine
+        = TrHalt
+
+        -- | Skip to the next state.
+        | TrSkip
+        { trSkipNext            :: lState }
+
+
         -- | Read from named input stream.
-        = TrPull    
+        | TrPull    
         { -- | Read from this input stream.
           trPullInput           :: nStream
 
@@ -28,28 +36,24 @@ data Transition lState nStream aExp bVal uVal
         , trReleaseNext         :: lState }
 
 
-        -- | Close an input.
-        | TrClose  
-        { trCloseInput          :: nStream
-        , trCloseNext           :: lState }
-
         -- | Output a value.
         | TrOut
         { trOutStream           :: nStream
         , trOutFun              :: Exp aExp bVal uVal
         , trOutNext             :: lState }
 
-        -- | Signal that output to a stream is done.
-        | TrDone
-        { trDoneStream          :: nStream
-        , trDoneNext            :: lState }
 
-        -- | Branch based on a function.
-        | TrIf
-        { trIfInput             :: nStream
-        , trIfFun               :: Exp aExp bVal uVal
-        , trIfTrue              :: lState
-        , trIfFalse             :: lState }
+        -- | Close an input.
+        | TrClose  
+        { trCloseInput          :: nStream
+        , trCloseNext           :: lState }
+
+
+        -- | Signal that output to a stream is done.
+        | TrEject
+        { trEjectStream          :: nStream
+        , trEjectNext            :: lState }
+
 
         -- | Update the state associated with a channel.
         | TrUpdate
@@ -57,10 +61,11 @@ data Transition lState nStream aExp bVal uVal
         , trUpdateFun           :: Exp aExp bVal uVal
         , trUpdateNext          :: lState }
 
-        -- | Skip to the next state.
-        | TrSkip
-        { trSkipNext            :: lState }
 
-        -- | Halt the program.
-        | TrHalt
+        -- | Branch based on a function.
+        | TrIf
+        { trIfInput             :: nStream
+        , trIfFun               :: Exp aExp bVal uVal
+        , trIfTrue              :: lState
+        , trIfFalse             :: lState }
         deriving Show
