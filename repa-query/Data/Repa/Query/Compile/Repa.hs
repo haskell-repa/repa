@@ -57,7 +57,6 @@ bindOfSource ss
 
 -- | Yield a Haskell binding for a flow op.
 bindOfFlowOp :: G.FlowOp () String String String -> Q (H.Pat, H.Exp)
-
 bindOfFlowOp op
  = case op of
         G.FopMapI sIn sOut xFun

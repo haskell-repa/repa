@@ -23,6 +23,7 @@ Library
         unordered-containers >= 0.2.5  && < 0.3,
         containers           >= 0.5.6  && < 0.6,
         template-haskell     >= 2.10.0 && < 2.11,
+        transformers         >= 0.4.2  && < 0.5,
         repa-flow            >= 4.1.0  && < 4.2
 
 
@@ -33,6 +34,7 @@ Library
         Data.Repa.Query.Eval.Exp
         Data.Repa.Query.Source.Builder
         Data.Repa.Query.Source.EDSL
+        Data.Repa.Query.Transform.Namify
         Data.Repa.Query.Exp
         Data.Repa.Query.Graph
 

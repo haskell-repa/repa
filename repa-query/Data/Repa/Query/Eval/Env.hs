@@ -31,9 +31,9 @@ class Env env a where
  toList         :: env a -> [(Bind env, a)]
 
 
-instance Env (Map String) a where
- type Bind  (Map String) = String
- type Bound (Map String) = String
+instance Ord n => Env (Map n) a where
+ type Bind  (Map n) = n
+ type Bound (Map n) = n
  lookup          = Map.lookup
  update          = Map.insert
  insert          = Map.insert
