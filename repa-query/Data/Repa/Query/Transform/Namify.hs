@@ -1,9 +1,11 @@
 
 module Data.Repa.Query.Transform.Namify
         ( Namifier (..)
+        , Namify   (..)
         , mkNamifierStrings)
 where
 import Control.Monad
+import Data.Repa.Query.Graph            as Q
 import Data.Repa.Query.Exp              as Q
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
@@ -24,7 +26,7 @@ data Namifier b u
           --   environment.
           namifierNew   :: Map b u -> (b, u)
 
-          -- | Holds the in-scope named binders during namification
+          -- | Holds the in-scope named binders during namification.
         , namifierEnv   :: Map b u
 
           -- | Stack of renamed binders along this path.
@@ -38,6 +40,45 @@ class Namify (c :: * -> * -> *) where
         => Namifier b u
         -> c () Int
         -> Maybe (c b u)
+
+
+instance Namify (Query a nF) where
+ namify nam (Query nf gg)
+        = liftM (Query nf) (namify nam gg)
+
+
+instance Namify (Graph a nF) where
+ namify nam (Graph ns) 
+        = liftM Graph (mapM (namify nam) ns)
+
+
+instance Namify (Node a nF) where
+ namify nam nn
+  = case nn of
+        NodeSource s    
+         -> return $ NodeSource s
+
+        NodeOp fop
+         -> liftM NodeOp (namify nam fop)
+
+
+instance Namify (FlowOp a nF) where
+ namify nam fop
+  = case fop of
+        FopMapI    fin fout xx
+         -> liftM  (FopMapI fin fout)    (namify nam xx)
+
+        FopFilterI fin fout xx
+         -> liftM  (FopFilterI fin fout) (namify nam xx)
+
+        FopFoldI   fin fout xf xn
+         -> liftM2 (FopFoldI fin fout)   (namify nam xf) (namify nam xn)
+
+        FopFoldsI  flen felem fout xf xn
+         -> liftM2 (FopFoldsI flen felem fout) (namify nam xf) (namify nam xn)
+
+        FopGroupsI flen felem xx
+         -> liftM  (FopGroupsI flen felem) (namify nam xx)
 
 
 instance Namify (Exp a) where
@@ -76,7 +117,7 @@ push    :: Ord b
 push nam
  = let  (b, u) = namifierNew nam (namifierEnv nam)
    in   (  nam {  namifierEnv   = Map.insert b u (namifierEnv nam)
-               ,  namifierStack = [(b, u)] }
+               ,  namifierStack = (b, u) : namifierStack nam }
         , (b, u))
 
 
@@ -89,7 +130,7 @@ rewrite :: Namifier b u
 rewrite nam ix
  = case lookup ix $ zip [0..] (namifierStack nam) of
         Just (_, u)     -> return u
-        Nothing         -> mzero
+        Nothing         -> Nothing
 
 
 -------------------------------------------------------------------------------
@@ -105,5 +146,4 @@ mkNamifierStrings
            in  case Map.lookup candidate has of
                 Nothing     -> (candidate, candidate)
                 Just _clash -> new has (i + 1)
-
 

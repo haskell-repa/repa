@@ -1,9 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-import Data.Repa.Query.EDSL                     as Q
-import Data.Repa.Query.JSON                     as Q
-import Data.Repa.Query.Builder                  as Q
 import Data.Repa.Query.Compile.Repa             as Q
+import Data.Repa.Query.Convert.JSON             as Q
+import Data.Repa.Query.Source.EDSL              as Q
+import Data.Repa.Query.Source.Builder           as Q
 import qualified Data.Repa.Query.Graph          as G
 
 import Data.Aeson                               (encode, toJSON, fromJSON, Result)
