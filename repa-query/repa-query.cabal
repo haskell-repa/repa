@@ -21,17 +21,20 @@ Library
         aeson                == 0.8.*,
         bytestring           >= 0.10.6 && < 0.11, 
         unordered-containers >= 0.2.5  && < 0.3,
-        containers           >= 0.5.6  && < 0.6
+        containers           >= 0.5.6  && < 0.6,
+        template-haskell     >= 2.10.0 && < 2.11,
+        repa-flow            >= 4.1.0  && < 4.2
 
 
   exposed-modules:
-        Data.Repa.Query.Graph
-        Data.Repa.Query.Builder
-        Data.Repa.Query.JSON
-        Data.Repa.Query.EDSL
-        Data.Repa.Query.Exp
-        Data.Repa.Query.Eval.Exp
+        Data.Repa.Query.Compile.Repa
+        Data.Repa.Query.Convert.JSON
         Data.Repa.Query.Eval.Env
+        Data.Repa.Query.Eval.Exp
+        Data.Repa.Query.Source.Builder
+        Data.Repa.Query.Source.EDSL
+        Data.Repa.Query.Exp
+        Data.Repa.Query.Graph
 
   ghc-options:
         -threaded

@@ -1,14 +1,27 @@
 {-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
 
--- | Convert a query graph to Haskell code using Repa-flow as the back end.
---   We can then compile the result with GHC to get an executable.
+-- | Compilation of Repa queries to native code by 
+--   emitting a Haskell program using repa-flow and compiling it with GHC.
 module Data.Repa.Query.Compile.Repa
-        (bindOfNode)
+        ( decOfQuery
+        , expOfQuery)
 where
 import Language.Haskell.TH              as H
-import Language.Haskell.TH.Quote        as H
 import Data.Repa.Flow                   as F
 import Data.Repa.Query.Graph            as G
+
+
+-- | Yield a top-level Haskell declararation for a query.
+--
+--   The query expression is bound to the given name.
+decOfQuery   
+        :: Name
+        -> G.Query () String String String 
+        -> Q H.Dec
+
+decOfQuery nResult query
+ = do   hexp    <- expOfQuery query
+        return  $ H.ValD (H.VarP nResult) (H.NormalB hexp) []
 
 
 -- | Yield a Haskell expression for a query
@@ -87,20 +100,25 @@ bindOfFlowOp op
                 hRhs            <- [| F.groupsBy_i $(expOfExp xFun) $hIn |]
                 return  (pOut, hRhs)
 
+        _ -> error "finish bindOfFlowOp"
+
 
 -- | Yield a Haskell expression from a query scalar expression.
 expOfExp   :: G.Exp () String String -> H.ExpQ 
 expOfExp xx
  = case xx of
-        G.XLit _ lit    
+        G.XVal _ (G.VLit _ lit)
          -> do  hl      <- litOfLit lit
                 H.litE hl
+
+        G.XVal _ (G.VLam _ sBind xBody)
+         -> H.lamE [H.varP (H.mkName sBind)] (expOfExp xBody)
 
         G.XVar _ str
          -> H.varE (H.mkName str)
 
-        G.XLam _ sBind xBody
-         -> H.lamE [H.varP (H.mkName sBind)] (expOfExp xBody)
+        G.XApp _ x1 x2
+         -> H.appsE [expOfExp x1, expOfExp x2]
 
         G.XOp  _ sop xsArgs
          -> H.appsE (expOfScalarOp sop : map expOfExp xsArgs)
@@ -127,8 +145,8 @@ expOfScalarOp sop
 litOfLit :: G.Lit -> Q H.Lit
 litOfLit lit 
  = case lit of
-        G.LitInt i      -> return $ H.IntegerL i
-        G.LitString s   -> return $ H.StringL  s
+        G.LInt i        -> return $ H.IntegerL i
+        G.LString s     -> return $ H.StringL  s
         _               -> error "fix float conversion"
 
 

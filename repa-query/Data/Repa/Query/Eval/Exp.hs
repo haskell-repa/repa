@@ -1,10 +1,10 @@
 
-
+-- | Direct evaluation / interpretation of a scalar expression.
 module Data.Repa.Query.Eval.Exp
-        ( Env (..)
-        , ExpEnv
+        ( ExpEnv
         , ValEnv
-        , evalExp)
+        , evalExp
+        , evalScalarOp)
 where
 import Data.Repa.Query.Eval.Env
 import Data.Repa.Query.Exp
@@ -22,11 +22,12 @@ type ValEnv a env
         = Val a (Bind env) (Bound env)
 
 
--- | Evaluate an expression in some environment.
+-- | Evaluate an expression in some environment,
+--   by direct interpretation.
 evalExp :: Env env (ValEnv a env)
-        => env     (ValEnv a env)
-        -> ExpEnv a env
-        -> Maybe   (ValEnv a env)
+        => env     (ValEnv a env)       -- ^ Starting environment.
+        -> ExpEnv a env                 -- ^ Expression to evaluate.
+        -> Maybe   (ValEnv a env)       -- ^ Resulting value.
 
 evalExp env xx
  = case xx of
@@ -58,7 +59,8 @@ evalExp env xx
                 return $ VLit a lResult
 
 
--- | Evaluate a primitive scalar operator applied to its arguments.
+-- | Evaluate a primitive scalar operator applied to its arguments,
+--   by direct interpretation.
 evalScalarOp 
         :: ScalarOp 
         -> [Lit] 

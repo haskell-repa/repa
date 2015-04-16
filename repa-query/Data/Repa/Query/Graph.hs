@@ -1,10 +1,19 @@
 
 module Data.Repa.Query.Graph
-        ( Query         (..)
+        ( -- * Queries
+          Query         (..)
+
+          -- * Graphs
         , Graph         (..)
         , Node          (..)
-        , FlowOp        (..)
+
+          -- * Flow sources
         , Source        (..)
+
+          -- * Flow operators
+        , FlowOp        (..)
+
+          -- * Scalar expressions
         , Exp           (..)
         , Val           (..)
         , Lit           (..)

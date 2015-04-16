@@ -1,5 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Data.Repa.Query.JSON
+
+-- | Conversion of Repa queries to JSON format for interfacing with
+--   client systems.
+-- 
+--   Conversion is done by providing instances for the `ToJSON` and `FromJSON`
+--   classes form the Aeson package.
+--
+module Data.Repa.Query.Convert.JSON
+        (encode, toJSON, fromJSON, Result(..))
 where
 import Control.Monad
 import Data.Repa.Query.Graph

@@ -23,17 +23,17 @@ where
 -- | Scalar expressions.
 data Exp a bV uV
         -- | Value.
-        = XVal  a (Val a bV uV)
+        = XVal  !a !(Val a bV uV)
 
         -- | Variable.
-        | XVar  a uV
+        | XVar  !a !uV
 
         -- | Function application.
-        | XApp  a (Exp a bV uV) (Exp a bV uV)
+        | XApp  !a !(Exp a bV uV) !(Exp a bV uV)
 
         -- | Apply a primitive operator.
         --   The application must be fully saturated.
-        | XOp   a ScalarOp [Exp a bV uV]
+        | XOp   !a !ScalarOp ![Exp a bV uV]
         deriving (Eq, Show)
 
 
@@ -50,8 +50,8 @@ annotOfExp xx
 -------------------------------------------------------------------------------
 -- | A value.
 data Val a bV uV
-        = VLit  a Lit
-        | VLam  a bV (Exp a bV uV)
+        = VLit  !a !Lit
+        | VLam  !a !bV !(Exp a bV uV)
         deriving (Eq, Show)
 
 
@@ -84,10 +84,10 @@ takeVLam vv
 -------------------------------------------------------------------------------
 -- | Literal values.
 data Lit
-        = LBool       Bool            -- ^ Literal Boolean
-        | LInt        Integer         -- ^ Literal integer.
-        | LFloat      Double          -- ^ Literal float.
-        | LString     String          -- ^ Literal string.
+        = LBool       !Bool            -- ^ Literal Boolean
+        | LInt        !Integer         -- ^ Literal integer.
+        | LFloat      !Double          -- ^ Literal float.
+        | LString     !String          -- ^ Literal string.
         deriving (Eq, Show)
 
 
