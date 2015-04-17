@@ -45,20 +45,6 @@ import Prelude
 
 ---------------------------------------------------------------------------------------------------
 -- | Source a named table.
--- 
---   When building an operator graph the format of the table is not known,
---   and hence the element type of the flow is polymorphic. 
---   If you want to manually constrain the flow to have a particular type
---   then provide an explicit type signature, For example:
---
--- @ 
---   (f :: Flow (Int :*: Int)) <- source "table"
--- @
---
---   When the query is compiled to executable code, the real format of the
---   table will be read from its metadata, and the type of the flow elements
---   checked against any provided signature.
---    
 source :: String -> Format.Row -> Q (Flow a)
 source table format
  = do   fOut    <- newFlow

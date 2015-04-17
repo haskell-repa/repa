@@ -384,14 +384,14 @@ scalarOpOfName ss
 instance ToJSON Format.Row where
  toJSON rr
   = case rr of
-        Format.RowPacked ff
+        Format.Packed ff
          -> object [ "type"     .= text "row"
                    , "row"      .= text "packed"
                    , "fields"   .= toJSON ff  ]
 
-        Format.RowLineSep c ff
+        Format.Lines c ff
          -> object [ "type"     .= text "row"
-                   , "row"      .= text "line"
+                   , "row"      .= text "lines"
                    , "sep"      .= T.pack [c]
                    , "fields"   .= toJSON ff ]
 
@@ -402,15 +402,15 @@ instance FromJSON Format.Row where
         , Just (String "packed") <- H.lookup "row"    hh
         , Just jFields           <- H.lookup "fields" hh
         = do    fields  <- parseJSON jFields
-                return  $ Format.RowPacked fields
+                return  $ Format.Packed fields
 
         | Just (String "row")    <- H.lookup "type"   hh
-        , Just (String "line")   <- H.lookup "row"    hh
+        , Just (String "lines")  <- H.lookup "row"    hh
         , Just (String sep)      <- H.lookup "sep"    hh
         , Just jFields           <- H.lookup "fields" hh
         , [c]                    <- T.unpack sep
         = do    fields  <- parseJSON jFields
-                return  $ Format.RowLineSep c fields
+                return  $ Format.Lines c fields
 
  parseJSON _ = mzero
 

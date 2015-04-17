@@ -54,9 +54,10 @@ type Q a
 --   The operator graph in the result query uses strings for flow variables
 --   and debruijn indices for value variables.
 --
-buildQ  :: Q (Flow a) -> Format.Row
+buildQ  :: Format.Row
+        -> Q (Flow a)
         -> G.Query () String String String
-buildQ f format
+buildQ format f
  = let  (Flow x, s')  
                 = runState f
                 $ S { sNodes        = []

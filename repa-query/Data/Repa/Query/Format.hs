@@ -15,10 +15,10 @@ import qualified Data.Map                       as Map
 -- | Row format.
 data Row
         -- | Packed binary data with fixed-width elements.
-        = RowPacked  [Field]
+        = Packed  [Field]
 
         -- | Possibly varible-length row with the given character to separate the fields.
-        | RowLineSep Char [Field]
+        | Lines Char [Field]
         deriving (Eq, Show)
 
 
