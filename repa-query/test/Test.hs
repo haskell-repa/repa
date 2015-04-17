@@ -23,6 +23,6 @@ qb1
 
 
 -----------------------------------------------------------
-q1  :: G.Query () String () Int
-q1 = runQ qb1
+q1  :: G.Query () String String String
+q1 = buildQ qb1
 

@@ -6,7 +6,6 @@ module Data.Repa.Query.Transform.Namify
 where
 import Control.Monad
 import Data.Repa.Query.Graph            as Q
-import Data.Repa.Query.Exp              as Q
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
 
@@ -14,11 +13,8 @@ import qualified Data.Map               as Map
 -- | Holds a function to rename anonymous binders, 
 --   and the state of the renamer as we decend into the tree.
 --
---   @s@ is the state type used to generate fresh names.
---
---   @b@ is the type of bindind occurrences of variables.
---
---   @u@ is the type of bound occurrences of variables.
+--   @b@ and @u@ are the types of bindinging and bound occurrences of
+--   variables respectively.
 --
 data Namifier b u
         = Namifier
@@ -43,8 +39,8 @@ class Namify (c :: * -> * -> *) where
 
 
 instance Namify (Query a nF) where
- namify nam (Query nf gg)
-        = liftM (Query nf) (namify nam gg)
+ namify nam (Query nf format gg)
+        = liftM (Query nf format) (namify nam gg)
 
 
 instance Namify (Graph a nF) where
@@ -134,6 +130,8 @@ rewrite nam ix
 
 
 -------------------------------------------------------------------------------
+-- | Namifier that uses strings for binding and bound occurrences
+--   of variables.
 mkNamifierStrings :: Namifier String String
 mkNamifierStrings 
  = Namifier

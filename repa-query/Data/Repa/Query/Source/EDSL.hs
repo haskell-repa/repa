@@ -34,6 +34,7 @@ where
 import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder
 import qualified Data.Repa.Query.Graph  as G
+import qualified Data.Repa.Query.Format as Format
 import qualified Prelude                as P
 import Prelude   
  hiding ( map, filter
@@ -58,10 +59,10 @@ import Prelude
 --   table will be read from its metadata, and the type of the flow elements
 --   checked against any provided signature.
 --    
-source :: String -> Q (Flow a)
-source table
+source :: String -> Format.Row -> Q (Flow a)
+source table format
  = do   fOut    <- newFlow
-        addNode $ G.NodeSource (G.SourceTable () table $ takeFlow fOut)
+        addNode $ G.NodeSource (G.SourceTable () table format $ takeFlow fOut)
         return  fOut
 
 

@@ -26,7 +26,7 @@ decOfQuery nResult query
 
 -- | Yield a Haskell expression for a query
 expOfQuery   :: G.Query  () String String String -> Q H.Exp
-expOfQuery (G.Query sResult (G.Graph nodes))
+expOfQuery (G.Query sResult _format (G.Graph nodes))
  = go nodes
  where  go []   
          =      H.varE (H.mkName sResult)
@@ -48,7 +48,7 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
-        G.SourceTable _ tableName sOut
+        G.SourceTable _ tableName _format sOut
          -> do  let hTable      =  return (LitE (StringL tableName))
                 xRhs            <- [| fromFiles [ $hTable ] sourceLines |]
                 pOut            <- H.varP (H.mkName sOut)

@@ -20,12 +20,15 @@ module Data.Repa.Query.Graph
         , ScalarOp      (..))
 where
 import Data.Repa.Query.Exp
+import qualified Data.Repa.Query.Format as Format
 
 
 -- | A query consisting of an graph, and the name of the output flow.
 data Query a nF bV nV
-        = Query nF (Graph a nF bV nV)
-        deriving Show
+        = Query nF Format.Row (Graph a nF bV nV)
+
+deriving instance (Show a, Show nF, Show bV, Show nV)
+        => Show (Query a nF bV nV)
 
 
 -- | Operator graph for a query.
@@ -47,16 +50,21 @@ data Node a nF bV nV
 -- | Flow sources.
 data Source a nF
         -- | Source data from a named table.
-        = SourceTable
+        =  SourceTable
         { -- | Annotation
           sourceAnnot           :: a
 
           -- | Name of table.
         , sourceTableName       :: String 
 
+          -- | Format of each row of table.
+        , sourceFormat          :: Format.Row
+
           -- | Output flow.
         , sourceOutput          :: nF }
-        deriving Show
+
+deriving instance (Show a, Show nF) 
+        => Show (Source a nF)
 
 
 -- | Flow operators.

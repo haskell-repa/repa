@@ -13,9 +13,11 @@ import Control.Monad
 import Data.Repa.Query.Graph
 import Data.Repa.Query.Exp
 import Data.Aeson                               as Aeson
+import Data.Text                                (Text)
+import qualified Data.Repa.Query.Format         as Format
 import qualified Data.Text                      as T
 import qualified Data.HashMap.Strict            as H
-import Data.Text                                (Text)
+
 
 
 --------------------------------------------------------------------------------------------- Query
@@ -23,10 +25,11 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
       => (ToJSON (Query a nF bV nV)) where
  toJSON xx
   = case xx of
-        Query f g
+        Query flow format graph
          -> object [ "type"     .= text "query"
-                   , "out"      .= toJSON f
-                   , "graph"    .= toJSON g ]
+                   , "out"      .= toJSON flow
+                   , "row"      .= toJSON format
+                   , "graph"    .= toJSON graph ]
 
 
 instance (FromJSON nF, FromJSON bV, FromJSON nV)
@@ -35,10 +38,12 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
 
         | Just (String "query") <- H.lookup "type"  hh
         , Just jOut             <- H.lookup "out"   hh
+        , Just jRow             <- H.lookup "row"   hh
         , Just jGraph           <- H.lookup "graph" hh
         = do    out     <- parseJSON jOut
+                row     <- parseJSON jRow
                 graph   <- parseJSON jGraph
-                return  $ Query out graph
+                return  $ Query out row graph
 
  parseJSON _ = mzero
  
@@ -216,10 +221,11 @@ instance (ToJSON nF)
        => ToJSON (Source a nF) where
  toJSON xx
   = case xx of
-        SourceTable _ n fOut
+        SourceTable _ name format fOut
          -> object [ "type"     .= text "source"
                    , "source"   .= text "table"
-                   , "name"     .= T.pack n
+                   , "name"     .= T.pack name
+                   , "format"   .= toJSON format
                    , "output"   .= toJSON fOut ]
 
 
@@ -228,11 +234,13 @@ instance  FromJSON nF
  parseJSON (Object hh)
 
         | Just (String "source") <- H.lookup "type"   hh
-        , Just (String "table") <- H.lookup "source" hh
-        , Just (String  name)   <- H.lookup "name"   hh
-        , Just  jOut            <- H.lookup "output" hh
-        = do  out     <- parseJSON jOut
-              return  $ SourceTable () (T.unpack name) out
+        , Just (String "table")  <- H.lookup "source" hh
+        , Just (String  name)    <- H.lookup "name"   hh
+        , Just jFormat           <- H.lookup "format" hh
+        , Just jOut              <- H.lookup "output" hh
+        = do  format  <- parseJSON jFormat
+              out     <- parseJSON jOut
+              return  $ SourceTable () (T.unpack name) format out
 
  parseJSON _ = mzero
 
@@ -372,7 +380,61 @@ scalarOpOfName ss
         _               -> Nothing
 
 
+-------------------------------------------------------------------------------------- Format.Row
+instance ToJSON Format.Row where
+ toJSON rr
+  = case rr of
+        Format.RowPacked ff
+         -> object [ "type"     .= text "row"
+                   , "row"      .= text "packed"
+                   , "fields"   .= toJSON ff  ]
+
+        Format.RowLineSep c ff
+         -> object [ "type"     .= text "row"
+                   , "row"      .= text "line"
+                   , "sep"      .= T.pack [c]
+                   , "fields"   .= toJSON ff ]
+
+
+instance FromJSON Format.Row where
+ parseJSON (Object hh)
+        | Just (String "row")    <- H.lookup "type"   hh
+        , Just (String "packed") <- H.lookup "row"    hh
+        , Just jFields           <- H.lookup "fields" hh
+        = do    fields  <- parseJSON jFields
+                return  $ Format.RowPacked fields
+
+        | Just (String "row")    <- H.lookup "type"   hh
+        , Just (String "line")   <- H.lookup "row"    hh
+        , Just (String sep)      <- H.lookup "sep"    hh
+        , Just jFields           <- H.lookup "fields" hh
+        , [c]                    <- T.unpack sep
+        = do    fields  <- parseJSON jFields
+                return  $ Format.RowLineSep c fields
+
+ parseJSON _ = mzero
+
+
+-------------------------------------------------------------------------------------- Format.Field
+instance ToJSON Format.Field where
+ toJSON ff
+        = object  [ "type"      .= text "field"
+                  , "field"     .= T.pack (Format.showField ff) ]
+
+
+instance FromJSON Format.Field where
+ parseJSON (Object hh)
+        | Just (String "field") <- H.lookup "type"  hh
+        , Just (String ff)      <- H.lookup "field" hh
+        , Just f                <- Format.readField (T.unpack ff)
+        = return f
+
+ parseJSON _ = mzero
+
+
 ---------------------------------------------------------------------------------------------------
 text :: Text -> Text
 text x = x 
+
+
 

@@ -4,12 +4,14 @@ module Data.Repa.Query.Source.Builder
 
         , Value (..)
         , Q
-        , runQ
+        , buildQ
         , newFlow
         , addNode)
 where
 import Control.Monad.State.Strict
-import qualified Data.Repa.Query.Graph  as G
+import qualified Data.Repa.Query.Format                 as Format
+import qualified Data.Repa.Query.Graph                  as G
+import qualified Data.Repa.Query.Transform.Namify       as N
 
 
 ---------------------------------------------------------------------------------------------------
@@ -52,14 +54,27 @@ type Q a
 --   The operator graph in the result query uses strings for flow variables
 --   and debruijn indices for value variables.
 --
-runQ :: Q (Flow a) -> G.Query () String () Int
-runQ f
- = let (Flow x, s')  = runState f
+buildQ  :: Q (Flow a) -> Format.Row
+        -> G.Query () String String String
+buildQ f format
+ = let  (Flow x, s')  
+                = runState f
                 $ S { sNodes        = []
                     , sGenFlow      = 0
                     , sGenScalar    = 0 }
-   in  G.Query x (G.Graph (sNodes s'))
 
+ 
+        -- The nodes added to the state use debruijn indices for variables,
+        -- but we'll convert them to named variables while we're here.
+        --
+        -- This match should always succeed because the namifier only returns
+        -- Nothing when there are out of scope variables. However, the only 
+        -- way we can construct a (Q (Flow a)) is via the EDSL code, which
+        -- doesn't provide a way of producing expressions with free indices.
+        --
+        Just query  = N.namify N.mkNamifierStrings 
+                    $ G.Query x format (G.Graph (sNodes s'))
+   in   query
 
 -- | State used when building the operator graph.
 data S  = S
