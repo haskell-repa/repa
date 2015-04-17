@@ -14,10 +14,11 @@ import qualified Data.Map                       as Map
 
 -- | Row format.
 data Row
-        -- | Packed binary data with fixed-width elements.
-        = Packed  [Field]
+        -- | Format with fixed-length rows.
+        = Fixed [Field]
 
-        -- | Possibly varible-length row with the given character to separate the fields.
+        -- | Foramt with rows on a separate line, where each row can have variable length
+        --   and we use a special character to separate the fields.
         | Lines Char [Field]
         deriving (Eq, Show)
 

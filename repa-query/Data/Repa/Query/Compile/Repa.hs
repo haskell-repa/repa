@@ -8,7 +8,10 @@ module Data.Repa.Query.Compile.Repa
 where
 import Language.Haskell.TH              as H
 import Data.Repa.Flow                   as F
+import Data.Repa.Flow.Auto.IO           as F
 import Data.Repa.Query.Graph            as G
+import Data.Repa.Query.Format           as Q
+import Data.Repa.Convert.Format         as C
 
 
 -- | Yield a top-level Haskell declararation for a query.
@@ -24,6 +27,7 @@ decOfQuery nResult query
         return  $ H.ValD (H.VarP nResult) (H.NormalB hexp) []
 
 
+---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a query
 expOfQuery   :: G.Query  () String String String -> Q H.Exp
 expOfQuery (G.Query sResult _format (G.Graph nodes))
@@ -36,6 +40,7 @@ expOfQuery (G.Query sResult _format (G.Graph nodes))
                 [| $(return hRhs) >>= \ $(return hPat) -> $(go ns) |]
 
 
+---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell binding for a flow node.
 bindOfNode   :: G.Node   () String String String -> Q (H.Pat, H.Exp)
 bindOfNode nn
@@ -48,10 +53,31 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
-        G.SourceTable _ tableName _format sOut
-         -> do  let hTable      =  return (LitE (StringL tableName))
-                xRhs            <- [| fromFiles [ $hTable ] sourceLines |]
-                pOut            <- H.varP (H.mkName sOut)
+        G.SourceTable _ tableName format@Lines{} sOut
+         -> do  let hTable       = return (LitE (StringL tableName))
+                let Just format' = expOfRowFormat format
+
+                xRhs    <- [| fromFiles [ $hTable ] 
+                                (F.sourceLinesFormat 
+                                        (64 * 1024)
+                                        (error "line to long")
+                                        (error "cannot convert")
+                                        $format') |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return (pOut, xRhs)
+
+
+        G.SourceTable _ tableName format@Fixed{} sOut
+         -> do  let hTable       = return (LitE (StringL tableName))
+                let Just format' = expOfRowFormat format
+
+                xRhs    <- [| fromFiles [ $hTable ]
+                                (F.sourceFixedFormat
+                                        $format'
+                                        (error "cannot convert")) |]
+
+                pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
 
 
@@ -102,6 +128,7 @@ bindOfFlowOp op
         _ -> error "finish bindOfFlowOp"
 
 
+---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression from a query scalar expression.
 expOfExp   :: G.Exp () String String -> H.ExpQ 
 expOfExp xx
@@ -148,4 +175,51 @@ litOfLit lit
         G.LString s     -> return $ H.StringL  s
         _               -> error "fix float conversion"
 
+
+---------------------------------------------------------------------------------------------------
+-- | Yield a Haskell expression for a row format.
+expOfRowFormat :: Q.Row -> Maybe H.ExpQ
+expOfRowFormat row
+ = case row of
+        Q.Fixed  (f:fs)  -> Just [| C.App $(expOfFieldFormats f fs) |]
+        Q.Lines c (f:fs) -> Just [| C.Sep $(H.litE (H.charL c)) $(expOfFieldFormats f fs) |]
+        _                -> Nothing
+
+
+-- | Yield a Haskell expression for some fields.
+expOfFieldFormats :: Q.Field -> [Q.Field] -> H.ExpQ 
+expOfFieldFormats f1 []        
+        = expOfFieldFormat f1
+
+expOfFieldFormats f1 (f2 : fs) 
+        = [| $(expOfFieldFormat f1) C.:*: $(expOfFieldFormats f2 fs) |]
+
+
+-- | Yield a Haskell expression for a field format.
+expOfFieldFormat   :: Q.Field -> H.ExpQ
+expOfFieldFormat format
+ = case format of
+        Q.Word8be       -> [| C.Word8be   |]
+        Q.Int8be        -> [| C.Int8be    |]
+
+        Q.Word16be      -> [| C.Word16be  |]
+        Q.Int16be       -> [| C.Int16be   |]
+
+        Q.Word32be      -> [| C.Word32be  |]
+        Q.Int32be       -> [| C.Int32be   |] 
+
+        Q.Word64be      -> [| C.Word64be  |]
+        Q.Int64be       -> [| C.Int64be   |]
+
+        Q.Float32be     -> [| C.Float32be |]
+        Q.Float64be     -> [| C.Float64be |]
+
+        Q.YYYYsMMsDD c  -> [| C.YYYYsMMsDD $(H.litE (H.charL c)) |]
+        Q.DDsMMsYYYY c  -> [| C.DDsMMsYYYY $(H.litE (H.charL c)) |]
+
+        Q.IntAsc        -> [| C.IntAsc    |]
+        Q.DoubleAsc     -> [| C.DoubleAsc |]
+
+        Q.FixAsc len    -> [| C.FixAsc $(H.litE (H.integerL (fromIntegral len))) |]
+        Q.VarAsc        -> [| C.VarAsc    |]
 

@@ -35,13 +35,17 @@ buildQueryViaRepa dirScratch _path query
 repaHeader :: String
 repaHeader
  = unlines 
- [ "import qualified Data.Repa.Flow.Auto"
+ [ "import qualified Data.Repa.Query.Runtime.Driver"
+ , "import qualified Data.Repa.Flow.Auto"
  , "import qualified Data.Repa.Flow.Auto.IO"
  , "import qualified Data.Repa.Flow.IO.Bucket"
- , "import qualified Data.Repa.Query.Runtime.Driver"
+ , "import qualified Data.Repa.Convert.Format.Fields"
+ , "import qualified Data.Repa.Convert.Format.Numeric"
+ , "import qualified Data.Repa.Product"
  , "import qualified GHC.Classes"
  , "import qualified GHC.Num"
- , "import qualified GHC.Base" 
+ , "import qualified GHC.Base"
+ , "import qualified GHC.Err" 
  , "main = do { True <- Data.Repa.Query.Runtime.Driver.streamSourcesToStdout _query; return () }" ]
 
 

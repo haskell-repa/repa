@@ -17,7 +17,7 @@ import Prelude (($), Int, return, String)
 -- User query
 qb1 :: Q (Flow (Int, Int))
 qb1
- = do   (f :: Flow Int) <- source "foo" (Lines '\t' [DoubleAsc])
+ = do   (f :: Flow Int) <- source "foo" (Lines '\t' [DoubleAsc, IntAsc])
         f2      <- map (+ 1) f
         f3      <- groups f2
         return f3

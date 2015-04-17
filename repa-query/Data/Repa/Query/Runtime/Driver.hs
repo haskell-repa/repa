@@ -5,7 +5,7 @@
 --   running queries, rather than being used at query compile time.
 --
 module Data.Repa.Query.Runtime.Driver
-        (streamSourcesWord8ToStdout)
+        (streamSourcesToStdout)
 where
 import Data.Repa.Flow                                   as F
 import Data.Word
@@ -24,10 +24,10 @@ import qualified Foreign.ForeignPtr                     as Foreign
 --   If this is not true then the function returns False, and no data is
 --   written to stdout.
 --
-streamSourcesWord8ToStdout
+streamSourcesToStdout
         :: Sources Word8 -> IO Bool
 
-streamSourcesWord8ToStdout (FG.Sources 1 pullX)
+streamSourcesToStdout (FG.Sources 1 pullX)
  = do   go
         return True
 
@@ -48,5 +48,5 @@ streamSourcesWord8ToStdout (FG.Sources 1 pullX)
          = do   hClose stdout
                 return ()
 
-streamSourcesWord8ToStdout _
+streamSourcesToStdout _
  = return False

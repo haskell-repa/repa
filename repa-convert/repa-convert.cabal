@@ -32,13 +32,14 @@ Library
         Data.Repa.Convert.Date32
         Data.Repa.Bits.Date32
 
-  other-modules:
         Data.Repa.Convert.Format.Base
         Data.Repa.Convert.Format.Binary
         Data.Repa.Convert.Format.Lists
         Data.Repa.Convert.Format.Fields
         Data.Repa.Convert.Format.Numeric
         Data.Repa.Convert.Format.Date32
+
+  other-modules:
 
 
 
