@@ -40,7 +40,7 @@ Library
         Data.Repa.Array.Auto
         Data.Repa.Array.Auto.IO
         Data.Repa.Array.Auto.Convert
-        Data.Repa.Array.Auto.Unpack
+        Data.Repa.Array.Auto.Format
 
         Data.Repa.Array.Generic.Convert
         Data.Repa.Array.Generic.Index
