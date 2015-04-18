@@ -35,7 +35,7 @@ pSieve config fileIn
         let ext = takeExtension fileIn
 
         sIn     <-  G.project_i 0
-                =<< (fromFiles' [fileIn]
+                =<< (fromFiles [fileIn]
                       $ (if | ext == ".tsv" -> F.sourceTSV
                             | ext == ".csv" -> F.sourceCSV
                             | otherwise     -> error $ "unknown format " ++ show ext))
