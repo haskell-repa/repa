@@ -14,10 +14,7 @@ import Prelude (($), Int, return, String)
 import Data.Repa.Query.Build
 
 
------------------------------------------------------------
--- User query
-qb1 :: G.Query () String String String
-qb1
+result  
  = query (LinesSep '\t') (IntAsc :*: IntAsc)
  $ do   f       <- source "foo.txt" Lines IntAsc
         f2      <- map (+ 1) f

@@ -36,7 +36,6 @@ Library
         Data.Repa.Query.Convert.JSON
         Data.Repa.Query.Eval.Env
         Data.Repa.Query.Eval.Exp
-        Data.Repa.Query.Runtime.Driver
         Data.Repa.Query.Source.Builder
         Data.Repa.Query.Source.EDSL
         Data.Repa.Query.Transform.Namify
@@ -44,6 +43,9 @@ Library
         Data.Repa.Query.Exp
         Data.Repa.Query.Format
         Data.Repa.Query.Graph
+
+        Data.Repa.Query.Runtime.Driver
+        Data.Repa.Query.Runtime.Primitive
 
   ghc-options:
         -threaded
@@ -64,3 +66,4 @@ Library
         GADTs
         TypeOperators
         DataKinds
+        PatternSynonyms
