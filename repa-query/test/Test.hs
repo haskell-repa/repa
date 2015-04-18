@@ -11,19 +11,15 @@ import Data.Aeson                               (encode, toJSON, fromJSON, Resul
 import qualified Data.ByteString.Lazy.Char8     as BS
 import qualified Prelude
 import Prelude (($), Int, return, String)
+import Data.Repa.Query.Build
 
 
 -----------------------------------------------------------
 -- User query
-qb1 :: Q (Flow (Int, Int))
+qb1 :: G.Query () String String String
 qb1
- = do   (f :: Flow Int) <- source "foo" (Lines '\t' [DoubleAsc, IntAsc])
+ = buildQ (LinesSep '\t' [IntAsc, IntAsc])
+ $ do   f       <- source "foo.txt" (Lines IntAsc)
         f2      <- map (+ 1) f
         f3      <- groups f2
         return f3
-
-
------------------------------------------------------------
-q1  :: G.Query () String String String
-q1 = buildQ (Lines '\t' [DoubleAsc]) qb1
-

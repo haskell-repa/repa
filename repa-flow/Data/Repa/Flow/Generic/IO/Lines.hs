@@ -7,7 +7,7 @@ import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Base              as F
 import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
-import qualified Data.Repa.Array.Auto.Unpack    as A
+import qualified Data.Repa.Array.Auto.Format    as A
 import Data.Repa.Convert.Format                 as C
 import Data.Char
 import Data.Word
@@ -46,7 +46,7 @@ sourceLinesFormat nChunk aFailLong _aFailConvert format bs
         -- Convert each value using the given format.
         let unpackRow :: Array A Word8 -> Value format
             unpackRow arr
-             = case A.unpackFromArray format arr of
+             = case A.unpackFormat format arr of
                  Nothing -> error ("no convert " ++ show arr)
                                 -- TODO: impl proper pull function
                                 -- so we can call aFailConvert if needed.

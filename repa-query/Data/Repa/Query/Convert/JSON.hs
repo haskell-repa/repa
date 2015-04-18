@@ -389,9 +389,14 @@ instance ToJSON Format.Row where
                    , "row"      .= text "fixed"
                    , "fields"   .= toJSON ff  ]
 
-        Format.Lines c ff
+        Format.Lines f
          -> object [ "type"     .= text "row"
                    , "row"      .= text "lines"
+                   , "field"    .= toJSON f ]
+
+        Format.LinesSep c ff
+         -> object [ "type"     .= text "row"
+                   , "row"      .= text "sep"
                    , "sep"      .= T.pack [c]
                    , "fields"   .= toJSON ff ]
 
@@ -406,11 +411,17 @@ instance FromJSON Format.Row where
 
         | Just (String "row")    <- H.lookup "type"   hh
         , Just (String "lines")  <- H.lookup "row"    hh
+        , Just jField            <- H.lookup "field" hh
+        = do    field   <- parseJSON jField
+                return  $ Format.Lines field
+
+        | Just (String "row")    <- H.lookup "type"   hh
+        , Just (String "sep")    <- H.lookup "row"    hh
         , Just (String sep)      <- H.lookup "sep"    hh
         , Just jFields           <- H.lookup "fields" hh
         , [c]                    <- T.unpack sep
         = do    fields  <- parseJSON jFields
-                return  $ Format.Lines c fields
+                return  $ Format.LinesSep c fields
 
  parseJSON _ = mzero
 
@@ -435,6 +446,4 @@ instance FromJSON Format.Field where
 ---------------------------------------------------------------------------------------------------
 text :: Text -> Text
 text x = x 
-
-
 

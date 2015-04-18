@@ -32,6 +32,7 @@ Library
         Data.Repa.Flow.Auto
         Data.Repa.Flow.Auto.Debug
         Data.Repa.Flow.Auto.IO
+        Data.Repa.Flow.Auto.Format        
         Data.Repa.Flow.Auto.SizedIO
 
         Data.Repa.Flow.Chunked

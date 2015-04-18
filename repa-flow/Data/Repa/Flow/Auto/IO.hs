@@ -35,7 +35,7 @@ where
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Array.Material                 as A
-import Data.Repa.Array.Auto.Unpack              as A
+import Data.Repa.Array.Auto.Format              as A
 import Data.Repa.Array.Generic                  as A
 import System.Directory
 import System.FilePath
@@ -176,7 +176,7 @@ sourceFixedFormat format aFail bs
                  then eject
                  else do
                         !chunk  <- bGetArray b defaultChunkSize
-                        case A.unpacksFixedFromArray format (A.convert A chunk) of
+                        case A.unpacksFixedFormat format (A.convert A chunk) of
                          Nothing        -> aFail
                          Just vals      -> eat vals
         {-# INLINE pull_sourceFixedFormat #-}
@@ -252,7 +252,7 @@ sinkFixedFormat format aFail bs
                     push_sinkFixedFormat eject_sinkFixedFormat
  where  
         push_sinkFixedFormat i !chunk
-         = case A.packsFixedToArray format chunk of
+         = case A.packsFixedFormat format chunk of
                 Nothing   -> aFail
                 Just buf  -> bPutArray (bs `index` i) (A.convert F buf)
         {-# INLINE push_sinkFixedFormat #-}

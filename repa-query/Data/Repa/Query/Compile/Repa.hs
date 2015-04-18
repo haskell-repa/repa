@@ -9,11 +9,13 @@ where
 import Language.Haskell.TH              as H
 import Data.Repa.Flow                   as F
 import Data.Repa.Flow.Auto.IO           as F
+import Data.Repa.Flow.Auto.Format       as F
 import Data.Repa.Query.Graph            as G
 import Data.Repa.Query.Format           as Q
 import Data.Repa.Convert.Format         as C
 
 
+---------------------------------------------------------------------------------------------------
 -- | Yield a top-level Haskell declararation for a query.
 --
 --   The query expression is bound to the given name.
@@ -30,10 +32,26 @@ decOfQuery nResult query
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a query
 expOfQuery   :: G.Query  () String String String -> Q H.Exp
-expOfQuery (G.Query sResult _format (G.Graph nodes))
- = go nodes
- where  go []   
-         =      H.varE (H.mkName sResult)
+expOfQuery (G.Query sResult format (G.Graph nodes))
+ = case format of
+        Fixed{}
+         -> [| $sources >>= F.concatPackFormat_i  $format' |]
+
+        Lines{}
+         -> [| $sources >>= F.unlinesPackFormat_i $format' |]
+
+        LinesSep{}
+         -> [| $sources >>= F.unlinesPackFormat_i $format' |]
+
+ where  sources 
+         = go nodes
+
+        Just format'
+         = expOfRowFormat format
+
+        go []   
+         = do   let hResult     = H.varE (H.mkName sResult)
+                [| return $hResult |]
 
         go (n : ns)
          = do   (hPat, hRhs)    <- bindOfNode n
@@ -54,6 +72,21 @@ bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
         G.SourceTable _ tableName format@Lines{} sOut
+         -> do  let hTable       = return (LitE (StringL tableName))
+                let Just format' = expOfRowFormat format
+
+                xRhs    <- [| fromFiles [ $hTable ] 
+                                (F.sourceLinesFormat 
+                                        (64 * 1024)
+                                        (error "line to long")
+                                        (error "cannot convert")
+                                        $format') |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return (pOut, xRhs)
+
+
+        G.SourceTable _ tableName format@LinesSep{} sOut
          -> do  let hTable       = return (LitE (StringL tableName))
                 let Just format' = expOfRowFormat format
 
@@ -122,7 +155,9 @@ bindOfFlowOp op
         G.FopGroupsI sIn sOut xFun
          -> do  let hIn         =  H.varE (H.mkName sIn)
                 pOut            <- H.varP (H.mkName sOut)
-                hRhs            <- [| F.groupsBy_i $(expOfExp xFun) $hIn |]
+                hRhs            <- [|     F.map_i (\(g, n) -> g :*: n)
+                                      =<< F.groupsBy_i $(expOfExp xFun) $hIn |]
+                                      
                 return  (pOut, hRhs)
 
         _ -> error "finish bindOfFlowOp"
@@ -181,9 +216,22 @@ litOfLit lit
 expOfRowFormat :: Q.Row -> Maybe H.ExpQ
 expOfRowFormat row
  = case row of
-        Q.Fixed  (f:fs)  -> Just [| C.App $(expOfFieldFormats f fs) |]
-        Q.Lines c (f:fs) -> Just [| C.Sep $(H.litE (H.charL c)) $(expOfFieldFormats f fs) |]
-        _                -> Nothing
+        Q.Fixed     [f]
+         -> Just [| $(expOfFieldFormat f) |]
+
+        Q.Fixed     (f:fs)
+         -> Just [| C.App $(expOfFieldFormats f fs) |]
+
+        Q.Lines f
+         -> Just [| $(expOfFieldFormat f) |]
+
+        Q.LinesSep _c [f]
+         -> Just [| $(expOfFieldFormat f) |]
+
+        Q.LinesSep c (f:fs) 
+         -> Just [| C.Sep $(H.litE (H.charL c)) $(expOfFieldFormats f fs) |]
+
+        _ -> Nothing
 
 
 -- | Yield a Haskell expression for some fields.

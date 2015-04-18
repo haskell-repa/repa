@@ -23,7 +23,7 @@ buildQueryViaRepa
 buildQueryViaRepa dirScratch _path query
  = runBuild dirScratch
  $ do   
-        dec     <- io $ TH.runQ $ CR.decOfQuery (TH.mkName "_query") query
+        dec <- io $ TH.runQ $ CR.decOfQuery (TH.mkName "_makeSources") query
 
         io $ writeFile (dirScratch </> "Main.hs") 
            $ repaHeader ++ "\n" ++ TH.pprint dec ++ "\n\n"
@@ -38,6 +38,7 @@ repaHeader
  [ "import qualified Data.Repa.Query.Runtime.Driver"
  , "import qualified Data.Repa.Flow.Auto"
  , "import qualified Data.Repa.Flow.Auto.IO"
+ , "import qualified Data.Repa.Flow.Auto.Format"
  , "import qualified Data.Repa.Flow.IO.Bucket"
  , "import qualified Data.Repa.Convert.Format.Fields"
  , "import qualified Data.Repa.Convert.Format.Numeric"
@@ -46,7 +47,11 @@ repaHeader
  , "import qualified GHC.Num"
  , "import qualified GHC.Base"
  , "import qualified GHC.Err" 
- , "main = do { True <- Data.Repa.Query.Runtime.Driver.streamSourcesToStdout _query; return () }" ]
+ , ""
+ , "main "
+ , " = do { sources <- _makeSources"
+ , "      ; True    <- Data.Repa.Query.Runtime.Driver.streamSourcesToStdout sources"
+ , "      ; return () }" ] 
 
 
 

@@ -15,11 +15,15 @@ import qualified Data.Map                       as Map
 -- | Row format.
 data Row
         -- | Format with fixed-length rows.
-        = Fixed [Field]
+        --   The fields are all concatenated together, with no delimitors.
+        = Fixed   [Field]
 
-        -- | Foramt with rows on a separate line, where each row can have variable length
-        --   and we use a special character to separate the fields.
-        | Lines Char [Field]
+        -- | Format with a single field on each lines.
+        | Lines    Field
+
+        -- | Format with multiple fields on each line,
+        --   where the fields are separated by a special character.
+        | LinesSep Char [Field]
         deriving (Eq, Show)
 
 
