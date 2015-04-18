@@ -12,7 +12,10 @@ data Config
 
           -- | Query source code, 
           --   can be the Haskell EDSL, or a JSON operator graph.
-        , configQuery           :: Maybe FilePath }
+        , configQuery           :: Maybe FilePath 
+
+          -- | Dump intermediate files.
+        , configDump            :: Bool }
 
 
 -- | Starting configuration.
@@ -20,7 +23,8 @@ configZero :: Config
 configZero
         = Config
         { configMode            = ModeBuild
-        , configQuery           = Nothing }
+        , configQuery           = Nothing 
+        , configDump            = False }
 
 
 -- | Major mode of program.
@@ -29,10 +33,10 @@ data Mode
         = ModeBuild
 
         -- | Emit operator graph in Haskell syntax.
-        | ModeDumpGraph
+        | ModeToGraph
 
         -- | Emit operator graph is JSON syntax.
-        | ModeDumpJSON
+        | ModeToJSON
         deriving (Eq, Show)
 
 
@@ -50,10 +54,13 @@ parseArgs args config
  , Nothing                 <- configQuery config
  = parseArgs rest $ config { configQuery = Just file }
 
- | "-dump-graph" : rest      <- args
+ | "-dump" : rest            <- args
+ = parseArgs rest $ config { configDump  = True }
+
+ | "-to-graph" : rest      <- args
  = parseArgs rest $ config { configMode  = ModeToGraph }
 
- | "-dump-json"  : rest      <- args
+ | "-to-json"  : rest      <- args
  = parseArgs rest $ config { configMode  = ModeToJSON }
 
  | file : rest             <- args
@@ -70,9 +77,11 @@ parseArgs args config
 dieUsage
  = error $ P.unlines
  [ "Usage: build -query FILE [OPTIONS]"
- , "Compile a Repa query into an executable, or emit its operator graph."
+ , "Compile a Repa query into an executable."
+ , "The query can be written in either the query DSL, or in the JSON format."
  , ""
  , "OPTIONS:"
- , " -dump-graph        Dump operator graph in Haskell syntax."
- , " -dump-json         Dump operator graph in JSON syntax." ]
+ , " -dump              Dump intermediate files."
+ , " -to-graph          Emit operator graph in Haskell syntax."
+ , " -to-json           Emit operator graph in JSON syntax." ]
 

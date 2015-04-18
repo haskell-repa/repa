@@ -6,6 +6,7 @@ module Data.Repa.Query.Build
 where
 import System.FilePath
 import System.Directory
+import Control.Monad
 import Data.Repa.Query.Convert.JSON             ()
 import qualified BuildBox.Build                 as BB
 import qualified BuildBox.Command.System        as BB
@@ -30,11 +31,12 @@ import qualified Data.ByteString.Lazy.Char8     as BS
 --
 buildQueryViaRepa
         :: FilePath                        -- ^ Working directory.
+        -> Bool                            -- ^ Cleanup intermediate files.
         -> Q.Query () String String String -- ^ Query to compile.
         -> FilePath                        -- ^ Path of output executable.
         -> BB.Build ()
 
-buildQueryViaRepa dirScratch query fileExe
+buildQueryViaRepa dirScratch cleanup query fileExe
  = do   
         -- Ensure the working directory already exists.
         BB.ensureDir dirScratch
@@ -42,19 +44,20 @@ buildQueryViaRepa dirScratch query fileExe
         -- Use Template Haskell to convert the query into Haskell code.
         dec <- BB.io $ TH.runQ $ CR.decOfQuery (TH.mkName "_makeSources") query
 
-        let fileHS      = dirScratch </> "Main.build-repa.hs" -- written by us.
-        let fileHI      = dirScratch </> "Main.build-repa.hi" -- dropped by GHC
-        let fileHO      = dirScratch </> "Main.build-repa.o"  -- dropped by GHC
+        let fileHS      = dirScratch </> "Main.dump-repa.hs" -- written by us.
+        let fileHI      = dirScratch </> "Main.dump-repa.hi" -- dropped by GHC
+        let fileHO      = dirScratch </> "Main.dump-repa.o"  -- dropped by GHC
 
         -- Write out Haskell into a temp file.
         BB.io $ writeFile fileHS
               $ repaHeader ++ "\n" ++ TH.pprint dec ++ "\n\n"
 
         -- Call GHC to build the query.
-        BB.sesystemq $ "ghc -fforce-recomp -O2 --make " ++ fileHS ++ " -o " ++ fileExe
+        _  <- BB.sesystemq $ "ghc -fforce-recomp -O2 --make " ++ fileHS ++ " -o " ++ fileExe
 
         -- Remove dropped files.
-        BB.io $ mapM_ removeFile [fileHS, fileHI, fileHO]
+        when cleanup
+         $ BB.io $ mapM_ removeFile [fileHS, fileHI, fileHO]
 
         return ()
 
@@ -63,16 +66,17 @@ buildQueryViaRepa dirScratch query fileExe
 -- | Like `buildQueryViaRepa`, but accept a query encoded as JSON.
 buildJsonViaRepa
         :: FilePath             -- ^ Working directory.
+        -> Bool                 -- ^ Cleanup intermediate files.
         -> String               -- ^ Query encoded as JSON.
         -> FilePath             -- ^ Path to output executable.
         -> BB.Build (Q.Query () String String String)
                                 -- ^ Operator graph of result query.
-buildJsonViaRepa dirScratch json fileExe
+buildJsonViaRepa dirScratch cleanup json fileExe
  = do   
         let Just query :: Maybe (Q.Query () String String String)
                 = Aeson.decode $ BS.pack json
 
-        buildQueryViaRepa dirScratch query fileExe
+        buildQueryViaRepa dirScratch cleanup query fileExe
         return  query
 
 
@@ -80,19 +84,20 @@ buildJsonViaRepa dirScratch json fileExe
 -- | Like `buildQueryViaRepa`, but accept a query encoded in the DSL.
 buildDslViaRepa
         :: FilePath             -- ^ Working directory.
+        -> Bool                 -- ^ Cleanup intermediate files.
         -> String               -- ^ Query encoded in the DSL.
         -> FilePath             -- ^ Path to output executable.
         -> BB.Build (Q.Query () String String String)
                                 -- ^ Operator graph of compiled query.
 
-buildDslViaRepa dirScratch dslQuery fileExe
+buildDslViaRepa dirScratch cleanup dslQuery fileExe
  = do   
         -- Attach header that defines the prims, and write out the code.
         --
         -- TODO: sanitize query before pasting on header to make sure it
         --       doesn't try to import other modules.
         --
-        let fileHS      = dirScratch </> "Main.build-dsl.hs"
+        let fileHS      = dirScratch </> "Main.dump-dsl.hs"
 
         BB.io $ writeFile fileHS (edslHeader ++ dslQuery)
 
@@ -102,9 +107,10 @@ buildDslViaRepa dirScratch dslQuery fileExe
                                  ++ "\"B.putStrLn (A.encode (A.toJSON result))\""
 
         -- Remove dropped files.
-        BB.io $ removeFile fileHS
+        when cleanup
+         $ BB.io $ removeFile fileHS
 
-        buildJsonViaRepa dirScratch jsonQuery fileExe
+        buildJsonViaRepa dirScratch cleanup jsonQuery fileExe
 
 
 ---------------------------------------------------------------------------------------------------
@@ -113,7 +119,9 @@ buildDslViaRepa dirScratch dslQuery fileExe
 edslHeader :: String
 edslHeader
  = unlines
- [ "{-# LANGUAGE NoImplicitPrelude #-}"
+ [ "{-# LANGUAGE NoImplicitPrelude   #-}"
+ , "{-# LANGUAGE ScopedTypeVariables #-}"
+ , "{-# LANGUAGE GADTs               #-}"
  , "import Data.Repa.Query.Source.Primitive"
  , "import qualified Data.Repa.Query.Convert.JSON"
  , "import qualified Data.ByteString.Lazy.Char8    as B (putStrLn)"

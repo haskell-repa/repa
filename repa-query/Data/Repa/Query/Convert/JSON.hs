@@ -10,6 +10,8 @@ module Data.Repa.Query.Convert.JSON
         (encode, toJSON, fromJSON, Result(..))
 where
 import Control.Monad
+import Data.Char
+import Data.List                                as L
 import Data.Repa.Query.Graph
 import Data.Repa.Query.Exp
 import Data.Aeson                               as Aeson
@@ -366,10 +368,16 @@ nameOfScalarOp sop
         SopGe           -> "ge"
         SopLt           -> "lt"
         SopLe           -> "le"
+        SopProj i       -> "proj" ++ show i
 
 
 scalarOpOfName :: String -> Maybe ScalarOp
 scalarOpOfName ss
+ | Just ds              <- L.stripPrefix "proj" ss
+ , all isDigit ds
+ = Just $ SopProj (read ds)
+
+ | otherwise
  = case ss of
         "neg"           -> Just $ SopNeg
         "add"           -> Just $ SopAdd

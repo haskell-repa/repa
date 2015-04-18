@@ -29,7 +29,9 @@ module Data.Repa.Query.Source.EDSL
           -- * Scalar operators
         , (+),  (-),  (*), (/)
         , (==), (/=)
-        , (>),  (>=), (<), (<=))
+        , (>),  (>=), (<), (<=)
+
+        , get1, get2, get3, get4, get5)
 where
 import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder
@@ -60,7 +62,7 @@ source table delim field
 
 
 -- | Apply a scalar function to every element of a flow.
-map :: (Value a -> Value a) -> Flow a -> Q (Flow a)
+map :: (Value a -> Value b) -> Flow a -> Q (Flow b)
 map fun fIn
  = do   fOut    <- newFlow
 
@@ -178,8 +180,8 @@ groupsBy fun fIn
 
 
 ---------------------------------------------------------------------------------------------------
--- Wrappers for scalar operators.
 
+-- Wrappers for scalar operators.
 -- | Scalar addition.
 (+) :: Value a -> Value a -> Value a
 (+) = makeScalarOp2 G.SopAdd 
@@ -221,6 +223,35 @@ groupsBy fun fIn
 (<=) = makeScalarOp2 G.SopLe
 
 
+-- Pairing and projection.
+-- (**) :: Value a -> Value b -> Value (a :*: b)
+-- (**) = 
+
+get1   :: Value (a :*: b)                         -> Value a
+get1    = makeScalarOp1 $ G.SopProj 1
+
+get2   :: Value (a :*: (b :*: c))                 -> Value b
+get2    = makeScalarOp1 $ G.SopProj 2
+
+get3   :: Value (a :*: (b :*: (c :*: d)))         -> Value c
+get3    = makeScalarOp1 $ G.SopProj 3
+
+get4   :: Value (a :*: b :*: c :*: d :*: e)       -> Value d
+get4    = makeScalarOp1 $ G.SopProj 4
+
+get5   :: Value (a :*: b :*: c :*: d :*: e :*: f) -> Value e
+get5    = makeScalarOp1 $ G.SopProj 5
+
+
+
+makeScalarOp1
+        :: G.ScalarOp 
+        -> Value a -> Value c
+
+makeScalarOp1 sop (Value x)
+        = Value $ xOp sop [x]
+
+
 makeScalarOp2 
         :: G.ScalarOp 
         -> Value a -> Value b -> Value c
@@ -234,9 +265,9 @@ instance Num (Value Int) where
  (+)            = makeScalarOp2 G.SopAdd
  (-)            = makeScalarOp2 G.SopSub
  (*)            = makeScalarOp2 G.SopMul
- negate         = undefined
- abs            = undefined
- signum         = undefined
+ negate         = error "edsl finish me"
+ abs            = error "edsl finish me"
+ signum         = error "edsl finish me"
  fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt x))
 
 

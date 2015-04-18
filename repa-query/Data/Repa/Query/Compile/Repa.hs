@@ -190,17 +190,25 @@ expOfExp xx
 expOfScalarOp :: ScalarOp -> H.ExpQ
 expOfScalarOp sop
  = case sop of
-        SopNeg  -> [| P.negate |]
-        SopAdd  -> [| P.add    |]
-        SopSub  -> [| P.sub    |]
-        SopMul  -> [| P.mul    |]
-        SopDiv  -> [| P.div    |]
-        SopEq   -> [| P.eq     |]
-        SopNeq  -> [| P.neq    |]
-        SopLe   -> [| P.le     |]
-        SopGt   -> [| P.gt     |]
-        SopGe   -> [| P.ge     |]
-        SopLt   -> [| P.lt     |]
+        SopNeg          -> [| P.negate |]
+        SopAdd          -> [| P.add    |]
+        SopSub          -> [| P.sub    |]
+        SopMul          -> [| P.mul    |]
+        SopDiv          -> [| P.div    |]
+        SopEq           -> [| P.eq     |]
+        SopNeq          -> [| P.neq    |]
+        SopLe           -> [| P.le     |]
+        SopGt           -> [| P.gt     |]
+        SopGe           -> [| P.ge     |]
+        SopLt           -> [| P.lt     |]
+
+        SopProj 1       -> [| (\(x :*: _)                         -> x) |]
+        SopProj 2       -> [| (\(_ :*: x :*: _)                   -> x) |]
+        SopProj 3       -> [| (\(_ :*: _ :*: x :*: _)             -> x) |]
+        SopProj 4       -> [| (\(_ :*: _ :*: _ :*: x :*: _)       -> x) |]
+        SopProj 5       -> [| (\(_ :*: _ :*: _ :*: _ :*: x :*: _) -> x) |]
+
+        _               -> error "expOfScalarOp: no match"
 
 
 -- | Yield a Haskell literal from a query literal.
@@ -237,7 +245,7 @@ expOfRowFormat delim fields
          |  Just ff'     <- expOfFieldFormats f fs
          -> Just [| P.Sep $(H.litE (H.charL c)) $ff' |]
 
-        _ -> Nothing
+        _ -> error $ "expOfRowFormat:" ++ show (delim, fields)
 
 
 -- | Yield a Haskell expression for some fields.

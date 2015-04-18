@@ -108,6 +108,7 @@ data Field a where
 deriving instance Show (Field a)
 deriving instance Eq   (Field a)
 
+infixr :*:
 
 
 ---------------------------------------------------------------------------------------------------

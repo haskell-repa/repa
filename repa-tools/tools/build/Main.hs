@@ -1,4 +1,5 @@
 
+-- | Compile a Repa query to an executable.
 import Config
 import Data.Repa.Query.Convert.JSON                     ()
 import Data.Repa.Query.Build                            as R
@@ -26,17 +27,23 @@ build config
          Left err -> error $ show err
          Right _  -> return ()
 
+
 build_query config file
  = case takeExtension file of
         ".hs"   
          -> do  dslQuery  <- BB.io $ readFile file
-                graph     <- R.buildDslViaRepa "."  dslQuery  (dropExtension file)
+                graph     <- R.buildDslViaRepa 
+                                "." (not $ configDump config)
+                                dslQuery  (dropExtension file)
                 build_print config graph
 
         ".json" 
          -> do  jsonQuery <- BB.io $ readFile file
-                graph     <- R.buildJsonViaRepa "." jsonQuery (dropExtension file)
+                graph     <- R.buildJsonViaRepa 
+                                "." (not $ configDump config)
+                                jsonQuery (dropExtension file)
                 build_print config graph
+
 
 build_print config graph
  = case configMode config of

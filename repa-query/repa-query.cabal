@@ -52,7 +52,7 @@ Library
   ghc-options:
         -threaded
         -Wall -fno-warn-missing-signatures
-        -O2
+        -O2 -Werror
 
   extensions:
         OverloadedStrings

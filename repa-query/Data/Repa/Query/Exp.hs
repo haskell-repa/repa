@@ -125,5 +125,9 @@ data ScalarOp
         | SopGe                         -- ^ Greater-than or equal.
         | SopLt                         -- ^ Less-than.
         | SopLe                         -- ^ Less-than or equal.
+
+        | SopProj Int                   -- ^ Projection
         deriving (Eq, Show)
+
+
 
