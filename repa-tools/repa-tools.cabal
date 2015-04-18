@@ -19,6 +19,31 @@ Source-repository head
   Location: https://github.com/DDCSF/repa.git
 
 
+Executable repa-build
+  Build-depends: 
+        base            == 4.8.*,
+        directory       == 1.2.*,
+        filepath        == 1.4.*,
+        buildbox        >= 2.1.6 && < 2.2,
+        repa-array      >= 4.1.0 && < 4.2,
+        repa-flow       >= 4.1.0 && < 4.2
+
+  Main-is:              Main.hs
+  HS-source-dirs:       tools/build
+  Other-modules:        Config
+
+  Extensions:
+        PatternGuards
+        BangPatterns
+        MultiWayIf
+
+  GHC-options: 
+        -Wall -fno-warn-missing-signatures
+        -rtsopts -threaded 
+        -O2
+
+
+
 Executable repa-fields
   Build-depends: 
         base            == 4.8.*,
@@ -61,3 +86,5 @@ Executable repa-sieve
         -Wall -fno-warn-missing-signatures
         -rtsopts -threaded 
         -O2
+
+

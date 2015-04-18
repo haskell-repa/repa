@@ -1,11 +1,13 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+
+-- | Primitive functions used by produced Repa code when compiling the queries.
+--   All names used by the emitted query code are defined here so we can keep
+--   track of what is being used.
+--
 module Data.Repa.Query.Runtime.Primitive
         ( -- * From Prelude
-          (>>=)
-        , (=<<)
-        , return
+          (>>=), (=<<), return
         , error
-
         , negate
         , add, sub, mul, div
         , eq,  neq

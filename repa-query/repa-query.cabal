@@ -38,6 +38,7 @@ Library
         Data.Repa.Query.Eval.Exp
         Data.Repa.Query.Source.Builder
         Data.Repa.Query.Source.EDSL
+        Data.Repa.Query.Source.Primitive
         Data.Repa.Query.Transform.Namify
         Data.Repa.Query.Build
         Data.Repa.Query.Exp
