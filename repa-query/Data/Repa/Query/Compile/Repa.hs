@@ -6,13 +6,13 @@ module Data.Repa.Query.Compile.Repa
         ( decOfQuery
         , expOfQuery)
 where
-import Language.Haskell.TH              as H
-import Data.Repa.Flow                   as F
-import Data.Repa.Flow.Auto.IO           as F
-import Data.Repa.Flow.Auto.Format       as F
-import Data.Repa.Query.Graph            as G
-import Data.Repa.Query.Format           as Q
-import Data.Repa.Convert.Format         as C
+import Language.Haskell.TH                      as H
+import Data.Repa.Flow                           as F
+import Data.Repa.Flow.Auto.IO                   as F
+import Data.Repa.Flow.Auto.Format               as F
+import Data.Repa.Query.Graph                    as G
+import qualified Data.Repa.Query.Format         as Q
+import qualified Data.Repa.Convert.Format       as C
 
 
 ---------------------------------------------------------------------------------------------------
@@ -32,22 +32,22 @@ decOfQuery nResult query
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a query
 expOfQuery   :: G.Query  () String String String -> Q H.Exp
-expOfQuery (G.Query sResult format (G.Graph nodes))
- = case format of
-        Fixed{}
+expOfQuery (G.Query sResult delim fields (G.Graph nodes))
+ = case delim of
+        Q.Fixed{}
          -> [| $sources >>= F.concatPackFormat_i  $format' |]
 
-        Lines{}
+        Q.Lines{}
          -> [| $sources >>= F.unlinesPackFormat_i $format' |]
 
-        LinesSep{}
+        Q.LinesSep{}
          -> [| $sources >>= F.unlinesPackFormat_i $format' |]
 
  where  sources 
          = go nodes
 
         Just format'
-         = expOfRowFormat format
+         = expOfRowFormat delim fields
 
         go []   
          = do   let hResult     = H.varE (H.mkName sResult)
@@ -71,9 +71,9 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
-        G.SourceTable _ tableName format@Lines{} sOut
+        G.SourceTable _ tableName delim@Q.Lines{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
-                let Just format' = expOfRowFormat format
+                let Just format' = expOfRowFormat delim fields
 
                 xRhs    <- [| fromFiles [ $hTable ] 
                                 (F.sourceLinesFormat 
@@ -86,9 +86,9 @@ bindOfSource ss
                 return (pOut, xRhs)
 
 
-        G.SourceTable _ tableName format@LinesSep{} sOut
+        G.SourceTable _ tableName delim@Q.LinesSep{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
-                let Just format' = expOfRowFormat format
+                let Just format' = expOfRowFormat delim fields
 
                 xRhs    <- [| fromFiles [ $hTable ] 
                                 (F.sourceLinesFormat 
@@ -101,9 +101,9 @@ bindOfSource ss
                 return (pOut, xRhs)
 
 
-        G.SourceTable _ tableName format@Fixed{} sOut
+        G.SourceTable _ tableName delim@Q.Fixed{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
-                let Just format' = expOfRowFormat format
+                let Just format' = expOfRowFormat delim fields
 
                 xRhs    <- [| fromFiles [ $hTable ]
                                 (F.sourceFixedFormat
@@ -213,61 +213,74 @@ litOfLit lit
 
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a row format.
-expOfRowFormat :: Q.Row -> Maybe H.ExpQ
-expOfRowFormat row
- = case row of
-        Q.Fixed     [f]
-         -> Just [| $(expOfFieldFormat f) |]
+expOfRowFormat :: Q.Delim -> Q.FieldBox -> Maybe H.ExpQ
+expOfRowFormat delim (Q.FieldBox field)
+ = case (delim, Q.flattens field) of
+        (Q.Fixed, [f])
+         |  Just f'     <- expOfFieldFormat f
+         -> Just f'
 
-        Q.Fixed     (f:fs)
-         -> Just [| C.App $(expOfFieldFormats f fs) |]
+        (Q.Fixed, (f:fs))
+         |  Just ff'    <- expOfFieldFormats f fs
+         -> Just [| C.App $ff' |]
 
-        Q.Lines f
-         -> Just [| $(expOfFieldFormat f) |]
+        (Q.Lines, [f])
+         |  Just f'     <- expOfFieldFormat f
+         -> Just f'
 
-        Q.LinesSep _c [f]
-         -> Just [| $(expOfFieldFormat f) |]
+        (Q.LinesSep _c, [f])
+         |  Just f'      <- expOfFieldFormat f
+         -> Just f'
 
-        Q.LinesSep c (f:fs) 
-         -> Just [| C.Sep $(H.litE (H.charL c)) $(expOfFieldFormats f fs) |]
+        (Q.LinesSep c,  (f:fs))
+         |  Just ff'     <- expOfFieldFormats f fs
+         -> Just [| C.Sep $(H.litE (H.charL c)) $ff' |]
 
         _ -> Nothing
 
 
 -- | Yield a Haskell expression for some fields.
-expOfFieldFormats :: Q.Field -> [Q.Field] -> H.ExpQ 
+expOfFieldFormats :: Q.FieldBox -> [Q.FieldBox] -> Maybe H.ExpQ 
 expOfFieldFormats f1 []        
         = expOfFieldFormat f1
 
 expOfFieldFormats f1 (f2 : fs) 
-        = [| $(expOfFieldFormat f1) C.:*: $(expOfFieldFormats f2 fs) |]
+        | Just f1'   <- expOfFieldFormat  f1
+        , Just ff'   <- expOfFieldFormats f2 fs
+        = Just [| $f1' C.:*: $ff' |]
+
+        | otherwise
+        = Nothing
 
 
 -- | Yield a Haskell expression for a field format.
-expOfFieldFormat   :: Q.Field -> H.ExpQ
-expOfFieldFormat format
- = case format of
-        Q.Word8be       -> [| C.Word8be   |]
-        Q.Int8be        -> [| C.Int8be    |]
+expOfFieldFormat   :: Q.FieldBox -> Maybe H.ExpQ
+expOfFieldFormat (Q.FieldBox field)
+ = case field of
+        Q.Word8be       -> Just [| C.Word8be   |]
+        Q.Int8be        -> Just [| C.Int8be    |]
 
-        Q.Word16be      -> [| C.Word16be  |]
-        Q.Int16be       -> [| C.Int16be   |]
+        Q.Word16be      -> Just [| C.Word16be  |]
+        Q.Int16be       -> Just [| C.Int16be   |]
 
-        Q.Word32be      -> [| C.Word32be  |]
-        Q.Int32be       -> [| C.Int32be   |] 
+        Q.Word32be      -> Just [| C.Word32be  |]
+        Q.Int32be       -> Just [| C.Int32be   |] 
 
-        Q.Word64be      -> [| C.Word64be  |]
-        Q.Int64be       -> [| C.Int64be   |]
+        Q.Word64be      -> Just [| C.Word64be  |]
+        Q.Int64be       -> Just [| C.Int64be   |]
 
-        Q.Float32be     -> [| C.Float32be |]
-        Q.Float64be     -> [| C.Float64be |]
+        Q.Float32be     -> Just [| C.Float32be |]
+        Q.Float64be     -> Just [| C.Float64be |]
 
-        Q.YYYYsMMsDD c  -> [| C.YYYYsMMsDD $(H.litE (H.charL c)) |]
-        Q.DDsMMsYYYY c  -> [| C.DDsMMsYYYY $(H.litE (H.charL c)) |]
+        Q.YYYYsMMsDD c  -> Just [| C.YYYYsMMsDD $(H.litE (H.charL c)) |]
+        Q.DDsMMsYYYY c  -> Just [| C.DDsMMsYYYY $(H.litE (H.charL c)) |]
 
-        Q.IntAsc        -> [| C.IntAsc    |]
-        Q.DoubleAsc     -> [| C.DoubleAsc |]
+        Q.IntAsc        -> Just [| C.IntAsc    |]
+        Q.DoubleAsc     -> Just [| C.DoubleAsc |]
 
-        Q.FixAsc len    -> [| C.FixAsc $(H.litE (H.integerL (fromIntegral len))) |]
-        Q.VarAsc        -> [| C.VarAsc    |]
+        Q.FixAsc len    -> Just [| C.FixAsc $(H.litE (H.integerL (fromIntegral len))) |]
+        Q.VarAsc        -> Just [| C.VarAsc    |]
+
+        _               -> Nothing
+
 

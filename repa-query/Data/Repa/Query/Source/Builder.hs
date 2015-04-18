@@ -4,7 +4,7 @@ module Data.Repa.Query.Source.Builder
 
         , Value (..)
         , Q
-        , buildQ
+        , query
         , newFlow
         , addNode)
 where
@@ -54,10 +54,12 @@ type Q a
 --   The operator graph in the result query uses strings for flow variables
 --   and debruijn indices for value variables.
 --
-buildQ  :: Format.Row
+query   :: Format.Delim
+        -> Format.Field a
         -> Q (Flow a)
         -> G.Query () String String String
-buildQ format f
+
+query delim fields  f
  = let  (Flow x, s')  
                 = runState f
                 $ S { sNodes        = []
@@ -73,9 +75,11 @@ buildQ format f
         -- way we can construct a (Q (Flow a)) is via the EDSL code, which
         -- doesn't provide a way of producing expressions with free indices.
         --
-        Just query  = N.namify N.mkNamifierStrings 
-                    $ G.Query x format (G.Graph (sNodes s'))
-   in   query
+        Just q  = N.namify N.mkNamifierStrings 
+                $ G.Query x delim 
+                        (Format.FieldBox fields)
+                        (G.Graph (sNodes s'))
+   in   q
 
 -- | State used when building the operator graph.
 data S  = S

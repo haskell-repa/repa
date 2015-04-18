@@ -61,4 +61,6 @@ Library
         ScopedTypeVariables
         ExistentialQuantification
         StandaloneDeriving
-        
+        GADTs
+        TypeOperators
+        DataKinds

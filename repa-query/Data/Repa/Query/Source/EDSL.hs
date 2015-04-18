@@ -33,6 +33,7 @@ module Data.Repa.Query.Source.EDSL
 where
 import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder
+import Data.Repa.Product
 import qualified Data.Repa.Query.Graph  as G
 import qualified Data.Repa.Query.Format as Format
 import qualified Prelude                as P
@@ -45,10 +46,16 @@ import Prelude
 
 ---------------------------------------------------------------------------------------------------
 -- | Source a named table.
-source :: String -> Format.Row -> Q (Flow a)
-source table format
+source  :: String 
+        -> Format.Delim 
+        -> Format.Field a 
+        -> Q (Flow a)
+
+source table delim field
  = do   fOut    <- newFlow
-        addNode $ G.NodeSource (G.SourceTable () table format $ takeFlow fOut)
+        addNode $ G.NodeSource 
+                $ G.SourceTable () table delim (Format.FieldBox field) 
+                $ takeFlow fOut
         return  fOut
 
 
@@ -139,7 +146,7 @@ filter fun fIn
 
 -- | Scan through a flow to find runs of consecutive values,
 --   yielding the value and the length of each run.
-groups :: Flow a -> Q (Flow (a, Int))
+groups :: Flow a -> Q (Flow (a :*: Int))
 groups fIn
  = do   fOut    <- newFlow
 
@@ -155,7 +162,7 @@ groups fIn
 -- | Like `groups` but use the given predicate to decide whether
 --   consecutive values should be placed into the same group.
 groupsBy :: (Value a -> Value a -> Value Bool) 
-         -> Flow a -> Q (Flow (a, Int))
+         -> Flow a -> Q (Flow (a :*: Int))
 groupsBy fun fIn
  = do   fOut    <- newFlow
 

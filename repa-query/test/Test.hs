@@ -18,8 +18,9 @@ import Data.Repa.Query.Build
 -- User query
 qb1 :: G.Query () String String String
 qb1
- = buildQ (LinesSep '\t' [IntAsc, IntAsc])
- $ do   f       <- source "foo.txt" (Lines IntAsc)
+ = query (LinesSep '\t') (IntAsc :*: IntAsc)
+ $ do   f       <- source "foo.txt" Lines IntAsc
         f2      <- map (+ 1) f
         f3      <- groups f2
         return f3
+

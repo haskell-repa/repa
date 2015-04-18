@@ -25,7 +25,18 @@ import qualified Data.Repa.Query.Format as Format
 
 -- | A query consisting of an graph, and the name of the output flow.
 data Query a nF bV nV
-        = Query nF Format.Row (Graph a nF bV nV)
+        = Query 
+        { -- | Name of output flow.
+          queryOutput           :: nF 
+
+          -- | How to delimit elements in output.
+        , queryResultDelim      :: Format.Delim
+
+          -- | Format of fields in output.
+        , queryResultFields     :: Format.FieldBox
+
+          -- | Query operator graph.
+        , queryGraph            :: Graph a nF bV nV }
 
 deriving instance (Show a, Show nF, Show bV, Show nV)
         => Show (Query a nF bV nV)
@@ -57,8 +68,11 @@ data Source a nF
           -- | Name of table.
         , sourceTableName       :: String 
 
-          -- | Format of each row of table.
-        , sourceFormat          :: Format.Row
+          -- | Delimitor for elements.
+        , sourceDelim           :: Format.Delim
+
+          -- | Format of fields.
+        , sourceFormat          :: Format.FieldBox
 
           -- | Output flow.
         , sourceOutput          :: nF }

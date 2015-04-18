@@ -1,90 +1,156 @@
 
+-- | Conversion between the open type-index representation of formats,
+--   and closed data-type view. 
 module Data.Repa.Query.Format
         ( Row   (..)
+        , Delim (..)
         , Field (..)
-        , FormatField
-        , makeFormatField
+
+        , FieldBox (..)
+        , flattens
+
         , showField
         , readField)
 where
 import Data.Char
-import qualified Data.Repa.Convert.Format       as C
+import Data.Word
+import Data.Int
+import Data.Repa.Bits.Date32                    as Date32
 import qualified Data.Map                       as Map
+import qualified Data.Repa.Product              as P
 
 
 -- | Row format.
-data Row
+data Row aa
+        = Row Delim (Field aa)
+        deriving (Eq, Show)
+
+
+-- | How the rows and fields are delimited.
+data Delim
         -- | Format with fixed-length rows.
         --   The fields are all concatenated together, with no delimitors.
-        = Fixed   [Field]
+        = Fixed
 
         -- | Format with a single field on each lines.
-        | Lines    Field
+        | Lines
 
         -- | Format with multiple fields on each line,
         --   where the fields are separated by a special character.
-        | LinesSep Char [Field]
+        | LinesSep Char
         deriving (Eq, Show)
 
 
 -- | Field formats supported by Repa tables.
 --
---   The repa-convert library defines several data formats, and a singleton
---   type to represent each format. We enumerate all the formats here in a 
+--   The repa-convert library defines several data formats using a singleton
+--   type to represent each format. We enumerate all the formats here in a
 --   closed data type to make it easier to write parsers and pretty pritners
 --   for queries that mention them.
 --
-data Field
-        = Word8be               -- ^ Big-endian 8-bit unsigned word.
-        | Int8be                -- ^ Big-endian 8-bit signed integer.
+--   The names of the constructors have the same names as the ones in 
+--   repa-convert, so when we read/show them they match.
+--
+data Field a where
 
-        | Word16be              -- ^ Big-endian 16-bit unsigned word.
-        | Int16be               -- ^ Big-endian 16-bit signed integer.
+        -- | Compound field.
+        (:*:)           :: Field x -> Field y -> Field (x P.:*: y)
 
-        | Word32be              -- ^ Big-endian 32-bit unsigned word.
-        | Int32be               -- ^ Big-endian 32-bit signed integer.
+        -- | Big-endian 8-bit unsigned word.
+        Word8be         :: Field Word8
 
-        | Word64be              -- ^ Big-endian 64-bit unsigned word.
-        | Int64be               -- ^ Big-endian 64-bit signed integer.
+        -- | Big-endian 8-bit signed integer.
+        Int8be          :: Field Int8
 
-        | Float32be             -- ^ Big-endian 32-bit IEEE 754 float.
-        | Float64be             -- ^ Big-endian 64-bit IEEE 754 float.
+        -- | Big-endian 16-bit unsigned word.
+        Word16be        :: Field Word16
 
-        | YYYYsMMsDD Char       -- ^ Date in ASCII YYYYsMMsDD format.
-        | DDsMMsYYYY Char       -- ^ Date in ASCII DDsMMsYYYY format.
+        -- | Big-endian 16-bit signed integer.
+        Int16be         :: Field Int16
 
-        | IntAsc                -- ^ Human readable ASCII integer.
-        | DoubleAsc             -- ^ Human readable ASCII double.
+        -- | Big-endian 32-bit unsigned word.
+        Word32be        :: Field Word32
 
-        | FixAsc     Int        -- ^ Fixed length ASCII string.
-        | VarAsc                -- ^ Variable length ASCII string.
-        deriving (Eq, Show)
+        -- | Big-endian 32-bit signed integer.
+        Int32be         :: Field Int32
+
+        -- | Big-endian 64-bit unsigned word.
+        Word64be        :: Field Word64
+
+        -- | Big-endian 64-bit signed integer.
+        Int64be         :: Field Int64
+
+        -- | Big-endian 32-bit IEEE 754 float.
+        Float32be       :: Field Float
+
+        -- | Big-endian 64-bit IEEE 754 float.
+        Float64be       :: Field Double
+
+        -- | Date in ASCII YYYYsMMsDD format.
+        YYYYsMMsDD      :: Char -> Field Date32
+
+        -- | Date in ASCII DDsMMsYYYY format.
+        DDsMMsYYYY      :: Char -> Field Date32
+
+        -- | Human readable ASCII integer.
+        IntAsc          :: Field Int  
+
+        -- | Human readable ASCII double.
+        DoubleAsc       :: Field Double
+
+        -- | Fixed length ASCII string.
+        FixAsc          :: Int -> Field String
+
+        -- | Variable length ASCII string.
+        VarAsc          :: Field String
+
+deriving instance Show (Field a)
+deriving instance Eq   (Field a)
 
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Existential container for field formats,
+--   and dictionaries to work with them.
+data FieldBox
+        =  forall a
+        .  FieldBox (Field a)
+
+instance Show FieldBox where
+ show (FieldBox f)      = show f
+
+
+-- | Flatten compound fields into their parts and box up the components.
+flattens :: Field a -> [FieldBox]
+flattens ff
+ = case ff of
+        (:*:) f1 f2     -> flattens f1 ++ flattens f2
+        _               -> [FieldBox ff]
+
+
+---------------------------------------------------------------------------------------------------
 -- | Show a field format.
-showField :: Field -> String
+showField :: Field a -> String
 showField ff = show ff
 
 
 -- | Parse a field format.
-readField :: String -> Maybe Field
+readField :: String -> Maybe FieldBox
 readField ss
  | Just f       <- Map.lookup ss atomic
  = Just f
 
  | ["YYYYsMMsDD", sep]  <- words ss
  , ['\'', c, '\'']      <- sep
- = Just $ YYYYsMMsDD c
+ = Just $ FieldBox $ YYYYsMMsDD c
 
  | ["DDsMMsYYYY", sep]  <- words ss
  , ['\'', c, '\'']      <- sep
- = Just $ DDsMMsYYYY c
+ = Just $ FieldBox $ DDsMMsYYYY c
 
  | ["FixAsc", sLen]     <- words ss
  , all isDigit sLen
- = Just $ FixAsc (read sLen)
+ = Just $ FieldBox $ FixAsc (read sLen)
 
  | otherwise
  = Nothing
@@ -92,51 +158,18 @@ readField ss
  where
         atomic
          = Map.fromList
-         [ ("Word8be",    Word8be),      ("Int8be",  Int8be)
-         , ("Word16be",   Word16be),     ("Int16be", Int16be)
-         , ("Word32be",   Word32be),     ("Int32be", Int32be)
-         , ("Word64be",   Word64be),     ("Int64be", Int64be)
-         , ("Float32be",  Float32be)
-         , ("Float64be",  Float64be)
-         , ("IntAsc",     IntAsc)
-         , ("DoubleAsc",  DoubleAsc)
-         , ("VarAsc",     VarAsc) ]
+         [ ("Word8be",    FieldBox   Word8be)
+         , ("Int8be",     FieldBox    Int8be) 
+         , ("Word16be",   FieldBox  Word16be)
+         , ("Int16be",    FieldBox   Int16be)
+         , ("Word32be",   FieldBox  Word32be)
+         , ("Int32be",    FieldBox   Int32be)
+         , ("Word64be",   FieldBox  Word64be)
+         , ("Int64be",    FieldBox   Int64be)
+         , ("Float32be",  FieldBox Float32be)
+         , ("Float64be",  FieldBox Float64be)
+         , ("IntAsc",     FieldBox    IntAsc)
+         , ("DoubleAsc",  FieldBox DoubleAsc)
+         , ("VarAsc",     FieldBox    VarAsc) ]
 
-
----------------------------------------------------------------------------------------------------
--- | Existential container for field formats,
---   and dictionaries to work with them.
-data FormatField
-        =  forall format
-        .  (C.Packable format, Show format) 
-        => FormatField format
-
-
--- | Package up the dictionaries for a given format.
-makeFormatField :: Field -> FormatField
-makeFormatField ff
- = case ff of
-        Word8be         -> FormatField C.Word8be
-        Int8be          -> FormatField C.Int8be
-
-        Word16be        -> FormatField C.Word16be
-        Int16be         -> FormatField C.Int16be
-
-        Word32be        -> FormatField C.Word32be
-        Int32be         -> FormatField C.Int32be
-
-        Word64be        -> FormatField C.Word64be
-        Int64be         -> FormatField C.Int64be
-
-        Float32be       -> FormatField C.Word8be
-        Float64be       -> FormatField C.Int8be
-
-        YYYYsMMsDD c    -> FormatField (C.YYYYsMMsDD c)
-        DDsMMsYYYY c    -> FormatField (C.DDsMMsYYYY c)
-
-        IntAsc          -> FormatField C.IntAsc
-        DoubleAsc       -> FormatField C.DoubleAsc
-
-        FixAsc len      -> FormatField (C.FixAsc len)
-        VarAsc          -> FormatField C.VarAsc
 

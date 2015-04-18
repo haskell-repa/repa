@@ -39,8 +39,8 @@ class Namify (c :: * -> * -> *) where
 
 
 instance Namify (Query a nF) where
- namify nam (Query nf format gg)
-        = liftM (Query nf format) (namify nam gg)
+ namify nam (Query nf delim fields gg)
+        = liftM (Query nf delim fields) (namify nam gg)
 
 
 instance Namify (Graph a nF) where

@@ -19,16 +19,16 @@ import qualified Data.Text                      as T
 import qualified Data.HashMap.Strict            as H
 
 
-
 --------------------------------------------------------------------------------------------- Query
 instance (ToJSON nF, ToJSON bV, ToJSON nV)
       => (ToJSON (Query a nF bV nV)) where
  toJSON xx
   = case xx of
-        Query flow format graph
+        Query flow delim fields graph
          -> object [ "type"     .= text "query"
                    , "out"      .= toJSON flow
-                   , "row"      .= toJSON format
+                   , "delim"    .= toJSON delim
+                   , "fields"   .= toJSON fields
                    , "graph"    .= toJSON graph ]
 
 
@@ -36,14 +36,16 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
       => (FromJSON (Query () nF bV nV)) where
  parseJSON (Object hh)
 
-        | Just (String "query") <- H.lookup "type"  hh
-        , Just jOut             <- H.lookup "out"   hh
-        , Just jRow             <- H.lookup "row"   hh
-        , Just jGraph           <- H.lookup "graph" hh
+        | Just (String "query") <- H.lookup "type"   hh
+        , Just jOut             <- H.lookup "out"    hh
+        , Just jDelim           <- H.lookup "delim"  hh
+        , Just jFields          <- H.lookup "fields" hh
+        , Just jGraph           <- H.lookup "graph"  hh
         = do    out     <- parseJSON jOut
-                row     <- parseJSON jRow
+                delim   <- parseJSON jDelim
+                fields  <- parseJSON jFields
                 graph   <- parseJSON jGraph
-                return  $ Query out row graph
+                return  $ Query out delim fields graph
 
  parseJSON _ = mzero
  
@@ -221,11 +223,12 @@ instance (ToJSON nF)
        => ToJSON (Source a nF) where
  toJSON xx
   = case xx of
-        SourceTable _ name format fOut
+        SourceTable _ name delim fields fOut
          -> object [ "type"     .= text "source"
                    , "source"   .= text "table"
                    , "name"     .= T.pack name
-                   , "format"   .= toJSON format
+                   , "delim"    .= toJSON delim
+                   , "fields"   .= toJSON fields
                    , "output"   .= toJSON fOut ]
 
 
@@ -236,11 +239,13 @@ instance  FromJSON nF
         | Just (String "source") <- H.lookup "type"   hh
         , Just (String "table")  <- H.lookup "source" hh
         , Just (String  name)    <- H.lookup "name"   hh
-        , Just jFormat           <- H.lookup "format" hh
+        , Just jDelim            <- H.lookup "delim"  hh
+        , Just jFields           <- H.lookup "fields" hh
         , Just jOut              <- H.lookup "output" hh
-        = do  format  <- parseJSON jFormat
+        = do  delim   <- parseJSON jDelim
+              fields  <- parseJSON jFields
               out     <- parseJSON jOut
-              return  $ SourceTable () (T.unpack name) format out
+              return  $ SourceTable () (T.unpack name) delim fields out
 
  parseJSON _ = mzero
 
@@ -381,59 +386,53 @@ scalarOpOfName ss
 
 
 -------------------------------------------------------------------------------------- Format.Row
-instance ToJSON Format.Row where
+instance ToJSON Format.Delim where
  toJSON rr
   = case rr of
-        Format.Fixed ff
-         -> object [ "type"     .= text "row"
-                   , "row"      .= text "fixed"
-                   , "fields"   .= toJSON ff  ]
+        Format.Fixed
+         -> object [ "type"     .= text "delim"
+                   , "delim"    .= text "fixed" ]
 
-        Format.Lines f
-         -> object [ "type"     .= text "row"
-                   , "row"      .= text "lines"
-                   , "field"    .= toJSON f ]
+        Format.Lines
+         -> object [ "type"     .= text "delim"
+                   , "delim"    .= text "lines" ]
 
-        Format.LinesSep c ff
-         -> object [ "type"     .= text "row"
-                   , "row"      .= text "sep"
-                   , "sep"      .= T.pack [c]
-                   , "fields"   .= toJSON ff ]
+        Format.LinesSep c
+         -> object [ "type"     .= text "delim"
+                   , "delim"    .= text "sep"
+                   , "sep"      .= T.pack [c] ]
 
-
-instance FromJSON Format.Row where
+instance FromJSON Format.Delim where
  parseJSON (Object hh)
-        | Just (String "row")    <- H.lookup "type"   hh
-        , Just (String "fixed")  <- H.lookup "row"    hh
-        , Just jFields           <- H.lookup "fields" hh
-        = do    fields  <- parseJSON jFields
-                return  $ Format.Fixed fields
+        | Just (String "delim")  <- H.lookup "type"   hh
+        , Just (String "fixed")  <- H.lookup "delim"  hh
+        =       return $ Format.Fixed
 
-        | Just (String "row")    <- H.lookup "type"   hh
-        , Just (String "lines")  <- H.lookup "row"    hh
-        , Just jField            <- H.lookup "field" hh
-        = do    field   <- parseJSON jField
-                return  $ Format.Lines field
+        | Just (String "delim")  <- H.lookup "type"   hh
+        , Just (String "fixed")  <- H.lookup "delim"  hh
+        =       return $ Format.Lines
 
-        | Just (String "row")    <- H.lookup "type"   hh
-        , Just (String "sep")    <- H.lookup "row"    hh
+        | Just (String "delim")  <- H.lookup "type"   hh
+        , Just (String "sep")    <- H.lookup "delim"  hh
         , Just (String sep)      <- H.lookup "sep"    hh
-        , Just jFields           <- H.lookup "fields" hh
         , [c]                    <- T.unpack sep
-        = do    fields  <- parseJSON jFields
-                return  $ Format.LinesSep c fields
+        =       return $ Format.LinesSep c
 
  parseJSON _ = mzero
 
 
 -------------------------------------------------------------------------------------- Format.Field
-instance ToJSON Format.Field where
+instance ToJSON   Format.FieldBox where
+ toJSON (Format.FieldBox ff)
+        = toJSON ff
+
+instance ToJSON (Format.Field a) where
  toJSON ff
         = object  [ "type"      .= text "field"
                   , "field"     .= T.pack (Format.showField ff) ]
 
 
-instance FromJSON Format.Field where
+instance FromJSON Format.FieldBox where
  parseJSON (Object hh)
         | Just (String "field") <- H.lookup "type"  hh
         , Just (String ff)      <- H.lookup "field" hh
