@@ -213,7 +213,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
         = do    fin     <- parseJSON jIn
                 fout    <- parseJSON jOut
                 fun     <- parseJSON jFun
-                return  $  FopFilterI fin fout fun
+                return  $  FopGroupsI fin fout fun
 
  parseJSON _ = mzero
 
@@ -409,7 +409,7 @@ instance FromJSON Format.Delim where
         =       return $ Format.Fixed
 
         | Just (String "delim")  <- H.lookup "type"   hh
-        , Just (String "fixed")  <- H.lookup "delim"  hh
+        , Just (String "lines")  <- H.lookup "delim"  hh
         =       return $ Format.Lines
 
         | Just (String "delim")  <- H.lookup "type"   hh

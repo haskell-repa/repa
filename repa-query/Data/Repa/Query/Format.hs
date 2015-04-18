@@ -8,6 +8,7 @@ module Data.Repa.Query.Format
 
         , FieldBox (..)
         , flattens
+        , flattensBox
 
         , showField
         , readField)
@@ -126,6 +127,12 @@ flattens ff
  = case ff of
         (:*:) f1 f2     -> flattens f1 ++ flattens f2
         _               -> [FieldBox ff]
+
+
+-- | Like `flattens`, but start with a boxed field format.
+flattensBox :: FieldBox -> [FieldBox]
+flattensBox (FieldBox f)
+        = flattens f
 
 
 ---------------------------------------------------------------------------------------------------

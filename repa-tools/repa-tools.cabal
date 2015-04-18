@@ -24,9 +24,12 @@ Executable repa-build
         base            == 4.8.*,
         directory       == 1.2.*,
         filepath        == 1.4.*,
-        buildbox        >= 2.1.6 && < 2.2,
-        repa-array      >= 4.1.0 && < 4.2,
-        repa-flow       >= 4.1.0 && < 4.2
+        bytestring      >= 0.10.6 && < 0.11,
+        aeson           >= 0.8.0  && < 0.9,
+        buildbox        >= 2.1.6  && < 2.2,
+        repa-array      >= 4.1.0  && < 4.2,
+        repa-flow       >= 4.1.0  && < 4.2,
+        repa-query      >= 4.1.0  && < 4.2
 
   Main-is:              Main.hs
   HS-source-dirs:       tools/build
@@ -35,6 +38,7 @@ Executable repa-build
   Extensions:
         PatternGuards
         BangPatterns
+        ScopedTypeVariables
         MultiWayIf
 
   GHC-options: 

@@ -54,7 +54,7 @@ source  :: String
 source table delim field
  = do   fOut    <- newFlow
         addNode $ G.NodeSource 
-                $ G.SourceTable () table delim (Format.FieldBox field) 
+                $ G.SourceTable () table delim (Format.flattens field) 
                 $ takeFlow fOut
         return  fOut
 

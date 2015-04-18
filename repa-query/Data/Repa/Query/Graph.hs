@@ -33,7 +33,7 @@ data Query a nF bV nV
         , queryResultDelim      :: Format.Delim
 
           -- | Format of fields in output.
-        , queryResultFields     :: Format.FieldBox
+        , queryResultFields     :: [Format.FieldBox] 
 
           -- | Query operator graph.
         , queryGraph            :: Graph a nF bV nV }
@@ -72,7 +72,7 @@ data Source a nF
         , sourceDelim           :: Format.Delim
 
           -- | Format of fields.
-        , sourceFormat          :: Format.FieldBox
+        , sourceFields          :: [Format.FieldBox]
 
           -- | Output flow.
         , sourceOutput          :: nF }

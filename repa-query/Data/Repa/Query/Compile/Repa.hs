@@ -7,8 +7,6 @@ module Data.Repa.Query.Compile.Repa
         , expOfQuery)
 where
 import Language.Haskell.TH                              as H
-import Data.Repa.Flow                                   as F
-import Data.Repa.Flow.Auto.IO                           as F
 import Data.Repa.Flow.Auto.Format                       as F
 import Data.Repa.Query.Graph                            as G
 import qualified Data.Repa.Query.Format                 as Q
@@ -163,7 +161,7 @@ bindOfFlowOp op
                                       
                 return  (pOut, hRhs)
 
-        _ -> error "finish bindOfFlowOp"
+        _ -> error $ "finish bindOfFlowOp: " ++ show op
 
 
 ---------------------------------------------------------------------------------------------------
@@ -203,7 +201,6 @@ expOfScalarOp sop
         SopGt   -> [| P.gt     |]
         SopGe   -> [| P.ge     |]
         SopLt   -> [| P.lt     |]
-        SopLe   -> [| P.le     |]
 
 
 -- | Yield a Haskell literal from a query literal.
@@ -217,9 +214,9 @@ litOfLit lit
 
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a row format.
-expOfRowFormat :: Q.Delim -> Q.FieldBox -> Maybe H.ExpQ
-expOfRowFormat delim (Q.FieldBox field)
- = case (delim, Q.flattens field) of
+expOfRowFormat :: Q.Delim -> [Q.FieldBox] -> Maybe H.ExpQ
+expOfRowFormat delim fields
+ = case (delim, fields) of
         (Q.Fixed, [f])
          |  Just f'     <- expOfFieldFormat f
          -> Just f'

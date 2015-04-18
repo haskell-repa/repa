@@ -59,7 +59,7 @@ query   :: Format.Delim
         -> Q (Flow a)
         -> G.Query () String String String
 
-query delim fields  f
+query delim field  f
  = let  (Flow x, s')  
                 = runState f
                 $ S { sNodes        = []
@@ -77,7 +77,7 @@ query delim fields  f
         --
         Just q  = N.namify N.mkNamifierStrings 
                 $ G.Query x delim 
-                        (Format.FieldBox fields)
+                        (Format.flattens field)
                         (G.Graph (sNodes s'))
    in   q
 
