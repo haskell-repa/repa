@@ -21,39 +21,76 @@ main
 
 
 build config
- = do   let Just file   = configQuery config
-        result          <- runBuild "/tmp" (build_query config file)
+ = do   let Just file   =  configQuery config
+        result          <- runBuild "/tmp" (build_mode config (configMode config) file)
         case result of
          Left err -> error $ show err
          Right _  -> return ()
 
 
-build_query config file
+build_mode  config mode file
+ = case mode of
+        ModeBuild       -> build_build   config file
+        ModeToGraph     -> build_toGraph config file
+        ModeToJSON      -> build_toJSON  config file
+
+
+build_build config file
  = case takeExtension file of
         ".hs"   
          -> do  dslQuery  <- BB.io $ readFile file
-                graph     <- R.buildDslViaRepa 
+                _graph    <- R.buildDslViaRepa 
                                 "." (not $ configDump config)
                                 dslQuery  (dropExtension file)
-                build_print config graph
+                return ()
 
         ".json" 
          -> do  jsonQuery <- BB.io $ readFile file
-                graph     <- R.buildJsonViaRepa 
+                _graph    <- R.buildJsonViaRepa 
                                 "." (not $ configDump config)
                                 jsonQuery (dropExtension file)
-                build_print config graph
-
-
-build_print config graph
- = case configMode config of
-        ModeBuild       
-         -> return ()
-
-        ModeToGraph
-         -> do  io $ putStrLn    $ show graph
                 return ()
 
-        ModeToJSON
-         -> do  io $ BS.putStrLn $ (Aeson.encode $ Aeson.toJSON graph)
+        ext -> error $ "Cannot compile a " ++ ext ++ " file to a query."
+
+
+build_toGraph config file
+ = case takeExtension file of
+        ".hs"
+         -> do  dslQuery  <- BB.io $ readFile file
+                graph     <- R.loadQueryFromDSL 
+                                (configDirScratch config) (not $ configDump config)
+                                dslQuery 
+                io $ putStrLn $ show graph
                 return ()
+
+        ".json"
+         -> do  jsonQuery <- BB.io $ readFile file
+                graph     <- R.loadQueryFromJSON
+                                (configDirScratch config) (not $ configDump config)
+                                jsonQuery
+                io $ putStrLn $ show graph
+
+        ext -> error $ "Cannot convert a " ++ ext ++ " file to a query."
+
+
+build_toJSON config file
+ = case takeExtension file of
+        ".hs"
+         -> do  dslQuery  <- BB.io $ readFile file
+                graph     <- R.loadQueryFromDSL 
+                                (configDirScratch config) (not $ configDump config)
+                                dslQuery 
+                io $ BS.putStrLn $ Aeson.encode $ Aeson.toJSON graph
+                return ()
+
+        ".json"
+         -> do  jsonQuery <- BB.io $ readFile file
+                graph     <- R.loadQueryFromJSON
+                                (configDirScratch config) (not $ configDump config)
+                                jsonQuery
+                io $ BS.putStrLn $ Aeson.encode $ Aeson.toJSON graph
+
+        ext -> error $ "Cannot convert a " ++ ext ++ " file to a JSON query."
+
+

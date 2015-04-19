@@ -1,8 +1,13 @@
 
 module Data.Repa.Query.Build
-        ( buildQueryViaRepa 
+        ( -- * Building
+          buildQueryViaRepa 
         , buildJsonViaRepa
-        , buildDslViaRepa)
+        , buildDslViaRepa
+
+          -- * Loading
+        , loadQueryFromDSL
+        , loadQueryFromJSON)
 where
 import System.FilePath
 import System.Directory
@@ -73,10 +78,13 @@ buildJsonViaRepa
                                 -- ^ Operator graph of result query.
 buildJsonViaRepa dirScratch cleanup json fileExe
  = do   
+        -- Parse the json version into a query.
         let Just query :: Maybe (Q.Query () String String String)
                 = Aeson.decode $ BS.pack json
 
+        -- Build query into an executable.
         buildQueryViaRepa dirScratch cleanup query fileExe
+
         return  query
 
 
@@ -92,6 +100,25 @@ buildDslViaRepa
 
 buildDslViaRepa dirScratch cleanup dslQuery fileExe
  = do   
+        -- Load json from the dsl version of the queyr.
+        query   <- loadQueryFromDSL dirScratch cleanup dslQuery
+
+        -- Build query into an executable.
+        buildQueryViaRepa dirScratch cleanup query fileExe
+
+        return query
+
+
+---------------------------------------------------------------------------------------------------
+-- | Load the operator graph from a query encoded in the DSL.
+loadQueryFromDSL
+        :: FilePath             -- ^ Working directory.
+        -> Bool                 -- ^ Cleanup intermediate files.
+        -> String               -- ^ Query encoded in the DSL.
+        -> BB.Build (Q.Query () String String String)
+
+loadQueryFromDSL dirScratch cleanup dslQuery
+ = do
         -- Attach header that defines the prims, and write out the code.
         --
         -- TODO: sanitize query before pasting on header to make sure it
@@ -110,8 +137,26 @@ buildDslViaRepa dirScratch cleanup dslQuery fileExe
         when cleanup
          $ BB.io $ removeFile fileHS
 
-        buildJsonViaRepa dirScratch cleanup jsonQuery fileExe
+        let Just query :: Maybe (Q.Query () String String String)
+                = Aeson.decode $ BS.pack jsonQuery
 
+        return query
+
+
+---------------------------------------------------------------------------------------------------
+-- | Load the operator graph from a query encoded in JSON.
+loadQueryFromJSON
+        :: FilePath             -- ^ Working directory.
+        -> Bool                 -- ^ Cleanup intermediate files.
+        -> String               -- ^ Query encoded in the DSL.
+        -> BB.Build (Q.Query () String String String)
+
+loadQueryFromJSON _dirScratch _cleanup jsonQuery
+ = do
+        let Just query :: Maybe (Q.Query () String String String)
+                = Aeson.decode $ BS.pack jsonQuery
+
+        return query
 
 ---------------------------------------------------------------------------------------------------
 -- | Junk pasted to the front of a query written in the EDSL 

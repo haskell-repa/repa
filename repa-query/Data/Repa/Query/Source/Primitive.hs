@@ -19,6 +19,7 @@ module Data.Repa.Query.Source.Primitive
         , filter
         , groups, groupsBy
 
+        , negate, abs, signum
         , (+),  (-),  (*), (/)
         , (==), (/=)
         , (>),  (>=), (<), (<=)

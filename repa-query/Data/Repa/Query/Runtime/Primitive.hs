@@ -8,7 +8,7 @@ module Data.Repa.Query.Runtime.Primitive
         ( -- * From Prelude
           (>>=), (=<<), return
         , error
-        , negate
+        , negate, abs, signum
         , add, sub, mul, div
         , eq,  neq
         , gt,  ge,  lt,  le
@@ -57,6 +57,8 @@ return                  = P.return
 error                   = P.error
 
 negate                  = (\x   -> P.negate x)
+abs                     = (\x   -> P.abs    x)
+signum                  = (\x   -> P.signum x)
 add                     = (\x y -> x P.+  y)
 sub                     = (\x y -> x P.-  y)
 mul                     = (\x y -> x P.*  y)

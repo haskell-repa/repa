@@ -15,7 +15,10 @@ data Config
         , configQuery           :: Maybe FilePath 
 
           -- | Dump intermediate files.
-        , configDump            :: Bool }
+        , configDump            :: Bool 
+
+          -- | Scratch directory to use for compilation.
+        , configDirScratch      :: FilePath }
 
 
 -- | Starting configuration.
@@ -24,7 +27,8 @@ configZero
         = Config
         { configMode            = ModeBuild
         , configQuery           = Nothing 
-        , configDump            = False }
+        , configDump            = False 
+        , configDirScratch      = "." }
 
 
 -- | Major mode of program.

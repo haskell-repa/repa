@@ -27,6 +27,7 @@ module Data.Repa.Query.Source.EDSL
         , groupsBy
 
           -- * Scalar operators
+        , negate, abs, signum
         , (+),  (-),  (*), (/)
         , (==), (/=)
         , (>),  (>=), (<), (<=)
@@ -46,6 +47,7 @@ import qualified Data.Repa.Query.Format as Format
 import qualified Prelude                as P
 import Prelude   
  hiding ( map, filter
+        , negate, abs, signum
         , (+),  (-), (*), (/)
         , (==), (/=)
         , (>),  (>=), (<), (<=))
@@ -186,6 +188,19 @@ groupsBy fun fIn
 
 ---------------------------------------------------------------------------------------------------
 -- Wrappers for scalar operators.
+
+-- | Scalar negation.
+negate :: Value a -> Value a
+negate = makeScalarOp1 G.SopNeg
+
+-- | Scalar absolute value.
+abs :: Value a -> Value a
+abs    = makeScalarOp1 G.SopAbs
+
+-- | Scalar sign of number.
+signum :: Value a -> Value a
+signum = makeScalarOp1 G.SopSignum
+
 -- | Scalar addition.
 (+) :: Value a -> Value a -> Value a
 (+) = makeScalarOp2 G.SopAdd 

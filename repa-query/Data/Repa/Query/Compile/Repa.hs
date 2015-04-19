@@ -191,6 +191,8 @@ expOfScalarOp :: ScalarOp -> Maybe H.ExpQ
 expOfScalarOp sop
  = case sop of
         SopNeg          -> Just [| P.negate |]
+        SopAbs          -> Just [| P.abs    |]
+        SopSignum       -> Just [| P.signum |]
         SopAdd          -> Just [| P.add    |]
         SopSub          -> Just [| P.sub    |]
         SopMul          -> Just [| P.mul    |]
@@ -220,7 +222,7 @@ expOfScalarOp sop
         SopProj 5 4     -> Just [| (\(_ :*: _ :*: _ :*: x :*: _) -> x) |]
         SopProj 5 5     -> Just [| (\(_ :*: _ :*: _ :*: _ :*: x) -> x) |]
 
-        _               -> Nothing
+        SopProj _ _     -> Nothing
 
 
 -- | Yield a Haskell literal from a query literal.
