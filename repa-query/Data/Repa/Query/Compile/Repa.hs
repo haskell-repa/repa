@@ -79,8 +79,8 @@ bindOfSource ss
                 xRhs    <- [| P.fromFiles [ $hTable ] 
                                 (P.sourceLinesFormat 
                                         (P.mul 64 1024)
-                                        (P.error "line to long")
-                                        (P.error "cannot convert")
+                                        (P.error "query: line to long.")
+                                        (P.error "query: cannot convert field.")
                                         $format') |]
 
                 pOut    <- H.varP (H.mkName sOut)
@@ -94,8 +94,8 @@ bindOfSource ss
                 xRhs    <- [| P.fromFiles [ $hTable ] 
                                 (P.sourceLinesFormat 
                                         (P.mul 64 1024)
-                                        (P.error "line to long")
-                                        (P.error "cannot convert")
+                                        (P.error "query: line to long.")
+                                        (P.error "query: cannot convert field.")
                                         $format') |]
 
                 pOut    <- H.varP (H.mkName sOut)
@@ -109,7 +109,7 @@ bindOfSource ss
                 xRhs    <- [| P.fromFiles [ $hTable ]
                                 (P.sourceFixedFormat
                                         $format'
-                                        (P.error "cannot convert")) |]
+                                        (P.error "query: cannot convert field.")) |]
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
@@ -183,32 +183,45 @@ expOfExp xx
          -> H.appsE [expOfExp x1, expOfExp x2]
 
         G.XOp  _ sop xsArgs
-         -> H.appsE (expOfScalarOp sop : map expOfExp xsArgs)
+         -> let Just hsop       = expOfScalarOp sop
+            in  H.appsE (hsop : map expOfExp xsArgs)
 
 
 -- | Yield a Haskell expression from a query scalar op.
-expOfScalarOp :: ScalarOp -> H.ExpQ
+expOfScalarOp :: ScalarOp -> Maybe H.ExpQ
 expOfScalarOp sop
  = case sop of
-        SopNeg          -> [| P.negate |]
-        SopAdd          -> [| P.add    |]
-        SopSub          -> [| P.sub    |]
-        SopMul          -> [| P.mul    |]
-        SopDiv          -> [| P.div    |]
-        SopEq           -> [| P.eq     |]
-        SopNeq          -> [| P.neq    |]
-        SopLe           -> [| P.le     |]
-        SopGt           -> [| P.gt     |]
-        SopGe           -> [| P.ge     |]
-        SopLt           -> [| P.lt     |]
+        SopNeg          -> Just [| P.negate |]
+        SopAdd          -> Just [| P.add    |]
+        SopSub          -> Just [| P.sub    |]
+        SopMul          -> Just [| P.mul    |]
+        SopDiv          -> Just [| P.div    |]
+        SopEq           -> Just [| P.eq     |]
+        SopNeq          -> Just [| P.neq    |]
+        SopLe           -> Just [| P.le     |]
+        SopGt           -> Just [| P.gt     |]
+        SopGe           -> Just [| P.ge     |]
+        SopLt           -> Just [| P.lt     |]
 
-        SopProj 1       -> [| (\(x :*: _)                         -> x) |]
-        SopProj 2       -> [| (\(_ :*: x :*: _)                   -> x) |]
-        SopProj 3       -> [| (\(_ :*: _ :*: x :*: _)             -> x) |]
-        SopProj 4       -> [| (\(_ :*: _ :*: _ :*: x :*: _)       -> x) |]
-        SopProj 5       -> [| (\(_ :*: _ :*: _ :*: _ :*: x :*: _) -> x) |]
+        SopProj 2 1     -> Just [| (\(x :*: _)                   -> x) |]
+        SopProj 2 2     -> Just [| (\(_ :*: x)                   -> x) |]
 
-        _               -> error "expOfScalarOp: no match"
+        SopProj 3 1     -> Just [| (\(x :*: _ :*: _)             -> x) |]
+        SopProj 3 2     -> Just [| (\(_ :*: x :*: _)             -> x) |]
+        SopProj 3 3     -> Just [| (\(_ :*: _ :*: x)             -> x) |]
+
+        SopProj 4 1     -> Just [| (\(x :*: _ :*: _ :*: _)       -> x) |]
+        SopProj 4 2     -> Just [| (\(_ :*: x :*: _ :*: _)       -> x) |]
+        SopProj 4 3     -> Just [| (\(_ :*: _ :*: x :*: _)       -> x) |]
+        SopProj 4 4     -> Just [| (\(_ :*: _ :*: _ :*: x)       -> x) |]
+
+        SopProj 5 1     -> Just [| (\(x :*: _ :*: _ :*: _ :*: _) -> x) |]
+        SopProj 5 2     -> Just [| (\(_ :*: x :*: _ :*: _ :*: _) -> x) |]
+        SopProj 5 3     -> Just [| (\(_ :*: _ :*: x :*: _ :*: _) -> x) |]
+        SopProj 5 4     -> Just [| (\(_ :*: _ :*: _ :*: x :*: _) -> x) |]
+        SopProj 5 5     -> Just [| (\(_ :*: _ :*: _ :*: _ :*: x) -> x) |]
+
+        _               -> Nothing
 
 
 -- | Yield a Haskell literal from a query literal.
@@ -238,14 +251,14 @@ expOfRowFormat delim fields
          -> Just f'
 
         (Q.LinesSep _c, [f])
-         |  Just f'      <- expOfFieldFormat f
+         |  Just f'     <- expOfFieldFormat f
          -> Just f'
 
         (Q.LinesSep c,  (f:fs))
-         |  Just ff'     <- expOfFieldFormats f fs
+         |  Just ff'    <- expOfFieldFormats f fs
          -> Just [| P.Sep $(H.litE (H.charL c)) $ff' |]
 
-        _ -> error $ "expOfRowFormat:" ++ show (delim, fields)
+        _ -> Nothing
 
 
 -- | Yield a Haskell expression for some fields.
@@ -291,5 +304,4 @@ expOfFieldFormat (Q.FieldBox field)
         Q.VarAsc        -> Just [| P.VarAsc    |]
 
         _               -> Nothing
-
 

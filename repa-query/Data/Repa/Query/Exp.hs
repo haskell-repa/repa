@@ -114,20 +114,19 @@ xString a s = XVal a $ VLit a $ LString s
 -------------------------------------------------------------------------------
 -- | Scalar operators.
 data ScalarOp
-        = SopNeg                        -- ^ Negation.
-        | SopAdd                        -- ^ Addition.
-        | SopSub                        -- ^ Subtraction.
-        | SopMul                        -- ^ Multiplication.
-        | SopDiv                        -- ^ Division.
-        | SopEq                         -- ^ Equality.
-        | SopNeq                        -- ^ Negated equality.
-        | SopGt                         -- ^ Greater-than.
-        | SopGe                         -- ^ Greater-than or equal.
-        | SopLt                         -- ^ Less-than.
-        | SopLe                         -- ^ Less-than or equal.
-
-        | SopProj Int                   -- ^ Projection
+        = SopNeg                -- ^ Negation.
+        | SopAbs                -- ^ Absolute value.
+        | SopSignum             -- ^ Sign of number.
+        | SopAdd                -- ^ Addition.
+        | SopSub                -- ^ Subtraction.
+        | SopMul                -- ^ Multiplication.
+        | SopDiv                -- ^ Division.
+        | SopEq                 -- ^ Equality.
+        | SopNeq                -- ^ Negated equality.
+        | SopGt                 -- ^ Greater-than.
+        | SopGe                 -- ^ Greater-than or equal.
+        | SopLt                 -- ^ Less-than.
+        | SopLe                 -- ^ Less-than or equal.
+        | SopProj Int Int       -- ^ Projection.
         deriving (Eq, Show)
-
-
 

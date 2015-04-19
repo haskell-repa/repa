@@ -23,7 +23,10 @@ module Data.Repa.Query.Source.Primitive
         , (==), (/=)
         , (>),  (>=), (<), (<=)
 
-        , get1, get2, get3, get4, get5
+        , get2_1, get2_2
+        , get3_1, get3_2, get3_3
+        , get4_1, get4_2, get4_3, get4_4
+        , get5_1, get5_2, get5_3, get5_4, get5_5
 
           -- * From Data.Repa.Query.Source.Builder
         , query

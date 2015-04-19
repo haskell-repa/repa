@@ -31,11 +31,16 @@ module Data.Repa.Query.Source.EDSL
         , (==), (/=)
         , (>),  (>=), (<), (<=)
 
-        , get1, get2, get3, get4, get5)
+        , get2_1, get2_2
+        , get3_1, get3_2, get3_3
+        , get4_1, get4_2, get4_3, get4_4
+        , get5_1, get5_2, get5_3, get5_4, get5_5)
 where
 import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Product
+import Data.Word
+import Data.Int
 import qualified Data.Repa.Query.Graph  as G
 import qualified Data.Repa.Query.Format as Format
 import qualified Prelude                as P
@@ -180,7 +185,6 @@ groupsBy fun fIn
 
 
 ---------------------------------------------------------------------------------------------------
-
 -- Wrappers for scalar operators.
 -- | Scalar addition.
 (+) :: Value a -> Value a -> Value a
@@ -223,57 +227,193 @@ groupsBy fun fIn
 (<=) = makeScalarOp2 G.SopLe
 
 
--- Pairing and projection.
--- (**) :: Value a -> Value b -> Value (a :*: b)
--- (**) = 
-
-get1   :: Value (a :*: b)                         -> Value a
-get1    = makeScalarOp1 $ G.SopProj 1
-
-get2   :: Value (a :*: (b :*: c))                 -> Value b
-get2    = makeScalarOp1 $ G.SopProj 2
-
-get3   :: Value (a :*: (b :*: (c :*: d)))         -> Value c
-get3    = makeScalarOp1 $ G.SopProj 3
-
-get4   :: Value (a :*: b :*: c :*: d :*: e)       -> Value d
-get4    = makeScalarOp1 $ G.SopProj 4
-
-get5   :: Value (a :*: b :*: c :*: d :*: e :*: f) -> Value e
-get5    = makeScalarOp1 $ G.SopProj 5
-
-
-
-makeScalarOp1
-        :: G.ScalarOp 
-        -> Value a -> Value c
-
+makeScalarOp1 :: G.ScalarOp -> Value a -> Value c
 makeScalarOp1 sop (Value x)
         = Value $ xOp sop [x]
 
 
-makeScalarOp2 
-        :: G.ScalarOp 
-        -> Value a -> Value b -> Value c
-
+makeScalarOp2 :: G.ScalarOp -> Value a -> Value b -> Value c
 makeScalarOp2 sop (Value x1) (Value x2)
         = Value $ xOp sop [x1, x2]
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Promote scalar literals.
+instance Num (Value Word) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
 instance Num (Value Int) where
  (+)            = makeScalarOp2 G.SopAdd
  (-)            = makeScalarOp2 G.SopSub
  (*)            = makeScalarOp2 G.SopMul
- negate         = error "edsl finish me"
- abs            = error "edsl finish me"
- signum         = error "edsl finish me"
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
  fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt x))
 
 
+instance Num (Value Float) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LFloat (fromIntegral x)))
+
+
+instance Num (Value Double) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LFloat (fromIntegral x)))
+
+
+instance Num (Value Word8) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Int8) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Word16) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Int16) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Word32) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Int32) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Word64) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
+instance Num (Value Int64) where
+ (+)            = makeScalarOp2 G.SopAdd
+ (-)            = makeScalarOp2 G.SopSub
+ (*)            = makeScalarOp2 G.SopMul
+ negate         = makeScalarOp1 G.SopNeg
+ abs            = makeScalarOp1 G.SopAbs
+ signum         = makeScalarOp1 G.SopSignum
+ fromInteger x  = Value $ G.XVal () (G.VLit () (G.LInt (fromIntegral x)))
+
+
 ---------------------------------------------------------------------------------------------------
+-- Projection.
+-- 2
+get2_1  :: Value (a :*: b)                        -> Value a
+get2_1  = makeScalarOp1 $ G.SopProj 2 1
+
+get2_2  :: Value (a :*: b)                        -> Value b
+get2_2  = makeScalarOp1 $ G.SopProj 2 1
+
+
+-- 3
+get3_1  :: Value (a :*: b :*: c)                  -> Value a
+get3_1  = makeScalarOp1 $ G.SopProj 3 1
+
+get3_2  :: Value (a :*: b :*: c)                  -> Value b
+get3_2  = makeScalarOp1 $ G.SopProj 3 2
+
+get3_3  :: Value (a :*: b :*: c)                  -> Value c
+get3_3  = makeScalarOp1 $ G.SopProj 3 3
+
+
+-- 4
+get4_1  :: Value (a :*: b :*: c :*: d)            -> Value a
+get4_1  = makeScalarOp1 $ G.SopProj 4 1
+
+get4_2  :: Value (a :*: b :*: c :*: d)            -> Value b
+get4_2  = makeScalarOp1 $ G.SopProj 4 2
+
+get4_3  :: Value (a :*: b :*: c :*: d)            -> Value c
+get4_3  = makeScalarOp1 $ G.SopProj 4 3
+
+get4_4  :: Value (a :*: b :*: c :*: d)            -> Value d
+get4_4  = makeScalarOp1 $ G.SopProj 4 4
+
+
+-- 5
+get5_1  :: Value (a :*: b :*: c :*: d :*: e)      -> Value a
+get5_1  = makeScalarOp1 $ G.SopProj 5 1
+
+get5_2  :: Value (a :*: b :*: c :*: d :*: e)      -> Value b
+get5_2  = makeScalarOp1 $ G.SopProj 5 2
+
+get5_3  :: Value (a :*: b :*: c :*: d :*: e)      -> Value c
+get5_3  = makeScalarOp1 $ G.SopProj 5 3
+
+get5_4  :: Value (a :*: b :*: c :*: d :*: e)      -> Value d
+get5_4  = makeScalarOp1 $ G.SopProj 5 4
+
+get5_5  :: Value (a :*: b :*: c :*: d :*: e)      -> Value e
+get5_5  = makeScalarOp1 $ G.SopProj 5 5
+
+
+---------------------------------------------------------------------------------------------------
+-- Utils
 xVar i          = G.XVar () i
 xLam x          = G.XVal () (G.VLam () () x)
 xOp s args      = G.XOp  () s args
-
 

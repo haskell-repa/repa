@@ -358,6 +358,8 @@ nameOfScalarOp :: ScalarOp -> String
 nameOfScalarOp sop
  = case sop of
         SopNeg          -> "neg"
+        SopAbs          -> "abs"
+        SopSignum       -> "signum"
         SopAdd          -> "add"
         SopSub          -> "sub"
         SopMul          -> "mul"
@@ -368,18 +370,22 @@ nameOfScalarOp sop
         SopGe           -> "ge"
         SopLt           -> "lt"
         SopLe           -> "le"
-        SopProj i       -> "proj" ++ show i
+        SopProj i j     -> "proj" ++ show i ++ "_" ++ show j
 
 
 scalarOpOfName :: String -> Maybe ScalarOp
 scalarOpOfName ss
  | Just ds              <- L.stripPrefix "proj" ss
- , all isDigit ds
- = Just $ SopProj (read ds)
+ , (ds1, '_' : ds2)     <- L.span isDigit ds
+ , all isDigit ds1, length ds1 > 0
+ , all isDigit ds2, length ds2 > 0
+ = Just $ SopProj (read ds1) (read ds2)
 
  | otherwise
  = case ss of
         "neg"           -> Just $ SopNeg
+        "abs"           -> Just $ SopAbs
+        "signum"        -> Just $ SopSignum
         "add"           -> Just $ SopAdd
         "sub"           -> Just $ SopSub
         "mul"           -> Just $ SopMul
