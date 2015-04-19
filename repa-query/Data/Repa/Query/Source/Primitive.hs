@@ -13,7 +13,10 @@ module Data.Repa.Query.Source.Primitive
           -- * From Data.Repa.Query.Source.EDSL
         , Flow 
         , Value
+
         , fromFile
+        , fromTable
+
         , map
         , fold, folds
         , filter

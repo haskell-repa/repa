@@ -73,6 +73,11 @@ bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
         G.SourceFile _ tableName delim@Q.Lines{} fields sOut
+         | case delim of
+                Q.Lines{}       -> True
+                Q.LinesSep{}    -> True
+                _               -> False
+                
          -> do  let hTable       = return (LitE (StringL tableName))
                 let Just format' = expOfRowFormat delim fields
 
@@ -85,22 +90,6 @@ bindOfSource ss
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
-
-
-        G.SourceFile _ tableName delim@Q.LinesSep{} fields sOut
-         -> do  let hTable       = return (LitE (StringL tableName))
-                let Just format' = expOfRowFormat delim fields
-
-                xRhs    <- [| P.fromFiles [ $hTable ] 
-                                (P.sourceLinesFormat 
-                                        (P.mul 64 1024)
-                                        (P.error "query: line to long.")
-                                        (P.error "query: cannot convert field.")
-                                        $format') |]
-
-                pOut    <- H.varP (H.mkName sOut)
-                return (pOut, xRhs)
-
 
         G.SourceFile _ tableName delim@Q.Fixed{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
@@ -113,6 +102,9 @@ bindOfSource ss
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
+
+
+        _ -> error "repa-query: TODO bindOfSource"
 
 
 -- | Yield a Haskell binding for a flow op.

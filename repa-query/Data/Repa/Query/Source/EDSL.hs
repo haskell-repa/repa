@@ -11,6 +11,7 @@ module Data.Repa.Query.Source.EDSL
 
           -- ** Sourcing
         , fromFile
+        , fromTable
 
           -- ** Mapping
         , map
@@ -55,17 +56,32 @@ import Prelude
 
 ---------------------------------------------------------------------------------------------------
 -- | Read complete rows from a flat file.
-fromFile :: String 
-         -> Format.Delim 
-         -> Format.Field a 
-         -> Q (Flow a)
+fromFile  :: FilePath
+          -> Format.Delim 
+          -> Format.Field a 
+          -> Q (Flow a)
 
-fromFile table delim field
+fromFile path delim field
  = do   fOut    <- newFlow
         addNode $ G.NodeSource 
-                $ G.SourceFile () table delim (Format.flattens field) 
+                $ G.SourceFile () path delim (Format.flattens field) 
                 $ takeFlow fOut
         return  fOut
+
+
+-- | Read complete rows from a table.
+--   TODO: load meta-data at graph construction time.
+fromTable :: FilePath
+          -> Q (Flow a)
+
+fromTable path 
+ = do   fOut    <- newFlow
+        addNode $ G.NodeSource
+                $ G.SourceTable () path 
+                        Format.Fixed            -- TODO: lookup real delim from meta-data.
+                        []                      -- TODO: lookup real fields from meta-data.
+                $ takeFlow fOut
+        return fOut
 
 
 -- | Apply a scalar function to every element of a flow.

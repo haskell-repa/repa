@@ -225,9 +225,17 @@ instance (ToJSON nF)
        => ToJSON (Source a nF) where
  toJSON xx
   = case xx of
-        SourceFile _ name delim fields fOut
+        SourceFile  _ name delim fields fOut
          -> object [ "_type"    .= text "source"
                    , "source"   .= text "file"
+                   , "name"     .= T.pack name
+                   , "delim"    .= toJSON delim
+                   , "fields"   .= toJSON fields
+                   , "output"   .= toJSON fOut ]
+
+        SourceTable _ name delim fields fOut
+         -> object [ "_type"    .= text "source"
+                   , "source"   .= text "table"
                    , "name"     .= T.pack name
                    , "delim"    .= toJSON delim
                    , "fields"   .= toJSON fields
@@ -248,6 +256,17 @@ instance  FromJSON nF
               fields  <- parseJSON jFields
               out     <- parseJSON jOut
               return  $ SourceFile () (T.unpack name) delim fields out
+
+        | Just (String "source") <- H.lookup "_type"  hh
+        , Just (String "table")  <- H.lookup "source" hh
+        , Just (String  name)    <- H.lookup "name"   hh
+        , Just jDelim            <- H.lookup "delim"  hh
+        , Just jFields           <- H.lookup "fields" hh
+        , Just jOut              <- H.lookup "output" hh
+        = do  delim   <- parseJSON jDelim
+              fields  <- parseJSON jFields
+              out     <- parseJSON jOut
+              return  $ SourceTable () (T.unpack name) delim fields out
 
  parseJSON _ = mzero
 
