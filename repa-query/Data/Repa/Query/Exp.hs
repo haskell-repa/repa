@@ -12,7 +12,10 @@ module Data.Repa.Query.Exp
 
           -- * Literals
         , Lit           (..)
-        , xBool,        xInt,   xFloat,         xString
+        , xBool
+        , xWord,        xInt
+        , xFloat,       xDouble
+        , xString
 
           -- * Scalar operators.
         , ScalarOp      (..))
@@ -85,8 +88,10 @@ takeVLam vv
 -- | Literal values.
 data Lit
         = LBool       !Bool            -- ^ Literal Boolean
+        | LWord       !Integer         -- ^ Literal word.
         | LInt        !Integer         -- ^ Literal integer.
-        | LFloat      !Double          -- ^ Literal float.
+        | LFloat      !Float           -- ^ Literal float.
+        | LDouble     !Double          -- ^ Literal double.
         | LString     !String          -- ^ Literal string.
         deriving (Eq, Show)
 
@@ -96,14 +101,24 @@ xBool   :: a -> Bool    -> Exp a bV uV
 xBool a b   = XVal a $ VLit a $ LBool b
 
 
+-- | Wrap a word into an expression.
+xWord  :: a -> Integer  -> Exp a bV uV
+xWord a i   = XVal a $ VLit a $ LWord (fromIntegral i)
+
+
 -- | Wrap an integer into an expression.
 xInt    :: a -> Integer -> Exp a bV uV
-xInt a i    = XVal a $ VLit a $ LInt i
+xInt a i    = XVal a $ VLit a $ LInt (fromIntegral i)
 
 
 -- | Wrap a float into an expression.
-xFloat  :: a -> Double  -> Exp a bV uV
+xFloat  :: a -> Float  -> Exp a bV uV
 xFloat a f  = XVal a $ VLit a $ LFloat f
+
+
+-- | Wrap a float into an expression.
+xDouble  :: a -> Double  -> Exp a bV uV
+xDouble a f = XVal a $ VLit a $ LDouble f
 
 
 -- | Wrap a string into an expression.

@@ -54,56 +54,57 @@ data Delim
 --
 data Field a where
 
-        -- | Compound field.
+        -- Compound field.
         (:*:)           :: Field x -> Field y -> Field (x P.:*: y)
 
-        -- | Big-endian 8-bit unsigned word.
+        -- Big-endian 8-bit unsigned word.
         Word8be         :: Field Word8
 
-        -- | Big-endian 8-bit signed integer.
+        -- Big-endian 8-bit signed integer.
         Int8be          :: Field Int8
 
-        -- | Big-endian 16-bit unsigned word.
+        -- Big-endian 16-bit unsigned word.
         Word16be        :: Field Word16
 
-        -- | Big-endian 16-bit signed integer.
+        -- Big-endian 16-bit signed integer.
         Int16be         :: Field Int16
 
-        -- | Big-endian 32-bit unsigned word.
+        -- Big-endian 32-bit unsigned word.
         Word32be        :: Field Word32
 
-        -- | Big-endian 32-bit signed integer.
+        -- Big-endian 32-bit signed integer.
         Int32be         :: Field Int32
 
-        -- | Big-endian 64-bit unsigned word.
+        -- Big-endian 64-bit unsigned word.
         Word64be        :: Field Word64
 
-        -- | Big-endian 64-bit signed integer.
+        -- Big-endian 64-bit signed integer.
         Int64be         :: Field Int64
 
-        -- | Big-endian 32-bit IEEE 754 float.
+        -- Big-endian 32-bit IEEE 754 float.
         Float32be       :: Field Float
 
-        -- | Big-endian 64-bit IEEE 754 float.
+        -- Big-endian 64-bit IEEE 754 float.
         Float64be       :: Field Double
 
-        -- | Date in ASCII YYYYsMMsDD format.
+        -- Date in ASCII YYYYsMMsDD format.
         YYYYsMMsDD      :: Char -> Field Date32
 
-        -- | Date in ASCII DDsMMsYYYY format.
+        -- Date in ASCII DDsMMsYYYY format.
         DDsMMsYYYY      :: Char -> Field Date32
 
-        -- | Human readable ASCII integer.
+        -- Human readable ASCII integer.
         IntAsc          :: Field Int  
 
-        -- | Human readable ASCII double.
+        -- Human readable ASCII double.
         DoubleAsc       :: Field Double
 
-        -- | Fixed length ASCII string.
+        -- Fixed length ASCII string.
         FixAsc          :: Int -> Field String
 
-        -- | Variable length ASCII string.
+        -- Variable length ASCII string.
         VarAsc          :: Field String
+
 
 deriving instance Show (Field a)
 deriving instance Eq   (Field a)

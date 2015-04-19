@@ -170,8 +170,7 @@ expOfExp   :: G.Exp () String String -> H.ExpQ
 expOfExp xx
  = case xx of
         G.XVal _ (G.VLit _ lit)
-         -> do  hl      <- litOfLit lit
-                H.litE hl
+         -> expOfLit lit
 
         G.XVal _ (G.VLam _ sBind xBody)
          -> H.lamE [H.varP (H.mkName sBind)] (expOfExp xBody)
@@ -225,12 +224,18 @@ expOfScalarOp sop
 
 
 -- | Yield a Haskell literal from a query literal.
-litOfLit :: G.Lit -> Q H.Lit
-litOfLit lit 
+expOfLit :: G.Lit -> H.ExpQ
+expOfLit lit 
  = case lit of
-        G.LInt i        -> return $ H.IntegerL i
-        G.LString s     -> return $ H.StringL  s
-        _               -> error "fix float conversion"
+        G.LBool   True  -> [| True  |]
+        G.LBool   False -> [| False |]
+
+        G.LWord   w     -> return $ H.LitE $ H.IntegerL  w
+        G.LInt    i     -> return $ H.LitE $ H.IntegerL  i
+        G.LFloat  f     -> return $ H.LitE $ H.RationalL (toRational f)
+        G.LDouble d     -> return $ H.LitE $ H.RationalL (toRational d)
+
+        G.LString s     -> return $ H.LitE $ H.StringL   s
 
 
 ---------------------------------------------------------------------------------------------------

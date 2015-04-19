@@ -258,29 +258,21 @@ instance (ToJSON bV, ToJSON nV)
  toJSON xx
   = case xx of
         -- literals
-        XVal _ (VLit _ (LBool b))
-         -> object [ "type"     .= text "exp"
-                   , "exp"      .= text "lit"
-                   , "lit"      .= text "bool"
-                   , "value"    .= T.pack (show b) ]
+        XVal _ (VLit _ lit)
+         -> let (name :: Text, val)     
+                 = case lit of
+                        LBool   b -> ("bool",   T.pack $ show b)
+                        LWord   w -> ("word",   T.pack $ show w)
+                        LInt    i -> ("int",    T.pack $ show i)
+                        LFloat  f -> ("float",  T.pack $ show f)
+                        LDouble d -> ("double", T.pack $ show d)
+                        LString s -> ("string", T.pack s)
 
-        XVal _ (VLit _ (LInt i))
-         -> object [ "type"     .= text "exp"
+            in  object 
+                   [ "type"     .= text "exp"
                    , "exp"      .= text "lit"
-                   , "lit"      .= text "int"
-                   , "value"    .= T.pack (show i) ]
-
-        XVal _ (VLit _ (LFloat f))
-         -> object [ "type"     .= text "exp"
-                   , "exp"      .= text "lit"
-                   , "lit"      .= text "float"
-                   , "value"    .= T.pack (show f) ]
-
-        XVal _ (VLit _ (LString s))
-         -> object [ "type"     .= text "exp"
-                   , "exp"      .= text "lit"
-                   , "lit"      .= text "string"
-                   , "value"    .= T.pack s ]
+                   , "lit"      .= name
+                   , "value"    .= val ]
 
         -- lambdas
         XVal _ (VLam _ bV x)
@@ -320,10 +312,13 @@ instance (FromJSON bV, FromJSON nV)
         , Just (String  lit)    <- H.lookup "lit"   hh
         , Just (String  value)  <- H.lookup "value" hh
         = case T.unpack lit of
-              "int"             -> return $ xInt    () $ read $ T.unpack value
-              "float"           -> return $ xFloat  () $ read $ T.unpack value
-              "string"          -> return $ xString () $ T.unpack value
-              _                 -> mzero
+                "bool"          -> return $ xBool   () $ read $ T.unpack value
+                "word"          -> return $ xWord   () $ read $ T.unpack value
+                "int"           -> return $ xInt    () $ read $ T.unpack value
+                "float"         -> return $ xFloat  () $ read $ T.unpack value
+                "double"        -> return $ xDouble () $ read $ T.unpack value
+                "string"        -> return $ xString () $ T.unpack value
+                _               -> mzero
 
         -- variables
         | Just (String "exp")   <- H.lookup "type"   hh
