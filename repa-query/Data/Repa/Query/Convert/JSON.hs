@@ -27,7 +27,7 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
  toJSON xx
   = case xx of
         Query flow delim fields graph
-         -> object [ "type"     .= text "query"
+         -> object [ "_type"    .= text "query"
                    , "out"      .= toJSON flow
                    , "delim"    .= toJSON delim
                    , "fields"   .= toJSON fields
@@ -38,7 +38,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
       => (FromJSON (Query () nF bV nV)) where
  parseJSON (Object hh)
 
-        | Just (String "query") <- H.lookup "type"   hh
+        | Just (String "query") <- H.lookup "_type"  hh
         , Just jOut             <- H.lookup "out"    hh
         , Just jDelim           <- H.lookup "delim"  hh
         , Just jFields          <- H.lookup "fields" hh
@@ -58,14 +58,14 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
  toJSON xx
   = case xx of
         Graph ns
-         -> object [ "type"     .= text "graph"
+         -> object [ "_type"    .= text "graph"
                    , "nodes"    .= toJSON ns ]
 
 instance (FromJSON nF, FromJSON bV, FromJSON nV)
       => (FromJSON (Graph () nF bV nV)) where
  parseJSON (Object hh)
 
-        | Just (String "graph") <- H.lookup "type"  hh
+        | Just (String "graph") <- H.lookup "_type" hh
         , Just jNodes           <- H.lookup "nodes" hh
         = do    nodes  <- parseJSON jNodes
                 return  $ Graph nodes 
@@ -79,12 +79,12 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
  toJSON xx
   = case xx of
         NodeSource s
-         -> object [ "type"     .= text "node"
+         -> object [ "_type"    .= text "node"
                    , "node"     .= text "source"
                    , "source"   .= toJSON s ]
 
         NodeOp op
-         -> object [ "type"     .= text "node"
+         -> object [ "_type"    .= text "node"
                    , "node"     .= text "op"
                    , "op"       .= toJSON op ]
 
@@ -93,13 +93,13 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
       => (FromJSON (Node () nF bV nV)) where
  parseJSON (Object hh)
 
-        | Just (String "node")   <- H.lookup "type"    hh
+        | Just (String "node")   <- H.lookup "_type"   hh
         , Just (String "source") <- H.lookup "node"    hh
         , Just jSource           <- H.lookup "source"  hh
         = do    source  <- parseJSON jSource
                 return  $ NodeSource source
 
-        | Just (String "node")  <- H.lookup "type"     hh
+        | Just (String "node")  <- H.lookup "_type"    hh
         , Just (String "op")    <- H.lookup "node"     hh
         , Just jOp              <- H.lookup "op"       hh
         = do    op      <- parseJSON jOp
@@ -114,21 +114,21 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
  toJSON xx
   = case xx of
         FopMapI fIn fOut fun
-         -> object [ "type"     .= text "fop"
+         -> object [ "_type"    .= text "fop"
                    , "fop"      .= text "mapi"
                    , "in"       .= toJSON fIn
                    , "out"      .= toJSON fOut
                    , "fun"      .= toJSON fun ]
 
         FopFilterI fIn fOut fun
-         -> object [ "type"     .= text "fop"
+         -> object [ "_type"    .= text "fop"
                    , "fop"      .= text "filteri"
                    , "in"       .= toJSON fIn
                    , "out"      .= toJSON fOut
                    , "fun"      .= toJSON fun ]
 
         FopFoldI fIn fOut fun z
-         -> object [ "type"     .= text "fop"
+         -> object [ "_type"    .= text "fop"
                    , "fop"      .= text "foldi"
                    , "in"       .= toJSON fIn
                    , "out"      .= toJSON fOut
@@ -136,7 +136,7 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
                    , "neutral"  .= toJSON z ]
 
         FopFoldsI fLens fElems fOut fun z
-         -> object [ "type"     .= text "fop"
+         -> object [ "_type"    .= text "fop"
                    , "fop"      .= text "folds"
                    , "lens"     .= toJSON fLens
                    , "elems"    .= toJSON fElems
@@ -145,7 +145,7 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
                    , "neutral"  .= toJSON z ]
 
         FopGroupsI fIn fOut fun
-         -> object [ "type"     .= text "fop"
+         -> object [ "_type"    .= text "fop"
                    , "fop"      .= text "groupsi"
                    , "in"       .= toJSON fIn
                    , "out"      .= toJSON fOut
@@ -157,7 +157,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
  parseJSON (Object hh)
 
         -- mapi
-        | Just (String "fop")  <- H.lookup "type"   hh
+        | Just (String "fop")  <- H.lookup "_type"   hh
         , Just (String "mapi") <- H.lookup "fop"    hh
         , Just jIn             <- H.lookup "in"     hh
         , Just jOut            <- H.lookup "out"    hh
@@ -168,7 +168,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
                 return  $  FopMapI fin fout fun
 
         -- filteri
-        | Just (String "fop")   <- H.lookup "type"  hh
+        | Just (String "fop")   <- H.lookup "_type"  hh
         , Just (String "filteri") <- H.lookup "fop" hh
         , Just jIn             <- H.lookup "in"     hh
         , Just jOut            <- H.lookup "out"    hh
@@ -179,7 +179,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
                 return  $  FopFilterI fin fout fun
 
         -- foldi
-        | Just (String "fop")   <- H.lookup "type"     hh
+        | Just (String "fop")   <- H.lookup "_type"     hh
         , Just (String "foldi") <- H.lookup "fop"      hh
         , Just jIn              <- H.lookup "in"       hh
         , Just jOut             <- H.lookup "out"      hh
@@ -192,7 +192,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
                 return  $  FopFoldI fin fout fun neutral
 
         -- foldsi
-        | Just (String "fop")    <- H.lookup "type"    hh
+        | Just (String "fop")    <- H.lookup "_type"    hh
         , Just (String "foldsi") <- H.lookup "fop"     hh
         , Just jLens             <- H.lookup "lens"    hh
         , Just jElems            <- H.lookup "elems"   hh
@@ -207,7 +207,7 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
                 return  $  FopFoldsI flens felems fout fun neutral
 
         -- groupsi
-        | Just (String "fop")     <- H.lookup "type"  hh
+        | Just (String "fop")     <- H.lookup "_type"  hh
         , Just (String "groupsi") <- H.lookup "fop" hh
         , Just jIn              <- H.lookup "in"     hh
         , Just jOut             <- H.lookup "out"    hh
@@ -226,7 +226,7 @@ instance (ToJSON nF)
  toJSON xx
   = case xx of
         SourceTable _ name delim fields fOut
-         -> object [ "type"     .= text "source"
+         -> object [ "_type"    .= text "source"
                    , "source"   .= text "table"
                    , "name"     .= T.pack name
                    , "delim"    .= toJSON delim
@@ -238,7 +238,7 @@ instance  FromJSON nF
        => FromJSON (Source () nF) where
  parseJSON (Object hh)
 
-        | Just (String "source") <- H.lookup "type"   hh
+        | Just (String "source") <- H.lookup "_type"  hh
         , Just (String "table")  <- H.lookup "source" hh
         , Just (String  name)    <- H.lookup "name"   hh
         , Just jDelim            <- H.lookup "delim"  hh
@@ -269,34 +269,34 @@ instance (ToJSON bV, ToJSON nV)
                         LString s -> ("string", T.pack s)
 
             in  object 
-                   [ "type"     .= text "exp"
+                   [ "_type"    .= text "exp"
                    , "exp"      .= text "lit"
                    , "lit"      .= name
                    , "value"    .= val ]
 
         -- lambdas
         XVal _ (VLam _ bV x)
-         -> object [ "type"     .= text "exp"
+         -> object [ "_type"    .= text "exp"
                    , "exp"      .= text "lam"
                    , "binder"   .= toJSON bV
                    , "body"     .= toJSON x ]
 
         -- variables
         XVar _ v
-         -> object [ "type"     .= text "exp"
+         -> object [ "_type"    .= text "exp"
                    , "exp"      .= text "var"
                    , "var"      .= toJSON v ]
 
         -- applications
         XApp _ xFun xArg
-         -> object [ "type"     .= text "exp"
+         -> object [ "_type"    .= text "exp"
                    , "exp"      .= text "app"
                    , "fun"      .= toJSON xFun
                    , "arg"      .= toJSON xArg ]
 
         -- operators
         XOp  _ sOp xsArgs
-         -> object [ "type"     .= text "exp"
+         -> object [ "_type"    .= text "exp"
                    , "exp"      .= text "sop"
                    , "sop"      .= nameOfScalarOp sOp
                    , "args"     .= toJSON xsArgs ]
@@ -307,7 +307,7 @@ instance (FromJSON bV, FromJSON nV)
  parseJSON (Object hh)
 
         -- literals
-        | Just (String "exp")   <- H.lookup "type"  hh
+        | Just (String "exp")   <- H.lookup "_type" hh
         , Just (String "lit")   <- H.lookup "exp"   hh
         , Just (String  lit)    <- H.lookup "lit"   hh
         , Just (String  value)  <- H.lookup "value" hh
@@ -321,14 +321,14 @@ instance (FromJSON bV, FromJSON nV)
                 _               -> mzero
 
         -- variables
-        | Just (String "exp")   <- H.lookup "type"   hh
+        | Just (String "exp")   <- H.lookup "_type"  hh
         , Just (String "var")   <- H.lookup "exp"    hh
         , Just jName            <- H.lookup "var"    hh
         = do  name      <- parseJSON jName
               return $ XVar () name
 
         -- lambdas
-        | Just (String "exp")   <- H.lookup "type"   hh
+        | Just (String "exp")   <- H.lookup "_type"  hh
         , Just (String "lam")   <- H.lookup "exp"    hh
         , Just jBinder          <- H.lookup "binder" hh
         , Just jBody            <- H.lookup "body"   hh
@@ -337,7 +337,7 @@ instance (FromJSON bV, FromJSON nV)
               return $ XVal () (VLam () binder body)
 
         -- operators
-        | Just (String "exp")   <- H.lookup "type"   hh
+        | Just (String "exp")   <- H.lookup "_type"  hh
         , Just (String "sop")   <- H.lookup "exp"    hh
         , Just (String ssop)    <- H.lookup "sop"    hh
         , Just jArgs            <- H.lookup "args"   hh
@@ -399,29 +399,29 @@ instance ToJSON Format.Delim where
  toJSON rr
   = case rr of
         Format.Fixed
-         -> object [ "type"     .= text "delim"
+         -> object [ "_type"    .= text "delim"
                    , "delim"    .= text "fixed" ]
 
         Format.Lines
-         -> object [ "type"     .= text "delim"
+         -> object [ "_type"    .= text "delim"
                    , "delim"    .= text "lines" ]
 
         Format.LinesSep c
-         -> object [ "type"     .= text "delim"
+         -> object [ "_type"    .= text "delim"
                    , "delim"    .= text "sep"
                    , "sep"      .= T.pack [c] ]
 
 instance FromJSON Format.Delim where
  parseJSON (Object hh)
-        | Just (String "delim")  <- H.lookup "type"   hh
+        | Just (String "delim")  <- H.lookup "_type"  hh
         , Just (String "fixed")  <- H.lookup "delim"  hh
         =       return $ Format.Fixed
 
-        | Just (String "delim")  <- H.lookup "type"   hh
+        | Just (String "delim")  <- H.lookup "_type"  hh
         , Just (String "lines")  <- H.lookup "delim"  hh
         =       return $ Format.Lines
 
-        | Just (String "delim")  <- H.lookup "type"   hh
+        | Just (String "delim")  <- H.lookup "_type"  hh
         , Just (String "sep")    <- H.lookup "delim"  hh
         , Just (String sep)      <- H.lookup "sep"    hh
         , [c]                    <- T.unpack sep
@@ -437,13 +437,13 @@ instance ToJSON   Format.FieldBox where
 
 instance ToJSON (Format.Field a) where
  toJSON ff
-        = object  [ "type"      .= text "field"
+        = object  [ "_type"     .= text "field"
                   , "field"     .= T.pack (Format.showField ff) ]
 
 
 instance FromJSON Format.FieldBox where
  parseJSON (Object hh)
-        | Just (String "field") <- H.lookup "type"  hh
+        | Just (String "field") <- H.lookup "_type" hh
         , Just (String ff)      <- H.lookup "field" hh
         , Just f                <- Format.readField (T.unpack ff)
         = return f

@@ -11,6 +11,7 @@ import System.Environment
 import qualified BuildBox.Build                         as BB
 import qualified BuildBox.Command.System                as BB
 import qualified Data.Aeson                             as Aeson
+import qualified Data.Aeson.Encode.Pretty               as Aeson
 import qualified Data.ByteString.Lazy.Char8             as BS
 
 
@@ -78,19 +79,35 @@ build_toJSON config file
  = case takeExtension file of
         ".hs"
          -> do  dslQuery  <- BB.io $ readFile file
+
                 graph     <- R.loadQueryFromDSL 
                                 (configDirScratch config) (not $ configDump config)
                                 dslQuery 
-                io $ BS.putStrLn $ Aeson.encode $ Aeson.toJSON graph
+
+                io $ BS.putStrLn 
+                        $ Aeson.encodePretty' aesonConfig
+                        $ Aeson.toJSON graph
+
                 return ()
 
         ".json"
          -> do  jsonQuery <- BB.io $ readFile file
+
                 graph     <- R.loadQueryFromJSON
                                 (configDirScratch config) (not $ configDump config)
                                 jsonQuery
-                io $ BS.putStrLn $ Aeson.encode $ Aeson.toJSON graph
+
+                io $ BS.putStrLn 
+                        $ Aeson.encodePretty' aesonConfig
+                        $ Aeson.toJSON graph
 
         ext -> error $ "Cannot convert a " ++ ext ++ " file to a JSON query."
+
+aesonConfig
+ = Aeson.defConfig
+        { Aeson.confIndent      = 4
+        , Aeson.confCompare     = compare }
+
+
 
 
