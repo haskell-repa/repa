@@ -72,7 +72,7 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
-        G.SourceTable _ tableName delim@Q.Lines{} fields sOut
+        G.SourceFile _ tableName delim@Q.Lines{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
                 let Just format' = expOfRowFormat delim fields
 
@@ -87,7 +87,7 @@ bindOfSource ss
                 return (pOut, xRhs)
 
 
-        G.SourceTable _ tableName delim@Q.LinesSep{} fields sOut
+        G.SourceFile _ tableName delim@Q.LinesSep{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
                 let Just format' = expOfRowFormat delim fields
 
@@ -102,7 +102,7 @@ bindOfSource ss
                 return (pOut, xRhs)
 
 
-        G.SourceTable _ tableName delim@Q.Fixed{} fields sOut
+        G.SourceFile _ tableName delim@Q.Fixed{} fields sOut
          -> do  let hTable       = return (LitE (StringL tableName))
                 let Just format' = expOfRowFormat delim fields
 

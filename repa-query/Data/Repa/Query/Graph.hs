@@ -60,13 +60,13 @@ data Node a nF bV nV
 
 -- | Flow sources.
 data Source a nF
-        -- | Source data from a named table.
-        =  SourceTable
+        -- | Source data from a flat file.
+        =  SourceFile
         { -- | Annotation
           sourceAnnot           :: a
 
           -- | Name of table.
-        , sourceTableName       :: String 
+        , sourceFilePath        :: FilePath
 
           -- | Delimitor for elements.
         , sourceDelim           :: Format.Delim

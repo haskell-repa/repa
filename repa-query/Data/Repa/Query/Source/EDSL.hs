@@ -10,7 +10,7 @@ module Data.Repa.Query.Source.EDSL
           --   tables.
 
           -- ** Sourcing
-        , source
+        , fromFile
 
           -- ** Mapping
         , map
@@ -54,16 +54,16 @@ import Prelude
 
 
 ---------------------------------------------------------------------------------------------------
--- | Source a named table.
-source  :: String 
-        -> Format.Delim 
-        -> Format.Field a 
-        -> Q (Flow a)
+-- | Read complete rows from a flat file.
+fromFile :: String 
+         -> Format.Delim 
+         -> Format.Field a 
+         -> Q (Flow a)
 
-source table delim field
+fromFile table delim field
  = do   fOut    <- newFlow
         addNode $ G.NodeSource 
-                $ G.SourceTable () table delim (Format.flattens field) 
+                $ G.SourceFile () table delim (Format.flattens field) 
                 $ takeFlow fOut
         return  fOut
 
