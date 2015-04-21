@@ -2,14 +2,13 @@
 -- | Compile a Repa query to an executable.
 import Config
 import Data.Repa.Query.Convert.JSON                     ()
-import Data.Repa.Query.Build                            as R
+import Data.Repa.Query.Build                            as QB
 import Data.Repa.Query.Graph                            as R
 
 import BuildBox.Build
 import System.FilePath
 import System.Environment
 import qualified BuildBox.Build                         as BB
-import qualified BuildBox.Command.System                as BB
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Aeson.Encode.Pretty               as Aeson
 import qualified Data.ByteString.Lazy.Char8             as BS
@@ -40,14 +39,16 @@ build_build config file
  = case takeExtension file of
         ".hs"   
          -> do  dslQuery  <- BB.io $ readFile file
-                _graph    <- R.buildDslViaRepa 
+                let Just pathRoot  = Config.configRoot config
+                let dslConfig      = QB.Config pathRoot
+                _graph    <- QB.buildDslViaRepa 
                                 "." (not $ configDump config)
-                                dslQuery  (dropExtension file)
+                                dslConfig dslQuery  (dropExtension file)
                 return ()
 
         ".json" 
          -> do  jsonQuery <- BB.io $ readFile file
-                _graph    <- R.buildJsonViaRepa 
+                _graph    <- QB.buildJsonViaRepa 
                                 "." (not $ configDump config)
                                 jsonQuery (dropExtension file)
                 return ()
@@ -59,15 +60,18 @@ build_toGraph config file
  = case takeExtension file of
         ".hs"
          -> do  dslQuery  <- BB.io $ readFile file
-                graph     <- R.loadQueryFromDSL 
+                let Just pathRoot  = Config.configRoot config
+                let dslConfig      = QB.Config pathRoot
+
+                graph     <- QB.loadQueryFromDSL 
                                 (configDirScratch config) (not $ configDump config)
-                                dslQuery 
+                                dslConfig dslQuery 
                 io $ putStrLn $ show graph
                 return ()
 
         ".json"
          -> do  jsonQuery <- BB.io $ readFile file
-                graph     <- R.loadQueryFromJSON
+                graph     <- QB.loadQueryFromJSON
                                 (configDirScratch config) (not $ configDump config)
                                 jsonQuery
                 io $ putStrLn $ show graph
@@ -78,11 +82,13 @@ build_toGraph config file
 build_toJSON config file
  = case takeExtension file of
         ".hs"
-         -> do  dslQuery  <- BB.io $ readFile file
+         -> do  dslQuery           <- BB.io $ readFile file
+                let Just pathRoot  = Config.configRoot config
+                let dslConfig      = QB.Config pathRoot
 
-                graph     <- R.loadQueryFromDSL 
+                graph     <- QB.loadQueryFromDSL 
                                 (configDirScratch config) (not $ configDump config)
-                                dslQuery 
+                                dslConfig dslQuery 
 
                 io $ BS.putStrLn 
                         $ Aeson.encodePretty' aesonConfig
@@ -93,7 +99,7 @@ build_toJSON config file
         ".json"
          -> do  jsonQuery <- BB.io $ readFile file
 
-                graph     <- R.loadQueryFromJSON
+                graph     <- QB.loadQueryFromJSON
                                 (configDirScratch config) (not $ configDump config)
                                 jsonQuery
 

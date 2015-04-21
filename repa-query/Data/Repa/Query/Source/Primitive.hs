@@ -11,8 +11,11 @@ module Data.Repa.Query.Source.Primitive
         , P.Int, P.Float, P.Double, P.String
 
           -- * From Data.Repa.Query.Source.EDSL
+        , Query
         , Flow 
         , Value
+
+        , query
 
         , fromFile
         , fromTable
@@ -32,15 +35,11 @@ module Data.Repa.Query.Source.Primitive
         , get4_1, get4_2, get4_3, get4_4
         , get5_1, get5_2, get5_3, get5_4, get5_5
 
-          -- * From Data.Repa.Query.Source.Builder
-        , query
-
           -- * From Data.Repa.Query.Format
         , Delim (..)
         , Field (..))
 where
 import Data.Repa.Query.Source.EDSL
-import Data.Repa.Query.Source.Builder
 import Data.Repa.Query.Format
 import qualified Prelude                as P
 

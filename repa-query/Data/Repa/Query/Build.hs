@@ -1,7 +1,10 @@
 
 module Data.Repa.Query.Build
-        ( -- * Building
-          buildQueryViaRepa 
+        ( -- * Config
+          QB.Config (..)
+
+          -- * Building
+        , buildQueryViaRepa 
         , buildJsonViaRepa
         , buildDslViaRepa
 
@@ -19,6 +22,7 @@ import qualified BuildBox.Command.File          as BB
 import qualified Language.Haskell.TH            as TH
 import qualified Data.Repa.Query.Compile.Repa   as CR
 import qualified Data.Repa.Query.Graph          as Q
+import qualified Data.Repa.Query.Source.Builder as QB
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString.Lazy.Char8     as BS
 
@@ -93,15 +97,16 @@ buildJsonViaRepa dirScratch cleanup json fileExe
 buildDslViaRepa
         :: FilePath             -- ^ Working directory.
         -> Bool                 -- ^ Cleanup intermediate files.
+        -> QB.Config            -- ^ Query builder config.
         -> String               -- ^ Query encoded in the DSL.
         -> FilePath             -- ^ Path to output executable.
         -> BB.Build (Q.Query () String String String)
                                 -- ^ Operator graph of compiled query.
 
-buildDslViaRepa dirScratch cleanup dslQuery fileExe
+buildDslViaRepa dirScratch cleanup dslConfig dslQuery fileExe
  = do   
         -- Load json from the dsl version of the queyr.
-        query   <- loadQueryFromDSL dirScratch cleanup dslQuery
+        query   <- loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
 
         -- Build query into an executable.
         buildQueryViaRepa dirScratch cleanup query fileExe
@@ -114,10 +119,11 @@ buildDslViaRepa dirScratch cleanup dslQuery fileExe
 loadQueryFromDSL
         :: FilePath             -- ^ Working directory.
         -> Bool                 -- ^ Cleanup intermediate files.
+        -> QB.Config            -- ^ Query builder config.
         -> String               -- ^ Query encoded in the DSL.
         -> BB.Build (Q.Query () String String String)
 
-loadQueryFromDSL dirScratch cleanup dslQuery
+loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
  = do
         -- Attach header that defines the prims, and write out the code.
         --
@@ -128,10 +134,13 @@ loadQueryFromDSL dirScratch cleanup dslQuery
 
         BB.io $ writeFile fileHS (edslHeader ++ dslQuery)
 
-        jsonQuery       <- BB.sesystemq 
-                        $ "ghc " ++ fileHS
-                                 ++ " -e "
-                                 ++ "\"result >>= \\g -> B.putStrLn (A.encode (A.toJSON g))\""
+        jsonQuery       
+         <- BB.sesystemq 
+         $ "ghc " 
+                ++ fileHS
+                ++ " -e "
+                ++ "\"Q.runQ " ++ edslConfig dslConfig ++ " result "
+                ++    ">>= \\g -> B.putStrLn (A.encode (A.toJSON g))\""
 
         -- Remove dropped files.
         when cleanup
@@ -168,12 +177,20 @@ edslHeader
  , "{-# LANGUAGE ScopedTypeVariables #-}"
  , "{-# LANGUAGE GADTs               #-}"
  , "import Data.Repa.Query.Source.Primitive"
- , "import qualified Data.Repa.Query.Convert.JSON"
- , "import qualified Data.ByteString.Lazy.Char8    as B (putStrLn)"
- , "import qualified Data.Aeson                    as A (encode, toJSON)"
+ , "import qualified Data.Repa.Query.Source.Builder     as Q"
+ , "import qualified Data.Repa.Query.Convert.JSON       as Q"
+ , "import qualified Data.ByteString.Lazy.Char8         as B (putStrLn)"
+ , "import qualified Data.Aeson                         as A (encode, toJSON)"
  , ""]
 
+edslConfig :: QB.Config -> String
+edslConfig config
+        =  "Q.Config { "
+        ++ " Q.configRoot = " ++ "\\\"" ++ QB.configRoot config ++ "\\\""
+        ++ " }"
 
+
+---------------------------------------------------------------------------------------------------
 -- | Junk pasted to the front of generated Repa code 
 --   to make it a well formed Haskell program.
 repaHeader :: String

@@ -29,7 +29,8 @@ Library
         filepath             >= 1.4.0  && < 1.5,
         repa-array           >= 4.1.0  && < 4.2,
         repa-flow            >= 4.1.0  && < 4.2,
-        repa-convert         >= 4.1.0  && < 4.2
+        repa-convert         >= 4.1.0  && < 4.2,
+        repa-store           >= 4.1.0  && < 4.2
 
 
   exposed-modules:

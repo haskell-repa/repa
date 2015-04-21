@@ -1,8 +1,25 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
+-- | Repa query EDSL.
+--
+--   A query written with this EDSL expresses an AST/operator graph that
+--   compiled into an executable that computes the result of the query.
+--
+--   The produced AST includes enough type information about the the source
+--   data that it can be checked for well-formedness without access to
+--   external metadata -- namely the format of tables and the types of
+--   their columns.
+--
+--   This meta-data can either be embedded directly in the query, 
+--   or read from a local copy of the table metadata, depending on what
+--   operators are used.
+--   
 module Data.Repa.Query.Source.EDSL
-        ( -- * Variables
-          Flow
-        , Value
+        ( -- * Types
+          Query, Flow, Value
+
+          -- * Query builder
+        , query
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
@@ -43,9 +60,9 @@ import Data.Repa.Query.Source.Builder
 import Data.Repa.Product
 import Data.Word
 import Data.Int
-import qualified Data.Repa.Query.Graph  as G
-import qualified Data.Repa.Query.Format as Format
-import qualified Prelude                as P
+import qualified Data.Repa.Query.Graph          as G
+import qualified Data.Repa.Query.Format         as F
+import qualified Prelude                        as P
 import Prelude   
  hiding ( map, filter
         , negate, abs, signum
@@ -55,31 +72,46 @@ import Prelude
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Produce a query, using the given deliminator and field types
+--   for the output format.
+query   :: F.Delim              -- ^ Output delimitor.
+        -> F.Field a            -- ^ Output field types.
+        -> Q (Flow a)           -- ^ Output flow.
+        -> Q Query
+
+query delim field mkFlow
+ = do   flow    <- mkFlow
+        return  $ Query delim field flow
+
+
+---------------------------------------------------------------------------------------------------
 -- | Read complete rows from a flat file.
 fromFile  :: FilePath
-          -> Format.Delim 
-          -> Format.Field a 
+          -> F.Delim 
+          -> F.Field a 
           -> Q (Flow a)
 
 fromFile path delim field
  = do   fOut    <- newFlow
         addNode $ G.NodeSource 
-                $ G.SourceFile () path delim (Format.flattens field) 
+                $ G.SourceFile () path delim (F.flattens field) 
                 $ takeFlow fOut
         return  fOut
 
 
 -- | Read complete rows from a table.
 --   TODO: load meta-data at graph construction time.
-fromTable :: FilePath
-          -> Q (Flow a)
-
+fromTable :: FilePath -> Q (Flow a)
 fromTable path 
- = do   fOut    <- newFlow
+ = do   
+        -- Load the table meta data.
+        -- We do this at query build time 
+
+        fOut    <- newFlow
         addNode $ G.NodeSource
                 $ G.SourceTable () path 
-                        Format.Fixed            -- TODO: lookup real delim from meta-data.
-                        []                      -- TODO: lookup real fields from meta-data.
+                        F.Fixed            -- TODO: lookup real delim from meta-data.
+                        []                 -- TODO: lookup real fields from meta-data.
                 $ takeFlow fOut
         return fOut
 

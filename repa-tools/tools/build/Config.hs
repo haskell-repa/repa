@@ -14,6 +14,9 @@ data Config
           --   can be the Haskell EDSL, or a JSON operator graph.
         , configQuery           :: Maybe FilePath 
 
+          -- | Root directory containing meta data for tables.
+        , configRoot            :: Maybe FilePath
+
           -- | Dump intermediate files.
         , configDump            :: Bool 
 
@@ -26,7 +29,8 @@ configZero :: Config
 configZero
         = Config
         { configMode            = ModeBuild
-        , configQuery           = Nothing 
+        , configQuery           = Nothing
+        , configRoot            = Nothing 
         , configDump            = False 
         , configDirScratch      = "." }
 
@@ -49,6 +53,7 @@ parseArgs :: [String] -> Config -> IO Config
 
 parseArgs [] config
  | isJust $ configQuery config
+ , isJust $ configRoot  config
  = return config
 
  | otherwise    = dieUsage
@@ -58,7 +63,10 @@ parseArgs args config
  , Nothing                 <- configQuery config
  = parseArgs rest $ config { configQuery = Just file }
 
- | "-dump" : rest            <- args
+ | "-root"  : path : rest  <- args
+ = parseArgs rest $ config { configRoot  = Just path }
+
+ | "-dump"  : rest         <- args
  = parseArgs rest $ config { configDump  = True }
 
  | "-to-graph" : rest      <- args
@@ -80,11 +88,12 @@ parseArgs args config
 -- | Die on wrong usage at command line.
 dieUsage
  = error $ P.unlines
- [ "Usage: build -query FILE [OPTIONS]"
+ [ "Usage: build -root PATH FILE  [OPTIONS]"
  , "Compile a Repa query into an executable."
  , "The query can be written in either the query DSL, or in the JSON format."
  , ""
  , "OPTIONS:"
+ , " -root PATH         (required) Root path containing table meta data."
  , " -dump              Dump intermediate files."
  , " -to-graph          Emit operator graph in Haskell syntax."
  , " -to-json           Emit operator graph in JSON syntax." ]

@@ -1,17 +1,35 @@
 module Data.Repa.Query.Source.Builder
-        ( Flow (..)
+        ( -- * Queries
+          Query (..)
+
+          -- * Flows
+        , Flow  (..)
         , makeFlow, takeFlow
 
+          -- * Values
         , Value (..)
-        , Q
-        , query
+
+          -- * Query builder monad.
+        , Q, Config (..)
+        , runQ
         , newFlow
         , addNode)
 where
-import Control.Monad.Trans.State.Strict
-import qualified Data.Repa.Query.Format                 as Format
+import qualified Control.Monad.Trans.State.Strict       as S
+import qualified Data.Repa.Query.Format                 as F
 import qualified Data.Repa.Query.Graph                  as G
 import qualified Data.Repa.Query.Transform.Namify       as N
+
+
+---------------------------------------------------------------------------------------------------
+-- | A complete query.
+data Query
+        = forall a. Query   
+        { queryOutDelim :: F.Delim
+        , queryOutField :: F.Field a
+        , queryOutFlow  :: Flow    a }
+
+deriving instance Show Query
 
 
 ---------------------------------------------------------------------------------------------------
@@ -46,26 +64,36 @@ data Value a
 ---------------------------------------------------------------------------------------------------
 -- | Query building monad.
 type Q a
-        = StateT S IO a
+        = S.StateT State IO a
+
+
+-- | Query builder config.
+data Config
+        = Config
+        { -- | Path to data root, containing meta-data for used tables.
+          configRoot    :: FilePath }
+        deriving Show
 
 
 -- | Run a query builder.
--- 
---   The operator graph in the result query uses strings for flow variables
---   and debruijn indices for value variables.
---
-query   :: Format.Delim
-        -> Format.Field a
-        -> Q (Flow a)
+--   
+--   The provided config contains the path to the meta data needed by
+--   operators like `sourceTable`.
+--   
+runQ    :: Config               -- ^ Query builder config.
+        -> Q  Query             -- ^ Computation to produce query AST.
         -> IO (G.Query () String String String)
 
-query delim field  f
- = do   (Flow x, s')  
-                <- runStateT f
-                $  S { sNodes        = []
-                     , sGenFlow      = 0
-                     , sGenScalar    = 0 }
- 
+runQ config mkQuery
+ = do   
+        -- Run the query builder to get the AST / operator graph.
+        (Query delim field (Flow vFlow), state')
+                <- S.runStateT mkQuery
+                $  State { sConfig      = config
+                         , sNodes       = []
+                         , sGenFlow     = 0
+                         , sGenScalar   = 0 }
+
         -- The nodes added to the state use debruijn indices for variables,
         -- but we'll convert them to named variables while we're here.
         --
@@ -76,19 +104,28 @@ query delim field  f
         --
         let Just q  
                 = N.namify N.mkNamifierStrings 
-                $ G.Query x delim 
-                        (Format.flattens field)
-                        (G.Graph (sNodes s'))
+                $ G.Query vFlow delim 
+                        (F.flattens field)
+                        (G.Graph (sNodes state'))
         return q
+ 
 
-
+ ---------------------------------------------------------------------------------------------------
 -- | State used when building the operator graph.
-data S  = S
-        { -- | We strip the type information from the nodes so we can put
+data State  
+        = State
+        { -- | Query builder config
+          sConfig       :: Config
+
+          -- | We strip the type information from the nodes so we can put
           --   them all in the graph. Flows are named with strings, while
           --   scalars are named with debruijn indices.
-          sNodes        :: [G.Node () String () Int]
+        , sNodes        :: [G.Node () String () Int]
+
+          -- | Counter to generate fresh flow variable names.
         , sGenFlow      :: Int
+
+          -- | Counter to generate fresh scalar variable names.
         , sGenScalar    :: Int }
         deriving Show
         
@@ -96,13 +133,14 @@ data S  = S
 -- | Allocate a new node name.
 newFlow :: Q (Flow a)
 newFlow 
- = do   ix      <- gets sGenFlow
-        modify  $ \s -> s { sGenFlow = ix + 1}
-        return  $ makeFlow $ "f" ++ show ix
+ = do   ix        <- S.gets sGenFlow
+        S.modify  $ \s -> s { sGenFlow = ix + 1}
+        return    $ makeFlow $ "f" ++ show ix
 
 
 -- | Add a new node to the graph
 addNode :: G.Node () String () Int -> Q ()
 addNode n
- = modify $ \s -> s { sNodes = sNodes s ++ [n] }
+ = S.modify $ \s -> s { sNodes = sNodes s ++ [n] }
+
 
