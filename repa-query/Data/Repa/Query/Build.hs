@@ -25,6 +25,7 @@ import qualified Data.Repa.Query.Graph          as Q
 import qualified Data.Repa.Query.Source.Builder as QB
 import qualified Data.Aeson                     as Aeson
 import qualified Data.ByteString.Lazy.Char8     as BS
+import qualified Data.List                      as L
 
 
 ---------------------------------------------------------------------------------------------------
@@ -100,18 +101,19 @@ buildDslViaRepa
         -> QB.Config            -- ^ Query builder config.
         -> String               -- ^ Query encoded in the DSL.
         -> FilePath             -- ^ Path to output executable.
-        -> BB.Build (Q.Query () String String String)
+        -> BB.Build (Either String (Q.Query () String String String))
                                 -- ^ Operator graph of compiled query.
 
 buildDslViaRepa dirScratch cleanup dslConfig dslQuery fileExe
  = do   
         -- Load json from the dsl version of the queyr.
-        query   <- loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
-
-        -- Build query into an executable.
-        buildQueryViaRepa dirScratch cleanup query fileExe
-
-        return query
+        eQuery   <- loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
+        case eQuery of
+         Left  err   -> return $ Left err
+         Right query    
+          -> do -- Build query into an executable.
+                buildQueryViaRepa dirScratch cleanup query fileExe
+                return $ Right query
 
 
 ---------------------------------------------------------------------------------------------------
@@ -121,7 +123,7 @@ loadQueryFromDSL
         -> Bool                 -- ^ Cleanup intermediate files.
         -> QB.Config            -- ^ Query builder config.
         -> String               -- ^ Query encoded in the DSL.
-        -> BB.Build (Q.Query () String String String)
+        -> BB.Build (Either String (Q.Query () String String String))
 
 loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
  = do
@@ -134,22 +136,49 @@ loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
 
         BB.io $ writeFile fileHS (edslHeader ++ dslQuery)
 
-        jsonQuery       
-         <- BB.sesystemq 
-         $ "ghc " 
-                ++ fileHS
-                ++ " -e "
-                ++ "\"Q.runQ " ++ edslConfig dslConfig ++ " result "
-                ++    ">>= \\g -> B.putStrLn (A.encode (A.toJSON g))\""
+        -- Run the query builder to get the JSON version.
+        -- IF the 
+        msg     <- BB.sesystemq 
+                $ "ghc " ++ fileHS ++ " -e " ++ "\"" ++ edslBuild dslConfig ++ "\""
 
         -- Remove dropped files.
         when cleanup
          $ BB.io $ removeFile fileHS
 
-        let Just query :: Maybe (Q.Query () String String String)
-                = Aeson.decode $ BS.pack jsonQuery
+        let result
+                -- EDSL query builder successfully produced the JSON version of
+                -- the query. 
+                --
+                -- In this case we get the string "OK:" followed by the pretty
+                -- printed JSON.
+                --
+                | Just jsonQuery        <- L.stripPrefix "OK:" msg
+                = let Just query :: Maybe (Q.Query () String String String)
+                        = Aeson.decode $ BS.pack jsonQuery
+                  in  return $ Right query
 
-        return query
+                -- The EDSL query builder ran, but had some problem and couldn't
+                -- produce the query. Maybe it couldn't find table meta-data, 
+                -- or detected that the query was malformed.
+                -- 
+                -- In this case we get the string "FAIL:" followed by a 
+                -- description of what went wrong.
+                --
+                | Just err              <- L.stripPrefix "FAIL:" msg
+                =     return $ Left err
+
+                -- The EDSL code itself could not be run by GHC. There is probably
+                -- a syntax or type error in the EDSL code.
+                --
+                -- In this case we get an error message directly from GHC.
+                -- 
+                -- TODO: we only get here if the query prints some other junk
+                -- GHC errors get caught by buildbox instead.
+                -- 
+                | otherwise
+                =     return $ Left $ "loadQueryFromDSL: cannot parse result"
+
+        result
 
 
 ---------------------------------------------------------------------------------------------------
@@ -179,9 +208,22 @@ edslHeader
  , "import Data.Repa.Query.Source.Primitive"
  , "import qualified Data.Repa.Query.Source.Builder     as Q"
  , "import qualified Data.Repa.Query.Convert.JSON       as Q"
- , "import qualified Data.ByteString.Lazy.Char8         as B (putStrLn)"
- , "import qualified Data.Aeson                         as A (encode, toJSON)"
+ , "import qualified Data.ByteString.Lazy               as B (append)"
+ , "import qualified Data.ByteString.Lazy.Char8         as B (putStrLn, pack)"
+ , "import qualified Data.Aeson                         as A (encode,   toJSON)"
+ , "import qualified Data.Either                        as E (Either(..))"
+ , "import qualified Prelude                            as P (show)"
  , ""]
+
+-- TODO: lift this goop out into a separate wrapper module.
+edslBuild :: QB.Config -> String
+edslBuild config
+ =  "Q.runQ " ++ edslConfig config ++ " result "
+ ++ ">>= \\r -> case r of { "
+ ++ "   E.Left  err   -> B.putStrLn (B.append (B.pack \\\"FAIL:\\\") (B.pack (P.show err)));"
+ ++ "   E.Right graph -> B.putStrLn (B.append (B.pack \\\"OK:\\\")   (A.encode (A.toJSON graph)))"
+ ++ "}"
+
 
 edslConfig :: QB.Config -> String
 edslConfig config

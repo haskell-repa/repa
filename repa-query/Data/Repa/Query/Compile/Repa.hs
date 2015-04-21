@@ -72,7 +72,7 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
-        G.SourceFile _ tableName delim@Q.Lines{} fields sOut
+        G.SourceFile _ tableName delim fields sOut
          | case delim of
                 Q.Lines{}       -> True
                 Q.LinesSep{}    -> True
@@ -104,7 +104,7 @@ bindOfSource ss
                 return (pOut, xRhs)
 
 
-        _ -> error "repa-query: TODO bindOfSource"
+        _ -> error $ "repa-query: TODO bindOfSource" ++ show ss
 
 
 -- | Yield a Haskell binding for a flow op.

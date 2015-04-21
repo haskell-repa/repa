@@ -106,7 +106,6 @@ fromTable path
  = do   
         -- Load the table meta data.
         -- We do this at query build time 
-
         fOut    <- newFlow
         addNode $ G.NodeSource
                 $ G.SourceTable () path 

@@ -36,79 +36,99 @@ build_mode  config mode file
 
 
 build_build config file
- = case takeExtension file of
-        ".hs"   
-         -> do  dslQuery  <- BB.io $ readFile file
-                let Just pathRoot  = Config.configRoot config
-                let dslConfig      = QB.Config pathRoot
-                _graph    <- QB.buildDslViaRepa 
-                                "." (not $ configDump config)
-                                dslConfig dslQuery  (dropExtension file)
-                return ()
+ | ".hs"        <- takeExtension file
+ = do   dslQuery  <- BB.io $ readFile file
+        let Just pathRoot  = Config.configRoot config
+        let dslConfig      = QB.Config pathRoot
+        egraph    <- QB.buildDslViaRepa 
+                        "." (not $ configDump config)
+                         dslConfig dslQuery  (dropExtension file)
+        checkResult egraph
 
-        ".json" 
-         -> do  jsonQuery <- BB.io $ readFile file
-                _graph    <- QB.buildJsonViaRepa 
-                                "." (not $ configDump config)
-                                jsonQuery (dropExtension file)
-                return ()
+ | ".json"      <- takeExtension file
+ = do   jsonQuery <- BB.io $ readFile file
+        graph     <- QB.buildJsonViaRepa 
+                        "." (not $ configDump config)
+                        jsonQuery (dropExtension file)
+        checkResult (Right graph)
 
-        ext -> error $ "Cannot compile a " ++ ext ++ " file to a query."
+ | otherwise
+ =      error $ "Cannot compile a " ++ (takeExtension file) ++ " file to a query."
+ where
+        checkResult (Left err)
+         = error err
+
+        checkResult (Right _graph)
+         = return ()
 
 
+---------------------------------------------------------------------------------------------------
 build_toGraph config file
- = case takeExtension file of
-        ".hs"
-         -> do  dslQuery  <- BB.io $ readFile file
-                let Just pathRoot  = Config.configRoot config
-                let dslConfig      = QB.Config pathRoot
+ -- Convert DSL query to graph AST.
+ | ".hs"        <- takeExtension file
+ = do   dslQuery  <- BB.io $ readFile file
+        let Just pathRoot  = Config.configRoot config
+        let dslConfig      = QB.Config pathRoot
 
-                graph     <- QB.loadQueryFromDSL 
-                                (configDirScratch config) (not $ configDump config)
-                                dslConfig dslQuery 
-                io $ putStrLn $ show graph
-                return ()
+        egraph    <- QB.loadQueryFromDSL 
+                        (configDirScratch config) (not $ configDump config)
+                        dslConfig dslQuery 
+        printErrGraph egraph
 
-        ".json"
-         -> do  jsonQuery <- BB.io $ readFile file
-                graph     <- QB.loadQueryFromJSON
-                                (configDirScratch config) (not $ configDump config)
-                                jsonQuery
-                io $ putStrLn $ show graph
+ -- Convert JSON query to graph ASt.
+ | ".json"      <- takeExtension file
+ = do   jsonQuery <- BB.io $ readFile file
+        graph     <- QB.loadQueryFromJSON
+                        (configDirScratch config) (not $ configDump config)
+                        jsonQuery
+        printErrGraph (Right graph)
 
-        ext -> error $ "Cannot convert a " ++ ext ++ " file to a query."
+ | otherwise
+ =      error $ "Cannot convert a " ++ takeExtension file ++ " file to a query."
+
+ where  printErrGraph (Left err)
+         = error err
+
+        printErrGraph (Right graph)
+         = io $ putStrLn $ show graph
 
 
+---------------------------------------------------------------------------------------------------
 build_toJSON config file
- = case takeExtension file of
-        ".hs"
-         -> do  dslQuery           <- BB.io $ readFile file
-                let Just pathRoot  = Config.configRoot config
-                let dslConfig      = QB.Config pathRoot
+ -- Convert DSL query to json.
+ | ".hs"        <- takeExtension file
+ = do   dslQuery           <- BB.io $ readFile file
+        let Just pathRoot  = Config.configRoot config
+        let dslConfig      = QB.Config pathRoot
 
-                graph     <- QB.loadQueryFromDSL 
-                                (configDirScratch config) (not $ configDump config)
-                                dslConfig dslQuery 
+        egraph  <- QB.loadQueryFromDSL 
+                        (configDirScratch config) (not $ configDump config)
+                        dslConfig dslQuery 
 
-                io $ BS.putStrLn 
-                        $ Aeson.encodePretty' aesonConfig
-                        $ Aeson.toJSON graph
+        printErrJSON egraph
 
-                return ()
+ -- Load JSON query and print it back.
+ | ".json"      <- takeExtension file
+ = do   jsonQuery <- BB.io $ readFile file
+        graph     <- QB.loadQueryFromJSON
+                        (configDirScratch config) (not $ configDump config)
+                        jsonQuery
 
-        ".json"
-         -> do  jsonQuery <- BB.io $ readFile file
+        printErrJSON (Right graph)
 
-                graph     <- QB.loadQueryFromJSON
-                                (configDirScratch config) (not $ configDump config)
-                                jsonQuery
+ | otherwise
+ =      error $ "Cannot convert a " ++ takeExtension file ++ " file to a JSON query."
 
-                io $ BS.putStrLn 
-                        $ Aeson.encodePretty' aesonConfig
-                        $ Aeson.toJSON graph
+ where  printErrJSON (Left err)
+         = error err
 
-        ext -> error $ "Cannot convert a " ++ ext ++ " file to a JSON query."
+        printErrJSON (Right graph)
+         = io $ BS.putStrLn 
+              $ Aeson.encodePretty' aesonConfig
+              $ Aeson.toJSON graph
 
+
+---------------------------------------------------------------------------------------------------
 aesonConfig
  = Aeson.defConfig
         { Aeson.confIndent      = 4

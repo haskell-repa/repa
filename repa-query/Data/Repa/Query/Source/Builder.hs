@@ -77,7 +77,7 @@ data Config
 --   
 runQ    :: Config               -- ^ Query builder config.
         -> Q  Query             -- ^ Computation to produce query AST.
-        -> IO (G.Query () String String String)
+        -> IO (Either String (G.Query () String String String))
 
 runQ config mkQuery
  = do   
@@ -90,7 +90,7 @@ runQ config mkQuery
                          , sGenScalar   = 0 }
 
         case eQuery of
-         Left err       -> error $ show err
+         Left err       -> return $ Left err
          Right (Query delim field (Flow vFlow))
           -> do 
                 -- The nodes added to the state use debruijn indices for variables,
@@ -106,7 +106,7 @@ runQ config mkQuery
                         $ G.Query vFlow delim 
                                 (F.flattens field)
                                 (G.Graph (sNodes state'))
-                return q
+                return $ Right q
  
 
  ---------------------------------------------------------------------------------------------------
