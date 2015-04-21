@@ -231,7 +231,7 @@ groupsBy fun fIn
                         $ let Value x = fun (Value $ xVar 0) (Value $ xVar 1)
                           in  x)
 
-        return fOut
+        return $ fOut
 
 
 ---------------------------------------------------------------------------------------------------

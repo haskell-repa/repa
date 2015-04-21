@@ -24,7 +24,6 @@ Library
         unordered-containers >= 0.2.5  && < 0.3,
         containers           >= 0.5.6  && < 0.6,
         template-haskell     >= 2.10.0 && < 2.11,
-        transformers         >= 0.4.2  && < 0.5,
         buildbox             >= 2.1.6  && < 2.2,
         filepath             >= 1.4.0  && < 1.5,
         repa-array           >= 4.1.0  && < 4.2,

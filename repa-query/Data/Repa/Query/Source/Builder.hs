@@ -15,10 +15,10 @@ module Data.Repa.Query.Source.Builder
         , newFlow
         , addNode)
 where
-import qualified Control.Monad.Trans.State.Strict       as S
 import qualified Data.Repa.Query.Format                 as F
 import qualified Data.Repa.Query.Graph                  as G
 import qualified Data.Repa.Query.Transform.Namify       as N
+import Control.Monad
 
 
 ---------------------------------------------------------------------------------------------------
@@ -62,11 +62,6 @@ data Value a
 
 
 ---------------------------------------------------------------------------------------------------
--- | Query building monad.
-type Q a
-        = S.StateT State IO a
-
-
 -- | Query builder config.
 data Config
         = Config
@@ -87,27 +82,31 @@ runQ    :: Config               -- ^ Query builder config.
 runQ config mkQuery
  = do   
         -- Run the query builder to get the AST / operator graph.
-        (Query delim field (Flow vFlow), state')
-                <- S.runStateT mkQuery
+        (state', eQuery)
+                <- evalQ mkQuery
                 $  State { sConfig      = config
                          , sNodes       = []
                          , sGenFlow     = 0
                          , sGenScalar   = 0 }
 
-        -- The nodes added to the state use debruijn indices for variables,
-        -- but we'll convert them to named variables while we're here.
-        --
-        -- This match should always succeed because the namifier only returns
-        -- Nothing when there are out of scope variables. However, the only 
-        -- way we can construct a (Q (Flow a)) is via the EDSL code, which
-        -- doesn't provide a way of producing expressions with free indices.
-        --
-        let Just q  
-                = N.namify N.mkNamifierStrings 
-                $ G.Query vFlow delim 
-                        (F.flattens field)
-                        (G.Graph (sNodes state'))
-        return q
+        case eQuery of
+         Left err       -> error $ show err
+         Right (Query delim field (Flow vFlow))
+          -> do 
+                -- The nodes added to the state use debruijn indices for variables,
+                -- but we'll convert them to named variables while we're here.
+                --
+                -- This match should always succeed because the namifier only returns
+                -- Nothing when there are out of scope variables. However, the only 
+                -- way we can construct a (Q (Flow a)) is via the EDSL code, which
+                -- doesn't provide a way of producing expressions with free indices.
+                --
+                let Just q  
+                        = N.namify N.mkNamifierStrings 
+                        $ G.Query vFlow delim 
+                                (F.flattens field)
+                                (G.Graph (sNodes state'))
+                return q
  
 
  ---------------------------------------------------------------------------------------------------
@@ -133,14 +132,65 @@ data State
 -- | Allocate a new node name.
 newFlow :: Q (Flow a)
 newFlow 
- = do   ix        <- S.gets sGenFlow
-        S.modify  $ \s -> s { sGenFlow = ix + 1}
-        return    $ makeFlow $ "f" ++ show ix
+ = do   ix      <- getsQ sGenFlow
+        modifyQ $ \s -> s { sGenFlow = ix + 1}
+        return  $ makeFlow $ "f" ++ show ix
 
 
 -- | Add a new node to the graph
 addNode :: G.Node () String () Int -> Q ()
 addNode n
- = S.modify $ \s -> s { sNodes = sNodes s ++ [n] }
+ = do   modifyQ $ \s -> s { sNodes = sNodes s ++ [n] }
+        return ()
+
+
+---------------------------------------------------------------------------------------------------
+-- | Query building monad.
+--
+--   The usual combination of state, exception and IO.
+--
+data Q a
+        = Q (State -> IO (State, Either String a))
+
+instance Functor Q where
+ fmap  = liftM
+
+instance Applicative Q where
+ (<*>) = ap
+ pure  = return
+
+instance Monad Q where
+ return !x
+  = Q (\s -> return $ (s, Right x))
+ {-# INLINE return #-}
+
+ (>>=)  !(Q f) !g
+  = Q (\s -> do
+        (s', r)   <- f s
+        case r of
+         Left  err -> return $ (s, Left err)
+         Right y   -> case g y of
+                        Q h     -> h s')
+ {-# INLINE (>>=) #-}
+
+
+-- | Evaluate a query builder computation.
+evalQ  :: Q a -> State -> IO (State, Either String a)
+evalQ (Q f) s = f s
+{-# INLINE evalQ #-}
+
+
+-- | Get an field of the builder state.
+getsQ  :: (State -> a) -> Q a
+getsQ f 
+ = Q (\s -> return (s, Right $ f s))
+{-# INLINE getsQ #-}
+
+
+-- | Modify the builder state.
+modifyQ :: (State -> State) -> Q ()
+modifyQ f 
+ = Q (\s -> return (f s, Right ()))
+{-# INLINE modifyQ #-}
 
 
