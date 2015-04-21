@@ -242,6 +242,7 @@ flattensBox :: FieldBox -> [FieldBox]
 flattensBox (FieldBox f)
         = flattens f
 
+
 ---------------------------------------------------------------------------------------------------
 text :: Text -> Text
 text x = x 

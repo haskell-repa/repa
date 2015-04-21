@@ -22,10 +22,16 @@ module Data.Repa.Query.Runtime.Primitive
         , fromFiles
         , sourceLinesFormat
         , sourceFixedFormat
+        , sourceTableFormat
 
           -- * From Data.Repa.Flow.Auto.Format
         , concatPackFormat_i
         , unlinesPackFormat_i
+
+          -- * From Data.Repa.Store.Format
+        , pattern Fixed
+        , pattern Lines
+        , pattern LinesSep
 
           -- * From Data.Repa.Convert.Format
         , pattern App
@@ -47,8 +53,9 @@ import qualified Prelude                        as P
 import qualified Data.Repa.Flow.Auto            as F
 import qualified Data.Repa.Flow.Auto.IO         as F
 import qualified Data.Repa.Flow.Auto.Format     as F
+import qualified Data.Repa.Store.Flow           as S
+import qualified Data.Repa.Store.Format         as S
 import qualified Data.Repa.Convert.Format       as C
-
 
 -- Prelude
 (>>=)                   = (\x y -> x P.>>= y)
@@ -81,6 +88,7 @@ groupsBy_i              = F.groupsBy_i
 fromFiles               = F.fromFiles
 sourceLinesFormat       = F.sourceLinesFormat
 sourceFixedFormat       = F.sourceFixedFormat
+sourceTableFormat       = S.sourceTableFormat
 
 
 -- Data.Repa.Flow.Auto.Format
@@ -88,8 +96,14 @@ concatPackFormat_i      = F.concatPackFormat_i
 unlinesPackFormat_i     = F.unlinesPackFormat_i
 
 
+-- Data.Repa.Store.Format
+pattern Fixed           = S.Fixed
+pattern Lines           = S.Lines
+pattern LinesSep c      = S.LinesSep c
+
+
 -- Data.Repa.Convert.Format
-pattern App   fs        = C.App fs
+pattern App fs          = C.App fs
 pattern Sep s fs        = C.Sep s fs
 
 pattern Word8be         = C.Word8be

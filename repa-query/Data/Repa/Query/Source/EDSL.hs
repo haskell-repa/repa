@@ -121,7 +121,7 @@ fromTable path
                 fOut    <- newFlow
                 addNode $ G.NodeSource
                         $ G.SourceTable () path 
-                                F.Fixed            -- TODO: lookup real delim from meta-data.
+                                (Table.tableDelim table)
                                 (P.map Table.columnFormat $ Table.tableColumns table)
                         $ takeFlow fOut
                 return fOut

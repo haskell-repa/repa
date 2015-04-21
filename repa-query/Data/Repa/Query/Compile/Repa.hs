@@ -47,7 +47,7 @@ expOfQuery (G.Query sResult delim fields (G.Graph nodes))
          = go nodes
 
         Just format'
-         = expOfRowFormat delim fields
+         = expOfDelimFields delim fields
 
         go []   
          = do   let hResult     = H.varE (H.mkName sResult)
@@ -71,14 +71,14 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
-        G.SourceFile _ tableName delim fields sOut
+        G.SourceFile _ path delim fields sOut
          | case delim of
                 Q.Lines{}       -> True
                 Q.LinesSep{}    -> True
                 _               -> False
                 
-         -> do  let hTable       = return (LitE (StringL tableName))
-                let Just format' = expOfRowFormat delim fields
+         -> do  let hTable       = return (LitE (StringL path))
+                let Just format' = expOfFieldsFormat fields
 
                 xRhs    <- [| P.fromFiles [ $hTable ] 
                                 (P.sourceLinesFormat 
@@ -90,9 +90,9 @@ bindOfSource ss
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
 
-        G.SourceFile _ tableName delim@Q.Fixed{} fields sOut
-         -> do  let hTable       = return (LitE (StringL tableName))
-                let Just format' = expOfRowFormat delim fields
+        G.SourceFile _ path Q.Fixed{} fields sOut
+         -> do  let hTable       = return (LitE (StringL path))
+                let Just format' = expOfFieldsFormat fields
 
                 xRhs    <- [| P.fromFiles [ $hTable ]
                                 (P.sourceFixedFormat
@@ -101,6 +101,22 @@ bindOfSource ss
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
+
+        G.SourceTable _ path delim fields sOut
+         -> do  let hPath        = return (LitE (StringL path))
+                let Just hFormat = expOfFieldsFormat fields
+                let hDelim       = expOfDelim delim
+
+                xRhs    <- [| P.sourceTableFormat 
+                                        (P.mul 64 1024)
+                                        (P.error "query: line too long.")
+                                        (P.error "query: cannot convert field.")
+                                        $hPath
+                                        $hDelim
+                                        $hFormat |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return  (pOut, xRhs)
 
 
         _ -> error $ "repa-query: TODO bindOfSource" ++ show ss
@@ -233,8 +249,8 @@ expOfLit lit
 
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a row format.
-expOfRowFormat :: Q.Delim -> [Q.FieldBox] -> Maybe H.ExpQ
-expOfRowFormat delim fields
+expOfDelimFields :: Q.Delim -> [Q.FieldBox] -> Maybe H.ExpQ
+expOfDelimFields delim fields
  = case (delim, fields) of
         (Q.Fixed, [f])
          |  Just f'     <- expOfFieldFormat f
@@ -257,6 +273,24 @@ expOfRowFormat delim fields
          -> Just [| P.Sep $(H.litE (H.charL c)) $ff' |]
 
         _ -> Nothing
+
+
+-- | Yield a Haskell expression for a delimitor.
+expOfDelim :: Q.Delim -> H.ExpQ
+expOfDelim d
+ = case d of
+        Q.Fixed         -> [| P.Fixed |]
+        Q.Lines         -> [| P.Lines |]
+        Q.LinesSep c    -> [| P.LinesSep $(H.litE (H.charL c)) |]
+
+
+-- | Yield a Haskell expression for some fields.
+expOfFieldsFormat :: [Q.FieldBox] -> Maybe H.ExpQ
+expOfFieldsFormat []
+        = Nothing
+
+expOfFieldsFormat (f : fs)
+        = expOfFieldFormats f fs
 
 
 -- | Yield a Haskell expression for some fields.

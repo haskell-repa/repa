@@ -172,8 +172,8 @@ data ErrorLoadMeta
 -- | Given a table directory and its meta-data, 
 --   get a list of all table partitions.
 --
-listPartitions :: FilePath -> Table -> IO (Maybe [FilePath])
-listPartitions path _table
+listPartitions :: FilePath ->  IO (Maybe [FilePath])
+listPartitions path 
  = check
  where  
         check 

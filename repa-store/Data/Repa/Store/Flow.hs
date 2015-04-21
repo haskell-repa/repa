@@ -1,6 +1,6 @@
 
 module Data.Repa.Store.Flow
-        (sourceTable)
+        (sourceTableFormat)
 where
 import Data.Repa.Store.Object.Table             as Table
 import Data.Repa.Store.Format                   as Format
@@ -15,27 +15,27 @@ import Data.Word
 
 -- | Read a the lines of a text file,
 --   converting each line to values with the given format.
-sourceTable
+sourceTableFormat
         :: forall format
         .  (Packable (Sep format), Target A (Value format))
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action if we find a line longer than the chunk length.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.
         -> FilePath                     -- ^ Path to table directory.
-        -> Table                        -- ^ Table meta-data.
         -> Delim                        -- ^ Row delimitor.
         -> format                       -- ^ Row format.
         -> IO (Sources Int IO (Array A (Value format)))
 
-sourceTable
+sourceTableFormat
         nChunk 
         aFailLong aFailConvert 
-        pathTable table 
+        pathTable  
         delim format
 
  | LinesSep c   <- delim
  = do  
-        Just parts   <- Table.listPartitions pathTable table
+        putStrLn pathTable
+        Just parts   <- Table.listPartitions pathTable 
 
         ss      <- fromFiles parts 
                 $  sourceLinesFormat nChunk 
@@ -45,4 +45,5 @@ sourceTable
         return ss
 
  | otherwise
- = error "sourceTable: finish me"
+ = error "sourceTable: TODO finish me"
+{-# INLINE_FLOW sourceTableFormat #-}
