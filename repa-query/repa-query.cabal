@@ -53,7 +53,14 @@ Library
         -Wall -fno-warn-missing-signatures
         -O2 -Werror
 
+  include-dirs:
+        include
+
+  install-includes:
+        repa-query.h
+
   extensions:
+        CPP
         OverloadedStrings
         BangPatterns
         PatternGuards

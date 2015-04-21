@@ -16,7 +16,7 @@ import qualified Data.Repa.Array.Material.Foreign       as AF
 import qualified Data.Repa.Array.Material.Auto          as AA
 import qualified Foreign.Ptr                            as Foreign
 import qualified Foreign.ForeignPtr                     as Foreign
-
+#include "repa-query.h"
 
 -- | Read data from a bundle of sources and write it to stdout.
 --  
@@ -24,15 +24,22 @@ import qualified Foreign.ForeignPtr                     as Foreign
 --   If this is not true then the function returns False, and no data is
 --   written to stdout.
 --
-streamSourcesToStdout
-        :: Sources Word8 -> IO Bool
+streamSourcesToStdout :: Sources Word8 -> IO Bool
+streamSourcesToStdout ss
+ =   FG.funnel_i ss 
+ >>= streamSourceToStdout
+{-# INLINE_FLOW streamSourcesToStdout #-}
 
-streamSourcesToStdout (FG.Sources 1 pullX)
+
+-- | Read data from a unitary stream and write it to stdout.
+streamSourceToStdout   :: FG.Sources () IO (AA.Array AA.A Word8) -> IO Bool
+streamSourceToStdout (FG.Sources () pullX)
  = do   go
         return True
 
  where  go 
-         = pullX 0 eat_streamSource eject_streamSource
+         = pullX () eat_streamSource eject_streamSource
+        {-# INLINE go #-}
 
         eat_streamSource (chunk :: AG.Array AA.A Word8)
          = do   let (start, len, fptr :: Foreign.ForeignPtr Word8) 
@@ -43,10 +50,10 @@ streamSourcesToStdout (FG.Sources 1 pullX)
 
                 hFlush stdout
                 go
+        {-# INLINE eat_streamSource #-}
 
         eject_streamSource
          = do   hClose stdout
                 return ()
-
-streamSourcesToStdout _
- = return False
+        {-# INLINE eject_streamSource #-}
+{-# INLINE_FLOW streamSourceToStdout #-}
