@@ -16,7 +16,7 @@ import Data.Repa.Query.Graph
 import Data.Repa.Query.Exp
 import Data.Aeson                               as Aeson
 import Data.Text                                (Text)
-import qualified Data.Repa.Query.Format         as Format
+import qualified Data.Repa.Store.Format         as Format
 import qualified Data.Text                      as T
 import qualified Data.HashMap.Strict            as H
 

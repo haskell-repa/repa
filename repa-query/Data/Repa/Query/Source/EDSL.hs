@@ -63,7 +63,7 @@ import Data.Word
 import Data.Int
 import qualified Data.Repa.Store.Object.Table   as Table
 import qualified Data.Repa.Query.Graph          as G
-import qualified Data.Repa.Query.Format         as F
+import qualified Data.Repa.Store.Format         as F
 import qualified Prelude                        as P
 import Prelude   
  hiding ( map, filter

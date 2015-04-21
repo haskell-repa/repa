@@ -18,7 +18,7 @@ module Data.Repa.Query.Source.Builder
         , newFlow
         , addNode)
 where
-import qualified Data.Repa.Query.Format                 as F
+import qualified Data.Repa.Store.Format                 as F
 import qualified Data.Repa.Query.Graph                  as G
 import qualified Data.Repa.Query.Transform.Namify       as N
 import Control.Monad

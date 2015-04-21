@@ -9,9 +9,8 @@ where
 import Language.Haskell.TH                              as H
 import Data.Repa.Flow.Auto.Format                       as F
 import Data.Repa.Query.Graph                            as G
-import qualified Data.Repa.Query.Format                 as Q
+import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Convert.Format               as C
-
 import qualified Data.Repa.Query.Runtime.Primitive      as P
 import qualified Data.Repa.Product                      as P
 

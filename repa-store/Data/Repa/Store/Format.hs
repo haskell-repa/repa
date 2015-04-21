@@ -1,7 +1,7 @@
 
 -- | Conversion between the open type-index representation of formats,
 --   and closed data-type view. 
-module Data.Repa.Query.Format
+module Data.Repa.Store.Format
         ( Row   (..)
         , Delim (..)
         , Field (..)

@@ -40,7 +40,7 @@ module Data.Repa.Query.Source.Primitive
         , Field (..))
 where
 import Data.Repa.Query.Source.EDSL
-import Data.Repa.Query.Format
+import Data.Repa.Store.Format
 import qualified Prelude                as P
 
 

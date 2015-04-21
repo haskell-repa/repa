@@ -43,7 +43,6 @@ Library
         Data.Repa.Query.Transform.Namify
         Data.Repa.Query.Build
         Data.Repa.Query.Exp
-        Data.Repa.Query.Format
         Data.Repa.Query.Graph
 
         Data.Repa.Query.Runtime.Driver
