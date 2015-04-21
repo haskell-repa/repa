@@ -240,32 +240,55 @@ instance (ToJSON nF)
                    , "fields"   .= toJSON fields
                    , "output"   .= toJSON fOut ]
 
+        SourceTableColumns _ name delim fields columns fOut
+         -> object [ "_type"    .= text "source"
+                   , "source"   .= text "table_columns"
+                   , "name"     .= T.pack name
+                   , "delim"    .= toJSON delim
+                   , "fields"   .= toJSON fields
+                   , "columns"  .= toJSON columns
+                   , "output"   .= toJSON fOut ]
+
 
 instance  FromJSON nF
        => FromJSON (Source () nF) where
  parseJSON (Object hh)
 
-        | Just (String "source") <- H.lookup "_type"  hh
-        , Just (String "file")   <- H.lookup "source" hh
-        , Just (String  name)    <- H.lookup "name"   hh
-        , Just jDelim            <- H.lookup "delim"  hh
-        , Just jFields           <- H.lookup "fields" hh
-        , Just jOut              <- H.lookup "output" hh
-        = do  delim   <- parseJSON jDelim
-              fields  <- parseJSON jFields
-              out     <- parseJSON jOut
-              return  $ SourceFile () (T.unpack name) delim fields out
+        | Just (String "source") <- H.lookup "_type"   hh
+        , Just (String "file")   <- H.lookup "source"  hh
+        , Just (String  name)    <- H.lookup "name"    hh
+        , Just jDelim            <- H.lookup "delim"   hh
+        , Just jFields           <- H.lookup "fields"  hh
+        , Just jOut              <- H.lookup "output"  hh
+        = do  delim     <- parseJSON jDelim
+              fields    <- parseJSON jFields
+              out       <- parseJSON jOut
+              return    $ SourceFile () (T.unpack name) delim fields out
 
-        | Just (String "source") <- H.lookup "_type"  hh
-        , Just (String "table")  <- H.lookup "source" hh
-        , Just (String  name)    <- H.lookup "name"   hh
-        , Just jDelim            <- H.lookup "delim"  hh
-        , Just jFields           <- H.lookup "fields" hh
-        , Just jOut              <- H.lookup "output" hh
-        = do  delim   <- parseJSON jDelim
-              fields  <- parseJSON jFields
-              out     <- parseJSON jOut
-              return  $ SourceTable () (T.unpack name) delim fields out
+        | Just (String "source") <- H.lookup "_type"   hh
+        , Just (String "table")  <- H.lookup "source"  hh
+        , Just (String  name)    <- H.lookup "name"    hh
+        , Just jDelim            <- H.lookup "delim"   hh
+        , Just jFields           <- H.lookup "fields"  hh
+        , Just jOut              <- H.lookup "output"  hh
+        = do  delim     <- parseJSON jDelim
+              fields    <- parseJSON jFields
+              out       <- parseJSON jOut
+              return    $ SourceTable () (T.unpack name) delim fields out
+
+        | Just (String "source") <- H.lookup "_type"   hh
+        , Just (String "table_columns") 
+                                 <- H.lookup "source"  hh
+        , Just (String  name)    <- H.lookup "name"    hh
+        , Just jDelim            <- H.lookup "delim"   hh
+        , Just jFields           <- H.lookup "fields"  hh
+        , Just jColumns          <- H.lookup "columns" hh
+        , Just jOut              <- H.lookup "output"  hh
+        = do  delim     <- parseJSON jDelim
+              fields    <- parseJSON jFields
+              columns   <- parseJSON jColumns
+              out       <- parseJSON jOut
+              return    $ SourceTableColumns () (T.unpack name) delim fields columns out
 
  parseJSON _ = mzero
 

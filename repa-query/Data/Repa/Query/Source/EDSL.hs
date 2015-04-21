@@ -29,6 +29,8 @@ module Data.Repa.Query.Source.EDSL
           -- ** Sourcing
         , fromFile
         , fromTable
+        , fromTableColumn
+        , fromTableColumns
 
           -- ** Mapping
         , map
@@ -64,6 +66,7 @@ import Data.Int
 import qualified Data.Repa.Store.Object.Table   as Table
 import qualified Data.Repa.Query.Graph          as G
 import qualified Data.Repa.Store.Format         as F
+import qualified Data.Text                      as T
 import qualified Prelude                        as P
 import Prelude   
  hiding ( map, filter
@@ -102,8 +105,7 @@ fromFile path delim field
 
 
 -- | Read complete rows from a table.
---   TODO: load meta-data at graph construction time.
-fromTable :: FilePath -> Q (Flow a)
+fromTable  :: FilePath -> Q (Flow a)
 fromTable path 
  = do   
         -- Load meta-data for the table.
@@ -115,10 +117,7 @@ fromTable path
           -> failQ $ show errLoadMeta
 
          Right table
-          -> do
-                -- Load the table meta data.
-                -- We do this at query build time 
-                fOut    <- newFlow
+          -> do fOut    <- newFlow
                 addNode $ G.NodeSource
                         $ G.SourceTable () path 
                                 (Table.tableDelim table)
@@ -127,6 +126,56 @@ fromTable path
                 return fOut
 
 
+-- | Read a named column from a table.
+fromTableColumn :: FilePath -> String -> Q (Flow a)
+fromTableColumn path nameColumn
+        = fromTableColumns path [nameColumn]
+
+
+-- | Read a named column from a table.
+fromTableColumns :: FilePath -> [String] -> Q (Flow a)
+fromTableColumns path names
+ = do
+        -- Load meta-data for the table.
+        pathRoot <- B.getRootDataQ
+        emeta    <- B.liftIO $ Table.loadMeta (pathRoot </> path)
+
+        -- Function to lookup the index of a named column.
+        let lookupColIx table name
+                | Just ix
+                <- P.lookup name 
+                         $  P.zip  (P.map (T.unpack . Table.columnName) 
+                                          (Table.tableColumns table))
+                                   [0..]
+                = Right (name, ix)
+
+                | otherwise
+                = Left name
+
+        case emeta of
+         Left errLoadMeta
+          -> failQ $ show errLoadMeta
+
+         Right table
+          -- Work out what index the requested column is in the table.
+          -- We store both the name and index to help detect if the
+          -- table has changed since we built the query.
+          -> case P.sequence $ P.map (lookupColIx table) names of
+              Right colIxs
+               -> do    fOut    <- newFlow
+                        addNode $ G.NodeSource
+                                $ G.SourceTableColumns () path 
+                                        (Table.tableDelim table)
+                                        (P.map Table.columnFormat $ Table.tableColumns table)
+                                        colIxs
+                                $ takeFlow fOut
+                        return fOut
+
+              Left nameUnknown 
+               -> failQ $ "unknown column " ++ show nameUnknown
+
+
+---------------------------------------------------------------------------------------------------
 -- | Apply a scalar function to every element of a flow.
 map :: (Value a -> Value b) -> Flow a -> Q (Flow b)
 map fun fIn

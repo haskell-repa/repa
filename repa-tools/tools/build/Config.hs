@@ -30,7 +30,7 @@ configZero
         = Config
         { configMode            = ModeBuild
         , configQuery           = Nothing
-        , configRootData        = Nothing 
+        , configRootData        = Just "." 
         , configDump            = False 
         , configDirScratch      = "." }
 

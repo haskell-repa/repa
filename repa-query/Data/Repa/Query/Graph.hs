@@ -67,13 +67,22 @@ data Source a nF
         , sourceOutput          :: nF                   -- ^ Output flow.
         }
 
-
         -- | Source complete rows from a table.
         | SourceTable
         { sourceAnnot           :: a                    -- ^ Annotation.
         , sourceFilePath        :: FilePath             -- ^ Path to table.
         , sourceDelim           :: Format.Delim         -- ^ Delimitor for elements.
         , sourceFields          :: [Format.FieldBox]    -- ^ Format of fields.
+        , sourceOutput          :: nF                   -- ^ Output flow.
+        }
+
+        -- | Source a subset of columns from a table.
+        | SourceTableColumns
+        { sourceAnnot           :: a                    -- ^ Annotation.
+        , sourceFilePath        :: FilePath             -- ^ Path to table.
+        , sourceDelim           :: Format.Delim         -- ^ Delimitor for elements.
+        , sourceFields          :: [Format.FieldBox]    -- ^ Format of fields.
+        , sourceColumns         :: [(String, Int)]      -- ^ Index and name of desired columns.
         , sourceOutput          :: nF                   -- ^ Output flow.
         }
 

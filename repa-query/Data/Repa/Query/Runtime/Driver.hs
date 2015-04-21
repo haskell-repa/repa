@@ -108,3 +108,4 @@ streamSourceToStdout (FG.Sources () pullX)
                 return ()
         {-# INLINE eject_streamSource #-}
 {-# INLINE_FLOW streamSourceToStdout #-}
+

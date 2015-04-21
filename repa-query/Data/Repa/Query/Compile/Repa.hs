@@ -125,7 +125,7 @@ bindOfSource ss
                 return  (pOut, xRhs)
 
 
-        _ -> error $ "repa-query: TODO bindOfSource" ++ show ss
+        _ -> error $ "repa-query: TODO bindOfSource code gen for " ++ show ss
 
 
 -- | Yield a Haskell binding for a flow op.
@@ -174,7 +174,7 @@ bindOfFlowOp op
                                       
                 return  (pOut, hRhs)
 
-        _ -> error $ "finish bindOfFlowOp: " ++ show op
+        _ -> error $ "repa-query: TODO bindOfFlowOp code gen for " ++ show op
 
 
 ---------------------------------------------------------------------------------------------------
