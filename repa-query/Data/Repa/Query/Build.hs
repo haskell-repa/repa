@@ -228,7 +228,7 @@ edslBuild config
 edslConfig :: QB.Config -> String
 edslConfig config
         =  "Q.Config { "
-        ++ " Q.configRoot = " ++ "\\\"" ++ QB.configRoot config ++ "\\\""
+        ++ " Q.configRootData = " ++ "\\\"" ++ QB.configRootData config ++ "\\\""
         ++ " }"
 
 

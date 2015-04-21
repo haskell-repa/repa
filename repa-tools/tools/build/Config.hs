@@ -15,7 +15,7 @@ data Config
         , configQuery           :: Maybe FilePath 
 
           -- | Root directory containing meta data for tables.
-        , configRoot            :: Maybe FilePath
+        , configRootData        :: Maybe FilePath
 
           -- | Dump intermediate files.
         , configDump            :: Bool 
@@ -30,7 +30,7 @@ configZero
         = Config
         { configMode            = ModeBuild
         , configQuery           = Nothing
-        , configRoot            = Nothing 
+        , configRootData        = Nothing 
         , configDump            = False 
         , configDirScratch      = "." }
 
@@ -52,8 +52,8 @@ data Mode
 parseArgs :: [String] -> Config -> IO Config
 
 parseArgs [] config
- | isJust $ configQuery config
- , isJust $ configRoot  config
+ | isJust $ configQuery    config
+ , isJust $ configRootData config
  = return config
 
  | otherwise    = dieUsage
@@ -61,19 +61,19 @@ parseArgs [] config
 parseArgs args config
  | "-query" : file : rest  <- args
  , Nothing                 <- configQuery config
- = parseArgs rest $ config { configQuery = Just file }
+ = parseArgs rest $ config { configQuery    = Just file }
 
- | "-root"  : path : rest  <- args
- = parseArgs rest $ config { configRoot  = Just path }
+ | "-root-data" : path : rest  <- args
+ = parseArgs rest $ config { configRootData = Just path }
 
  | "-dump"  : rest         <- args
- = parseArgs rest $ config { configDump  = True }
+ = parseArgs rest $ config { configDump     = True }
 
  | "-to-graph" : rest      <- args
- = parseArgs rest $ config { configMode  = ModeToGraph }
+ = parseArgs rest $ config { configMode     = ModeToGraph }
 
  | "-to-json"  : rest      <- args
- = parseArgs rest $ config { configMode  = ModeToJSON }
+ = parseArgs rest $ config { configMode     = ModeToJSON }
 
  | file : rest             <- args
  , x : _                   <- file

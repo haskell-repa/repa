@@ -56,10 +56,12 @@ module Data.Repa.Query.Source.EDSL
         , get5_1, get5_2, get5_3, get5_4, get5_5)
 where
 import Control.Monad.State.Strict
-import Data.Repa.Query.Source.Builder
+import System.FilePath
+import Data.Repa.Query.Source.Builder           as B
 import Data.Repa.Product
 import Data.Word
 import Data.Int
+import qualified Data.Repa.Store.Object.Table   as Table
 import qualified Data.Repa.Query.Graph          as G
 import qualified Data.Repa.Query.Format         as F
 import qualified Prelude                        as P
@@ -104,15 +106,25 @@ fromFile path delim field
 fromTable :: FilePath -> Q (Flow a)
 fromTable path 
  = do   
-        -- Load the table meta data.
-        -- We do this at query build time 
-        fOut    <- newFlow
-        addNode $ G.NodeSource
-                $ G.SourceTable () path 
-                        F.Fixed            -- TODO: lookup real delim from meta-data.
-                        []                 -- TODO: lookup real fields from meta-data.
-                $ takeFlow fOut
-        return fOut
+        -- Load meta-data for the table.
+        pathRoot <- B.getRootDataQ
+        emeta    <- B.liftIO $ Table.loadMeta (pathRoot </> path)
+
+        case emeta of
+         Left errLoadMeta
+          -> failQ $ show errLoadMeta
+
+         Right _table
+          -> do
+                -- Load the table meta data.
+                -- We do this at query build time 
+                fOut    <- newFlow
+                addNode $ G.NodeSource
+                        $ G.SourceTable () path 
+                                F.Fixed            -- TODO: lookup real delim from meta-data.
+                                []                 -- TODO: lookup real fields from meta-data.
+                        $ takeFlow fOut
+                return fOut
 
 
 -- | Apply a scalar function to every element of a flow.

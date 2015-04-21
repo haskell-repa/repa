@@ -12,6 +12,9 @@ module Data.Repa.Query.Source.Builder
           -- * Query builder monad.
         , Q, Config (..)
         , runQ
+        , evalQ, getsQ, modifyQ, failQ, liftIO
+        , getRootDataQ
+
         , newFlow
         , addNode)
 where
@@ -66,7 +69,7 @@ data Value a
 data Config
         = Config
         { -- | Path to data root, containing meta-data for used tables.
-          configRoot    :: FilePath }
+          configRootData        :: FilePath }
         deriving Show
 
 
@@ -109,7 +112,7 @@ runQ config mkQuery
                 return $ Right q
  
 
- ---------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | State used when building the operator graph.
 data State  
         = State
@@ -177,20 +180,34 @@ instance Monad Q where
 -- | Evaluate a query builder computation.
 evalQ  :: Q a -> State -> IO (State, Either String a)
 evalQ (Q f) s = f s
-{-# INLINE evalQ #-}
 
 
 -- | Get an field of the builder state.
 getsQ  :: (State -> a) -> Q a
 getsQ f 
  = Q (\s -> return (s, Right $ f s))
-{-# INLINE getsQ #-}
+
+
+-- | Get root of data directory.
+getRootDataQ :: Q FilePath
+getRootDataQ
+ = getsQ (configRootData . sConfig)
 
 
 -- | Modify the builder state.
 modifyQ :: (State -> State) -> Q ()
 modifyQ f 
  = Q (\s -> return (f s, Right ()))
-{-# INLINE modifyQ #-}
 
+
+-- | Fail in the builder state.
+failQ   :: String -> Q a
+failQ str
+ = Q (\s -> return (s, Left str))
+
+
+-- | Lift an IO action into the builder monad.
+liftIO  :: IO a  -> Q a
+liftIO f
+ = Q (\s -> f >>= \x -> return (s, Right x))
 

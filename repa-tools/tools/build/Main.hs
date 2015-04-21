@@ -38,7 +38,7 @@ build_mode  config mode file
 build_build config file
  | ".hs"        <- takeExtension file
  = do   dslQuery  <- BB.io $ readFile file
-        let Just pathRoot  = Config.configRoot config
+        let Just pathRoot  = Config.configRootData config
         let dslConfig      = QB.Config pathRoot
         egraph    <- QB.buildDslViaRepa 
                         "." (not $ configDump config)
@@ -67,7 +67,7 @@ build_toGraph config file
  -- Convert DSL query to graph AST.
  | ".hs"        <- takeExtension file
  = do   dslQuery  <- BB.io $ readFile file
-        let Just pathRoot  = Config.configRoot config
+        let Just pathRoot  = Config.configRootData config
         let dslConfig      = QB.Config pathRoot
 
         egraph    <- QB.loadQueryFromDSL 
@@ -98,7 +98,7 @@ build_toJSON config file
  -- Convert DSL query to json.
  | ".hs"        <- takeExtension file
  = do   dslQuery           <- BB.io $ readFile file
-        let Just pathRoot  = Config.configRoot config
+        let Just pathRoot  = Config.configRootData config
         let dslConfig      = QB.Config pathRoot
 
         egraph  <- QB.loadQueryFromDSL 
