@@ -8,7 +8,7 @@ module Data.Repa.Query.Source.Builder
         , newFlow
         , addNode)
 where
-import Control.Monad.State.Strict
+import Control.Monad.Trans.State.Strict
 import qualified Data.Repa.Query.Format                 as Format
 import qualified Data.Repa.Query.Graph                  as G
 import qualified Data.Repa.Query.Transform.Namify       as N
@@ -46,7 +46,7 @@ data Value a
 ---------------------------------------------------------------------------------------------------
 -- | Query building monad.
 type Q a
-        = State S a
+        = StateT S IO a
 
 
 -- | Run a query builder.
@@ -57,15 +57,14 @@ type Q a
 query   :: Format.Delim
         -> Format.Field a
         -> Q (Flow a)
-        -> G.Query () String String String
+        -> IO (G.Query () String String String)
 
 query delim field  f
- = let  (Flow x, s')  
-                = runState f
-                $ S { sNodes        = []
-                    , sGenFlow      = 0
-                    , sGenScalar    = 0 }
-
+ = do   (Flow x, s')  
+                <- runStateT f
+                $  S { sNodes        = []
+                     , sGenFlow      = 0
+                     , sGenScalar    = 0 }
  
         -- The nodes added to the state use debruijn indices for variables,
         -- but we'll convert them to named variables while we're here.
@@ -75,11 +74,13 @@ query delim field  f
         -- way we can construct a (Q (Flow a)) is via the EDSL code, which
         -- doesn't provide a way of producing expressions with free indices.
         --
-        Just q  = N.namify N.mkNamifierStrings 
+        let Just q  
+                = N.namify N.mkNamifierStrings 
                 $ G.Query x delim 
                         (Format.flattens field)
                         (G.Graph (sNodes s'))
-   in   q
+        return q
+
 
 -- | State used when building the operator graph.
 data S  = S

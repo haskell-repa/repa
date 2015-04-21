@@ -131,7 +131,7 @@ loadQueryFromDSL dirScratch cleanup dslQuery
         jsonQuery       <- BB.sesystemq 
                         $ "ghc " ++ fileHS
                                  ++ " -e "
-                                 ++ "\"B.putStrLn (A.encode (A.toJSON result))\""
+                                 ++ "\"result >>= \\g -> B.putStrLn (A.encode (A.toJSON g))\""
 
         -- Remove dropped files.
         when cleanup
