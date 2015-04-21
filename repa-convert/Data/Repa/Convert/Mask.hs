@@ -30,8 +30,7 @@ data Keep = Keep
 
 -- | Class of data types that can have parts masked out.
 class Maskable mask full where
- type Masked mask full 
-
+ type Masked mask full
  -- | Mask out some component of a type.
  --
  -- @  
@@ -45,31 +44,31 @@ class Maskable mask full where
  mask :: mask -> full -> Masked mask full
 
 
+instance Maskable Keep t2 where
+ type Masked Keep t2 = t2
+ mask Keep x2 = x2
+
+instance Maskable Drop t2 where
+ type Masked Drop t2 = ()
+ mask Drop x2 = ()
+
+instance Maskable () () where
+ type Masked ()   () = ()
+ mask () ()   = ()
+
+
 instance Maskable mask t2 
       => Maskable (Keep :*: mask) (t1 :*: t2) where
- type Masked (Keep :*: mask) (t1 :*: t2) = (t1 :*: Masked mask t2)
+ type Masked (Keep :*: m2) (t1 :*: t2) 
+        = t1 :*: Masked m2 t2
  mask (_ :*: m2) (x1 :*: x2) = x1 :*: mask m2 x2
 
 
 instance Maskable mask t2
       => Maskable (Drop :*: mask) (t1 :*: t2)  where
- type Masked (Drop :*: mask) (t1 :*: t2) = Masked mask t2
+ type Masked (Drop :*: m2) (t1 :*: t2)
+        = Masked m2 t2
  mask (_ :*: m2) (x1 :*: x2) = mask m2 x2
-
-
-instance Maskable Keep t2 where
- type Masked Keep t2  = t2
- mask Keep x2 = x2
-
-
-instance Maskable Drop t2 where
- type Masked Drop t2  = ()
- mask Drop x2 = ()
-
-
-instance Maskable () () where
- type Masked () ()    = ()
- mask () ()           = ()
 
 
 ---------------------------------------------------------------------------------------------------
