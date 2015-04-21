@@ -30,6 +30,7 @@ Library
         Data.Repa.Convert.Format
         Data.Repa.Convert.Numeric
         Data.Repa.Convert.Date32
+        Data.Repa.Convert.Mask
         Data.Repa.Bits.Date32
 
         Data.Repa.Convert.Format.Base
