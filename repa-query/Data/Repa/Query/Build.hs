@@ -242,8 +242,7 @@ repaHeader
  , "import qualified Data.Repa.Query.Runtime.Primitive"
  , "import qualified Data.Repa.Product"
  , ""
- , "main "
- , " = do { sources <- _makeSources"
- , "      ; True    <- Data.Repa.Query.Runtime.Driver.streamSourcesToStdout sources"
- , "      ; return () }" ] 
+ , "main = Data.Repa.Query.Runtime.Driver.execQuery _makeSources" ]
+
+
 

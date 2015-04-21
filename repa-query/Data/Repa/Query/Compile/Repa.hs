@@ -25,8 +25,11 @@ decOfQuery
         -> Q H.Dec
 
 decOfQuery nResult query
- = do   hexp    <- expOfQuery query
-        return  $ H.ValD (H.VarP nResult) (H.NormalB hexp) []
+ = do   let hRootData = H.varP (mkName ("_rootData"))
+
+        hExp    <- [| \ $hRootData -> $(expOfQuery query) |]
+
+        return  $  H.ValD (H.VarP nResult) (H.NormalB hExp) [] 
 
 
 ---------------------------------------------------------------------------------------------------
@@ -77,10 +80,11 @@ bindOfSource ss
                 Q.LinesSep{}    -> True
                 _               -> False
                 
-         -> do  let hTable       = return (LitE (StringL path))
+         -> do  let hRootData    = H.varE (mkName ("_rootData"))
+                let hTable       = return (LitE (StringL path))
                 let Just format' = expOfFieldsFormat fields
 
-                xRhs    <- [| P.fromFiles [ $hTable ] 
+                xRhs    <- [| P.fromFiles [ $hRootData P.</> $hTable ] 
                                 (P.sourceLinesFormat 
                                         (P.mul 64 1024)
                                         (P.error "query: line to long.")
@@ -91,10 +95,11 @@ bindOfSource ss
                 return (pOut, xRhs)
 
         G.SourceFile _ path Q.Fixed{} fields sOut
-         -> do  let hTable       = return (LitE (StringL path))
+         -> do  let hRootData    = H.varE (mkName ("_rootData"))
+                let hTable       = return (LitE (StringL path))
                 let Just format' = expOfFieldsFormat fields
 
-                xRhs    <- [| P.fromFiles [ $hTable ]
+                xRhs    <- [| P.fromFiles [ $hRootData P.</> $hTable ]
                                 (P.sourceFixedFormat
                                         $format'
                                         (P.error "query: cannot convert field.")) |]
@@ -103,7 +108,8 @@ bindOfSource ss
                 return (pOut, xRhs)
 
         G.SourceTable _ path delim fields sOut
-         -> do  let hPath        = return (LitE (StringL path))
+         -> do  let hRootData    = H.varE (mkName ("_rootData"))
+                let hPath        = return (LitE (StringL path))
                 let Just hFormat = expOfFieldsFormat fields
                 let hDelim       = expOfDelim delim
 
@@ -111,7 +117,7 @@ bindOfSource ss
                                         (P.mul 64 1024)
                                         (P.error "query: line too long.")
                                         (P.error "query: cannot convert field.")
-                                        $hPath
+                                        ($hRootData P.</> $hPath)
                                         $hDelim
                                         $hFormat |]
 

@@ -47,7 +47,11 @@ module Data.Repa.Query.Runtime.Primitive
         , pattern IntAsc
         , pattern DoubleAsc
         , pattern FixAsc
-        , pattern VarAsc)
+        , pattern VarAsc
+
+        -- * From System.FilePath
+        , (</>)
+        , (<.>))
 where
 import qualified Prelude                        as P
 import qualified Data.Repa.Flow.Auto            as F
@@ -56,6 +60,7 @@ import qualified Data.Repa.Flow.Auto.Format     as F
 import qualified Data.Repa.Store.Flow           as S
 import qualified Data.Repa.Store.Format         as S
 import qualified Data.Repa.Convert.Format       as C
+import qualified System.FilePath                as FilePath
 
 -- Prelude
 (>>=)                   = (\x y -> x P.>>= y)
@@ -129,4 +134,9 @@ pattern DoubleAsc       = C.DoubleAsc
 
 pattern FixAsc len      = C.FixAsc len
 pattern VarAsc          = C.VarAsc
+
+
+-- System.FilePath
+(</>)                   = (\x y -> x FilePath.</> y)
+(<.>)                   = (\x y -> x FilePath.<.> y)
 

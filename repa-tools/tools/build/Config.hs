@@ -93,7 +93,7 @@ dieUsage
  , "The query can be written in either the query DSL, or in the JSON format."
  , ""
  , "OPTIONS:"
- , " -root PATH         (required) Root path containing table meta data."
+ , " -root-data PATH    (required) Root path containing table meta data."
  , " -dump              Dump intermediate files."
  , " -to-graph          Emit operator graph in Haskell syntax."
  , " -to-json           Emit operator graph in JSON syntax." ]

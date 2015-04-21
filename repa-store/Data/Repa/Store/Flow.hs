@@ -34,8 +34,8 @@ sourceTableFormat
 
  | LinesSep c   <- delim
  = do  
-        putStrLn pathTable
-        Just parts   <- Table.listPartitions pathTable 
+        -- TODO: check directory exists.
+        Just parts  <- Table.listPartitions pathTable 
 
         ss      <- fromFiles parts 
                 $  sourceLinesFormat nChunk 
