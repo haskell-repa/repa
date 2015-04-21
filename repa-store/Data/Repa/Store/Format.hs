@@ -197,6 +197,7 @@ readField ss
          , ("DoubleAsc",  FieldBox DoubleAsc)
          , ("VarAsc",     FieldBox    VarAsc) ]
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Existential container for field formats,
 --   and dictionaries to work with them.

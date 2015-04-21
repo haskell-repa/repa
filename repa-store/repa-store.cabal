@@ -24,10 +24,13 @@ Library
         unordered-containers >= 0.2.5  && < 0.3,
         directory            >= 1.2.2  && < 1.3,
         bytestring           >= 0.10.6 && < 0.11,
-        repa-convert         >= 4.1.0  && < 4.2
+        repa-convert         >= 4.1.0  && < 4.2,
+        repa-array           >= 4.1.0  && < 4.2,
+        repa-flow            >= 4.1.0  && < 4.2
 
   exposed-modules:
         Data.Repa.Store.Format
+        Data.Repa.Store.Flow
         Data.Repa.Store.Object
         Data.Repa.Store.Object.Table
 
@@ -36,10 +39,18 @@ Library
         -Wall -fno-warn-missing-signatures
         -O2 -Werror
 
+  include-dirs:
+        include
+
+  install-includes:
+        repa-store.h
+
   extensions:
+        CPP
         PatternGuards
         OverloadedStrings
         ExistentialQuantification
         TypeOperators
         StandaloneDeriving
+        FlexibleContexts
         GADTs
