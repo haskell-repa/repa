@@ -13,20 +13,27 @@ module Data.Repa.Store.Format
         , showField
         , readField)
 where
+import Control.Monad
 import Data.Char
 import Data.Word
 import Data.Int
+import Data.Text                                (Text)
 import Data.Repa.Bits.Date32                    as Date32
+import Data.Aeson                               as Aeson
 import qualified Data.Map                       as Map
 import qualified Data.Repa.Product              as P
+import qualified Data.HashMap.Strict            as H
+import qualified Data.Text                      as T
 
 
+---------------------------------------------------------------------------------------------------
 -- | Row format.
 data Row aa
         = Row Delim (Field aa)
         deriving (Eq, Show)
 
 
+---------------------------------------------------------------------------------------------------
 -- | How the rows and fields are delimited.
 data Delim
         -- | Format with fixed-length rows.
@@ -42,6 +49,42 @@ data Delim
         deriving (Eq, Show)
 
 
+instance ToJSON Delim where
+ toJSON rr
+  = case rr of
+        Fixed
+         -> object [ "_type"    .= text "delim"
+                   , "delim"    .= text "fixed" ]
+
+        Lines
+         -> object [ "_type"    .= text "delim"
+                   , "delim"    .= text "lines" ]
+
+        LinesSep c
+         -> object [ "_type"    .= text "delim"
+                   , "delim"    .= text "sep"
+                   , "sep"      .= T.pack [c] ]
+
+instance FromJSON Delim where
+ parseJSON (Object hh)
+        | Just (String "delim")  <- H.lookup "_type"  hh
+        , Just (String "fixed")  <- H.lookup "delim"  hh
+        =       return $ Fixed
+
+        | Just (String "delim")  <- H.lookup "_type"  hh
+        , Just (String "lines")  <- H.lookup "delim"  hh
+        =       return $ Lines
+
+        | Just (String "delim")  <- H.lookup "_type"  hh
+        , Just (String "sep")    <- H.lookup "delim"  hh
+        , Just (String sep)      <- H.lookup "sep"    hh
+        , [c]                    <- T.unpack sep
+        =       return $ LinesSep c
+
+ parseJSON _ = mzero
+
+
+---------------------------------------------------------------------------------------------------
 -- | Field formats supported by Repa tables.
 --
 --   The repa-convert library defines several data formats using a singleton
@@ -111,33 +154,6 @@ deriving instance Eq   (Field a)
 
 infixr :*:
 
-
----------------------------------------------------------------------------------------------------
--- | Existential container for field formats,
---   and dictionaries to work with them.
-data FieldBox
-        =  forall a
-        .  FieldBox (Field a)
-
-instance Show FieldBox where
- show (FieldBox f)      = show f
-
-
--- | Flatten compound fields into their parts and box up the components.
-flattens :: Field a -> [FieldBox]
-flattens ff
- = case ff of
-        (:*:) f1 f2     -> flattens f1 ++ flattens f2
-        _               -> [FieldBox ff]
-
-
--- | Like `flattens`, but start with a boxed field format.
-flattensBox :: FieldBox -> [FieldBox]
-flattensBox (FieldBox f)
-        = flattens f
-
-
----------------------------------------------------------------------------------------------------
 -- | Show a field format.
 showField :: Field a -> String
 showField ff = show ff
@@ -181,4 +197,51 @@ readField ss
          , ("DoubleAsc",  FieldBox DoubleAsc)
          , ("VarAsc",     FieldBox    VarAsc) ]
 
+---------------------------------------------------------------------------------------------------
+-- | Existential container for field formats,
+--   and dictionaries to work with them.
+data FieldBox
+        =  forall a
+        .  FieldBox (Field a)
+
+instance Show FieldBox where
+ show (FieldBox f)      = show f
+
+
+instance ToJSON   FieldBox where
+ toJSON (FieldBox ff)
+        = toJSON ff
+
+instance ToJSON (Field a) where
+ toJSON ff
+        = object  [ "_type"     .= text "field"
+                  , "field"     .= T.pack (showField ff) ]
+
+
+instance FromJSON FieldBox where
+ parseJSON (Object hh)
+        | Just (String "field") <- H.lookup "_type" hh
+        , Just (String ff)      <- H.lookup "field" hh
+        , Just f                <- readField (T.unpack ff)
+        = return f
+
+ parseJSON _ = mzero
+
+
+-- | Flatten compound fields into their parts and box up the components.
+flattens :: Field a -> [FieldBox]
+flattens ff
+ = case ff of
+        (:*:) f1 f2     -> flattens f1 ++ flattens f2
+        _               -> [FieldBox ff]
+
+
+-- | Like `flattens`, but start with a boxed field format.
+flattensBox :: FieldBox -> [FieldBox]
+flattensBox (FieldBox f)
+        = flattens f
+
+---------------------------------------------------------------------------------------------------
+text :: Text -> Text
+text x = x 
 

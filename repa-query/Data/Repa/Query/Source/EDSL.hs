@@ -114,7 +114,7 @@ fromTable path
          Left errLoadMeta
           -> failQ $ show errLoadMeta
 
-         Right _table
+         Right table
           -> do
                 -- Load the table meta data.
                 -- We do this at query build time 
@@ -122,7 +122,7 @@ fromTable path
                 addNode $ G.NodeSource
                         $ G.SourceTable () path 
                                 F.Fixed            -- TODO: lookup real delim from meta-data.
-                                []                 -- TODO: lookup real fields from meta-data.
+                                (P.map Table.columnFormat $ Table.tableColumns table)
                         $ takeFlow fOut
                 return fOut
 

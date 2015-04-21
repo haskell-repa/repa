@@ -16,9 +16,17 @@
 -- @
 --
 module Data.Repa.Store.Object.Table
-        ( Table  (..)
+        ( -- * Table
+          Table  (..)
+        , lookupColumn
+
+          -- * Column
         , Column (..)
+
+          -- * Metadata
         , loadMeta, ErrorLoadMeta
+
+          -- * Partitions
         , listPartitions)
 where
 import System.FilePath
@@ -27,9 +35,10 @@ import Data.Text                                (Text)
 import Data.List
 import Data.Maybe
 import Data.Aeson                               as A
+import qualified Data.Repa.Store.Format         as F
 import qualified Data.HashMap.Strict            as H
 import qualified Data.ByteString.Lazy.Char8     as BS
-import qualified System.Directory               as S      
+import qualified System.Directory               as System      
 
 
 ---------------------------------------------------------------------------------------------------
@@ -39,28 +48,41 @@ data Table
         { -- | Table name
           tableName      :: Text
 
+          -- | How rows and fields are deliminted in the data.
+        , tableDelim    :: F.Delim
+
           -- | Table columns.
         , tableColumns   :: [Column] }
         deriving Show
 
 
 instance ToJSON Table where
- toJSON (Table name columns)
-        = object [ "type"    .= text "table"
-                 , "name"    .= toJSON name
-                 , "columns" .= toJSON columns]
+ toJSON (Table name delim columns)
+        = object [ "_type"      .= text "table"
+                 , "name"       .= toJSON name
+                 , "delim"      .= toJSON delim
+                 , "columns"    .= toJSON columns]
 
 
 instance FromJSON Table where
  parseJSON (Object hh)
-        | Just (String "table")         <- H.lookup "type"    hh
-        , Just jName                    <- H.lookup "name"    hh
-        , Just jColumns                 <- H.lookup "columns" hh
+        | Just (String "table") <- H.lookup "_type"   hh
+        , Just jName            <- H.lookup "name"    hh
+        , Just jDelim           <- H.lookup "delim"   hh
+        , Just jColumns         <- H.lookup "columns" hh
         = do    name    <- parseJSON jName
+                delim   <- parseJSON jDelim
                 columns <- parseJSON jColumns
-                return  $ Table name columns
+                return  $ Table name delim columns
 
  parseJSON _ = mzero
+
+
+-- | Lookup a single column in the table,
+--   returning `Nothing` if it's not there.
+lookupColumn :: Text -> Table -> Maybe Column
+lookupColumn name table
+ = find (\c -> name == columnName c) (tableColumns table)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -71,28 +93,30 @@ data Column
           columnName    :: Text
 
           -- | On-disk data format of column.
-        , columnFormat  :: Text
+        , columnFormat  :: F.FieldBox
 
           -- | English description of column.
         , columnDesc    :: Text }
-        deriving (Eq, Show)
+        deriving Show
 
 
 instance ToJSON Column where
- toJSON (Column name format desc)
-        = object [ "type"   .= text "column"
+ toJSON (Column name field desc)
+        = object [ "_type"  .= text "column"
                  , "name"   .= toJSON name
-                 , "format" .= toJSON format
+                 , "format" .= toJSON field
                  , "desc"   .= toJSON desc ]
 
 
 instance FromJSON Column where
  parseJSON (Object hh)
-        | Just (String "column")        <- H.lookup "type"   hh
+        | Just (String "column")        <- H.lookup "_type"  hh
         , Just (String name)            <- H.lookup "name"   hh
-        , Just (String format)          <- H.lookup "format" hh
+        , Just jField                   <- H.lookup "format" hh
         , Just (String desc)            <- H.lookup "desc"   hh
-        = return $ Column name format desc
+        = do
+                field   <- parseJSON jField
+                return $ Column name field desc
 
  parseJSON _ = mzero
 
@@ -113,13 +137,13 @@ loadMeta path
  where  pathMeta        = path </> "_table.json"
 
         check
-         = do   hasTableDir     <- S.doesDirectoryExist path
+         = do   hasTableDir     <- System.doesDirectoryExist path
                 if not hasTableDir 
                  then return $ Left $ ErrorLoadMetaNoDir path
                  else load
 
         load
-         = do   hasMetaFile     <- S.doesFileExist pathMeta
+         = do   hasMetaFile     <- System.doesFileExist pathMeta
                 if not hasMetaFile 
                  then return $ Left $ ErrorLoadMetaNoMeta pathMeta
                  else parse
@@ -153,14 +177,14 @@ listPartitions path _table
  = check
  where  
         check 
-         = do   hasTableDir     <- S.doesDirectoryExist path
+         = do   hasTableDir     <- System.doesDirectoryExist path
                 if not hasTableDir
                  then return $ Nothing
                  else list
 
         list 
          = do   files   <- liftM (filter (\x -> not $ elem x [".", ".."]))
-                        $  S.getDirectoryContents path
+                        $  System.getDirectoryContents path
 
                 mfs     <- liftM catMaybes  
                         $  mapM  slurp 

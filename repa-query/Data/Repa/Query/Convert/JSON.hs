@@ -16,7 +16,6 @@ import Data.Repa.Query.Graph
 import Data.Repa.Query.Exp
 import Data.Aeson                               as Aeson
 import Data.Text                                (Text)
-import qualified Data.Repa.Store.Format         as Format
 import qualified Data.Text                      as T
 import qualified Data.HashMap.Strict            as H
 
@@ -411,63 +410,6 @@ scalarOpOfName ss
         "lt"            -> Just $ SopLt
         "le"            -> Just $ SopLe
         _               -> Nothing
-
-
--------------------------------------------------------------------------------------- Format.Row
-instance ToJSON Format.Delim where
- toJSON rr
-  = case rr of
-        Format.Fixed
-         -> object [ "_type"    .= text "delim"
-                   , "delim"    .= text "fixed" ]
-
-        Format.Lines
-         -> object [ "_type"    .= text "delim"
-                   , "delim"    .= text "lines" ]
-
-        Format.LinesSep c
-         -> object [ "_type"    .= text "delim"
-                   , "delim"    .= text "sep"
-                   , "sep"      .= T.pack [c] ]
-
-instance FromJSON Format.Delim where
- parseJSON (Object hh)
-        | Just (String "delim")  <- H.lookup "_type"  hh
-        , Just (String "fixed")  <- H.lookup "delim"  hh
-        =       return $ Format.Fixed
-
-        | Just (String "delim")  <- H.lookup "_type"  hh
-        , Just (String "lines")  <- H.lookup "delim"  hh
-        =       return $ Format.Lines
-
-        | Just (String "delim")  <- H.lookup "_type"  hh
-        , Just (String "sep")    <- H.lookup "delim"  hh
-        , Just (String sep)      <- H.lookup "sep"    hh
-        , [c]                    <- T.unpack sep
-        =       return $ Format.LinesSep c
-
- parseJSON _ = mzero
-
-
--------------------------------------------------------------------------------------- Format.Field
-instance ToJSON   Format.FieldBox where
- toJSON (Format.FieldBox ff)
-        = toJSON ff
-
-instance ToJSON (Format.Field a) where
- toJSON ff
-        = object  [ "_type"     .= text "field"
-                  , "field"     .= T.pack (Format.showField ff) ]
-
-
-instance FromJSON Format.FieldBox where
- parseJSON (Object hh)
-        | Just (String "field") <- H.lookup "_type" hh
-        , Just (String ff)      <- H.lookup "field" hh
-        , Just f                <- Format.readField (T.unpack ff)
-        = return f
-
- parseJSON _ = mzero
 
 
 ---------------------------------------------------------------------------------------------------
