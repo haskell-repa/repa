@@ -26,11 +26,14 @@ Library
         double-conversion == 2.0.*
 
   exposed-modules:
+        Data.Repa.Singleton.Nat
+        Data.Repa.Singleton.Bool
+
+
         Data.Repa.Product
         Data.Repa.Convert.Format
         Data.Repa.Convert.Numeric
         Data.Repa.Convert.Date32
-        Data.Repa.Convert.Mask
         Data.Repa.Bits.Date32
 
         Data.Repa.Convert.Format.Base
@@ -50,19 +53,20 @@ Library
 
   extensions:
         CPP
-        ForeignFunctionInterface
-        NoMonomorphismRestriction
-        ExistentialQuantification
-        BangPatterns
+        GADTs
         MagicHash
+        DataKinds
+        MultiWayIf
+        BangPatterns
+        TypeFamilies
+        PatternGuards
+        TypeOperators
         UnboxedTuples
         FlexibleContexts
         FlexibleInstances
-        PatternGuards
-        MultiWayIf
-        TypeFamilies
-        TypeOperators
+        StandaloneDeriving
         ScopedTypeVariables
         MultiParamTypeClasses
-
-
+        ForeignFunctionInterface
+        ExistentialQuantification
+        NoMonomorphismRestriction

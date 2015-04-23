@@ -56,6 +56,9 @@ module Data.Repa.Flow.Auto
         , folds_i,              FoldsDict
         , foldGroupsBy_i,       FoldGroupsDict
 
+        -- ** Fields
+        , maskFields_i 
+
         -- * Finalizers
         , finalize_i,           finalize_o
         )

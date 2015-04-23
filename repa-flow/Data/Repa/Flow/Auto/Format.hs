@@ -64,4 +64,3 @@ unlinesPackFormat_i format ss
         where   !nl = A.fromList [fromIntegral $ ord '\n']
 {-# INLINE_FLOW unlinesPackFormat_i #-}
 
-

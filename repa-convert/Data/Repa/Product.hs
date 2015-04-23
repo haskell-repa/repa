@@ -1,10 +1,15 @@
-
+{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 module Data.Repa.Product
-        ((:*:)(..))
+        ( (:*:)   (..)
+        , Valid   (..)
+        , Discard (..), Keep(..), Drop(..)
+        , Mask    (..))
 where
+import Data.Repa.Singleton.Nat
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Generic            as G
 import qualified Data.Vector.Generic.Mutable    as M
+
 
 -- | Strict product type, written infix.
 data a :*: b    
@@ -12,6 +17,116 @@ data a :*: b
         deriving (Eq, Show)
 
 infixr :*:
+
+
+class Valid p where
+-- | Check if a sequence of products forms a valid list, 
+--   using () for the nil value.
+--
+-- @
+-- valid (1 :*: 4 :*: 5)  ... no instance
+--
+-- valid (1 :*: 4 :*: ()) = True
+-- @
+--
+ valid :: p -> Bool
+
+instance Valid () where
+ valid _ = True
+ {-# INLINE valid #-}
+
+instance Valid fs => Valid (f :*: fs) where
+ valid (_ :*: xs) = valid xs
+ {-# INLINE valid #-}
+
+
+---------------------------------------------------------------------------------------------------
+class    Valid t
+      => Select  (n :: N) t where
+ type    Select'    n        t
+ -- | Return just the given field in this tuple.
+ select ::          Nat n -> t -> Select' n t
+
+
+instance Valid ts
+      => Select  Z    (t1 :*: ts) where
+ type Select'    Z    (t1 :*: ts) = t1
+ select       Zero    (t1 :*: _)  = t1
+ {-# INLINE select #-}
+
+
+instance Select n ts
+      => Select (S n) (t1 :*: ts) where
+ type Select'   (S n) (t1 :*: ts) = Select' n ts
+ select      (Succ n) (_  :*: xs) = select  n xs
+ {-# INLINE select #-}
+
+
+---------------------------------------------------------------------------------------------------
+class    Valid t 
+      => Discard (n :: N) t where
+ type    Discard'   n        t
+ -- | Discard the given field in this tuple.
+ discard ::         Nat n -> t -> Discard' n t
+
+
+instance Valid ts 
+      => Discard Z     (t1 :*: ts) where
+ type Discard'   Z     (t1 :*: ts) = ts
+ discard      Zero     (_  :*: xs) = xs
+ {-# INLINE discard #-}
+
+
+instance Discard n ts 
+      => Discard (S n) (t1 :*: ts) where
+ type Discard'   (S n) (t1 :*: ts) = t1 :*: Discard' n ts
+ discard      (Succ n) (x1 :*: xs) = x1 :*: discard  n xs
+ {-# INLINE discard #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Singleton to indicate a field that should be dropped.
+data Drop = Drop
+
+-- | Singleton to indicate a field that should be kept.
+data Keep = Keep
+
+
+-- | Class of data types that can have parts masked out.
+class (Valid m, Valid t) => Mask  m t where
+ type Mask' m t
+ -- | Mask out some component of a type.
+ --
+ -- @  
+ -- mask (Keep :*: Drop  :*: Keep :*: ()) 
+ --      (1    :*: \"foo\" :*: \'a\'  :*: ())   =   (1 :*: \'a\' :*: ())
+ --
+ -- mask (Drop :*: Drop  :*: Drop :*: ()) 
+ --      (1    :*: \"foo\" :*: \'a\'  :*: ())   =   ()
+ -- @
+ --
+ mask :: m -> t -> Mask' m t
+
+
+instance Mask () () where
+ type Mask' ()   () = ()
+ mask       ()   () = ()
+ {-# INLINE mask #-}
+
+
+instance Mask m ts 
+      => Mask (Keep :*: m)  (t1 :*: ts) where
+ type Mask'   (Keep :*: ms) (t1 :*: ts) = t1 :*: Mask' ms ts
+ mask         (_    :*: ms) (x1 :*: xs) = x1 :*: mask  ms xs
+ {-# INLINE mask #-}
+
+
+instance Mask ms ts
+      => Mask (Drop :*: ms) (t1 :*: ts) where
+ type Mask'   (Drop :*: ms) (t1 :*: ts) = Mask' ms ts
+ mask         (_    :*: ms) (_  :*: xs) = mask  ms xs
+ {-# INLINE mask #-}
+
 
 -- Unboxed ----------------------------------------------------------------------------------------
 -- Unboxed instance adapted from:
