@@ -58,7 +58,7 @@ Library
         Data.Repa.Flow.Chunked.Fold
         Data.Repa.Flow.Chunked.Folds
         Data.Repa.Flow.Chunked.Groups
-        Data.Repa.Flow.Chunked.Operator
+        Data.Repa.Flow.Chunked.Generic
 
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.Connect
@@ -94,20 +94,20 @@ Library
 
   extensions:
         CPP
-        BangPatterns
-        NoMonomorphismRestriction
-        RankNTypes
         MagicHash
+        RankNTypes
+        TypeFamilies
+        BangPatterns
+        PatternGuards
+        ConstraintKinds
+        ParallelListComp
         FlexibleContexts
         FlexibleInstances
-        PatternGuards
-        TypeFamilies
-        MultiParamTypeClasses
-        ScopedTypeVariables
-        FunctionalDependencies
-        ConstraintKinds
-        ForeignFunctionInterface
         StandaloneDeriving
-        ParallelListComp
+        ScopedTypeVariables
+        MultiParamTypeClasses
+        FunctionalDependencies
+        ForeignFunctionInterface
+        NoMonomorphismRestriction
 
         
