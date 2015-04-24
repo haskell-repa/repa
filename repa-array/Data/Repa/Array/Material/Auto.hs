@@ -14,4 +14,5 @@ import Data.Repa.Array.Material.Auto.InstFloat
 import Data.Repa.Array.Material.Auto.InstInt
 import Data.Repa.Array.Material.Auto.InstWord
 import Data.Repa.Array.Material.Auto.InstDate32
+import Data.Repa.Array.Material.Auto.InstProduct
 import Data.Repa.Array.Internals.Target

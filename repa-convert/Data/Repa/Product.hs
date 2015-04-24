@@ -19,6 +19,7 @@ import qualified Data.Vector.Generic            as G
 import qualified Data.Vector.Generic.Mutable    as M
 
 
+---------------------------------------------------------------------------------------------------
 -- | Strict product type, written infix.
 data a :*: b    
         = !a :*: !b             
@@ -42,6 +43,7 @@ class Valid p where
 instance Valid () where
  valid _ = True
  {-# INLINE valid #-}
+
 
 instance Valid fs => Valid (f :*: fs) where
  valid (_ :*: xs) = valid xs

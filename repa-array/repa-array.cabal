@@ -87,6 +87,7 @@ Library
         Data.Repa.Array.Material.Auto.InstInt
         Data.Repa.Array.Material.Auto.InstWord
         Data.Repa.Array.Material.Auto.InstDate32
+        Data.Repa.Array.Material.Auto.InstProduct
 
         Data.Repa.Array.Material.Foreign.Base
 
