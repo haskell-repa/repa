@@ -48,8 +48,8 @@ module Data.Repa.Flow.Simple
         , trigger_o
 
           -- ** Ignorance
-        , discard_o
         , ignore_o
+        , abandon_o
 
           -- * Flow IO
           -- ** Sourcing

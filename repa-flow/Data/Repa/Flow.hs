@@ -147,8 +147,8 @@ module Data.Repa.Flow
         , trigger_o
 
         -- ** Ignorance
-        , discard_o
         , ignore_o
+        , abandon_o
 
         -- ** Splitting
         , head_i

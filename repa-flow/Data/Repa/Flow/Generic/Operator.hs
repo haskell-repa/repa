@@ -34,8 +34,8 @@ module Data.Repa.Flow.Generic.Operator
         , rcapture_o
 
           -- * Ignorance
-        , discard_o
         , ignore_o
+        , abandon_o
 
           -- * Tracing
         , trace_o)
@@ -352,7 +352,7 @@ rcapture_o nDst n use
              = atomicModifyIORef ref (\old -> ((i, x) : old, ()))
             {-# INLINE capture_eat #-}
 
-        k0       <- discard_o n
+        k0       <- ignore_o n
         k1       <- watch_o   capture_eat k0
 
         x        <- use k1
@@ -367,43 +367,43 @@ rcapture_o nDst n use
 trigger_o :: Monad m 
           => i -> (i -> a -> m ()) -> m (Sinks i m a)
 trigger_o i f
- = discard_o i >>= watch_o f
+ = ignore_o i >>= watch_o f
 {-# INLINE trigger_o #-}
 
 
 -- Ignorance-------------------------------------------------------------------
--- | A sink that drops all data on the floor.
---
---   This sink is strict in the elements, so they are demanded before being
---   discarded. Haskell debugging thunks attached to the elements will be
---   demanded.
---
-discard_o :: Monad m 
-          => i -> m (Sinks i m a)
-discard_o n
- = return $ Sinks n push_discard eject_discard
- where  
-        -- IMPORTANT: push_discard should be strict in the element so that
-        -- and Haskell tracing thunks attached to it are evaluated.
-        -- We *discard* the elements, but don't completely ignore them.
-        push_discard  !_ !_ = return ()
-        eject_discard !_    = return ()
-{-# INLINE_FLOW discard_o #-}
-
-
 -- | A sink that ignores all incoming data.
 --
---   This sink is non-strict in the elements. 
---   Haskell tracing thunks attached to the elements will *not* be demanded.
+--   * This sink is strict in the elements, so they are demanded before being
+--     discarded. 
+--   * Haskell debugging thunks attached to the elements will be
+--     demanded.
 --
 ignore_o  :: Monad m 
           => i -> m (Sinks i m a)
 ignore_o n
  = return $ Sinks n push_ignore eject_ignore
- where
-        push_ignore  _ _   = return ()
-        eject_ignore _     = return ()
+ where  
+        -- IMPORTANT: push_ignore should be strict in the element so that
+        -- and Haskell tracing thunks attached to it are evaluated.
+        push_ignore  !_ !_ = return ()
+        eject_ignore !_    = return ()
 {-# INLINE_FLOW ignore_o #-}
+
+
+-- | A sink that drops all data on the floor.
+--
+--   * This sink is non-strict in the elements. 
+--   * Haskell tracing thunks attached to the elements will *not* be demanded.
+--
+abandon_o :: Monad m 
+          => i -> m (Sinks i m a)
+abandon_o n
+ = return $ Sinks n push_abandon eject_abandon
+ where
+        push_abandon  _ _   = return ()
+        eject_abandon _     = return ()
+{-# INLINE_FLOW abandon_o #-}
 
 
 -- Trace ----------------------------------------------------------------------
@@ -424,6 +424,4 @@ trace_o nSinks
                  (return ())
 
 {-# NOINLINE trace_o #-}
-
-
 

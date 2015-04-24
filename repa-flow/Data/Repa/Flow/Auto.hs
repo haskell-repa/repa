@@ -37,11 +37,16 @@ module Data.Repa.Flow.Auto
         , trigger_o
 
         -- ** Ignorance
-        , discard_o
         , ignore_o
+        , abandon_o
 
         -- ** Splitting
         , head_i
+
+        -- ** Selecting
+        , select_i,             select_o
+        , discard_i,            discard_o
+        , mask_i,               mask_o
 
         -- ** Grouping
         , groups_i
@@ -60,6 +65,7 @@ module Data.Repa.Flow.Auto
         , finalize_i,           finalize_o
         )
 where
+import Data.Repa.Flow.Auto.Select
 import Data.Repa.Flow.Auto.Base
 import Data.Repa.Array.Auto                    
         hiding (fromList, fromLists)
@@ -74,8 +80,6 @@ import qualified Data.Repa.Flow.Chunked                 as C hiding (next)
 import qualified Data.Repa.Flow.Generic                 as G hiding (next)
 import Control.Monad
 #include "repa-flow.h"
-
-
 
 
 -- Evaluation -----------------------------------------------------------------
@@ -243,29 +247,28 @@ trigger_o arity f
 
 -- Ignorance ------------------------------------------------------------------
 -- | Create a bundle of sinks of the given arity that drop all data on the
---   floor.
+--   floor. 
 --
---   * The sinks is strict in the *chunks*, so they are demanded before being
---     discarded. 
 --   * Haskell debugging thunks attached to the chunks will be
 --     demanded, but thunks attached to elements may not be -- depending on
 --     whether the chunk representation is strict in the elements.
 --
-discard_o :: Int -> IO (Sinks a)
-discard_o = G.discard_o
-{-# INLINE discard_o #-}
-
-
--- | Create a bundle of sinks of the given arity that drop all data on the
---   floor. 
---
---   * As opposed to `discard_o` the sinks are non-strict in the chunks.
---   * Haskell debugging thunks attached to the chunks will *not* be 
---     demanded.
---
 ignore_o :: Int -> IO (Sinks a)
 ignore_o  = G.ignore_o
 {-# INLINE ignore_o #-}
+
+
+-- | Create a bundle of sinks of the given arity that drop all data on the
+--   floor.
+--
+--   * As opposed to `ignore_o` the sinks are non-strict in the chunks.
+--   * Haskell debugging thunks attached to the chunks will *not* be 
+--     demanded.
+--
+abandon_o :: Int -> IO (Sinks a)
+abandon_o = G.abandon_o
+{-# INLINE abandon_o #-}
+
 
 
 -- Splitting ------------------------------------------------------------------

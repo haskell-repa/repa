@@ -40,8 +40,8 @@ module Data.Repa.Flow.Chunked
         , trigger_o
 
           -- ** Ignorance
-        , discard_o
-        , ignore_o)
+        , ignore_o
+        , abandon_o)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.Chunked.Map

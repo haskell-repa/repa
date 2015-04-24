@@ -80,8 +80,8 @@ module Data.Repa.Flow.Generic
         , rcapture_o
 
           -- ** Ignorance
-        , discard_o
         , ignore_o
+        , abandon_o
 
           -- ** Tracing
         , trace_o

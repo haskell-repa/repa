@@ -11,8 +11,8 @@ module Data.Repa.Flow.Chunked.Generic
         , trigger_o
 
           -- * Ignorance
-        , discard_o
-        , ignore_o)
+        , ignore_o
+        , abandon_o)
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Array.Generic                  as A
@@ -51,8 +51,10 @@ trigger_o = G.trigger_o
 -- Ignorance ------------------------------------------------------------------
 -- | A sink that ignores all incoming data.
 --
---   This sink is non-strict in the chunks. 
---   Haskell tracing thunks attached to the chunks will *not* be demanded.
+--   * The sinks is strict in the *chunks*, so they are demanded before being
+--     discarded. Haskell debugging thunks attached to the chunks will be
+--     demanded, but thunks attached to elements may not be -- depending on
+--     whether the chunk representation is strict in the elements.
 --
 ignore_o :: Monad m => i -> m (Sinks i m l a)
 ignore_o  = G.ignore_o
@@ -62,12 +64,10 @@ ignore_o  = G.ignore_o
 -- | Yield a bundle of sinks of the given arity that drops all data on the
 --   floor.
 --
---   * The sinks is strict in the *chunks*, so they are demanded before being
---     discarded. Haskell debugging thunks attached to the chunks will be
---     demanded, but thunks attached to elements may not be -- depending on
---     whether the chunk representation is strict in the elements.
+--   This sink is non-strict in the chunks. 
+--   Haskell tracing thunks attached to the chunks will *not* be demanded.
 --
-discard_o :: Monad m => i -> m (Sinks i m l a)
-discard_o = G.discard_o
-{-# INLINE discard_o #-}
+abandon_o :: Monad m => i -> m (Sinks i m l a)
+abandon_o = G.abandon_o
+{-# INLINE abandon_o #-}
 

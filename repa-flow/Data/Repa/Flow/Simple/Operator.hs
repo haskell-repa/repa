@@ -31,8 +31,8 @@ module Data.Repa.Flow.Simple.Operator
         , trigger_o
 
           -- * Ignorance
-        , discard_o
-        , ignore_o)
+        , ignore_o
+        , abandon_o)
 where
 import Data.Repa.Flow.Simple.Base
 import Data.Repa.Flow.States                    (States (..))
@@ -204,22 +204,22 @@ trigger_o f  = G.trigger_o () (\_ x -> f x)
 
 
 -- Ignorance ------------------------------------------------------------------
--- | A sink that drops all data on the floor.
+-- | A sink that ignores all incoming elements.
 --
 --   This sink is strict in the elements, so they are demanded before being
 --   discarded. Haskell debugging thunks attached to the elements will be demanded.
-discard_o :: Monad m 
-          => m (Sink m a)
-discard_o = G.discard_o ()
-{-# INLINE discard_o #-}
-
-
--- | A sink that ignores all incoming elements.
---
---   This sink is non-strict in the elements. 
---   Haskell tracing thinks attached to the elements will *not* be demanded.
 ignore_o  :: Monad m 
           => m (Sink m a)
 ignore_o = G.ignore_o ()
 {-# INLINE ignore_o #-}
+
+
+-- | A sink that drops all data on the floor.
+--
+--   This sink is non-strict in the elements. 
+--   Haskell tracing thinks attached to the elements will *not* be demanded.
+abandon_o :: Monad m 
+          => m (Sink m a)
+abandon_o = G.abandon_o ()
+{-# INLINE abandon_o #-}
 

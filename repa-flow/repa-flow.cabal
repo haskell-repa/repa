@@ -30,7 +30,6 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Auto
-        Data.Repa.Flow.Auto.Base
         Data.Repa.Flow.Auto.Debug
         Data.Repa.Flow.Auto.IO
         Data.Repa.Flow.Auto.Format        
@@ -54,6 +53,9 @@ Library
         Data.Repa.Flow
 
   other-modules:
+        Data.Repa.Flow.Auto.Base
+        Data.Repa.Flow.Auto.Select
+
         Data.Repa.Flow.Chunked.Base
         Data.Repa.Flow.Chunked.Map
         Data.Repa.Flow.Chunked.Fold
