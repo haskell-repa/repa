@@ -29,11 +29,6 @@ Library
         Data.Repa.Singleton.Nat
         Data.Repa.Singleton.Bool
 
-
-        Data.Repa.Product
-        Data.Repa.Convert.Format
-        Data.Repa.Convert.Numeric
-        Data.Repa.Convert.Date32
         Data.Repa.Bits.Date32
 
         Data.Repa.Convert.Format.Base
@@ -42,9 +37,12 @@ Library
         Data.Repa.Convert.Format.Fields
         Data.Repa.Convert.Format.Numeric
         Data.Repa.Convert.Format.Date32
+        Data.Repa.Convert.Format
+        Data.Repa.Convert.Numeric
+
+        Data.Repa.Product
 
   other-modules:
-
 
 
   ghc-options:

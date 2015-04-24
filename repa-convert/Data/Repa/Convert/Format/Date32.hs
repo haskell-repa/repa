@@ -6,7 +6,6 @@ where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Binary
-import Data.Repa.Convert.Date32
 import Data.Repa.Bits.Date32                    (Date32)
 import Data.Char
 import Data.Word
@@ -37,7 +36,7 @@ instance Format YYYYsMMsDD where
 instance Packable YYYYsMMsDD where
 
  unpack buf len (YYYYsMMsDD s) k
-  = do  r       <- loadYYYYsMMsDD (fromIntegral $ ord s) buf len
+  = do  r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) buf len
         case r of
          Just (d, o)    -> k (d, o)
          Nothing        -> return Nothing
@@ -82,7 +81,7 @@ instance Format DDsMMsYYYY where
 instance Packable DDsMMsYYYY where
 
  unpack buf len (DDsMMsYYYY s) k
-  = do  r       <- loadDDsMMsYYYY (fromIntegral $ ord s) buf len
+  = do  r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) buf len
         case r of
          Just (d, o)    -> k (d, o)
          Nothing        -> return Nothing

@@ -1,8 +1,16 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 module Data.Repa.Product
-        ( (:*:)   (..)
+        ( -- * Product type
+          (:*:)   (..)
         , Valid   (..)
+
+          -- * Selecting
+        , Select  (..)
+
+          -- * Discarding
         , Discard (..), Keep(..), Drop(..)
+
+          -- * Masking
         , Mask    (..))
 where
 import Data.Repa.Singleton.Nat
@@ -20,15 +28,15 @@ infixr :*:
 
 
 class Valid p where
--- | Check if a sequence of products forms a valid list, 
---   using () for the nil value.
---
--- @
--- valid (1 :*: 4 :*: 5)  ... no instance
---
--- valid (1 :*: 4 :*: ()) = True
--- @
---
+ -- | Check if a sequence of products forms a valid list, 
+ --   using () for the nil value.
+ --
+ -- @
+ -- valid (1 :*: 4 :*: 5)  ... no instance
+ --
+ -- valid (1 :*: 4 :*: ()) = True
+ -- @
+ --
  valid :: p -> Bool
 
 instance Valid () where
