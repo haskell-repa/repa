@@ -8,10 +8,24 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Fusion.Unpack                  as F
-import Data.Repa.Product                        as B
+import Data.Repa.Singleton.Nat                  as D
+import Data.Repa.Product                        as D
 import Control.Monad
 #include "repa-array.h"
 
+
+---------------------------------------------------------------------------------------------------
+-- Arrays of products are stored in columnar format to allow easy selecting
+-- and addition of columns. 
+-- 
+-- Given an array of type (Array A (Int :*: Char :*: Bool :*: ())), this is
+-- stored as a flat array of Int, a flat array of Char, and a flat array of
+-- Bool. The unit colunm is stored as a simple count of the number of elements, 
+-- and serves as the Nil element in the list of column types.
+--
+-- Extracting particular column, getting the array of type (Array A Char)
+-- is linear in the number of columns. Doing so takes about as long as
+-- retrieving a single element from a cons-list.
 
 ----------------------------------------------------------------------------------------------- :*:
 instance (Bulk A a, Bulk A b) => Bulk A (a :*: b) where
@@ -104,4 +118,69 @@ instance (Eq (Array A a), Eq (Array A b))
  (==) (AArray_Prod arrA1 arrA2) (AArray_Prod arrB1 arrB2) 
         = arrA1 == arrB1 && arrA2 == arrB2
  {-# INLINE (==) #-}
+
+
+--------------------------------------------------------------------------------------------- Valid
+instance Valid (Array A ()) where
+ valid _ = True
+ {-# INLINE valid #-}
+
+
+instance Valid (Array A ts) 
+      => Valid (Array A (f :*: ts)) where
+ valid (AArray_Prod _ arr2) = valid arr2
+ {-# INLINE valid #-}
+
+
+-------------------------------------------------------------------------------------------- Select
+instance Valid (Array A ts)
+      => Select 'Z (Array A (t1 :*: ts)) where
+ type Select'   'Z (Array A (t1 :*: ts)) = Array A t1
+ select       Zero (AArray_Prod x1 _)    = x1
+ {-# INLINE select #-}
+
+
+instance Select n (Array A ts)
+      => Select ('S n) (Array A (t1 :*: ts)) where
+ type Select'   ('S n) (Array A (t1 :*: ts)) = Select' n (Array A ts)
+ select       (Succ n) (AArray_Prod _ xs)    = select  n xs
+ {-# INLINE select #-}
+
+
+------------------------------------------------------------------------------------------- Discard
+instance Valid (Array A ts)
+      => Discard 'Z    (Array A (t1 :*: ts)) where
+ type Discard'   'Z    (Array A (t1 :*: ts)) = Array A ts
+ discard       Zero    (AArray_Prod _ xs)    = xs
+ {-# INLINE discard #-}
+
+
+instance ( Discard  n   (Array A ts)
+        ,  Discard' n   (Array A ts) ~ Array A (Discard' n ts))
+      => Discard ('S n) (Array A (t1 :*: ts)) where
+ type Discard'   ('S n) (Array A (t1 :*: ts)) = Array A (t1 :*: Discard' n ts)
+ discard      (Succ n) (AArray_Prod x xs)     = AArray_Prod x (discard n xs)
+ {-# INLINE discard #-}
+
+
+---------------------------------------------------------------------------------------------- Mask
+instance Mask () (Array A ()) where
+ type Mask' ()   (Array A ()) = Array A ()
+ mask       ()   arr          = arr
+ {-# INLINE mask #-}
+
+
+instance ( Mask  ms (Array A ts)
+         , Mask' ms (Array A ts) ~ Array A (Mask' ms ts))
+      =>   Mask (Keep :*: ms) (Array A (t1 :*: ts)) where
+ type Mask'     (Keep :*: ms) (Array A (t1 :*: ts)) = Array A (t1 :*: Mask' ms ts)
+ mask           (Keep :*: ms) (AArray_Prod x1 xs)   = AArray_Prod x1 (mask  ms xs)
+ {-# INLINE mask #-}
+
+
+instance ( Mask  ms (Array A ts))
+      =>   Mask   (Drop :*: ms) (Array A (t1 :*: ts)) where
+ type Mask'     (Drop :*: ms) (Array A (t1 :*: ts)) = Mask' ms (Array A ts)
+ mask           (Drop :*: ms) (AArray_Prod _ xs)    = mask ms xs
+ {-# INLINE mask #-}
 

@@ -124,8 +124,8 @@ instance Mask () () where
  {-# INLINE mask #-}
 
 
-instance Mask m ts 
-      => Mask (Keep :*: m)  (t1 :*: ts) where
+instance Mask ms ts 
+      => Mask (Keep :*: ms) (t1 :*: ts) where
  type Mask'   (Keep :*: ms) (t1 :*: ts) = t1 :*: Mask' ms ts
  mask         (_    :*: ms) (x1 :*: xs) = x1 :*: mask  ms xs
  {-# INLINE mask #-}

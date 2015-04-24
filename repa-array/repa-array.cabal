@@ -120,26 +120,25 @@ Library
 
   extensions:
         CPP
-        BangPatterns
-        NoMonomorphismRestriction
-        RankNTypes
         MagicHash
-        UnboxedTuples
-        ScopedTypeVariables
-        PatternGuards
-        FlexibleInstances
-        FlexibleContexts
-        TypeOperators
-        TypeFamilies
-        DefaultSignatures
-        MultiParamTypeClasses
-        EmptyDataDecls
-        StandaloneDeriving
-        FunctionalDependencies
-        ConstraintKinds
-        ForeignFunctionInterface
-        ViewPatterns
-        ExistentialQuantification
+        DataKinds
+        RankNTypes
         InstanceSigs
-
-
+        TypeFamilies
+        ViewPatterns
+        BangPatterns
+        PatternGuards
+        UnboxedTuples
+        TypeOperators
+        EmptyDataDecls
+        ConstraintKinds
+        FlexibleContexts
+        DefaultSignatures
+        FlexibleInstances
+        StandaloneDeriving
+        ScopedTypeVariables
+        MultiParamTypeClasses
+        FunctionalDependencies
+        ForeignFunctionInterface
+        NoMonomorphismRestriction
+        ExistentialQuantification
