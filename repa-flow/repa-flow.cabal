@@ -30,6 +30,7 @@ Library
 
   exposed-modules:
         Data.Repa.Flow.Auto
+        Data.Repa.Flow.Auto.Base
         Data.Repa.Flow.Auto.Debug
         Data.Repa.Flow.Auto.IO
         Data.Repa.Flow.Auto.Format        
