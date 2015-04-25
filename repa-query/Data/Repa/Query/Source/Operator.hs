@@ -17,9 +17,10 @@ import Prelude
 
 
 -- | Apply a scalar function to every element of a flow.
-map :: (Value a -> Value b) -> Flow a -> Q (Flow b)
-map fun fIn
- = do   fOut    <- newFlow
+map :: (Value a -> Value b) -> Q (Flow a) -> Q (Flow b)
+map fun mkIn
+ = do   fIn     <- mkIn
+        fOut    <- newFlow
 
         addNode $ G.NodeOp 
          $ G.FopMapI 
@@ -46,10 +47,11 @@ map fun fIn
 --
 fold    :: (Value a -> Value a -> Value a)
         -> Value a 
-        -> Flow a -> Q (Flow a)
+        -> Q (Flow a) -> Q (Flow a)
 
-fold fun (Value z) fIn
- = do   fOut    <- newFlow
+fold fun (Value z) mkIn
+ = do   fIn     <- mkIn
+        fOut    <- newFlow
 
         addNode $ G.NodeOp
          $ G.FopFoldI
@@ -66,12 +68,14 @@ fold fun (Value z) fIn
 --   The length of each run is taken from a second flow.
 folds   :: (Value a -> Value a -> Value a)
         -> Value a
-        -> Flow    (n :*: Int :*: ()) 
-        -> Flow a
+        -> Q (Flow (n :*: Int :*: ()))
+        -> Q (Flow a)
         -> Q (Flow (n :*: a   :*: ()))
 
-folds fun (Value z) fLens fElems
- = do   fOut    <- newFlow
+folds fun (Value z) mkLens mkElems
+ = do   fLens   <- mkLens
+        fElems  <- mkElems
+        fOut    <- newFlow
 
         addNode $ G.NodeOp
          $ G.FopFoldsI
@@ -87,10 +91,11 @@ folds fun (Value z) fLens fElems
 
 -- | Keep only the elements that match the given predicate.
 filter  :: (Value a -> Value Bool)
-        -> Flow a -> Q (Flow a)
+        -> Q (Flow a) -> Q (Flow a)
 
-filter fun fIn
- = do   fOut    <- newFlow
+filter fun mkIn
+ = do   fIn     <- mkIn
+        fOut    <- newFlow
 
         addNode $ G.NodeOp
          $ G.FopFilterI
@@ -104,9 +109,10 @@ filter fun fIn
 
 -- | Scan through a flow to find runs of consecutive values,
 --   yielding the value and the length of each run.
-groups :: Flow a -> Q (Flow (a :*: Int :*: ()))
-groups fIn
- = do   fOut    <- newFlow
+groups :: Q (Flow a) -> Q (Flow (a :*: Int :*: ()))
+groups mkIn
+ = do   fIn     <- mkIn
+        fOut    <- newFlow
 
         addNode $ G.NodeOp  
          $ G.FopGroupsI
@@ -120,9 +126,12 @@ groups fIn
 -- | Like `groups` but use the given predicate to decide whether
 --   consecutive values should be placed into the same group.
 groupsBy :: (Value a -> Value a -> Value Bool) 
-         -> Flow a -> Q (Flow (a :*: Int :*: ()))
-groupsBy fun fIn
- = do   fOut    <- newFlow
+         -> Q (Flow a) 
+         -> Q (Flow (a :*: Int :*: ()))
+
+groupsBy fun mkIn
+ = do   fIn     <- mkIn
+        fOut    <- newFlow
 
         addNode $ G.NodeOp
          $ G.FopGroupsI
