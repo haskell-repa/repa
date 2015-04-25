@@ -209,7 +209,7 @@ edslHeader
  , "{-# LANGUAGE GADTs               #-}"
  , "import Data.Repa.Query.Source"
  , "import qualified Data.Repa.Query.Source.Builder     as Q"
- , "import qualified Data.Repa.Query.Convert.JSON       as Q"
+ , "import qualified Data.Repa.Query.Graph.JSON         as Q"
  , "import qualified Data.ByteString.Lazy               as B (append)"
  , "import qualified Data.ByteString.Lazy.Char8         as B (putStrLn, pack)"
  , "import qualified Data.Aeson                         as A (encode,   toJSON)"
@@ -240,11 +240,11 @@ edslConfig config
 repaHeader :: String
 repaHeader
  = unlines 
- [ "import qualified Data.Repa.Query.Runtime.Driver"
+ [ "import qualified Data.Repa.Query.Runtime"
  , "import qualified Data.Repa.Query.Runtime.Primitive"
  , "import qualified Data.Repa.Product"
  , ""
- , "main = Data.Repa.Query.Runtime.Driver.execQuery _makeSources" ]
+ , "main = Data.Repa.Query.Runtime.execQuery _makeSources" ]
 
 
 

@@ -1,7 +1,7 @@
 
 -- | Compile a Repa query to an executable.
 import Config
-import Data.Repa.Query.Convert.JSON                     ()
+import Data.Repa.Query.Graph.JSON                       ()
 import Data.Repa.Query.Build                            as QB
 import Data.Repa.Query.Graph                            as R
 
