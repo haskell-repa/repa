@@ -42,16 +42,12 @@ module Data.Repa.Convert
         , forFormat
         , listFormat
 
-          -- * Packing single fields
+          -- * Packing data.
         , Packable  (..)
         , packToList
         , unpackFromList
         , packToString
-        , unpackFromString
-
-          -- * Packing compound records
-        , Packables (..))
-
+        , unpackFromString)
 where
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats

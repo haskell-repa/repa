@@ -1,8 +1,7 @@
 
 module Data.Repa.Convert.Format.Base
         ( Format   (..)
-        , Packable (..)
-        , Packables(..))
+        , Packable (..))
 where
 import Data.Repa.Product
 import Data.Word
@@ -93,26 +92,3 @@ class Format   format
                                         -- ^ Continue, given the unpacked value and the 
                                         --   number of bytes read. 
         -> IO (Maybe a)
-
-
--- | Class of field containers, eg comma or pipe-separated fields.
-class (Format format, IsList format)
-   =>  Packables delim format where
-
- packs  :: S.Ptr Word8                  -- ^ Target Buffer.
-        -> delim                        -- ^ Field delimitor.
-        -> format                       -- ^ Storage format.
-        -> Value format                 -- ^ Value to pack.
-        -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
-        -> IO (Maybe a)
-
- unpacks
-        :: S.Ptr Word8                  -- ^ Target Buffer.
-        -> Int                          -- ^ Length of buffer.
-        -> delim                        -- ^ Field delimitor.
-        -> format                       -- ^ Storage format.
-        -> ((Value format, Int) -> IO (Maybe a))        
-                                        -- ^ Continue, given the number of bytes written.
-        -> IO (Maybe a)
-
-

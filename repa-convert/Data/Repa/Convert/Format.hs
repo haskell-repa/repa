@@ -6,7 +6,6 @@ module Data.Repa.Convert.Format
           Format   (..)
 
           -- * Packing records
-        , Packable  (..)
-        , Packables (..))
+        , Packable  (..))
 where
 import Data.Repa.Convert.Format.Base

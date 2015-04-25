@@ -29,17 +29,21 @@ instance Format IntAsc where
 
 instance Packable IntAsc where
 
+ -- TODO: This is very slow. Avoid going via lists.
+ pack   buf IntAsc v k
+   = pack buf VarAsc (show v) k
+ {-# INLINE pack #-}
+
  unpack buf len IntAsc k 
+  | len > 0
   = do  r       <- loadInt buf len
         case r of
           Just (n, o)     -> k (n, o)
           _               -> return Nothing
- {-# INLINE unpack #-}
 
- -- TODO: This is very slow. Avoid going via lists.
- pack   buf IntAsc v k
-  = pack buf VarAsc (show v) k
- {-# INLINE pack #-}
+  | otherwise
+  = return Nothing
+ {-# INLINE unpack #-}
 
 
 ----------------------------------------------------------------------------------------- DoubleAsc
@@ -69,7 +73,12 @@ instance Packable DoubleAsc where
  {-# INLINE pack   #-}
 
  unpack buf len DoubleAsc k
+  | len > 0
   = do  (v, o)       <- loadDouble buf len
         k (v, o)
+
+  | otherwise
+  = return Nothing
  {-# INLINE unpack #-}
+
 
