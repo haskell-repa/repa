@@ -21,11 +21,12 @@ instance Format f => Format (FixList   f) where
  type Value (FixList f)         
   = [Value f]
 
- minSize    (FixList f len)
-        = minSize f * len
+ fieldCount _  
+  = 1
 
- fieldCount _ 
-  = Just 1
+ minSize    (FixList f len)
+  = minSize f * len
+
 
  fixedSize  (FixList f len)           
   = do  lenElem <- fixedSize f
@@ -53,11 +54,11 @@ instance Format f => Format (VarList f) where
  type Value (VarList f)
         = [Value f]
 
+ fieldCount _
+  = 1
+
  minSize _ 
   = 0
-
- fieldCount _
-  = Just 1
 
  fixedSize  (VarList _)
   = Nothing
@@ -83,8 +84,8 @@ instance Format f => Format (VarList f) where
 data FixAsc     = FixAsc Int            deriving (Eq, Show)
 instance Format FixAsc where
  type Value (FixAsc)            = String
+ fieldCount _                   = 1
  minSize    (FixAsc len)        = len
- fieldCount _                   = Just 1
  fixedSize  (FixAsc len)        = Just len
  packedSize (FixAsc len) _      = Just len
  {-# INLINE minSize    #-}
@@ -128,8 +129,8 @@ instance Packable FixAsc where
 data VarAsc = VarAsc            deriving (Eq, Show)
 instance Format (VarAsc)        where
  type Value VarAsc              = String
+ fieldCount _                   = 1
  minSize    _                   = 0
- fieldCount _                   = Just 1
  fixedSize  VarAsc              = Nothing
  packedSize VarAsc xs           = Just $ length xs
  {-# INLINE minSize    #-}
@@ -163,13 +164,6 @@ instance Packable VarAsc where
         xs      <- mapM load_unpackChar [0 .. len - 1]
         k (xs, len)
   {-# NOINLINE unpack #-}
-
-
-instance Packables sep VarAsc where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
 
 
 w8  :: Integral a => a -> Word8

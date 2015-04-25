@@ -15,8 +15,8 @@ import qualified Foreign.Marshal.Utils          as F
 data IntAsc     = IntAsc        deriving (Eq, Show)
 instance Format IntAsc where
  type Value IntAsc      = Int
+ fieldCount _           = 1
  minSize    _           = 1
- fieldCount _           = Just 1
  fixedSize  _           = Nothing
 
  -- Max length of a pretty printed 64-bit Int is 20 bytes including sign.
@@ -42,20 +42,13 @@ instance Packable IntAsc where
  {-# INLINE pack #-}
 
 
-instance Packables sep IntAsc where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 ----------------------------------------------------------------------------------------- DoubleAsc
 -- | Human-readable ASCII Double.
 data DoubleAsc  = DoubleAsc     deriving (Eq, Show)
 instance Format DoubleAsc where
  type Value DoubleAsc   = Double
+ fieldCount _           = 1
  minSize    _           = 1
- fieldCount _           = Just 1
  fixedSize  _           = Nothing
 
  -- Max length of a pretty-printed 64-bit double is 64 bytes.
@@ -79,11 +72,4 @@ instance Packable DoubleAsc where
   = do  (v, o)       <- loadDouble buf len
         k (v, o)
  {-# INLINE unpack #-}
-
-
-instance Packables sep DoubleAsc where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
 

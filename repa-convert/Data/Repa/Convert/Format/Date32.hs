@@ -23,8 +23,8 @@ cw8 c = fromIntegral $ ord c
 data YYYYsMMsDD         = YYYYsMMsDD Char       deriving (Eq, Show)
 instance Format YYYYsMMsDD where
  type Value YYYYsMMsDD  = Date32
+ fieldCount _           = 1
  minSize    _           = 10
- fieldCount _           = Just 1
  fixedSize  _           = Just 10
  packedSize _ _         = Just 10
  {-# INLINE minSize    #-}
@@ -56,20 +56,13 @@ instance Packable YYYYsMMsDD where
  {-# INLINE pack #-}
 
 
-instance Packables sep YYYYsMMsDD where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 ---------------------------------------------------------------------------------------- DDsMMsYYYY
 -- | Date32 in ASCII DDsMMsYYYY format.
 data DDsMMsYYYY         = DDsMMsYYYY Char       deriving (Eq, Show)
 instance Format DDsMMsYYYY where
  type Value DDsMMsYYYY  = Date32
+ fieldCount _           = 1
  minSize    _           = 10
- fieldCount _           = Just 1
  fixedSize  _           = Just 10
  packedSize _ _         = Just 10
  {-# INLINE minSize    #-}
@@ -99,11 +92,4 @@ instance Packable DDsMMsYYYY where
      pack (S.plusPtr buf (od + os1 + om + os2)) IntAsc   yy     $ \oy  -> 
      k (od + os1 + om + os2 + oy)
  {-# INLINE pack #-}
-
-
-instance Packables sep DDsMMsYYYY where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
 

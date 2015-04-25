@@ -1,7 +1,10 @@
 
 
 module Data.Repa.Flow.Auto.Format
-        ( module Data.Repa.Convert.Format
+        ( -- * Pre-defined data formats
+          module Data.Repa.Convert.Formats
+
+          -- * Packing functions
         , packFormat_i
         , concatPackFormat_i
         , unlinesPackFormat_i)
@@ -13,16 +16,16 @@ import Data.Repa.Array                          as A
 import Data.Repa.Array.Auto.Format              as A
 import qualified Data.Repa.Flow.Generic         as G
 import qualified Data.Repa.Convert.Format       as C
-import Data.Repa.Convert.Format
+import Data.Repa.Convert.Formats
 #include "repa-flow.h"
 
 
 -- | Pack elements into the given storage formats.
 packFormat_i
         :: (C.Packable format, Elem (Value format), Build (Array Word8) t)
-        => format
-        -> Sources (Value format)
-        -> IO (Sources (Array Word8))
+        => format                       -- ^ Desination format for data.
+        -> Sources (Value format)       -- ^ Sources of values to be packed.
+        -> IO (Sources (Array Word8))   -- ^ Packed data.
 
 packFormat_i format ss
  = let
@@ -39,9 +42,9 @@ packFormat_i format ss
 --   but append the packed output arrays into a flat stream of bytes.
 concatPackFormat_i
         :: (C.Packable format, Elem (Value format), Build (Array Word8) t)
-        => format
-        -> Sources (Value format)
-        -> IO (Sources Word8)
+        => format                       -- ^ Destination format for data.
+        -> Sources (Value format)       -- ^ Sources of values to be packed.
+        -> IO (Sources Word8)           -- ^ Packed data.
 
 concatPackFormat_i format ss 
         =   G.map_i A.concat 
@@ -53,9 +56,9 @@ concatPackFormat_i format ss
 --   but also insert a newline character after each array.
 unlinesPackFormat_i
         :: (C.Packable format, Elem (Value format), Build (Array Word8) t)
-        => format
-        -> Sources (Value format)
-        -> IO (Sources Word8)
+        => format                       -- ^ Destination format for data.
+        -> Sources (Value format)       -- ^ Sources of values to be packed.
+        -> IO (Sources Word8)           -- ^ Packed data.
 
 unlinesPackFormat_i format ss
         =   G.map_i A.concat

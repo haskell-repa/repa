@@ -26,8 +26,8 @@ import qualified Control.Monad.Primitive        as Prim
 data Word8be     = Word8be              deriving (Eq, Show)
 instance Format Word8be                 where
  type Value Word8be     = Word8
+ fieldCount _           = 1
  minSize    _           = 1
- fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
  {-# INLINE minSize    #-}
@@ -48,13 +48,6 @@ instance Packable Word8be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Word8be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
 {-# INLINE w8  #-}
@@ -65,8 +58,8 @@ w8 = fromIntegral
 data Int8be     = Int8be                deriving (Eq, Show)
 instance Format Int8be                  where
  type Value Int8be      = V.Int8
+ fieldCount _           = 1
  minSize    _           = 1
- fieldCount _           = Just 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
  {-# INLINE minSize    #-}
@@ -82,13 +75,6 @@ instance Packable Int8be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Int8be where
- packs   buf     _ f x k     = pack   buf     f x k
- unpacks buf len _ f k       = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 i8  :: Integral a => a -> Int8
 i8 = fromIntegral
 {-# INLINE i8  #-}
@@ -99,8 +85,8 @@ i8 = fromIntegral
 data Word16be    = Word16be             deriving (Eq, Show)
 instance Format Word16be                where
  type Value Word16be    = V.Word16
+ fieldCount _           = 1
  minSize    _           = 2
- fieldCount _           = Just 1
  fixedSize  _           = Just 2
  packedSize _ _         = Just 2
  {-# INLINE minSize    #-}
@@ -124,13 +110,6 @@ instance Packable Word16be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Word16be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 w16 :: Integral a => a -> Word16
 w16 = fromIntegral
 {-# INLINE w16 #-}
@@ -141,8 +120,8 @@ w16 = fromIntegral
 data Int16be    = Int16be               deriving (Eq, Show)
 instance Format Int16be                 where
  type Value Int16be     = V.Int16
+ fieldCount _           = 1
  minSize    _           = 2
- fieldCount _           = Just 1
  fixedSize  _           = Just 2
  packedSize _ _         = Just 2
  {-# INLINE minSize    #-}
@@ -158,13 +137,6 @@ instance Packable Int16be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Int16be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 i16 :: Integral a => a -> Int16
 i16 = fromIntegral
 {-# INLINE i16 #-}
@@ -175,8 +147,8 @@ i16 = fromIntegral
 data Word32be    = Word32be             deriving (Eq, Show)
 instance Format Word32be                where
  type Value Word32be    = V.Word32
+ fieldCount _           = 1
  minSize    _           = 4
- fieldCount _           = Just 1
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
  {-# INLINE minSize    #-}
@@ -207,13 +179,6 @@ instance Packable Word32be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Word32be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 w32 :: Integral a => a -> Word32
 w32 = fromIntegral
 {-# INLINE w32 #-}
@@ -224,8 +189,8 @@ w32 = fromIntegral
 data Int32be    = Int32be               deriving (Eq, Show)
 instance Format Int32be                 where
  type Value Int32be     = V.Int32
+ fieldCount _           = 1
  minSize    _           = 4
- fieldCount _           = Just 1
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
  {-# INLINE minSize    #-}
@@ -241,13 +206,6 @@ instance Packable Int32be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Int32be where
- packs   buf     _ f x k     = pack   buf     f x k
- unpacks buf len _ f k       = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 i32 :: Integral a => a -> Int32
 i32 = fromIntegral
 {-# INLINE i32 #-}
@@ -258,8 +216,8 @@ i32 = fromIntegral
 data Word64be    = Word64be             deriving (Eq, Show)
 instance Format Word64be                where
  type Value Word64be    = V.Word64
+ fieldCount _           = 1
  minSize    _           = 8
- fieldCount _           = Just 1
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
  {-# INLINE minSize    #-}
@@ -302,13 +260,6 @@ instance Packable Word64be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Word64be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 w64 :: Integral a => a -> Word64
 w64 = fromIntegral
 {-# INLINE w64 #-}
@@ -319,8 +270,8 @@ w64 = fromIntegral
 data Int64be    = Int64be               deriving (Eq, Show)
 instance Format Int64be                 where
  type Value Int64be     = V.Int64
+ fieldCount _           = 1
  minSize    _           = 8
- fieldCount _           = Just 1
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
  {-# INLINE minSize    #-}
@@ -336,13 +287,6 @@ instance Packable Int64be where
  {-# INLINE unpack #-}
 
 
-instance Packables sep Int64be where
- packs   buf     _ f x k     = pack   buf     f x k
- unpacks buf len _ f k       = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
-
-
 i64 :: Integral a => a -> Int64
 i64 = fromIntegral
 {-# INLINE i64 #-}
@@ -353,8 +297,8 @@ i64 = fromIntegral
 data Float32be  = Float32be             deriving (Eq, Show)
 instance Format Float32be               where
  type Value Float32be   = Float
+ fieldCount _           = 1
  minSize    _           = 4
- fieldCount _           = Just 1
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
  {-# INLINE minSize    #-}
@@ -371,13 +315,6 @@ instance Packable Float32be where
  unpack    buf len Float32be k
   = unpack buf len Word32be (\(v, i) -> k (word32ToFloat v, i))
  {-# INLINE unpack #-}
-
-
-instance Packables sep Float32be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
 
 
 -- | Bitwise cast of `Float` to `Word32`.
@@ -408,8 +345,8 @@ word32ToFloat w
 data Float64be  = Float64be             deriving (Eq, Show)
 instance Format Float64be               where
  type Value Float64be   = Double
+ fieldCount _           = 1
  minSize    _           = 8
- fieldCount _           = Just 1
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
  {-# INLINE minSize    #-}
@@ -426,13 +363,6 @@ instance Packable Float64be where
  unpack    buf len Float64be k
   = unpack buf len Word64be (\(v, i) -> k (word64ToDouble v, i))
  {-# INLINE unpack #-}
-
-
-instance Packables sep Float64be where
- packs   buf     _ f x k = pack   buf     f x k
- unpacks buf len _ f k   = unpack buf len f k
- {-# INLINE packs   #-}
- {-# INLINE unpacks #-}
 
 
 -- | Bitwise cast of `Double` to `Word64`.

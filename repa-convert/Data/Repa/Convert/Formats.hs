@@ -39,11 +39,12 @@ module Data.Repa.Convert.Formats
         , Word64be   (..),       Int64be (..)
         , Float64be  (..))
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Format.App
 import Data.Repa.Convert.Format.Binary
-import Data.Repa.Convert.Format.Lists
-import Data.Repa.Convert.Format.Fields
-import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Date32
+import Data.Repa.Convert.Format.Fields  ()
+import Data.Repa.Convert.Format.Lists
+import Data.Repa.Convert.Format.Numeric
+import Data.Repa.Convert.Format.Sep
 import Data.Repa.Product
 

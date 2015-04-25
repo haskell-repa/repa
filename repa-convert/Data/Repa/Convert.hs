@@ -39,29 +39,28 @@ module Data.Repa.Convert
 
           -- | The @Formats@ module contains the pre-defined data formats.
         , module Data.Repa.Convert.Formats
+        , forFormat
+        , listFormat
 
-          -- * Packing records
+          -- * Packing single fields
         , Packable  (..)
-        , Packables (..)
-
-          -- * Conversion
         , packToList
         , unpackFromList
         , packToString
         , unpackFromString
-        , forFormat
-        , listFormat)
+
+          -- * Packing compound records
+        , Packables (..))
+
 where
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
-import Data.Repa.Product
 import Data.Char
 import Data.Word
 import Control.Monad
 import System.IO.Unsafe
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
-import qualified Foreign.Ptr                    as S
 
 
 ---------------------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 module Data.Repa.Product
         ( -- * Product type
           (:*:)   (..)
-        , Valid   (..)
+        , IsList  (..)
 
           -- * Selecting
         , Select  (..)
@@ -28,37 +28,37 @@ data a :*: b
 infixr :*:
 
 
-class Valid p where
+class IsList p where
  -- | Check if a sequence of products forms a valid list, 
  --   using () for the nil value.
  --
  -- @
- -- valid (1 :*: 4 :*: 5)  ... no instance
+ -- isList (1 :*: 4 :*: 5)  ... no instance
  --
- -- valid (1 :*: 4 :*: ()) = True
+ -- isList (1 :*: 4 :*: ()) = True
  -- @
  --
- valid :: p -> Bool
+ isList :: p -> Bool
 
-instance Valid () where
- valid _ = True
- {-# INLINE valid #-}
+instance IsList () where
+ isList _ = True
+ {-# INLINE isList #-}
 
 
-instance Valid fs => Valid (f :*: fs) where
- valid (_ :*: xs) = valid xs
- {-# INLINE valid #-}
+instance IsList fs => IsList (f :*: fs) where
+ isList (_ :*: xs) = isList xs
+ {-# INLINE isList #-}
 
 
 ---------------------------------------------------------------------------------------------------
-class    Valid t
+class    IsList t
       => Select  (n :: N) t where
  type    Select'    n        t
  -- | Return just the given field in this tuple.
  select ::          Nat n -> t -> Select' n t
 
 
-instance Valid ts
+instance IsList ts
       => Select  Z    (t1 :*: ts) where
  type Select'    Z    (t1 :*: ts) = t1
  select       Zero    (t1 :*: _)  = t1
@@ -73,14 +73,14 @@ instance Select n ts
 
 
 ---------------------------------------------------------------------------------------------------
-class    Valid t 
+class    IsList t 
       => Discard (n :: N) t where
  type    Discard'   n        t
  -- | Discard the given field in this tuple.
  discard ::         Nat n -> t -> Discard' n t
 
 
-instance Valid ts 
+instance IsList ts 
       => Discard Z     (t1 :*: ts) where
  type Discard'   Z     (t1 :*: ts) = ts
  discard      Zero     (_  :*: xs) = xs
@@ -103,7 +103,7 @@ data Keep = Keep
 
 
 -- | Class of data types that can have parts masked out.
-class (Valid m, Valid t) => Mask  m t where
+class (IsList m, IsList t) => Mask  m t where
  type Mask' m t
  -- | Mask out some component of a type.
  --

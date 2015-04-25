@@ -2,13 +2,10 @@
 module Data.Repa.Convert.Format.Base
         ( Format   (..)
         , Packable (..)
-        , Packables(..)
-        , (:*:)    (..))
+        , Packables(..))
 where
 import Data.Repa.Product
-import Data.Char
 import Data.Word
-import Control.Monad
 import qualified Foreign.Ptr                    as S
 
 
@@ -19,6 +16,10 @@ class Format f where
 
  -- | Get the type of a value with this format.
  type Value f  
+
+ -- | Yield the number of separate fields in this format.
+ fieldCount :: f -> Int
+
 
  -- | Yield the minumum number of bytes that a value of this
  --   format will take up. 
@@ -47,8 +48,6 @@ class Format f where
  packedSize :: f -> Value f -> Maybe Int
 
 
- -- | Yield the number of separate fields in this format.
- fieldCount :: f -> Maybe Int
 
   
 ---------------------------------------------------------------------------------------------------
@@ -97,11 +96,11 @@ class Format   format
 
 
 -- | Class of field containers, eg comma or pipe-separated fields.
-class Format format 
-   => Packables container format where
+class (Format format, IsList format)
+   =>  Packables delim format where
 
  packs  :: S.Ptr Word8                  -- ^ Target Buffer.
-        -> container                    -- ^ Field container.
+        -> delim                        -- ^ Field delimitor.
         -> format                       -- ^ Storage format.
         -> Value format                 -- ^ Value to pack.
         -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
@@ -110,7 +109,7 @@ class Format format
  unpacks
         :: S.Ptr Word8                  -- ^ Target Buffer.
         -> Int                          -- ^ Length of buffer.
-        -> container                    -- ^ Field container.
+        -> delim                        -- ^ Field delimitor.
         -> format                       -- ^ Storage format.
         -> ((Value format, Int) -> IO (Maybe a))        
                                         -- ^ Continue, given the number of bytes written.

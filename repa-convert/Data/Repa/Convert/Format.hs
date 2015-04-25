@@ -10,4 +10,3 @@ module Data.Repa.Convert.Format
         , Packables (..))
 where
 import Data.Repa.Convert.Format.Base
-import Data.Repa.Convert.Formats
