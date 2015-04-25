@@ -15,13 +15,8 @@
 --   operators are used.
 --   
 module Data.Repa.Query.Source
-        ( -- * From Prelude
-          ($)
-        , return, (>>=), (=<<)
-        , P.Int, P.Float, P.Double, P.String
-
-          -- * Types
-        , Query, Flow, Value
+        ( -- * Types
+          Query, Flow, Value
 
           -- * Query builder
         , query
@@ -54,16 +49,22 @@ module Data.Repa.Query.Source
         , groupsBy
 
           -- * Scalar operators
+          -- ** Arithmetic
         , negate, abs, signum
         , (+),  (-),  (*), (/)
         , (==), (/=)
         , (>),  (>=), (<), (<=)
 
-          -- * Projections
+          -- ** Projections
         , get2_1, get2_2
         , get3_1, get3_2, get3_3
         , get4_1, get4_2, get4_3, get4_4
-        , get5_1, get5_2, get5_3, get5_4, get5_5)
+        , get5_1, get5_2, get5_3, get5_4, get5_5
+
+          -- * Prelude re-exports.
+        , ($)
+        , return, (>>=), (=<<)
+        , P.Int, P.Float, P.Double, P.String)
 where
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Query.Source.Literal           ()

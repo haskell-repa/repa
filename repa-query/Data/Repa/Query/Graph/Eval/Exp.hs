@@ -1,13 +1,13 @@
 
 -- | Direct evaluation / interpretation of a scalar expression.
-module Data.Repa.Query.Eval.Exp
+module Data.Repa.Query.Graph.Eval.Exp
         ( ExpEnv
         , ValEnv
         , evalExp
         , evalScalarOp)
 where
-import Data.Repa.Query.Eval.Env
-import Data.Repa.Query.Exp
+import Data.Repa.Query.Graph.Eval.Env
+import Data.Repa.Query.Graph.Exp
 import Control.Monad
 import Prelude hiding (lookup)
 

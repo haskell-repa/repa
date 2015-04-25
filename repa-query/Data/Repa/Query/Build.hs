@@ -15,17 +15,19 @@ where
 import System.FilePath
 import System.Directory
 import Control.Monad
-import Data.Repa.Query.Convert.JSON             ()
-import qualified BuildBox.Build                 as BB
-import qualified BuildBox.Command.System        as BB
-import qualified BuildBox.Command.File          as BB
-import qualified Language.Haskell.TH            as TH
-import qualified Data.Repa.Query.Compile.Repa   as CR
-import qualified Data.Repa.Query.Graph          as Q
-import qualified Data.Repa.Query.Source.Builder as QB
-import qualified Data.Aeson                     as Aeson
-import qualified Data.ByteString.Lazy.Char8     as BS
-import qualified Data.List                      as L
+import qualified Data.Repa.Query.Build.Repa             as CR
+import qualified Data.Repa.Query.Graph.JSON             ()
+import qualified Data.Repa.Query.Graph                  as Q
+import qualified Data.Repa.Query.Source.Builder         as QB
+import qualified Data.Aeson                             as Aeson
+import qualified Data.ByteString.Lazy.Char8             as BS
+import qualified Data.List                              as L
+
+import qualified Language.Haskell.TH                    as TH
+
+import qualified BuildBox.Build                         as BB
+import qualified BuildBox.Command.System                as BB
+import qualified BuildBox.Command.File                  as BB
 
 
 ---------------------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 
 -- | Expressions that can be used to produce scalar values in Repa queries.
-module Data.Repa.Query.Exp
+module Data.Repa.Query.Graph.Exp
         ( -- * Expressions
           Exp           (..)
         , annotOfExp

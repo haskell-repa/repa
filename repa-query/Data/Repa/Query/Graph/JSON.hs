@@ -6,14 +6,14 @@
 --   Conversion is done by providing instances for the `ToJSON` and `FromJSON`
 --   classes form the Aeson package.
 --
-module Data.Repa.Query.Convert.JSON
+module Data.Repa.Query.Graph.JSON
         (encode, toJSON, fromJSON, Result(..))
 where
 import Control.Monad
 import Data.Char
 import Data.List                                as L
 import Data.Repa.Query.Graph
-import Data.Repa.Query.Exp
+import Data.Repa.Query.Graph.Exp
 import Data.Aeson                               as Aeson
 import Data.Text                                (Text)
 import qualified Data.Text                      as T

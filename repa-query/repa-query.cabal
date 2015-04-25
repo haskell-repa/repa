@@ -33,23 +33,30 @@ Library
 
 
   exposed-modules:
-        Data.Repa.Query.Compile.Repa
-        Data.Repa.Query.Convert.JSON
-        Data.Repa.Query.Eval.Env
-        Data.Repa.Query.Eval.Exp
+
+        Data.Repa.Query.Build.Repa
+        Data.Repa.Query.Build
+
+        Data.Repa.Query.Graph.Eval
+        Data.Repa.Query.Graph.JSON
+        Data.Repa.Query.Graph
+
+        Data.Repa.Query.Runtime.Primitive
+        Data.Repa.Query.Runtime
+
         Data.Repa.Query.Source.Builder
         Data.Repa.Query.Source.Compounds
         Data.Repa.Query.Source
 
         Data.Repa.Query.Transform.Namify
-        Data.Repa.Query.Build
-        Data.Repa.Query.Exp
-        Data.Repa.Query.Graph
-
-        Data.Repa.Query.Runtime.Driver
-        Data.Repa.Query.Runtime.Primitive
 
   other-modules:
+        Data.Repa.Query.Graph.Eval.Env
+        Data.Repa.Query.Graph.Eval.Exp
+        Data.Repa.Query.Graph.Exp
+
+        Data.Repa.Query.Runtime.Driver
+
         Data.Repa.Query.Source.Literal
         Data.Repa.Query.Source.Operator
         Data.Repa.Query.Source.Projection

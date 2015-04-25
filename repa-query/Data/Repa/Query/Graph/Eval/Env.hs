@@ -1,6 +1,6 @@
 
 -- | Generic environment type used when directly evaluating queries.
-module Data.Repa.Query.Eval.Env
+module Data.Repa.Query.Graph.Eval.Env
         (Env (..))
 where
 import Data.Map                 (Map)

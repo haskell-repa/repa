@@ -19,7 +19,7 @@ module Data.Repa.Query.Graph
         , Lit           (..)
         , ScalarOp      (..))
 where
-import Data.Repa.Query.Exp
+import Data.Repa.Query.Graph.Exp
 import qualified Data.Repa.Store.Format as Format
 
 

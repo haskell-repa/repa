@@ -2,7 +2,7 @@
 
 -- | Compilation of Repa queries to native code by 
 --   emitting a Haskell program using repa-flow and compiling it with GHC.
-module Data.Repa.Query.Compile.Repa
+module Data.Repa.Query.Build.Repa
         ( decOfQuery
         , expOfQuery)
 where
