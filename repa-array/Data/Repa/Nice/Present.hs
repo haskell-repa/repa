@@ -22,8 +22,11 @@ import Prelude                          as P
 
 -- | A value, wrapped up nicely.
 data Present
+        -- | Nothing to present.
+        = Blank
+
         -- | An atomic thing.
-        = Atom  Text
+        | Atom  Text
 
         -- | Many of the same thing, to display with list brackets @[.. , ..]@
         | Many  [Present]
@@ -37,6 +40,7 @@ data Present
 depth :: Present -> Int
 depth pp
  = case pp of
+        Blank{}  -> 0
         Atom{}   -> 0
         Many ps  -> 1 + (case ps of
                                 []      -> 0
@@ -58,6 +62,7 @@ strip1 _         = Nothing
 
 -- | Flatten a present into text
 flatten :: Present -> Text 
+flatten Blank      = T.pack ""
 flatten (Atom str) = str
 flatten (Many ps)  
  = T.pack "[" <> (T.intercalate (T.pack ",") $ map flatten ps) <> T.pack "]"
@@ -73,6 +78,10 @@ flatten (Some ps)
 --
 class Presentable a where
  present :: a -> Present 
+
+
+instance Presentable () where
+ present _ = Blank
 
 
 instance Presentable Char where
@@ -135,14 +144,16 @@ instance (Presentable a, Presentable b)
 
  present (xa :*: xb)
   = let aa      = case present xa of
+                        Blank    -> []
                         Atom x   -> [Atom x]
                         Many xx  -> xx
                         Some xx  -> xx
 
         bb      = case present xb of
-                        Atom x  -> [Atom x]
-                        Many xx -> xx
-                        Some xx -> xx
+                        Blank    -> []
+                        Atom x   -> [Atom x]
+                        Many xx  -> xx
+                        Some xx  -> xx
   in  Some (aa ++ bb)
 
 
