@@ -6,7 +6,8 @@
 --
 module Data.Repa.Query.Runtime.Primitive
         ( -- * From Prelude
-          (>>=), (=<<), return
+          pattern Unit
+        , (>>=), (=<<), return
         , error
         , negate, abs, signum
         , add, sub, mul, div
@@ -15,6 +16,9 @@ module Data.Repa.Query.Runtime.Primitive
 
           -- * From Data.Repa.Flow.Auto
         , map_i
+        , select_i
+        , discard_i
+        , mask_i
         , folds_i
         , groupsBy_i
 
@@ -58,11 +62,12 @@ import qualified Data.Repa.Flow.Auto            as F
 import qualified Data.Repa.Flow.Auto.IO         as F
 import qualified Data.Repa.Flow.Auto.Format     as F
 import qualified Data.Repa.Store.Flow           as S
-import qualified Data.Repa.Store.Format         as S
-import qualified Data.Repa.Convert.Format       as C
+import qualified Data.Repa.Convert.Formats      as C
 import qualified System.FilePath                as FilePath
 
 -- Prelude
+pattern Unit            = ()
+
 (>>=)                   = (\x y -> x P.>>= y)
 (=<<)                   = (\x y -> x P.=<< y)
 return                  = P.return
@@ -85,6 +90,9 @@ le                      = (\x y -> x P.<= y)
 
 -- Data.Repa.Flow.Auto
 map_i                   = F.map_i
+select_i                = F.select_i
+discard_i               = F.discard_i
+mask_i                  = F.mask_i
 folds_i                 = F.folds_i
 groupsBy_i              = F.groupsBy_i
 

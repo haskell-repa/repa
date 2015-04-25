@@ -100,6 +100,9 @@ data Field a where
         -- Compound field.
         (:*:)           :: Field x -> Field y -> Field (x P.:*: y)
 
+        -- Empty row.
+        Nil             :: Field ()
+
         -- Big-endian 8-bit unsigned word.
         Word8be         :: Field Word8
 
@@ -183,7 +186,8 @@ readField ss
  where
         atomic
          = Map.fromList
-         [ ("Word8be",    FieldBox   Word8be)
+         [ ("Nil",        FieldBox       Nil)
+         , ("Word8be",    FieldBox   Word8be)
          , ("Int8be",     FieldBox    Int8be) 
          , ("Word16be",   FieldBox  Word16be)
          , ("Int16be",    FieldBox   Int16be)

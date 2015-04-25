@@ -10,7 +10,7 @@ import Language.Haskell.TH                              as H
 import Data.Repa.Flow.Auto.Format                       as F
 import Data.Repa.Query.Graph                            as G
 import qualified Data.Repa.Store.Format                 as Q
-import qualified Data.Repa.Convert.Format               as C
+import qualified Data.Repa.Convert.Formats              as C
 import qualified Data.Repa.Query.Runtime.Primitive      as P
 import qualified Data.Repa.Product                      as P
 
@@ -120,25 +120,30 @@ bindOfSource ss
                                         (P.error "query: line too long.")
                                         (P.error "query: cannot convert field.")
                                         ($hRootData P.</> $hPath)
-                                        $hDelim
-                                        $hFormat |]
+                                        $hDelim $hFormat |]
 
                 pOut    <- H.varP (H.mkName sOut)
                 return  (pOut, xRhs)
 
         ---------------------------------------------------
-{-
         G.SourceTableColumns _ path delim fields cols sOut
-         -> do  let hRootData    = G.varE (mkName "_rootData")
+         -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hPath        = return (LitE (StringL path))
                 let Just hFormat = expOfFieldsFormat fields
                 let hDelim       = expOfDelim delim
+                let hMask        = expOfMask (length fields) (map snd cols)
 
-                xRhs    <- [| P.sourceTableFormat
+                xRhs    <- [|      P.mask_i $hMask
+                             P.=<< P.sourceTableFormat
                                         (P.mul 64 1024)
                                         (P.error "query: line too long.")
-                                        (P.error )
--}
+                                        (P.error "query: cannot convert field.")
+                                        ($hRootData P.</> $hPath)
+                                        $hDelim $hFormat |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return  (pOut, xRhs)
+
 
         _ -> error $ "repa-query: TODO bindOfSource code gen for " ++ show ss
 
@@ -269,6 +274,18 @@ expOfLit lit
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Create a Haskell expression for a field mask.
+expOfMask :: Int -> [Int] -> ExpQ
+expOfMask len wanted
+ = go [0 .. len - 1]
+ where
+        go []                   = [| P.Unit |]
+        go (i : is)
+         | elem i wanted        = [| P.Keep :*: $(go is) |]
+         | otherwise            = [| P.Drop :*: $(go is) |]
+
+
+---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a row format.
 expOfDelimFields :: Q.Delim -> [Q.FieldBox] -> Maybe H.ExpQ
 expOfDelimFields delim fields
@@ -308,7 +325,7 @@ expOfDelim d
 -- | Yield a Haskell expression for some fields.
 expOfFieldsFormat :: [Q.FieldBox] -> Maybe H.ExpQ
 expOfFieldsFormat []
-        = Nothing
+        = Just [| P.Unit |]
 
 expOfFieldsFormat (f : fs)
         = expOfFieldFormats f fs
@@ -316,15 +333,16 @@ expOfFieldsFormat (f : fs)
 
 -- | Yield a Haskell expression for some fields.
 expOfFieldFormats :: Q.FieldBox -> [Q.FieldBox] -> Maybe H.ExpQ 
-expOfFieldFormats f1 []        
-        = expOfFieldFormat f1
+expOfFieldFormats f1 []
+        | Just f1'      <- expOfFieldFormat f1
+        = Just [| $f1' P.:*: P.Unit |]
 
 expOfFieldFormats f1 (f2 : fs) 
-        | Just f1'   <- expOfFieldFormat  f1
-        , Just ff'   <- expOfFieldFormats f2 fs
-        = Just [| $f1' P.:*: $ff' |]
+        | Just f1'      <- expOfFieldFormat  f1
+        , Just ff'      <- expOfFieldFormats f2 fs
+        = Just [| $f1' P.:*: $ff'   |]
 
-        | otherwise
+expOfFieldFormats _ _
         = Nothing
 
 
@@ -332,6 +350,8 @@ expOfFieldFormats f1 (f2 : fs)
 expOfFieldFormat   :: Q.FieldBox -> Maybe H.ExpQ
 expOfFieldFormat (Q.FieldBox field)
  = case field of
+        Q.Nil           -> Just [| P.Unit      |]
+
         Q.Word8be       -> Just [| P.Word8be   |]
         Q.Int8be        -> Just [| P.Int8be    |]
 
