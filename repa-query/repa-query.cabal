@@ -38,8 +38,9 @@ Library
         Data.Repa.Query.Eval.Env
         Data.Repa.Query.Eval.Exp
         Data.Repa.Query.Source.Builder
-        Data.Repa.Query.Source.EDSL
-        Data.Repa.Query.Source.Primitive
+        Data.Repa.Query.Source.Compounds
+        Data.Repa.Query.Source
+
         Data.Repa.Query.Transform.Namify
         Data.Repa.Query.Build
         Data.Repa.Query.Exp
@@ -47,6 +48,13 @@ Library
 
         Data.Repa.Query.Runtime.Driver
         Data.Repa.Query.Runtime.Primitive
+
+  other-modules:
+        Data.Repa.Query.Source.Literal
+        Data.Repa.Query.Source.Operator
+        Data.Repa.Query.Source.Projection
+        Data.Repa.Query.Source.Scalar
+        Data.Repa.Query.Source.Sources
 
   ghc-options:
         -threaded
@@ -61,17 +69,19 @@ Library
 
   extensions:
         CPP
-        OverloadedStrings
+        GADTs
+        DataKinds
         BangPatterns
+        TypeFamilies
         PatternGuards
+        TypeOperators
+        PatternSynonyms
         FlexibleContexts
         FlexibleInstances
-        TypeFamilies
-        MultiParamTypeClasses
-        ScopedTypeVariables
-        ExistentialQuantification
+        OverloadedStrings
         StandaloneDeriving
-        GADTs
-        TypeOperators
-        DataKinds
-        PatternSynonyms
+        ScopedTypeVariables
+        MultiParamTypeClasses
+        ExistentialQuantification
+        NoMonomorphismRestriction
+        

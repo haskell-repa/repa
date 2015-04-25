@@ -205,7 +205,7 @@ edslHeader
  [ "{-# LANGUAGE NoImplicitPrelude   #-}"
  , "{-# LANGUAGE ScopedTypeVariables #-}"
  , "{-# LANGUAGE GADTs               #-}"
- , "import Data.Repa.Query.Source.Primitive"
+ , "import Data.Repa.Query.Source"
  , "import qualified Data.Repa.Query.Source.Builder     as Q"
  , "import qualified Data.Repa.Query.Convert.JSON       as Q"
  , "import qualified Data.ByteString.Lazy               as B (append)"
