@@ -19,7 +19,8 @@ module Data.Repa.Query.Source.Primitive
 
         , fromFile
         , fromTable
-        , fromTableColumns
+        , fromColumn
+        , fromColumns
 
         , map
         , fold, folds

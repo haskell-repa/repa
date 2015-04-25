@@ -83,7 +83,7 @@ bindOfSource ss
                 
          -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hTable       = return (LitE (StringL path))
-                let Just format' = expOfFieldsFormat fields
+                let Just format' = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
 
                 xRhs    <- [| P.fromFiles [ $hRootData P.</> $hTable ] 
                                 (P.sourceLinesFormat 
@@ -98,7 +98,7 @@ bindOfSource ss
         G.SourceFile _ path Q.Fixed{} fields sOut
          -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hTable       = return (LitE (StringL path))
-                let Just format' = expOfFieldsFormat fields
+                let Just format' = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
 
                 xRhs    <- [| P.fromFiles [ $hRootData P.</> $hTable ]
                                 (P.sourceFixedFormat
@@ -112,7 +112,7 @@ bindOfSource ss
         G.SourceTable _ path delim fields sOut
          -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hPath        = return (LitE (StringL path))
-                let Just hFormat = expOfFieldsFormat fields
+                let Just hFormat = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
                 let hDelim       = expOfDelim delim
 
                 xRhs    <- [| P.sourceTableFormat 
@@ -126,10 +126,30 @@ bindOfSource ss
                 return  (pOut, xRhs)
 
         ---------------------------------------------------
+        G.SourceTableColumn  _ path delim fields col  sOut
+         -> do  let hRootData    = H.varE (mkName "_rootData")
+                let hPath        = return (LitE (StringL path))
+                let Just hFormat = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
+                let hDelim       = expOfDelim delim
+                let Just hNat    = expOfNat (snd col)
+
+                xRhs    <- [|      P.select_i $hNat
+                             P.=<< P.sourceTableFormat
+                                        (P.mul 64 1024)
+                                        (P.error "query: line too long.")
+                                        (P.error "query: cannot convert field.")
+                                        ($hRootData P.</> $hPath)
+                                        $hDelim $hFormat |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return  (pOut, xRhs)
+
+
+        ---------------------------------------------------
         G.SourceTableColumns _ path delim fields cols sOut
          -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hPath        = return (LitE (StringL path))
-                let Just hFormat = expOfFieldsFormat fields
+                let Just hFormat = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
                 let hDelim       = expOfDelim delim
                 let hMask        = expOfMask (length fields) (map snd cols)
 
@@ -189,8 +209,7 @@ bindOfFlowOp op
         G.FopGroupsI sIn sOut xFun
          -> do  let hIn         =  H.varE (H.mkName sIn)
                 pOut            <- H.varP (H.mkName sOut)
-                hRhs            <- [|       P.map_i (\(g, n) -> g :*: n)
-                                      P.=<< P.groupsBy_i $(expOfExp xFun) $hIn |]
+                hRhs            <- [| P.groupsBy_i $(expOfExp xFun) $hIn |]
                                       
                 return  (pOut, hRhs)
 
@@ -325,7 +344,7 @@ expOfDelim d
 -- | Yield a Haskell expression for some fields.
 expOfFieldsFormat :: [Q.FieldBox] -> Maybe H.ExpQ
 expOfFieldsFormat []
-        = Just [| P.Unit |]
+        = Nothing
 
 expOfFieldsFormat (f : fs)
         = expOfFieldFormats f fs
@@ -335,7 +354,7 @@ expOfFieldsFormat (f : fs)
 expOfFieldFormats :: Q.FieldBox -> [Q.FieldBox] -> Maybe H.ExpQ 
 expOfFieldFormats f1 []
         | Just f1'      <- expOfFieldFormat f1
-        = Just [| $f1' P.:*: P.Unit |]
+        = Just [| $f1' |]
 
 expOfFieldFormats f1 (f2 : fs) 
         | Just f1'      <- expOfFieldFormat  f1
@@ -377,4 +396,22 @@ expOfFieldFormat (Q.FieldBox field)
         Q.VarAsc        -> Just [| P.VarAsc    |]
 
         _               -> Nothing
+
+
+---------------------------------------------------------------------------------------------------
+expOfNat :: Int -> Maybe H.ExpQ
+expOfNat n
+ = case n of
+        0       -> Just [| P.nat0 |]
+        1       -> Just [| P.nat1 |]
+        2       -> Just [| P.nat2 |]
+        3       -> Just [| P.nat3 |]
+        4       -> Just [| P.nat4 |]
+        5       -> Just [| P.nat5 |]
+        6       -> Just [| P.nat6 |]
+        7       -> Just [| P.nat7 |]
+        8       -> Just [| P.nat8 |]
+        9       -> Just [| P.nat9 |]
+        _       -> Nothing
+
 

@@ -76,12 +76,24 @@ data Source a nF
         , sourceOutput          :: nF                   -- ^ Output flow.
         }
 
+        -- | Source a single column from a table.
+        | SourceTableColumn
+        { sourceAnnot           :: a                    -- ^ Annotation.
+        , sourceFilePath        :: FilePath             -- ^ Path to table.
+        , sourceDelim           :: Format.Delim         -- ^ Delimitor for elements.
+        , sourceFields          :: [Format.FieldBox]    -- ^ Format of all fields in table.
+        , sourceColumn          :: (String, Int)        -- ^ Index and name of desired column.
+        , sourceOutput          :: nF }                 -- ^ Output flow.
+        
+
         -- | Source a subset of columns from a table.
+        --   The type of the resulting elements is list-like, eg (col1 :*: col2 :*: ())
+        --
         | SourceTableColumns
         { sourceAnnot           :: a                    -- ^ Annotation.
         , sourceFilePath        :: FilePath             -- ^ Path to table.
         , sourceDelim           :: Format.Delim         -- ^ Delimitor for elements.
-        , sourceFields          :: [Format.FieldBox]    -- ^ Format of fields.
+        , sourceFields          :: [Format.FieldBox]    -- ^ Format of all fields in table.
         , sourceColumns         :: [(String, Int)]      -- ^ Index and name of desired columns.
         , sourceOutput          :: nF                   -- ^ Output flow.
         }

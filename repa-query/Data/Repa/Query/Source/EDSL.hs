@@ -29,8 +29,8 @@ module Data.Repa.Query.Source.EDSL
           -- ** Sourcing
         , fromFile
         , fromTable
-        , fromTableColumn
-        , fromTableColumns
+        , fromColumn
+        , fromColumns
 
           -- ** Mapping
         , map
@@ -127,14 +127,51 @@ fromTable path
 
 
 -- | Read a named column from a table.
-fromTableColumn :: FilePath -> String -> Q (Flow a)
-fromTableColumn path nameColumn
-        = fromTableColumns path [nameColumn]
+fromColumn :: FilePath -> String -> Q (Flow a)
+fromColumn path name
+ = do
+        -- Load meta-data for the table.
+        pathRoot <- B.getRootDataQ
+        emeta    <- B.liftIO $ Table.loadMeta (pathRoot </> path)
+
+        -- Function to lookup the index of a named column.
+        let lookupColIx table nameCol
+                | Just ix
+                <- P.lookup nameCol 
+                         $  P.zip  (P.map (T.unpack . Table.columnName) 
+                                          (Table.tableColumns table))
+                                   [0..]
+                = Right (nameCol, ix)
+
+                | otherwise
+                = Left nameCol
+
+        case emeta of
+         Left errLoadMeta
+          -> failQ $ show errLoadMeta
+
+         Right table
+          -- Work out what index the requested column is in the table.
+          -- We store both the name and index to help detect if the
+          -- table has changed since we built the query.
+          -> case lookupColIx table name of
+              Right colIx
+               -> do    fOut    <- newFlow
+                        addNode $ G.NodeSource
+                                $ G.SourceTableColumn () path 
+                                        (Table.tableDelim table)
+                                        (P.map Table.columnFormat $ Table.tableColumns table)
+                                        colIx
+                                $ takeFlow fOut
+                        return fOut
+
+              Left nameUnknown 
+               -> failQ $ "unknown column " ++ show nameUnknown
 
 
 -- | Read a named column from a table.
-fromTableColumns :: FilePath -> [String] -> Q (Flow a)
-fromTableColumns path names
+fromColumns :: FilePath -> [String] -> Q (Flow a)
+fromColumns path names
  = do
         -- Load meta-data for the table.
         pathRoot <- B.getRootDataQ
@@ -215,8 +252,8 @@ fold fun (Value z) fIn
          $ G.FopFoldI
                 (takeFlow fIn)
                 (takeFlow fOut)
-                (xLam $ let Value x = fun (Value $ xVar 0) (Value $ xVar 1)
-                        in  x)
+                (xLam $ xLam $ let Value x = fun (Value $ xVar 0) (Value $ xVar 1)
+                               in  x)
                 z
 
         return fOut
@@ -226,8 +263,9 @@ fold fun (Value z) fIn
 --   The length of each run is taken from a second flow.
 folds   :: (Value a -> Value a -> Value a)
         -> Value a
-        -> Flow Int -> Flow a
-        -> Q (Flow a)
+        -> Flow    (n :*: Int :*: ()) 
+        -> Flow a
+        -> Q (Flow (n :*: a   :*: ()))
 
 folds fun (Value z) fLens fElems
  = do   fOut    <- newFlow
@@ -237,8 +275,8 @@ folds fun (Value z) fLens fElems
                 (takeFlow fLens)
                 (takeFlow fElems)
                 (takeFlow fOut)
-                (xLam $ let Value x = fun (Value $ xVar 0) (Value $ xVar 1)
-                        in  x)
+                (xLam $ xLam $ let Value x = fun (Value $ xVar 0) (Value $ xVar 1)
+                               in  x)
                 z
 
         return fOut
@@ -263,7 +301,7 @@ filter fun fIn
 
 -- | Scan through a flow to find runs of consecutive values,
 --   yielding the value and the length of each run.
-groups :: Flow a -> Q (Flow (a :*: Int))
+groups :: Flow a -> Q (Flow (a :*: Int :*: ()))
 groups fIn
  = do   fOut    <- newFlow
 
@@ -279,7 +317,7 @@ groups fIn
 -- | Like `groups` but use the given predicate to decide whether
 --   consecutive values should be placed into the same group.
 groupsBy :: (Value a -> Value a -> Value Bool) 
-         -> Flow a -> Q (Flow (a :*: Int))
+         -> Flow a -> Q (Flow (a :*: Int :*: ()))
 groupsBy fun fIn
  = do   fOut    <- newFlow
 

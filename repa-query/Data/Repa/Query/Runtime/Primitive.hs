@@ -53,9 +53,13 @@ module Data.Repa.Query.Runtime.Primitive
         , pattern FixAsc
         , pattern VarAsc
 
+        -- * From Data.Repa.Singleton.Nat
+        , nat0, nat1, nat2, nat3, nat4, nat5, nat6, nat7, nat8, nat9
+
         -- * From System.FilePath
         , (</>)
         , (<.>))
+
 where
 import qualified Prelude                        as P
 import qualified Data.Repa.Flow.Auto            as F
@@ -63,7 +67,11 @@ import qualified Data.Repa.Flow.Auto.IO         as F
 import qualified Data.Repa.Flow.Auto.Format     as F
 import qualified Data.Repa.Store.Flow           as S
 import qualified Data.Repa.Convert.Formats      as C
+import qualified Data.Repa.Singleton.Nat        as R
 import qualified System.FilePath                as FilePath
+
+import Data.Repa.Product
+
 
 -- Prelude
 pattern Unit            = ()
@@ -89,12 +97,41 @@ le                      = (\x y -> x P.<= y)
 
 
 -- Data.Repa.Flow.Auto
+-- TODO: conversions need to be redone chunkwise,
+--       instead of row-at-a-time.
+
 map_i                   = F.map_i
 select_i                = F.select_i
 discard_i               = F.discard_i
 mask_i                  = F.mask_i
-folds_i                 = F.folds_i
-groupsBy_i              = F.groupsBy_i
+
+
+-- Segmented fold.
+folds_i
+        :: (F.FoldsDict n a b u1 u2 u3 u4, F.Flow n, F.Flow b)
+        => (a -> b -> b)
+        -> b
+        -> F.Sources       (n :*: P.Int :*: ())
+        -> F.Sources a 
+        -> P.IO (F.Sources (n :*: b     :*: ()))
+
+folds_i f z sNameLens sVals
+ = do   sNameLens'      <- F.map_i   (\(name :*: len :*: ()) -> (name, len)) sNameLens
+        sResult         <- F.folds_i f z sNameLens' sVals
+        sResult'        <- F.map_i   (\(name, agg)           -> name :*: agg :*: ()) sResult
+        return sResult'
+
+-- Group by.
+groupsBy_i 
+        :: (F.GroupsDict a u1 u2, F.Flow a)
+        => (a -> a -> P.Bool)
+        -> F.Sources a
+        -> P.IO (F.Sources (a :*: P.Int :*: ()))
+
+groupsBy_i f ss
+        =   F.map_i      (\(g, n) -> g :*: n :*: ())
+        =<< F.groupsBy_i f ss
+
 
 
 -- Data.Repa.Flow.Auto.IO
@@ -143,6 +180,17 @@ pattern DoubleAsc       = C.DoubleAsc
 pattern FixAsc len      = C.FixAsc len
 pattern VarAsc          = C.VarAsc
 
+-- Data.Repa.Singleton.Nat
+nat0                    = R.nat0
+nat1                    = R.nat1
+nat2                    = R.nat2
+nat3                    = R.nat3
+nat4                    = R.nat4
+nat5                    = R.nat5
+nat6                    = R.nat6
+nat7                    = R.nat7
+nat8                    = R.nat8
+nat9                    = R.nat9
 
 -- System.FilePath
 (</>)                   = (\x y -> x FilePath.</> y)
