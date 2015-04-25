@@ -74,13 +74,14 @@ bindOfNode nn
 bindOfSource :: G.Source () String -> Q (H.Pat, H.Exp)
 bindOfSource ss
  = case ss of
+        ---------------------------------------------------
         G.SourceFile _ path delim fields sOut
          | case delim of
                 Q.Lines{}       -> True
                 Q.LinesSep{}    -> True
                 _               -> False
                 
-         -> do  let hRootData    = H.varE (mkName ("_rootData"))
+         -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hTable       = return (LitE (StringL path))
                 let Just format' = expOfFieldsFormat fields
 
@@ -95,7 +96,7 @@ bindOfSource ss
                 return (pOut, xRhs)
 
         G.SourceFile _ path Q.Fixed{} fields sOut
-         -> do  let hRootData    = H.varE (mkName ("_rootData"))
+         -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hTable       = return (LitE (StringL path))
                 let Just format' = expOfFieldsFormat fields
 
@@ -107,8 +108,9 @@ bindOfSource ss
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
 
+        ---------------------------------------------------
         G.SourceTable _ path delim fields sOut
-         -> do  let hRootData    = H.varE (mkName ("_rootData"))
+         -> do  let hRootData    = H.varE (mkName "_rootData")
                 let hPath        = return (LitE (StringL path))
                 let Just hFormat = expOfFieldsFormat fields
                 let hDelim       = expOfDelim delim
@@ -124,6 +126,19 @@ bindOfSource ss
                 pOut    <- H.varP (H.mkName sOut)
                 return  (pOut, xRhs)
 
+        ---------------------------------------------------
+{-
+        G.SourceTableColumns _ path delim fields cols sOut
+         -> do  let hRootData    = G.varE (mkName "_rootData")
+                let hPath        = return (LitE (StringL path))
+                let Just hFormat = expOfFieldsFormat fields
+                let hDelim       = expOfDelim delim
+
+                xRhs    <- [| P.sourceTableFormat
+                                        (P.mul 64 1024)
+                                        (P.error "query: line too long.")
+                                        (P.error )
+-}
 
         _ -> error $ "repa-query: TODO bindOfSource code gen for " ++ show ss
 

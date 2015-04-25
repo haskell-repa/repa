@@ -1,6 +1,15 @@
 
 module Data.Repa.Store.Flow
-        (sourceTableFormat)
+        ( sourceTableFormat)
+
+          -- * Delimitors
+        , Delim (..)
+
+          -- * Formats
+        , (:*:) (..)
+        , Varsc
+        , FixAsc
+
 where
 import Data.Repa.Store.Object.Table             as Table
 import Data.Repa.Store.Format                   as Format
@@ -8,7 +17,8 @@ import Data.Repa.Flow.Generic.IO                as G
 import Data.Repa.Flow.Generic                   as F
 import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
-import Data.Repa.Convert.Format                 as C
+import Data.Repa.Convert.Format
+import Data.Repa.Product
 import Data.Word
 #include "repa-store.h"
 
@@ -40,7 +50,7 @@ sourceTableFormat
         ss      <- fromFiles parts 
                 $  sourceLinesFormat nChunk 
                         aFailLong aFailConvert 
-                        (C.Sep c format)
+                        (Sep c format)
 
         return ss
 

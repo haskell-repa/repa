@@ -131,9 +131,9 @@ module Data.Repa.Flow
 
         -- * Flow Operators
         -- ** Mapping
-          -- | If you want to work on a chunk at a time then use 
-          --   `Data.Repa.Flow.Generic.map_i` and
-          --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
+        -- | If you want to work on a chunk at a time then use 
+        --   `Data.Repa.Flow.Generic.map_i` and
+        --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
         , map_i,                map_o
 
         -- ** Connecting
@@ -152,6 +152,11 @@ module Data.Repa.Flow
 
         -- ** Splitting
         , head_i
+
+        -- ** Selecting
+        , select_i,             select_o
+        , discard_i,            discard_o
+        , mask_i,               mask_o
 
         -- ** Grouping
         , groups_i
