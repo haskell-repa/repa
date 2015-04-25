@@ -2,6 +2,7 @@
 module Data.Repa.Store.Flow
         ( sourceTableFormat)
 
+{-
           -- * Delimitors
         , Delim (..)
 
@@ -9,7 +10,7 @@ module Data.Repa.Store.Flow
         , (:*:) (..)
         , Varsc
         , FixAsc
-
+-}
 where
 import Data.Repa.Store.Object.Table             as Table
 import Data.Repa.Store.Format                   as Format
@@ -17,8 +18,7 @@ import Data.Repa.Flow.Generic.IO                as G
 import Data.Repa.Flow.Generic                   as F
 import Data.Repa.Array.Generic                  as A
 import Data.Repa.Array.Material                 as A
-import Data.Repa.Convert.Format
-import Data.Repa.Product
+import Data.Repa.Convert
 import Data.Word
 #include "repa-store.h"
 
@@ -27,7 +27,8 @@ import Data.Word
 --   converting each line to values with the given format.
 sourceTableFormat
         :: forall format
-        .  (Packable (Sep format), Target A (Value format))
+        .  ( Packable (Sep format), Target A (Value format)
+           , Value (Sep format) ~ Value format)
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action if we find a line longer than the chunk length.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.

@@ -2,7 +2,7 @@
 module Data.Repa.Product
         ( -- * Product type
           (:*:)   (..)
-        , IsList  (..)
+        , IsProd  (..)
 
           -- * Selecting
         , Select  (..)
@@ -28,37 +28,37 @@ data a :*: b
 infixr :*:
 
 
-class IsList p where
+class IsProd p where
  -- | Check if a sequence of products forms a valid list, 
  --   using () for the nil value.
  --
  -- @
- -- isList (1 :*: 4 :*: 5)  ... no instance
+ -- isProd (1 :*: 4 :*: 5)  ... no instance
  --
- -- isList (1 :*: 4 :*: ()) = True
+ -- isProd (1 :*: 4 :*: ()) = True
  -- @
  --
- isList :: p -> Bool
+ isProd :: p -> Bool
 
-instance IsList () where
- isList _ = True
- {-# INLINE isList #-}
+instance IsProd () where
+ isProd _ = True
+ {-# INLINE isProd #-}
 
 
-instance IsList fs => IsList (f :*: fs) where
- isList (_ :*: xs) = isList xs
- {-# INLINE isList #-}
+instance IsProd fs => IsProd (f :*: fs) where
+ isProd (_ :*: xs) = isProd xs
+ {-# INLINE isProd #-}
 
 
 ---------------------------------------------------------------------------------------------------
-class    IsList t
+class    IsProd t
       => Select  (n :: N) t where
  type    Select'    n        t
  -- | Return just the given field in this tuple.
  select ::          Nat n -> t -> Select' n t
 
 
-instance IsList ts
+instance IsProd ts
       => Select  Z    (t1 :*: ts) where
  type Select'    Z    (t1 :*: ts) = t1
  select       Zero    (t1 :*: _)  = t1
@@ -73,14 +73,14 @@ instance Select n ts
 
 
 ---------------------------------------------------------------------------------------------------
-class    IsList t 
+class    IsProd t 
       => Discard (n :: N) t where
  type    Discard'   n        t
  -- | Discard the given field in this tuple.
  discard ::         Nat n -> t -> Discard' n t
 
 
-instance IsList ts 
+instance IsProd ts 
       => Discard Z     (t1 :*: ts) where
  type Discard'   Z     (t1 :*: ts) = ts
  discard      Zero     (_  :*: xs) = xs
@@ -103,7 +103,7 @@ data Keep = Keep
 
 
 -- | Class of data types that can have parts masked out.
-class (IsList m, IsList t) => Mask  m t where
+class (IsProd m, IsProd t) => Mask  m t where
  type Mask' m t
  -- | Mask out some component of a type.
  --

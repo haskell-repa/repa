@@ -121,19 +121,19 @@ instance (Eq (Array A a), Eq (Array A b))
 
 
 --------------------------------------------------------------------------------------------- Valid
-instance Valid (Array A ()) where
- valid _ = True
- {-# INLINE valid #-}
+instance IsProd (Array A ()) where
+ isProd _ = True
+ {-# INLINE isProd #-}
 
 
-instance Valid (Array A ts) 
-      => Valid (Array A (f :*: ts)) where
- valid (AArray_Prod _ arr2) = valid arr2
- {-# INLINE valid #-}
+instance IsProd (Array A ts) 
+      => IsProd (Array A (f :*: ts)) where
+ isProd (AArray_Prod _ arr2) = isProd arr2
+ {-# INLINE isProd #-}
 
 
 -------------------------------------------------------------------------------------------- Select
-instance Valid (Array A ts)
+instance IsProd (Array A ts)
       => Select 'Z (Array A (t1 :*: ts)) where
  type Select'   'Z (Array A (t1 :*: ts)) = Array A t1
  select       Zero (AArray_Prod x1 _)    = x1
@@ -148,7 +148,7 @@ instance Select n (Array A ts)
 
 
 ------------------------------------------------------------------------------------------- Discard
-instance Valid (Array A ts)
+instance IsProd (Array A ts)
       => Discard 'Z    (Array A (t1 :*: ts)) where
  type Discard'   'Z    (Array A (t1 :*: ts)) = Array A ts
  discard       Zero    (AArray_Prod _ xs)    = xs

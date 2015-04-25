@@ -131,8 +131,8 @@ unpacksFixedFormat
         -> Maybe (Array (Value format))   -- ^ Unpacked elements.
 
 unpacksFixedFormat !format !arrBytes
- | lenBytes       <- A.length arrBytes
- , Just lenElems  <- fieldCount format
+ | lenBytes     <- A.length arrBytes
+ , lenElems     <- fieldCount format
  = unsafePerformIO
  $ do   
         let (oStart, _, fptr :: ForeignPtr Word8) 
