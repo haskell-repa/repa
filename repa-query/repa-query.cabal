@@ -26,6 +26,7 @@ Library
         template-haskell     >= 2.10.0 && < 2.11,
         buildbox             >= 2.1.6  && < 2.2,
         filepath             >= 1.4.0  && < 1.5,
+        process              >= 1.2.3  && < 1.3,
         repa-array           >= 4.1.0  && < 4.2,
         repa-flow            >= 4.1.0  && < 4.2,
         repa-convert         >= 4.1.0  && < 4.2,
@@ -49,6 +50,8 @@ Library
         Data.Repa.Query.Source
 
         Data.Repa.Query.Transform.Namify
+
+        Data.Repa.Query
 
   other-modules:
         Data.Repa.Query.Build.Repa.Exp
