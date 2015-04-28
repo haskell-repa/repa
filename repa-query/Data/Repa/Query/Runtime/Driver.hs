@@ -19,13 +19,14 @@ import qualified Data.Repa.Array.Material.Auto          as AA
 import qualified Foreign.Ptr                            as Foreign
 import qualified Foreign.ForeignPtr                     as Foreign
 import qualified System.Environment                     as System
+import Prelude                                          as P
 #include "repa-query.h"
 
 
+---------------------------------------------------------------------------------------------------
 -- | Top level driver for a query.
 --
---   The query takes the path to the root data directory as
---   its first argument.
+--   The query takes the path to the root data directory as its first argument.
 --
 execQuery :: (FilePath -> IO (Sources Word8)) -> IO ()
 execQuery makeSources
@@ -58,14 +59,19 @@ parseArgs [] config
  | otherwise = dieUsage
 
 parseArgs args config
- | "--root-data" : path : rest   <- args
+ | "-root-data" : path : rest   <- args
  = parseArgs rest $ config { configRootData = Just path }
 
  | otherwise
  = dieUsage
 
 dieUsage 
- = error "TODO query usage"
+ = error $ P.unlines
+ [ "Usage: query -root-data <PATH>"
+ , "Execute a Repa query."
+ , ""
+ , "OPTIONS:"
+ , " -root-data PATH    (required) Root path containing table data." ]
 
 
 ---------------------------------------------------------------------------------------------------

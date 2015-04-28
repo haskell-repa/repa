@@ -88,7 +88,7 @@ parseArgs args config
 -- | Die on wrong usage at command line.
 dieUsage
  = error $ P.unlines
- [ "Usage: build -root PATH FILE  [OPTIONS]"
+ [ "Usage: build -root-data PATH FILE  [OPTIONS]"
  , "Compile a Repa query into an executable."
  , "The query can be written in either the query DSL, or in the JSON format."
  , ""
