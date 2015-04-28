@@ -1,8 +1,16 @@
 
 module Data.Repa.Bits.Date32
         ( Date32
-        , pack, unpack
+
+        , pack
+
+        , unpack
+        , yearOfDate32
+        , monthOfDate32
+        , dayOfDate32
+
         , next
+
         , loadYYYYsMMsDD
         , loadDDsMMsYYYY)
 where
@@ -79,6 +87,27 @@ unpack (Date32 date)
           , fromIntegral $ (date `shiftR` 8)  .&. 0x0ff
           , fromIntegral $ date               .&. 0x0ff)
 {-# INLINE unpack #-}
+
+
+-- | Take the year number of a `Date32`.
+yearOfDate32 :: Date32 -> Word
+yearOfDate32 date
+ = case unpack date of
+        (yy, _, _)      -> yy
+
+
+-- | Take the month number of a `Date32`.
+monthOfDate32 :: Date32 -> Word
+monthOfDate32 date
+ = case unpack date of
+        (_, mm, _)      -> mm
+
+
+-- | Take the day number of a `Date32`.
+dayOfDate32 :: Date32 -> Word
+dayOfDate32 date
+ = case unpack date of
+        (_, _, dd)      -> dd
 
 
 ---------------------------------------------------------------------------------------------------

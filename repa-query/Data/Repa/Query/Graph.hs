@@ -106,9 +106,10 @@ deriving instance (Show a, Show nF)
 ---------------------------------------------------------------------------------------------------
 -- | Flow operators.
 data FlowOp a nF bV nV
-        -- | Apply a function to every element of a flow.
+        -- | Combine corresponding elements of some flows with a function.
+        --   INVARIANT: there must be at least one element in the inputs list.
         = FopMapI
-        { fopInput              :: nF                   -- ^ Input flow.
+        { fopInputs             :: [nF]                 -- ^ Input flow.
         , fopOutput             :: nF                   -- ^ Output flow.
         , fopFun                :: Exp a bV nV          -- ^ Worker function.
         }

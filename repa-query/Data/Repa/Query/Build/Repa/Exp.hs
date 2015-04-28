@@ -16,6 +16,7 @@ import Data.Repa.Flow.Auto.Format                       as F
 import Data.Repa.Query.Graph                            as G
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Convert.Formats              as C
+
 import qualified Data.Repa.Query.Runtime.Primitive      as P
 import qualified Data.Repa.Product                      as P
 
@@ -60,25 +61,39 @@ expOfScalarOp sop
         SopGe           -> Just [| P.ge     |]
         SopLt           -> Just [| P.lt     |]
 
-        SopProj 2 1     -> Just [| (\(x :*: _)                   -> x) |]
-        SopProj 2 2     -> Just [| (\(_ :*: x)                   -> x) |]
+        SopRow 0        -> Just [| ()                                                   |]
+        SopRow 1        -> Just [| (\a         -> a :*: ())                             |]
+        SopRow 2        -> Just [| (\a b       -> a :*: b :*: ())                       |]
+        SopRow 3        -> Just [| (\a b c     -> a :*: b :*: c :*: ())                 |]
+        SopRow 4        -> Just [| (\a b c d   -> a :*: b :*: c :*: d :*: ())           |]
+        SopRow 5        -> Just [| (\a b c d e -> a :*: b :*: c :*: d :*: e :*: ())     |]
+        SopRow _        -> Nothing
 
-        SopProj 3 1     -> Just [| (\(x :*: _ :*: _)             -> x) |]
-        SopProj 3 2     -> Just [| (\(_ :*: x :*: _)             -> x) |]
-        SopProj 3 3     -> Just [| (\(_ :*: _ :*: x)             -> x) |]
 
-        SopProj 4 1     -> Just [| (\(x :*: _ :*: _ :*: _)       -> x) |]
-        SopProj 4 2     -> Just [| (\(_ :*: x :*: _ :*: _)       -> x) |]
-        SopProj 4 3     -> Just [| (\(_ :*: _ :*: x :*: _)       -> x) |]
-        SopProj 4 4     -> Just [| (\(_ :*: _ :*: _ :*: x)       -> x) |]
+        SopGet 2 1      -> Just [| (\(x :*: _)                   -> x) |]
+        SopGet 2 2      -> Just [| (\(_ :*: x)                   -> x) |]
 
-        SopProj 5 1     -> Just [| (\(x :*: _ :*: _ :*: _ :*: _) -> x) |]
-        SopProj 5 2     -> Just [| (\(_ :*: x :*: _ :*: _ :*: _) -> x) |]
-        SopProj 5 3     -> Just [| (\(_ :*: _ :*: x :*: _ :*: _) -> x) |]
-        SopProj 5 4     -> Just [| (\(_ :*: _ :*: _ :*: x :*: _) -> x) |]
-        SopProj 5 5     -> Just [| (\(_ :*: _ :*: _ :*: _ :*: x) -> x) |]
+        SopGet 3 1      -> Just [| (\(x :*: _ :*: _)             -> x) |]
+        SopGet 3 2      -> Just [| (\(_ :*: x :*: _)             -> x) |]
+        SopGet 3 3      -> Just [| (\(_ :*: _ :*: x)             -> x) |]
 
-        SopProj _ _     -> Nothing
+        SopGet 4 1      -> Just [| (\(x :*: _ :*: _ :*: _)       -> x) |]
+        SopGet 4 2      -> Just [| (\(_ :*: x :*: _ :*: _)       -> x) |]
+        SopGet 4 3      -> Just [| (\(_ :*: _ :*: x :*: _)       -> x) |]
+        SopGet 4 4      -> Just [| (\(_ :*: _ :*: _ :*: x)       -> x) |]
+
+        SopGet 5 1      -> Just [| (\(x :*: _ :*: _ :*: _ :*: _) -> x) |]
+        SopGet 5 2      -> Just [| (\(_ :*: x :*: _ :*: _ :*: _) -> x) |]
+        SopGet 5 3      -> Just [| (\(_ :*: _ :*: x :*: _ :*: _) -> x) |]
+        SopGet 5 4      -> Just [| (\(_ :*: _ :*: _ :*: x :*: _) -> x) |]
+        SopGet 5 5      -> Just [| (\(_ :*: _ :*: _ :*: _ :*: x) -> x) |]
+
+        SopGet _ _      -> Nothing
+
+
+        SopYearOfDate   -> Just [| P.yearOfDate  |]
+        SopMonthOfDate  -> Just [| P.monthOfDate |]
+        SopDayOfDate    -> Just [| P.dayOfDate   |]
 
 
 -- | Yield a Haskell literal from a query literal.

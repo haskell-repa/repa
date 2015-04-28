@@ -1,13 +1,20 @@
 
 module Data.Repa.Query.Source.Scalar
-        ( negate, abs, signum
+        ( -- * Arithmetic
+          negate, abs, signum
         , (+),  (-),  (*), (/)
         , (==), (/=)
-        , (>),  (>=), (<), (<=))
+        , (>),  (>=), (<), (<=)
+
+          -- * Dates
+        , yearOfDate
+        , monthOfDate
+        , dayOfDate)
 where
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Query.Graph                    as G
 import Data.Repa.Query.Source.Compounds         as S
+import Data.Repa.Bits.Date32                    (Date32)
 import Prelude   
  hiding ( negate, abs, signum
         , (+),  (-), (*), (/)
@@ -15,6 +22,7 @@ import Prelude
         , (>),  (>=), (<), (<=))
 
 
+---------------------------------------------------------------------------------------- Arithmetic
 -- | Scalar negation.
 negate :: Value a -> Value a
 negate = makeScalarOp1 G.SopNeg
@@ -78,6 +86,18 @@ signum = makeScalarOp1 G.SopSignum
 -- | Scalar less-than-equal.
 (<=) :: Value a -> Value a -> Value Bool
 (<=) = makeScalarOp2 G.SopLe
+
+
+--------------------------------------------------------------------------------------------- Dates
+yearOfDate  :: Value Date32 -> Value Int
+yearOfDate  = makeScalarOp1 G.SopYearOfDate
+
+monthOfDate :: Value Date32 -> Value Int
+monthOfDate = makeScalarOp1 G.SopMonthOfDate
+
+dayOfDate   :: Value Date32 -> Value Int
+dayOfDate   = makeScalarOp1 G.SopDayOfDate
+
 
 
 

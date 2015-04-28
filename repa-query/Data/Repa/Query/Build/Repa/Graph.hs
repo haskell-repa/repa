@@ -129,7 +129,7 @@ bindOfSource ss
 bindOfFlowOp :: G.FlowOp () String String String -> Q (H.Pat, H.Exp)
 bindOfFlowOp op
  = case op of
-        G.FopMapI sIn sOut xFun
+        G.FopMapI [sIn] sOut xFun
          -> do  let hIn         =  H.varE (H.mkName sIn)
                 pOut            <- H.varP (H.mkName sOut)
                 hRhs            <- [| P.map_i $(expOfExp xFun) $hIn |]

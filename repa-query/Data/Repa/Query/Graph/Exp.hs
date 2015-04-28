@@ -129,6 +129,7 @@ xString a s = XVal a $ VLit a $ LString s
 -------------------------------------------------------------------------------
 -- | Scalar operators.
 data ScalarOp
+        -- Arithmetic
         = SopNeg                -- ^ Negation.
         | SopAbs                -- ^ Absolute value.
         | SopSignum             -- ^ Sign of number.
@@ -142,6 +143,15 @@ data ScalarOp
         | SopGe                 -- ^ Greater-than or equal.
         | SopLt                 -- ^ Less-than.
         | SopLe                 -- ^ Less-than or equal.
-        | SopProj Int Int       -- ^ Projection.
+
+        -- Tupling
+        | SopRow  Int           -- ^ Construction        
+        | SopGet Int Int        -- ^ Projection.
+
+        -- Dates
+        | SopYearOfDate         -- ^ Take the year number of a date.
+        | SopMonthOfDate        -- ^ Take the month number of a date.
+        | SopDayOfDate          -- ^ Take the day number of a date.
         deriving (Eq, Show)
+
 

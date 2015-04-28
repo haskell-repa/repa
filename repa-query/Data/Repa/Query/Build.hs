@@ -155,9 +155,15 @@ loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
                 -- printed JSON.
                 --
                 | Just jsonQuery        <- L.stripPrefix "OK:" msg
-                = let Just query :: Maybe (Q.Query () String String String)
-                        = Aeson.decode $ BS.pack jsonQuery
-                  in  return $ Right query
+                = case Aeson.decode $ BS.pack jsonQuery of
+                     -- Sadly, the produced JSON could not be parsed.
+                     Nothing
+                      -> return $ Left $ "loadQueryFromDSL: cannot parse produced JSON."
+
+                     -- The produced JSON parsed ok.
+                     Just (query :: Q.Query () String String String)
+                      -> return $ Right query
+
 
                 -- The EDSL query builder ran, but had some problem and couldn't
                 -- produce the query. Maybe it couldn't find table meta-data, 

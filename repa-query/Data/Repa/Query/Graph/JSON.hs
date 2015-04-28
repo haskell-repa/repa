@@ -213,10 +213,10 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
       => (ToJSON (FlowOp a nF bV nV)) where
  toJSON xx
   = case xx of
-        FopMapI fIn fOut fun
+        FopMapI fIns fOut fun
          -> object [ "_type"    .= text "fop"
                    , "fop"      .= text "mapi"
-                   , "in"       .= toJSON fIn
+                   , "ins"      .= toJSON fIns
                    , "out"      .= toJSON fOut
                    , "fun"      .= toJSON fun ]
 
@@ -257,34 +257,34 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
  parseJSON (Object hh)
 
         -- mapi
-        | Just (String "fop")  <- H.lookup "_type"   hh
-        , Just (String "mapi") <- H.lookup "fop"    hh
-        , Just jIn             <- H.lookup "in"     hh
-        , Just jOut            <- H.lookup "out"    hh
-        , Just jFun            <- H.lookup "fun"    hh
+        | Just (String "fop")  <- H.lookup "_type"    hh
+        , Just (String "mapi") <- H.lookup "fop"      hh
+        , Just jIn             <- H.lookup "ins"      hh
+        , Just jOut            <- H.lookup "out"      hh
+        , Just jFun            <- H.lookup "fun"      hh
         = do    fin     <- parseJSON jIn
                 fout    <- parseJSON jOut
                 fun     <- parseJSON jFun
                 return  $  FopMapI fin fout fun
 
         -- filteri
-        | Just (String "fop")   <- H.lookup "_type"  hh
-        , Just (String "filteri") <- H.lookup "fop" hh
-        , Just jIn             <- H.lookup "in"     hh
-        , Just jOut            <- H.lookup "out"    hh
-        , Just jFun            <- H.lookup "fun"    hh
+        | Just (String "fop")   <- H.lookup "_type"   hh
+        , Just (String "filteri") <- H.lookup "fop"   hh
+        , Just jIn             <- H.lookup "in"       hh
+        , Just jOut            <- H.lookup "out"      hh
+        , Just jFun            <- H.lookup "fun"      hh
         = do    fin     <- parseJSON jIn
                 fout    <- parseJSON jOut
                 fun     <- parseJSON jFun
                 return  $  FopFilterI fin fout fun
 
         -- foldi
-        | Just (String "fop")   <- H.lookup "_type"     hh
-        , Just (String "foldi") <- H.lookup "fop"      hh
-        , Just jIn              <- H.lookup "in"       hh
-        , Just jOut             <- H.lookup "out"      hh
-        , Just jFun             <- H.lookup "fun"      hh
-        , Just jNeutral         <- H.lookup "neutral"  hh
+        | Just (String "fop")   <- H.lookup "_type"   hh
+        , Just (String "foldi") <- H.lookup "fop"     hh
+        , Just jIn              <- H.lookup "in"      hh
+        , Just jOut             <- H.lookup "out"     hh
+        , Just jFun             <- H.lookup "fun"     hh
+        , Just jNeutral         <- H.lookup "neutral" hh
         = do    fin     <- parseJSON jIn
                 fout    <- parseJSON jOut
                 fun     <- parseJSON jFun
@@ -419,47 +419,68 @@ instance (FromJSON bV, FromJSON nV)
 ------------------------------------------------------------------------------------------ ScalarOp
 nameOfScalarOp :: ScalarOp -> String
 nameOfScalarOp sop
- = case sop of
-        SopNeg          -> "neg"
-        SopAbs          -> "abs"
-        SopSignum       -> "signum"
-        SopAdd          -> "add"
-        SopSub          -> "sub"
-        SopMul          -> "mul"
-        SopDiv          -> "div"
-        SopEq           -> "eq"
-        SopNeq          -> "neq"
-        SopGt           -> "gt"
-        SopGe           -> "ge"
-        SopLt           -> "lt"
-        SopLe           -> "le"
-        SopProj i j     -> "proj" ++ show i ++ "_" ++ show j
+        -- Atomic names
+        | [name]        <- [ name | (sop', name) <- sopNames
+                                  ,  sop == sop' ]
+        = name
+
+        -- Tupling
+        | SopRow  i     <- sop
+        = "row"  ++ show i
+
+        -- Projection
+        | SopGet i j    <- sop
+        = "get" ++ show i ++ "_" ++ show j
+
+        -- If this fails then the 'sopNames' table is probably incomplete.
+        | otherwise
+        = error "repa-query.nameOfScalarOp: no match"
 
 
 scalarOpOfName :: String -> Maybe ScalarOp
 scalarOpOfName ss
- | Just ds              <- L.stripPrefix "proj" ss
- , (ds1, '_' : ds2)     <- L.span isDigit ds
- , all isDigit ds1, length ds1 > 0
- , all isDigit ds2, length ds2 > 0
- = Just $ SopProj (read ds1) (read ds2)
+        -- Atomic names
+        | [sop]         <- [ sop | (sop, name') <- sopNames
+                                 , ss == name' ]
+        = Just sop
 
- | otherwise
- = case ss of
-        "neg"           -> Just $ SopNeg
-        "abs"           -> Just $ SopAbs
-        "signum"        -> Just $ SopSignum
-        "add"           -> Just $ SopAdd
-        "sub"           -> Just $ SopSub
-        "mul"           -> Just $ SopMul
-        "div"           -> Just $ SopDiv
-        "eq"            -> Just $ SopEq
-        "neq"           -> Just $ SopNeq
-        "gt"            -> Just $ SopGt
-        "ge"            -> Just $ SopGe
-        "lt"            -> Just $ SopLt
-        "le"            -> Just $ SopLe
-        _               -> Nothing
+        -- Tupling
+        | Just ds              <- L.stripPrefix "row" ss
+        , all isDigit ds,  length ds > 0
+        = Just $ SopRow  (read ds)
+
+        -- Projection
+        | Just ds              <- L.stripPrefix "get" ss
+        , (ds1, '_' : ds2)     <- L.span isDigit ds
+        , all isDigit ds1, length ds1 > 0
+        , all isDigit ds2, length ds2 > 0
+        = Just $ SopGet (read ds1) (read ds2)
+
+        | otherwise
+        = Nothing
+
+
+sopNames :: [(ScalarOp, String)]
+sopNames 
+ =      -- Arithmetic
+        [ (SopNeg,              "neg")
+        , (SopAbs,              "abs")
+        , (SopSignum,           "signum")
+        , (SopAdd,              "add")
+        , (SopSub,              "sub")
+        , (SopMul,              "mul")
+        , (SopDiv,              "div")
+        , (SopEq,               "eq")
+        , (SopNeq,              "neq")
+        , (SopGt,               "gt")
+        , (SopGe,               "ge")
+        , (SopLt,               "lt")
+        , (SopLe,               "le")
+
+        -- Dates
+        , (SopYearOfDate,       "yearOfDate")
+        , (SopMonthOfDate,      "monthOfDate")
+        , (SopDayOfDate,        "dayOfDate")]
 
 
 ---------------------------------------------------------------------------------------------------

@@ -61,8 +61,8 @@ instance Namify (Node a nF) where
 instance Namify (FlowOp a nF) where
  namify nam fop
   = case fop of
-        FopMapI    fin fout xx
-         -> liftM  (FopMapI fin fout)    (namify nam xx)
+        FopMapI    fins fout xx
+         -> liftM  (FopMapI fins fout)   (namify nam xx)
 
         FopFilterI fin fout xx
          -> liftM  (FopFilterI fin fout) (namify nam xx)

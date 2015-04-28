@@ -19,7 +19,7 @@ module Data.Repa.Query.Source
           Query, Flow, Value
 
           -- * Query builder
-        , query
+        , Q, query
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
@@ -35,7 +35,7 @@ module Data.Repa.Query.Source
         , fromColumns
 
           -- ** Mapping
-        , map
+        , map, map2, map3, map4, map5
 
           -- ** Folding
         , fold
@@ -55,6 +55,14 @@ module Data.Repa.Query.Source
         , (==), (/=)
         , (>),  (>=), (<), (<=)
 
+          -- ** Dates
+        , yearOfDate
+        , monthOfDate
+        , dayOfDate
+
+          -- ** Constructors
+        , row0, row1, row2, row3, row4, row5
+
           -- ** Projections
         , get2_1, get2_2
         , get3_1, get3_2, get3_3
@@ -64,7 +72,7 @@ module Data.Repa.Query.Source
           -- * Prelude re-exports.
         , ($)
         , return, (>>=), (=<<)
-        , P.Int, P.Float, P.Double, P.String)
+        , P.Int, P.Float, P.Double, P.String, Date32.Date32)
 where
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Query.Source.Literal           ()
@@ -73,6 +81,7 @@ import Data.Repa.Query.Source.Projection
 import Data.Repa.Query.Source.Scalar
 import Data.Repa.Query.Source.Sources
 import Data.Repa.Store.Format                   as F
+import qualified Data.Repa.Bits.Date32          as Date32
 import qualified Prelude                        as P
 import Prelude   
  hiding ( ($), return, (>>=), (=<<)

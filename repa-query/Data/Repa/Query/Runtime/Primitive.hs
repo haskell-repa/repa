@@ -9,10 +9,16 @@ module Data.Repa.Query.Runtime.Primitive
           pattern Unit
         , (>>=), (=<<), return
         , error
+
         , negate, abs, signum
         , add, sub, mul, div
         , eq,  neq
         , gt,  ge,  lt,  le
+
+          -- * From Data.Repa.Bits.Date32
+        , yearOfDate
+        , monthOfDate
+        , dayOfDate
 
           -- * From Data.Repa.Flow.Auto
         , map_i
@@ -67,13 +73,14 @@ import qualified Data.Repa.Flow.Auto.IO         as F
 import qualified Data.Repa.Flow.Auto.Format     as F
 import qualified Data.Repa.Store.Flow           as S
 import qualified Data.Repa.Convert.Formats      as C
+import qualified Data.Repa.Bits.Date32          as B
 import qualified Data.Repa.Singleton.Nat        as R
 import qualified System.FilePath                as FilePath
 
 import Data.Repa.Product
 
 
--- Prelude
+------------------------------------------------------------------------------------------- Prelude
 pattern Unit            = ()
 
 (>>=)                   = (\x y -> x P.>>= y)
@@ -96,6 +103,13 @@ lt                      = (\x y -> x P.<  y)
 le                      = (\x y -> x P.<= y)
 
 
+--------------------------------------------------------------------------------------------- Dates
+yearOfDate              = (\x -> P.fromIntegral (B.yearOfDate32  x))
+monthOfDate             = (\x -> P.fromIntegral (B.monthOfDate32 x))
+dayOfDate               = (\x -> P.fromIntegral (B.dayOfDate32   x))
+
+
+---------------------------------------------------------------------------------------------- Flow
 -- Data.Repa.Flow.Auto
 -- TODO: conversions need to be redone chunkwise,
 --       instead of row-at-a-time.
