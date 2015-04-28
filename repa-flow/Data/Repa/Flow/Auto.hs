@@ -25,6 +25,10 @@ module Data.Repa.Flow.Auto
         --   `Data.Repa.Flow.Generic.map_i` and
         --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
         , map_i,                map_o
+        , zipWith_ii
+        , zipWith3_ii
+        , zipWith4_ii
+        , zipWith5_ii
 
         -- ** Connecting
         , dup_oo
@@ -164,6 +168,68 @@ map_o   :: (Flow a, Build b bt)
         => (a -> b) -> Sinks b   -> IO (Sinks a)
 map_o f s = C.smap_o (\_ x -> f x) s
 {-# INLINE map_o #-}
+
+
+-- | Combine corresponding elements of two sources with the given function.
+zipWith_ii 
+        :: (Flow a, Flow b, Build c bt)
+        => (a -> b -> c) 
+        -> Sources a -> Sources b 
+        -> IO (Sources c)
+zipWith_ii f sa sb
+        = C.szipWith_ii A (\_ a b -> f a b) sa sb
+{-# INLINE zipWith_ii #-}
+
+
+-- | Combine corresponding elements of three sources with the given function.
+---
+--   TODO: do this chunkwise instead.
+zipWith3_ii 
+        :: ( Flow a, Flow b, Flow c
+           , Build b bt, Build c ct, Build d dt)
+        => (a -> b -> c -> d) 
+        -> Sources a -> Sources b -> Sources c
+        -> IO (Sources d)
+zipWith3_ii f sa sb sc
+        =   C.szipWith_ii A (\_ a (b, c) -> f a b c) sa 
+        =<< C.szipWith_ii A (\_ b c      -> (b, c))  sb sc
+{-# INLINE zipWith3_ii #-}
+
+
+-- | Combine corresponding elements of four sources with the given function.
+---
+--   TODO: do this chunkwise instead.
+zipWith4_ii 
+        :: ( Flow a, Flow b, Flow c, Flow d
+           , Build a at, Build b bt, Build c ct, Build d dt, Build e et)
+        => (a -> b -> c -> d -> e) 
+        -> Sources a -> Sources b -> Sources c -> Sources d
+        -> IO (Sources e)
+zipWith4_ii f sa sb sc sd
+ = do   sab     <- C.szipWith_ii A (\_ a b -> (a, b)) sa sb
+        scd     <- C.szipWith_ii A (\_ c d -> (c, d)) sc sd
+        result  <- C.szipWith_ii A (\_ (a, b) (c, d) -> f a b c d) sab scd
+        return result
+{-# INLINE zipWith4_ii #-}
+
+
+-- | Combine corresponding elements of five sources with the given function.
+---
+--   TODO: do this chunkwise instead.
+zipWith5_ii 
+        :: ( Flow a, Flow b, Flow c, Flow d, Flow e
+           , Build a at, Build b bt, Build c ct, Build d dt, Build e et
+           , Build f ft)
+        => (a -> b -> c -> d -> e -> f) 
+        -> Sources a -> Sources b -> Sources c -> Sources d -> Sources e
+        -> IO (Sources f)
+zipWith5_ii f sa sb sc sd se
+ = do   sab     <- C.szipWith_ii  A (\_ a b -> (a, b)) sa sb
+        scd     <- C.szipWith_ii  A (\_ c d -> (c, d)) sc sd
+        result  <- zipWith3_ii      (\(a, b) (c, d) e -> f a b c d e) 
+                                    sab scd se
+        return result
+{-# INLINE zipWith5_ii #-}
 
 
 -- Connecting -----------------------------------------------------------------
