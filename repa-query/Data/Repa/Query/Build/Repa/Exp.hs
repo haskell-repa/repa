@@ -61,13 +61,37 @@ expOfScalarOp sop
         SopGe           -> Just [| P.ge     |]
         SopLt           -> Just [| P.lt     |]
 
-        SopRow 0        -> Just [| ()                                                   |]
-        SopRow 1        -> Just [| (\a         -> a :*: ())                             |]
-        SopRow 2        -> Just [| (\a b       -> a :*: b :*: ())                       |]
-        SopRow 3        -> Just [| (\a b c     -> a :*: b :*: c :*: ())                 |]
-        SopRow 4        -> Just [| (\a b c d   -> a :*: b :*: c :*: d :*: ())           |]
-        SopRow 5        -> Just [| (\a b c d e -> a :*: b :*: c :*: d :*: e :*: ())     |]
-        SopRow _        -> Nothing
+        SopRow 0
+         -> Just [| P.Unit |]
+        SopRow 1
+         -> Just [| (\  a
+                     -> a :*: P.Unit) |]
+        SopRow 2
+         -> Just [| (\  a b
+                     -> a :*: b :*: P.Unit) |]
+        SopRow 3
+         -> Just [| (\  a b c
+                     -> a :*: b :*: c :*: P.Unit) |]
+        SopRow 4
+         -> Just [| (\  a b c d
+                     -> a :*: b :*: c :*: d :*: P.Unit) |]
+        SopRow 5
+         -> Just [| (\  a b c d e
+                     -> a :*: b :*: c :*: d :*: e :*: P.Unit) |]
+        SopRow 6
+         -> Just [| (\  a b c d e f 
+                     -> a :*: b :*: c :*: d :*: e :*: f :*: P.Unit) |]
+        SopRow 7
+         -> Just [| (\  a b c d e f g
+                     -> a :*: b :*: c :*: d :*: e :*: f :*: g :*: P.Unit) |]
+        SopRow 8
+         -> Just [| (\  a b c d e f g h
+                     -> a :*: b :*: c :*: d :*: e :*: f :*: g :*: h :*: P.Unit) |]
+        SopRow 9
+         -> Just [| (\  a b c d e f g h i 
+                     -> a :*: b :*: c :*: d :*: e :*: f :*: g :*: h :*: i :*: P.Unit) |]
+        SopRow _        
+         -> Nothing
 
 
         SopGet 2 1      -> Just [| (\(x :*: _)                   -> x) |]

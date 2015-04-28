@@ -135,10 +135,10 @@ module Data.Repa.Flow
         --   `Data.Repa.Flow.Generic.map_i` and
         --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
         , map_i,                map_o
-        , zipWith_ii
-        , zipWith3_ii
-        , zipWith4_ii
-        , zipWith5_ii
+        , zipWith_i
+        , zipWith3_i
+        , zipWith4_i
+        , zipWith5_i
 
         -- ** Connecting
         , dup_oo

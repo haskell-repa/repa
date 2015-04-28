@@ -71,6 +71,7 @@ Library
         -threaded
         -Wall -fno-warn-missing-signatures
         -O2 -Werror
+        -fsimpl-tick-factor=1000
 
   include-dirs:
         include

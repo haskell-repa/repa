@@ -22,6 +22,7 @@ module Data.Repa.Query.Runtime.Primitive
 
           -- * From Data.Repa.Flow.Auto
         , map_i
+        , zipWith_i, zipWith3_i, zipWith4_i, zipWith5_i
         , select_i
         , discard_i
         , mask_i
@@ -104,8 +105,13 @@ le                      = (\x y -> x P.<= y)
 
 
 --------------------------------------------------------------------------------------------- Dates
+yearOfDate              :: B.Date32 -> P.Int
 yearOfDate              = (\x -> P.fromIntegral (B.yearOfDate32  x))
+
+monthOfDate             :: B.Date32 -> P.Int
 monthOfDate             = (\x -> P.fromIntegral (B.monthOfDate32 x))
+
+dayOfDate               :: B.Date32 -> P.Int
 dayOfDate               = (\x -> P.fromIntegral (B.dayOfDate32   x))
 
 
@@ -115,6 +121,11 @@ dayOfDate               = (\x -> P.fromIntegral (B.dayOfDate32   x))
 --       instead of row-at-a-time.
 
 map_i                   = F.map_i
+zipWith_i               = F.zipWith_i
+zipWith3_i              = F.zipWith3_i
+zipWith4_i              = F.zipWith4_i
+zipWith5_i              = F.zipWith5_i
+
 select_i                = F.select_i
 discard_i               = F.discard_i
 mask_i                  = F.mask_i

@@ -7,17 +7,23 @@ module Data.Repa.Query.Source.Compounds
         , makeScalarOp2
         , makeScalarOp3
         , makeScalarOp4
-        , makeScalarOp5)
+        , makeScalarOp5
+        , makeScalarOp6
+        , makeScalarOp7
+        , makeScalarOp8
+        , makeScalarOp9)
 where
 import Data.Repa.Query.Source.Builder
 import qualified Data.Repa.Query.Graph          as G
 
 
+---------------------------------------------------------------------------------------------------
 xVar i          = G.XVar () i
 xLam x          = G.XVal () (G.VLam () () x)
 xOp s args      = G.XOp  () s args
 
 
+---------------------------------------------------------------------------------------------------
 makeScalarOp0
         :: G.ScalarOp 
         -> Value a
@@ -63,3 +69,42 @@ makeScalarOp5
         -> Value f
 makeScalarOp5 sop (Value x1) (Value x2) (Value x3) (Value x4) (Value x5)
         = Value $ xOp sop [x1, x2, x3, x4, x5]
+
+
+makeScalarOp6
+        :: G.ScalarOp
+        -> Value a -> Value b -> Value c -> Value d -> Value e -> Value f
+        -> Value g
+makeScalarOp6 sop 
+        (Value x1) (Value x2) (Value x3) (Value x4) (Value x5) (Value x6)
+        = Value $ xOp sop [x1, x2, x3, x4, x5, x6]
+
+
+makeScalarOp7
+        :: G.ScalarOp
+        -> Value a -> Value b -> Value c -> Value d -> Value e -> Value f -> Value g
+        -> Value h
+makeScalarOp7 sop 
+        (Value x1) (Value x2) (Value x3) (Value x4) (Value x5) (Value x6) (Value x7)
+        = Value $ xOp sop [x1, x2, x3, x4, x5, x6, x7]
+
+
+makeScalarOp8
+        :: G.ScalarOp
+        -> Value a -> Value b -> Value c -> Value d -> Value e -> Value f -> Value g -> Value h
+        -> Value i
+makeScalarOp8 sop 
+        (Value x1) (Value x2) (Value x3) (Value x4) (Value x5) (Value x6) (Value x7) (Value x8)
+        = Value $ xOp sop [x1, x2, x3, x4, x5, x6, x7, x8]
+
+
+makeScalarOp9
+        :: G.ScalarOp
+        -> Value a -> Value b -> Value c -> Value d -> Value e -> Value f -> Value g -> Value h
+        -> Value i
+        -> Value j
+makeScalarOp9 sop 
+        (Value x1) (Value x2) (Value x3) (Value x4) (Value x5) (Value x6) (Value x7) (Value x8)
+        (Value x9)
+        = Value $ xOp sop [x1, x2, x3, x4, x5, x6, x7, x8, x9]
+

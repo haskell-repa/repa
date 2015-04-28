@@ -48,7 +48,7 @@ map2 fun mkIn1 mkIn2
                 [takeFlow fIn1, takeFlow fIn2]
                 (takeFlow fOut)
                 (xLam $ xLam 
-                 $ let Value x  = fun   (Value $ xVar 0) (Value $ xVar 1)
+                 $ let Value x  = fun   (Value $ xVar 1) (Value $ xVar 0)
                    in  x)
 
         return fOut
@@ -70,8 +70,8 @@ map3 fun mkIn1 mkIn2 mkIn3
                 [takeFlow fIn1, takeFlow fIn2, takeFlow fIn3]
                 (takeFlow fOut)
                 (xLam $ xLam $ xLam
-                 $ let Value x  = fun   (Value $ xVar 0) (Value $ xVar 1)
-                                        (Value $ xVar 2)
+                 $ let Value x  = fun   (Value $ xVar 2) (Value $ xVar 1)
+                                        (Value $ xVar 0)
                    in  x)
 
         return fOut
@@ -94,8 +94,8 @@ map4 fun mkIn1 mkIn2 mkIn3 mkIn4
                 [takeFlow fIn1, takeFlow fIn2, takeFlow fIn3, takeFlow fIn4]
                 (takeFlow fOut)
                 (xLam $ xLam $ xLam $ xLam
-                 $ let Value x  = fun   (Value $ xVar 0) (Value $ xVar 1)
-                                        (Value $ xVar 2) (Value $ xVar 3)
+                 $ let Value x  = fun   (Value $ xVar 3) (Value $ xVar 2)
+                                        (Value $ xVar 1) (Value $ xVar 0)
                    in  x)
 
         return fOut
@@ -119,9 +119,9 @@ map5 fun mkIn1 mkIn2 mkIn3 mkIn4 mkIn5
                 [takeFlow fIn1, takeFlow fIn2, takeFlow fIn3, takeFlow fIn4, takeFlow fIn5]
                 (takeFlow fOut)
                 (xLam $ xLam $ xLam $ xLam $ xLam
-                 $ let Value x  = fun   (Value $ xVar 0) (Value $ xVar 1)
-                                        (Value $ xVar 2) (Value $ xVar 3)
-                                        (Value $ xVar 4)
+                 $ let Value x  = fun   (Value $ xVar 4) (Value $ xVar 3)
+                                        (Value $ xVar 2) (Value $ xVar 1)
+                                        (Value $ xVar 0)
                    in  x)
 
         return fOut

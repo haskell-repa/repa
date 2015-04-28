@@ -1,6 +1,6 @@
 
 module Data.Repa.Query.Source.Projection
-        ( row0, row1, row2, row3, row4, row5
+        ( row0, row1, row2, row3, row4, row5, row6, row7, row8, row9
         , get1_1
         , get2_1, get2_2
         , get3_1, get3_2, get3_3
@@ -41,6 +41,27 @@ row4    = makeScalarOp4 $ G.SopRow 4
 row5    :: Value a -> Value b -> Value c -> Value d -> Value e
         -> Value (a :*: b :*: c :*: d :*: e :*: ())
 row5    = makeScalarOp5 $ G.SopRow 5
+
+
+row6    :: Value a -> Value b -> Value c -> Value d -> Value e -> Value f
+        -> Value (a :*: b :*: c :*: d :*: e :*: f :*: ())
+row6    = makeScalarOp6 $ G.SopRow 6
+
+
+row7    :: Value a -> Value b -> Value c -> Value d -> Value e -> Value f -> Value g
+        -> Value (a :*: b :*: c :*: d :*: e :*: f :*: g :*: ())
+row7    = makeScalarOp7 $ G.SopRow 7
+
+
+row8    :: Value a -> Value b -> Value c -> Value d -> Value e -> Value f -> Value g -> Value h
+        -> Value (a :*: b :*: c :*: d :*: e :*: f :*: g :*: h :*: ())
+row8    = makeScalarOp8 $ G.SopRow 8
+
+
+row9    :: Value a -> Value b -> Value c -> Value d -> Value e -> Value f -> Value g -> Value h 
+        -> Value i
+        -> Value (a :*: b :*: c :*: d :*: e :*: f :*: g :*: h :*: i :*: ())
+row9    = makeScalarOp9 $ G.SopRow 9
 
 
 ----------------------------------------------------------------------------------------------- Get
