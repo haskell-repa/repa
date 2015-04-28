@@ -51,6 +51,10 @@ Library
         Data.Repa.Query.Transform.Namify
 
   other-modules:
+        Data.Repa.Query.Build.Repa.Exp
+        Data.Repa.Query.Build.Repa.Graph
+        Data.Repa.Query.Build.Repa.Query
+
         Data.Repa.Query.Graph.Eval.Env
         Data.Repa.Query.Graph.Eval.Exp
         Data.Repa.Query.Graph.Exp
