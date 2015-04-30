@@ -72,6 +72,7 @@ import Data.Repa.Store.Format                           as F
 import Prelude 
         hiding (map, filter)
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Produce a query using the default ASCII output format.
 query   :: Q (Flow a) -> Q Query

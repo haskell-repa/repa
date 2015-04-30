@@ -6,6 +6,7 @@ module Data.Repa.Query.Transform.Namify
 where
 import Control.Monad
 import Data.Repa.Query.Graph            as Q
+import Data.Repa.Query.Job              as Q
 import Data.Map                         (Map)
 import qualified Data.Map               as Map
 

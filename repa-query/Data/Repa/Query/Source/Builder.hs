@@ -20,6 +20,7 @@ module Data.Repa.Query.Source.Builder
 where
 import qualified Data.Repa.Store.Format                 as F
 import qualified Data.Repa.Query.Graph                  as G
+import qualified Data.Repa.Query.Job                    as G
 import qualified Data.Repa.Query.Transform.Namify       as N
 import Control.Monad
 

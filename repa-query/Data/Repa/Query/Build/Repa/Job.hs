@@ -3,13 +3,14 @@
 
 -- | Compilation of Repa queries to native code by 
 --   emitting a Haskell program using repa-flow and compiling it with GHC.
-module Data.Repa.Query.Build.Repa.Query
+module Data.Repa.Query.Build.Repa.Job
         ( decOfQuery
         , expOfQuery)
 where
 import Data.Repa.Query.Build.Repa.Exp                   as R
 import Data.Repa.Query.Build.Repa.Graph                 as R
 import Data.Repa.Query.Graph                            as G
+import Data.Repa.Query.Job                              as G
 import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
@@ -19,7 +20,7 @@ import qualified Data.Repa.Query.Runtime.Primitive      as P
 -- | Yield a top-level Haskell declararation for a query.
 --
 --   The query expression is bound to the given name.
-decOfQuery   
+decOfQuery
         :: Name
         -> G.Query () String String String 
         -> Q H.Dec
