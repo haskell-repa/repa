@@ -1,5 +1,5 @@
 
-module Data.Repa.Query.Source.Operator
+module Data.Repa.Query.Source.Primitive.Operator
         ( map, map2, map3, map4, map5
         , fold, folds
         , filter
@@ -9,7 +9,7 @@ import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Product
 import Data.Int
-import Data.Repa.Query.Source.Compounds         as C
+import Data.Repa.Query.Graph.Compounds          as G
 import qualified Data.Repa.Query.Graph          as G
 import Prelude   
  hiding ( map, filter

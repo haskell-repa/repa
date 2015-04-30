@@ -7,22 +7,24 @@ module Data.Repa.Flow.Auto.Format
           -- * Packing functions
         , packFormat_i
         , concatPackFormat_i
-        , unlinesPackFormat_i)
+        , unlinesPackFormat_i
+        , unlinesPackAscii_i)
 where
 import Data.Word
 import Data.Char
-import Data.Repa.Flow.Auto                      as F
-import Data.Repa.Array                          as A
-import Data.Repa.Array.Auto.Format              as A
-import qualified Data.Repa.Flow.Generic         as G
-import qualified Data.Repa.Convert.Format       as C
+import Data.Repa.Flow.Auto                              as F
+import Data.Repa.Array                                  as A
+import Data.Repa.Array.Auto.Format                      as A
+import qualified Data.Repa.Flow.Generic                 as G
+import qualified Data.Repa.Convert.Format               as C
+import qualified Data.Repa.Convert.Default.Ascii        as C
 import Data.Repa.Convert.Formats
 #include "repa-flow.h"
 
 
 -- | Pack elements into the given storage formats.
 packFormat_i
-        :: (C.Packable format, Elem (Value format), Build (Array Word8) t)
+        :: (C.Packable format, Elem (Value format))
         => format                       -- ^ Desination format for data.
         -> Sources (Value format)       -- ^ Sources of values to be packed.
         -> IO (Sources (Array Word8))   -- ^ Packed data.
@@ -55,15 +57,34 @@ concatPackFormat_i format ss
 -- | Like `concatPackFormat_i`, 
 --   but also insert a newline character after each array.
 unlinesPackFormat_i
-        :: (C.Packable format, Elem (Value format), Build (Array Word8) t)
+        :: (C.Packable format, Elem (Value format))
         => format                       -- ^ Destination format for data.
         -> Sources (Value format)       -- ^ Sources of values to be packed.
         -> IO (Sources Word8)           -- ^ Packed data.
 
 unlinesPackFormat_i format ss
         =   G.map_i A.concat
-        =<< F.map_i (\arr -> A.concat $ A.fromList [arr, nl])
+        =<< F.map_i (\arr -> A.concat $ A.fromList [arr, nl])   -- TODO: want intercalate.
         =<< packFormat_i format ss
         where   !nl = A.fromList [fromIntegral $ ord '\n']
 {-# INLINE_FLOW unlinesPackFormat_i #-}
+
+
+-- | Like `unlinesPackFormat_i`,
+--   but use a default, human-readable format to encode the values.
+unlinesPackAscii_i
+        :: forall a 
+        . ( C.FormatAscii a, a ~ Value (C.FormatAscii' a)
+          , Elem a
+          , Packable (C.FormatAscii' a))
+        => Sources a                    -- ^ Sources of values to be packed.
+        -> IO (Sources Word8)           -- ^ Packed data.
+
+unlinesPackAscii_i ss
+        =   G.map_i A.concat
+        =<< F.map_i (\arr -> A.concat $ A.fromList [arr, nl])    -- TODO: want intercalate
+        =<< packFormat_i (C.formatAscii proxy) ss
+        where   !nl     = A.fromList [fromIntegral $ ord '\n']
+                proxy   = (error "repa-flow: unlinesPackAscii_i proxy" :: a)
+{-# INLINE_FLOW unlinesPackAscii_i #-}
 

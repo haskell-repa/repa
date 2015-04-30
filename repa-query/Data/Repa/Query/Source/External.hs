@@ -1,20 +1,11 @@
 
--- | Repa query EDSL.
+-- | Re-export of query combinators to be used when building queries defined
+--   in external code. We re-export all the basic types and functions the
+--   in the Preude the function may need to use, but without IO functions
+--   that can access the local file system directly, like readFile / writeFile.
 --
---   A query written with this EDSL expresses an AST/operator graph that
---   compiled into an executable that computes the result of the query.
---
---   The produced AST includes enough type information about the the source
---   data that it can be checked for well-formedness without access to
---   external metadata -- namely the format of tables and the types of
---   their columns.
---
---   This meta-data can either be embedded directly in the query, 
---   or read from a local copy of the table metadata, depending on what
---   operators are used.
---   
-module Data.Repa.Query.Source
-        ( -- * Query Types
+module Data.Repa.Query.Source.External
+        ( -- * Query types.
           Query, Flow, Value
 
           -- * Query builder
@@ -48,6 +39,12 @@ module Data.Repa.Query.Source
         , groupsBy
 
           -- * Scalar operators
+          -- ** Arithmetic
+        , negate, abs, signum
+        , (+),  (-),  (*), (/)
+        , (==), (/=)
+        , (>),  (>=), (<), (<=)
+
           -- ** Dates
         , yearOfDate
         , monthOfDate
@@ -60,7 +57,12 @@ module Data.Repa.Query.Source
         , get2_1, get2_2
         , get3_1, get3_2, get3_3
         , get4_1, get4_2, get4_3, get4_4
-        , get5_1, get5_2, get5_3, get5_4, get5_5)
+        , get5_1, get5_2, get5_3, get5_4, get5_5
+
+          -- * Prelude re-exports.
+        , ($)
+        , return, (>>=), (=<<)
+        , P.Int, P.Float, P.Double, P.String, Date32.Date32)
 where
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Query.Source.Primitive.Literal         ()
@@ -68,11 +70,27 @@ import Data.Repa.Query.Source.Primitive.Operator
 import Data.Repa.Query.Source.Primitive.Projection
 import Data.Repa.Query.Source.Primitive.Scalar
 import Data.Repa.Query.Source.Primitive.Sources
+import Data.Repa.Bits.Date32                            as Date32
 import Data.Repa.Store.Format                           as F
-import Prelude 
-        hiding (map, filter)
+import qualified Prelude                                as P
+import Prelude   
+ hiding ( ($), return, (>>=), (=<<)
+        , map, filter
+        , negate, abs, signum
+        , (+),  (-), (*), (/)
+        , (==), (/=)
+        , (>),  (>=), (<), (<=))
 
----------------------------------------------------------------------------------------------------
+
+-- Re-exports of Prelude things, 
+-- so the names are reported from coming from this module in
+-- EDSL compile time error messages.
+($)     = (\x y -> x P.$ y)
+return  = P.return
+(>>=)   = (\x y -> x P.>>= y)
+(=<<)   = (\x y -> x P.=<< y)
+
+
 -- | Produce a query using the default ASCII output format.
 query   :: Q (Flow a) -> Q Query
 query mkFlow
@@ -88,4 +106,5 @@ queryAs :: F.Delim -> F.Field a
 queryAs delim field mkFlow
  = do   flow    <- mkFlow
         return  $ QueryFixed delim field flow
+
 

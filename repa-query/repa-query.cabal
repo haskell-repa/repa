@@ -18,7 +18,10 @@ Library
         base                 == 4.8.*,
         mtl                  == 2.2.1,
         text                 == 1.2.*,
+
         aeson                == 0.8.*,
+        aeson-pretty         >= 0.7.2  && < 0.8,
+
         directory            >= 1.2.2  && < 1.3,
         bytestring           >= 0.10.6 && < 0.11, 
         unordered-containers >= 0.2.5  && < 0.3,
@@ -40,13 +43,15 @@ Library
 
         Data.Repa.Query.Graph.Eval
         Data.Repa.Query.Graph.JSON
+        Data.Repa.Query.Graph.Compounds
         Data.Repa.Query.Graph
 
         Data.Repa.Query.Runtime.Primitive
         Data.Repa.Query.Runtime
 
         Data.Repa.Query.Source.Builder
-        Data.Repa.Query.Source.Compounds
+        Data.Repa.Query.Source.External
+        Data.Repa.Query.Source.Interact
         Data.Repa.Query.Source
 
         Data.Repa.Query.Transform.Namify
@@ -64,11 +69,11 @@ Library
 
         Data.Repa.Query.Runtime.Driver
 
-        Data.Repa.Query.Source.Literal
-        Data.Repa.Query.Source.Operator
-        Data.Repa.Query.Source.Projection
-        Data.Repa.Query.Source.Scalar
-        Data.Repa.Query.Source.Sources
+        Data.Repa.Query.Source.Primitive.Literal
+        Data.Repa.Query.Source.Primitive.Operator
+        Data.Repa.Query.Source.Primitive.Projection
+        Data.Repa.Query.Source.Primitive.Scalar
+        Data.Repa.Query.Source.Primitive.Sources
 
   ghc-options:
         -threaded

@@ -1,5 +1,5 @@
 
-module Data.Repa.Query.Source.Compounds
+module Data.Repa.Query.Graph.Compounds
         ( xVar, xLam, xOp
 
         , makeScalarOp0

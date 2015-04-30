@@ -1,5 +1,5 @@
 
-module Data.Repa.Query.Source.Projection
+module Data.Repa.Query.Source.Primitive.Projection
         ( row0, row1, row2, row3, row4, row5, row6, row7, row8, row9
         , get1_1
         , get2_1, get2_2
@@ -8,7 +8,7 @@ module Data.Repa.Query.Source.Projection
         , get5_1, get5_2, get5_3, get5_4, get5_5)
 where
 import Data.Repa.Query.Source.Builder           as S
-import Data.Repa.Query.Source.Compounds         as S
+import Data.Repa.Query.Graph.Compounds          as G
 import Data.Repa.Query.Graph                    as G
 import Data.Repa.Product
 

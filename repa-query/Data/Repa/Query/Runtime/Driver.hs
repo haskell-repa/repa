@@ -14,10 +14,7 @@ import Data.Maybe
 import System.IO
 import qualified Data.Repa.Flow.Generic                 as FG
 import qualified Data.Repa.Array.Generic                as AG
-import qualified Data.Repa.Array.Material.Foreign       as AF
 import qualified Data.Repa.Array.Material.Auto          as AA
-import qualified Foreign.Ptr                            as Foreign
-import qualified Foreign.ForeignPtr                     as Foreign
 import qualified System.Environment                     as System
 import Prelude                                          as P
 #include "repa-query.h"
@@ -37,7 +34,7 @@ execQuery makeSources
         let Just pathRootData = configRootData config
 
         ss      <- makeSources pathRootData
-        True    <- streamSourcesToStdout ss
+        streamSourcesToStdout ss
         return  ()
 {-# INLINE execQuery #-}
 
@@ -81,16 +78,29 @@ dieUsage
 --   If this is not true then the function returns False, and no data is
 --   written to stdout.
 --
-streamSourcesToStdout :: Sources Word8 -> IO Bool
+streamSourcesToStdout :: Sources Word8 -> IO ()
 streamSourcesToStdout ss
- =   FG.funnel_i ss 
- >>= streamSourceToStdout
+ = do   
+        ss0     <- FG.funnel_i ss
+        ss1     <- FG.mapIndex_i (\_ -> 1) (\_ -> ()) ss0
+
+        b       <- hBucket stdout
+        let bs  = AG.fromList AA.B [b]
+        ks      <- sinkBytes bs 
+        drainP ss1 ks
+
 {-# INLINE_FLOW streamSourcesToStdout #-}
 
 
+{-
 -- | Read data from a unitary stream and write it to stdout.
 streamSourceToStdout   :: FG.Sources () IO (AA.Array AA.A Word8) -> IO Bool
-streamSourceToStdout (FG.Sources () pullX)
+streamSourceToStdout ss -- (FG.Sources () pullX)
+ = do   
+        let bs  =  AG.fromList AA.A [stdout]
+        ks      <- F.sinkBytes bs
+        drainP ss ks
+
  = do   go
         return True
 
@@ -114,4 +124,4 @@ streamSourceToStdout (FG.Sources () pullX)
                 return ()
         {-# INLINE eject_streamSource #-}
 {-# INLINE_FLOW streamSourceToStdout #-}
-
+-}

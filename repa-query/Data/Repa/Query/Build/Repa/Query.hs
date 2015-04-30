@@ -35,24 +35,29 @@ decOfQuery nResult query
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a query
 expOfQuery   :: G.Query  () String String String -> Q H.Exp
-expOfQuery (G.Query (G.OutputFormatFixed delim fields) 
-                    sResult (G.Graph nodes))
- = case delim of
-        Q.Fixed{}
-         -> [| $sources P.>>= P.concatPackFormat_i  $format' |]
 
-        Q.Lines{}
-         -> [| $sources P.>>= P.unlinesPackFormat_i $format' |]
+expOfQuery (G.Query outputFormat sResult (G.Graph nodes))
+ = case outputFormat of
+    G.OutputFormatFixed delim fields
+     -> let Just format'
+             = expOfDelimFields delim fields
 
-        Q.LinesSep{}
-         -> [| $sources P.>>= P.unlinesPackFormat_i $format' |]
+        in case delim of
+            Q.Fixed{}
+             -> [| $sources P.>>= P.concatPackFormat_i  $format' |]
+
+            Q.Lines{}
+             -> [| $sources P.>>= P.unlinesPackFormat_i $format' |]
+
+            Q.LinesSep{}
+             -> [| $sources P.>>= P.unlinesPackFormat_i $format' |]
+
+    G.OutputFormatAsciiBuildTime 
+     ->         [| $sources P.>>= P.unlinesPackAscii_i |]
 
  where  sources 
          = go nodes
-
-        Just format'
-         = expOfDelimFields delim fields
-
+        
         go []   
          = do   let hResult     = H.varE (H.mkName sResult)
                 [| P.return $hResult |]
@@ -60,5 +65,3 @@ expOfQuery (G.Query (G.OutputFormatFixed delim fields)
         go (n : ns)
          = do   (hPat, hRhs)    <- bindOfNode n
                 [| $(return hRhs) P.>>= \ $(return hPat) -> $(go ns) |]
-
-

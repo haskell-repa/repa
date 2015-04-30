@@ -54,17 +54,28 @@ instance ToJSON OutputFormat where
   = case xx of
         OutputFormatFixed delim fields
          -> object [ "_type"    .= text "output_format"
+                   , "format"   .= text "fixed"
                    , "delim"    .= toJSON delim
                    , "fields"   .= toJSON fields ]
+
+        OutputFormatAsciiBuildTime 
+         -> object [ "_type"    .= text "output_format"
+                   , "format"   .= text "ascii_build_time" ]
+
 
 instance FromJSON OutputFormat where
  parseJSON (Object hh)
         | Just (String "output_format") <- H.lookup "_type" hh
+        , Just (String "fixed") <- H.lookup "format" hh
         , Just jDelim           <- H.lookup "delim"  hh
         , Just jFields          <- H.lookup "fields" hh
         = do    delim   <- parseJSON jDelim
                 fields  <- parseJSON jFields
                 return  $  OutputFormatFixed delim fields
+
+        | Just (String "output_format")    <- H.lookup "_type" hh
+        , Just (String "ascii_build_time") <- H.lookup "format" hh
+        = do    return  $  OutputFormatAsciiBuildTime
 
  parseJSON _ = mzero
  

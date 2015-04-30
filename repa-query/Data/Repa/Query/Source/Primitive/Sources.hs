@@ -1,5 +1,5 @@
 
-module Data.Repa.Query.Source.Sources
+module Data.Repa.Query.Source.Primitive.Sources
         ( fromFile
         , fromTable
         , fromColumn
@@ -95,7 +95,13 @@ fromColumn path name
                -> failQ $ "unknown column " ++ show nameUnknown
 
 
--- | Read a named column from a table.
+-- | Read some named column from a table.
+--
+--   TODO: The columns come out in the order they were in the table,
+--   rather than the order specified in the list. This is because
+--   we're just reading all the fields in a row and masking the ones
+--   that we don't want.
+--
 fromColumns :: FilePath -> [String] -> Q (Flow a)
 fromColumns path names
  = do

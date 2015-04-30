@@ -86,12 +86,13 @@ openBucket path mode
 
 
 -- | Wrap an existing file handle as a bucket.
+--
+--   The starting position is set to 0.
 hBucket :: Handle -> IO Bucket
 hBucket h
- = do   pos     <- hTell h
-        return  $ Bucket
+ =      return  $ Bucket
                 { bucketFilePath        = Nothing
-                , bucketStartPos        = pos
+                , bucketStartPos        = 0
                 , bucketLength          = Nothing
                 , bucketHandle          = h }
 {-# NOINLINE hBucket #-}
@@ -99,6 +100,16 @@ hBucket h
 
 -- From Files -----------------------------------------------------------------
 -- | Open some files as buckets and use them as `Sources`.
+fromFiles
+        :: [FilePath]
+        -> (Array B Bucket -> IO b)
+        -> IO b
+fromFiles files use 
+ = fromFiles' (A.fromList B files) use
+{-# INLINE fromFiles #-}
+
+
+-- | Like `fromFiles'`, but take a list of file paths.
 fromFiles' 
         ::  (Bulk l FilePath, Target l Bucket)
         =>  Array l FilePath                    -- ^ Files to open.
@@ -117,16 +128,6 @@ fromFiles' paths use
 
         use bsArr
 {-# NOINLINE fromFiles' #-}
-
-
--- | Like `fromFiles`, but take a list of file paths.
-fromFiles
-        :: [FilePath]
-        -> (Array B Bucket -> IO b)
-        -> IO b
-fromFiles files use 
- = fromFiles' (A.fromList B files) use
-{-# INLINE fromFiles #-}
 
 
 -- | Open all the files in a directory as separate buckets.
@@ -265,10 +266,19 @@ advance h pEnd
 -- Writing --------------------------------------------------------------------
 -- | Open some files for writing as individual buckets and pass
 --   them to the given consumer.
---
+toFiles :: [FilePath]                   -- ^ File paths.
+        -> (Array B Bucket -> IO b)     -- ^ Worker writes data to buckets.
+        -> IO b
+
+toFiles paths use
+        = toFiles' (A.fromList B paths) use
+{-# INLINE toFiles #-}
+
+
+-- | Like `toFiles`, but take an array of `FilePath`s.
 toFiles' :: (Bulk l FilePath, Target l Bucket)
-         =>  Array l FilePath            -- ^ File paths.
-         -> (Array l Bucket -> IO b)
+         =>  Array l FilePath           -- ^ File paths.
+         -> (Array l Bucket -> IO b)    -- ^ Worker writes data to buckets.
                                         -- ^ Consumer.
          -> IO b
 
@@ -285,16 +295,6 @@ toFiles' paths use
 ---
 --   TODO: Attached finalizers to the sinks so that file assocated with
 --   each stream is closed when that stream is ejected.
-
-
--- | Like `toFiles`, but take a list of file paths.
-toFiles :: [FilePath] 
-        -> (Array B Bucket -> IO b)
-        -> IO b
-
-toFiles paths use
-        = toFiles' (A.fromList B paths) use
-{-# INLINE toFiles #-}
 
 
 -- | Create a new directory of the given name, containing the given number

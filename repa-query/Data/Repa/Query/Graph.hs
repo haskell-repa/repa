@@ -44,12 +44,21 @@ deriving instance (Show a, Show nF, Show bV, Show nV)
 
 -- | Output format for a query.
 data OutputFormat
+
+        -- | Output format is fixed to the given format,
+        --   given in the query definition.
         = OutputFormatFixed 
         { -- | How to delimit fields in the output.
           outputFormatDelim     ::  Format.Delim
 
           -- | Formats for each field in the output.
         , outputFormatFields    :: [Format.FieldBox] }
+
+        -- | Output format is default human readable ascii, determined at
+        --   query build time based on the inferred data type of the 
+        --   of the result.
+        | OutputFormatAsciiBuildTime
+
 
 deriving instance Show OutputFormat
 

@@ -15,6 +15,11 @@ import Data.Repa.Product
 class FormatAscii a where
  -- | The format for this type.
  type FormatAscii' a 
+
+ -- | Get the format for an element.
+ --
+ --   The element value itself is not demanded.
+ --
  formatAscii :: a -> FormatAscii' a
 
 data Plain a 
@@ -30,11 +35,14 @@ instance FormatAscii () where
 instance ( FormatAscii t1
          , FormatAscii (Plain ts))
         => FormatAscii (t1 :*: ts) where
+
  type FormatAscii' (t1 :*: ts)        
   = Sep      (FormatAscii' t1 :*: FormatAscii' (Plain ts))
 
- formatAscii (x1 :*: xs)            
-  = Sep '\t' (formatAscii x1  :*: formatAscii  (Plain xs))
+ formatAscii _            
+  = let (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
+        (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
+    in  Sep '\t' (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
  {-# INLINE formatAscii #-}
 
 
@@ -46,8 +54,13 @@ instance FormatAscii (Plain ()) where
 
 instance (FormatAscii t1, FormatAscii (Plain ts))
       => FormatAscii (Plain (t1 :*: ts)) where
- type FormatAscii'   (Plain (t1 :*: ts)) = FormatAscii' t1 :*: FormatAscii' (Plain ts)
- formatAscii         (Plain (x1 :*: xs)) = formatAscii  x1 :*: formatAscii  (Plain xs)
+ type FormatAscii'   (Plain (t1 :*: ts)) 
+  = FormatAscii' t1 :*: FormatAscii' (Plain ts)
+
+ formatAscii         _
+  = let (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
+        (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
+    in  formatAscii  x1_proxy :*: formatAscii (Plain xs_proxy)
 
  
 instance FormatAscii  Int where

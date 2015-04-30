@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Data.Repa.Query.Source.Literal () where
-import Data.Repa.Query.Source.Builder           as S
-import Data.Repa.Query.Source.Compounds         as S
-import Data.Repa.Query.Graph                    as G
+module Data.Repa.Query.Source.Primitive.Literal () where
+import Data.Repa.Query.Source.Builder                   as S
+import Data.Repa.Query.Graph                            as G
+import Data.Repa.Query.Graph.Compounds                  as G
 import Data.Word
 import Data.Int
 

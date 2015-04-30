@@ -27,10 +27,16 @@ import Control.Monad
 ---------------------------------------------------------------------------------------------------
 -- | A complete query.
 data Query
-        = forall a. Query   
+        -- | Query where the output format is provided explicitly.
+        = forall a. QueryFixed   
         { queryOutDelim :: F.Delim
         , queryOutField :: F.Field a
         , queryOutFlow  :: Flow    a }
+
+        -- | Query where the output format is human readable ascii, determine at
+        --   query build time based on the inferred data type of the result.
+        | forall a. QueryAsciiBuildTime
+        { queryOutFlow  :: Flow    a }
 
 deriving instance Show Query
 
@@ -92,18 +98,19 @@ runQ config mkQuery
                          , sGenFlow     = 0
                          , sGenScalar   = 0 }
 
+        -- The nodes added to the state use debruijn indices for variables,
+        -- but we'll convert them to named variables while we're here.
+        --
+        -- The Just q match should always succeed because the namifier only
+        -- returnsNothing when there are out of scope variables. However,
+        -- the only way we can construct a (Q (Flow a)) is via the EDSL code,
+        -- which doesn't provide a way of producing expressions with free indices.
+        --
         case eQuery of
          Left err       -> return $ Left err
-         Right (Query delim field (Flow vFlow))
+
+         Right (QueryFixed delim field (Flow vFlow))
           -> do 
-                -- The nodes added to the state use debruijn indices for variables,
-                -- but we'll convert them to named variables while we're here.
-                --
-                -- This match should always succeed because the namifier only returns
-                -- Nothing when there are out of scope variables. However, the only 
-                -- way we can construct a (Q (Flow a)) is via the EDSL code, which
-                -- doesn't provide a way of producing expressions with free indices.
-                --
                 let Just q  
                         = N.namify N.mkNamifierStrings 
                         $ G.Query 
@@ -112,6 +119,16 @@ runQ config mkQuery
                                 (G.Graph (sNodes state'))
                 return $ Right q
  
+         Right (QueryAsciiBuildTime (Flow vFlow))
+          -> do 
+                let Just q  
+                        = N.namify N.mkNamifierStrings 
+                        $ G.Query 
+                                G.OutputFormatAsciiBuildTime
+                                vFlow
+                                (G.Graph (sNodes state'))
+                return $ Right q
+
 
 ---------------------------------------------------------------------------------------------------
 -- | State used when building the operator graph.
