@@ -63,7 +63,7 @@ import Prelude                                          as P
 -- | Run a query locally.
 runWith :: FilePath     -- ^ Scratch path for temp files.
         -> FilePath     -- ^ Root path to data.
-        -> Q.Q Q.Query      -- ^ Query to run.
+        -> Q.Q Q.Query  -- ^ Query to run.
         -> IO ()
 
 runWith pathScratch pathRootData qquery

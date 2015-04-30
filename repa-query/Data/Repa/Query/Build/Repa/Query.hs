@@ -35,7 +35,8 @@ decOfQuery nResult query
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression for a query
 expOfQuery   :: G.Query  () String String String -> Q H.Exp
-expOfQuery (G.Query sResult delim fields (G.Graph nodes))
+expOfQuery (G.Query (G.OutputFormatFixed delim fields) 
+                    sResult (G.Graph nodes))
  = case delim of
         Q.Fixed{}
          -> [| $sources P.>>= P.concatPackFormat_i  $format' |]

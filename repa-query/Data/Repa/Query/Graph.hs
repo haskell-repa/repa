@@ -2,6 +2,7 @@
 module Data.Repa.Query.Graph
         ( -- * Queries
           Query         (..)
+        , OutputFormat  (..)
 
           -- * Graphs
         , Graph         (..)
@@ -27,14 +28,30 @@ import qualified Data.Repa.Store.Format as Format
 -- | A query consisting of an graph, and the name of the output flow.
 data Query a nF bV nV
         = Query 
-        { queryOutput           :: nF                   -- ^ Name of output flow.
-        , queryResultDelim      :: Format.Delim         -- ^ How to delimit fields in output.
-        , queryResultFields     :: [Format.FieldBox]    -- ^ Format of fields in output.
-        , queryGraph            :: Graph a nF bV nV     -- ^ Query operator graph.
+        { -- | Output format for data.
+          queryOutputFormat     :: OutputFormat
+
+          -- | Name of output flow in the operator graph.
+        , queryOutput           :: nF
+
+          -- | Operator graph for the query.
+        , queryGraph            :: Graph a nF bV nV
         }
 
 deriving instance (Show a, Show nF, Show bV, Show nV)
         => Show (Query a nF bV nV)
+
+
+-- | Output format for a query.
+data OutputFormat
+        = OutputFormatFixed 
+        { -- | How to delimit fields in the output.
+          outputFormatDelim     ::  Format.Delim
+
+          -- | Formats for each field in the output.
+        , outputFormatFields    :: [Format.FieldBox] }
+
+deriving instance Show OutputFormat
 
 
 ---------------------------------------------------------------------------------------------------

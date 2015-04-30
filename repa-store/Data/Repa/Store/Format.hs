@@ -10,6 +10,8 @@ module Data.Repa.Store.Format
         , flattens
         , flattensBox
 
+        , FieldFormat (..)
+        
         , showField
         , readField)
 where
@@ -25,6 +27,8 @@ import qualified Data.Repa.Product              as P
 import qualified Data.HashMap.Strict            as H
 import qualified Data.Text                      as T
 
+import qualified Data.Repa.Convert.Format       as F
+import qualified Data.Repa.Convert.Formats      as F
 
 ---------------------------------------------------------------------------------------------------
 -- | Row format.
@@ -245,6 +249,35 @@ flattens ff
 flattensBox :: FieldBox -> [FieldBox]
 flattensBox (FieldBox f)
         = flattens f
+
+
+---------------------------------------------------------------------------------------------------
+class FieldFormat format where
+ -- Convert a format from the open type version to the closed type version.
+ fieldFormat :: format -> Field (F.Value format)
+
+
+instance FieldFormat () where
+ fieldFormat _    = Nil
+
+
+instance ( FieldFormat f1
+         , FieldFormat fs)
+      =>   FieldFormat (f1 F.:*: fs)  where
+ fieldFormat (f1 F.:*: fs)       
+  = fieldFormat f1 :*: fieldFormat fs
+
+
+instance FieldFormat F.IntAsc where
+ fieldFormat _    = IntAsc
+
+
+instance FieldFormat F.DoubleAsc where
+ fieldFormat _    = DoubleAsc
+
+
+instance FieldFormat F.VarAsc where
+ fieldFormat _    = VarAsc
 
 
 ---------------------------------------------------------------------------------------------------

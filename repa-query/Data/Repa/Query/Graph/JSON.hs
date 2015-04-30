@@ -25,11 +25,10 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
       => (ToJSON (Query a nF bV nV)) where
  toJSON xx
   = case xx of
-        Query flow delim fields graph
+        Query format flow graph
          -> object [ "_type"    .= text "query"
                    , "out"      .= toJSON flow
-                   , "delim"    .= toJSON delim
-                   , "fields"   .= toJSON fields
+                   , "format"   .= toJSON format
                    , "graph"    .= toJSON graph ]
 
 
@@ -39,14 +38,33 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
 
         | Just (String "query") <- H.lookup "_type"  hh
         , Just jOut             <- H.lookup "out"    hh
+        , Just jFormat          <- H.lookup "format" hh
+        , Just jGraph           <- H.lookup "graph"  hh
+        = do    fOut    <- parseJSON jOut
+                format  <- parseJSON jFormat
+                graph   <- parseJSON jGraph
+                return  $ Query format fOut graph
+
+ parseJSON _ = mzero
+
+
+-------------------------------------------------------------------------------------- OutputFormat
+instance ToJSON OutputFormat where
+ toJSON xx
+  = case xx of
+        OutputFormatFixed delim fields
+         -> object [ "_type"    .= text "output_format"
+                   , "delim"    .= toJSON delim
+                   , "fields"   .= toJSON fields ]
+
+instance FromJSON OutputFormat where
+ parseJSON (Object hh)
+        | Just (String "output_format") <- H.lookup "_type" hh
         , Just jDelim           <- H.lookup "delim"  hh
         , Just jFields          <- H.lookup "fields" hh
-        , Just jGraph           <- H.lookup "graph"  hh
-        = do    out     <- parseJSON jOut
-                delim   <- parseJSON jDelim
+        = do    delim   <- parseJSON jDelim
                 fields  <- parseJSON jFields
-                graph   <- parseJSON jGraph
-                return  $ Query out delim fields graph
+                return  $  OutputFormatFixed delim fields
 
  parseJSON _ = mzero
  

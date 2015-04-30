@@ -44,13 +44,13 @@ module Data.Repa.Convert
 
           -- * Packing data.
         , Packable  (..)
-        , packToList
-        , unpackFromList
-        , packToString
-        , unpackFromString)
+        , packToAscii
+        , packToList8,  unpackFromList8
+        , packToString, unpackFromString)
 where
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
+import Data.Repa.Convert.Default.Ascii
 import Data.Char
 import Data.Word
 import Control.Monad
@@ -60,11 +60,22 @@ import qualified Foreign.Marshal.Alloc          as S
 
 
 ---------------------------------------------------------------------------------------------------
--- | Pack a value into a list of `Word8`.
-packToList 
+-- | Pack a value to a list of `Word8` using the default Ascii format.
+packToAscii
+        :: ( FormatAscii a
+           , Value    (FormatAscii' a) ~ a
+           , Packable (FormatAscii' a))
+        => a -> Maybe String
+packToAscii a
+        = packToString (formatAscii a) a
+
+
+---------------------------------------------------------------------------------------------------
+-- | Pack a value to a list of `Word8`.
+packToList8 
         :: Packable format
         => format -> Value format -> Maybe [Word8]
-packToList f x
+packToList8 f x
  | Just lenMax  <- packedSize f x
  = unsafePerformIO
  $ do   buf     <- S.mallocBytes lenMax
@@ -80,11 +91,11 @@ packToList f x
 
 
 -- | Unpack a value from a list of `Word8`.
-unpackFromList
+unpackFromList8
         :: Packable format
         => format -> [Word8] -> Maybe (Value format)
 
-unpackFromList f xs
+unpackFromList8 f xs
  = unsafePerformIO
  $ do   let len = length xs
         buf     <- S.mallocBytes len
@@ -98,7 +109,7 @@ packToString
         :: Packable format
         => format -> Value format -> Maybe String
 packToString f v
-        = liftM (map (chr . fromIntegral)) $ packToList f v
+        = liftM (map (chr . fromIntegral)) $ packToList8 f v
 
 
 -- | Unpack a value from a String.
@@ -106,7 +117,7 @@ unpackFromString
         :: Packable format
         => format -> String -> Maybe (Value format)
 unpackFromString f s
-        = unpackFromList f $ map (fromIntegral . ord) s
+        = unpackFromList8 f $ map (fromIntegral . ord) s
 
 
 ---------------------------------------------------------------------------------------------------

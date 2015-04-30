@@ -106,8 +106,9 @@ runQ config mkQuery
                 --
                 let Just q  
                         = N.namify N.mkNamifierStrings 
-                        $ G.Query vFlow delim 
-                                (F.flattens field)
+                        $ G.Query 
+                                (G.OutputFormatFixed delim (F.flattens field))
+                                vFlow
                                 (G.Graph (sNodes state'))
                 return $ Right q
  

@@ -19,7 +19,7 @@ module Data.Repa.Query.Source
           Query, Flow, Value
 
           -- * Query builder
-        , Q, query
+        , Q, query, queryAs
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
@@ -81,6 +81,8 @@ import Data.Repa.Query.Source.Projection
 import Data.Repa.Query.Source.Scalar
 import Data.Repa.Query.Source.Sources
 import Data.Repa.Store.Format                   as F
+import qualified Data.Repa.Convert.Format       as C
+import Data.Repa.Convert.Default.Ascii          as C
 import qualified Data.Repa.Bits.Date32          as Date32
 import qualified Prelude                        as P
 import Prelude   
@@ -103,15 +105,32 @@ return  = P.return
 
 
 ---------------------------------------------------------------------------------------------------
--- | Produce a query, using the given deliminator and field types
---   for the output format.
-query   :: F.Delim              -- ^ Output delimitor.
-        -> F.Field a            -- ^ Output field types.
-        -> Q (Flow a)           -- ^ Output flow.
+-- | Produce a query using the default ASCII output format.
+query   :: forall a format
+        .  ( FieldFormat format, FormatAscii  a
+           , C.Value format  ~ a
+           , FormatAscii' a  ~ format)
+        => Q (Flow a)
         -> Q Query
 
-query delim field mkFlow
+query mkFlow
+ = do   flow    <- mkFlow
+        let proxy = (error "repa-query: proxy" :: a)
+        return  $ Query (LinesSep '\t') 
+                        (F.fieldFormat $ C.formatAscii proxy)
+                        flow
+                        
+
+-- | Produce a query using the given deliminator and row format.
+queryAs :: F.Delim -> F.Field a
+        -> Q (Flow a)
+        -> Q Query
+
+queryAs delim field mkFlow
  = do   flow    <- mkFlow
         return  $ Query delim field flow
+
+
+
 
 

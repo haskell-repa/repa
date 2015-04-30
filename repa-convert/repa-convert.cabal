@@ -26,15 +26,16 @@ Library
         double-conversion == 2.0.*
 
   exposed-modules:
-        Data.Repa.Singleton.Nat
-        Data.Repa.Singleton.Bool
-
         Data.Repa.Bits.Date32
 
+        Data.Repa.Convert.Default.Ascii
         Data.Repa.Convert.Numeric
         Data.Repa.Convert.Format
         Data.Repa.Convert.Formats
         Data.Repa.Convert
+
+        Data.Repa.Singleton.Nat
+        Data.Repa.Singleton.Bool
 
         Data.Repa.Product
 
