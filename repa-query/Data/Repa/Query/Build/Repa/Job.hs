@@ -4,8 +4,8 @@
 -- | Compilation of Repa queries to native code by 
 --   emitting a Haskell program using repa-flow and compiling it with GHC.
 module Data.Repa.Query.Build.Repa.Job
-        ( decOfQuery
-        , expOfQuery)
+        ( decOfJob
+        , expOfJob)
 where
 import Data.Repa.Query.Build.Repa.Exp                   as R
 import Data.Repa.Query.Build.Repa.Graph                 as R
@@ -17,27 +17,26 @@ import qualified Data.Repa.Query.Runtime.Primitive      as P
 
 
 ---------------------------------------------------------------------------------------------------
--- | Yield a top-level Haskell declararation for a query.
+-- | Yield a top-level Haskell declararation for a job
 --
---   The query expression is bound to the given name.
-decOfQuery   
+--   The result value is bound to the given name.
+decOfJob
         :: Name
-        -> G.Query () String String String 
+        -> Job
         -> Q H.Dec
 
-decOfQuery nResult query
+decOfJob nResult job
  = do   let hRootData = H.varP (mkName ("_rootData"))
-
-        hExp    <- [| \ $hRootData -> $(expOfQuery query) |]
+        hExp    <- [| \ $hRootData -> $(expOfJob job) |]
 
         return  $  H.ValD (H.VarP nResult) (H.NormalB hExp) [] 
 
 
 ---------------------------------------------------------------------------------------------------
--- | Yield a Haskell expression for a query
-expOfQuery   :: G.Query  () String String String -> Q H.Exp
+-- | Yield a Haskell expression for a job
+expOfJob   :: Job -> Q H.Exp
 
-expOfQuery (G.Query outputFormat sResult (G.Graph nodes))
+expOfJob (JobQuery (G.Query sResult (G.Graph nodes)) outputFormat)
  = case outputFormat of
     G.OutputFormatFixed delim fields
      -> let Just format'
@@ -66,3 +65,6 @@ expOfQuery (G.Query outputFormat sResult (G.Graph nodes))
         go (n : ns)
          = do   (hPat, hRhs)    <- bindOfNode n
                 [| $(return hRhs) P.>>= \ $(return hPat) -> $(go ns) |]
+
+expOfJob _
+ = error "expOfJob: finish me"

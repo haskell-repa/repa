@@ -36,11 +36,8 @@ data Job
 -- | A query consisting of an graph, and the name of the output flow.
 data Query a nF bV nV
         = Query 
-        { -- | Output format for data.
-          queryOutputFormat     :: OutputFormat                 -- TODO: kill field
-
-          -- | Name of output flow in the operator graph.
-        , queryOutput           :: nF
+        { -- | Name of output flow in the operator graph.
+          queryOutput           :: nF
 
           -- | Operator graph for the query.
         , queryGraph            :: Graph a nF bV nV

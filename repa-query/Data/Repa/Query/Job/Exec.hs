@@ -55,17 +55,14 @@ runWith pathScratch pathRootData mkJobs
         runJobs []      = return ()
         runJobs (j:js)  = runJob j >> runJobs js
 
-        runJob (JobQuery q _outputFormat)   -- TODO: pass along outputFormat
+        runJob job
          = BB.withTempFile $ \pathExe
-         -> do  Q.buildQueryViaRepa 
+         -> do  Q.buildJobViaRepa 
                         pathScratch True
-                        q pathExe
+                        job pathExe
 
                 BB.io $ S.system 
                       $ pathExe ++ " -root-data " ++ pathRootData
-
-        runJob _
-         = error "runJob: finish me"
 
 
 

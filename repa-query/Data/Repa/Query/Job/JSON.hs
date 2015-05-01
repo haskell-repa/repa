@@ -58,10 +58,9 @@ instance (ToJSON nF, ToJSON bV, ToJSON nV)
       => (ToJSON (Query a nF bV nV)) where
  toJSON xx
   = case xx of
-        Query format flow graph
+        Query flow graph
          -> object [ "_type"    .= text "query"
                    , "out"      .= toJSON flow
-                   , "format"   .= toJSON format
                    , "graph"    .= toJSON graph ]
 
 
@@ -71,12 +70,10 @@ instance (FromJSON nF, FromJSON bV, FromJSON nV)
 
         | Just (String "query") <- H.lookup "_type"  hh
         , Just jOut             <- H.lookup "out"    hh
-        , Just jFormat          <- H.lookup "format" hh
         , Just jGraph           <- H.lookup "graph"  hh
         = do    fOut    <- parseJSON jOut
-                format  <- parseJSON jFormat
                 graph   <- parseJSON jGraph
-                return  $ Query format fOut graph
+                return  $ Query fOut graph
 
  parseJSON _ = mzero
 

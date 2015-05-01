@@ -4,13 +4,13 @@ module Data.Repa.Query.Build
           QB.Config (..)
 
           -- * Building
-        , buildQueryViaRepa 
+        , buildJobViaRepa 
         , buildJsonViaRepa
         , buildDslViaRepa
 
           -- * Loading
-        , loadQueryFromDSL
-        , loadQueryFromJSON)
+        , loadJobFromDSL
+        , loadJobFromJSON)
 where
 import System.FilePath
 import System.Directory
@@ -32,9 +32,9 @@ import qualified BuildBox.Command.File                  as BB
 
 
 ---------------------------------------------------------------------------------------------------
--- | Produce an executable for the given query.
+-- | Produce an executable for the given job.
 --
---   We use Template Haskell to convert the query to Haskell using the
+--   We use Template Haskell to convert the job to Haskell using the
 --   Repa Flow library, then compile it with GHC.
 --
 --   The working directory is used to store the intermediate Haskell
@@ -42,20 +42,20 @@ import qualified BuildBox.Command.File                  as BB
 --   removed after the build, so the whole directory and its contents
 --   should be removed by the caller when they're done.
 --
-buildQueryViaRepa
-        :: FilePath                        -- ^ Working directory.
-        -> Bool                            -- ^ Cleanup intermediate files.
-        -> Q.Query () String String String -- ^ Query to compile.
-        -> FilePath                        -- ^ Path of output executable.
+buildJobViaRepa
+        :: FilePath                     -- ^ Working directory.
+        -> Bool                         -- ^ Cleanup intermediate files.
+        -> Q.Job                        -- ^ Job to compile.
+        -> FilePath                     -- ^ Path of output executable.
         -> BB.Build ()
 
-buildQueryViaRepa dirScratch cleanup query fileExe
+buildJobViaRepa dirScratch cleanup job fileExe
  = do   
         -- Ensure the working directory already exists.
         BB.ensureDir dirScratch
 
         -- Use Template Haskell to convert the query into Haskell code.
-        dec <- BB.io $ TH.runQ $ CR.decOfQuery (TH.mkName "_makeSources") query
+        dec <- BB.io $ TH.runQ $ CR.decOfJob (TH.mkName "_makeSources") job
 
         let fileHS      = dirScratch </> "Main.dump-repa.hs" -- written by us.
         let fileHI      = dirScratch </> "Main.dump-repa.hi" -- dropped by GHC
@@ -82,53 +82,53 @@ buildJsonViaRepa
         -> Bool                 -- ^ Cleanup intermediate files.
         -> String               -- ^ Query encoded as JSON.
         -> FilePath             -- ^ Path to output executable.
-        -> BB.Build (Q.Query () String String String)
-                                -- ^ Operator graph of result query.
+        -> BB.Build Q.Job       -- ^ Operator graph for job.
+
 buildJsonViaRepa dirScratch cleanup json fileExe
  = do   
-        -- Parse the json version into a query.
-        let Just query :: Maybe (Q.Query () String String String)
+        -- Parse the json version into a job.
+        let Just job :: Maybe Q.Job
                 = Aeson.decode $ BS.pack json
 
         -- Build query into an executable.
-        buildQueryViaRepa dirScratch cleanup query fileExe
+        buildJobViaRepa dirScratch cleanup job fileExe
 
-        return  query
+        return  job
 
 
 ---------------------------------------------------------------------------------------------------
--- | Like `buildQueryViaRepa`, but accept a query encoded in the DSL.
+-- | Like `buildJobViaRepa`, but accept a job encoded in the DSL.
 buildDslViaRepa
         :: FilePath             -- ^ Working directory.
         -> Bool                 -- ^ Cleanup intermediate files.
         -> QB.Config            -- ^ Query builder config.
         -> String               -- ^ Query encoded in the DSL.
         -> FilePath             -- ^ Path to output executable.
-        -> BB.Build (Either String (Q.Query () String String String))
+        -> BB.Build (Either String Q.Job)
                                 -- ^ Operator graph of compiled query.
 
-buildDslViaRepa dirScratch cleanup dslConfig dslQuery fileExe
+buildDslViaRepa dirScratch cleanup dslConfig dslJob fileExe
  = do   
-        -- Load json from the dsl version of the queyr.
-        eQuery   <- loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
-        case eQuery of
+        -- Load json from the dsl version of the job.
+        eJob   <- loadJobFromDSL dirScratch cleanup dslConfig dslJob
+        case eJob of
          Left  err   -> return $ Left err
-         Right query    
-          -> do -- Build query into an executable.
-                buildQueryViaRepa dirScratch cleanup query fileExe
-                return $ Right query
+         Right job
+          -> do -- Build job into an executable.
+                buildJobViaRepa dirScratch cleanup job fileExe
+                return $ Right job
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Load the operator graph from a query encoded in the DSL.
-loadQueryFromDSL
+loadJobFromDSL
         :: FilePath             -- ^ Working directory.
         -> Bool                 -- ^ Cleanup intermediate files.
-        -> QB.Config            -- ^ Query builder config.
-        -> String               -- ^ Query encoded in the DSL.
-        -> BB.Build (Either String (Q.Query () String String String))
+        -> QB.Config            -- ^ Job builder config.
+        -> String               -- ^ Job encoded in the DSL.
+        -> BB.Build (Either String Q.Job)
 
-loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
+loadJobFromDSL dirScratch cleanup dslConfig dslJob
  = do
         -- Attach header that defines the prims, and write out the code.
         --
@@ -137,10 +137,9 @@ loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
         --
         let fileHS      = dirScratch </> "Main.dump-dsl.hs"
 
-        BB.io $ writeFile fileHS (edslHeader ++ dslQuery)
+        BB.io $ writeFile fileHS (edslHeader ++ dslJob)
 
-        -- Run the query builder to get the JSON version.
-        -- IF the 
+        -- Run the job builder to get the JSON version.
         msg     <- BB.sesystemq 
                 $ "ghc " ++ fileHS ++ " -e " ++ "\"" ++ edslBuild dslConfig ++ "\""
 
@@ -149,21 +148,20 @@ loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
          $ BB.io $ removeFile fileHS
 
         let result
-                -- EDSL query builder successfully produced the JSON version of
-                -- the query. 
+                -- EDSL job builder successfully produced the JSON version.
                 --
                 -- In this case we get the string "OK:" followed by the pretty
                 -- printed JSON.
                 --
-                | Just jsonQuery        <- L.stripPrefix "OK:" msg
-                = case Aeson.decode $ BS.pack jsonQuery of
+                | Just jsonJob       <- L.stripPrefix "OK:" msg
+                = case Aeson.decode $ BS.pack jsonJob of
                      -- Sadly, the produced JSON could not be parsed.
                      Nothing
-                      -> return $ Left $ "loadQueryFromDSL: cannot parse produced JSON."
+                      -> return $ Left $ "loadJobFromDSL: cannot parse produced JSON."
 
                      -- The produced JSON parsed ok.
-                     Just (query :: Q.Query () String String String)
-                      -> return $ Right query
+                     Just (job :: Q.Job)
+                      -> return $ Right job
 
 
                 -- The EDSL query builder ran, but had some problem and couldn't
@@ -191,19 +189,19 @@ loadQueryFromDSL dirScratch cleanup dslConfig dslQuery
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load the operator graph from a query encoded in JSON.
-loadQueryFromJSON
+-- | Load a job description from JSON.
+loadJobFromJSON
         :: FilePath             -- ^ Working directory.
         -> Bool                 -- ^ Cleanup intermediate files.
         -> String               -- ^ Query encoded in the DSL.
-        -> BB.Build (Q.Query () String String String)
+        -> BB.Build Q.Job
 
-loadQueryFromJSON _dirScratch _cleanup jsonQuery
+loadJobFromJSON _dirScratch _cleanup jsonJob
  = do
-        let Just query :: Maybe (Q.Query () String String String)
-                = Aeson.decode $ BS.pack jsonQuery
+        let Just job :: Maybe Q.Job
+                = Aeson.decode $ BS.pack jsonJob
 
-        return query
+        return job
 
 ---------------------------------------------------------------------------------------------------
 -- | Junk pasted to the front of a query written in the EDSL 

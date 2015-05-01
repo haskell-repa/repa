@@ -98,7 +98,6 @@ query mkFlow config
          Right (Flow vFlow)
           -> do let Just q  = N.namify N.mkNamifierStrings
                             $ J.Query
-                                J.OutputFormatAsciiBuildTime
                                 vFlow
                                 (G.Graph (sNodes state'))
 

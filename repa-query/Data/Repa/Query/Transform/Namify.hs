@@ -40,8 +40,8 @@ class Namify (c :: * -> * -> *) where
 
 
 instance Namify (Query a nF) where
- namify nam (Query outputFormat fOut graph)
-        = liftM (Query outputFormat fOut) (namify nam graph)
+ namify nam (Query fOut graph)
+        = liftM (Query fOut) (namify nam graph)
 
 
 instance Namify (Graph a nF) where
