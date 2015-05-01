@@ -1,15 +1,9 @@
 
-module Data.Repa.Query.Job
-        ( -- * Job
-          Job           (..)
-
-          -- * Query
+module Data.Repa.Query.Source.Job
+        ( Job           (..)
         , Query         (..)
         , QueryS        
-        , OutputFormat  (..)
-
-          -- * Extract
-        , ExtractTarget (..))
+        , OutputFormat  (..))
 where
 import Data.Repa.Query.Graph
 import Data.Repa.Store.Format   as Format
@@ -33,7 +27,7 @@ data Job
 data Query a nF bV nV
         = Query 
         { -- | Output format for data.
-          queryOutputFormat     :: OutputFormat                 -- TODO: kill field
+          queryOutputFormat     :: OutputFormat
 
           -- | Name of output flow in the operator graph.
         , queryOutput           :: nF

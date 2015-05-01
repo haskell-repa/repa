@@ -18,7 +18,8 @@ module Data.Repa.Query.Source
           Query, Flow, Value
 
           -- * Query builder
-        , Q, query, queryAs
+        , Q, query
+--        , queryAs
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
@@ -62,7 +63,10 @@ module Data.Repa.Query.Source
         , get4_1, get4_2, get4_3, get4_4
         , get5_1, get5_2, get5_3, get5_4, get5_5)
 where
-import Data.Repa.Query.Source.Builder
+import Data.Repa.Query.Job                              as J
+import Data.Repa.Query.Graph                            as G
+import Data.Repa.Query.Transform.Namify                 as N
+import Data.Repa.Query.Source.Builder                   as S
 import Data.Repa.Query.Source.Primitive.Literal         ()
 import Data.Repa.Query.Source.Primitive.Operator
 import Data.Repa.Query.Source.Primitive.Projection
@@ -75,12 +79,33 @@ import Prelude
 
 ---------------------------------------------------------------------------------------------------
 -- | Produce a query using the default ASCII output format.
-query   :: Q (Flow a) -> Q Query
-query mkFlow
- = do   flow    <- mkFlow
-        return  $ QueryAsciiBuildTime flow
-                        
+query   :: Q (Flow a) 
+        -> Config 
+        -> IO (Either String [Job])
 
+query mkFlow config
+ = do   (state', eFlow) 
+                <- evalQ mkFlow 
+                $  State { sConfig      = config
+                         , sNodes       = []
+                         , sGenFlow     = 0
+                         , sGenScalar   = 0 }
+
+        case eFlow of
+         Left  err
+          -> return $ Left err
+
+         Right (Flow vFlow)
+          -> do let Just q  = N.namify N.mkNamifierStrings
+                            $ J.Query
+                                J.OutputFormatAsciiBuildTime
+                                vFlow
+                                (G.Graph (sNodes state'))
+
+                return $ Right [JobQuery q J.OutputFormatAsciiBuildTime]
+
+
+{-
 -- | Produce a query using the given deliminator and row format.
 queryAs :: F.Delim -> F.Field a
         -> Q (Flow a)
@@ -89,4 +114,13 @@ queryAs :: F.Delim -> F.Field a
 queryAs delim field mkFlow
  = do   flow    <- mkFlow
         return  $ QueryFixed delim field flow
+-}
+
+
+
+
+
+
+
+
 

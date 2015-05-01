@@ -1,31 +1,33 @@
 module Data.Repa.Query.Source.Builder
-        ( -- * Queries
-          Query (..)
+        ( -- Query (..)
 
           -- * Flows
-        , Flow  (..)
+          Flow  (..)
         , makeFlow, takeFlow
 
           -- * Values
         , Value (..)
 
           -- * Query builder monad.
-        , Q, Config (..)
-        , runQ
+        , Q
+        , Config (..)
+        , State (..)
+--        , runQ
         , evalQ, getsQ, modifyQ, failQ, liftIO
         , getRootDataQ
 
         , newFlow
         , addNode)
 where
-import qualified Data.Repa.Store.Format                 as F
+-- import qualified Data.Repa.Store.Format                 as F
 import qualified Data.Repa.Query.Graph                  as G
-import qualified Data.Repa.Query.Job                    as G
-import qualified Data.Repa.Query.Transform.Namify       as N
+-- import qualified Data.Repa.Query.Job                    as G
+-- import qualified Data.Repa.Query.Transform.Namify       as N
 import Control.Monad
 
 
 ---------------------------------------------------------------------------------------------------
+{-
 -- | A complete query.
 data Query
         -- | Query where the output format is provided explicitly.
@@ -40,7 +42,7 @@ data Query
         { queryOutFlow  :: Flow    a }
 
 deriving instance Show Query
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | Flows of the given element type.
@@ -79,7 +81,7 @@ data Config
           configRootData        :: FilePath }
         deriving Show
 
-
+{-
 -- | Run a query builder.
 --   
 --   The provided config contains the path to the meta data needed by
@@ -129,7 +131,7 @@ runQ config mkQuery
                                 vFlow
                                 (G.Graph (sNodes state'))
                 return $ Right q
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | State used when building the operator graph.

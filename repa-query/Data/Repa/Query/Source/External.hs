@@ -6,10 +6,12 @@
 --
 module Data.Repa.Query.Source.External
         ( -- * Query types.
-          Query, Flow, Value
+        --  Query
+          Flow, Value
 
           -- * Query builder
-        , Q, query, queryAs
+        , Q
+--        , query
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
@@ -89,22 +91,4 @@ import Prelude
 return  = P.return
 (>>=)   = (\x y -> x P.>>= y)
 (=<<)   = (\x y -> x P.=<< y)
-
-
--- | Produce a query using the default ASCII output format.
-query   :: Q (Flow a) -> Q Query
-query mkFlow
- = do   flow    <- mkFlow
-        return  $ QueryAsciiBuildTime flow
-                        
-
--- | Produce a query using the given deliminator and row format.
-queryAs :: F.Delim -> F.Field a
-        -> Q (Flow a)
-        -> Q Query
-
-queryAs delim field mkFlow
- = do   flow    <- mkFlow
-        return  $ QueryFixed delim field flow
-
 

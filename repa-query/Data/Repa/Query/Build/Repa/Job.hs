@@ -20,7 +20,7 @@ import qualified Data.Repa.Query.Runtime.Primitive      as P
 -- | Yield a top-level Haskell declararation for a query.
 --
 --   The query expression is bound to the given name.
-decOfQuery
+decOfQuery   
         :: Name
         -> G.Query () String String String 
         -> Q H.Dec
