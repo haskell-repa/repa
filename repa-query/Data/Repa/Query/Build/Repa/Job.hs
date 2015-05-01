@@ -14,6 +14,7 @@ import Data.Repa.Query.Job.Spec                         as G
 import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
+import qualified Data.Repa.Query.Runtime.Driver         as P
 
 
 ---------------------------------------------------------------------------------------------------
@@ -26,36 +27,57 @@ decOfJob
         -> Q H.Dec
 
 decOfJob nResult job
- = do   let hRootData = H.varP (mkName ("_rootData"))
-        hExp    <- [| \ $hRootData -> $(expOfJob job) |]
-
+ = do   hExp    <- [| $(expOfJob job) |]
         return  $  H.ValD (H.VarP nResult) (H.NormalB hExp) [] 
 
 
 ---------------------------------------------------------------------------------------------------
--- | Yield a Haskell expression for a job
+-- | Yield a Haskell expression for a job.
+--
+--   These all produce a value of type IO ().
+--   Run the action to invoke the job.
+--
 expOfJob   :: Job -> Q H.Exp
 
-expOfJob (JobQuery (G.Query sResult (G.Graph nodes)) outputFormat)
- = case outputFormat of
+expOfJob (JobQuery   query format)
+ =      [| P.execQuery   $(expOfQueryFormat query format) |]
+
+expOfJob (JobExtract query format target)
+ =      [| P.execExtract $(expOfQueryFormat query format) $(expOfExtractTarget target) |]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Yield a Haskell expression that produces a flow for the 
+--   given query and output format.
+--
+expOfQueryFormat 
+        :: G.QueryS -> G.OutputFormat
+        -> Q H.Exp 
+
+expOfQueryFormat (G.Query sResult (G.Graph nodes)) format 
+ = case format of
     G.OutputFormatFixed delim fields
      -> let Just format'
              = expOfDelimFields delim fields
 
         in case delim of
             Q.Fixed{}
-             -> [| $sources P.>>= P.concatPackFormat_i  $format' |]
+             -> [| \ $hRootData -> $sources P.>>= P.concatPackFormat_i  $format' |]
 
             Q.Lines{}
-             -> [| $sources P.>>= P.unlinesPackFormat_i $format' |]
+             -> [| \ $hRootData -> $sources P.>>= P.unlinesPackFormat_i $format' |]
 
             Q.LinesSep{}
-             -> [| $sources P.>>= P.unlinesPackFormat_i $format' |]
+             -> [| \ $hRootData -> $sources P.>>= P.unlinesPackFormat_i $format' |]
 
     G.OutputFormatAsciiBuildTime 
-     ->         [| $sources P.>>= P.unlinesPackAscii_i |]
+     ->         [| \ $hRootData -> $sources P.>>= P.unlinesPackAscii_i |]
 
- where  sources 
+ where 
+        hRootData
+         = H.varP (mkName "_rootData")
+
+        sources 
          = go nodes
         
         go []   
@@ -66,5 +88,16 @@ expOfJob (JobQuery (G.Query sResult (G.Graph nodes)) outputFormat)
          = do   (hPat, hRhs)    <- bindOfNode n
                 [| $(return hRhs) P.>>= \ $(return hPat) -> $(go ns) |]
 
-expOfJob _
- = error "expOfJob: finish me"
+
+---------------------------------------------------------------------------------------------------
+expOfExtractTarget
+        :: G.ExtractTarget
+        -> Q H.Exp
+
+expOfExtractTarget target
+ = case target of
+        G.ExtractTargetFile file 
+         -> let hFile   = H.LitE (H.StringL file)
+            in [| P.ExtractTargetFile $(return hFile) |]
+
+

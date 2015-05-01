@@ -26,7 +26,7 @@ data Job
 
         -- | Query where the output is written to local storage.
         | JobExtract
-        { jobExtract            :: QueryS 
+        { jobQuery              :: QueryS 
         , jobOutputFormat       :: OutputFormat 
         , jobExtractTarget      :: ExtractTarget }
         deriving Show

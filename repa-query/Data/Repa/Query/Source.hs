@@ -18,8 +18,9 @@ module Data.Repa.Query.Source
           Query, Flow, Value
 
           -- * Query builder
-        , Q, query
---        , queryAs
+        , Q
+        , query
+        , extract, toFile
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
@@ -78,13 +79,14 @@ import Prelude
 
 
 ---------------------------------------------------------------------------------------------------
--- | Produce a query using the default ASCII output format.
+-- | Query using the default ASCII output format.
 query   :: Q (Flow a) 
         -> Config 
         -> IO (Either String [Job])
 
 query mkFlow config
- = do   (state', eFlow) 
+ = do   
+        (state', eFlow) 
                 <- evalQ mkFlow 
                 $  State { sConfig      = config
                          , sNodes       = []
@@ -97,29 +99,40 @@ query mkFlow config
 
          Right (Flow vFlow)
           -> do let Just q  = N.namify N.mkNamifierStrings
-                            $ J.Query
-                                vFlow
-                                (G.Graph (sNodes state'))
+                            $ J.Query vFlow (G.Graph (sNodes state'))
 
                 return $ Right [JobQuery q J.OutputFormatAsciiBuildTime]
 
 
-{-
--- | Produce a query using the given deliminator and row format.
-queryAs :: F.Delim -> F.Field a
+---------------------------------------------------------------------------------------------------
+-- | Extract data to the given target.
+extract :: ExtractTarget 
         -> Q (Flow a)
-        -> Q Query
+        -> Config
+        -> IO (Either String [Job])
 
-queryAs delim field mkFlow
- = do   flow    <- mkFlow
-        return  $ QueryFixed delim field flow
--}
+extract target mkFlow config
+ = do   
+        (state', eFlow) 
+                <- evalQ mkFlow 
+                $  State { sConfig      = config
+                         , sNodes       = []
+                         , sGenFlow     = 0
+                         , sGenScalar   = 0 }
+
+        case eFlow of
+         Left  err
+          -> return $ Left err
+
+         Right (Flow vFlow)
+          -> do let Just q  = N.namify N.mkNamifierStrings
+                            $ J.Query vFlow (G.Graph (sNodes state'))
+
+                return $ Right [JobExtract q J.OutputFormatAsciiBuildTime target]
 
 
-
-
-
-
-
+-- | Extract to the given local file.
+toFile :: FilePath -> ExtractTarget
+toFile path = ExtractTargetFile path
 
 

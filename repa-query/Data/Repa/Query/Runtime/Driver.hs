@@ -1,17 +1,19 @@
 
--- | Drivers used by queries compiled via Repa.
+-- | Drivers used to run the various jobs.
 --
---   This code is imported by the generated query code and used by the 
---   running queries, rather than being used at query compile time.
+--   These drivers are used by the code that runs at query execution time.
+--   We have a driver for each of the job types defined in "Data.Repa.Query.Job".
 --
 module Data.Repa.Query.Runtime.Driver
         ( execQuery
-        , streamSourcesToStdout)
+        , execExtract
+        , pattern ExtractTargetFile)
 where
-import Data.Repa.Flow                                   as F
 import Data.Word
 import Data.Maybe
 import System.IO
+import qualified Data.Repa.Flow                         as F
+import qualified Data.Repa.Query.Job.Spec               as QJ
 import qualified Data.Repa.Flow.Generic                 as FG
 import qualified Data.Repa.Array.Generic                as AG
 import qualified Data.Repa.Array.Material.Auto          as AA
@@ -21,33 +23,85 @@ import Prelude                                          as P
 
 
 ---------------------------------------------------------------------------------------------------
--- | Top level driver for a query.
+-- | Top level driver for a query job.
 --
 --   The query takes the path to the root data directory as its first argument.
 --
-execQuery :: (FilePath -> IO (Sources Word8)) -> IO ()
+execQuery :: (FilePath -> IO (F.Sources Word8)) -> IO ()
 execQuery makeSources
  = do
+        -- Parse command-line arguments.
         args    <- System.getArgs
-
         config  <- parseArgs args configZero
         let Just pathRootData = configRootData config
 
+        -- Build the flow sources.
         ss      <- makeSources pathRootData
+
+        -- Stream data from flow sources to stdout.
         streamSourcesToStdout ss
         return  ()
 {-# INLINE execQuery #-}
 
 
--- | Query command-line config.
-data Config
-        = Config
-        { configRootData        :: Maybe FilePath }
+---------------------------------------------------------------------------------------------------
+-- | Top level driver for an extract job.
+--
+--   The query takes the path to the root data directory as its first argument.
+--
+execExtract
+        :: (FilePath -> IO (F.Sources Word8)) 
+        -> QJ.ExtractTarget 
+        -> IO ()
 
-configZero 
-        = Config Nothing
+execExtract makeSources target
+ = do
+        -- Parse command-line arguments.
+        args    <- System.getArgs
+        config  <- parseArgs args configZero
+        let Just pathRootData = configRootData config
+
+        -- Build the flow sources.
+        ss      <- makeSources pathRootData
+
+        -- Stream data from flow sources to stdout.
+        case target of
+         QJ.ExtractTargetFile fileOut
+          -> streamSourcesToFile ss fileOut
+
+{-# INLINE execExtract #-}
 
 
+-- Pattern synonyms for extract targets so that generated
+-- code that uses them only needs to import this module.
+pattern ExtractTargetFile file  = QJ.ExtractTargetFile file
+
+
+---------------------------------------------------------------------------------------------------
+-- | Read data from a bundle of sources and write it to stdout.
+streamSourcesToStdout :: F.Sources Word8 -> IO ()
+streamSourcesToStdout ss
+ = do   ss0     <- FG.funnel_i ss
+        ss1     <- FG.mapIndex_i (\_ -> 1) (\_ -> ()) ss0
+
+        b       <- F.hBucket stdout
+        let bs  =  AG.fromList AA.B [b]
+        ks      <- F.sinkBytes bs 
+        F.drainP ss1 ks
+{-# INLINE_FLOW streamSourcesToStdout #-}
+
+
+-- | Read data from a bundle of sources and write it to a single file.
+streamSourcesToFile :: F.Sources Word8 -> FilePath -> IO ()
+streamSourcesToFile ss filePath
+ = do   ss0     <- FG.funnel_i ss
+        ss1     <- FG.mapIndex_i (\_ -> 1) (\_ -> ()) ss0
+        ks      <- F.toFiles [filePath] F.sinkBytes
+        F.drainP ss1 ks
+{-# INLINE_FLOW streamSourcesToFile #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Parse command line arguments given to query.
 parseArgs :: [String] -> Config -> IO Config
 parseArgs [] config
@@ -71,57 +125,11 @@ dieUsage
  , " -root-data PATH    (required) Root path containing table data." ]
 
 
----------------------------------------------------------------------------------------------------
--- | Read data from a bundle of sources and write it to stdout.
---  
---   This function only works for sources bundles containing a single stream.
---   If this is not true then the function returns False, and no data is
---   written to stdout.
---
-streamSourcesToStdout :: Sources Word8 -> IO ()
-streamSourcesToStdout ss
- = do   
-        ss0     <- FG.funnel_i ss
-        ss1     <- FG.mapIndex_i (\_ -> 1) (\_ -> ()) ss0
+-- | Query command-line config.
+data Config
+        = Config
+        { configRootData        :: Maybe FilePath }
 
-        b       <- hBucket stdout
-        let bs  = AG.fromList AA.B [b]
-        ks      <- sinkBytes bs 
-        drainP ss1 ks
+configZero 
+        = Config Nothing
 
-{-# INLINE_FLOW streamSourcesToStdout #-}
-
-
-{-
--- | Read data from a unitary stream and write it to stdout.
-streamSourceToStdout   :: FG.Sources () IO (AA.Array AA.A Word8) -> IO Bool
-streamSourceToStdout ss -- (FG.Sources () pullX)
- = do   
-        let bs  =  AG.fromList AA.A [stdout]
-        ks      <- F.sinkBytes bs
-        drainP ss ks
-
- = do   go
-        return True
-
- where  go 
-         = pullX () eat_streamSource eject_streamSource
-        {-# INLINE go #-}
-
-        eat_streamSource (chunk :: AG.Array AA.A Word8)
-         = do   let (start, len, fptr :: Foreign.ForeignPtr Word8) 
-                        = AF.toForeignPtr $ AG.convert AF.F chunk
-
-                Foreign.withForeignPtr fptr $ \ptr 
-                 -> hPutBuf stdout (ptr `Foreign.plusPtr` start) len
-
-                hFlush stdout
-                go
-        {-# INLINE eat_streamSource #-}
-
-        eject_streamSource
-         = do   hClose stdout
-                return ()
-        {-# INLINE eject_streamSource #-}
-{-# INLINE_FLOW streamSourceToStdout #-}
--}

@@ -50,6 +50,7 @@ Library
         Data.Repa.Query.Job.JSON
 
         Data.Repa.Query.Runtime.Primitive
+        Data.Repa.Query.Runtime.Driver
         Data.Repa.Query.Runtime
 
         Data.Repa.Query.Source.Builder
@@ -73,8 +74,6 @@ Library
 
         Data.Repa.Query.Job.Spec
         Data.Repa.Query.Job.Exec
-
-        Data.Repa.Query.Runtime.Driver
 
         Data.Repa.Query.Source.Primitive.Literal
         Data.Repa.Query.Source.Primitive.Operator

@@ -55,7 +55,7 @@ buildJobViaRepa dirScratch cleanup job fileExe
         BB.ensureDir dirScratch
 
         -- Use Template Haskell to convert the query into Haskell code.
-        dec <- BB.io $ TH.runQ $ CR.decOfJob (TH.mkName "_makeSources") job
+        dec <- BB.io $ TH.runQ $ CR.decOfJob (TH.mkName "_runJob") job
 
         let fileHS      = dirScratch </> "Main.dump-repa.hs" -- written by us.
         let fileHI      = dirScratch </> "Main.dump-repa.hi" -- dropped by GHC
@@ -245,11 +245,11 @@ edslConfig config
 repaHeader :: String
 repaHeader
  = unlines 
- [ "import qualified Data.Repa.Query.Runtime"
+ [ "import qualified Data.Repa.Query.Runtime.Driver"
  , "import qualified Data.Repa.Query.Runtime.Primitive"
  , "import qualified Data.Repa.Product"
  , ""
- , "main = Data.Repa.Query.Runtime.execQuery _makeSources" ]
+ , "main = _runJob" ]
 
 
 
