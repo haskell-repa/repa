@@ -68,7 +68,11 @@ Library
 
         Data.Repa.Query.Graph.Eval.Env
         Data.Repa.Query.Graph.Eval.Exp
+        Data.Repa.Query.Graph.Graph
         Data.Repa.Query.Graph.Exp
+
+        Data.Repa.Query.Job.Spec
+        Data.Repa.Query.Job.Exec
 
         Data.Repa.Query.Runtime.Driver
 

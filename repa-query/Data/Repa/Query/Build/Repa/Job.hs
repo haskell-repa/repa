@@ -10,7 +10,7 @@ where
 import Data.Repa.Query.Build.Repa.Exp                   as R
 import Data.Repa.Query.Build.Repa.Graph                 as R
 import Data.Repa.Query.Graph                            as G
-import Data.Repa.Query.Job                              as G
+import Data.Repa.Query.Job.Spec                         as G
 import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P

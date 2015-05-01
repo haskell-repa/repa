@@ -17,7 +17,7 @@ import System.Directory
 import Control.Monad
 import qualified Data.Repa.Query.Build.Repa             as CR
 import qualified Data.Repa.Query.Graph.JSON             ()
-import qualified Data.Repa.Query.Job                    as Q
+import qualified Data.Repa.Query.Job.Spec               as Q
 import qualified Data.Repa.Query.Job.JSON               ()
 import qualified Data.Repa.Query.Source.Builder         as QB
 import qualified Data.Aeson                             as Aeson

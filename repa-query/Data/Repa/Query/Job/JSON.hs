@@ -4,10 +4,54 @@ module Data.Repa.Query.Job.JSON
 where
 import Control.Monad
 import Data.Repa.Query.Graph.JSON
-import Data.Repa.Query.Job
+import Data.Repa.Query.Job.Spec
 import Data.Aeson                               as Aeson
 import Data.Text                                (Text)
 import qualified Data.HashMap.Strict            as H
+import qualified Data.Text                      as Text
+
+----------------------------------------------------------------------------------------------- Job
+instance ToJSON Job where
+ toJSON xx 
+  = case xx of
+        JobQuery query format
+         -> object [ "_type"    .= text "job"
+                   , "job"      .= text "query"
+                   , "query"    .= toJSON query
+                   , "format"   .= toJSON format ]
+
+        JobExtract query format target
+         -> object [ "_type"    .= text "job"
+                   , "job"      .= text "extract"
+                   , "query"    .= toJSON query
+                   , "format"   .= toJSON format
+                   , "target"   .= toJSON target ]
+
+
+instance FromJSON Job where
+ parseJSON (Object hh)
+
+        | Just (String "job")     <- H.lookup "_type"  hh
+        , Just (String "query")   <- H.lookup "job"    hh
+        , Just jQuery             <- H.lookup "query"  hh
+        , Just jFormat            <- H.lookup "format" hh
+        = do    query   <- parseJSON jQuery
+                format  <- parseJSON jFormat
+                return  $ JobQuery query format
+
+        | Just (String "job")     <- H.lookup "_type"  hh
+        , Just (String "extract") <- H.lookup "job"    hh
+        , Just jQuery             <- H.lookup "query"  hh
+        , Just jFormat            <- H.lookup "format" hh
+        , Just jTarget            <- H.lookup "target" hh
+        = do    query   <- parseJSON jQuery
+                format  <- parseJSON jFormat
+                target  <- parseJSON jTarget
+                return  $ JobExtract query format target
+
+ parseJSON _
+        = mzero
+
 
 --------------------------------------------------------------------------------------------- Query
 instance (ToJSON nF, ToJSON bV, ToJSON nV)
@@ -68,6 +112,30 @@ instance FromJSON OutputFormat where
 
  parseJSON _ = mzero
 
+
+------------------------------------------------------------------------------------- ExtractTarget
+instance ToJSON ExtractTarget where
+ toJSON xx 
+  = case xx of
+        ExtractTargetFile path
+         -> object [ "_type"    .= text "extract_target"
+                   , "target"   .= text "file"
+                   , "file"     .= Text.pack path ]
+
+
+instance FromJSON ExtractTarget where
+ parseJSON (Object hh)
+        | Just (String "extract_target") <- H.lookup "_type"  hh
+        , Just (String "file")           <- H.lookup "target" hh
+        , Just (String path)             <- H.lookup "file"   hh
+        = do    return  $ ExtractTargetFile (Text.unpack path)
+
+ parseJSON _ = mzero
+
+
 ---------------------------------------------------------------------------------------------------
 text :: Text -> Text
 text x = x 
+
+
+

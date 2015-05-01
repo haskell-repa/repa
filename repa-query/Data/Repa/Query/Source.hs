@@ -63,7 +63,7 @@ module Data.Repa.Query.Source
         , get4_1, get4_2, get4_3, get4_4
         , get5_1, get5_2, get5_3, get5_4, get5_5)
 where
-import Data.Repa.Query.Job                              as J
+import Data.Repa.Query.Job.Spec                         as J
 import Data.Repa.Query.Graph                            as G
 import Data.Repa.Query.Transform.Namify                 as N
 import Data.Repa.Query.Source.Builder                   as S
