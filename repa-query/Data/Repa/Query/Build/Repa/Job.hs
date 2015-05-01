@@ -43,7 +43,8 @@ expOfJob (JobQuery   query format)
  =      [| P.execQuery   $(expOfQueryFormat query format) |]
 
 expOfJob (JobExtract query format target)
- =      [| P.execExtract $(expOfQueryFormat query format) $(expOfExtractTarget target) |]
+ =      [| P.execExtract $(expOfQueryFormat query format) 
+                         $(expOfExtractTarget target) |]
 
 
 ---------------------------------------------------------------------------------------------------
