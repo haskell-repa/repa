@@ -38,7 +38,6 @@ Library
 
   exposed-modules:
 
-        Data.Repa.Query.Build.Repa
         Data.Repa.Query.Build
 
         Data.Repa.Query.Graph.Eval
@@ -66,6 +65,7 @@ Library
         Data.Repa.Query.Build.Repa.Exp
         Data.Repa.Query.Build.Repa.Graph
         Data.Repa.Query.Build.Repa.Job
+        Data.Repa.Query.Build.Repa
 
         Data.Repa.Query.Graph.Eval.Env
         Data.Repa.Query.Graph.Eval.Exp

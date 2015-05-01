@@ -14,20 +14,27 @@
 --   operators are used.
 --   
 module Data.Repa.Query.Source
-        ( -- * Query Types
-          Query, Flow, Value
+        ( -- * Types
+          Job, Query, Flow, Value, Q
 
-          -- * Query builder
-        , Q
+          -- * Job Builders
+          -- ** Query
         , query
-        , extract, toFile
+
+          -- ** Extract
+        , extract,      ExtractTarget (..)
+
+          -- ** Sieve
+        , sieve,        SieveTarget   (..)
+
+          -- ** Targets
+        , TargetFile(..)
+        , TargetDir (..)
 
           -- * Flow operators
           -- | The provided operators are restricted to the set that can be
           --   performed on the fly, without needing to create intermediate
           --   tables.
-        , Delim  (..)
-        , Field  (..)
 
           -- ** Sourcing
         , fromFile
@@ -37,6 +44,9 @@ module Data.Repa.Query.Source
 
           -- ** Mapping
         , map, map2, map3, map4, map5
+
+          -- ** Zipping
+        , zip, zip2, zip3, zip4, zip5
 
           -- ** Folding
         , fold
@@ -62,7 +72,11 @@ module Data.Repa.Query.Source
         , get2_1, get2_2
         , get3_1, get3_2, get3_3
         , get4_1, get4_2, get4_3, get4_4
-        , get5_1, get5_2, get5_3, get5_4, get5_5)
+        , get5_1, get5_2, get5_3, get5_4, get5_5
+
+          -- * Output formats
+        , F.Delim  (..)
+        , F.Field  (..))
 where
 import Data.Repa.Query.Job.Spec                         as J
 import Data.Repa.Query.Graph                            as G
@@ -73,38 +87,26 @@ import Data.Repa.Query.Source.Primitive.Operator
 import Data.Repa.Query.Source.Primitive.Projection
 import Data.Repa.Query.Source.Primitive.Scalar
 import Data.Repa.Query.Source.Primitive.Sources
-import Data.Repa.Store.Format                           as F
+import qualified Data.Repa.Store.Format                 as F
+import Data.Repa.Product
 import Prelude 
-        hiding (map, filter)
+ hiding ( map
+        , zip, zip3
+        , filter)
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Query using the default ASCII output format.
 query   :: Q (Flow a) 
         -> Config 
         -> IO (Either String [Job])
 
 query mkFlow config
- = do   
-        (state', eFlow) 
-                <- evalQ mkFlow 
-                $  State { sConfig      = config
-                         , sNodes       = []
-                         , sGenFlow     = 0
-                         , sGenScalar   = 0 }
-
-        case eFlow of
-         Left  err
-          -> return $ Left err
-
-         Right (Flow vFlow)
-          -> do let Just q  = N.namify N.mkNamifierStrings
-                            $ J.Query vFlow (G.Graph (sNodes state'))
-
-                return $ Right [JobQuery q J.OutputFormatAsciiBuildTime]
+ =  makeQuery config mkFlow $ \q
+ -> return $ Right [JobQuery q J.OutputFormatAsciiBuildTime]
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Extract data to the given target.
 extract :: ExtractTarget 
         -> Q (Flow a)
@@ -112,7 +114,33 @@ extract :: ExtractTarget
         -> IO (Either String [Job])
 
 extract target mkFlow config
- = do   
+ =  makeQuery config mkFlow $ \q
+ -> return $ Right [JobExtract q J.OutputFormatAsciiBuildTime target]
+
+
+-------------------------------------------------------------------------------
+-- | Sieve rows to named buckets in a directory.
+sieve   :: SieveTarget
+        -> Q (Flow (String :*: a))
+        -> Config
+        -> IO (Either String [Job])
+
+sieve target mkFlow config
+ =  makeQuery config mkFlow $ \q
+ -> return $ Right [JobSieve q J.OutputFormatAsciiBuildTime target]
+
+
+-------------------------------------------------------------------------------
+-- | Evaluate a flow builder, 
+--   and convert it to a query graph.
+makeQuery 
+        :: Config
+        -> Q (Flow a)
+        -> (QueryS -> IO (Either String b))
+        -> IO (Either String b)
+
+makeQuery config mkFlow k
+ = do
         (state', eFlow) 
                 <- evalQ mkFlow 
                 $  State { sConfig      = config
@@ -127,12 +155,22 @@ extract target mkFlow config
          Right (Flow vFlow)
           -> do let Just q  = N.namify N.mkNamifierStrings
                             $ J.Query vFlow (G.Graph (sNodes state'))
+                k q
 
-                return $ Right [JobExtract q J.OutputFormatAsciiBuildTime target]
+
+-------------------------------------------------------------------------------
+class TargetFile t where
+ -- | Lift a file path to a target.
+ toFile :: FilePath -> t
+
+instance TargetFile ExtractTarget where
+ toFile  path   = ExtractTargetFile path
 
 
--- | Extract to the given local file.
-toFile :: FilePath -> ExtractTarget
-toFile path = ExtractTargetFile path
+class TargetDir t where
+ -- | Lift a directory name to a target.
+ toDir  :: FilePath -> t
 
+instance TargetDir  SieveTarget where
+ toDir   path   = SieveTargetDir path
 

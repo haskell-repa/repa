@@ -9,7 +9,10 @@ module Data.Repa.Query.Job.Spec
         , OutputFormat  (..)
 
           -- * Extract
-        , ExtractTarget (..))
+        , ExtractTarget (..)
+
+          -- * Sieve
+        , SieveTarget   (..))
 where
 import Data.Repa.Query.Graph
 import Data.Repa.Store.Format   as Format
@@ -29,6 +32,13 @@ data Job
         { jobQuery              :: QueryS 
         , jobOutputFormat       :: OutputFormat 
         , jobExtractTarget      :: ExtractTarget }
+
+        -- | Query where the result is a pair of filename and value.
+        --   Each value is written to its associated file.
+        | JobSieve
+        { jobQuery              :: QueryS
+        , jobOutputFormat       :: OutputFormat
+        , jobSieveTarget        :: SieveTarget }
         deriving Show
 
 
@@ -75,9 +85,16 @@ deriving instance Show OutputFormat
 
 
 ---------------------------------------------------------------------------------------------------
--- | Target for an extract.
+-- | Target for an extract job.
 data ExtractTarget
         -- | Write data to a local file.
         = ExtractTargetFile FilePath
+        deriving Show
+
+
+-- | Target for a sieve job.
+data SieveTarget
+        -- | Write data to buckets in the given directory.
+        = SieveTargetDir  FilePath
         deriving Show
 

@@ -37,9 +37,10 @@ module Data.Repa.Query.Runtime.Primitive
         , sourceTableFormat
 
           -- * From Data.Repa.Flow.Auto.Format
-        , concatPackFormat_i
-        , unlinesPackFormat_i
-        , unlinesPackAscii_i
+        , packFormat_i
+        , packFormatLn_i
+        , packAsciiLn_i
+        , keyPackAsciiLn_i
 
           -- * From Data.Repa.Store.Format
         , pattern Fixed
@@ -176,9 +177,10 @@ sourceTableFormat       = S.sourceTableFormat
 
 
 -- Data.Repa.Flow.Auto.Format -------------------------------------------------
-concatPackFormat_i      = F.concatPackFormat_i
-unlinesPackFormat_i     = F.unlinesPackFormat_i
-unlinesPackAscii_i      = F.unlinesPackAscii_i
+packFormat_i            = F.packFormat_i
+packFormatLn_i          = F.packFormatLn_i
+packAsciiLn_i           = F.packAsciiLn_i
+keyPackAsciiLn_i        = F.keyPackAsciiLn_i
 
 
 -- Data.Repa.Store.Format -----------------------------------------------------

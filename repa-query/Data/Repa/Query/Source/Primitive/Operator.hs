@@ -1,18 +1,22 @@
 
 module Data.Repa.Query.Source.Primitive.Operator
         ( map, map2, map3, map4, map5
+        , zip, zip2, zip3, zip4, zip5
         , fold, folds
         , filter
         , groups, groupsBy)
 where
 import Control.Monad.State.Strict
+import Data.Repa.Query.Source.Primitive.Projection
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Product
 import Data.Int
 import Data.Repa.Query.Graph.Compounds          as G
 import qualified Data.Repa.Query.Graph          as G
 import Prelude   
- hiding ( map, filter
+ hiding ( map
+        , zip, zip3
+        , filter
         , negate, abs, signum)
 
 
@@ -125,6 +129,36 @@ map5 fun mkIn1 mkIn2 mkIn3 mkIn4 mkIn5
                    in  x)
 
         return fOut
+
+----------------------------------------------------------------------------------------------- Zip
+-- | Zip a flow of elements into a row.
+zip     :: Q (Flow a)
+        -> Q (Flow (a :*: ()))
+zip = map row1
+
+
+-- | Zip corresponding elements of two flows.
+zip2    :: Q (Flow a) -> Q (Flow b) 
+        -> Q (Flow (a :*: b :*: ()))
+zip2 = map2 row2
+
+
+-- | Zip corresponding elements of three flows.
+zip3    :: Q (Flow a) -> Q (Flow b) -> Q (Flow c)
+        -> Q (Flow (a :*: b :*: c :*: ()))
+zip3 = map3 row3
+
+
+-- | Zip corresponding elements of three flows.
+zip4    :: Q (Flow a) -> Q (Flow b) -> Q (Flow c) -> Q (Flow d)
+        -> Q (Flow (a :*: b :*: c :*: d :*: ()))
+zip4 = map4 row4
+
+
+-- | Zip corresponding elements of three flows.
+zip5    :: Q (Flow a) -> Q (Flow b) -> Q (Flow c) -> Q (Flow d) -> Q (Flow e)
+        -> Q (Flow (a :*: b :*: c :*: d :*: e :*: ()))
+zip5 = map5 row5
 
 
 ---------------------------------------------------------------------------------------------- Fold 

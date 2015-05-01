@@ -14,7 +14,7 @@ import qualified Data.Text                      as Text
 instance ToJSON Job where
  toJSON xx 
   = case xx of
-        JobQuery query format
+        JobQuery   query format
          -> object [ "_type"    .= text "job"
                    , "job"      .= text "query"
                    , "query"    .= toJSON query
@@ -23,6 +23,13 @@ instance ToJSON Job where
         JobExtract query format target
          -> object [ "_type"    .= text "job"
                    , "job"      .= text "extract"
+                   , "query"    .= toJSON query
+                   , "format"   .= toJSON format
+                   , "target"   .= toJSON target ]
+
+        JobSieve   query format target
+         -> object [ "_type"    .= text "job"
+                   , "job"      .= text "sieve"
                    , "query"    .= toJSON query
                    , "format"   .= toJSON format
                    , "target"   .= toJSON target ]
@@ -41,6 +48,16 @@ instance FromJSON Job where
 
         | Just (String "job")     <- H.lookup "_type"  hh
         , Just (String "extract") <- H.lookup "job"    hh
+        , Just jQuery             <- H.lookup "query"  hh
+        , Just jFormat            <- H.lookup "format" hh
+        , Just jTarget            <- H.lookup "target" hh
+        = do    query   <- parseJSON jQuery
+                format  <- parseJSON jFormat
+                target  <- parseJSON jTarget
+                return  $ JobExtract query format target
+
+        | Just (String "job")     <- H.lookup "_type"  hh
+        , Just (String "sieve")   <- H.lookup "job"    hh
         , Just jQuery             <- H.lookup "query"  hh
         , Just jFormat            <- H.lookup "format" hh
         , Just jTarget            <- H.lookup "target" hh
@@ -126,6 +143,26 @@ instance FromJSON ExtractTarget where
         , Just (String "file")           <- H.lookup "target" hh
         , Just (String path)             <- H.lookup "file"   hh
         = do    return  $ ExtractTargetFile (Text.unpack path)
+
+ parseJSON _ = mzero
+
+
+------------------------------------------------------------------------------------- ExtractTarget
+instance ToJSON SieveTarget where
+ toJSON xx 
+  = case xx of
+        SieveTargetDir path
+         -> object [ "_type"    .= text "sieve_target"
+                   , "target"   .= text "dir"
+                   , "dir"      .= Text.pack path ]
+
+
+instance FromJSON SieveTarget where
+ parseJSON (Object hh)
+        | Just (String "sieve_target")   <- H.lookup "_type"  hh
+        , Just (String "dir")            <- H.lookup "target" hh
+        , Just (String path)             <- H.lookup "dir "   hh
+        = do    return  $ SieveTargetDir (Text.unpack path)
 
  parseJSON _ = mzero
 

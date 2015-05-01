@@ -15,6 +15,7 @@ import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
 import qualified Data.Repa.Query.Runtime.Driver         as P
+import Data.Repa.Product
 
 
 ---------------------------------------------------------------------------------------------------
@@ -40,46 +41,40 @@ decOfJob nResult job
 expOfJob   :: Job -> Q H.Exp
 
 expOfJob (JobQuery   query format)
- =      [| P.execQuery   $(expOfQueryFormat query format) |]
+ =      [| P.execQuery   $(expOfBulkQueryFormat query format) |]
 
 expOfJob (JobExtract query format target)
- =      [| P.execExtract $(expOfQueryFormat query format) 
+ =      [| P.execExtract $(expOfBulkQueryFormat query format) 
                          $(expOfExtractTarget target) |]
+
+expOfJob (JobSieve   query format target)
+ =      [| P.execSieve   $(expOfKeyQueryFormat  query format)
+                         $(expOfSieveTarget   target) |]
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell expression that produces a flow for the 
 --   given query and output format.
 --
-expOfQueryFormat 
+expOfBulkQueryFormat 
         :: G.QueryS -> G.OutputFormat
         -> Q H.Exp 
 
-expOfQueryFormat (G.Query sResult (G.Graph nodes)) format 
+expOfBulkQueryFormat (G.Query sResult (G.Graph nodes)) format 
  = case format of
     G.OutputFormatFixed delim fields
-     -> let Just format'
-             = expOfDelimFields delim fields
-
+     -> let Just format' = expOfDelimFields delim fields
         in case delim of
-            Q.Fixed{}
-             -> [| \ $hRootData -> $sources P.>>= P.concatPackFormat_i  $format' |]
-
-            Q.Lines{}
-             -> [| \ $hRootData -> $sources P.>>= P.unlinesPackFormat_i $format' |]
-
-            Q.LinesSep{}
-             -> [| \ $hRootData -> $sources P.>>= P.unlinesPackFormat_i $format' |]
+            Q.Fixed{}    -> [| \ $hRootData -> $sources P.>>= P.packFormat_i   $format' |]
+            Q.Lines{}    -> [| \ $hRootData -> $sources P.>>= P.packFormatLn_i $format' |]
+            Q.LinesSep{} -> [| \ $hRootData -> $sources P.>>= P.packFormatLn_i $format' |]
 
     G.OutputFormatAsciiBuildTime 
-     ->         [| \ $hRootData -> $sources P.>>= P.unlinesPackAscii_i |]
+     -> [| \ $hRootData -> $sources P.>>= P.packAsciiLn_i |]
 
  where 
-        hRootData
-         = H.varP (mkName "_rootData")
-
-        sources 
-         = go nodes
+        hRootData = H.varP (mkName "_rootData")
+        sources   = go nodes
         
         go []   
          = do   let hResult     = H.varE (H.mkName sResult)
@@ -91,14 +86,45 @@ expOfQueryFormat (G.Query sResult (G.Graph nodes)) format
 
 
 ---------------------------------------------------------------------------------------------------
-expOfExtractTarget
-        :: G.ExtractTarget
+expOfKeyQueryFormat
+        :: G.QueryS -> G.OutputFormat
         -> Q H.Exp
 
+expOfKeyQueryFormat (G.Query sResult (G.Graph nodes)) format
+ = case format of
+    G.OutputFormatAsciiBuildTime
+     -> [| \ $hRootData -> $sources 
+                P.>>= P.map_i (\(k :*: x) -> (k, x))
+                P.>>= P.keyPackAsciiLn_i |]
+  
+    _ -> error "repa-query.expOfKeyQueryFormat: not finished"
+
+ where
+        hRootData = H.varP (mkName "_rootData")
+        sources   = go nodes
+        
+        go []   
+         = do   let hResult     = H.varE (H.mkName sResult)
+                [| P.return $hResult |]
+
+        go (n : ns)
+         = do   (hPat, hRhs)    <- bindOfNode n
+                [| $(return hRhs) P.>>= \ $(return hPat) -> $(go ns) |]
+
+
+---------------------------------------------------------------------------------------------------
+expOfExtractTarget :: G.ExtractTarget -> Q H.Exp
 expOfExtractTarget target
  = case target of
         G.ExtractTargetFile file 
          -> let hFile   = H.LitE (H.StringL file)
             in [| P.ExtractTargetFile $(return hFile) |]
 
+
+expOfSieveTarget :: G.SieveTarget -> Q H.Exp
+expOfSieveTarget target
+ = case target of
+        G.SieveTargetDir file 
+         -> let hFile   = H.LitE (H.StringL file)
+            in [| P.SieveTargetDir $(return hFile) |]
 

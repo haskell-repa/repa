@@ -22,6 +22,19 @@ import Prelude
         , (>),  (>=), (<), (<=))
 
 
+-- TODO:  We can't determine the real type for 'a' at query build time.
+-- Define a placeholder type Scalar and use it for 'a' in these functions.
+-- When we've looked up the meta-data we can type-check the graph itself
+-- to ensure the query will work.
+--
+--  should have
+--   (+) :: Value Scalar -> Value Scalar -> Value Scalar
+-- 
+--  This will stop us from trying to add non-scalar values,
+--  and we can defined an instance of the Num type class for it.
+--
+
+
 ---------------------------------------------------------------------------------------- Arithmetic
 -- | Scalar negation.
 negate :: Value a -> Value a
