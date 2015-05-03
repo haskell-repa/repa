@@ -174,6 +174,31 @@ bindOfFlowOp op
                                         $hIn1 $hIn2 $hIn3 $hIn4 $hIn5 |]
                 return  (pOut, hRhs)
 
+        G.FopMapI [sIn1, sIn2, sIn3, sIn4, sIn5, sIn6] sOut xFun
+         -> do  let hIn1        =  H.varE (H.mkName sIn1)
+                let hIn2        =  H.varE (H.mkName sIn2)
+                let hIn3        =  H.varE (H.mkName sIn3)
+                let hIn4        =  H.varE (H.mkName sIn4)
+                let hIn5        =  H.varE (H.mkName sIn5)
+                let hIn6        =  H.varE (H.mkName sIn6)
+                pOut            <- H.varP (H.mkName sOut)
+                hRhs            <- [| P.zipWith6_i $(expOfExp xFun) 
+                                        $hIn1 $hIn2 $hIn3 $hIn4 $hIn5 $hIn6 |]
+                return  (pOut, hRhs)
+
+        G.FopMapI [sIn1, sIn2, sIn3, sIn4, sIn5, sIn6, sIn7] sOut xFun
+         -> do  let hIn1        =  H.varE (H.mkName sIn1)
+                let hIn2        =  H.varE (H.mkName sIn2)
+                let hIn3        =  H.varE (H.mkName sIn3)
+                let hIn4        =  H.varE (H.mkName sIn4)
+                let hIn5        =  H.varE (H.mkName sIn5)
+                let hIn6        =  H.varE (H.mkName sIn6)
+                let hIn7        =  H.varE (H.mkName sIn7)
+                pOut            <- H.varP (H.mkName sOut)
+                hRhs            <- [| P.zipWith7_i $(expOfExp xFun) 
+                                        $hIn1 $hIn2 $hIn3 $hIn4 $hIn5 $hIn6 $hIn7 |]
+                return  (pOut, hRhs)
+
 {-      TODO: add filter to repa-flow API
         G.FopFilterI sIn sOut xFun
          -> do  let hIn         = H.varE (H.mkName sIn)

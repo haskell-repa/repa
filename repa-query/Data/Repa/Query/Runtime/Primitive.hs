@@ -16,6 +16,7 @@ module Data.Repa.Query.Runtime.Primitive
         , gt,  ge,  lt,  le
 
           -- * From Data.Repa.Bits.Date32
+        , stringOfDate
         , yearOfDate
         , monthOfDate
         , dayOfDate
@@ -23,7 +24,7 @@ module Data.Repa.Query.Runtime.Primitive
           -- * From Data.Repa.Flow.Auto
         , Sources, Sinks
         , map_i
-        , zipWith_i, zipWith3_i, zipWith4_i, zipWith5_i
+        , zipWith_i, zipWith3_i, zipWith4_i, zipWith5_i, zipWith6_i, zipWith7_i
         , select_i
         , discard_i
         , mask_i
@@ -79,8 +80,9 @@ import qualified Data.Repa.Flow.Auto                    as F
 import qualified Data.Repa.Flow.Auto.IO                 as F
 import qualified Data.Repa.Flow.Auto.Format             as F
 import qualified Data.Repa.Store.Flow                   as S
-import qualified Data.Repa.Convert.Formats              as C
 import qualified Data.Repa.Convert.Default.Ascii        as C
+import qualified Data.Repa.Convert.Formats              as C
+import qualified Data.Repa.Convert                      as C
 import qualified Data.Repa.Bits.Date32                  as B
 import qualified Data.Repa.Singleton.Nat                as R
 import qualified System.FilePath                        as FilePath
@@ -88,7 +90,7 @@ import qualified System.FilePath                        as FilePath
 import Data.Repa.Product
 
 
--- Prelude --------------------------------------------------------------------
+-- Prelude ----------------------------------------------------------------------------------------
 pattern Unit            = ()
 
 (>>=)                   = (\x y -> x P.>>= y)
@@ -111,7 +113,10 @@ lt                      = (\x y -> x P.<  y)
 le                      = (\x y -> x P.<= y)
 
 
--- Data.Repa.Bits.Date32 ------------------------------------------------------
+-- Data.Repa.Bits.Date32 --------------------------------------------------------------------------
+stringOfDate            :: B.Date32 -> P.String
+stringOfDate            = (\x -> let P.Just str = C.packToString (F.YYYYsMMsDD '-') x in str)
+
 yearOfDate              :: B.Date32 -> P.Int
 yearOfDate              = (\x -> P.fromIntegral (B.yearOfDate32  x))
 
@@ -122,7 +127,7 @@ dayOfDate               :: B.Date32 -> P.Int
 dayOfDate               = (\x -> P.fromIntegral (B.dayOfDate32   x))
 
 
--- Data.Repa.Flow.Auto --------------------------------------------------------
+-- Data.Repa.Flow.Auto ----------------------------------------------------------------------------
 -- Data.Repa.Flow.Auto
 -- TODO: conversions need to be redone chunkwise,
 --       instead of row-at-a-time.
@@ -135,6 +140,8 @@ zipWith_i               = F.zipWith_i
 zipWith3_i              = F.zipWith3_i
 zipWith4_i              = F.zipWith4_i
 zipWith5_i              = F.zipWith5_i
+zipWith6_i              = F.zipWith6_i
+zipWith7_i              = F.zipWith7_i
 
 select_i                = F.select_i
 discard_i               = F.discard_i
@@ -142,6 +149,7 @@ mask_i                  = F.mask_i
 
 
 -- Segmented fold.
+-- TODO: do this chunkwise.
 folds_i
         :: (F.FoldsDict n a b u1 u2 u3 u4, F.Flow n, F.Flow b)
         => (a -> b -> b)
@@ -169,27 +177,27 @@ groupsBy_i f ss
 
 
 
--- Data.Repa.Flow.Auto.IO -----------------------------------------------------
+-- Data.Repa.Flow.Auto.IO -------------------------------------------------------------------------
 fromFiles               = F.fromFiles
 sourceLinesFormat       = F.sourceLinesFormat
 sourceFixedFormat       = F.sourceFixedFormat
 sourceTableFormat       = S.sourceTableFormat
 
 
--- Data.Repa.Flow.Auto.Format -------------------------------------------------
+-- Data.Repa.Flow.Auto.Format ---------------------------------------------------------------------
 packFormat_i            = F.packFormat_i
 packFormatLn_i          = F.packFormatLn_i
 packAsciiLn_i           = F.packAsciiLn_i
 keyPackAsciiLn_i        = F.keyPackAsciiLn_i
 
 
--- Data.Repa.Store.Format -----------------------------------------------------
+-- Data.Repa.Store.Format -------------------------------------------------------------------------
 pattern Fixed           = S.Fixed
 pattern Lines           = S.Lines
 pattern LinesSep c      = S.LinesSep c
 
 
--- Data.Repa.Convert.Format ---------------------------------------------------
+-- Data.Repa.Convert.Format -----------------------------------------------------------------------
 pattern App fs          = C.App fs
 pattern Sep s fs        = C.Sep s fs
 
@@ -218,11 +226,11 @@ pattern FixAsc len      = C.FixAsc len
 pattern VarAsc          = C.VarAsc
 
 
--- Data.Repa.Convert.Default.Ascii --------------------------------------------
+-- Data.Repa.Convert.Default.Ascii ----------------------------------------------------------------
 formatAscii             = C.formatAscii
 
 
--- Data.Repa.Singleton.Nat ----------------------------------------------------
+-- Data.Repa.Singleton.Nat ------------------------------------------------------------------------
 nat0                    = R.nat0
 nat1                    = R.nat1
 nat2                    = R.nat2
@@ -235,7 +243,7 @@ nat8                    = R.nat8
 nat9                    = R.nat9
 
 
--- System.FilePath ------------------------------------------------------------
+-- System.FilePath --------------------------------------------------------------------------------
 (</>)                   = (\x y -> x FilePath.</> y)
 (<.>)                   = (\x y -> x FilePath.<.> y)
 

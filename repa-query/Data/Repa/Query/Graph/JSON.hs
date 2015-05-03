@@ -447,6 +447,7 @@ sopNames
         , (SopLe,               "le")
 
         -- Dates
+        , (SopStringOfDate,     "stringOfDate")
         , (SopYearOfDate,       "yearOfDate")
         , (SopMonthOfDate,      "monthOfDate")
         , (SopDayOfDate,        "dayOfDate")]

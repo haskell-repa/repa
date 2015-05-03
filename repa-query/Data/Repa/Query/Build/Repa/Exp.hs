@@ -114,10 +114,10 @@ expOfScalarOp sop
 
         SopGet _ _      -> Nothing
 
-
-        SopYearOfDate   -> Just [| P.yearOfDate  |]
-        SopMonthOfDate  -> Just [| P.monthOfDate |]
-        SopDayOfDate    -> Just [| P.dayOfDate   |]
+        SopStringOfDate -> Just [| P.stringOfDate |]
+        SopYearOfDate   -> Just [| P.yearOfDate   |]
+        SopMonthOfDate  -> Just [| P.monthOfDate  |]
+        SopDayOfDate    -> Just [| P.dayOfDate    |]
 
 
 -- | Yield a Haskell literal from a query literal.

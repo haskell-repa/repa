@@ -43,10 +43,10 @@ module Data.Repa.Query.Source
         , fromColumns
 
           -- ** Mapping
-        , map, map2, map3, map4, map5
+        , map, map2, map3, map4, map5, map6, map7
 
           -- ** Zipping
-        , zip, zip2, zip3, zip4, zip5
+        , zip, zip2, zip3, zip4, zip5, zip6, zip7
 
           -- ** Folding
         , fold
@@ -61,6 +61,7 @@ module Data.Repa.Query.Source
 
           -- * Scalar operators
           -- ** Dates
+        , stringOfDate
         , yearOfDate
         , monthOfDate
         , dayOfDate

@@ -136,9 +136,9 @@ module Data.Repa.Flow
         --   `Data.Repa.Flow.Generic.map_o` from "Data.Repa.Flow.Generic".
         , map_i,                map_o
         , zipWith_i
-        , zipWith3_i
-        , zipWith4_i
-        , zipWith5_i
+
+        -- | Higher arity zipWith functions.
+        , module Data.Repa.Flow.Auto.ZipWith
 
         -- ** Connecting
         , dup_oo
@@ -200,8 +200,10 @@ where
 import Data.Repa.Flow.Auto
 import Data.Repa.Flow.Auto.Debug
 import Data.Repa.Flow.Auto.IO
+import Data.Repa.Flow.Auto.ZipWith
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.States
+
 
 import Data.Repa.Array.Generic
         hiding (fromList, GroupsDict, FoldsDict)

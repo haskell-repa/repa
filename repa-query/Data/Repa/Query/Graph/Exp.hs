@@ -149,6 +149,7 @@ data ScalarOp
         | SopGet Int Int        -- ^ Projection.
 
         -- Dates
+        | SopStringOfDate       -- ^ Convert a date to a string.
         | SopYearOfDate         -- ^ Take the year number of a date.
         | SopMonthOfDate        -- ^ Take the month number of a date.
         | SopDayOfDate          -- ^ Take the day number of a date.

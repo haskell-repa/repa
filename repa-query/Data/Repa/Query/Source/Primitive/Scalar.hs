@@ -7,6 +7,7 @@ module Data.Repa.Query.Source.Primitive.Scalar
         , (>),  (>=), (<), (<=)
 
           -- * Dates
+        , stringOfDate
         , yearOfDate
         , monthOfDate
         , dayOfDate)
@@ -102,14 +103,17 @@ signum = makeScalarOp1 G.SopSignum
 
 
 --------------------------------------------------------------------------------------------- Dates
-yearOfDate  :: Value Date32 -> Value Int
-yearOfDate  = makeScalarOp1 G.SopYearOfDate
+stringOfDate :: Value Date32 -> Value String
+stringOfDate = makeScalarOp1 G.SopStringOfDate 
 
-monthOfDate :: Value Date32 -> Value Int
-monthOfDate = makeScalarOp1 G.SopMonthOfDate
+yearOfDate   :: Value Date32 -> Value Int
+yearOfDate   = makeScalarOp1 G.SopYearOfDate
 
-dayOfDate   :: Value Date32 -> Value Int
-dayOfDate   = makeScalarOp1 G.SopDayOfDate
+monthOfDate  :: Value Date32 -> Value Int
+monthOfDate  = makeScalarOp1 G.SopMonthOfDate
+
+dayOfDate    :: Value Date32 -> Value Int
+dayOfDate    = makeScalarOp1 G.SopDayOfDate
 
 
 
