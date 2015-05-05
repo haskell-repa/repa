@@ -2,6 +2,7 @@
 module Data.Repa.Store.Object.Dimension
         (Dimension (..))
 where
+import Data.Repa.Store.Object.Family
 import Control.Monad
 import Data.Text
 import Data.Aeson                               as A
@@ -13,33 +14,54 @@ import qualified Data.HashMap.Strict            as H
 data Dimension
         = Dimension
         { -- | Name of dimension.
-          dimensionName         :: Text
+          dimensionName          :: Text
 
           -- | On-disk data format of key column.
-        , dimensionKeyFormat    :: F.FieldBox
+        , dimensionKeyFormat     :: F.FieldBox
 
           -- | Human readable description of column.
-        , dimensionDescription  :: Text }
+        , dimensionDescription   :: Text 
+
+          -- | Meta-data for subdimensions,
+          --   or `Nothing` if it hasn't been loaded.
+        , dimensionSubDimensions :: Maybe [Dimension]
+
+          -- | Meta-data for associated column families,
+          --   or `Nothing` if it hasn't been loaded.
+        , dimensionFamilies      :: Maybe [Family] }
         deriving Show
 
 
 instance ToJSON Dimension where
- toJSON (Dimension name format desc)
-        = object [ "_type"      .= text "dimension"
-                 , "name"       .= toJSON name
-                 , "format"     .= toJSON format
-                 , "desc"       .= toJSON desc ]
+ toJSON (Dimension name format desc mSubDims mFamilies)
+  =  object $    [ "_type"    .= text "dimension"
+                 , "name"     .= toJSON name
+                 , "format"   .= toJSON format
+                 , "desc"     .= toJSON desc ]
+  ++ (maybe [] (\subdims -> 
+                 [ "subdims"  .= toJSON subdims])  mSubDims)
+  ++ (maybe [] (\families ->
+                 [ "families" .= toJSON families]) mFamilies)
 
 
 instance FromJSON Dimension where
  parseJSON (Object hh)
         | Just (String "dimension") <- H.lookup "_type" hh
-        , Just (String name)     <- H.lookup "name"   hh
-        , Just jField            <- H.lookup "format" hh
-        , Just (String desc)     <- H.lookup "desc"   hh
+        , Just (String name)        <- H.lookup "name"   hh
+        , Just jField               <- H.lookup "format" hh
+        , Just (String desc)        <- H.lookup "desc"   hh
         = do
-                field   <- parseJSON jField
-                return $ Dimension name field desc
+                field     <- parseJSON jField
+
+                mSubDims  <- case H.lookup "subdims" hh of
+                                Nothing  -> return Nothing
+                                Just txt -> liftM Just $ parseJSON txt
+
+                mFamilies <- case H.lookup "families" hh of
+                                Nothing  -> return Nothing
+                                Just txt -> liftM Just $ parseJSON txt
+
+                return $ Dimension name field desc mSubDims mFamilies
 
  parseJSON _ = mzero
 
