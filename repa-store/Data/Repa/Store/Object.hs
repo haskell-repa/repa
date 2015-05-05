@@ -207,6 +207,7 @@ loadObjectFromDir path
                 ".table"        -> loadTable
                 _               -> return $ Left $ ErrorLoadObjectUnrecognised path
 
+        -- Dimension --------------------------------------
         loadDimension
          = do   let pathMeta    =  path </> "_dimension.json"
                 hasMetaFile     <- System.doesFileExist pathMeta
@@ -215,8 +216,21 @@ loadObjectFromDir path
                  else do strMeta <- BS.readFile pathMeta
                          case A.decode strMeta of
                           Nothing    -> return $ Left  $ ErrorLoadObjectMalformed pathMeta
-                          Just meta  -> return $ Right $ ObjectDimension meta
+                          Just meta  -> loadDimension_sub meta
 
+        loadDimension_sub meta
+         = do   eObjs    <- listObjectsInDir path
+                case eObjs of
+                 Left  err -> return $ Left $ ErrorLoadObjectList err
+                 Right objs
+                  -> do let objsSub    = [d | ObjectDimension d <- objs]
+                        let objsFamily = [f | ObjectFamily    f <- objs]
+                        return $ Right $ ObjectDimension 
+                               $ meta   { dimensionSubDimensions = Just objsSub
+                                        , dimensionFamilies      = Just objsFamily }
+
+
+        -- Family -----------------------------------------
         loadFamily
          = do   let pathMeta    =  path </> "_family.json"
                 hasMetaFile     <- System.doesFileExist pathMeta
@@ -225,8 +239,19 @@ loadObjectFromDir path
                  else do strMeta <- BS.readFile pathMeta
                          case A.decode strMeta of
                           Nothing    -> return $ Left  $ ErrorLoadObjectMalformed pathMeta
-                          Just meta  -> return $ Right $ ObjectFamily meta
+                          Just meta  -> loadFamily_sub meta
 
+        loadFamily_sub meta
+         = do   eObjs   <- listObjectsInDir path
+                case eObjs of
+                 Left  err -> return $ Left $ ErrorLoadObjectList err
+                 Right objs
+                  -> do let objsCol    = [d | ObjectColumn d <- objs]
+                        return $ Right $ ObjectFamily
+                               $ meta  { familyColumns = Just objsCol }
+
+
+        -- Column ------------------------------------------
         loadColumn
          = do   let pathMeta    =  path </> "_column.json"
                 hasMetaFile     <- System.doesFileExist pathMeta
@@ -235,8 +260,10 @@ loadObjectFromDir path
                  else do strMeta <- BS.readFile pathMeta
                          case A.decode strMeta of
                           Nothing    -> return $ Left  $ ErrorLoadObjectMalformed pathMeta
-                          Just meta  -> return $ Right $ ObjectDimension meta
+                          Just meta  -> return $ Right $ ObjectColumn meta
 
+
+        -- Table -------------------------------------------
         loadTable
          = do   let pathMeta    =  path </> "_table.json"
                 hasMetaFile     <- System.doesFileExist pathMeta
@@ -248,19 +275,21 @@ loadObjectFromDir path
                            Just meta -> return $ Right $ ObjectTable meta
 
 
-
 -- | Errors that can happen when loading object meta data.
 data ErrorLoadObject
-          -- | Object directory does not exist.
+        -- | Object directory does not exist.
         = ErrorLoadObjectNoDir     FilePath
 
-          -- | Object directory extension is unrecognised.
+        -- | Object directory extension is unrecognised.
         | ErrorLoadObjectUnrecognised FilePath
 
-          -- | Object directory does not include meta-data.
+        -- | Object directory does not include meta-data.
         | ErrorLoadObjectNoMeta    FilePath
 
-          -- | Object meta-data is malformed.
+        -- | Object meta-data is malformed.
         | ErrorLoadObjectMalformed FilePath
+
+        -- | Error encountered when listing sub-objects.
+        | ErrorLoadObjectList      ErrorListObjects
         deriving Show
 
