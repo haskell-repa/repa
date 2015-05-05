@@ -6,6 +6,7 @@ module Data.Repa.Store.Object
         , objectExtensions
         , nameOfObject
         , typeOfObject
+        , childrenOfObject
 
           -- * Listing Objects
         , listObjectsInDir
@@ -13,22 +14,30 @@ module Data.Repa.Store.Object
 
           -- * Loading Objects
         , loadObjectFromDir
-        , ErrorLoadObject  (..))
+        , ErrorLoadObject  (..)
+
+          -- * Resolving object paths.
+        , resolveObject
+        , ResolvePart  (..)
+        , ErrorResolveObject (..))
 where
 import Data.Repa.Store.Object.Dimension
 import Data.Repa.Store.Object.Family
 import Data.Repa.Store.Object.Column
 import Data.Repa.Store.Object.Table
 
-import System.FilePath
+import System.FilePath                          as FilePath
 import Control.Monad
 import Data.Maybe
 import Data.Text                                (Text)
 import Data.Aeson                               ((.=))
 
+import qualified Data.List                      as L
 import qualified Data.Aeson                     as A
 import qualified Data.HashMap.Strict            as H
 import qualified Data.ByteString.Lazy.Char8     as BS
+import qualified Data.Map.Strict                as Map
+import qualified Data.Text                      as Text
 import qualified System.Directory               as System
 
 
@@ -149,9 +158,29 @@ typeOfObject oo
         ObjectTable{}           -> ObjectTypeTable
 
 
+-- | Get the child objects of the given one.
+childrenOfObject :: Object -> [Object]
+childrenOfObject oo
+ = case oo of
+        ObjectDimension dim     
+         ->  map ObjectDimension (join $ maybeToList $ dimensionSubDimensions dim)
+         ++  map ObjectFamily    (join $ maybeToList $ dimensionFamilies dim)
+
+        ObjectFamily fam
+         ->  map ObjectColumn    (join $ maybeToList $ familyColumns fam)
+
+        ObjectColumn{} -> []
+
+        ObjectTable tab
+         ->  map ObjectColumn    (tableColumns tab)
+
+
 ---------------------------------------------------------------------------------------------------
 -- | Get a list of objects available in a directory.
-listObjectsInDir :: FilePath -> IO (Either ErrorListObjects [Object])
+listObjectsInDir 
+        :: FilePath 
+        -> IO (Either ErrorListObjects [(FilePath, Object)])
+
 listObjectsInDir path
  = check
  where  
@@ -173,8 +202,11 @@ listObjectsInDir path
                 if elem ext [".dimension", ".family", ".column", ".table"]
                  then do r <- loadObjectFromDir dir
                          case r of
-                          Left  err    -> return $ Just $ Left  $ ErrorListObjectsLoad err
-                          Right object -> return $ Just $ Right object
+                          Left  err    
+                           -> return $ Just $ Left $ ErrorListObjectsLoad err
+
+                          Right object 
+                           -> return $ Just $ Right (dir, object)
 
                  else return Nothing
 
@@ -223,8 +255,8 @@ loadObjectFromDir path
                 case eObjs of
                  Left  err -> return $ Left $ ErrorLoadObjectList err
                  Right objs
-                  -> do let objsSub    = [d | ObjectDimension d <- objs]
-                        let objsFamily = [f | ObjectFamily    f <- objs]
+                  -> do let objsSub    = [d | (_path, ObjectDimension d) <- objs]
+                        let objsFamily = [f | (_path, ObjectFamily    f) <- objs]
                         return $ Right $ ObjectDimension 
                                $ meta   { dimensionSubDimensions = Just objsSub
                                         , dimensionFamilies      = Just objsFamily }
@@ -246,7 +278,7 @@ loadObjectFromDir path
                 case eObjs of
                  Left  err -> return $ Left $ ErrorLoadObjectList err
                  Right objs
-                  -> do let objsCol    = [d | ObjectColumn d <- objs]
+                  -> do let objsCol    = [d | (_path, ObjectColumn d) <- objs]
                         return $ Right $ ObjectFamily
                                $ meta  { familyColumns = Just objsCol }
 
@@ -292,4 +324,120 @@ data ErrorLoadObject
         -- | Error encountered when listing sub-objects.
         | ErrorLoadObjectList      ErrorListObjects
         deriving Show
+
+
+---------------------------------------------------------------------------------------------------
+-- | Given the logical path of an object, build a list of meta data
+--   for the physical object that represents it, along with any
+--   container objects.
+--
+--   For example, suppose we have the following directory structure:
+--
+-- @
+-- home/
+-- + data/
+--   + historical/
+--     + symbol.dimension/
+--       + date.family/
+--         + volume.column
+--         + open.column
+--         + close.column
+-- @
+-- 
+-- Given the path "home/data/historical/symbol/date/volume",
+-- we build a list of `ResolvePart`s, one for each part of the file path,
+-- ending in a part that holds the meta-data for the target column.
+--
+resolveObject :: FilePath -> IO (Either ErrorResolveObject [ResolvePart])
+resolveObject path
+ = go_dir [] [] (FilePath.splitPath path)
+ where
+        -- Recursing into plain directories ---------------
+        -- The path doesn't contain any components, like '.'
+        go_dir _acc [] []  
+         = return $ Left $ ErrorResolveObjectEmptyPath path
+
+        -- We've entered into some directories, but there are no more parts to
+        -- the path. Return the current directory as the result that was selected.
+        go_dir acc _prev []
+         = return $ Right acc
+
+        -- See if there is anything in the current directory
+        -- named like the next part in the path.
+        go_dir acc prev (p : ps)
+         = do   let path' = FilePath.joinPath $ prev ++ [p]
+                isDir     <- System.doesDirectoryExist path'
+                if isDir 
+                 then do
+                        -- The next part names a directory,
+                        -- so enter into it. 
+                        let r   = ResolveDir $ FilePath.joinPath (prev ++ [p])
+                        go_dir (acc ++ [r]) (prev ++ [p]) ps
+                 else do
+                        -- The next part didn't name a directory,
+                        -- so see if there is a store object with that name.
+                        ePathObjs    <- listObjectsInDir (FilePath.joinPath prev)
+                        case ePathObjs of
+                         Left  err      -> return $ Left $ ErrorResolveObjectList err
+                         Right pathObjs -> go_objs acc pathObjs (p : ps)
+
+
+        -- Recursing into objects -------------------------
+        -- We ran out of components to the path.
+        go_objs _acc _pathObjs []
+         = return $ Left $ ErrorResolveObjectEmptyPath path
+
+        -- We can't find any object that matches the next component in the path.
+        go_objs _acc []   (_p : _ps)
+         = return $ Left $ ErrorResolveObjectNotFound  path
+
+        -- We're at the final component in the path,
+        -- so we're expecting it to name one of the objects here.
+        go_objs acc pathObjs (p : [])
+         = let  (p', _)         = L.span (/= '/') p
+                (_pObjs, objs)  = unzip pathObjs
+                objMap          = Map.fromList $ zip (map nameOfObject objs) pathObjs
+
+           in   case Map.lookup (Text.pack p') objMap of
+                 Nothing             -> return $ Left  $ ErrorResolveObjectNotFound path
+                 Just (pathObj, obj) -> return $ Right $ acc ++ [ResolveObject pathObj obj]
+
+        -- Enter into a container object named after the next
+        -- component of the path.
+        go_objs acc pathObjs  (p : ps)
+         = let  (p', _)         = L.span (/= '/') p
+                (_pObjs, objs)  = unzip pathObjs
+                objMap          = Map.fromList $ zip (map nameOfObject objs) pathObjs
+
+           in   case Map.lookup (Text.pack p') objMap of
+                 Nothing
+                  -> return $ Left $ ErrorResolveObjectNotFound path
+
+                 Just (pathObj, obj) 
+                  -> let objsChildren  = childrenOfObject obj
+                         psObjChildren = zip (repeat "TODO") objsChildren       
+                     in  go_objs (acc ++ [ResolveObject pathObj obj]) psObjChildren ps
+
+                                -- TODO: we don't have the path for the child objects, 
+                                --       and there won't be one for columns in tables.
+                                --       Add a Maybe field to the object meta data types
+                                --       to list the path that they are at.
+
+-- | Part of the resolved collection of objects.
+data ResolvePart
+        = ResolveDir    FilePath 
+        | ResolveObject FilePath Object
+        deriving Show
+
+
+-- | Errors that can happen when resolving an object name.
+data ErrorResolveObject
+        = ErrorResolveObjectEmptyPath FilePath
+        | ErrorResolveObjectNotFound  FilePath
+        | ErrorResolveObjectList      ErrorListObjects
+        deriving Show
+
+
+
+
 
