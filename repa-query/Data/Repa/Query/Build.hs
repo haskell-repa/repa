@@ -247,6 +247,7 @@ repaHeader
  = unlines 
  [ "import qualified Data.Repa.Query.Runtime.Driver"
  , "import qualified Data.Repa.Query.Runtime.Primitive"
+ , "import qualified Data.Repa.Convert.Formats"
  , "import qualified Data.Repa.Product"
  , ""
  , "main = _runJob" ]

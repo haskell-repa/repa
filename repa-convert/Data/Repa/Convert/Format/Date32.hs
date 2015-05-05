@@ -47,11 +47,11 @@ instance Packable YYYYsMMsDD where
   , yy  <- fromIntegral yy'
   , mm  <- fromIntegral mm'
   , dd  <- fromIntegral dd'
-  =  pack buf                                   IntAsc   yy     $ \oy  -> 
-     pack (S.plusPtr buf oy)                    Word8be (cw8 s) $ \os1 ->
-     pack (S.plusPtr buf (oy + os1))            IntAsc   mm     $ \om  ->
-     pack (S.plusPtr buf (oy + os1 + om))       Word8be (cw8 s) $ \os2 ->
-     pack (S.plusPtr buf (oy + os1 + om + os2)) IntAsc   dd     $ \od  -> 
+  =  pack buf                                   (IntAsc0 4) yy      $ \oy  -> 
+     pack (S.plusPtr buf oy)                    Word8be     (cw8 s) $ \os1 ->
+     pack (S.plusPtr buf (oy + os1))            (IntAsc0 2) mm      $ \om  ->
+     pack (S.plusPtr buf (oy + os1 + om))       Word8be     (cw8 s) $ \os2 ->
+     pack (S.plusPtr buf (oy + os1 + om + os2)) (IntAsc0 2) dd      $ \od  -> 
      k (oy + os1 + om + os2 + od)
  {-# INLINE pack #-}
 
@@ -85,11 +85,11 @@ instance Packable DDsMMsYYYY where
   , yy  <- fromIntegral yy'
   , mm  <- fromIntegral mm'
   , dd  <- fromIntegral dd'
-  =  pack buf                                   IntAsc   dd     $ \od  -> 
-     pack (S.plusPtr buf  od)                   Word8be (cw8 s) $ \os1 ->
-     pack (S.plusPtr buf (od + os1))            IntAsc   mm     $ \om  ->
-     pack (S.plusPtr buf (od + os1 + om))       Word8be (cw8 s) $ \os2 ->
-     pack (S.plusPtr buf (od + os1 + om + os2)) IntAsc   yy     $ \oy  -> 
+  =  pack buf                                   (IntAsc0 2) dd      $ \od  -> 
+     pack (S.plusPtr buf  od)                   Word8be     (cw8 s) $ \os1 ->
+     pack (S.plusPtr buf (od + os1))            (IntAsc0 2) mm      $ \om  ->
+     pack (S.plusPtr buf (od + os1 + om))       Word8be     (cw8 s) $ \os2 ->
+     pack (S.plusPtr buf (od + os1 + om + os2)) (IntAsc0 4) yy      $ \oy  -> 
      k (od + os1 + om + os2 + oy)
  {-# INLINE pack #-}
 

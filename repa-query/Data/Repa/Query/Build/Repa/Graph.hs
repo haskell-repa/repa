@@ -33,16 +33,29 @@ bindOfSource ss
         G.SourceFile _ path delim fields sOut
 
          -- Variable length rows.
-         | case delim of
-                Q.Lines{}       -> True
-                Q.LinesSep{}    -> True
-                _               -> False
-                
+         | Q.LinesSep c <- delim                
+         -> do  let hTable       = return (LitE (StringL path))
+                let Just format' = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
+                let c'           = return (LitE (CharL c))
+
+                xRhs    
+                 <- [| P.fromFiles [ $hTable ] 
+                        (P.sourceLinesFormat 
+                                (P.mul 64 1024)
+                                (P.error "query: line to long.")
+                                (P.error "query: cannot convert field.")
+                                (P.Sep $c' $format')) |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return (pOut, xRhs)
+
+         -- Variable length rows.
+         | Q.Lines      <- delim
          -> do  let hTable       = return (LitE (StringL path))
                 let Just format' = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
 
                 xRhs    
-                 <- [| P.fromFiles [ $hRootData P.</> $hTable ] 
+                 <- [| P.fromFiles [ $hTable ] 
                         (P.sourceLinesFormat 
                                 (P.mul 64 1024)
                                 (P.error "query: line to long.")
@@ -58,7 +71,7 @@ bindOfSource ss
                 let Just format' = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
 
                 xRhs    
-                 <- [|  P.fromFiles [ $hRootData P.</> $hTable ]
+                 <- [|  P.fromFiles [ $hTable ]
                           (P.sourceFixedFormat
                                 $format'
                                 (P.error "query: cannot convert field.")) |]

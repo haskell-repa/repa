@@ -81,7 +81,7 @@ import qualified Data.Repa.Flow.Auto.IO                 as F
 import qualified Data.Repa.Flow.Auto.Format             as F
 import qualified Data.Repa.Store.Flow                   as S
 import qualified Data.Repa.Convert.Default.Ascii        as C
-import qualified Data.Repa.Convert.Formats              as C
+import qualified Data.Repa.Convert.Formats              as C    
 import qualified Data.Repa.Convert                      as C
 import qualified Data.Repa.Bits.Date32                  as B
 import qualified Data.Repa.Singleton.Nat                as R

@@ -19,6 +19,7 @@ module Data.Repa.Convert.Formats
           -- * Atomic values
           -- ** ASCII numeric
         , IntAsc     (..)
+        , IntAsc0    (..)
         , DoubleAsc  (..)
 
           -- ** ASCII dates

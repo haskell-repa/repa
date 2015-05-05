@@ -7,6 +7,7 @@ module Data.Repa.Store.Object
         , ErrorListObjects (..))
 where
 import Data.Repa.Store.Object.Table
+import Data.Repa.Store.Meta
 import System.FilePath
 import Data.Maybe
 import Control.Monad

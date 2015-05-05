@@ -7,8 +7,9 @@ module Data.Repa.Store.Flow
 
         , module Data.Repa.Convert.Formats)
 where
-import Data.Repa.Store.Object.Table             as Table
 import Data.Repa.Store.Format                   as Format
+import Data.Repa.Store.Partitions
+
 import Data.Repa.Convert.Formats
 import Data.Repa.Flow.Generic.IO                as G
 import Data.Repa.Flow.Generic                   as F
@@ -42,7 +43,7 @@ sourceTableFormat
  | LinesSep c   <- delim
  = do  
         -- TODO: check directory exists.
-        Just parts  <- Table.listPartitions pathTable 
+        Just parts  <- listPartitions pathTable 
 
         ss      <- fromFiles parts 
                 $  sourceLinesFormat nChunk 

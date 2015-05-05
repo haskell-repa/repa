@@ -31,8 +31,13 @@ Library
   exposed-modules:
         Data.Repa.Store.Format
         Data.Repa.Store.Flow
-        Data.Repa.Store.Object
+
+        Data.Repa.Store.Meta
+
         Data.Repa.Store.Object.Table
+        Data.Repa.Store.Object.Column
+        Data.Repa.Store.Object
+
 
   ghc-options:
         -threaded

@@ -30,6 +30,7 @@ import qualified Data.Text                      as T
 import qualified Data.Repa.Convert.Format       as F
 import qualified Data.Repa.Convert.Formats      as F
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Row format.
 data Row aa
@@ -144,7 +145,10 @@ data Field a where
         DDsMMsYYYY      :: Char -> Field Date32
 
         -- Human readable ASCII integer.
-        IntAsc          :: Field Int  
+        IntAsc          :: Field Int
+
+        -- Human readable ASCII integer with leading zeros.
+        IntAsc0         :: Int  -> Field Int
 
         -- Human readable ASCII double.
         DoubleAsc       :: Field Double
@@ -179,6 +183,10 @@ readField ss
  | ["DDsMMsYYYY", sep]  <- words ss
  , ['\'', c, '\'']      <- sep
  = Just $ FieldBox $ DDsMMsYYYY c
+
+ | ["IntAsc0", sLen]    <- words ss
+ , all isDigit sLen
+ = Just $ FieldBox $ IntAsc0 (read sLen)
 
  | ["FixAsc", sLen]     <- words ss
  , all isDigit sLen

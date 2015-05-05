@@ -1,6 +1,7 @@
 
 module Data.Repa.Convert.Format.Numeric
         ( IntAsc    (..)
+        , IntAsc0   (..)
         , DoubleAsc (..))
 where
 import Data.Repa.Convert.Format.Base
@@ -35,6 +36,44 @@ instance Packable IntAsc where
  {-# INLINE pack #-}
 
  unpack buf len IntAsc k 
+  | len > 0
+  = do  r       <- loadInt buf len
+        case r of
+          Just (n, o)     -> k (n, o)
+          _               -> return Nothing
+
+  | otherwise
+  = return Nothing
+ {-# INLINE unpack #-}
+
+
+------------------------------------------------------------------------------------------- IntAsc
+-- | Human-readable ASCII integer, with leading zeros.
+data IntAsc0    = IntAsc0 Int   deriving (Eq, Show)
+instance Format IntAsc0 where
+ type Value IntAsc0     = Int
+ fieldCount _           = 1
+ minSize    _           = 1
+ fixedSize  _           = Nothing
+
+ -- Max length of a pretty printed 64-bit Int is 20 bytes including sign.
+ packedSize (IntAsc0 n) _ = Just (n + 20)
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
+
+
+instance Packable IntAsc0 where
+
+ -- TODO: This is very slow. Avoid going via lists.
+ pack   buf (IntAsc0 n) v k
+  = let s       = show v
+        s'      = replicate (n - length s) '0' ++ s
+    in  pack buf VarAsc s' k
+ {-# INLINE pack #-}
+
+ unpack buf len (IntAsc0 _) k 
   | len > 0
   = do  r       <- loadInt buf len
         case r of
