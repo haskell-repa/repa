@@ -14,13 +14,13 @@ import qualified Data.HashMap.Strict            as H
 data Column 
         = Column
         { -- | Name of column.
-          columnName    :: Text
+          columnName            :: Text
 
           -- | On-disk data format of column.
-        , columnFormat  :: F.FieldBox
+        , columnFormat          :: F.FieldBox
 
-          -- | English description of column.
-        , columnDesc    :: Text }
+          -- | Human readable description of column.
+        , columnDescription     :: Text }
         deriving Show
 
 

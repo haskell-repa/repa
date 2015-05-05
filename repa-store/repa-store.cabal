@@ -36,6 +36,7 @@ Library
 
         Data.Repa.Store.Object.Table
         Data.Repa.Store.Object.Column
+        Data.Repa.Store.Object.Dimension
         Data.Repa.Store.Object
 
 
