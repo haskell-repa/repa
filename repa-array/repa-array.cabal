@@ -99,6 +99,7 @@ Library
         Data.Repa.Array.Internals.Operator.Insert
         Data.Repa.Array.Internals.Operator.Partition
         Data.Repa.Array.Internals.Operator.Reduce
+        Data.Repa.Array.Internals.Operator.Replicate
         Data.Repa.Array.Internals.Operator.Filter
 
         Data.Repa.Array.Internals.Bulk

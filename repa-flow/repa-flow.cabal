@@ -63,6 +63,7 @@ Library
         Data.Repa.Flow.Chunked.Folds
         Data.Repa.Flow.Chunked.Groups
         Data.Repa.Flow.Chunked.Generic
+        Data.Repa.Flow.Chunked.Replicate
 
         Data.Repa.Flow.Generic.Base
         Data.Repa.Flow.Generic.Connect

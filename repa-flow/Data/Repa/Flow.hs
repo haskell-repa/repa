@@ -130,6 +130,9 @@ module Data.Repa.Flow
         , finalize_i,           finalize_o
 
         -- * Flow Operators
+        -- ** Replicating
+        , replicates_i
+
         -- ** Mapping
         -- | If you want to work on a chunk at a time then use 
         --   `Data.Repa.Flow.Generic.map_i` and
@@ -203,7 +206,6 @@ import Data.Repa.Flow.Auto.IO
 import Data.Repa.Flow.Auto.ZipWith
 import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.States
-
 
 import Data.Repa.Array.Generic
         hiding (fromList, GroupsDict, FoldsDict)

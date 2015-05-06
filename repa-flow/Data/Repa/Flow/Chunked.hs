@@ -18,6 +18,9 @@ module Data.Repa.Flow.Chunked
         , finalize_i,   finalize_o
 
           -- * Flow Operators
+          -- ** Replicate
+        , replicates_i
+
           -- ** Mapping
           -- | If you want to work on a chunk at a time then use 
           --   `Data.Repa.Flow.Generic.map_i` and
@@ -49,6 +52,7 @@ import Data.Repa.Flow.Chunked.Fold
 import Data.Repa.Flow.Chunked.Folds
 import Data.Repa.Flow.Chunked.Generic
 import Data.Repa.Flow.Chunked.Groups
+import Data.Repa.Flow.Chunked.Replicate
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic         as G
 #include "repa-flow.h"

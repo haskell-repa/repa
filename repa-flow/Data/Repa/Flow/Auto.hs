@@ -20,6 +20,9 @@ module Data.Repa.Flow.Auto
         , drainP
 
         -- * Flow Operators
+        -- ** Replicating
+        , replicates_i
+
         -- ** Mapping
         -- | If you want to work on a chunk at a time then use 
         --   `Data.Repa.Flow.Generic.map_i` and
@@ -154,6 +157,15 @@ finalize_o
 finalize_o f k 
         = G.finalize_o f k
 {-# INLINE finalize_o #-}
+
+
+-- Replicating ----------------------------------------------------------------
+-- | Segmented replicate.
+replicates_i 
+        :: (Flow (Int, a), Build a at, Unpack (A.Buffer A a) att)
+        => Sources (Int, a) -> IO (Sources a)
+replicates_i = C.replicates_i A
+{-# INLINE replicates_i #-}
 
 
 -- Mapping --------------------------------------------------------------------
