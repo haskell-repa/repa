@@ -2,20 +2,37 @@
 -- | * See the "Data.Repa.Vector.Unboxed" module for examples of how these
 --     functions can be used.
 module Data.Repa.Stream
-        ( extractS
-        , insertS
-        , mergeS
-        , compactS
+        ( -- * Compacting
+          compactS
         , compactInS
+
+          -- * Concatenating
         , catMaybesS
-        , findSegmentsS
+
+          -- * Dicing
         , diceSepS
-        , startLengthsOfSegsS
+
+          -- * Extracting
+        , extractS
+
+          -- * Inserting
+        , insertS
+
+          -- * Merging
+        , mergeS
+
+          -- * Padding
         , padForwardS
 
-          -- * Unsafe operators
-        , unsafeRatchetS)
+          -- * Ratcheting
+        , unsafeRatchetS
 
+          -- * Replicating
+        , replicatesS
+
+          -- * Segmenting
+        , findSegmentsS
+        , startLengthsOfSegsS)
 where
 import Data.Repa.Stream.Concat
 import Data.Repa.Stream.Compact
@@ -25,5 +42,6 @@ import Data.Repa.Stream.Insert
 import Data.Repa.Stream.Merge
 import Data.Repa.Stream.Pad
 import Data.Repa.Stream.Ratchet
+import Data.Repa.Stream.Replicate
 import Data.Repa.Stream.Segment
 

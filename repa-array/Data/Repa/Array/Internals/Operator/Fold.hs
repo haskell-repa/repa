@@ -1,4 +1,5 @@
 
+-- | Folding operations on arrays.
 module Data.Repa.Array.Internals.Operator.Fold
         ( folds
         , foldsWith

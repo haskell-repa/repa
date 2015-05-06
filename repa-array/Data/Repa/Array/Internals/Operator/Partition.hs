@@ -1,4 +1,5 @@
 
+-- | Partition operations on arrays.
 module Data.Repa.Array.Internals.Operator.Partition
         ( partition
         , partitionBy

@@ -1,4 +1,5 @@
 
+-- | Grouping operations on arrays.
 module Data.Repa.Array.Internals.Operator.Group
         ( groups
         , groupsWith

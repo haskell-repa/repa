@@ -31,6 +31,9 @@ module Data.Repa.Array.Generic
         , toList
         , convert,      copy
 
+          -- ** Replicating
+        , replicates
+
           -- ** Mapping
         , mapS, map2S
 
@@ -85,9 +88,10 @@ import Data.Repa.Array.Internals.Operator.Compact       as A
 import Data.Repa.Array.Internals.Operator.Filter        as A
 import Data.Repa.Array.Internals.Operator.Fold          as A
 import Data.Repa.Array.Internals.Operator.Group         as A
-import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Insert        as A
+import Data.Repa.Array.Internals.Operator.Merge         as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
+import Data.Repa.Array.Internals.Operator.Replicate     as A
 import qualified Data.Repa.Array.Generic.Convert        as A
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad

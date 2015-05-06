@@ -43,6 +43,9 @@ module Data.Repa.Array
 
         -- * Operators
 
+        -- ** Replicating
+        , replicates
+
         -- ** Mapping
         , map
         , map2

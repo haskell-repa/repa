@@ -20,6 +20,9 @@ module Data.Repa.Array.Auto
 
         -- * Operators
 
+        -- ** Replicating
+        , replicates
+
         -- ** Mapping
         , map
         , map2

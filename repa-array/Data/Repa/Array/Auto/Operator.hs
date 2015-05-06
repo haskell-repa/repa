@@ -25,6 +25,9 @@ module Data.Repa.Array.Auto.Operator
 
         -- * Operators
 
+        -- ** Replicating
+        , replicates
+
         -- ** Mapping
         , map
         , map2
@@ -203,6 +206,17 @@ toListss = G.toListss
 reverse :: Build a at => Array a -> Array a
 reverse arr = G.computeS A $! A.reverse arr
 {-# INLINE reverse #-}
+
+
+-- Replicating ------------------------------------------------------------------------------------
+-- | Segmented replicate.
+replicates 
+        :: (Elem a, Build a at)
+        => Array (Int, a) -> Array a
+
+replicates arr
+ = G.replicates A arr
+{-# INLINE replicates #-}
 
 
 -- Mapping ----------------------------------------------------------------------------------------

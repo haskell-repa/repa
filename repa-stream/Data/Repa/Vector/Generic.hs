@@ -4,48 +4,49 @@
 --   * NOTE: Support for streams of unknown length is not complete.
 --
 module Data.Repa.Vector.Generic
-        ( -- * Stream functions
+        ( -- * Stream operators
           unstreamToVector2
         , unstreamToMVector2
 
-          -- * Chain functions
-        , chainOfVector
-        , unchainToVector
-        , unchainToMVector
+          -- ** Compacting
+        , compact
+        , compactIn
 
-          -- * Generating
-        , ratchet
-
-          -- * Extracting
-        , extract
-
-          -- * Inserting
-        , insert
-
-          -- * Merging
-        , merge
-        , mergeMaybe
-
-          -- * Splitting
+          -- ** Dicing
         , findSegments
         , findSegmentsFrom
         , diceSep
 
-          -- * Compacting
-        , compact
-        , compactIn
+          -- ** Extracting
+        , extract
 
-          -- * Padding
+          -- ** Inserting
+        , insert
+
+          -- ** Merging
+        , merge
+        , mergeMaybe
+
+          -- ** Padding
         , padForward
+
+          -- ** Ratcheting
+        , ratchet
+
+          -- ** Replicating
+        , replicates
+
+          -- * Chain operators
+        , chainOfVector
+        , unchainToVector
+        , unchainToMVector
+
+          -- * Folding
+        , folds, C.Folds(..)
 
           -- * Scanning
         , scanMaybe
-
-          -- * Grouping
-        , groupsBy
-
-          -- * Folding
-        , folds, C.Folds(..))
+        , groupsBy)
 where
 import Data.Repa.Stream.Compact
 import Data.Repa.Stream.Concat
@@ -55,6 +56,7 @@ import Data.Repa.Stream.Insert
 import Data.Repa.Stream.Merge
 import Data.Repa.Stream.Pad
 import Data.Repa.Stream.Ratchet
+import Data.Repa.Stream.Replicate
 import Data.Repa.Stream.Segment
 import Data.Repa.Option
 import Data.IORef
@@ -135,6 +137,264 @@ unstreamToMVector2_max nMax s0 step
                                 , GM.unsafeSlice 0 iR vecR)
     in go SM.SPEC 0 0 s0
 {-# INLINE_STREAM unstreamToMVector2_max #-}
+
+
+-------------------------------------------------------------------------------
+-- | Combination of `fold` and `filter`. 
+--   
+--   We walk over the stream front to back, maintaining an accumulator.
+--   At each point we can chose to emit an element (or not)
+--
+compact :: (GV.Vector v a, GV.Vector v b)
+        => (s -> a -> (Maybe b, s))     -- ^ Worker function
+        -> s                            -- ^ Starting state
+        -> v a                          -- ^ Input vector
+        -> v b
+
+compact f s0 vec
+        = GV.unstream $ compactS f s0 $ GV.stream vec
+{-# INLINE compact #-}
+
+
+-- | Like `compact` but use the first value of the stream as the 
+--   initial state, and add the final state to the end of the output.
+compactIn
+        :: GV.Vector v a
+        => (a -> a -> (Maybe a, a))     -- ^ Worker function.
+        -> v a                          -- ^ Input elements.
+        -> v a
+
+compactIn f vec
+        = GV.unstream $ compactInS f $ GV.stream vec
+{-# INLINE compactIn #-}
+
+
+-------------------------------------------------------------------------------
+-- | Given predicates that detect the beginning and end of some interesting
+--   segment of information, scan through a vector looking for when these
+--   segments begin and end. Return vectors of the segment starting positions
+--   and lengths.
+--
+--   * As each segment must end on a element where the ending predicate returns
+--     True, the miniumum segment length returned is 1.
+--
+findSegments 
+        :: (GV.Vector v a, GV.Vector v Int, GV.Vector v (Int, Int))
+        => (a -> Bool)          -- ^ Predicate to check for start of segment.
+        -> (a -> Bool)          -- ^ Predicate to check for end of segment.
+        ->  v a                 -- ^ Input vector.
+        -> (v Int, v Int)
+
+findSegments pStart pEnd src
+        = GV.unzip
+        $ GV.unstream
+        $ startLengthsOfSegsS
+        $ findSegmentsS pStart pEnd (GV.length src - 1)
+        $ SM.indexed 
+        $ GV.stream src
+{-# INLINE findSegments #-}
+
+
+-------------------------------------------------------------------------------
+-- | Given predicates that detect the beginning and end of some interesting
+--   segment of information, scan through a vector looking for when these
+--   segments begin and end. Return vectors of the segment starting positions
+--   and lengths.
+findSegmentsFrom
+        :: (GV.Vector v Int, GV.Vector v (Int, Int))
+        => (a -> Bool)          -- ^ Predicate to check for start of segment.
+        -> (a -> Bool)          -- ^ Predicate to check for end of segment.
+        -> Int                  -- ^ Input length.
+        -> (Int -> a)           -- ^ Get an element from the input.
+        -> (v Int, v Int)
+
+findSegmentsFrom pStart pEnd len get
+        = GV.unzip
+        $ GV.unstream
+        $ startLengthsOfSegsS
+        $ findSegmentsS pStart pEnd (len - 1)
+        $ SM.map         (\ix -> (ix, get ix))
+        $ SM.enumFromStepN 0 1 len
+{-# INLINE findSegmentsFrom #-}
+
+
+-------------------------------------------------------------------------------
+-- | Dice a vector stream into rows and columns.
+--
+diceSep :: (GV.Vector v a, GV.Vector v (Int, Int))
+        => (a -> Bool)                  -- ^ Detect the end of a column.
+        -> (a -> Bool)                  -- ^ Detect the end of a row.
+        ->  v a
+        -> (v (Int, Int), v (Int, Int)) -- ^ Segment starts   and lengths
+
+diceSep pEndInner pEndBoth vec
+        = runST
+        $ unstreamToVector2
+        $ diceSepS pEndInner pEndBoth 
+        $ S.liftStream
+        $ GV.stream vec
+{-# INLINE diceSep #-}
+
+
+-------------------------------------------------------------------------------
+-- | Extract segments from some source array and concatenate them.
+-- 
+-- @
+--    let arr = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+--    in  extractS (index arr) [(0, 1), (3, 3), (2, 6)]
+--    
+--     => [10, 13, 14, 15, 12, 13, 14, 15, 16, 17]
+-- @
+--
+extract :: (GV.Vector v (Int, Int), GV.Vector v a)
+        => (Int -> a)           -- ^ Function to get elements from the source.
+        -> v (Int, Int)  -- ^ Segment starts and lengths.
+        -> v a           -- ^ Result elements.
+
+extract get vStartLen
+ = GV.unstream $ extractS get $ GV.stream vStartLen
+{-# INLINE extract #-}
+
+
+-------------------------------------------------------------------------------
+-- | Insert elements produced by the given function into a vector.
+insert  :: GV.Vector v a
+        => (Int -> Maybe a)     -- ^ Produce a new element for this index.
+        -> v a                  -- ^ Source vector.
+        -> v a
+
+insert fNew vec
+ = GV.unstream $ insertS fNew $ GV.stream vec
+{-# INLINE insert #-}
+
+
+-------------------------------------------------------------------------------
+-- | Merge two pre-sorted key-value streams.
+merge   :: ( Ord k
+           , GV.Vector v k
+           , GV.Vector v (k, a)
+           , GV.Vector v (k, b)
+           , GV.Vector v (k, c))
+        => (k -> a -> b -> c)   -- ^ Combine two values with the same key.
+        -> (k -> a -> c)        -- ^ Handle a left value without a right value.
+        -> (k -> b -> c)        -- ^ Handle a right value without a left value.
+        -> v (k, a)             -- ^ Vector of keys and left values.
+        -> v (k, b)             -- ^ Vector of keys and right values.
+        -> v (k, c)             -- ^ Vector of keys and results.
+
+merge fBoth fLeft fRight vA vB
+        = GV.unstream 
+        $ mergeS fBoth fLeft fRight 
+                (GV.stream vA) 
+                (GV.stream vB)
+{-# INLINE merge #-}
+
+
+-- | Like `merge`, but only produce the elements where the worker functions
+--   return `Just`.
+mergeMaybe 
+        :: ( Ord k
+           , GV.Vector v k
+           , GV.Vector v (k, a)
+           , GV.Vector v (k, b)
+           , GV.Vector v (k, c))
+        => (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
+        -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.
+        -> (k -> b -> Maybe c)      -- ^ Handle a right value without a left value.
+        -> v (k, a)                 -- ^ Vector of keys and left values.
+        -> v (k, b)                 -- ^ Vector of keys and right values.
+        -> v (k, c)                 -- ^ Vector of keys and results.
+
+mergeMaybe fBoth fLeft fRight vA vB
+        = GV.unstream
+        $ catMaybesS
+        $ SM.map  munge_mergeMaybe
+        $ mergeS fBoth fLeft fRight
+                (GV.stream vA)
+                (GV.stream vB)
+
+        where   munge_mergeMaybe (_k, Nothing)   = Nothing
+                munge_mergeMaybe (k,  Just x)    = Just (k, x)
+                {-# INLINE munge_mergeMaybe #-}
+{-# INLINE mergeMaybe #-}
+
+
+-------------------------------------------------------------------------------
+-- | Given a stream of keys and values, and a successor function for keys, 
+--   if the stream is has keys missing in the sequence then insert 
+--   the missing key, copying forward the the previous value.
+padForward  
+        :: (Ord k, GV.Vector v (k, a))
+        => (k -> k)             -- ^ Successor function.
+        -> v (k, a)             -- ^ Input keys and values.
+        -> v (k, a)
+
+padForward ksucc vec
+        = GV.unstream
+        $ padForwardS ksucc
+        $ GV.stream vec
+{-# INLINE padForward #-}
+
+
+-------------------------------------------------------------------------------
+-- | Interleaved `enumFromTo`. 
+--
+--   Given a vector of starting values, and a vector of stopping values, 
+--   produce an stream of elements where we increase each of the starting
+--   values to the stopping values in a round-robin order. Also produce a
+--   vector of result segment lengths.
+--
+-- @
+--  unsafeRatchetS [10,20,30,40] [15,26,33,47]
+--  =  [10,20,30,40       -- 4
+--     ,11,21,31,41       -- 4
+--     ,12,22,32,42       -- 4
+--     ,13,23   ,43       -- 3
+--     ,14,24   ,44       -- 3
+--        ,25   ,45       -- 2
+--              ,46]      -- 1
+--
+--         ^^^^             ^^^
+--       Elements         Lengths
+-- @
+--
+ratchet :: (GV.Vector v Int, GV.Vector v (Int, Int))
+        => v (Int, Int)         -- ^ Starting and ending values.
+        -> (v Int, v Int)       -- ^ Elements and Lengths vectors.
+ratchet vStartsMax 
+ = unsafePerformIO
+ $ do   
+        -- Make buffers for the start values and unpack the max values.
+        let (vStarts, vMax) = GV.unzip vStartsMax
+        mvStarts   <- GV.thaw vStarts
+
+        -- Make a vector for the output lengths.
+        mvLens     <- GM.unsafeNew (GV.length vStartsMax)
+        rmvLens    <- newIORef mvLens
+
+        -- Run the computation
+        mvStarts'  <- GM.munstream $ unsafeRatchetS mvStarts vMax rmvLens
+
+        -- Read back the output segment lengths and freeze everything.
+        mvLens'    <- readIORef rmvLens
+        vStarts'   <- GV.unsafeFreeze mvStarts'
+        vLens'     <- GV.unsafeFreeze mvLens'
+        return (vStarts', vLens')
+{-# INLINE ratchet #-}
+
+
+-------------------------------------------------------------------------------
+-- | Segmented replicate.
+replicates
+        :: (GV.Vector v (Int, a), GV.Vector v a)
+        => v (Int, a)
+        -> v a
+
+replicates vec
+        = GV.unstream
+        $ replicatesS
+        $ GV.stream vec
+{-# INLINE replicates #-}
 
 
 -------------------------------------------------------------------------------
@@ -229,133 +489,39 @@ unchainToMVector_unknown nStart s0 step
 
 
 -------------------------------------------------------------------------------
--- | Interleaved `enumFromTo`. 
+-- | Segmented fold over vectors of segment lengths and input values.
 --
---   Given a vector of starting values, and a vector of stopping values, 
---   produce an stream of elements where we increase each of the starting
---   values to the stopping values in a round-robin order. Also produce a
---   vector of result segment lengths.
+--   The total lengths of all segments need not match the length of the
+--   input elements vector. The returned `C.Folds` state can be inspected
+--   to determine whether all segments were completely folded, or the 
+--   vector of segment lengths or elements was too short relative to the
+--   other. In the resulting state, `C.foldLensState` is the index into
+--   the lengths vector *after* the last one that was consumed. If this
+--   equals the length of the lengths vector then all segment lengths were
+--   consumed. Similarly for the elements vector.
 --
--- @
---  unsafeRatchetS [10,20,30,40] [15,26,33,47]
---  =  [10,20,30,40       -- 4
---     ,11,21,31,41       -- 4
---     ,12,22,32,42       -- 4
---     ,13,23   ,43       -- 3
---     ,14,24   ,44       -- 3
---        ,25   ,45       -- 2
---              ,46]      -- 1
---
---         ^^^^             ^^^
---       Elements         Lengths
--- @
---
-ratchet :: (GV.Vector v Int, GV.Vector v (Int, Int))
-        => v (Int, Int)         -- ^ Starting and ending values.
-        -> (v Int, v Int)       -- ^ Elements and Lengths vectors.
-ratchet vStartsMax 
- = unsafePerformIO
- $ do   
-        -- Make buffers for the start values and unpack the max values.
-        let (vStarts, vMax) = GV.unzip vStartsMax
-        mvStarts   <- GV.thaw vStarts
+folds   :: forall v n a b
+        .  (GV.Vector v (n, Int), GV.Vector v a, GV.Vector v (n, b))
+        => (a -> b -> b)        -- ^ Worker function to fold each segment.
+        -> b                    -- ^ Initial state when folding segments.
+        -> Option3 n Int b      -- ^ Length and initial state for first segment.
+        -> v (n, Int)           -- ^ Segment names and lengths.
+        -> v a                  -- ^ Elements.
+        -> (v (n, b), C.Folds Int Int n a b)
 
-        -- Make a vector for the output lengths.
-        mvLens     <- GM.unsafeNew (GV.length vStartsMax)
-        rmvLens    <- newIORef mvLens
+folds f zN s0 vLens vVals
+ = let  
+        f' x y = return $ f x y
+        {-# INLINE f' #-}
 
-        -- Run the computation
-        mvStarts'  <- GM.munstream $ unsafeRatchetS mvStarts vMax rmvLens
+        (vResults :: v (n, b), state) 
+          = runST $ unchainToVector
+                  $ C.foldsC f' zN s0
+                        (chainOfVector vLens)
+                        (chainOfVector vVals)
 
-        -- Read back the output segment lengths and freeze everything.
-        mvLens'    <- readIORef rmvLens
-        vStarts'   <- GV.unsafeFreeze mvStarts'
-        vLens'     <- GV.unsafeFreeze mvLens'
-        return (vStarts', vLens')
-{-# INLINE ratchet #-}
-
-
--------------------------------------------------------------------------------
--- | Extract segments from some source array and concatenate them.
--- 
--- @
---    let arr = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
---    in  extractS (index arr) [(0, 1), (3, 3), (2, 6)]
---    
---     => [10, 13, 14, 15, 12, 13, 14, 15, 16, 17]
--- @
---
-extract :: (GV.Vector v (Int, Int), GV.Vector v a)
-        => (Int -> a)           -- ^ Function to get elements from the source.
-        -> v (Int, Int)  -- ^ Segment starts and lengths.
-        -> v a           -- ^ Result elements.
-
-extract get vStartLen
- = GV.unstream $ extractS get $ GV.stream vStartLen
-{-# INLINE extract #-}
-
-
--------------------------------------------------------------------------------
--- | Insert elements produced by the given function into a vector.
-insert  :: GV.Vector v a
-        => (Int -> Maybe a)     -- ^ Produce a new element for this index.
-        -> v a                  -- ^ Source vector.
-        -> v a
-
-insert fNew vec
- = GV.unstream $ insertS fNew $ GV.stream vec
-{-# INLINE insert #-}
-
-
--------------------------------------------------------------------------------
--- | Merge two pre-sorted key-value streams.
-merge   :: ( Ord k
-           , GV.Vector v k
-           , GV.Vector v (k, a)
-           , GV.Vector v (k, b)
-           , GV.Vector v (k, c))
-        => (k -> a -> b -> c)   -- ^ Combine two values with the same key.
-        -> (k -> a -> c)        -- ^ Handle a left value without a right value.
-        -> (k -> b -> c)        -- ^ Handle a right value without a left value.
-        -> v (k, a)             -- ^ Vector of keys and left values.
-        -> v (k, b)             -- ^ Vector of keys and right values.
-        -> v (k, c)             -- ^ Vector of keys and results.
-
-merge fBoth fLeft fRight vA vB
-        = GV.unstream 
-        $ mergeS fBoth fLeft fRight 
-                (GV.stream vA) 
-                (GV.stream vB)
-{-# INLINE merge #-}
-
-
--- | Like `merge`, but only produce the elements where the worker functions
---   return `Just`.
-mergeMaybe 
-        :: ( Ord k
-           , GV.Vector v k
-           , GV.Vector v (k, a)
-           , GV.Vector v (k, b)
-           , GV.Vector v (k, c))
-        => (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
-        -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.
-        -> (k -> b -> Maybe c)      -- ^ Handle a right value without a left value.
-        -> v (k, a)                 -- ^ Vector of keys and left values.
-        -> v (k, b)                 -- ^ Vector of keys and right values.
-        -> v (k, c)                 -- ^ Vector of keys and results.
-
-mergeMaybe fBoth fLeft fRight vA vB
-        = GV.unstream
-        $ catMaybesS
-        $ SM.map  munge_mergeMaybe
-        $ mergeS fBoth fLeft fRight
-                (GV.stream vA)
-                (GV.stream vB)
-
-        where   munge_mergeMaybe (_k, Nothing)   = Nothing
-                munge_mergeMaybe (k,  Just x)    = Just (k, x)
-                {-# INLINE munge_mergeMaybe #-}
-{-# INLINE mergeMaybe #-}
+   in   (vResults, state)
+{-# INLINE folds #-}
 
 
 -------------------------------------------------------------------------------
@@ -408,155 +574,4 @@ groupsBy f !c !vec0
          = runST $ unchainToVector   $ C.liftChain 
                  $ C.groupsByC f' c  $ chainOfVector vec0
 {-# INLINE groupsBy #-}
-
-
--------------------------------------------------------------------------------
--- | Given predicates that detect the beginning and end of some interesting
---   segment of information, scan through a vector looking for when these
---   segments begin and end. Return vectors of the segment starting positions
---   and lengths.
---
---   * As each segment must end on a element where the ending predicate returns
---     True, the miniumum segment length returned is 1.
---
-findSegments 
-        :: (GV.Vector v a, GV.Vector v Int, GV.Vector v (Int, Int))
-        => (a -> Bool)          -- ^ Predicate to check for start of segment.
-        -> (a -> Bool)          -- ^ Predicate to check for end of segment.
-        ->  v a                 -- ^ Input vector.
-        -> (v Int, v Int)
-
-findSegments pStart pEnd src
-        = GV.unzip
-        $ GV.unstream
-        $ startLengthsOfSegsS
-        $ findSegmentsS pStart pEnd (GV.length src - 1)
-        $ SM.indexed 
-        $ GV.stream src
-{-# INLINE findSegments #-}
-
-
--------------------------------------------------------------------------------
--- | Given predicates that detect the beginning and end of some interesting
---   segment of information, scan through a vector looking for when these
---   segments begin and end. Return vectors of the segment starting positions
---   and lengths.
-findSegmentsFrom
-        :: (GV.Vector v Int, GV.Vector v (Int, Int))
-        => (a -> Bool)          -- ^ Predicate to check for start of segment.
-        -> (a -> Bool)          -- ^ Predicate to check for end of segment.
-        -> Int                  -- ^ Input length.
-        -> (Int -> a)           -- ^ Get an element from the input.
-        -> (v Int, v Int)
-
-findSegmentsFrom pStart pEnd len get
-        = GV.unzip
-        $ GV.unstream
-        $ startLengthsOfSegsS
-        $ findSegmentsS pStart pEnd (len - 1)
-        $ SM.map         (\ix -> (ix, get ix))
-        $ SM.enumFromStepN 0 1 len
-{-# INLINE findSegmentsFrom #-}
-
-
--------------------------------------------------------------------------------
--- | Dice a vector stream into rows and columns.
---
-diceSep :: (GV.Vector v a, GV.Vector v (Int, Int))
-        => (a -> Bool)                  -- ^ Detect the end of a column.
-        -> (a -> Bool)                  -- ^ Detect the end of a row.
-        ->  v a
-        -> (v (Int, Int), v (Int, Int)) -- ^ Segment starts   and lengths
-
-diceSep pEndInner pEndBoth vec
-        = runST
-        $ unstreamToVector2
-        $ diceSepS pEndInner pEndBoth 
-        $ S.liftStream
-        $ GV.stream vec
-{-# INLINE diceSep #-}
-
-
--------------------------------------------------------------------------------
--- | Combination of `fold` and `filter`. 
---   
---   We walk over the stream front to back, maintaining an accumulator.
---   At each point we can chose to emit an element (or not)
---
-compact
-        :: (GV.Vector v a, GV.Vector v b)
-        => (s -> a -> (Maybe b, s))     -- ^ Worker function
-        -> s                            -- ^ Starting state
-        -> v a                          -- ^ Input vector
-        -> v b
-
-compact f s0 vec
-        = GV.unstream $ compactS f s0 $ GV.stream vec
-{-# INLINE compact #-}
-
-
--- | Like `compact` but use the first value of the stream as the 
---   initial state, and add the final state to the end of the output.
-compactIn
-        :: GV.Vector v a
-        => (a -> a -> (Maybe a, a))     -- ^ Worker function.
-        -> v a                          -- ^ Input elements.
-        -> v a
-
-compactIn f vec
-        = GV.unstream $ compactInS f $ GV.stream vec
-{-# INLINE compactIn #-}
-
-
--------------------------------------------------------------------------------
--- | Segmented fold over vectors of segment lengths and input values.
---
---   The total lengths of all segments need not match the length of the
---   input elements vector. The returned `C.Folds` state can be inspected
---   to determine whether all segments were completely folded, or the 
---   vector of segment lengths or elements was too short relative to the
---   other. In the resulting state, `C.foldLensState` is the index into
---   the lengths vector *after* the last one that was consumed. If this
---   equals the length of the lengths vector then all segment lengths were
---   consumed. Similarly for the elements vector.
---
-folds   :: forall v n a b
-        .  (GV.Vector v (n, Int), GV.Vector v a, GV.Vector v (n, b))
-        => (a -> b -> b)        -- ^ Worker function to fold each segment.
-        -> b                    -- ^ Initial state when folding segments.
-        -> Option3 n Int b      -- ^ Length and initial state for first segment.
-        -> v (n, Int)           -- ^ Segment names and lengths.
-        -> v a                  -- ^ Elements.
-        -> (v (n, b), C.Folds Int Int n a b)
-
-folds f zN s0 vLens vVals
- = let  
-        f' x y = return $ f x y
-        {-# INLINE f' #-}
-
-        (vResults :: v (n, b), state) 
-          = runST $ unchainToVector
-                  $ C.foldsC f' zN s0
-                        (chainOfVector vLens)
-                        (chainOfVector vVals)
-
-   in   (vResults, state)
-{-# INLINE folds #-}
-
-
--------------------------------------------------------------------------------
--- | Given a stream of keys and values, and a successor function for keys, 
---   if the stream is has keys missing in the sequence then insert 
---   the missing key, copying forward the the previous value.
-padForward  
-        :: (Ord k, GV.Vector v (k, a))
-        => (k -> k)             -- ^ Successor function.
-        -> v (k, a)             -- ^ Input keys and values.
-        -> v (k, a)
-
-padForward ksucc vec
-        = GV.unstream
-        $ padForwardS ksucc
-        $ GV.stream vec
-{-# INLINE padForward #-}
 

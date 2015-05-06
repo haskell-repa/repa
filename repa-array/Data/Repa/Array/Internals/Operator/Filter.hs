@@ -1,3 +1,4 @@
+
 -- | Filtering operators on arrays.
 module Data.Repa.Array.Internals.Operator.Filter
         ( filter)

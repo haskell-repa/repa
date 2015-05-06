@@ -46,6 +46,7 @@ Library
         Data.Repa.Stream.Merge
         Data.Repa.Stream.Pad
         Data.Repa.Stream.Ratchet
+        Data.Repa.Stream.Replicate
         Data.Repa.Stream.Segment
 
   include-dirs:

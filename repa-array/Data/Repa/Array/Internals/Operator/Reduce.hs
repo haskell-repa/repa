@@ -1,4 +1,5 @@
 
+-- | Reduction operations on arrays.
 module Data.Repa.Array.Internals.Operator.Reduce
         ( foldl
 

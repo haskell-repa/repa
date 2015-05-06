@@ -1,43 +1,45 @@
 
 module Data.Repa.Vector.Unboxed
-        ( -- * Conversion
-          chainOfVector
-        , unchainToVector
-        , unchainToMVector
+        ( -- * Stream operators
+          -- ** Compacting
+          compact
+        , compactIn
 
-          -- * Generating
-        , ratchet
-
-          -- * Extracting
-        , extract
-
-          -- * Inserting
-        , insert
-
-          -- * Merging
-        , merge
-        , mergeMaybe
-
-          -- * Splitting
+          -- ** Dicing
         , findSegments
         , findSegmentsFrom
         , diceSep
 
-          -- * Compacting
-        , compact
-        , compactIn
+          -- ** Extracting
+        , extract
 
-          -- * Padding
+          -- ** Inserting
+        , insert
+
+          -- ** Merging
+        , merge
+        , mergeMaybe
+
+          -- ** Padding
         , padForward
 
-          -- * Scanning
-        , scanMaybe
+          -- ** Ratcheting
+        , ratchet
 
-          -- * Grouping
+          -- * Chain operators
+        , unchainToVector
+        , unchainToMVector
+
+          -- ** Folding
+        , folds, C.Folds(..)
+
+          -- ** Scanning
+        , scanMaybe
         , groupsBy
 
-          -- * Folding
-        , folds, C.Folds(..))
+          -- ** Conversion
+        , chainOfVector
+        )
 where
 import Data.Repa.Option
 import Data.Vector.Unboxed                              (Unbox, Vector)

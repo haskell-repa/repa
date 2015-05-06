@@ -1,4 +1,5 @@
 
+-- | Merge operations on arrays.
 module Data.Repa.Array.Internals.Operator.Merge
         ( merge
         , mergeMaybe)

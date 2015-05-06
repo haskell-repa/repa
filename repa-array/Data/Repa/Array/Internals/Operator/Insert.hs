@@ -1,4 +1,5 @@
 
+-- | Insertion operations on arrays.
 module Data.Repa.Array.Internals.Operator.Insert
         (insert)
 where
