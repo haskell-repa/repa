@@ -1,6 +1,7 @@
 
 module Data.Repa.Store.Flow
         ( sourceTableFormat
+        , sourceFamilyColumn
 
           -- * Delimitors
         , Delim (..)
@@ -20,14 +21,15 @@ import Data.Word
 #include "repa-store.h"
 
 
--- | Read a the lines of a text file,
---   converting each line to values with the given format.
+---------------------------------------------------------------------------------------------------
+-- | Source complete rows from a table.
 sourceTableFormat
         :: forall format
         .  ( Packable (Sep format), Target A (Value format)
-           , Value (Sep format) ~ Value format)
+           , Value (Sep format) ~ Value format
+           , Show format)
         => Integer                      -- ^ Chunk length.
-        -> IO ()                        -- ^ Action if we find a line longer than the chunk length.
+        -> IO ()                        -- ^ Action if we find an over-long line.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.
         -> FilePath                     -- ^ Path to table directory.
         -> Delim                        -- ^ Row delimitor.
@@ -35,23 +37,46 @@ sourceTableFormat
         -> IO (Sources Int IO (Array A (Value format)))
 
 sourceTableFormat
-        nChunk 
-        aFailLong aFailConvert 
-        pathTable  
-        delim format
-
+        nChunk aFailLong aFailConvert 
+        path delim format
  | LinesSep c   <- delim
  = do  
         -- TODO: check directory exists.
-        Just parts  <- listPartitions pathTable 
-
-        ss      <- fromFiles parts 
-                $  sourceLinesFormat nChunk 
-                        aFailLong aFailConvert 
-                        (Sep c format)
+        Just parts  <- listPartitions path
+        ss          <- fromFiles parts 
+                    $  sourceLinesFormat nChunk aFailLong aFailConvert 
+                                (Sep c format)
 
         return ss
 
  | otherwise
  = error "sourceTable: TODO finish me"
 {-# INLINE_FLOW sourceTableFormat #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Source elements from a single column in a column family. 
+sourceFamilyColumn 
+        :: ( Packable format
+           , Target A (Value format)
+           , Show format)
+        => Integer
+        -> IO ()                        -- ^ Action if we find an over-long line.
+        -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.
+        -> FilePath                     -- ^ Path to column directory.
+        -> format                       -- ^ Element format.
+        -> IO (Sources Int IO (Array A (Value format)))
+
+sourceFamilyColumn 
+        nChunk aFailLong aFailConvert
+        path format
+ = do   
+        -- TODO: check directory exists
+        Just parts <- listPartitions path
+
+        ss         <- fromFiles parts
+                   $  sourceLinesFormat nChunk aFailLong aFailConvert
+                                format
+
+        return ss
+

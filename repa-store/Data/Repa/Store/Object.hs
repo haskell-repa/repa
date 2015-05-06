@@ -294,7 +294,8 @@ loadObjectFromDir path
                  else do strMeta <- BS.readFile pathMeta
                          case A.decode strMeta of
                           Nothing    -> return $ Left  $ ErrorLoadObjectMalformed pathMeta
-                          Just meta  -> return $ Right $ ObjectColumn meta
+                          Just meta  -> return $ Right $ ObjectColumn 
+                                               $ meta  { columnDirectory = Just path }
 
 
         -- Table -------------------------------------------
@@ -306,7 +307,8 @@ loadObjectFromDir path
                  else do strMeta <- BS.readFile pathMeta
                          case A.decode strMeta of
                            Nothing   -> return $ Left  $ ErrorLoadObjectMalformed pathMeta
-                           Just meta -> return $ Right $ ObjectTable meta
+                           Just meta -> return $ Right $ ObjectTable 
+                                               $ meta  { tableDirectory = Just path }
 
 
 -- | Errors that can happen when loading object meta data.

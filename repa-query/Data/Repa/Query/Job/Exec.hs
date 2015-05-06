@@ -61,8 +61,13 @@ runWith pathScratch pathRootData mkJobs
                         pathScratch True
                         job pathExe
 
+                _ <- BB.io 
+                        $ S.system 
+                        $ "cp " ++ pathExe ++ " /tmp/Main.bin"
+
                 BB.io $ S.system 
                       $ pathExe ++ " -root-data " ++ pathRootData
+
 
 
 

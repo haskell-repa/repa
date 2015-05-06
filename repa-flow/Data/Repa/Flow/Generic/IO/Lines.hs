@@ -18,7 +18,7 @@ import Data.Word
 --   converting each line to values with the given format.
 sourceLinesFormat
         :: forall format
-        .  (Packable format, Target A (Value format))
+        .  (Packable format, Target A (Value format), Show format)
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action if we find a line longer than the chunk length.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.

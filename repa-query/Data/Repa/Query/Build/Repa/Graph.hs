@@ -60,7 +60,7 @@ bindOfSource ss
                                 (P.mul 64 1024)
                                 (P.error "query: line to long.")
                                 (P.error "query: cannot convert field.")
-                                $format') |]
+                                (P.Sep '\t' $format')) |]
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
@@ -133,6 +133,23 @@ bindOfSource ss
                                 (P.error "query: cannot convert field.")
                                 ($hRootData P.</> $hPath)
                                 $hDelim $hFormat |]
+
+                pOut    <- H.varP (H.mkName sOut)
+                return  (pOut, xRhs)
+
+
+        ---------------------------------------------------
+        G.SourceFamilyColumn  _ path field sOut
+         -> do  let hPath        = return (LitE (StringL path))
+                let Just hFormat = expOfFieldsFormat ([field] ++ [Q.FieldBox Q.Nil])
+
+                xRhs    
+                 <- [|  P.sourceFamilyColumn
+                                (P.mul 64 1024)
+                                (P.error "query: line too long.")
+                                (P.error "query: cannot convert field.")
+                                ($hRootData P.</> $hPath)
+                                (P.Sep '\t' $hFormat) |]
 
                 pOut    <- H.varP (H.mkName sOut)
                 return  (pOut, xRhs)

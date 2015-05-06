@@ -37,4 +37,5 @@ listPartitions path
         slurp file
          = case takeExtension file of
                 ".tsv"  -> return $ Just [file]
+                ".txt"  -> return $ Just [file]
                 _       -> return Nothing

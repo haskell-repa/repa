@@ -187,7 +187,8 @@ sourceFixedFormat format aFail bs
 --   converting each line to values with the given format.
 sourceLinesFormat
         :: ( Packable format
-           , Target A (Value format))
+           , Target A (Value format)
+           , Show format)
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action when a line is too long.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a value.

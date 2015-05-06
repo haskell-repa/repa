@@ -115,6 +115,13 @@ instance (ToJSON nF)
                    , "columns"  .= toJSON columns
                    , "output"   .= toJSON fOut ]
 
+        SourceFamilyColumn _ name field fOut
+         -> object [ "_type"    .= text "source"
+                   , "source"   .= text "family_column"
+                   , "name"     .= T.pack name
+                   , "field"    .= toJSON field
+                   , "output"   .= toJSON fOut ]
+
 
 instance  FromJSON nF
        => FromJSON (Source () nF) where
@@ -173,6 +180,17 @@ instance  FromJSON nF
               columns   <- parseJSON jColumns
               out       <- parseJSON jOut
               return    $ SourceTableColumns () (T.unpack name) delim fields columns out
+
+        -- SourceFamilyColumn
+        | Just (String "source") <- H.lookup "_type"  hh
+        , Just (String "family_column") 
+                                 <- H.lookup "source" hh
+        , Just (String  name)    <- H.lookup "name"   hh
+        , Just jField            <- H.lookup "field"  hh
+        , Just jOut              <- H.lookup "output" hh
+        = do  field     <- parseJSON jField
+              out       <- parseJSON jOut
+              return    $ SourceFamilyColumn () (T.unpack name) field out
 
  parseJSON _ = mzero
 

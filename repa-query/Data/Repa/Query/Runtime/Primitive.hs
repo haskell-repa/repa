@@ -36,6 +36,7 @@ module Data.Repa.Query.Runtime.Primitive
         , sourceLinesFormat
         , sourceFixedFormat
         , sourceTableFormat
+        , sourceFamilyColumn
 
           -- * From Data.Repa.Flow.Auto.Format
         , packFormat_i
@@ -182,6 +183,7 @@ fromFiles               = F.fromFiles
 sourceLinesFormat       = F.sourceLinesFormat
 sourceFixedFormat       = F.sourceFixedFormat
 sourceTableFormat       = S.sourceTableFormat
+sourceFamilyColumn      = S.sourceFamilyColumn
 
 
 -- Data.Repa.Flow.Auto.Format ---------------------------------------------------------------------

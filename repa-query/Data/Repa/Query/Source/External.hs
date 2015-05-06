@@ -22,9 +22,7 @@ module Data.Repa.Query.Source.External
 
           -- ** Sourcing
         , fromFile
-        , fromTable
-        , fromColumn
-        , fromColumns
+        , fromStore
 
           -- ** Mapping
         , map, map2, map3, map4, map5

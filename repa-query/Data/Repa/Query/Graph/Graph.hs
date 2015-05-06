@@ -67,7 +67,6 @@ data Source a nF
         , sourceFields          :: [Format.FieldBox]    -- ^ Format of all fields in table.
         , sourceColumn          :: (String, Int)        -- ^ Index and name of desired column.
         , sourceOutput          :: nF }                 -- ^ Output flow.
-        
 
         -- | Source a subset of columns from a table.
         --   The type of the resulting elements is list-like, eg (col1 :*: col2 :*: ())
@@ -80,6 +79,13 @@ data Source a nF
         , sourceColumns         :: [(String, Int)]      -- ^ Index and name of desired columns.
         , sourceOutput          :: nF                   -- ^ Output flow.
         }
+
+        -- | Source a single column in a column family.
+        | SourceFamilyColumn
+        { sourceAnnot           :: a                    -- ^ Annotation.
+        , sourceFilePath        :: FilePath             -- ^ Path to table.
+        , sourceField           :: Format.FieldBox      -- ^ Format of elements.
+        , sourceOutput          :: nF }                 -- ^ Output flow.
 
 
 deriving instance (Show a, Show nF) 
