@@ -36,15 +36,19 @@ data Table
           tableName      :: Text
 
           -- | How rows and fields are deliminted in the data.
-        , tableDelim    :: F.Delim
+        , tableDelim     :: F.Delim
 
           -- | Table columns.
-        , tableColumns   :: [Column] }
+        , tableColumns   :: [Column] 
+
+          -- | Local directory that holds the column family, if known.
+          --   (not serialised)
+        , tableDirectory :: Maybe FilePath }
         deriving Show
 
 
 instance ToJSON Table where
- toJSON (Table name delim columns)
+ toJSON (Table name delim columns _mDirectory)
         = object [ "_type"      .= text "table"
                  , "name"       .= toJSON name
                  , "delim"      .= toJSON delim
@@ -60,7 +64,7 @@ instance FromJSON Table where
         = do    name    <- parseJSON jName
                 delim   <- parseJSON jDelim
                 columns <- parseJSON jColumns
-                return  $ Table name delim columns
+                return  $ Table name delim columns Nothing
 
  parseJSON _ = mzero
 

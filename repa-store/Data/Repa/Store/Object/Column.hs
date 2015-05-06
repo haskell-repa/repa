@@ -20,12 +20,16 @@ data Column
         , columnFormat          :: F.FieldBox
 
           -- | Human readable description of column.
-        , columnDescription     :: Text }
+        , columnDescription     :: Text 
+
+          -- | Local directory that holds the column, if known.
+          --   (not serialized)
+        , columnDirectory       :: Maybe FilePath }
         deriving Show
 
 
 instance ToJSON Column where
- toJSON (Column name field desc)
+ toJSON (Column name field desc _mDirectory)
         = object [ "_type"  .= text "column"
                  , "name"   .= toJSON name
                  , "format" .= toJSON field
@@ -40,7 +44,7 @@ instance FromJSON Column where
         , Just (String desc)     <- H.lookup "desc"   hh
         = do
                 field   <- parseJSON jField
-                return $ Column name field desc
+                return $ Column name field desc Nothing
 
  parseJSON _ = mzero
 

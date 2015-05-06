@@ -101,7 +101,6 @@ instance A.ToJSON Object where
 
 
 instance A.FromJSON Object where
-
  parseJSON (A.Object hh)
         | Just (A.String "object")    <- H.lookup "_type"     hh
         , Just (A.String "dimension") <- H.lookup "object"    hh
@@ -179,12 +178,11 @@ childrenOfObject oo
 -- | Get a list of objects available in a directory.
 listObjectsInDir 
         :: FilePath 
-        -> IO (Either ErrorListObjects [(FilePath, Object)])
+        -> IO (Either ErrorListObjects [Object])
 
 listObjectsInDir path
  = check
- where  
-        check
+ where  check
          = do   hasDir  <- System.doesDirectoryExist path
                 if not hasDir
                  then return $ Left $ ErrorListObjectsNoDir path
@@ -206,7 +204,7 @@ listObjectsInDir path
                            -> return $ Just $ Left $ ErrorListObjectsLoad err
 
                           Right object 
-                           -> return $ Just $ Right (dir, object)
+                           -> return $ Just $ Right object
 
                  else return Nothing
 
@@ -221,6 +219,8 @@ data ErrorListObjects
 ---------------------------------------------------------------------------------------------------
 -- | Given the name of the directory that holds some object,
 --   load its associated meta-data.
+--
+--   TODO: check directory name matches object name on load.
 --
 loadObjectFromDir :: FilePath -> IO (Either ErrorLoadObject Object)
 loadObjectFromDir path
@@ -255,11 +255,12 @@ loadObjectFromDir path
                 case eObjs of
                  Left  err -> return $ Left $ ErrorLoadObjectList err
                  Right objs
-                  -> do let objsSub    = [d | (_path, ObjectDimension d) <- objs]
-                        let objsFamily = [f | (_path, ObjectFamily    f) <- objs]
-                        return $ Right $ ObjectDimension 
+                  -> do let objsSub    = [d | ObjectDimension d <- objs]
+                        let objsFamily = [f | ObjectFamily    f <- objs]
+                        return $ Right  $ ObjectDimension 
                                $ meta   { dimensionSubDimensions = Just objsSub
-                                        , dimensionFamilies      = Just objsFamily }
+                                        , dimensionFamilies      = Just objsFamily
+                                        , dimensionDirectory     = Just path }
 
 
         -- Family -----------------------------------------
@@ -278,9 +279,10 @@ loadObjectFromDir path
                 case eObjs of
                  Left  err -> return $ Left $ ErrorLoadObjectList err
                  Right objs
-                  -> do let objsCol    = [d | (_path, ObjectColumn d) <- objs]
-                        return $ Right $ ObjectFamily
-                               $ meta  { familyColumns = Just objsCol }
+                  -> do let objsCol    = [d | ObjectColumn d <- objs]
+                        return $ Right  $ ObjectFamily
+                               $ meta   { familyColumns         = Just objsCol 
+                                        , familyDirectory       = Just path }
 
 
         -- Column ------------------------------------------
@@ -393,40 +395,33 @@ resolveObject path
 
         -- We're at the final component in the path,
         -- so we're expecting it to name one of the objects here.
-        go_objs acc pathObjs (p : [])
-         = let  (p', _)         = L.span (/= '/') p
-                (_pObjs, objs)  = unzip pathObjs
-                objMap          = Map.fromList $ zip (map nameOfObject objs) pathObjs
+        go_objs acc objs (p : [])
+         = let  (p', _) = L.span (/= '/') p
+                objMap  = Map.fromList $ zip (map nameOfObject objs) objs
 
            in   case Map.lookup (Text.pack p') objMap of
-                 Nothing             -> return $ Left  $ ErrorResolveObjectNotFound path
-                 Just (pathObj, obj) -> return $ Right $ acc ++ [ResolveObject pathObj obj]
+                 Nothing  -> return $ Left  $ ErrorResolveObjectNotFound path
+                 Just obj -> return $ Right $ acc ++ [ResolveObject obj]
 
         -- Enter into a container object named after the next
         -- component of the path.
-        go_objs acc pathObjs  (p : ps)
-         = let  (p', _)         = L.span (/= '/') p
-                (_pObjs, objs)  = unzip pathObjs
-                objMap          = Map.fromList $ zip (map nameOfObject objs) pathObjs
+        go_objs acc objs (p : ps)
+         = let  (p', _) = L.span (/= '/') p
+                objMap  = Map.fromList $ zip (map nameOfObject objs) objs
 
            in   case Map.lookup (Text.pack p') objMap of
                  Nothing
                   -> return $ Left $ ErrorResolveObjectNotFound path
 
-                 Just (pathObj, obj) 
+                 Just obj
                   -> let objsChildren  = childrenOfObject obj
-                         psObjChildren = zip (repeat "TODO") objsChildren       
-                     in  go_objs (acc ++ [ResolveObject pathObj obj]) psObjChildren ps
+                     in  go_objs (acc ++ [ResolveObject obj]) objsChildren ps
 
-                                -- TODO: we don't have the path for the child objects, 
-                                --       and there won't be one for columns in tables.
-                                --       Add a Maybe field to the object meta data types
-                                --       to list the path that they are at.
 
 -- | Part of the resolved collection of objects.
 data ResolvePart
         = ResolveDir    FilePath 
-        | ResolveObject FilePath Object
+        | ResolveObject Object
         deriving Show
 
 
@@ -436,8 +431,4 @@ data ErrorResolveObject
         | ErrorResolveObjectNotFound  FilePath
         | ErrorResolveObjectList      ErrorListObjects
         deriving Show
-
-
-
-
 

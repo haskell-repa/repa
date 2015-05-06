@@ -28,12 +28,16 @@ data Dimension
 
           -- | Meta-data for associated column families,
           --   or `Nothing` if it hasn't been loaded.
-        , dimensionFamilies      :: Maybe [Family] }
+        , dimensionFamilies      :: Maybe [Family] 
+
+          -- | Local directory that holds the column, if known.
+          --   (not serialized)
+        , dimensionDirectory     :: Maybe FilePath }
         deriving Show
 
 
 instance ToJSON Dimension where
- toJSON (Dimension name format desc mSubDims mFamilies)
+ toJSON (Dimension name format desc mSubDims mFamilies _mDirectory)
   =  object $    [ "_type"    .= text "dimension"
                  , "name"     .= toJSON name
                  , "format"   .= toJSON format
@@ -61,7 +65,9 @@ instance FromJSON Dimension where
                                 Nothing  -> return Nothing
                                 Just txt -> liftM Just $ parseJSON txt
 
-                return $ Dimension name field desc mSubDims mFamilies
+                return $ Dimension 
+                                name field desc 
+                                mSubDims mFamilies Nothing
 
  parseJSON _ = mzero
 

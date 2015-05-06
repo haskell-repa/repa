@@ -24,12 +24,16 @@ data Family
 
           -- | Meta-data for associated columns,
           --   or `Nothing` if it hasn't been loaded.
-        , familyColumns         :: Maybe [Column] }
+        , familyColumns         :: Maybe [Column] 
+
+          -- | Local directory that holds the column family, if known.
+          --   (not serialised)
+        , familyDirectory       :: Maybe FilePath }
         deriving Show
 
 
 instance ToJSON Family where
- toJSON (Family name format desc mColumns)
+ toJSON (Family name format desc mColumns _mDirectory)
   =  object $    [ "_type"      .= text "family"
                  , "name"       .= toJSON name
                  , "format"     .= toJSON format
@@ -51,7 +55,8 @@ instance FromJSON Family where
                                 Nothing  -> return Nothing
                                 Just txt -> liftM Just $ parseJSON txt
 
-                return $ Family name field desc mColumns
+                return $ Family name field desc
+                                mColumns Nothing
 
  parseJSON _ = mzero
 
