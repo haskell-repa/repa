@@ -51,11 +51,11 @@ packFormat !format !v
         -- of bytes actually used, then slice the original buffer
         -- down to this size.
         withForeignPtr fptr $ \ptr
-         -> C.pack (plusPtr ptr oStart) format v
-         $  \len -> do
-                buf'    <- A.unsafeSliceBuffer 0 len buf
-                arr     <- A.unsafeFreezeBuffer buf'
-                return  $ Just $ A.convert arr
+         -> do  Just ptr' <- C.runPacker (C.pack format v) (plusPtr ptr oStart)
+                let len   =  minusPtr ptr' ptr
+                buf'      <- A.unsafeSliceBuffer 0 len buf
+                arr       <- A.unsafeFreezeBuffer  buf'
+                return    $ Just $ A.convert arr
 
  | otherwise = Nothing
 {-# INLINE_ARRAY packFormat #-}
@@ -81,17 +81,19 @@ packsFixedFormat !format !arrElems
         let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
 
         withForeignPtr fptr $ \ptr_
-         -> do  let ptr = plusPtr ptr_ oStart
-
-                let loop !ixSrc !ixDst
+         -> do  
+                let loop !ixSrc !ptrDst
                      | ixSrc >= lenElems
                      = return $ Just ()
 
                      | otherwise
-                     = C.pack (plusPtr ptr ixDst) format (A.index arrElems ixSrc)
-                     $ \oElem -> loop (ixSrc + 1) (ixDst + oElem)
+                     = do  let x        =  A.index arrElems ixSrc
+                           Just ptrDst' <- C.runPacker (C.pack format x) ptrDst
+                           loop (ixSrc + 1) ptrDst'
 
-                mFinal <- loop 0 0
+                let ptr = plusPtr ptr_ oStart
+                mFinal <- loop 0 ptr
+
                 case mFinal of
                  Nothing       -> return Nothing
                  Just _        -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf

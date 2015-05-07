@@ -6,7 +6,7 @@ import Data.Repa.Bits.Date32                    (Date32)
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Date32
-import Data.Repa.Convert.Format.Sep
+import Data.Repa.Convert.Format.Row
 import Data.Repa.Product
 
 
@@ -37,12 +37,12 @@ instance ( FormatAscii t1
         => FormatAscii (t1 :*: ts) where
 
  type FormatAscii' (t1 :*: ts)        
-  = Sep      (FormatAscii' t1 :*: FormatAscii' (Plain ts))
+  = Row      (FormatAscii' t1 :*: FormatAscii' (Plain ts))
 
  formatAscii _            
   = let (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
         (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
-    in  Sep '\t' (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
+    in  Row '\t' (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
  {-# INLINE formatAscii #-}
 
 
