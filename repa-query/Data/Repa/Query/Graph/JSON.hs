@@ -115,12 +115,14 @@ instance (ToJSON nF)
                    , "columns"  .= toJSON columns
                    , "output"   .= toJSON fOut ]
 
-        SourceFamilyColumn _ name field fOut
-         -> object [ "_type"    .= text "source"
-                   , "source"   .= text "family_column"
-                   , "name"     .= T.pack name
-                   , "field"    .= toJSON field
-                   , "output"   .= toJSON fOut ]
+        SourceFamilyColumn _ nameFamily nameColumn formatKey formatColumn flowOut
+         -> object [ "_type"      .= text "source"
+                   , "source"     .= text "family_column"
+                   , "name_fam"   .= T.pack nameFamily
+                   , "name_col"   .= T.pack nameColumn
+                   , "format_key" .= toJSON formatKey
+                   , "format_col" .= toJSON formatColumn
+                   , "output"     .= toJSON flowOut ]
 
 
 instance  FromJSON nF
@@ -182,15 +184,21 @@ instance  FromJSON nF
               return    $ SourceTableColumns () (T.unpack name) delim fields columns out
 
         -- SourceFamilyColumn
-        | Just (String "source") <- H.lookup "_type"  hh
+        | Just (String "source") <- H.lookup "_type"      hh
         , Just (String "family_column") 
-                                 <- H.lookup "source" hh
-        , Just (String  name)    <- H.lookup "name"   hh
-        , Just jField            <- H.lookup "field"  hh
-        , Just jOut              <- H.lookup "output" hh
-        = do  field     <- parseJSON jField
+                                 <- H.lookup "source"     hh
+        , Just (String nameFam)  <- H.lookup "name_fam"   hh
+        , Just (String nameCol)  <- H.lookup "name_col"   hh
+        , Just jFormatKey        <- H.lookup "format_key" hh
+        , Just jFormatCol        <- H.lookup "format_col" hh
+        , Just jOut              <- H.lookup "output"     hh
+        = do  
+              formatKey <- parseJSON jFormatKey
+              formatCol <- parseJSON jFormatCol
               out       <- parseJSON jOut
-              return    $ SourceFamilyColumn () (T.unpack name) field out
+              return    $ SourceFamilyColumn () 
+                                (T.unpack nameFam) (T.unpack nameCol)
+                                formatKey formatCol out
 
  parseJSON _ = mzero
 

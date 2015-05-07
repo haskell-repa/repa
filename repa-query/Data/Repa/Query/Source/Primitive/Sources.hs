@@ -8,7 +8,7 @@ import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder           as B
 import qualified Data.Repa.Store.Object         as O
 import qualified Data.Repa.Store.Object.Table   as O
--- import qualified Data.Repa.Store.Object.Family  as O
+import qualified Data.Repa.Store.Object.Family  as O
 import qualified Data.Repa.Store.Object.Column  as O
 import qualified Data.Repa.Query.Graph          as G
 import qualified Data.Repa.Store.Format         as F
@@ -55,6 +55,7 @@ fromStore path
                         $ takeFlow fOut
                 return fOut
 
+
           -- Source a single column from a table.
           |  O.ResolveObject (O.ObjectColumn column) 
            : O.ResolveObject (O.ObjectTable table)  : _
@@ -77,13 +78,16 @@ fromStore path
 
           -- Source a single column from a column family
           |  O.ResolveObject (O.ObjectColumn column) 
-           : O.ResolveObject (O.ObjectFamily _family)  : _
+           : O.ResolveObject (O.ObjectFamily family)  : _
                         <- reverse parts
-          ,  Just dir   <- O.columnDirectory column
+          ,  Just dirFamily <- O.familyDirectory family
+          ,  Just dirColumn <- O.columnDirectory column
           -> do 
                 fOut    <- newFlow
                 addNode $ G.NodeSource
-                        $ G.SourceFamilyColumn () dir
+                        $ G.SourceFamilyColumn () 
+                                dirFamily dirColumn
+                                (O.familyFormat family)
                                 (O.columnFormat column)
                         $ takeFlow fOut
                 return fOut

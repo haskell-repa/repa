@@ -50,6 +50,8 @@ data Source a nF
         , sourceOutput          :: nF                   -- ^ Output flow.
         }
 
+        -- TODO: merge the table sourcing nodes into just the single
+        --       SourceTableColumns then fix the column ordering.
         -- | Source complete rows from a table.
         | SourceTable
         { sourceAnnot           :: a                    -- ^ Annotation.
@@ -65,7 +67,7 @@ data Source a nF
         , sourceFilePath        :: FilePath             -- ^ Path to table.
         , sourceDelim           :: Format.Delim         -- ^ Delimitor for elements.
         , sourceFields          :: [Format.FieldBox]    -- ^ Format of all fields in table.
-        , sourceColumn          :: (String, Int)        -- ^ Index and name of desired column.
+        , sourceIxColumn        :: (String, Int)        -- ^ Index and name of desired column.
         , sourceOutput          :: nF }                 -- ^ Output flow.
 
         -- | Source a subset of columns from a table.
@@ -76,15 +78,17 @@ data Source a nF
         , sourceFilePath        :: FilePath             -- ^ Path to table.
         , sourceDelim           :: Format.Delim         -- ^ Delimitor for elements.
         , sourceFields          :: [Format.FieldBox]    -- ^ Format of all fields in table.
-        , sourceColumns         :: [(String, Int)]      -- ^ Index and name of desired columns.
+        , sourceIxColumns       :: [(String, Int)]      -- ^ Index and name of desired columns.
         , sourceOutput          :: nF                   -- ^ Output flow.
         }
 
         -- | Source a single column in a column family.
         | SourceFamilyColumn
         { sourceAnnot           :: a                    -- ^ Annotation.
-        , sourceFilePath        :: FilePath             -- ^ Path to table.
-        , sourceField           :: Format.FieldBox      -- ^ Format of elements.
+        , sourceFilePath        :: FilePath             -- ^ Path to column family.
+        , sourceColumn          :: FilePath             -- ^ Name of desired column.
+        , sourceFormatKey       :: Format.FieldBox      -- ^ Format of family key.
+        , sourceFormatColumn    :: Format.FieldBox      -- ^ Format of desired column.
         , sourceOutput          :: nF }                 -- ^ Output flow.
 
 

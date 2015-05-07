@@ -163,7 +163,8 @@ finalize_o f k
 -- | Segmented replicate.
 replicates_i 
         :: (Flow (Int, a), Build a at, Unpack (A.Buffer A a) att)
-        => Sources (Int, a) -> IO (Sources a)
+        => Sources (Int, a)     -- ^ Source of segment lengths and values.
+        -> IO (Sources a)       
 replicates_i = C.replicates_i A
 {-# INLINE replicates_i #-}
 

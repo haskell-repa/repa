@@ -12,7 +12,7 @@ import Data.Repa.Query.Graph                            as G
 import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
-
+import qualified Data.Repa.Product                      as P
 
 -------------------------------------------------------------------
 -- | Yield a Haskell binding for a flow node.
@@ -139,17 +139,30 @@ bindOfSource ss
 
 
         ---------------------------------------------------
-        G.SourceFamilyColumn  _ path field sOut
-         -> do  let hPath        = return (LitE (StringL path))
-                let Just hFormat = expOfFieldsFormat ([field] ++ [Q.FieldBox Q.Nil])
+        G.SourceFamilyColumn  _ pathFamily pathColumn formatKey formatColumn sOut
+         -> do  let hPathFamily  = return (LitE (StringL pathFamily))
+                let hPathColumn  = return (LitE (StringL pathColumn))
+                let Just hFormatKey     = expOfFieldFormat formatKey 
+                let Just hFormatColumn  = expOfFieldsFormat ([formatColumn] ++ [Q.FieldBox Q.Nil])
 
                 xRhs    
-                 <- [|  P.sourceFamilyColumn
-                                (P.mul 64 1024)
-                                (P.error "query: line too long.")
-                                (P.error "query: cannot convert field.")
-                                ($hRootData P.</> $hPath)
-                                (P.Sep '\t' $hFormat) |]
+                 <- [|  do sk <- P.sourceFamilyKey
+                                        (P.mul 64 1024)
+                                        (P.error "query: line too long.")
+                                        (P.error "query: cannot convert field.")
+                                        ($hRootData P.</> $hPathFamily)
+                                        $hFormatKey
+
+                           sc <- P.sourceFamilyColumn
+                                        (P.mul 64 1024)
+                                        (P.error "query: line too long.")
+                                        (P.error "query: cannot convert field.")
+                                        ($hRootData P.</> $hPathColumn)
+                                        (P.Sep '\t' $hFormatColumn) 
+
+                           P.zipWith_i (\k c -> k P.:*: c P.:*: P.Unit) sk sc
+
+                     |]
 
                 pOut    <- H.varP (H.mkName sOut)
                 return  (pOut, xRhs)
