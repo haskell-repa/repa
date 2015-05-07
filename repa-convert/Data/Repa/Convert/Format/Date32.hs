@@ -39,7 +39,7 @@ instance Packable YYYYsMMsDD where
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
-        <> pack (IntAsc0 4) dd
+        <> pack (IntAsc0 2) dd
  {-# INLINE pack #-}
 
  unpack buf len (YYYYsMMsDD s) k
