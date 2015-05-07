@@ -83,12 +83,12 @@ data Source a nF
         }
 
         -- | Source a single column in a column family.
-        | SourceFamilyColumn
+        | SourceFamilyColumns
         { sourceAnnot           :: a                    -- ^ Annotation.
-        , sourceFilePath        :: FilePath             -- ^ Path to column family.
-        , sourceColumn          :: FilePath             -- ^ Name of desired column.
+        , sourcePathFamily      :: FilePath             -- ^ Path  to column family.
+        , sourcePathColumns     :: [FilePath]           -- ^ Paths to wanted columns.
         , sourceFormatKey       :: Format.FieldBox      -- ^ Format of family key.
-        , sourceFormatColumn    :: Format.FieldBox      -- ^ Format of desired column.
+        , sourceFormatColumns   :: [Format.FieldBox]    -- ^ Format of wanted columns.
         , sourceOutput          :: nF }                 -- ^ Output flow.
 
 

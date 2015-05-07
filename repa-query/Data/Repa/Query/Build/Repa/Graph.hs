@@ -7,12 +7,14 @@ module Data.Repa.Query.Build.Repa.Graph
         , bindOfSource
         , bindOfFlowOp)
 where
+import Control.Monad
 import Data.Repa.Query.Build.Repa.Exp                   as R
 import Data.Repa.Query.Graph                            as G
 import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
 import qualified Data.Repa.Product                      as P
+
 
 -------------------------------------------------------------------
 -- | Yield a Haskell binding for a flow node.
@@ -139,36 +141,139 @@ bindOfSource ss
 
 
         ---------------------------------------------------
-        G.SourceFamilyColumn  _ pathFamily pathColumn formatKey formatColumn sOut
-         -> do  let hPathFamily  = return (LitE (StringL pathFamily))
-                let hPathColumn  = return (LitE (StringL pathColumn))
-                let Just hFormatKey     = expOfFieldFormat formatKey 
-                let Just hFormatColumn  = expOfFieldsFormat ([formatColumn] ++ [Q.FieldBox Q.Nil])
+        G.SourceFamilyColumns _ 
+                pathFamily pathColumns
+                formatKey  formatColumns
+                sOut
+         -> do
+                let arity 
+                        = length pathColumns
 
-                xRhs    
-                 <- [|  do sk <- P.sourceFamilyKey
-                                        (P.mul 64 1024)
-                                        (P.error "query: line too long.")
-                                        (P.error "query: cannot convert field.")
-                                        ($hRootData P.</> $hPathFamily)
-                                        $hFormatKey
+                let hPathFamily  
+                        = return (LitE (StringL pathFamily))
 
-                           sc <- P.sourceFamilyColumn
-                                        (P.mul 64 1024)
-                                        (P.error "query: line too long.")
-                                        (P.error "query: cannot convert field.")
-                                        ($hRootData P.</> $hPathColumn)
-                                        (P.Sep '\t' $hFormatColumn) 
+                let hPathColumns  
+                        = map (return . LitE . StringL) pathColumns
 
-                           P.zipWith_i (\k c -> k P.:*: c P.:*: P.Unit) sk sc
+                let Just hFormatKey     
+                        = expOfFieldFormat formatKey 
 
-                     |]
+                let Just hFormatColumns
+                        = sequence 
+                        $ map (\f -> expOfFieldsFormat ([f] ++ [Q.FieldBox Q.Nil]))
+                        $ formatColumns
 
+                -- Source the key.
+                xSourceFamilyKey
+                        <- [| P.sourceFamilyKey
+                                (P.mul 64 1024)
+                                (P.error "query: line too long.")
+                                (P.error "query: cannot convert field.")
+                                ($hRootData P.</> $hPathFamily)
+                                $hFormatKey |]
+
+                -- Source all the columns.
+                xSourceFamilyCols
+                        <- mapM (\  (path, format)
+                                 -> expOfSourceFamilyColumn hRootData path format)
+                        $  zip hPathColumns hFormatColumns
+
+                nKey    <- newName "k"
+                nsCols  <- replicateM arity (newName "c")
+
+                let Just xZipWith
+                        = expOfZipWith
+                                (expOfRowN (arity + 1))
+                                (H.varE nKey : [H.varE nCol | nCol <- nsCols])
+
+
+                xZipped <- expOfBindsExp 
+                                (  (H.varP nKey, return xSourceFamilyKey)
+                                : [(H.varP nCol, return xSourceFamilyCol)
+                                        | nCol             <- nsCols
+                                        | xSourceFamilyCol <- xSourceFamilyCols])
+                        $  xZipWith
+                          
                 pOut    <- H.varP (H.mkName sOut)
-                return  (pOut, xRhs)
+                return  (pOut, xZipped)
 
 
+expOfBindsExp 
+        :: [(Q H.Pat, Q H.Exp)]
+        -> Q H.Exp
+        -> Q H.Exp
+
+expOfBindsExp [] qBody
+        = qBody
+
+expOfBindsExp ((p, x) : more) qBody
+ = do   hRest   <- expOfBindsExp more qBody
+        [| $x P.>>= \ $p -> $(return hRest) |]
+
+
+expOfSourceFamilyColumn 
+        :: Q H.Exp      -- ^ Data root path.
+        -> Q H.Exp      -- ^ Path to column.
+        -> Q H.Exp      -- ^ Format of column
+        -> Q H.Exp
+
+expOfSourceFamilyColumn hPathRootData hPathColumn hFormatColumn
+ =      [| P.sourceFamilyColumn
+                (P.mul 64 1024)
+                (P.error "query: line too long.")
+                (P.error "query: cannot convert field.")
+                ($hPathRootData P.</> $hPathColumn)
+                (P.Sep '\t' $hFormatColumn) |]
+
+
+-- | Combine corresponding values in some flows with a function.
+expOfZipWith :: Q H.Exp -> [Q H.Exp] -> Maybe (Q H.Exp)
+expOfZipWith xF xArgs
+ = case xArgs of
+        [x1]
+          -> Just [| P.map_i       $xF $x1 |]
+
+        [x1, x2]
+          -> Just [| P.zipWith_i   $xF $x1 $x2 |]
+
+        [x1, x2, x3]
+          -> Just [| P.zipWith3_i  $xF $x1 $x2 $x3 |]
+
+        [x1, x2, x3, x4]        
+          -> Just [| P.zipWith4_i  $xF $x1 $x2 $x3 $x4 |]
+
+        [x1, x2, x3, x4, x5]
+          -> Just [| P.zipWith5_i  $xF $x1 $x2 $x3 $x4 $x5 |]
+
+        [x1, x2, x3, x4, x5, x6]
+          -> Just [| P.zipWith6_i  $xF $x1 $x2 $x3 $x4 $x5 $x6 |]
+
+        [x1, x2, x3, x4, x5, x6, x7]
+          -> Just [| P.zipWith7_i  $xF $x1 $x2 $x3 $x4 $x5 $x6 $x7 |]
+
+        _ -> Nothing
+
+
+-- | Produce a functional expression that combines its arguments
+--   into a row.
+expOfRowN   :: Int -> Q H.Exp
+expOfRowN n
+ = do   vars      <- replicateM n (newName "x")
+
+        let xBody = foldr (\hv hb -> [| $hv P.:*: $hb |]) [| P.Unit |] 
+                  $ map H.varE vars
+
+        let xExp  = foldr (\hv hb -> [| \ $hv -> $hb |])  xBody
+                  $ map H.varP vars
+
+        xExp
+
+
+---------------------------------------------------------------------------------------------------
 -- | Yield a Haskell binding for a flow op.
+-- 
+--   TODO: generalise this to avoid cut-and-paste.
+--
 bindOfFlowOp :: G.FlowOp () String String String -> Q (H.Pat, H.Exp)
 bindOfFlowOp op
  = case op of

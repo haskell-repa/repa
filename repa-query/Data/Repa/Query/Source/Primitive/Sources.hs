@@ -1,7 +1,8 @@
 
 module Data.Repa.Query.Source.Primitive.Sources
         ( fromFile
-        , fromStore)
+        , fromStore
+        , fromStoreColumns)
 where
 import System.FilePath
 import Control.Monad.State.Strict
@@ -31,6 +32,7 @@ fromFile path delim field
         return  fOut
 
 
+---------------------------------------------------------------------------------------------------
 -- | Read the object at the given path in the store.
 fromStore :: FilePath -> Q (Flow a)
 fromStore path
@@ -85,10 +87,11 @@ fromStore path
           -> do 
                 fOut    <- newFlow
                 addNode $ G.NodeSource
-                        $ G.SourceFamilyColumn () 
-                                dirFamily dirColumn
+                        $ G.SourceFamilyColumns () 
+                                dirFamily 
+                                [dirColumn]
                                 (O.familyFormat family)
-                                (O.columnFormat column)
+                                [O.columnFormat column]
                         $ takeFlow fOut
                 return fOut
 
@@ -97,55 +100,38 @@ fromStore path
 
 
 ---------------------------------------------------------------------------------------------------
---  Read some named column from a table.
---
---   TODO: The columns come out in the order they were in the table,
---   rather than the order specified in the list. This is because
---   we're just reading all the fields in a row and masking the ones
---   that we don't want.
---
-{-
-fromColumns :: FilePath -> [String] -> Q (Flow a)
-fromColumns path names
+-- | Source multiple columns from a compound object,
+--   like a table or column family.
+fromStoreColumns :: FilePath -> [String] -> Q (Flow a)
+fromStoreColumns path nameColsWanted
  = do
-        -- Load meta-data for the table.
-        pathRoot <- B.getRootDataQ
-        emeta    <- B.liftIO $ O.loadObjectFromDir (pathRoot </> path)
+        pathRoot  <- B.getRootDataQ
+        let path' =  pathRoot </> path
+        eObject   <- B.liftIO $ O.resolveObject path'
 
-        -- Function to lookup the index of a named column.
-        let lookupColIx table name
-                | Just ix
-                <- P.lookup name 
-                         $  P.zip  (P.map (T.unpack . O.columnName) 
-                                          (O.tableColumns table))
-                                   [0..]
-                = Right (name, ix)
+        case eObject of
+         Left err
+          -> failQ $ show err
 
-                | otherwise
-                = Left name
+         Right parts
+          -- Source multiple columns from a column family.
+          | O.ResolveObject (O.ObjectFamily family) : _ <- reverse parts
+          , Just dirFamily  <- O.familyDirectory family
+          , Just colsAll    <- O.familyColumns family
+          , nameColsAll     <- zip (map O.columnName colsAll) colsAll
+          , Just colsWanted <- sequence [ lookup (T.pack name) nameColsAll 
+                                        | name <- nameColsWanted ]
+          -> do 
+                fOut    <- newFlow
+                addNode $  G.NodeSource
+                        $  G.SourceFamilyColumns ()
+                                dirFamily
+                                [ dirFamily </> name ++ ".column" | name <- nameColsWanted]
+                                (O.familyFormat family)
+                                (map O.columnFormat colsWanted)
+                        $ takeFlow fOut
+                return fOut
 
-        case emeta of
-         Left errLoadMeta
-          -> failQ $ show errLoadMeta
-
-         Right (O.ObjectTable table)
-          -- Work out what index the requested column is in the table.
-          -- We store both the name and index to help detect if the
-          -- table has changed since we built the query.
-          -> case P.sequence $ P.map (lookupColIx table) names of
-              Right colIxs
-               -> do    fOut    <- newFlow
-                        addNode $ G.NodeSource
-                                $ G.SourceTableColumns () path 
-                                        (O.tableDelim table)
-                                        (P.map O.columnFormat $ O.tableColumns table)
-                                        colIxs
-                                $ takeFlow fOut
-                        return fOut
-
-              Left nameUnknown 
-               -> failQ $ "unknown column " ++ show nameUnknown
-
-         Right _ -> failQ $ "not a table"
--}
+          | otherwise
+          -> failQ "repa-query.fromStoreColumns: not found"
 

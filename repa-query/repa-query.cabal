@@ -102,6 +102,7 @@ Library
         PatternGuards
         TypeOperators
         PatternSynonyms
+        ParallelListComp
         FlexibleContexts
         FlexibleInstances
         OverloadedStrings

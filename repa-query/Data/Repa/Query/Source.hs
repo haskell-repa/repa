@@ -39,6 +39,7 @@ module Data.Repa.Query.Source
           -- ** Sourcing
         , fromFile
         , fromStore
+        , fromStoreColumns
 
           -- ** Mapping
         , map, map2, map3, map4, map5, map6, map7
