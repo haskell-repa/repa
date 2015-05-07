@@ -94,23 +94,23 @@ expOfScalarOp sop
          -> Nothing
 
 
-        SopGet 2 1      -> Just [| (\(x :*: _)                   -> x) |]
-        SopGet 2 2      -> Just [| (\(_ :*: x)                   -> x) |]
+        SopGet 2 1      -> Just [| (\(x :*: _ :*: P.Unit)        -> x) |]
+        SopGet 2 2      -> Just [| (\(_ :*: x :*: P.Unit)        -> x) |]
 
-        SopGet 3 1      -> Just [| (\(x :*: _ :*: _)             -> x) |]
-        SopGet 3 2      -> Just [| (\(_ :*: x :*: _)             -> x) |]
-        SopGet 3 3      -> Just [| (\(_ :*: _ :*: x)             -> x) |]
+        SopGet 3 1      -> Just [| (\(x :*: _ :*: _ :*: P.Unit)  -> x) |]
+        SopGet 3 2      -> Just [| (\(_ :*: x :*: _ :*: P.Unit)  -> x) |]
+        SopGet 3 3      -> Just [| (\(_ :*: _ :*: x :*: P.Unit)  -> x) |]
 
-        SopGet 4 1      -> Just [| (\(x :*: _ :*: _ :*: _)       -> x) |]
-        SopGet 4 2      -> Just [| (\(_ :*: x :*: _ :*: _)       -> x) |]
-        SopGet 4 3      -> Just [| (\(_ :*: _ :*: x :*: _)       -> x) |]
-        SopGet 4 4      -> Just [| (\(_ :*: _ :*: _ :*: x)       -> x) |]
+        SopGet 4 1      -> Just [| (\(x :*: _ :*: _ :*: _ :*: P.Unit)  -> x) |]
+        SopGet 4 2      -> Just [| (\(_ :*: x :*: _ :*: _ :*: P.Unit)  -> x) |]
+        SopGet 4 3      -> Just [| (\(_ :*: _ :*: x :*: _ :*: P.Unit)  -> x) |]
+        SopGet 4 4      -> Just [| (\(_ :*: _ :*: _ :*: x :*: P.Unit)  -> x) |]
 
-        SopGet 5 1      -> Just [| (\(x :*: _ :*: _ :*: _ :*: _) -> x) |]
-        SopGet 5 2      -> Just [| (\(_ :*: x :*: _ :*: _ :*: _) -> x) |]
-        SopGet 5 3      -> Just [| (\(_ :*: _ :*: x :*: _ :*: _) -> x) |]
-        SopGet 5 4      -> Just [| (\(_ :*: _ :*: _ :*: x :*: _) -> x) |]
-        SopGet 5 5      -> Just [| (\(_ :*: _ :*: _ :*: _ :*: x) -> x) |]
+        SopGet 5 1      -> Just [| (\(x :*: _ :*: _ :*: _ :*: _ :*: P.Unit) -> x) |]
+        SopGet 5 2      -> Just [| (\(_ :*: x :*: _ :*: _ :*: _ :*: P.Unit) -> x) |]
+        SopGet 5 3      -> Just [| (\(_ :*: _ :*: x :*: _ :*: _ :*: P.Unit) -> x) |]
+        SopGet 5 4      -> Just [| (\(_ :*: _ :*: _ :*: x :*: _ :*: P.Unit) -> x) |]
+        SopGet 5 5      -> Just [| (\(_ :*: _ :*: _ :*: _ :*: x :*: P.Unit) -> x) |]
 
         SopGet _ _      -> Nothing
 
