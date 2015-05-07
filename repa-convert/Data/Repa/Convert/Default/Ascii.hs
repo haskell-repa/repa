@@ -76,8 +76,8 @@ instance FormatAscii  Double where
 
 
 instance FormatAscii  String where
- type FormatAscii' String = VarAsc
- formatAscii _            = VarAsc
+ type FormatAscii' String = VarString
+ formatAscii _            = VarString
  {-# INLINE formatAscii #-}
 
 

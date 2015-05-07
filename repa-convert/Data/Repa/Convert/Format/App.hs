@@ -2,6 +2,7 @@
 module Data.Repa.Convert.Format.App
         (App (..))
 where
+import Data.Monoid
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Product
 import qualified Foreign.Ptr                    as S
@@ -54,7 +55,7 @@ instance ( Format f1, Format (App fs)
 
 
 instance Packable (App ()) where
-  pack   _buf _fmt _val k = k 0
+  pack   _fmt _val        = mempty
   unpack _buf _len _fmt k = k ((), 0)
   {-# INLINE pack   #-}
   {-# INLINE unpack #-}
@@ -64,10 +65,8 @@ instance ( Packable f1, Packable (App fs)
          , Value (App fs) ~ Value fs)
       => Packable (App (f1 :*: fs)) where
 
- pack    !buf (App (f1 :*: fs)) (x1 :*: xs) k
-  =  pack  buf                    f1  x1 $ \o1
-  -> pack (S.plusPtr buf o1) (App fs) xs $ \os
-  -> k (o1 + os)
+ pack    (App (f1 :*: fs)) (x1 :*: xs)
+  =  pack f1 x1 <> pack (App fs) xs
 
  unpack  !buf !len (App (f1 :*: fs)) k
   =  unpack  buf                len       f1        $ \(x1, o1)

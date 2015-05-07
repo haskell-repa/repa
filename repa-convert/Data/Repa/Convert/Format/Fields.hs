@@ -17,7 +17,7 @@ instance Format () where
 
 
 instance Packable () where
- pack   _buf _fmt _val k = k 0
+ pack   _ _              = mempty
  unpack _buf _len _fmt k = k ((), 0)
  {-# INLINE pack   #-} 
  {-# INLINE unpack #-}

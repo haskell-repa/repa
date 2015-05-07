@@ -5,6 +5,7 @@ where
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Product
+import Data.Monoid
 import Data.Word
 import Data.Char
 import qualified Foreign.Storable               as S
@@ -17,6 +18,7 @@ data Sep f
         deriving Show
 
 
+-------------------------------------------------------------------------------
 instance Format (Sep ()) where
  type Value (Sep ())     = ()
  fieldCount (Sep _ _)    = 0
@@ -29,6 +31,14 @@ instance Format (Sep ()) where
  {-# INLINE packedSize #-}
 
 
+instance Packable (Sep ()) where
+ pack   _fmt _val        = mempty
+ unpack _buf _len _fmt k = k ((), 0)
+ {-# INLINE pack   #-}
+ {-# INLINE unpack #-}
+
+
+-------------------------------------------------------------------------------
 instance ( Format f1, Format (Sep fs)
          , Value (Sep fs) ~ Value fs)
         => Format (Sep (f1 :*: fs)) where
@@ -62,27 +72,16 @@ instance ( Format f1, Format (Sep fs)
  {-# INLINE packedSize #-}
 
 
-instance Packable (Sep ()) where
- pack   _buf _fmt _val k = k 0
- unpack _buf _len _fmt k = k ((), 0)
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
-
-
 instance ( Packable f1, Packable (Sep fs)
          , Value (Sep fs) ~ Value fs)
        => Packable (Sep (f1 :*: fs)) where
 
- pack   !buf    (Sep c (f1 :*: fs)) (x1 :*: xs) k
-  |  fieldCount (Sep c fs) >= 1
-  =  pack  buf                       f1          x1          $ \o1
-  -> pack  (S.plusPtr buf  o1)       Word8be    (w8 $ ord c) $ \oc
-  -> pack  (S.plusPtr buf (o1 + oc)) (Sep c fs)  xs          $ \os
-  -> k (o1 + oc + os)
+ pack   (Sep c (f1 :*: fs)) (x1 :*: xs) 
+  | fieldCount (Sep c fs) >= 1
+  = pack f1 x1 <> pack Word8be (w8 $ ord c) <> pack (Sep c fs) xs
 
   | otherwise
-  =  pack  buf                       f1          x1          $ \o1
-  -> k o1
+  = pack f1 x1
  {-# INLINE pack #-}
 
 

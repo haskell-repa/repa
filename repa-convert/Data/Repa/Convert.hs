@@ -42,8 +42,13 @@ module Data.Repa.Convert
         , forFormat
         , listFormat
 
-          -- * Packing data.
+          -- * Packing data
         , Packable  (..)
+
+          -- ** Packer monoid
+        , Packer, runPacker
+
+          -- ** Packing and unpacking
         , packToAscii
         , packToList8,  unpackFromList8
         , packToString, unpackFromString)
@@ -57,6 +62,7 @@ import Control.Monad
 import System.IO.Unsafe
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
+import qualified GHC.Ptr                        as S
 
 
 ---------------------------------------------------------------------------------------------------
@@ -79,10 +85,11 @@ packToList8 f x
  | Just lenMax  <- packedSize f x
  = unsafePerformIO
  $ do   buf     <- S.mallocBytes lenMax
-        mResult <- pack buf f x (\o -> return (Just o))
+        mResult <- runPacker (pack f x) buf
         case mResult of
          Nothing      -> return Nothing
-         Just lenUsed -> do
+         Just buf' 
+          -> do let lenUsed = S.minusPtr buf' buf
                 xs      <- mapM (S.peekByteOff buf) [0 .. lenUsed - 1]
                 S.free buf
                 return $ Just xs

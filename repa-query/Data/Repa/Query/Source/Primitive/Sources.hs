@@ -7,6 +7,7 @@ where
 import System.FilePath
 import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Builder           as B
+import qualified Data.Repa.Store.Resolve        as O
 import qualified Data.Repa.Store.Object         as O
 import qualified Data.Repa.Store.Object.Table   as O
 import qualified Data.Repa.Store.Object.Family  as O

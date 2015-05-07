@@ -6,12 +6,16 @@ module Data.Repa.Convert.Format.Lists
 
           -- * ASCII Strings
         , FixAsc (..)
-        , VarAsc (..))
+        , VarAsc (..)
+        , VarString (..))
 where
+import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Base
+import Data.Monoid
 import Data.Word
 import Data.Char
 import qualified Foreign.Storable               as S
+import qualified Foreign.Ptr                    as S
 
 
 ---------------------------------------------------------------------------------------------------
@@ -96,20 +100,20 @@ instance Format FixAsc where
 
 instance Packable FixAsc where
  
-  pack buf   (FixAsc lenField) xs k
-   = do let !lenChars   = length xs
-        let !lenPad     = lenField - lenChars
+  pack (FixAsc lenField) xs = Packer $ \buf k
+   -> do let !lenChars   = length xs
+         let !lenPad     = lenField - lenChars
 
-        if lenChars > lenField
-         then return Nothing
-         else do
+         if lenChars > lenField
+          then return Nothing
+          else do
                 mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
                         $ zip [0 .. lenChars - 1] xs
 
                 mapM_ (\o      -> S.pokeByteOff buf (lenChars + o) (0 :: Word8))
                         $ [0 .. lenPad - 1]
 
-                k lenField
+                k (S.plusPtr buf lenField)
   {-# NOINLINE pack #-}
 
   unpack buf _ (FixAsc lenField) k
@@ -125,7 +129,8 @@ instance Packable FixAsc where
   {-# NOINLINE unpack #-}
 
 
--- | Variable length string.
+---------------------------------------------------------------------------------------------------
+-- | Variable length raw string (with no quotes).
 data VarAsc = VarAsc            deriving (Eq, Show)
 instance Format (VarAsc)        where
  type Value VarAsc              = String
@@ -141,13 +146,10 @@ instance Format (VarAsc)        where
 
 instance Packable VarAsc where
 
-  pack buf       VarAsc xs k
-   = do let !lenChars   = length xs
-
-        mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
-                $ zip [0 .. lenChars - 1] xs
-
-        k lenChars
+  pack VarAsc xx
+   = case xx of
+        []       -> mempty
+        (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarAsc xs
   {-# NOINLINE pack #-}
 
   unpack buf len VarAsc k
@@ -164,6 +166,39 @@ instance Packable VarAsc where
         xs      <- mapM load_unpackChar [0 .. len - 1]
         k (xs, len)
   {-# NOINLINE unpack #-}
+
+
+---------------------------------------------------------------------------------------------------
+data VarString = VarString      deriving (Eq, Show)
+instance Format VarString       where
+ type Value VarString           = String
+ fieldCount _                   = 1
+ minSize    _                   = 2
+ fixedSize  _                   = Nothing
+ packedSize VarString xs        = Just $ 2 + length xs     -- TODO: not true with escaped chars.
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
+
+
+instance Packable VarString where
+
+ pack VarString xx                                         -- TODO: escape special chars
+  =  pack Word8be (cw8 '"')
+  <> pack VarAsc  xx
+  <> pack Word8be (cw8 '"')
+ {-# INLINE pack #-}
+
+ unpack
+  = error "repa-convert.Packable[VarString]: finish me"
+ {-# INLINE unpack #-}
+
+
+---------------------------------------------------------------------------------------------------
+cw8 :: Char -> Word8
+cw8 c = fromIntegral $ ord c
+{-# INLINE cw8 #-}
 
 
 w8  :: Integral a => a -> Word8

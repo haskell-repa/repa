@@ -37,9 +37,9 @@ instance Format Word8be                 where
 
 
 instance Packable Word8be where
- pack   buf Word8be x k
-  = do  S.poke buf (fromIntegral x)
-        k 1
+ pack   Word8be x = Packer $ \buf k
+  -> do S.poke buf (fromIntegral x)
+        k (S.plusPtr buf 1)
  {-# INLINE pack #-}
 
  unpack buf _ Word8be k
@@ -69,8 +69,8 @@ instance Format Int8be                  where
 
 
 instance Packable Int8be where
- pack    buf     Int8be x k  = pack   buf     Word8be (w8 x) k
- unpack  buf len Int8be k    = unpack buf len Word8be (\(x, o) -> k (i8 x, o))
+ pack    Int8be x               = pack   Word8be (w8 x)
+ unpack  buf len Int8be k       = unpack buf len Word8be (\(x, o) -> k (i8 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
@@ -96,10 +96,10 @@ instance Format Word16be                where
 
 
 instance Packable Word16be where
- pack   buf Word16be x k
-  = do  S.poke  buf          (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
+ pack   Word16be x = Packer $ \buf k
+  -> do S.poke        buf    (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
         S.pokeByteOff buf 1  (w8 ((w16 x .&. 0x000ff)))
-        k 2
+        k (S.plusPtr buf 2)
  {-# INLINE pack #-}
 
  unpack buf _ Word16be k
@@ -131,8 +131,8 @@ instance Format Int16be                 where
 
 
 instance Packable Int16be where
- pack   buf     Int16be x k  = pack   buf     Word16be (w16 x) k
- unpack buf len Int16be k    = unpack buf len Word16be (\(x, o) -> k (i16 x, o))
+ pack   Int16be x          = pack   Word16be (w16 x)
+ unpack buf len Int16be k  = unpack buf len Word16be (\(x, o) -> k (i16 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
@@ -158,12 +158,12 @@ instance Format Word32be                where
 
 
 instance Packable Word32be where
- pack   buf Word32be x k
-  = do  S.poke        buf    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
+ pack   Word32be x = Packer $ \buf k
+  -> do S.poke        buf    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
         S.pokeByteOff buf 1  (w8 ((w32 x .&. 0x000ff0000) `shiftR` 16))
         S.pokeByteOff buf 2  (w8 ((w32 x .&. 0x00000ff00) `shiftR`  8))
         S.pokeByteOff buf 3  (w8 ((w32 x .&. 0x0000000ff)))
-        k 4
+        k (S.plusPtr buf 4)
  {-# INLINE pack #-}
 
  unpack buf _ Word32be k
@@ -184,6 +184,7 @@ w32 = fromIntegral
 {-# INLINE w32 #-}
 
 
+
 ------------------------------------------------------------------------------------------- Int32be
 -- | Big-endian 32-bit signed integer.
 data Int32be    = Int32be               deriving (Eq, Show)
@@ -200,7 +201,7 @@ instance Format Int32be                 where
 
 
 instance Packable Int32be where
- pack   buf     Int32be x k  = pack   buf     Word32be (w32 x) k
+ pack   Int32be x            = pack   Word32be (w32 x)
  unpack buf len Int32be k    = unpack buf len Word32be (\(x, o) -> k (i32 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
@@ -227,8 +228,8 @@ instance Format Word64be                where
 
 
 instance Packable Word64be where
- pack   buf Word64be x k
-  = do  S.poke        buf    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
+ pack   Word64be x = Packer $ \buf k
+  -> do S.poke        buf    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
         S.pokeByteOff buf 1  (w8 ((w64 x .&. 0x000ff000000000000) `shiftR` 48))
         S.pokeByteOff buf 2  (w8 ((w64 x .&. 0x00000ff0000000000) `shiftR` 40))
         S.pokeByteOff buf 3  (w8 ((w64 x .&. 0x0000000ff00000000) `shiftR` 32))
@@ -236,7 +237,7 @@ instance Packable Word64be where
         S.pokeByteOff buf 5  (w8 ((w64 x .&. 0x00000000000ff0000) `shiftR` 16))
         S.pokeByteOff buf 6  (w8 ((w64 x .&. 0x0000000000000ff00) `shiftR`  8))
         S.pokeByteOff buf 7  (w8 ((w64 x .&. 0x000000000000000ff)            ))
-        k 8
+        k (S.plusPtr buf 8)
  {-# INLINE pack #-}
 
  unpack buf _ Word64be k
@@ -281,7 +282,7 @@ instance Format Int64be                 where
 
 
 instance Packable Int64be where
- pack   buf     Int64be x k  = pack   buf     Word64be (w64 x) k
+ pack   Int64be x            = pack   Word64be (w64 x)
  unpack buf len Int64be k    = unpack buf len Word64be (\(x, o) -> k (i64 x, o))
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
@@ -308,8 +309,7 @@ instance Format Float32be               where
 
 
 instance Packable Float32be where
- pack      buf Float32be x k
-  = pack   buf Word32be (floatToWord32 x) k
+ pack      Float32be x           = pack Word32be (floatToWord32 x)
  {-# INLINE pack #-}
 
  unpack    buf len Float32be k
@@ -356,8 +356,7 @@ instance Format Float64be               where
 
 
 instance Packable Float64be where
- pack      buf Float64be x k
-  = pack   buf Word64be (doubleToWord64 x) k
+ pack      Float64be x          = pack   Word64be (doubleToWord64 x)
  {-# INLINE pack #-}
 
  unpack    buf len Float64be k

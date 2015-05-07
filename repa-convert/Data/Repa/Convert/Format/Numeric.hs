@@ -9,6 +9,7 @@ import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Numeric
 import qualified Foreign.ForeignPtr             as F
 import qualified Foreign.Marshal.Utils          as F
+import qualified Foreign.Ptr                    as S
 
 
 ------------------------------------------------------------------------------------------- IntAsc
@@ -31,8 +32,8 @@ instance Format IntAsc where
 instance Packable IntAsc where
 
  -- TODO: This is very slow. Avoid going via lists.
- pack   buf IntAsc v k
-   = pack buf VarAsc (show v) k
+ pack IntAsc v
+   = pack VarAsc (show v)
  {-# INLINE pack #-}
 
  unpack buf len IntAsc k 
@@ -67,10 +68,10 @@ instance Format IntAsc0 where
 instance Packable IntAsc0 where
 
  -- TODO: This is very slow. Avoid going via lists.
- pack   buf (IntAsc0 n) v k
+ pack   (IntAsc0 n) v 
   = let s       = show v
         s'      = replicate (n - length s) '0' ++ s
-    in  pack buf VarAsc s' k
+    in  pack VarAsc s'
  {-# INLINE pack #-}
 
  unpack buf len (IntAsc0 _) k 
@@ -104,11 +105,11 @@ instance Format DoubleAsc where
 
 instance Packable DoubleAsc where
 
- pack   buf DoubleAsc v k
-  = do  (fptr, len)  <- storeDoubleShortest v
+ pack   DoubleAsc v = Packer $ \buf k
+  -> do (fptr, len)  <- storeDoubleShortest v
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
-        k len
+        k (S.plusPtr buf len)
  {-# INLINE pack   #-}
 
  unpack buf len DoubleAsc k

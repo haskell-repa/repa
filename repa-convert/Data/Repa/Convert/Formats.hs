@@ -5,40 +5,45 @@ module Data.Repa.Convert.Formats
           (:*:)(..)
 
           -- * Field Separators
-        , App (..)
-        , Sep (..)
+        , App           (..)
+        , Sep           (..)
 
           -- * Lists
-        , FixList(..)
-        , VarList(..)
+        , FixList       (..)
+        , VarList       (..)
 
           -- * Strings
-        , FixAsc (..)
-        , VarAsc (..)
+        , FixAsc        (..)
+        , VarAsc        (..)
+        , VarString     (..)
 
           -- * Atomic values
           -- ** ASCII numeric
-        , IntAsc     (..)
-        , IntAsc0    (..)
-        , DoubleAsc  (..)
+        , IntAsc        (..)
+        , IntAsc0       (..)
+        , DoubleAsc     (..)
 
           -- ** ASCII dates
-        , YYYYsMMsDD (..)
-        , DDsMMsYYYY (..)
+        , YYYYsMMsDD    (..)
+        , DDsMMsYYYY    (..)
 
           -- ** 8-bit binary
-        , Word8be    (..),       Int8be  (..)
+        , Word8be       (..)
+        , Int8be        (..)
 
           -- ** 16-bit binary
-        , Word16be   (..),       Int16be (..)
+        , Word16be      (..)
+        , Int16be       (..)
 
           -- ** 32-bit binary
-        , Word32be   (..),       Int32be (..)
-        , Float32be  (..)
+        , Word32be      (..)
+        , Int32be       (..)
+        , Float32be     (..)
 
           -- ** 64-bit binary
-        , Word64be   (..),       Int64be (..)
-        , Float64be  (..))
+        , Word64be      (..)
+        , Int64be       (..)
+        , Float64be     (..))
 where
 import Data.Repa.Convert.Format.App
 import Data.Repa.Convert.Format.Binary

@@ -1,9 +1,10 @@
 
 module Data.Repa.Convert.Format.Base
         ( Format   (..)
-        , Packable (..))
+        , Packable (..)
+        , Packer   (..)
+        , runPacker)
 where
-import Data.Repa.Product
 import Data.Word
 import qualified Foreign.Ptr                    as S
 
@@ -47,8 +48,31 @@ class Format f where
  packedSize :: f -> Value f -> Maybe Int
 
 
+-- | Packer wraps a function that can write to a buffer.
+data Packer
+  =  Packer
+        (   S.Ptr Word8 
+        -> (S.Ptr Word8 -> IO (Maybe (S.Ptr Word8)))
+        -> IO (Maybe (S.Ptr Word8)))
 
-  
+instance Monoid Packer where
+ mempty 
+  = Packer $ \buf k -> k buf
+
+ mappend (Packer fa) (Packer fb)
+  = Packer $ \buf0 k -> fa buf0 (\buf1 -> fb buf1 k)
+
+
+-- | Pack data into the given buffer.
+runPacker 
+        :: Packer 
+        -> S.Ptr Word8 
+        -> IO (Maybe (S.Ptr Word8))
+
+runPacker (Packer make) buf
+        = make buf (\buf' -> return (Just buf'))
+
+
 ---------------------------------------------------------------------------------------------------
 -- | Class of storage formats that can have values packed and unpacked
 --   from foreign bufferes. 
@@ -69,11 +93,9 @@ class Format   format
  --   value has too many elements, then this function returns `False`, 
  --   otherwise `True`.
  --
- pack   :: S.Ptr Word8                  -- ^ Target Buffer.
-        -> format                       -- ^ Storage format.
-        -> Value format                 -- ^ Value to pack.
-        -> (Int -> IO (Maybe a))        -- ^ Continue, given the number of bytes written.
-        -> IO (Maybe a)
+ pack   :: format               -- ^ Storage format.
+        -> Value format         -- ^ Value   to packer.
+        -> Packer               -- ^ Packer  that can write the value.
 
 
  -- | Unpack a value from a buffer using the given format.
