@@ -147,7 +147,7 @@ unsafeBackpermuteDft arrDft fnIndex arrSrc
 --
 --   For example, to replicate the rows of an array use the following:
 --
---   @extend arr (Any :. (5::Int) :. All)@
+--   @extend (Any :. (5::Int) :. All) arr@
 --
 extend, unsafeExtend
         :: ( Slice sl
