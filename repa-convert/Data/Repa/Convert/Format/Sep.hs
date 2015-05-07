@@ -18,7 +18,7 @@ data Sep f
         deriving Show
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 instance Format (Sep ()) where
  type Value (Sep ())     = ()
  fieldCount (Sep _ _)    = 0
@@ -38,7 +38,7 @@ instance Packable (Sep ()) where
  {-# INLINE unpack #-}
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 instance ( Format f1, Format (Sep fs)
          , Value (Sep fs) ~ Value fs)
         => Format (Sep (f1 :*: fs)) where
@@ -109,6 +109,7 @@ instance ( Packable f1, Packable (Sep fs)
  {-# INLINE unpack #-}
 
 
+---------------------------------------------------------------------------------------------------
 -- | Find the first occurrence of the given separating character in the
 --   buffer, or `Nothing` if we don't find it before the buffer ends.
 findSep :: Word8                  -- ^ Separating character.

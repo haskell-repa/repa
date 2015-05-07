@@ -91,7 +91,3 @@ instance Packable DDsMMsYYYY where
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
 {-# INLINE cw8 #-}
-
-
-
-

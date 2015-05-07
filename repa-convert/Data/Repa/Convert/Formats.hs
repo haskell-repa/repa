@@ -7,6 +7,7 @@ module Data.Repa.Convert.Formats
           -- * Field Separators
         , App           (..)
         , Sep           (..)
+        , Row           (..)
 
           -- * Lists
         , FixList       (..)
@@ -51,6 +52,7 @@ import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Fields  ()
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Numeric
+import Data.Repa.Convert.Format.Row
 import Data.Repa.Convert.Format.Sep
 import Data.Repa.Product
 

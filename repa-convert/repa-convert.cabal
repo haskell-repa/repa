@@ -48,6 +48,7 @@ Library
         Data.Repa.Convert.Format.Numeric
         Data.Repa.Convert.Format.Date32
         Data.Repa.Convert.Format.Sep
+        Data.Repa.Convert.Format.Row
 
 
   ghc-options:
