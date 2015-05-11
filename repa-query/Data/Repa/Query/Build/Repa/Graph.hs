@@ -146,22 +146,21 @@ bindOfSource ss
                 formatKey  formatColumns
                 sOut
          -> do
-                let arity 
-                        = length pathColumns
-
-                let hPathFamily  
+                -- Directory holding column family.
+                let hPathFamily     
                         = return (LitE (StringL pathFamily))
 
-                let hPathColumns  
+                -- Directories holding wanted columns.
+                let hPathColumns    
                         = map (return . LitE . StringL) pathColumns
 
-                let Just hFormatKey     
+                -- Format of column family key.
+                let Just hFormatKey 
                         = expOfFieldFormat formatKey 
 
+                -- Formats of wanted columns.
                 let Just hFormatColumns
-                        = sequence 
-                        $ map (\f -> expOfFieldsFormat ([f] ++ [Q.FieldBox Q.Nil]))
-                        $ formatColumns
+                        = sequence $ map expOfFieldFormat $ formatColumns
 
                 -- Source the key.
                 xSourceFamilyKey
@@ -172,20 +171,21 @@ bindOfSource ss
                                 ($hRootData P.</> $hPathFamily)
                                 $hFormatKey |]
 
-                -- Source all the columns.
+                -- Source the wanted columns.
                 xSourceFamilyCols
                         <- mapM (\  (path, format)
                                  -> expOfSourceFamilyColumn hRootData path format)
                         $  zip hPathColumns hFormatColumns
 
-                nKey    <- newName "k"
-                nsCols  <- replicateM arity (newName "c")
+                -- Zip together the family key and wanted columns.
+                nKey      <- newName "k"
+                let arity = length pathColumns
+                nsCols    <- replicateM arity (newName "c")
 
                 let Just xZipWith
                         = expOfZipWith
                                 (expOfRowN (arity + 1))
                                 (H.varE nKey : [H.varE nCol | nCol <- nsCols])
-
 
                 xZipped <- expOfBindsExp 
                                 (  (H.varP nKey, return xSourceFamilyKey)
@@ -194,6 +194,7 @@ bindOfSource ss
                                         | xSourceFamilyCol <- xSourceFamilyCols])
                         $  xZipWith
                           
+                -- Final result.
                 pOut    <- H.varP (H.mkName sOut)
                 return  (pOut, xZipped)
 
@@ -223,7 +224,7 @@ expOfSourceFamilyColumn hPathRootData hPathColumn hFormatColumn
                 (P.error "query: line too long.")
                 (P.error "query: cannot convert field.")
                 ($hPathRootData P.</> $hPathColumn)
-                (P.Sep '\t' $hFormatColumn) |]
+                $hFormatColumn |]
 
 
 -- | Combine corresponding values in some flows with a function.
@@ -273,6 +274,7 @@ expOfRowN n
 -- | Yield a Haskell binding for a flow op.
 -- 
 --   TODO: generalise this to avoid cut-and-paste.
+--   We've got the zipWith function builder now.
 --
 bindOfFlowOp :: G.FlowOp () String String String -> Q (H.Pat, H.Exp)
 bindOfFlowOp op
