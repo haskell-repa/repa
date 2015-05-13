@@ -3,7 +3,6 @@
 import Config
 import Data.Repa.Query.Graph.JSON                       ()
 import Data.Repa.Query.Build                            as QB
-import Data.Repa.Query.Graph                            as R
 
 import BuildBox.Build
 import System.FilePath
@@ -70,7 +69,7 @@ build_toGraph config file
         let Just pathRoot  = Config.configRootData config
         let dslConfig      = QB.Config pathRoot
 
-        egraph    <- QB.loadQueryFromDSL 
+        egraph    <- QB.loadJobFromDSL 
                         (configDirScratch config) (not $ configDump config)
                         dslConfig dslQuery 
         printErrGraph egraph
@@ -78,7 +77,7 @@ build_toGraph config file
  -- Convert JSON query to graph ASt.
  | ".json"      <- takeExtension file
  = do   jsonQuery <- BB.io $ readFile file
-        graph     <- QB.loadQueryFromJSON
+        graph     <- QB.loadJobFromJSON
                         (configDirScratch config) (not $ configDump config)
                         jsonQuery
         printErrGraph (Right graph)
@@ -101,7 +100,7 @@ build_toJSON config file
         let Just pathRoot  = Config.configRootData config
         let dslConfig      = QB.Config pathRoot
 
-        egraph  <- QB.loadQueryFromDSL 
+        egraph  <- QB.loadJobFromDSL 
                         (configDirScratch config) (not $ configDump config)
                         dslConfig dslQuery 
 
@@ -110,7 +109,7 @@ build_toJSON config file
  -- Load JSON query and print it back.
  | ".json"      <- takeExtension file
  = do   jsonQuery <- BB.io $ readFile file
-        graph     <- QB.loadQueryFromJSON
+        graph     <- QB.loadJobFromJSON
                         (configDirScratch config) (not $ configDump config)
                         jsonQuery
 

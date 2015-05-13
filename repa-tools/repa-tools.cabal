@@ -48,7 +48,6 @@ Executable repa-build
         -O2
 
 
-
 Executable repa-fields
   Build-depends: 
         base            == 4.8.*,
@@ -67,7 +66,6 @@ Executable repa-fields
         -Wall -fno-warn-missing-signatures
         -rtsopts -threaded 
         -O2
-
 
 
 Executable repa-sieve
@@ -92,4 +90,24 @@ Executable repa-sieve
         -rtsopts -threaded 
         -O2
 
+
+Executable repa-tags
+  Build-depends: 
+        base            == 4.8.*,
+        directory       == 1.2.*,
+        filepath        == 1.4.*,
+        tagsoup         >= 0.13.3 && < 0.14
+
+  Main-is:              Main.hs
+  HS-source-dirs:       tools/tags
+  Other-modules:        Config
+
+  Extensions:
+        PatternGuards
+        ScopedTypeVariables
+
+  GHC-options: 
+        -Wall -fno-warn-missing-signatures
+        -rtsopts -threaded 
+        -O2
 
