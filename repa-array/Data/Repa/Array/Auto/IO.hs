@@ -2,7 +2,11 @@
 -- | Array IO
 module Data.Repa.Array.Auto.IO
         ( -- * Raw Array IO
-          hGetArray,   hGetArrayPre
+          -- ** File Path
+          readFile
+
+          -- ** File Handle
+        , hGetArray,   hGetArrayPre
         , hPutArray
 
           -- * XSV files
@@ -14,7 +18,6 @@ module Data.Repa.Array.Auto.IO
 where
 import Data.Repa.Array.Auto.Base
 import Data.Repa.Array.Generic.Convert
-import System.IO
 import Data.Word
 import Data.Char
 import qualified Data.Repa.Array.Material.Auto          as A
@@ -26,21 +29,35 @@ import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Marshal.Alloc                  as F
 import qualified Foreign.Marshal.Utils                  as F
+import qualified System.IO                              as S
+import Prelude hiding (readFile)
 
 
--- | Get data from a file, up to the given number of bytes.
-hGetArray :: Handle -> Int -> IO (Array Word8)
+---------------------------------------------------------------------------------------------------
+-- | Read an entire file as an array.
+readFile :: FilePath -> IO (Array Word8)
+readFile path
+ = do   h       <- S.openFile path S.ReadMode
+        S.hSeek h S.SeekFromEnd  0
+        len     <- S.hTell h
+        S.hSeek h S.AbsoluteSeek 0
+        hGetArray h (fromIntegral len)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Get data from a file handle, up to the given number of bytes.
+hGetArray :: S.Handle -> Int -> IO (Array Word8)
 hGetArray h len
  = do   buf :: F.Ptr Word8 <- F.mallocBytes len
-        bytesRead          <- hGetBuf h buf len
+        bytesRead          <- S.hGetBuf h buf len
         fptr               <- F.newForeignPtr F.finalizerFree buf
         return  $! convert $! A.fromForeignPtr bytesRead fptr
 {-# NOINLINE hGetArray #-}
 
 
--- | Get data from a file, up to the given number of bytes, also
+-- | Get data from a file handle, up to the given number of bytes, also
 --   copying the given data to the front of the new buffer.
-hGetArrayPre :: Handle -> Int -> Array Word8 -> IO (Array Word8)
+hGetArrayPre :: S.Handle -> Int -> Array Word8 -> IO (Array Word8)
 hGetArrayPre h len arr
  | (offset, lenPre, fptrPre :: F.ForeignPtr Word8)   
         <- A.toForeignPtr $ convert arr
@@ -49,7 +66,7 @@ hGetArrayPre h len arr
         let ptrPre      = F.plusPtr ptrPre' offset
         ptrBuf :: F.Ptr Word8 <- F.mallocBytes (lenPre + len)
         F.copyBytes ptrBuf ptrPre lenPre
-        lenRead         <- hGetBuf h (F.plusPtr ptrBuf lenPre) len
+        lenRead         <- S.hGetBuf h (F.plusPtr ptrBuf lenPre) len
         let bytesTotal  = lenPre + lenRead
         fptrBuf         <- F.newForeignPtr F.finalizerFree ptrBuf
         return  $ convert $! A.fromForeignPtr bytesTotal fptrBuf
@@ -57,14 +74,14 @@ hGetArrayPre h len arr
 
 
 -- | Write data into a file.
-hPutArray :: Handle -> Array Word8 -> IO ()
+hPutArray :: S.Handle -> Array Word8 -> IO ()
 hPutArray h arr
  | (offset, lenPre, fptrPre :: F.ForeignPtr Word8)     
         <- A.toForeignPtr $ convert arr
  = F.withForeignPtr fptrPre
  $ \ptr' -> do
         let ptr         = F.plusPtr ptr' offset
-        hPutBuf h ptr lenPre
+        S.hPutBuf h ptr lenPre
 {-# NOINLINE hPutArray #-}
 
 
@@ -77,9 +94,9 @@ getArrayFromXSV
         -> IO (Array (Array (Array Char)))
 
 getArrayFromXSV !cSep !filePath
- = do   h       <- openFile filePath ReadMode
+ = do   h       <- S.openFile filePath S.ReadMode
         arr     <- hGetArrayFromXSV cSep h
-        hClose h
+        S.hClose h
         return arr
 
 
@@ -87,17 +104,17 @@ getArrayFromXSV !cSep !filePath
 --   We get an array of rows:fields:characters.
 hGetArrayFromXSV 
         :: Char                 -- ^ Field separator character, eg '|', ',' or '\t'.
-        -> Handle               -- ^ Source file handle.
+        -> S.Handle             -- ^ Source file handle.
         -> IO (Array (Array (Array Char)))
 
 hGetArrayFromXSV !cSep !hIn
  = do   
         -- Find out how much data there is remaining in the file.
-        start     <- hTell hIn
-        hSeek hIn SeekFromEnd 0
-        end       <- hTell hIn
+        start     <- S.hTell hIn
+        S.hSeek hIn S.SeekFromEnd 0
+        end       <- S.hTell hIn
         let !len  =  end - start
-        hSeek hIn AbsoluteSeek start
+        S.hSeek hIn S.AbsoluteSeek start
 
         -- Read array as Word8s.
         !arr8   <- hGetArray hIn (fromIntegral len)
@@ -132,9 +149,9 @@ putArrayAsXSV
         -> IO ()
 
 putArrayAsXSV !cSep !filePath !arrChar
- = do   h       <- openFile filePath WriteMode
+ = do   h       <- S.openFile filePath S.WriteMode
         hPutArrayAsXSV cSep h arrChar
-        hClose h
+        S.hClose h
 
 
 -- | Write a nested array as an XSV file.
@@ -142,7 +159,7 @@ putArrayAsXSV !cSep !filePath !arrChar
 --   The array contains rows:fields:characters.
 hPutArrayAsXSV
         :: Char                         -- ^ Separator character, eg '|', ',' or '\t'
-        -> Handle                       -- ^ Source file handle.
+        -> S.Handle                     -- ^ Source file handle.
         -> Array (Array (Array Char))   -- ^ Array of row, field, character.
         -> IO ()
 

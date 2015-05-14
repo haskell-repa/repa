@@ -9,11 +9,11 @@ import qualified Text.HTML.TagSoup      as TS
 import qualified System.Environment     as S
 
 
+---------------------------------------------------------------------------------------------------
 main :: IO ()
 main
  = do   args    <- S.getArgs
         config  <- parseArgs args configZero
-
         mapM_ (unpack config) $ configInFiles config
 
 
@@ -51,7 +51,7 @@ unpack config file
         -- is defined by the surrounding XML context.
         eat ctx (TS.TagOpen name1 attrs : TS.TagClose name2 : moar)
          | name1 == name2
-         = do   aggregateRow dir ctx name1 attrs
+         = do   aggregateRow dir ctx name1 (attrs ++ configInsertAttrs config)
                 eat ctx moar
 
         -- Skip over XML header opening tags.
@@ -62,12 +62,15 @@ unpack config file
         eat ctx (TS.TagOpen name attrs : moar)
          = case attrs of
             attr1 : _
-              -> eat ((name, Just attr1) : ctx) moar
+              -> do
+                aggregateRow dir ctx name (attrs ++ configInsertAttrs config)
+                eat ((name, Just attr1) : ctx) moar
 
-            _ -> eat ((name, Nothing) :    ctx) moar
+            _ -> do
+                eat ((name, Nothing)    : ctx) moar
 
         -- Handle closing tags.
-        eat ctx (TS.TagClose name      : moar)
+        eat ctx (TS.TagClose name : moar)
          = case ctx of
             (name', _) : ctx'
              -- Close matching tag.
@@ -132,7 +135,11 @@ writeRow
         -> IO ()
 
 writeRow dir parts name attrs
- = do   let fileName = foldl (\n p -> n ++ "#" ++ p) "part" parts ++ "#" ++ name ++ ".attrs"
+ = do   let fileName 
+                = foldl (\n p -> n ++ "#" ++ p) 
+                        "part" parts 
+                ++ "#" ++ name ++ ".lists"
+
         appendFile (dir </> fileName) (show attrs ++ "\n")
 
 

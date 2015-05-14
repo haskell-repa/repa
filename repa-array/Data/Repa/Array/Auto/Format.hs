@@ -2,16 +2,21 @@
 module Data.Repa.Array.Auto.Format
         ( module Data.Repa.Convert.Format
         
+          -- * Packing
         , packFormat
         , packsFixedFormat
 
+          -- * Unpacking
         , unpackFormat
-        , unpacksFixedFormat)
+        , unpacksFixedFormat
+        , unpacksLinesFormat)
 where
 import Data.Repa.Array.Auto.Base                        as A
 import Data.Repa.Array.Generic.Convert                  as A
+import qualified Data.Repa.Array.Generic                as AG
 import qualified Data.Repa.Array.Material.Auto          as A
 import qualified Data.Repa.Array.Material.Foreign       as A
+import qualified Data.Repa.Array.Material.Nested        as A
 import qualified Data.Repa.Array.Internals.Target       as A
 import qualified Data.Repa.Array.Internals.Bulk         as A
 import qualified Data.Repa.Convert.Format               as C
@@ -23,6 +28,7 @@ import Foreign.Ptr
 import System.IO.Unsafe
 import Control.Monad
 import Data.Word
+import Data.Char
 
 import qualified Data.Vector.Storable.Mutable   as SM
 #include "repa-array.h"
@@ -161,4 +167,40 @@ unpacksFixedFormat !format !arrBytes
 
  | otherwise = Nothing
 {-# INLINE_ARRAY unpacksFixedFormat #-}
+
+
+-- | Unpack an array containing elements in some format separated
+--   by newline ('\n') characters. 
+-- 
+--   * Any '\r' characters in the array are filtered out before splitting
+--     it into lines.
+--   * If the value cannot be converted then this function just calls `error`.
+unpacksLinesFormat
+        :: forall format
+        .  (Packable format, A.Target A.A (Value format))
+        => format                       -- ^ Format for each element.
+        -> Array Word8                  -- ^ Packed binary data.
+        -> Array (Value format)         -- ^ Unpacked elements.
+
+unpacksLinesFormat format arr8
+ = do
+        let !nl = fromIntegral $ ord '\n'
+        let !nr = fromIntegral $ ord '\r'
+
+        let rows8 :: AG.Array A.N (AG.Array A.F Word8)
+                = A.trimEnds  (== nl)
+                $ A.segmentOn (== nl)
+                $ AG.filter A.F  (/= nr) arr8
+
+        -- TODO: if we had a mapM function we could write to a IORef to signal
+        --       that something didn't convert.
+        let unpackRow :: AG.Array A.A Word8 -> Value format
+            unpackRow arr
+             = case unpackFormat format arr of
+                Nothing -> error ("repa-array.unpacksLinesFormat: cannot convert")
+                Just v  -> v
+            {-# INLINE unpackRow #-}
+
+        AG.mapS A.A (unpackRow . AG.convert A.A) rows8
+{-# INLINE unpacksLinesFormat #-}
 
