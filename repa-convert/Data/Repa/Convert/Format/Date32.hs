@@ -6,11 +6,13 @@ where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Binary
-import Data.Repa.Bits.Date32                    (Date32)
 import Data.Monoid
 import Data.Char
 import Data.Word
-import qualified Data.Repa.Bits.Date32          as Date32
+import Data.Repa.Scalar.Date32                  (Date32)
+import qualified Data.Repa.Scalar.Date32        as Date32
+import qualified Foreign.Ptr                    as F
+import Prelude hiding (fail)
 
 
 ---------------------------------------------------------------------------------------- YYYYsMMsDD
@@ -42,11 +44,14 @@ instance Packable YYYYsMMsDD where
         <> pack (IntAsc0 2) dd
  {-# INLINE pack #-}
 
- unpack buf len (YYYYsMMsDD s) k
-  = do  r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) buf len
+ unpack (YYYYsMMsDD s)
+  =  Unpacker $ \start end fail eat
+  -> do
+        let !len = F.minusPtr end start
+        r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) start len
         case r of
-         Just (d, o)    -> k (d, o)
-         Nothing        -> return Nothing
+         Just (d, o)    -> eat (F.plusPtr start o) d
+         Nothing        -> fail
  {-# INLINE unpack #-}
 
 
@@ -79,11 +84,14 @@ instance Packable DDsMMsYYYY where
         <> pack (IntAsc0 4) yy
  {-# INLINE pack #-}
 
- unpack buf len (DDsMMsYYYY s) k
-  = do  r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) buf len
+ unpack (DDsMMsYYYY s)
+  =  Unpacker $ \start end fail eat
+  -> do
+        let !len = F.minusPtr end start
+        r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) start len
         case r of
-         Just (d, o)    -> k (d, o)
-         Nothing        -> return Nothing
+         Just (d, o)    -> eat (F.plusPtr start o) d
+         Nothing        -> fail
  {-# INLINE unpack #-}
 
 
@@ -91,3 +99,5 @@ instance Packable DDsMMsYYYY where
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
 {-# INLINE cw8 #-}
+
+

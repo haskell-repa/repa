@@ -2,12 +2,19 @@
 module Data.Repa.Convert.Format.Base
         ( Format   (..)
         , Packable (..)
+
+        -- * Packer
         , Packer   (..)
-        , runPacker)
+        , unsafeRunPacker
+
+        -- * Unpacker
+        , Unpacker (..)
+        , unsafeRunUnpacker)
 where
 import Data.Word
+import Data.IORef
 import qualified Foreign.Ptr                    as S
-
+import Prelude  hiding (fail)
 
 ---------------------------------------------------------------------------------------------------
 -- | Relates a storage format to the Haskell type of the value
@@ -48,29 +55,117 @@ class Format f where
  packedSize :: f -> Value f -> Maybe Int
 
 
+---------------------------------------------------------------------------------------------------
 -- | Packer wraps a function that can write to a buffer.
 data Packer
   =  Packer
-        (   S.Ptr Word8 
+  { -- | Takes start of buffer, 
+    --   and a continuation that takes a pointer to after the last written byte. 
+    fromPacker
+        :: S.Ptr Word8 
         -> (S.Ptr Word8 -> IO (Maybe (S.Ptr Word8)))
-        -> IO (Maybe (S.Ptr Word8)))
+        -> IO (Maybe (S.Ptr Word8))
+  }
 
 instance Monoid Packer where
  mempty 
   = Packer $ \buf k -> k buf
+ {-# INLINE mempty #-}
 
  mappend (Packer fa) (Packer fb)
   = Packer $ \buf0 k -> fa buf0 (\buf1 -> fb buf1 k)
+ {-# INLINE mappend #-}
 
 
 -- | Pack data into the given buffer.
-runPacker 
-        :: Packer 
-        -> S.Ptr Word8 
+--   
+--   PRECONDITION: The buffer needs to be big enough to hold the packed data,
+--   otherwise you'll corrupt the heap (bad). Use `packedSize` to work out
+--   how big it needs to be.
+--
+unsafeRunPacker 
+        :: Packer       -- ^ Packer to run.
+        -> S.Ptr Word8  -- ^ Start of buffer.
         -> IO (Maybe (S.Ptr Word8))
+                        -- ^ Pointer to the byte after the last one written.
 
-runPacker (Packer make) buf
+unsafeRunPacker (Packer make) buf
         = make buf (\buf' -> return (Just buf'))
+{-# INLINE unsafeRunPacker #-}
+
+
+---------------------------------------------------------------------------------------------------
+data Unpacker a
+  =  Unpacker 
+  {  -- | Takes start and end of buffer, fail action, and a continuation
+     --   that takes a pointer to the last read byte.
+     fromUnpacker
+        :: forall b
+        .  S.Ptr Word8                 -- Start of buffer.
+        -> S.Ptr Word8                 -- Pointer to first byte after end of buffer.
+        -> IO b                        -- Signal failure.
+        -> (S.Ptr Word8 -> a -> IO b)  -- Eat an unpacked value.
+        -> IO b
+  }
+
+
+instance Functor Unpacker where
+ fmap f (Unpacker fx)
+  =  Unpacker $ \start end fail eat
+  -> fx start end fail $ \start_x x 
+  -> eat start_x (f x)
+ {-# INLINE fmap #-}
+
+
+instance Applicative Unpacker where
+ pure  x
+  =  Unpacker $ \start _end _fail eat
+  -> eat start x
+ {-# INLINE pure #-}
+
+ (<*>) (Unpacker ff) (Unpacker fx)
+  =  Unpacker $ \start end fail eat
+  -> ff start   end fail $ \start_f f
+  -> fx start_f end fail $ \start_x x
+  -> eat start_x (f x)
+ {-# INLINE (<*>) #-}
+
+
+instance Monad Unpacker where
+ return = pure
+ {-# INLINE return #-}
+
+ (>>=) (Unpacker fa) mkfb
+  =  Unpacker $ \start end fail eat
+  -> fa start end fail $ \start_x x
+  -> case mkfb x of
+        Unpacker fb
+         -> fb start_x end fail eat
+ {-# INLINE (>>=) #-}
+
+
+-- | Unpack data from the given buffer.
+--
+--   PRECONDITION: The buffer must be at least the minimum size of the 
+--   format (minSize). This allows us to avoid repeatedly checking for 
+--   buffer overrun when unpacking fixed size format. If the buffer
+--   is not long enough then you'll get an indeterminate result (bad).
+--
+unsafeRunUnpacker
+        :: Unpacker a   -- ^ Unpacker to run.
+        -> S.Ptr Word8  -- ^ Source buffer.
+        -> Int          -- ^ Length of source buffer.
+        -> IO (Maybe (a, S.Ptr Word8))  
+                -- ^ Unpacked result, and pointer to the byte after the last
+                --   one read.
+
+unsafeRunUnpacker (Unpacker f) start len
+ = do   ref     <- newIORef Nothing
+        f start (S.plusPtr start len)
+                (return ())
+                (\ptr x -> writeIORef ref (Just (x, ptr)))
+        readIORef ref
+{-# INLINE unsafeRunUnpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -85,32 +180,13 @@ class Format   format
 
 
  -- | Pack a value into a buffer using the given format.
- -- 
- --   The buffer must be at least as long as the size returned by
- --   `fixedSize` / `packedSize`. 
- -- 
- --   If the format contains fixed width fields and the corresponding
- --   value has too many elements, then this function returns `False`, 
- --   otherwise `True`.
- --
- pack   :: format               -- ^ Storage format.
-        -> Value format         -- ^ Value   to packer.
-        -> Packer               -- ^ Packer  that can write the value.
+ pack   :: format                       -- ^ Storage format.
+        -> Value format                 -- ^ Value   to pack.
+        -> Packer                       -- ^ Packer  that can write the value.
 
 
  -- | Unpack a value from a buffer using the given format.
- --
- --   This is the inverse of `pack` above.
- -- 
- --   PRECONDITION: The length of the buffer must be at least the
- --   minimum size required of the format (minSize). This allows
- --   us to avoid repeatedly checking for buffer overrun when
- --   unpacking fixed size formats.
- --
- unpack :: S.Ptr Word8                  -- ^ Source buffer.
-        -> Int                          -- ^ Length of buffer.
-        -> format                       -- ^ Format of buffer.
-        -> ((Value format, Int) -> IO (Maybe a)) 
-                                        -- ^ Continue, given the unpacked value and the 
-                                        --   number of bytes read. 
-        -> IO (Maybe a)
+ unpack :: format                       -- ^ Storage format.
+        -> Unpacker (Value format)      -- ^ Unpacker for that format.
+
+

@@ -5,7 +5,7 @@ where
 import Data.Repa.Convert.Format.Sep
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Base
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 import Data.Monoid
 import Data.Word
 import Data.Char
@@ -31,8 +31,8 @@ instance Format (Row ()) where
 
 
 instance Packable (Row ()) where
- pack   _fmt _val        = mempty
- unpack _buf _len _fmt k = k ((), 0)
+ pack   _fmt _val       = mempty
+ unpack _fmt            = return ()
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 

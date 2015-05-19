@@ -2,10 +2,9 @@
 module Data.Repa.Convert.Format.App
         (App (..))
 where
-import Data.Monoid
 import Data.Repa.Convert.Format.Base
-import Data.Repa.Product
-import qualified Foreign.Ptr                    as S
+import Data.Repa.Scalar.Product
+import Data.Monoid
 
 
 -- | Append fields without separators.
@@ -47,7 +46,6 @@ instance ( Format f1, Format (App fs)
   = do  s1      <- packedSize f1       x1
         ss      <- packedSize (App fs) xs
         return  $ s1 + ss
-
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
@@ -55,10 +53,10 @@ instance ( Format f1, Format (App fs)
 
 
 instance Packable (App ()) where
-  pack   _fmt _val        = mempty
-  unpack _buf _len _fmt k = k ((), 0)
-  {-# INLINE pack   #-}
-  {-# INLINE unpack #-}
+ pack   _fmt _val       = mempty
+ unpack _fmt            = return ()
+ {-# INLINE pack   #-}
+ {-# INLINE unpack #-}
 
 
 instance ( Packable f1, Packable (App fs)
@@ -66,13 +64,12 @@ instance ( Packable f1, Packable (App fs)
       => Packable (App (f1 :*: fs)) where
 
  pack    (App (f1 :*: fs)) (x1 :*: xs)
-  =  pack f1 x1 <> pack (App fs) xs
+  =     pack f1 x1 <> pack (App fs) xs
 
- unpack  !buf !len (App (f1 :*: fs)) k
-  =  unpack  buf                len       f1        $ \(x1, o1)
-  -> unpack (S.plusPtr buf o1) (len - o1) (App fs)  $ \(xs, os)
-  -> k (x1 :*: xs, o1 + os)
-
+ unpack  (App (f1 :*: fs))
+  = do  x1      <- unpack f1
+        xs      <- unpack (App fs)
+        return  (x1 :*: xs)
  {-# INLINE pack #-}
  {-# INLINE unpack #-}
 

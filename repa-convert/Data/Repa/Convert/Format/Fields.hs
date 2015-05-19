@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.Repa.Convert.Format.Fields where
 import Data.Repa.Convert.Format.Base
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 
 
 instance Format () where
@@ -17,8 +17,8 @@ instance Format () where
 
 
 instance Packable () where
- pack   _ _              = mempty
- unpack _buf _len _fmt k = k ((), 0)
+ pack   _       = mempty
+ unpack _       = return ()
  {-# INLINE pack   #-} 
  {-# INLINE unpack #-}
 

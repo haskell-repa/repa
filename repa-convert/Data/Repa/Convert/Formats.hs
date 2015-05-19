@@ -58,5 +58,5 @@ import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Row
 import Data.Repa.Convert.Format.Sep
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 

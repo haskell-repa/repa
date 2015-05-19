@@ -13,32 +13,40 @@
 --   If you have binary data that does not have a fixed format then
 --   try the @binary@ or @cereal@ packages.
 --
---   For testing purposes, use `packToList` which takes a format,
+--   For testing purposes, use `packToString` which takes a format,
 --   a record, and returns a list of bytes.
 --
 -- @
--- > import Data.Repa.Convert.Format
+-- > import Data.Repa.Convert
 --
--- > let Just bytes = packToList (FixString ASCII 10 :*: Word16be :*: Float64be) ("foo" :*: 66 :*: 93.42)
--- > bytes
--- [102,111,111,0,0,0,0,0,0,0,0,66,64,87,90,225,71,174,20,123]
+-- > let formatPSV  = Sep '|' (VarAsc :*: IntAsc :*: DoubleAsc :*: ())
+-- > let Just str   = packToString formatPSV ("foo" :*: 66 :*: 93.42 :*: ())
+-- > str
+-- "foo|66|93.42"
 -- @
 --
--- We can then unpack the raw bytes back to Haskell values with `unpackFromList`.
+-- We can then unpack the raw bytes back to Haskell values with `unpackFromString`.
 --
 -- @
--- > unpackFromList (FixString ASCII 10 :*: Word16be :*: Float64be) bytes 
--- Just ("foo" :*: (66 :*: 93.42))
+-- > unpackFromString format str 
+-- Just ("foo" :*: (66 :*: (93.42 :*: ())))
 -- @
 --
--- In production code use `pack` and `unpack` to work directly with a buffer in foreign memory.
+-- In production code use `unsafeRunPacker` and `unsafeRunUnpacker` to work directly
+-- with a buffer in foreign memory.
+--
+-- * NOTE that in the current version the separating character is un-escapable. 
+-- * The above means that the format @(Sep ',')@ does NOT parse a CSV
+--   file according to the CSV specification: http://tools.ietf.org/html/rfc4180.
 --
 module Data.Repa.Convert
-        ( -- * Data formats  
-          Format    (..)
+        ( -- | The @Formats@ module contains the pre-defined data formats.
+          module Data.Repa.Convert.Formats
 
-          -- | The @Formats@ module contains the pre-defined data formats.
-        , module Data.Repa.Convert.Formats
+          -- * Data formats  
+        , Format    (..)
+
+          -- * Type constraints
         , forFormat
         , listFormat
 
@@ -46,11 +54,21 @@ module Data.Repa.Convert
         , Packable  (..)
 
           -- ** Packer monoid
-        , Packer, runPacker
+        , Packer (..)
+        , unsafeRunPacker
 
-          -- ** Packing and unpacking
+          -- ** Unpacker monad
+        , Unpacker (..)
+        , unsafeRunUnpacker
+
+          -- * Interfaces
+          -- ** Default Ascii
         , packToAscii
+
+          -- ** List Interface
         , packToList8,  unpackFromList8
+
+          -- ** String Interface
         , packToString, unpackFromString)
 where
 import Data.Repa.Convert.Format
@@ -84,7 +102,7 @@ packToList8 f x
  | Just lenMax  <- packedSize f x
  = unsafePerformIO
  $ do   buf     <- S.mallocBytes lenMax
-        mResult <- runPacker (pack f x) buf
+        mResult <- unsafeRunPacker (pack f x) buf
         case mResult of
          Nothing      -> return Nothing
          Just buf' 
@@ -101,13 +119,14 @@ unpackFromList8
         :: Packable format
         => format -> [Word8] -> Maybe (Value format)
 
-unpackFromList8 f xs
+unpackFromList8 format xs
  = unsafePerformIO
  $ do   let len = length xs
         buf     <- S.mallocBytes len
         mapM_ (\(o, x) -> S.pokeByteOff buf o x)
                 $ zip [0 .. len - 1] xs
-        unpack buf len f $ \(v, _) -> return (Just v)
+        r <- unsafeRunUnpacker (unpack format) buf len
+        return $ fmap fst r
 
 
 -- | Pack a value to a String.

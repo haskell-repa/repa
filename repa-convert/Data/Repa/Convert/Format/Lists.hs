@@ -16,6 +16,7 @@ import Data.Word
 import Data.Char
 import qualified Foreign.Storable               as S
 import qualified Foreign.Ptr                    as S
+import Prelude hiding (fail)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -100,7 +101,8 @@ instance Format FixAsc where
 
 instance Packable FixAsc where
  
-  pack (FixAsc lenField) xs = Packer $ \buf k
+  pack (FixAsc lenField) xs 
+   =  Packer $ \buf k
    -> do let !lenChars   = length xs
          let !lenPad     = lenField - lenChars
 
@@ -116,16 +118,18 @@ instance Packable FixAsc where
                 k (S.plusPtr buf lenField)
   {-# NOINLINE pack #-}
 
-  unpack buf _ (FixAsc lenField) k
-   = do 
+  unpack (FixAsc lenField)
+   =  Unpacker $ \start _end _fail eat
+   -> do 
         let load_unpackChar o
-                = do    x :: Word8 <- S.peekByteOff buf o
+                = do    x :: Word8 <- S.peekByteOff start o
                         return $ chr $ fromIntegral x
             {-# INLINE load_unpackChar #-}
 
         xs      <- mapM load_unpackChar [0 .. lenField - 1]
         let (pre, _) = break (== '\0') xs
-        k (pre, lenField)
+        eat (S.plusPtr start lenField)
+            pre
   {-# NOINLINE unpack #-}
 
 
@@ -152,19 +156,21 @@ instance Packable VarAsc where
         (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarAsc xs
   {-# NOINLINE pack #-}
 
-  unpack buf len VarAsc k
-   = do 
+  unpack VarAsc 
+   = Unpacker $ \start end _fail eat
+   -> do
         -- We don't locally know what the stopping point should
         -- for the string, so just decode all the way to the end.
         -- If the caller knows the field should be shorter then
         -- it should pass in a shorter length.
         let load_unpackChar o
-                = do    x :: Word8      <- S.peekByteOff buf o
+                = do    x :: Word8  <- S.peekByteOff start o
                         return $ chr $ fromIntegral x
             {-# INLINE load_unpackChar #-}
                         
-        xs      <- mapM load_unpackChar [0 .. len - 1]
-        k (xs, len)
+        let !len = S.minusPtr end start
+        xs       <- mapM load_unpackChar [0 .. len - 1]
+        eat (S.plusPtr start len) xs
   {-# NOINLINE unpack #-}
 
 
@@ -175,7 +181,8 @@ instance Format VarString       where
  fieldCount _                   = 1
  minSize    _                   = 2
  fixedSize  _                   = Nothing
- packedSize VarString xs        = Just $ 2 + length xs     -- TODO: not true with escaped chars.
+ packedSize VarString xs        
+  = Just $ length $ show xs     
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
@@ -184,12 +191,12 @@ instance Format VarString       where
 
 instance Packable VarString where
 
- pack VarString xx                                         -- TODO: escape special chars
-  =  pack Word8be (cw8 '"')
-  <> pack VarAsc  xx
-  <> pack Word8be (cw8 '"')
+ -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
+ pack VarString xx
+  =  pack VarAsc (show xx)
  {-# INLINE pack #-}
 
+ -- TODO: handle escape characters.
  unpack
   = error "repa-convert.Packable[VarString]: finish me"
  {-# INLINE unpack #-}

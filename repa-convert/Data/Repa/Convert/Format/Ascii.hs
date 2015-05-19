@@ -2,12 +2,12 @@
 module Data.Repa.Convert.Format.Ascii
         (FormatAscii (..))
 where
-import Data.Repa.Bits.Date32                    (Date32)
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Row
-import Data.Repa.Product
+import Data.Repa.Scalar.Date32                  (Date32)
+import Data.Repa.Scalar.Product
 
 
 -- | Class of types that can be formatted in some default human readable
@@ -40,7 +40,8 @@ instance ( FormatAscii t1
   = Row      (FormatAscii' t1 :*: FormatAscii' (Plain ts))
 
  formatAscii _            
-  = let (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
+  = let -- The values of these type proxies should never be demanded.
+        (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
         (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
     in  Row '\t' (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
  {-# INLINE formatAscii #-}
@@ -57,11 +58,13 @@ instance (FormatAscii t1, FormatAscii (Plain ts))
  type FormatAscii'   (Plain (t1 :*: ts)) 
   = FormatAscii' t1 :*: FormatAscii' (Plain ts)
 
- formatAscii         _
-  = let (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
+ formatAscii _
+  = let -- The values of these type proxies should never be demanded.
+        (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
         (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
     in  formatAscii  x1_proxy :*: formatAscii (Plain xs_proxy)
-
+ {-# INLINE formatAscii #-}
+ 
  
 instance FormatAscii  Int where
  type FormatAscii' Int    = IntAsc
@@ -85,5 +88,4 @@ instance FormatAscii  Date32 where
  type FormatAscii' Date32 = YYYYsMMsDD
  formatAscii _            = YYYYsMMsDD '-'
  {-# INLINE formatAscii #-}
-
 

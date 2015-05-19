@@ -5,9 +5,15 @@ module Data.Repa.Convert.Format
         ( -- * Packing single fields
           Format   (..)
 
-          -- * Packing records
+          -- * Packable
         , Packable  (..)
-        , Packer
-        , runPacker)
+
+          -- ** Packer
+        , Packer    (..)
+        , unsafeRunPacker
+
+          -- ** Unpacker
+        , Unpacker  (..)
+        , unsafeRunUnpacker)
 where
 import Data.Repa.Convert.Format.Base

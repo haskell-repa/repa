@@ -4,15 +4,21 @@ module Data.Repa.Convert.Format.Sep
 where
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Base
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 import Data.Monoid
 import Data.Word
 import Data.Char
-import qualified Foreign.Storable               as S
-import qualified Foreign.Ptr                    as S
+import qualified Foreign.Storable               as F
+import qualified Foreign.Ptr                    as F
+import Prelude hiding (fail)
 
 
 -- | Separate fields with the given character.
+-- 
+--   * The separating character is un-escapable. 
+--   * The above means that the format @(Sep ',')@ does NOT parse a CSV
+--     file according to the CSV specification: http://tools.ietf.org/html/rfc4180.
+--
 data Sep f
         = Sep  Char f
         deriving Show
@@ -33,7 +39,7 @@ instance Format (Sep ()) where
 
 instance Packable (Sep ()) where
  pack   _fmt _val        = mempty
- unpack _buf _len _fmt k = k ((), 0)
+ unpack _fmt             = return ()
  {-# INLINE pack   #-}
  {-# INLINE unpack #-}
 
@@ -85,51 +91,55 @@ instance ( Packable f1, Packable (Sep fs)
  {-# INLINE pack #-}
 
 
- unpack !buf !len (Sep c (f1 :*: fs)) k
-  | n <- fieldCount (Sep c fs) 
-  , n >= 1
-  = findSep (w8 $ ord c) buf len $ \pos
-  -> let
-        -- The following size code should be evaluated statically via
-        -- inlining and GHC simplifications.
-        !s1 = minSize f1
-        !ss = minSize (Sep c fs)
+ unpack (Sep c (f1 :*: fs)) 
+  | fieldCount (Sep c fs) >= 1
+  = Unpacker $ \start end fail eat
+  -> let !len = F.minusPtr end start in  
+     findSep (w8 $ ord c) start len fail $ \pos
+      -> let -- The following size code should be evaluated statically via
+             -- inlining and GHC simplifications.
+             !s1 = minSize f1
+             !ss = minSize (Sep c fs)
 
-     in if   (s1 <= pos)
-          && (s1 + 1 + ss <= len)
-          then unpack  buf                       pos            f1       $ \(x1, o1)
-            -> unpack (S.plusPtr buf (o1 + 1)) (len - o1 - 1) (Sep c fs) $ \(xs, os)
-            -> k (x1 :*: xs, o1 + 1 + os)
-          else return Nothing
+         in if  (s1 <= pos) && (s1 + 1 + ss <= len)
+             then
+                  (fromUnpacker $ unpack f1)             start     end fail $ \start_x1 x1
+               -> let start_x1' = F.plusPtr start_x1 1 
+                  in  (fromUnpacker $ unpack (Sep c fs)) start_x1' end fail $ \start_xs xs
+                    -> eat start_xs (x1 :*: xs)
+             else fail
 
   | otherwise
-  =  unpack buf                len        f1         $ \(x1, o1)
-  -> unpack (S.plusPtr buf o1) (len - o1) (Sep c fs) $ \(xs, os)
-  -> k (x1 :*: xs, o1 + os)
+  =  Unpacker  $ \start end fail eat
+  -> (fromUnpacker $ unpack f1)         start   end fail $ \start_x  x
+  -> (fromUnpacker $ unpack (Sep c fs)) start_x end fail $ \start_xs xs
+  -> eat start_xs (x :*: xs)
  {-# INLINE unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Find the first occurrence of the given separating character in the
 --   buffer, or `Nothing` if we don't find it before the buffer ends.
+--
 findSep :: Word8                  -- ^ Separating character.
-        -> S.Ptr Word8            -- ^ Buffer.
+        -> F.Ptr Word8            -- ^ Buffer.
         -> Int                    -- ^ Buffer length
-        -> (Int -> IO (Maybe a))  -- ^ Continuation taking separator position.      
-        -> IO (Maybe a)
+        -> IO b                   -- ^ Signal failure
+        -> (Int -> IO b)          -- ^ Continuation taking separator position.      
+        -> IO b
 
-findSep !sep !buf !len k 
+findSep !sep !buf !len fail eat
  = loop_findSep 0
  where  
         loop_findSep !ix
          | ix >= len    
-         = return Nothing
+         = fail
 
          | otherwise
-         = do   x :: Word8  <- S.peekByteOff buf ix
-                if x == sep
-                 then k ix
-                 else loop_findSep (ix + 1)
+         = do x :: Word8  <- F.peekByteOff buf ix
+              if x == sep
+               then eat ix
+               else loop_findSep (ix + 1)
         {-# INLINE loop_findSep #-}
 {-# INLINE findSep #-}
 

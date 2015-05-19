@@ -1,5 +1,5 @@
 Name:           repa-convert
-Version:        4.1.0.1
+Version:        4.2.0.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
-Description:    Packing and unpacking binary data.
-Synopsis:       Packing and unpacking binary data.
+Description:    Packing and unpacking flat tables.
+Synopsis:       Packing and unpacking flat tables.
 
 source-repository head
   type:     git
@@ -23,20 +23,13 @@ Library
         primitive         == 0.6.*,
         vector            == 0.10.*,
         bytestring        == 0.10.*,
-        double-conversion == 2.0.*
+        double-conversion == 2.0.*,
+        repa-scalar       == 4.2.0.*
 
   exposed-modules:
-        Data.Repa.Bits.Date32
-
-        Data.Repa.Convert.Numeric
         Data.Repa.Convert.Format
         Data.Repa.Convert.Formats
         Data.Repa.Convert
-
-        Data.Repa.Singleton.Nat
-        Data.Repa.Singleton.Bool
-
-        Data.Repa.Product
 
   other-modules:
         Data.Repa.Convert.Format.Ascii
@@ -60,6 +53,7 @@ Library
         GADTs
         MagicHash
         DataKinds
+        RankNTypes
         MultiWayIf
         BangPatterns
         TypeFamilies

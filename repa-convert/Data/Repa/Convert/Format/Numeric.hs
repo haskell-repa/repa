@@ -6,10 +6,12 @@ module Data.Repa.Convert.Format.Numeric
 where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Lists
-import Data.Repa.Convert.Numeric
+import qualified Data.Repa.Scalar.Int           as S
+import qualified Data.Repa.Scalar.Double        as S
 import qualified Foreign.ForeignPtr             as F
 import qualified Foreign.Marshal.Utils          as F
-import qualified Foreign.Ptr                    as S
+import qualified Foreign.Ptr                    as F
+import Prelude hiding (fail)
 
 
 ------------------------------------------------------------------------------------------- IntAsc
@@ -31,20 +33,21 @@ instance Format IntAsc where
 
 instance Packable IntAsc where
 
- -- TODO: This is very slow. Avoid going via lists.
+ -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  pack IntAsc v
-   = pack VarAsc (show v)
+  = pack VarAsc (show v)
  {-# INLINE pack #-}
 
- unpack buf len IntAsc k 
-  | len > 0
-  = do  r       <- loadInt buf len
-        case r of
-          Just (n, o)     -> k (n, o)
-          _               -> return Nothing
-
-  | otherwise
-  = return Nothing
+ unpack IntAsc 
+  =  Unpacker $ \start end fail eat
+  -> let !len = F.minusPtr end start in 
+     if len > 0
+        then do
+          r       <- S.loadInt start len
+          case r of
+           Just (n, o)  -> eat (F.plusPtr start o) n
+           Nothing      -> fail
+        else fail
  {-# INLINE unpack #-}
 
 
@@ -67,22 +70,23 @@ instance Format IntAsc0 where
 
 instance Packable IntAsc0 where
 
- -- TODO: This is very slow. Avoid going via lists.
+ -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  pack   (IntAsc0 n) v 
   = let s       = show v
         s'      = replicate (n - length s) '0' ++ s
     in  pack VarAsc s'
  {-# INLINE pack #-}
 
- unpack buf len (IntAsc0 _) k 
-  | len > 0
-  = do  r       <- loadInt buf len
+ unpack (IntAsc0 _)
+  =  Unpacker $ \start end fail eat
+  -> let !len = F.minusPtr end start in
+     if len > 0
+      then do
+        r       <- S.loadInt start len
         case r of
-          Just (n, o)     -> k (n, o)
-          _               -> return Nothing
-
-  | otherwise
-  = return Nothing
+         Just (n, o)    -> eat (F.plusPtr start o) n
+         Nothing        -> fail
+      else fail
  {-# INLINE unpack #-}
 
 
@@ -105,20 +109,22 @@ instance Format DoubleAsc where
 
 instance Packable DoubleAsc where
 
- pack   DoubleAsc v = Packer $ \buf k
-  -> do (fptr, len)  <- storeDoubleShortest v
+ pack   DoubleAsc v 
+  =  Packer $ \buf k
+  -> do (fptr, len)  <- S.storeDoubleShortest v
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
-        k (S.plusPtr buf len)
+        k (F.plusPtr buf len)
  {-# INLINE pack   #-}
 
- unpack buf len DoubleAsc k
-  | len > 0
-  = do  (v, o)       <- loadDouble buf len
-        k (v, o)
-
-  | otherwise
-  = return Nothing
+ unpack DoubleAsc 
+  =  Unpacker $ \start end fail eat
+  -> let !len = F.minusPtr end start in
+     if len > 0
+      then do
+        (v, o)  <- S.loadDouble start len
+        eat (F.plusPtr start o) v
+      else fail
  {-# INLINE unpack #-}
 
 
