@@ -1,8 +1,11 @@
 
 -- | Pre-defined data formats.
 module Data.Repa.Convert.Formats
-        ( -- * Field Products
-          (:*:)(..)
+        ( -- * Default Ascii Format
+          FormatAscii(..)
+
+          -- * Field Products
+        , (:*:)(..)
 
           -- * Field Separators
         , App           (..)
@@ -46,6 +49,7 @@ module Data.Repa.Convert.Formats
         , Int64be       (..)
         , Float64be     (..))
 where
+import Data.Repa.Convert.Format.Ascii
 import Data.Repa.Convert.Format.App
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Date32

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-orphans    #-}
+{-# OPTIONS_GHC -fno-warn-orphans -fno-warn-incomplete-patterns #-}
 {-# LANGUAGE    UndecidableInstances #-}
 module Data.Repa.Array.Material.Auto.InstProduct
 where
@@ -30,7 +30,7 @@ import Control.Monad
 ----------------------------------------------------------------------------------------------- :*:
 instance (Bulk A a, Bulk A b) => Bulk A (a :*: b) where
  data Array A (a :*: b)            = AArray_Prod !(Array A a) !(Array A b)
- layout (AArray_Prod arrA _ )      = Auto (A.length arrA)
+ layout (AArray_Prod arrA arrB)    = Auto (min (A.length arrA) (A.length arrB))
  index  (AArray_Prod arrA arrB) ix = A.index arrA ix :*: A.index arrB ix
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
@@ -183,4 +183,53 @@ instance ( Mask  ms (Array A ts))
  type Mask'     (Drop :*: ms) (Array A (t1 :*: ts)) = Mask' ms (Array A ts)
  mask           (Drop :*: ms) (AArray_Prod _ xs)    = mask ms xs
  {-# INLINE mask #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Form the product of two arrays, in constant time.
+prod    :: Array A a -> Array A b -> Array A (a :*: b)
+prod a1 a2 = AArray_Prod a1 a2
+{-# INLINE prod #-}
+
+-- | Unpack a product of two arrays, in constant time.
+unprod  :: Array A (a :*: b) -> (Array A a, Array A b)
+unprod (AArray_Prod a1 a2) = (a1, a2)
+{-# INLINE unprod #-}
+
+
+---------------------------------------------------------------------------------------------------
+pattern Prod1 n a1     
+        = AArray_Prod a1 (AArray_Unit n)
+
+pattern Prod2 n a1 a2
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Unit n))
+
+pattern Prod3 n a1 a2 a3
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Unit n)))
+
+pattern Prod4 n a1 a2 a3 a4
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
+         (AArray_Unit n))))
+
+pattern Prod5 n a1 a2 a3 a4 a5 
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
+         (AArray_Prod a5 ((AArray_Unit n))))))
+
+pattern Prod6 n a1 a2 a3 a4 a5 a6
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
+         (AArray_Prod a5 (AArray_Prod a6 (AArray_Unit n))))))
+
+pattern Prod7 n a1 a2 a3 a4 a5 a6 a7
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
+         (AArray_Prod a5 (AArray_Prod a6 (AArray_Prod a7 (AArray_Unit n)))))))
+
+pattern Prod8 n a1 a2 a3 a4 a5 a6 a7 a8
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
+         (AArray_Prod a5 (AArray_Prod a6 (AArray_Prod a7 (AArray_Prod a8
+         (AArray_Unit n))))))))
+
+pattern Prod9 n a1 a2 a3 a4 a5 a6 a7 a8 a9
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
+         (AArray_Prod a5 (AArray_Prod a6 (AArray_Prod a7 (AArray_Prod a8
+         (AArray_Prod a9 (AArray_Unit n)))))))))
 

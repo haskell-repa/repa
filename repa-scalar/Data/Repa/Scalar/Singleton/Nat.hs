@@ -4,7 +4,7 @@
 -- 
 --   Used for indexing into hetrogenous list types.
 --
-module Data.Repa.Singleton.Nat
+module Data.Repa.Scalar.Singleton.Nat
         ( N   (..)
         , Nat (..)
         , Add (..)
@@ -22,7 +22,7 @@ data N  = Z | S N
 deriving instance Show N
 
 
--- | Peano natural numbers with a singleton.
+-- | Peano natural number singletons.
 data Nat (n :: N) where
         Zero    :: Nat Z
         Succ    :: Nat n -> Nat (S n)
@@ -33,6 +33,7 @@ deriving instance Show (Nat n)
 ---------------------------------------------------------------------------------------------------
 class Add x y where
  type AddR x y :: N
+ -- | Addition of singleton typed natural numbers.
  add  :: Nat x -> Nat y -> Nat (AddR x y)
 
 instance Add Z x where
@@ -49,6 +50,7 @@ instance Add x (S y) => Add (S x) y where
 ---------------------------------------------------------------------------------------------------
 class Mul x y where
  type MulR x y :: N
+ -- | Multiplication of singleton typed natural numbers.
  mul  :: Nat x -> Nat y -> Nat (MulR x y)
 
 instance Mul Z x where

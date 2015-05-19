@@ -35,7 +35,7 @@ module Data.Repa.Array.Auto.Operator
 
         -- ** Folding
         , foldl
-        , sum,  prod
+        , sum,  product
         , mean, std
 
         -- *** Special Folds
@@ -107,7 +107,8 @@ import qualified Data.Repa.Fusion.Unpack                as F
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U
 import Prelude 
-       hiding   ( map, length, reverse, filter, concat, unlines, foldl, sum, zip, unzip
+       hiding   ( map,  length, reverse, filter, concat, unlines, foldl
+                , sum,  product, zip, unzip
                 , head, tail, init)
 
 
@@ -273,9 +274,9 @@ sum   = G.sum
 
 
 -- | Yield the product of the elements of an array.
-prod   :: (Elem a, Num a) => Array a -> a
-prod   = G.prod
-{-# INLINE prod #-}
+product   :: (Elem a, Num a) => Array a -> a
+product = G.product
+{-# INLINE product #-}
 
 
 -- | Yield the mean value of the elements of an array.

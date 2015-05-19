@@ -69,7 +69,7 @@ module Data.Repa.Array.Generic
 
           -- ** Folding
           -- *** Complete fold
-        , foldl, sum, prod, mean, std
+        , foldl, sum, product, mean, std
         , correlate
 
           -- *** Segmented fold
@@ -97,7 +97,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
 import Prelude  
        hiding   ( reverse, length, map, zipWith, concat, unlines
-                , foldl, sum
+                , foldl, sum, product
                 , filter)
 #include "repa-array.h"
 

@@ -1,20 +1,21 @@
 
-module Data.Repa.Bits.Date32
+module Data.Repa.Scalar.Date32
         ( Date32
 
+        -- * Projections
+        , year, month, day
+
+        -- * Packing and Unpacking
         , pack
-
         , unpack
-        , yearOfDate32
-        , monthOfDate32
-        , dayOfDate32
 
+        -- * Operators
         , next
 
+        -- * Loading
         , loadYYYYsMMsDD
         , loadDDsMMsYYYY)
 where
-import Data.Repa.Convert.Numeric
 import Data.Word
 import Data.Bits
 import GHC.Exts
@@ -22,9 +23,10 @@ import GHC.Word
 import Foreign.Storable
 import Foreign.Ptr
 import Control.Monad
+import Data.Repa.Scalar.Int
 import qualified Foreign.Ptr            as F
 import qualified Foreign.Storable       as F
-import Prelude                                          as P
+import Prelude                          as P
 
 
 -- | A date packed into a 32-bit word.
@@ -66,7 +68,7 @@ instance Storable Date32 where
 --   If any components of the date are out-of-range then they will be bit-wise
 --   truncated so they fit in their destination fields.
 --
-pack   :: (Word, Word, Word) -> Date32
+pack   :: (Int, Int, Int) -> Date32
 pack (yy, mm, dd) 
         = Date32
         $   ((fromIntegral yy .&. 0x0ffff) `shiftL` 16) 
@@ -81,7 +83,7 @@ pack (yy, mm, dd)
 --   and does not guarantee that the returned fields are within a valid 
 --   range for the given calendar date.
 --
-unpack  :: Date32 -> (Word, Word, Word)
+unpack  :: Date32 -> (Int, Int, Int)
 unpack (Date32 date)
         = ( fromIntegral $ (date `shiftR` 16) .&. 0x0ffff
           , fromIntegral $ (date `shiftR` 8)  .&. 0x0ff
@@ -90,22 +92,22 @@ unpack (Date32 date)
 
 
 -- | Take the year number of a `Date32`.
-yearOfDate32 :: Date32 -> Word
-yearOfDate32 date
+year :: Date32 -> Int
+year date
  = case unpack date of
         (yy, _, _)      -> yy
 
 
 -- | Take the month number of a `Date32`.
-monthOfDate32 :: Date32 -> Word
-monthOfDate32 date
+month :: Date32 -> Int
+month date
  = case unpack date of
         (_, mm, _)      -> mm
 
 
 -- | Take the day number of a `Date32`.
-dayOfDate32 :: Date32 -> Word
-dayOfDate32 date
+day :: Date32 -> Int
+day date
  = case unpack date of
         (_, _, dd)      -> dd
 
@@ -161,8 +163,8 @@ loadYYYYsMMsDD
         -> IO (Maybe (Date32, Int))     -- ^ Result.
 
 loadYYYYsMMsDD !sep !buf (I# len_)
- = year
- where  year 
+ = loadYear
+ where  loadYear 
          | (# 1#, yy, ix' #)     <- loadInt# buf len_
          = sep1 ix' yy
          | otherwise    = return Nothing
@@ -171,12 +173,12 @@ loadYYYYsMMsDD !sep !buf (I# len_)
          |  1# <- ix <# len_    
          =  F.peekByteOff buf (I# ix) >>= \(r :: Word8)
          -> if r == sep
-                then month (ix +# 1#) yy 
+                then loadMonth (ix +# 1#) yy 
                 else return Nothing
 
          | otherwise    = return Nothing
 
-        month ix yy
+        loadMonth ix yy
          |  1# <- ix <# len_    
          , (# 1#, mm, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
          = sep2 (ix +# o) yy mm
@@ -186,12 +188,12 @@ loadYYYYsMMsDD !sep !buf (I# len_)
          |  1#  <- ix <# len_
          =  F.peekByteOff buf (I# ix) >>= \(r :: Word8)
          -> if r == sep
-                then day (ix +# 1#) yy mm 
+                then loadDay (ix +# 1#) yy mm 
                 else return Nothing
 
          | otherwise    = return Nothing
 
-        day ix yy mm
+        loadDay ix yy mm
          | 1# <- ix <# len_
          , (# 1#, dd, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
          = return 
@@ -213,8 +215,8 @@ loadDDsMMsYYYY
         -> IO (Maybe (Date32, Int))     -- ^ Result.
 
 loadDDsMMsYYYY !sep !buf (I# len_)
- = day
- where  day 
+ = loadDay
+ where  loadDay 
          | (# 1#, dd, ix' #)     <- loadInt# buf len_
          = sep1 ix' dd
          | otherwise    = return Nothing
@@ -223,12 +225,12 @@ loadDDsMMsYYYY !sep !buf (I# len_)
          | 1# <- ix <# len_    
          =  F.peekByteOff buf (I# ix) >>= \(r :: Word8)
          -> if r == sep
-                then month (ix +# 1#) dd
+                then loadMonth (ix +# 1#) dd
                 else return Nothing
 
          | otherwise    = return Nothing
 
-        month ix dd
+        loadMonth ix dd
          | 1# <- ix <# len_    
          , (# 1#, mm, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
          = sep2 (ix +# o) dd mm
@@ -238,12 +240,12 @@ loadDDsMMsYYYY !sep !buf (I# len_)
          |  1#  <- ix <# len_
          =  F.peekByteOff buf (I# ix) >>= \(r :: Word8)
          -> if r == sep
-                then year (ix +# 1#) dd mm
+                then loadYear (ix +# 1#) dd mm
                 else return Nothing
 
          | otherwise    = return Nothing
 
-        year ix dd mm 
+        loadYear ix dd mm 
          | 1# <- ix <# len_
          , (# 1#, yy, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
          = return 

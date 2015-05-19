@@ -4,7 +4,7 @@ module Data.Repa.Array.Internals.Operator.Reduce
         ( foldl
 
           -- | Specialised reductions.
-        , prod, sum
+        , product, sum
         , mean, std
         , correlate)
 where
@@ -15,7 +15,7 @@ import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Eval.Stream                            as A
 import qualified Data.Vector.Fusion.Stream              as S
 import Prelude 
-        as P hiding (foldl, sum)
+        as P hiding (foldl, sum, product)
 #include "repa-array.h"
 
 
@@ -36,9 +36,9 @@ sum arr = foldl (+) 0 arr
 
 
 -- | Yield the product of the elements of an array.
-prod   :: (BulkI l a, Num a) => Array l a -> a
-prod arr = foldl (*) 1 arr
-{-# INLINE prod #-}
+product   :: (BulkI l a, Num a) => Array l a -> a
+product arr = foldl (*) 1 arr
+{-# INLINE product #-}
 
 
 -- | Yield the mean value of the elements of an array.

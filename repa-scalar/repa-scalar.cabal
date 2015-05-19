@@ -1,4 +1,4 @@
-Name:           repa-convert
+Name:           repa-scalar
 Version:        4.1.0.1
 License:        BSD3
 License-file:   LICENSE
@@ -10,8 +10,8 @@ Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
 Bug-reports:    repa@ouroborus.net
-Description:    Packing and unpacking binary data.
-Synopsis:       Packing and unpacking binary data.
+Description:    Scalar data types and conversions.
+Synopsis:       Scalar data types and conversions.
 
 source-repository head
   type:     git
@@ -26,51 +26,30 @@ Library
         double-conversion == 2.0.*
 
   exposed-modules:
-        Data.Repa.Bits.Date32
-
-        Data.Repa.Convert.Numeric
-        Data.Repa.Convert.Format
-        Data.Repa.Convert.Formats
-        Data.Repa.Convert
-
-        Data.Repa.Singleton.Nat
-        Data.Repa.Singleton.Bool
-
-        Data.Repa.Product
-
-  other-modules:
-        Data.Repa.Convert.Format.Ascii
-        Data.Repa.Convert.Format.App
-        Data.Repa.Convert.Format.Base
-        Data.Repa.Convert.Format.Binary
-        Data.Repa.Convert.Format.Lists
-        Data.Repa.Convert.Format.Fields
-        Data.Repa.Convert.Format.Numeric
-        Data.Repa.Convert.Format.Date32
-        Data.Repa.Convert.Format.Sep
-        Data.Repa.Convert.Format.Row
-
+        Data.Repa.Scalar.Date32
+        Data.Repa.Scalar.Double
+        Data.Repa.Scalar.Int
+        Data.Repa.Scalar.Singleton.Nat
+        Data.Repa.Scalar.Singleton.Bool
+        Data.Repa.Scalar.Product
 
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -O2
 
+
   extensions:
-        CPP
         GADTs
-        MagicHash
         DataKinds
-        MultiWayIf
+        MagicHash
         BangPatterns
         TypeFamilies
-        PatternGuards
-        TypeOperators
         UnboxedTuples
-        FlexibleContexts
+        TypeOperators
+        KindSignatures
+        PatternGuards
         FlexibleInstances
         StandaloneDeriving
         ScopedTypeVariables
         MultiParamTypeClasses
         ForeignFunctionInterface
-        ExistentialQuantification
-        NoMonomorphismRestriction

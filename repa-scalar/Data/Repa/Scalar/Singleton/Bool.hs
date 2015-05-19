@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-module Data.Repa.Singleton.Bool
+module Data.Repa.Scalar.Singleton.Bool
         ( B             (..)
         , Boolean       (..))
 where

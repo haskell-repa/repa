@@ -107,6 +107,26 @@ module Data.Repa.Array
         , segmentOn
         , dice
         , diceSep
+
+        -- ** Products
+
+        -- *** Generic
+        , prod
+        , unprod
+
+        -- *** Pattern synonyms
+        -- | These patterns patterns work on arrays of arbitrary element type.
+        --   
+        --   (Haddock 2.16.0 has a bug where the type signatures come out monomorphic)
+        --
+        , pattern Prod2
+        , pattern Prod3
+        , pattern Prod4
+        , pattern Prod5
+        , pattern Prod6
+        , pattern Prod7
+        , pattern Prod8
+        , pattern Prod9
         )
 where
 import Data.Repa.Array.Auto

@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-module Data.Repa.Product
+module Data.Repa.Scalar.Product
         ( -- * Product type
-          (:*:)   (..)
-        , IsProd  (..)
+          (:*:)         (..)
+        , IsProdList    (..)
 
           -- * Selecting
-        , Select  (..)
+        , Select (..)
 
           -- * Discarding
         , Discard (..), Keep(..), Drop(..)
@@ -13,7 +13,7 @@ module Data.Repa.Product
           -- * Masking
         , Mask    (..))
 where
-import Data.Repa.Singleton.Nat
+import Data.Repa.Scalar.Singleton.Nat
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Generic            as G
 import qualified Data.Vector.Generic.Mutable    as M
@@ -28,37 +28,37 @@ data a :*: b
 infixr :*:
 
 
-class IsProd p where
+class IsProdList p where
  -- | Check if a sequence of products forms a valid list, 
  --   using () for the nil value.
  --
  -- @
- -- isProd (1 :*: 4 :*: 5)  ... no instance
+ -- isProdList (1 :*: 4 :*: 5)  ... no instance
  --
- -- isProd (1 :*: 4 :*: ()) = True
+ -- isProdList (1 :*: 4 :*: ()) = True
  -- @
  --
- isProd :: p -> Bool
+ isProdList :: p -> Bool
 
-instance IsProd () where
- isProd _ = True
- {-# INLINE isProd #-}
+instance IsProdList () where
+ isProdList _ = True
+ {-# INLINE isProdList #-}
 
 
-instance IsProd fs => IsProd (f :*: fs) where
- isProd (_ :*: xs) = isProd xs
- {-# INLINE isProd #-}
+instance IsProdList fs => IsProdList (f :*: fs) where
+ isProdList (_ :*: xs) = isProdList xs
+ {-# INLINE isProdList #-}
 
 
 ---------------------------------------------------------------------------------------------------
-class    IsProd t
+class    IsProdList t
       => Select  (n :: N) t where
  type    Select'    n        t
  -- | Return just the given field in this tuple.
  select ::          Nat n -> t -> Select' n t
 
 
-instance IsProd ts
+instance IsProdList ts
       => Select  Z    (t1 :*: ts) where
  type Select'    Z    (t1 :*: ts) = t1
  select       Zero    (t1 :*: _)  = t1
@@ -73,14 +73,14 @@ instance Select n ts
 
 
 ---------------------------------------------------------------------------------------------------
-class    IsProd t 
+class    IsProdList t 
       => Discard (n :: N) t where
  type    Discard'   n        t
  -- | Discard the given field in this tuple.
  discard ::         Nat n -> t -> Discard' n t
 
 
-instance IsProd ts 
+instance IsProdList ts 
       => Discard Z     (t1 :*: ts) where
  type Discard'   Z     (t1 :*: ts) = ts
  discard      Zero     (_  :*: xs) = xs
@@ -103,7 +103,7 @@ data Keep = Keep
 
 
 -- | Class of data types that can have parts masked out.
-class (IsProd m, IsProd t) => Mask  m t where
+class (IsProdList m, IsProdList t) => Mask  m t where
  type Mask' m t
  -- | Mask out some component of a type.
  --

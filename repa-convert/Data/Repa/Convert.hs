@@ -55,7 +55,6 @@ module Data.Repa.Convert
 where
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
-import Data.Repa.Convert.Default.Ascii
 import Data.Char
 import Data.Word
 import Control.Monad

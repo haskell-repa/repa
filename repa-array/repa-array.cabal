@@ -133,6 +133,7 @@ Library
         TypeOperators
         EmptyDataDecls
         ConstraintKinds
+        PatternSynonyms
         FlexibleContexts
         DefaultSignatures
         FlexibleInstances

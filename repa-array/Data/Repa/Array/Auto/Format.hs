@@ -134,8 +134,8 @@ unpackFormat !format !arrBytes
 --   using the given fixed length format.
 unpacksFixedFormat
         :: (Packable format, A.Target A.A (Value format))
-        => format                         -- ^ Fixed length format for each element.
-        -> Array Word8                    -- ^ Packed binary data.
+        => Array Word8                    -- ^ Packed binary data.
+        -> format                         -- ^ Fixed length format for each element.
         -> Maybe (Array (Value format))   -- ^ Unpacked elements.
 
 unpacksFixedFormat !format !arrBytes
@@ -178,8 +178,8 @@ unpacksFixedFormat !format !arrBytes
 unpacksLinesFormat
         :: forall format
         .  (Packable format, A.Target A.A (Value format))
-        => format                       -- ^ Format for each element.
-        -> Array Word8                  -- ^ Packed binary data.
+        => Array Word8                  -- ^ Packed binary data.
+        -> format                       -- ^ Format for each element.
         -> Array (Value format)         -- ^ Unpacked elements.
 
 unpacksLinesFormat format arr8

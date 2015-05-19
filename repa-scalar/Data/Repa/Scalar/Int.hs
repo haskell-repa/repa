@@ -1,24 +1,21 @@
 
-module Data.Repa.Convert.Numeric
-        ( -- * Int conversion
-          
-          -- * Double conversion
-        , loadDouble
-        , storeDoubleShortest
-        , storeDoubleFixed)
+-- | Loading and storing integers directly from/to memory buffers.
+module Data.Repa.Scalar.Int
+        ( -- * Loading
+          loadInt
+        , loadInt#
+        , loadIntWith#
+
+          -- * Storing
+        , storeInt)
 where
 import Data.Word
 import Data.Char
 import GHC.Exts
-
 import qualified Data.ByteString.Internal               as BS
 import qualified Data.Double.Conversion.ByteString      as DC
-
-import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
-import qualified Foreign.Marshal.Alloc                  as F
-import qualified Foreign.Marshal.Utils                  as F
 
 
 -- Int --------------------------------------------------------------------------------------------
@@ -26,16 +23,16 @@ import qualified Foreign.Marshal.Utils                  as F
 --   returning the value and number of characters read.
 loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int                          -- ^ Length of buffer.
-        -> IO (Maybe (Int, Int))        -- ^ Int read, and number of digits read from buffer.
+        -> IO (Maybe (Int, Int))        -- ^ Int read, and length of digits.
  
-loadInt ptr (I# len)
+loadInt !ptr (I# len)
  = case loadInt# ptr len of
         (# 0#, _, _  #) -> return $ Nothing
         (# _,  n, ix #) -> return $ Just (I# n, I# ix)
 {-# INLINE loadInt #-}
 
 
--- | Specialise `loadIntWith#` to foreign buffers.
+-- | Like `loadInt`, but via unboxed types.
 loadInt#
         :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int#                         -- ^ Length of buffer.
@@ -55,7 +52,8 @@ loadInt# buf len
 {-# NOINLINE loadInt# #-}
 
 
--- | Load an ASCII `Int` from an abstract buffer.
+-- | Like `loadInt#`, but use the given function to get characters
+--   from the input buffer.
 loadIntWith# 
         :: (Int# -> Int#)               -- ^ Function to get a byte from the source.
         -> Int#                         -- ^ Length of buffer
@@ -67,6 +65,7 @@ loadIntWith# !get len
         start !ix
          | 1# <- ix >=# len = (# 0#, 0#, 0# #)
          | otherwise        = sign ix
+        {-# INLINE start #-}
 
         -- Check for explicit sign character,
         -- and encode what it was as an integer.
@@ -76,6 +75,7 @@ loadIntWith# !get len
                 '-'     -> loop 1# (ix +# 1#) 0#
                 '+'     -> loop 2# (ix +# 1#) 0#
                 _       -> loop 0#  ix        0#
+        {-# INLINE sign #-}
 
         loop !neg !ix !n 
          -- We've hit the end of the array.
@@ -113,6 +113,7 @@ loadIntWith# !get len
          -- Number was not negated.
          | otherwise
          = (# 1#, n, ix #)
+        {-# NOINLINE end #-}
 {-# INLINE loadIntWith# #-}
 
 
@@ -123,58 +124,4 @@ storeInt i
         BS.PS p _ _     -> return p
 {-# INLINE storeInt #-}
 
-
--- Double -----------------------------------------------------------------------------------------
--- | Load an ASCII `Double` from a foreign buffer
---   returning the value and number of characters read.
-loadDouble :: Ptr Word8 -> Int -> IO (Double, Int)
-loadDouble pIn len
- = F.allocaBytes (len + 1) $ \pBuf ->
-   F.alloca                $ \pRes ->
-    do
-        -- Copy the data to our new buffer.
-        F.copyBytes pBuf pIn (fromIntegral len)
-
-        -- Poke a 0 on the end to ensure it's null terminated.
-        F.pokeByteOff pBuf len (0 :: Word8)
-
-        -- Call the C strtod function
-        let !d  = strtod pBuf pRes
-
-        -- Read back the end pointer.
-        res     <- F.peek pRes
-
-        return (d, res `F.minusPtr` pBuf)
-{-# INLINE loadDouble #-}
-
-
--- TODO: strtod will skip whitespace before the actual double, 
--- but we probably want to avoid this to be consistent.
-foreign import ccall unsafe
- strtod :: Ptr Word8 -> Ptr (Ptr Word8) -> Double
-
-
-
--- | Store an ASCII `Double`, yielding a freshly allocated buffer
---   and its length.
---
---   * The value is printed as either (sign)digits.digits,
---     or in exponential format, depending on which is shorted.
---
---   * The result is buffer not null terminated.
---
-storeDoubleShortest :: Double -> IO (F.ForeignPtr Word8, Int)
-storeDoubleShortest d
- = case DC.toShortest d of
-        BS.PS p _ n  -> return (p, n)
-{-# INLINE storeDoubleShortest #-}
-
-
--- | Like `showDoubleShortest`, but use a fixed number of digits after
---   the decimal point.
-storeDoubleFixed :: Int -> Double -> IO (F.ForeignPtr Word8, Int)
-storeDoubleFixed !prec !d
- = case DC.toFixed prec d of
-        BS.PS p _ n  -> return (p, n)
-{-# INLINE storeDoubleFixed #-}
 

@@ -1,5 +1,5 @@
 
-module Data.Repa.Convert.Default.Ascii
+module Data.Repa.Convert.Format.Ascii
         (FormatAscii (..))
 where
 import Data.Repa.Bits.Date32                    (Date32)
