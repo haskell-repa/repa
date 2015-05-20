@@ -39,7 +39,7 @@ instance Packable IntAsc where
  {-# INLINE pack #-}
 
  unpack IntAsc 
-  =  Unpacker $ \start end fail eat
+  =  Unpacker $ \start end _stop fail eat
   -> let !len = F.minusPtr end start in 
      if len > 0
         then do
@@ -78,7 +78,7 @@ instance Packable IntAsc0 where
  {-# INLINE pack #-}
 
  unpack (IntAsc0 _)
-  =  Unpacker $ \start end fail eat
+  =  Unpacker $ \start end _stop fail eat
   -> let !len = F.minusPtr end start in
      if len > 0
       then do
@@ -118,7 +118,7 @@ instance Packable DoubleAsc where
  {-# INLINE pack   #-}
 
  unpack DoubleAsc 
-  =  Unpacker $ \start end fail eat
+  =  Unpacker $ \start end _stop fail eat
   -> let !len = F.minusPtr end start in
      if len > 0
       then do

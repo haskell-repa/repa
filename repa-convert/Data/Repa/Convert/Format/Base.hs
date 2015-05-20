@@ -98,18 +98,20 @@ unsafeRunPacker (Packer make) buf
 ---------------------------------------------------------------------------------------------------
 data Unpacker a
   =  Unpacker 
-  {  -- | Takes pointers to the first byte in the buffer, and the
-     --   the first byte after the buffer. Also takes a fail action
-     --   and continuation. 
+  {  -- | Takes pointers to the first byte in the buffer, the first byte
+     --   after the buffer, and a special field terminating character to
+     --   terminate variable length encodings where the length is not
+     --   determined from the representation of the encoding itself.
      --
-     --   A value is read from the buffer, and the continuation is called
-     --   with a pointer to the byte after the last one that was read,
-     --   along with the unpacked value.
+     --   If a value can be successfully unpacked from the buffer, then
+     --   it is passed to the continuation, along with a pointer to the
+     --   byte after the last one that was read.
      --
      fromUnpacker
         :: forall b
         .  S.Ptr Word8                 -- Start of buffer.
         -> S.Ptr Word8                 -- Pointer to first byte after end of buffer.
+        -> Maybe Word8                 -- Stop decoding if we see this field terminator.
         -> IO b                        -- Signal failure.
         -> (S.Ptr Word8 -> a -> IO b)  -- Eat an unpacked value.
         -> IO b
@@ -118,22 +120,22 @@ data Unpacker a
 
 instance Functor Unpacker where
  fmap f (Unpacker fx)
-  =  Unpacker $ \start end fail eat
-  -> fx start end fail $ \start_x x 
+  =  Unpacker $ \start end stop fail eat
+  -> fx start end stop fail $ \start_x x 
   -> eat start_x (f x)
  {-# INLINE fmap #-}
 
 
 instance Applicative Unpacker where
  pure  x
-  =  Unpacker $ \start _end _fail eat
+  =  Unpacker $ \start _end _fail _stop eat
   -> eat start x
  {-# INLINE pure #-}
 
  (<*>) (Unpacker ff) (Unpacker fx)
-  =  Unpacker $ \start end fail eat
-  -> ff start   end fail $ \start_f f
-  -> fx start_f end fail $ \start_x x
+  =  Unpacker $ \start end stop fail eat
+  -> ff start   end stop fail $ \start_f f
+  -> fx start_f end stop fail $ \start_x x
   -> eat start_x (f x)
  {-# INLINE (<*>) #-}
 
@@ -143,11 +145,11 @@ instance Monad Unpacker where
  {-# INLINE return #-}
 
  (>>=) (Unpacker fa) mkfb
-  =  Unpacker $ \start end fail eat
-  -> fa start end fail $ \start_x x
+  =  Unpacker $ \start end stop fail eat
+  -> fa start end stop fail $ \start_x x
   -> case mkfb x of
         Unpacker fb
-         -> fb start_x end fail eat
+         -> fb start_x end stop fail eat
  {-# INLINE (>>=) #-}
 
 
@@ -162,13 +164,16 @@ unsafeRunUnpacker
         :: Unpacker a   -- ^ Unpacker to run.
         -> S.Ptr Word8  -- ^ Source buffer.
         -> Int          -- ^ Length of source buffer.
+        -> Maybe Word8  -- ^ Field ending character.
         -> IO (Maybe (a, S.Ptr Word8))  
                 -- ^ Unpacked result, and pointer to the byte after the last
                 --   one read.
 
-unsafeRunUnpacker (Unpacker f) start len
+unsafeRunUnpacker (Unpacker f) start len stop
  = do   ref     <- newIORef Nothing
-        f start (S.plusPtr start len)
+        f       start 
+                (S.plusPtr start len)
+                stop
                 (return ())
                 (\ptr x -> writeIORef ref (Just (x, ptr)))
         readIORef ref

@@ -119,7 +119,7 @@ instance Packable FixAsc where
   {-# NOINLINE pack #-}
 
   unpack (FixAsc lenField)
-   =  Unpacker $ \start _end _fail eat
+   =  Unpacker $ \start _end _stop _fail eat
    -> do 
         let load_unpackChar o
                 = do    x :: Word8 <- S.peekByteOff start o
@@ -157,7 +157,7 @@ instance Packable VarAsc where
   {-# NOINLINE pack #-}
 
   unpack VarAsc 
-   = Unpacker $ \start end _fail eat
+   = Unpacker $ \start end _stop _fail eat
    -> do
         -- We don't locally know what the stopping point should
         -- for the string, so just decode all the way to the end.
@@ -199,7 +199,7 @@ instance Packable VarString where
  {-# INLINE pack #-}
 
  unpack VarString
-  =  Unpacker $ \start end fail eat
+  =  Unpacker $ \start end _stop fail eat
   -> do r       <- unpackString start end
         case r of
          Nothing            -> fail

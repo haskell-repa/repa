@@ -93,7 +93,7 @@ instance ( Packable f1, Packable (Sep fs)
 
  unpack (Sep c (f1 :*: fs)) 
   | fieldCount (Sep c fs) >= 1
-  = Unpacker $ \start end fail eat
+  = Unpacker $ \start end stop fail eat
   -> let !len = F.minusPtr end start in  
      findSep (w8 $ ord c) start len fail $ \pos
       -> let -- The following size code should be evaluated statically via
@@ -103,16 +103,16 @@ instance ( Packable f1, Packable (Sep fs)
 
          in if  (s1 <= pos) && (s1 + 1 + ss <= len)
              then
-                  (fromUnpacker $ unpack f1)             start     end fail $ \start_x1 x1
+                  (fromUnpacker $ unpack f1)             start     end stop fail $ \start_x1 x1
                -> let start_x1' = F.plusPtr start_x1 1 
-                  in  (fromUnpacker $ unpack (Sep c fs)) start_x1' end fail $ \start_xs xs
+                  in  (fromUnpacker $ unpack (Sep c fs)) start_x1' end stop fail $ \start_xs xs
                     -> eat start_xs (x1 :*: xs)
              else fail
 
   | otherwise
-  =  Unpacker  $ \start end fail eat
-  -> (fromUnpacker $ unpack f1)         start   end fail $ \start_x  x
-  -> (fromUnpacker $ unpack (Sep c fs)) start_x end fail $ \start_xs xs
+  =  Unpacker  $ \start end stop fail eat
+  -> (fromUnpacker $ unpack f1)         start   end stop fail $ \start_x  x
+  -> (fromUnpacker $ unpack (Sep c fs)) start_x end stop fail $ \start_xs xs
   -> eat start_xs (x :*: xs)
  {-# INLINE unpack #-}
 

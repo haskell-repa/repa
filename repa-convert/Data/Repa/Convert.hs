@@ -125,7 +125,7 @@ unpackFromList8 format xs
         buf     <- S.mallocBytes len
         mapM_ (\(o, x) -> S.pokeByteOff buf o x)
                 $ zip [0 .. len - 1] xs
-        r <- unsafeRunUnpacker (unpack format) buf len
+        r <- unsafeRunUnpacker (unpack format) buf len Nothing
         return $ fmap fst r
 
 

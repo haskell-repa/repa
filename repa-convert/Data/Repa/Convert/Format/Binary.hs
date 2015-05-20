@@ -44,7 +44,7 @@ instance Packable Word8be where
  {-# INLINE pack #-}
 
  unpack Word8be 
-  =  Unpacker $ \start _end _fail eat
+  =  Unpacker $ \start _end _stop _fail eat
   -> do x <- S.peek start
         eat (S.plusPtr start 1) (fromIntegral x)
  {-# INLINE unpack #-}
@@ -106,7 +106,7 @@ instance Packable Word16be where
  {-# INLINE pack #-}
 
  unpack Word16be 
-  =  Unpacker $ \start _end _fail eat
+  =  Unpacker $ \start _end _stop _fail eat
   -> do x0 :: Word8  <- S.peek        start 
         x1 :: Word8  <- S.peekByteOff start 1
         eat (S.plusPtr start 2)
@@ -172,7 +172,7 @@ instance Packable Word32be where
  {-# INLINE pack #-}
 
  unpack Word32be 
-  =  Unpacker $ \start _end _fail eat
+  =  Unpacker $ \start _end _fail _stop eat
   -> do x0 :: Word8  <- S.peek        start 
         x1 :: Word8  <- S.peekByteOff start 1
         x2 :: Word8  <- S.peekByteOff start 2
@@ -248,7 +248,7 @@ instance Packable Word64be where
  {-# INLINE pack #-}
 
  unpack Word64be 
-  =  Unpacker $ \start _end _fail eat
+  =  Unpacker $ \start _end _fail _stop eat
   -> do x0 :: Word8  <- S.peek        start 
         x1 :: Word8  <- S.peekByteOff start 1
         x2 :: Word8  <- S.peekByteOff start 2

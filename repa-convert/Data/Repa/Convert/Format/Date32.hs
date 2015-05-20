@@ -45,7 +45,7 @@ instance Packable YYYYsMMsDD where
  {-# INLINE pack #-}
 
  unpack (YYYYsMMsDD s)
-  =  Unpacker $ \start end fail eat
+  =  Unpacker $ \start end _stop fail eat
   -> do
         let !len = F.minusPtr end start
         r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) start len
@@ -85,7 +85,7 @@ instance Packable DDsMMsYYYY where
  {-# INLINE pack #-}
 
  unpack (DDsMMsYYYY s)
-  =  Unpacker $ \start end fail eat
+  =  Unpacker $ \start end _stop fail eat
   -> do
         let !len = F.minusPtr end start
         r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) start len
