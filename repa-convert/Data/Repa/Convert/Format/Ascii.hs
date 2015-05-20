@@ -5,7 +5,7 @@ where
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Date32
-import Data.Repa.Convert.Format.Row
+import Data.Repa.Convert.Format.Tup
 import Data.Repa.Scalar.Date32                  (Date32)
 import Data.Repa.Scalar.Product
 
@@ -40,13 +40,13 @@ instance ( FormatAscii t1
         => FormatAscii (t1 :*: ts) where
 
  type FormatAscii' (t1 :*: ts)        
-  = Row      (FormatAscii' t1 :*: FormatAscii' (Plain ts))
+  = Tup      (FormatAscii' t1 :*: FormatAscii' (Plain ts))
 
  formatAscii _            
   = let -- The values of these type proxies should never be demanded.
         (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
         (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
-    in  Row '\t' (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
+    in  Tup (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
  {-# INLINE formatAscii #-}
 
 
