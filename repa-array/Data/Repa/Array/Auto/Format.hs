@@ -57,7 +57,8 @@ packFormat !format !v
         -- of bytes actually used, then slice the original buffer
         -- down to this size.
         withForeignPtr fptr $ \ptr
-         -> do  Just ptr' <- C.runPacker (C.pack format v) (plusPtr ptr oStart)
+         -> do  Just ptr' <- C.unsafeRunPacker (C.pack format v) 
+                                               (plusPtr ptr oStart)
                 let len   =  minusPtr ptr' ptr
                 buf'      <- A.unsafeSliceBuffer 0 len buf
                 arr       <- A.unsafeFreezeBuffer  buf'
@@ -94,7 +95,7 @@ packsFixedFormat !format !arrElems
 
                      | otherwise
                      = do  let x        =  A.index arrElems ixSrc
-                           Just ptrDst' <- C.runPacker (C.pack format x) ptrDst
+                           Just ptrDst' <- C.unsafeRunPacker (C.pack format x) ptrDst
                            loop (ixSrc + 1) ptrDst'
 
                 let ptr = plusPtr ptr_ oStart
@@ -123,8 +124,13 @@ unpackFormat !format !arrBytes
  $ let  (oStart, _, fptr :: ForeignPtr Word8) 
          = A.toForeignPtr $ A.convert arrBytes
    in   withForeignPtr fptr $ \ptr_
-         -> C.unpack (plusPtr ptr_ oStart) lenBytes format 
-          $ \(v, _) -> return (Just v)
+         -> do  r <- C.unsafeRunUnpacker 
+                        (C.unpack format) 
+                        (plusPtr ptr_ oStart)
+                        lenBytes (const False)
+                case r of
+                 Just (v, _) -> return $ Just v
+                 _           -> return Nothing
 
  | otherwise = Nothing
 {-# INLINE_ARRAY unpackFormat #-}
@@ -134,8 +140,8 @@ unpackFormat !format !arrBytes
 --   using the given fixed length format.
 unpacksFixedFormat
         :: (Packable format, A.Target A.A (Value format))
-        => Array Word8                    -- ^ Packed binary data.
-        -> format                         -- ^ Fixed length format for each element.
+        => format                         -- ^ Fixed length format for each element.
+        -> Array Word8                    -- ^ Packed binary data.
         -> Maybe (Array (Value format))   -- ^ Unpacked elements.
 
 unpacksFixedFormat !format !arrBytes
@@ -147,20 +153,30 @@ unpacksFixedFormat !format !arrBytes
                 = A.toForeignPtr $ A.convert arrBytes
 
         withForeignPtr fptr $ \ptr_
-         -> do  let ptr =  plusPtr ptr_ oStart
-                buf     <- A.unsafeNewBuffer (A.Auto lenElems)
+         -> do  buf        <- A.unsafeNewBuffer (A.Auto lenElems)
 
-                let loop !ixSrc !ixDst 
-                     | ixDst >= lenElems
-                     = return $ Just ixSrc
+                let !ptr     = plusPtr ptr_ oStart 
+                let !ptrEnd  = plusPtr ptr  lenBytes
+
+                let loop !ptrSrc !ixDst 
+                     | ptrSrc >= ptrEnd
+                     = return $ Just ptrSrc
 
                      | otherwise
-                     = C.unpack (plusPtr ptr ixSrc) (lenBytes - ixSrc) format 
-                     $ \(value, oElem) 
-                     -> do A.unsafeWriteBuffer buf ixDst value
-                           loop (ixSrc + oElem) (ixDst + 1)
+                     = do r <- C.unsafeRunUnpacker
+                                 (C.unpack format)
+                                 ptrSrc 
+                                 (minusPtr ptrEnd ptrSrc)
+                                 (const False)
 
-                mFinal <- loop 0 0
+                          case r of
+                           Just (value, ptrSrc') 
+                            -> do A.unsafeWriteBuffer buf ixDst value
+                                  loop ptrSrc' (ixDst + 1)
+
+                           Nothing -> return Nothing
+
+                mFinal <- loop ptr 0
                 case mFinal of
                  Nothing        -> return Nothing
                  Just _         -> liftM Just $ A.unsafeFreezeBuffer buf
@@ -178,8 +194,8 @@ unpacksFixedFormat !format !arrBytes
 unpacksLinesFormat
         :: forall format
         .  (Packable format, A.Target A.A (Value format))
-        => Array Word8                  -- ^ Packed binary data.
-        -> format                       -- ^ Format for each element.
+        => format                       -- ^ Format for each element.
+        -> Array Word8                  -- ^ Packed binary data.
         -> Array (Value format)         -- ^ Unpacked elements.
 
 unpacksLinesFormat format arr8

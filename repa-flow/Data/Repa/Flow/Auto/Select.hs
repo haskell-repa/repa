@@ -6,8 +6,8 @@ module Data.Repa.Flow.Auto.Select
 where
 import Data.Repa.Array                          as A
 import Data.Repa.Flow.Auto.Base                 as F
-import Data.Repa.Singleton.Nat                  as D
-import Data.Repa.Product                        as D
+import Data.Repa.Scalar.Singleton.Nat           as D
+import Data.Repa.Scalar.Product                 as D
 import qualified Data.Repa.Flow.Generic         as G
 #include "repa-array.h"
 

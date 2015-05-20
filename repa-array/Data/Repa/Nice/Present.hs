@@ -11,13 +11,13 @@ module Data.Repa.Nice.Present
 where
 import Data.Monoid
 import Data.Word
-import Data.Text                        (Text)
-import Data.Repa.Product                ((:*:) (..))
-import Data.Repa.Nice                   (Str(..), Tok(..))
-import qualified Data.Text              as T
-import Data.Repa.Bits.Date32            (Date32)
-import qualified Data.Repa.Bits.Date32  as Date32
-import Prelude                          as P
+import Data.Text                                (Text)
+import Data.Repa.Nice                           (Str(..), Tok(..))
+import Data.Repa.Scalar.Product                 ((:*:) (..))
+import Data.Repa.Scalar.Date32                  (Date32)
+import qualified Data.Text                      as T
+import qualified Data.Repa.Scalar.Date32        as Date32
+import Prelude                                  as P
 
 
 -- | A value, wrapped up nicely.

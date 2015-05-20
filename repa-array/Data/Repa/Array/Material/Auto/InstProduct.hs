@@ -7,9 +7,9 @@ import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
+import Data.Repa.Scalar.Singleton.Nat           as D
+import Data.Repa.Scalar.Product                 as D
 import Data.Repa.Fusion.Unpack                  as F
-import Data.Repa.Singleton.Nat                  as D
-import Data.Repa.Product                        as D
 import Control.Monad
 #include "repa-array.h"
 
@@ -121,19 +121,19 @@ instance (Eq (Array A a), Eq (Array A b))
 
 
 --------------------------------------------------------------------------------------------- Valid
-instance IsProd (Array A ()) where
- isProd _ = True
- {-# INLINE isProd #-}
+instance IsProdList (Array A ()) where
+ isProdList _ = True
+ {-# INLINE isProdList #-}
 
 
-instance IsProd (Array A ts) 
-      => IsProd (Array A (f :*: ts)) where
- isProd (AArray_Prod _ arr2) = isProd arr2
- {-# INLINE isProd #-}
+instance IsProdList (Array A ts) 
+      => IsProdList (Array A (f :*: ts)) where
+ isProdList (AArray_Prod _ arr2) = isProdList arr2
+ {-# INLINE isProdList #-}
 
 
 -------------------------------------------------------------------------------------------- Select
-instance IsProd (Array A ts)
+instance IsProdList (Array A ts)
       => Select 'Z (Array A (t1 :*: ts)) where
  type Select'   'Z (Array A (t1 :*: ts)) = Array A t1
  select       Zero (AArray_Prod x1 _)    = x1
@@ -148,7 +148,7 @@ instance Select n (Array A ts)
 
 
 ------------------------------------------------------------------------------------------- Discard
-instance IsProd (Array A ts)
+instance IsProdList (Array A ts)
       => Discard 'Z    (Array A (t1 :*: ts)) where
  type Discard'   'Z    (Array A (t1 :*: ts)) = Array A ts
  discard       Zero    (AArray_Prod _ xs)    = xs

@@ -1,7 +1,7 @@
 
 -- | Shapes and Indices
 module Data.Repa.Array.Generic.Index
-	( -- * Shapes
+        ( -- * Shapes
           Shape (..)
         , inShape
         , showShape

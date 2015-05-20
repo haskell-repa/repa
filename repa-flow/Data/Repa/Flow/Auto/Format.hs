@@ -1,5 +1,4 @@
 
-
 module Data.Repa.Flow.Auto.Format
         ( -- * Pre-defined data formats
           module Data.Repa.Convert.Formats
@@ -12,13 +11,12 @@ module Data.Repa.Flow.Auto.Format
 where
 import Data.Word
 import Data.Char
+import Data.Repa.Convert.Formats
 import Data.Repa.Flow.Auto                              as F
 import Data.Repa.Array                                  as A
 import Data.Repa.Array.Auto.Format                      as A
+import qualified Data.Repa.Convert                      as C
 import qualified Data.Repa.Flow.Generic                 as G
-import qualified Data.Repa.Convert.Format               as C
-import qualified Data.Repa.Convert.Default.Ascii        as C
-import Data.Repa.Convert.Formats
 #include "repa-flow.h"
 
 

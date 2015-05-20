@@ -19,8 +19,8 @@
 -- @
 -- > import Data.Repa.Convert
 --
--- > let formatPSV  = Sep '|' (VarAsc :*: IntAsc :*: DoubleAsc :*: ())
--- > let Just str   = packToString formatPSV ("foo" :*: 66 :*: 93.42 :*: ())
+-- > let format   = Sep '|' (VarAsc :*: IntAsc :*: DoubleAsc :*: ())
+-- > let Just str = packToString format ("foo" :*: 66 :*: 93.42 :*: ())
 -- > str
 -- "foo|66|93.42"
 -- @

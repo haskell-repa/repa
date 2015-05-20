@@ -57,7 +57,7 @@ module Data.Repa.Array
         , foldsWith
 
         -- *** Special Folds
-        , sum,  prod
+        , sum,  product
         , mean, std
         , correlate
 
@@ -131,7 +131,8 @@ module Data.Repa.Array
 where
 import Data.Repa.Array.Auto
 import Prelude 
-       hiding   ( map, length, reverse, filter, concat, unlines, foldl, sum
-                , head, init, tail, zip, unzip)
+ hiding ( map, length, reverse, filter, concat, unlines, foldl
+        , sum, product
+        , head, init, tail, zip, unzip)
 
 

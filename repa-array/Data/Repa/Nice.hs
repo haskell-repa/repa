@@ -4,13 +4,13 @@ module Data.Repa.Nice
         , Str   (..)
         , Tok   (..))
 where
-import Data.Repa.Array.Generic  as A
-import Data.Repa.Product        as B
-import Control.Monad
-import Data.Word
 import Data.Int
-import Data.Repa.Bits.Date32            (Date32)
-import Prelude                  as P
+import Data.Word
+import Control.Monad
+import Data.Repa.Array.Generic          as A
+import Data.Repa.Scalar.Product         as B
+import Data.Repa.Scalar.Date32          (Date32)
+import Prelude                          as P
 
 
 -- | Wrapper to indicate a list of characters should be printed as a string,

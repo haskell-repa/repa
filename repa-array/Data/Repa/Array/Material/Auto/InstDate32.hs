@@ -11,11 +11,12 @@ import qualified Data.Repa.Array.Material.Foreign       as A
 import qualified Data.Repa.Array.Generic                as A
 import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Fusion.Unpack                as A
-import Data.Repa.Bits.Date32
-import GHC.Exts
+import Data.Repa.Scalar.Date32
 import Control.Monad
+import GHC.Exts
 import Prelude                                          as P
 #include "repa-array.h"
+
 
 instance A.Bulk A.A Date32 where
  data Array A.A Date32           = AArray_Date32 !(A.Array A.F Date32)
