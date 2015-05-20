@@ -109,10 +109,10 @@ data Unpacker a
      --
      fromUnpacker
         :: forall b
-        .  S.Ptr Word8                 -- Start of buffer.
-        -> S.Ptr Word8                 -- Pointer to first byte after end of buffer.
-        -> Maybe Word8                 -- Stop decoding if we see this field terminator.
-        -> IO b                        -- Signal failure.
+        .  S.Ptr Word8          -- Start of buffer.
+        -> S.Ptr Word8          -- Pointer to first byte after end of buffer.
+        -> (Word8 -> Bool)      -- Detect a field terminator.
+        -> IO b                 -- Signal failure.
         -> (S.Ptr Word8 -> a -> IO b)  -- Eat an unpacked value.
         -> IO b
   }
@@ -161,10 +161,10 @@ instance Monad Unpacker where
 --   is not long enough then you'll get an indeterminate result (bad).
 --
 unsafeRunUnpacker
-        :: Unpacker a   -- ^ Unpacker to run.
-        -> S.Ptr Word8  -- ^ Source buffer.
-        -> Int          -- ^ Length of source buffer.
-        -> Maybe Word8  -- ^ Field ending character.
+        :: Unpacker a           -- ^ Unpacker to run.
+        -> S.Ptr Word8          -- ^ Source buffer.
+        -> Int                  -- ^ Length of source buffer.
+        -> (Word8 -> Bool)      -- ^ Detect a field terminator.
         -> IO (Maybe (a, S.Ptr Word8))  
                 -- ^ Unpacked result, and pointer to the byte after the last
                 --   one read.

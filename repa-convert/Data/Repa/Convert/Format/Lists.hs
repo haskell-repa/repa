@@ -1,11 +1,7 @@
 
 module Data.Repa.Convert.Format.Lists 
-        ( -- * Lists
-          FixList(..)
-        , VarList(..)
-
-          -- * ASCII Strings
-        , FixAsc (..)
+        ( -- * ASCII Strings
+          FixAsc (..)
         , VarAsc (..)
         , VarString (..))
 where
@@ -20,73 +16,15 @@ import Prelude hiding (fail)
 
 
 ---------------------------------------------------------------------------------------------------
--- | Fixed length list.
-data FixList    f = FixList   f Int      deriving (Eq, Show)
-instance Format f => Format (FixList   f) where
- type Value (FixList f)         
-  = [Value f]
-
- fieldCount _  
-  = 1
-
- minSize    (FixList f len)
-  = minSize f * len
-
-
- fixedSize  (FixList f len)           
-  = do  lenElem <- fixedSize f
-        return  $ lenElem * len
-
- packedSize (FixList _ 0) _
-  =     return 0
-
- packedSize (FixList f len) xs
-  | length xs == len
-  = do  lenElems <- mapM (packedSize f) xs
-        return   $ sum lenElems
-
-  | otherwise 
-  = Nothing
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
-
-
--- | Variable length list.
-data VarList   f = VarList   f          deriving (Eq, Show)
-instance Format f => Format (VarList f) where
- type Value (VarList f)
-        = [Value f]
-
- fieldCount _
-  = 1
-
- minSize _ 
-  = 0
-
- fixedSize  (VarList _)
-  = Nothing
-
- packedSize (VarList f) xs@(x : _)
-  = do  lenElem <- packedSize f x
-        return  $ lenElem * length xs
-
- packedSize _ []
-  =     return 0
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
-
-
----------------------------------------------------------------------------------------------------
 -- | Fixed length string.
 --   
---   * When packing, if the provided string is shorter than the fixed length
---     then the extra bytes are zero-filled. 
+-- * When packing, the length of the provided string must match
+--   the field width, else packing will fail.
 --
-data FixAsc     = FixAsc Int            deriving (Eq, Show)
+-- * When unpacking, the length of the result will be as set
+--   by the field width.
+--
+data FixAsc     = FixAsc Int    deriving (Eq, Show)
 instance Format FixAsc where
  type Value (FixAsc)            = String
  fieldCount _                   = 1
@@ -101,35 +39,31 @@ instance Format FixAsc where
 
 instance Packable FixAsc where
  
-  pack (FixAsc lenField) xs 
+  pack (FixAsc len) xs 
+   |  length xs == len
    =  Packer $ \buf k
-   -> do let !lenChars   = length xs
-         let !lenPad     = lenField - lenChars
+   -> do mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
+                $ zip [0 .. len - 1] xs
+         k (S.plusPtr buf len)
 
-         if lenChars > lenField
-          then return Nothing
-          else do
-                mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
-                        $ zip [0 .. lenChars - 1] xs
-
-                mapM_ (\o      -> S.pokeByteOff buf (lenChars + o) (0 :: Word8))
-                        $ [0 .. lenPad - 1]
-
-                k (S.plusPtr buf lenField)
+   | otherwise
+   = Packer $ \_ _ -> return Nothing
   {-# NOINLINE pack #-}
 
-  unpack (FixAsc lenField)
-   =  Unpacker $ \start _end _stop _fail eat
+  unpack (FixAsc len)
+   =  Unpacker $ \start end _stop fail eat
    -> do 
-        let load_unpackChar o
-                = do    x :: Word8 <- S.peekByteOff start o
+        let lenBuf = S.minusPtr end start
+        if  lenBuf < len
+         then fail
+         else 
+          do let load_unpackChar o
+                   = do x :: Word8 <- S.peekByteOff start o
                         return $ chr $ fromIntegral x
-            {-# INLINE load_unpackChar #-}
+                 {-# INLINE load_unpackChar #-}
 
-        xs      <- mapM load_unpackChar [0 .. lenField - 1]
-        let (pre, _) = break (== '\0') xs
-        eat (S.plusPtr start lenField)
-            pre
+             xs      <- mapM load_unpackChar [0 .. len - 1]
+             eat (S.plusPtr start len) xs
   {-# NOINLINE unpack #-}
 
 
@@ -157,21 +91,34 @@ instance Packable VarAsc where
   {-# NOINLINE pack #-}
 
   unpack VarAsc 
-   = Unpacker $ \start end _stop _fail eat
-   -> do
-        -- We don't locally know what the stopping point should
-        -- for the string, so just decode all the way to the end.
-        -- If the caller knows the field should be shorter then
-        -- it should pass in a shorter length.
-        let load_unpackChar o
-                = do    x :: Word8  <- S.peekByteOff start o
-                        return $ chr $ fromIntegral x
-            {-# INLINE load_unpackChar #-}
-                        
-        let !len = S.minusPtr end start
-        xs       <- mapM load_unpackChar [0 .. len - 1]
-        eat (S.plusPtr start len) xs
-  {-# NOINLINE unpack #-}
+   = Unpacker $ \start end stop _fail eat
+   -> do (ptr, str)      <- unpackAsc start end stop
+         eat ptr str
+  {-# INLINE unpack #-}
+
+
+-- | Unpack a ascii text from the given buffer.
+unpackAsc
+        :: S.Ptr Word8      -- ^ First byte in buffer.
+        -> S.Ptr Word8      -- ^ First byte after buffer.
+        -> (Word8 -> Bool)  -- ^ Detect field deliminator.
+        -> IO (S.Ptr Word8, [Char])
+
+unpackAsc start end stop
+ = go start []
+ where  go !ptr !acc
+         | ptr >= end
+         = return (ptr, reverse acc)
+
+         | otherwise
+         = do   w :: Word8 <- S.peek ptr
+                if stop w 
+                 then do
+                   return (ptr, reverse acc)
+                 else do
+                   let !ptr'  = S.plusPtr ptr 1
+                   go ptr' ((chr $ fromIntegral w) : acc)
+{-# INLINE unpackAsc #-}
 
 
 ---------------------------------------------------------------------------------------------------

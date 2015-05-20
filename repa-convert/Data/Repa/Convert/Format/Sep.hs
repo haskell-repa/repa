@@ -94,54 +94,28 @@ instance ( Packable f1, Packable (Sep fs)
  unpack (Sep c (f1 :*: fs)) 
   | fieldCount (Sep c fs) >= 1
   = Unpacker $ \start end stop fail eat
-  -> let !len = F.minusPtr end start in  
-     findSep (w8 $ ord c) start len fail $ \pos
-      -> let -- The following size code should be evaluated statically via
-             -- inlining and GHC simplifications.
-             !s1 = minSize f1
-             !ss = minSize (Sep c fs)
+  -> let !len = F.minusPtr end start 
+         !s1  = minSize f1
+         !ss  = minSize (Sep c fs)
 
-         in if  (s1 <= pos) && (s1 + 1 + ss <= len)
-             then
-                  (fromUnpacker $ unpack f1)             start     end stop fail $ \start_x1 x1
-               -> let start_x1' = F.plusPtr start_x1 1 
-                  in  (fromUnpacker $ unpack (Sep c fs)) start_x1' end stop fail $ \start_xs xs
-                    -> eat start_xs (x1 :*: xs)
-             else fail
+         stop' x = w8 (ord c) == x || stop x
+         {-# INLINE stop' #-}
+
+     in if (s1 + 1 + ss <= len)
+         then (fromUnpacker $ unpack f1)              start     end stop' fail $ \start_x1 x1
+            -> let start_x1' = F.plusPtr start_x1 1 
+               in  (fromUnpacker $ unpack (Sep c fs)) start_x1' end stop' fail $ \start_xs xs
+                -> eat start_xs (x1 :*: xs)
+         else fail
 
   | otherwise
   =  Unpacker  $ \start end stop fail eat
-  -> (fromUnpacker $ unpack f1)         start   end stop fail $ \start_x  x
-  -> (fromUnpacker $ unpack (Sep c fs)) start_x end stop fail $ \start_xs xs
-  -> eat start_xs (x :*: xs)
+  -> let stop' x = w8 (ord c) == x || stop x
+         {-# INLINE stop' #-}
+     in  (fromUnpacker $ unpack f1)         start   end stop' fail $ \start_x  x
+      -> (fromUnpacker $ unpack (Sep c fs)) start_x end stop' fail $ \start_xs xs
+      -> eat start_xs (x :*: xs)
  {-# INLINE unpack #-}
-
-
----------------------------------------------------------------------------------------------------
--- | Find the first occurrence of the given separating character in the
---   buffer, or `Nothing` if we don't find it before the buffer ends.
---
-findSep :: Word8                  -- ^ Separating character.
-        -> F.Ptr Word8            -- ^ Buffer.
-        -> Int                    -- ^ Buffer length
-        -> IO b                   -- ^ Signal failure
-        -> (Int -> IO b)          -- ^ Continuation taking separator position.      
-        -> IO b
-
-findSep !sep !buf !len fail eat
- = loop_findSep 0
- where  
-        loop_findSep !ix
-         | ix >= len    
-         = fail
-
-         | otherwise
-         = do x :: Word8  <- F.peekByteOff buf ix
-              if x == sep
-               then eat ix
-               else loop_findSep (ix + 1)
-        {-# INLINE loop_findSep #-}
-{-# INLINE findSep #-}
 
 
 ---------------------------------------------------------------------------------------------------

@@ -12,10 +12,6 @@ module Data.Repa.Convert.Formats
         , Sep           (..)
         , Tup           (..)
 
-          -- * Lists
-        , FixList       (..)
-        , VarList       (..)
-
           -- * Strings
         , FixAsc        (..)
         , VarAsc        (..)
