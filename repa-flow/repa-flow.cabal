@@ -44,9 +44,7 @@ Library
         Data.Repa.Flow.Generic.Debug
         Data.Repa.Flow.Generic.IO
 
-        Data.Repa.Flow.IO.Binary
         Data.Repa.Flow.IO.Bucket
-        Data.Repa.Flow.IO.Storable
 
         Data.Repa.Flow.Simple
 

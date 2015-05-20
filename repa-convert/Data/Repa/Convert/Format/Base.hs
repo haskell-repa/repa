@@ -99,13 +99,15 @@ unsafeRunPacker (Packer make) buf
 data Unpacker a
   =  Unpacker 
   {  -- | Takes pointers to the first byte in the buffer, the first byte
-     --   after the buffer, and a special field terminating character to
-     --   terminate variable length encodings where the length is not
-     --   determined from the representation of the encoding itself.
+     --   after the buffer, and a special field terminating character. 
+     --   The field terminating character is used by variable length 
+     --   encodings where the length of the encoded data cannot be 
+     --   determined from the encoding itself.
      --
-     --   If a value can be successfully unpacked from the buffer, then
+     --   If a value can be successfully unpacked from the buffer then
      --   it is passed to the continuation, along with a pointer to the
-     --   byte after the last one that was read.
+     --   byte after the last one that was read. If not, then the fail
+     --   action is invoked.
      --
      fromUnpacker
         :: forall b
