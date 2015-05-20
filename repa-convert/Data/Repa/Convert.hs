@@ -1,6 +1,6 @@
 
--- | Convert tuples of Haskell values to and from packed binary or
---   ASCII representations.
+-- | Convert tuples of Haskell values to and from ASCII or packed binary
+--   representations.
 --
 --   This package is intended for cheap and cheerful serialisation and
 --   deserialisation of flat tables, where each row has a fixed format.

@@ -59,8 +59,9 @@ class Format f where
 -- | Packer wraps a function that can write to a buffer.
 data Packer
   =  Packer
-  { -- | Takes start of buffer, 
-    --   and a continuation that takes a pointer to after the last written byte. 
+  { -- | Takes start of buffer, packs data into it, and calls the 
+    --   continuation with a pointer to the byte just after the 
+    --   last one that was written.
     fromPacker
         :: S.Ptr Word8 
         -> (S.Ptr Word8 -> IO (Maybe (S.Ptr Word8)))
@@ -97,8 +98,14 @@ unsafeRunPacker (Packer make) buf
 ---------------------------------------------------------------------------------------------------
 data Unpacker a
   =  Unpacker 
-  {  -- | Takes start and end of buffer, fail action, and a continuation
-     --   that takes a pointer to the last read byte.
+  {  -- | Takes pointers to the first byte in the buffer, and the
+     --   the first byte after the buffer. Also takes a fail action
+     --   and continuation. 
+     --
+     --   A value is read from the buffer, and the continuation is called
+     --   with a pointer to the byte after the last one that was read,
+     --   along with the unpacked value.
+     --
      fromUnpacker
         :: forall b
         .  S.Ptr Word8                 -- Start of buffer.

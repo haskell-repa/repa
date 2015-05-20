@@ -13,10 +13,10 @@ import Data.Repa.Scalar.Product
 -- | Class of types that can be formatted in some default human readable
 --   ASCII way.
 class FormatAscii a where
- -- | The format for this type.
+ -- | The format for values of this type.
  type FormatAscii' a 
 
- -- | Get the format for an element.
+ -- | Get the standard ASCII format for a value.
  --
  --   The element value itself is not demanded.
  --
@@ -26,12 +26,15 @@ data Plain a
         = Plain a
 
 
+-- | Empty tuples produce no output.
 instance FormatAscii () where
  type FormatAscii' ()     = ()
  formatAscii _            = ()
  {-# INLINE formatAscii #-}
 
 
+-- | Tuples are displayed with round parens and commas to separate
+--   the fields.
 instance ( FormatAscii t1
          , FormatAscii (Plain ts))
         => FormatAscii (t1 :*: ts) where
@@ -66,24 +69,29 @@ instance (FormatAscii t1, FormatAscii (Plain ts))
  {-# INLINE formatAscii #-}
  
  
+-- | Ints are formated in base-10.
 instance FormatAscii  Int where
  type FormatAscii' Int    = IntAsc
  formatAscii _            = IntAsc
  {-# INLINE formatAscii #-}
 
 
+-- | Doubles are formatted as base-10 decimal.
 instance FormatAscii  Double where
  type FormatAscii' Double = DoubleAsc
  formatAscii _            = DoubleAsc
  {-# INLINE formatAscii #-}
 
 
+-- | Strings are formatted with double quotes and back-slash escaping
+--   of special characters.
 instance FormatAscii  String where
  type FormatAscii' String = VarString
  formatAscii _            = VarString
  {-# INLINE formatAscii #-}
 
 
+-- | Dates are formatted as YYYY-MM-DD.
 instance FormatAscii  Date32 where
  type FormatAscii' Date32 = YYYYsMMsDD
  formatAscii _            = YYYYsMMsDD '-'

@@ -16,7 +16,7 @@ import Prelude hiding (fail)
 -- | Separate fields with the given character.
 -- 
 --   * The separating character is un-escapable. 
---   * The above means that the format @(Sep ',')@ does NOT parse a CSV
+--   * The format @(Sep ',')@ does NOT parse a CSV
 --     file according to the CSV specification: http://tools.ietf.org/html/rfc4180.
 --
 data Sep f
