@@ -53,7 +53,6 @@ Library
         Data.Repa.Array.Material.Auto
         Data.Repa.Array.Material.Boxed
         Data.Repa.Array.Material.Foreign
-        Data.Repa.Array.Material.Strided
         Data.Repa.Array.Material.Nested
         Data.Repa.Array.Material.Unboxed
         Data.Repa.Array.Material
