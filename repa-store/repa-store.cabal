@@ -39,8 +39,6 @@ Library
         Data.Repa.Store.Format
         Data.Repa.Store.Flow
         Data.Repa.Store.Resolve
-
-  other-modules:
         Data.Repa.Store.Partitions
  
   ghc-options:
