@@ -88,7 +88,7 @@ import Data.Repa.Query.Source.Primitive.Projection
 import Data.Repa.Query.Source.Primitive.Scalar
 import Data.Repa.Query.Source.Primitive.Sources
 import qualified Data.Repa.Store.Format                 as F
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 import Prelude 
  hiding ( map
         , zip, zip3

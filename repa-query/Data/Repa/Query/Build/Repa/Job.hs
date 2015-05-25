@@ -15,7 +15,7 @@ import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
 import qualified Data.Repa.Query.Runtime.Driver         as P
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 
 
 ---------------------------------------------------------------------------------------------------

@@ -1,90 +1,74 @@
 
+PACKAGES = \
+	repa \
+	repa-eval \
+	repa-io \
+	repa-algorithms \
+	repa-scalar \
+	repa-stream \
+	repa-convert \
+	repa-array \
+	repa-flow \
+	repa-store \
+	repa-query
+
+
 # Build the standard library.
 .PHONY : all
 all : 
-	@make clean
-	@make repa
-	@make repa-io
-	@make repa-algorithms
-	@make repa-examples
+	@make packages
 
 
-# Build the repa plugin.
-.PHONY : plugin
-plugin : 
-	@make clean
-	@make repa
-	@make repa-io
-	@make repa-series
-	@make repa-plugin
-	
+# Build and install all the Cabal packages.
+.PHONY : packages
+packages :
+	@for package in ${PACKAGES} repa-examples repa-tools; do \
+		if [ `ghc-pkg list $${package} --simple-output | wc -l` -gt 0 ]; then \
+			echo "* Skipping $${package}; already installed"; \
+		    	continue; \
+		fi; \
+		cd $${package}; \
+		echo "* Building $${package}"; \
+		 	cabal clean && \
+		 	cabal configure && \
+		 	cabal build && \
+		 	cabal install --enable-documentation --force-reinstalls;\
+		if [ $$? -ne 0 ]; then \
+		    	echo "* Error in $${package}!"; \
+		    	break; \
+		fi; \
+		cd ..; \
+		echo; \
+	done;
 
-# == Clean ====================================================================
+
+# Unregister all the Cabal packages.
+.PHONY : unregister
+unregister : 
+	@echo "* Unregistering packages"
+	@for package in ${PACKAGES}; do \
+		if [ `ghc-pkg list $${package} --simple-output | wc -l` -gt 0 ]; then \
+		  	echo "* Unregistering $${package}"; \
+		  	ghc-pkg unregister $${package} --force 2> /dev/null; \
+		  	if [ $$? -ne 0 ]; then  \
+		   		continue; \
+			fi; \
+		fi; \
+	done;
+
+
+# Unregister all the packages, then reinstall them.
+.PHONY : reinstall
+reinstall :
+	@make unregister
+	@make packages
+
+
+# Clean out all the junk.
 .PHONY : clean
 clean :
-	@echo "-- Cleaning up -------------------------------------------------"
-	rm -Rf repa/dist
-	rm -Rf repa-algorithms/dist
-	rm -Rf repa-bulk/dist
-	rm -Rf repa-examples/dist
-	rm -Rf repa-io/dist
-	rm -Rf repa-plugin/dist
-	rm -Rf repa-series/dist
-	@echo
-
-
-# == Packages =================================================================
-.PHONY : repa
-repa :
-	@echo "-- Building repa -----------------------------------------------"
-	@cd $@ ; \
-		cabal clean ; \
-		cabal install --enable-shared --user --reinstall --force
-	@echo
-
-
-.PHONY : repa-io
-repa-io :
-	@echo "-- Building repa-io --------------------------------------------"
-	@cd $@ ; \
-		cabal clean ; \
-		cabal install --enable-shared --user --reinstall --force
-	@echo
-
-
-.PHONY : repa-algorithms
-repa-algorithms :
-	@echo "-- Building repa-algorithms ------------------------------------"
-	@cd $@ ; \
-		cabal clean ; \
-		cabal install --enable-shared --user --reinstall --force
-	@echo
-
-
-.PHONY : repa-examples
-repa-examples :
-	@echo "-- Building repa-examples --------------------------------------"
-	@cd $@ ; \
-		cabal clean ; \
-		cabal install --enable-shared --user --reinstall
-	@echo 
-
-
-.PHONY : repa-series
-repa-series :
-	@echo "-- Building repa-series ----------------------------------------"
-	@cd $@ ; \
-		cabal clean ; \
-		cabal install --enable-shared --user --reinstall --force
-	@echo 
-
-
-.PHONY : repa-plugin
-repa-plugin :
-	@echo "-- Building repa-plugin ----------------------------------------"
-	@cd $@ ; \
-		cabal clean ; \
-		cabal install --enable-shared --user --reinstall --force
-	@echo 
-
+	@for package in ${PACKAGES} repa-examples repa-tools; do \
+		rm -Rf $${package}/dist; \
+	done;
+	@find . -name '.DS_Store' -or -name '._.DS_Store' | xargs rm -f
 

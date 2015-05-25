@@ -20,10 +20,10 @@ import Data.Char
 import Data.Word
 import Data.Int
 import Data.Text                                (Text)
-import Data.Repa.Bits.Date32                    as Date32
+import Data.Repa.Scalar.Date32                  as Date32
 import Data.Aeson                               as Aeson
 import qualified Data.Map                       as Map
-import qualified Data.Repa.Product              as P
+import qualified Data.Repa.Scalar.Product       as P
 import qualified Data.HashMap.Strict            as H
 import qualified Data.Text                      as T
 

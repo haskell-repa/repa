@@ -9,10 +9,10 @@ where
 import Control.Monad.State.Strict
 import Data.Repa.Query.Source.Primitive.Projection
 import Data.Repa.Query.Source.Builder
-import Data.Repa.Product
-import Data.Int
 import Data.Repa.Query.Graph.Compounds          as G
 import qualified Data.Repa.Query.Graph          as G
+import Data.Repa.Scalar.Product
+import Data.Int
 import Prelude   
  hiding ( map
         , zip, zip3

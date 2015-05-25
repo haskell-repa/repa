@@ -15,7 +15,7 @@ where
 import Data.Repa.Query.Source.Builder
 import Data.Repa.Query.Graph                    as G
 import Data.Repa.Query.Graph.Compounds          as G
-import Data.Repa.Bits.Date32                    (Date32)
+import Data.Repa.Scalar.Date32                  (Date32)
 import Prelude   
  hiding ( negate, abs, signum
         , (+),  (-), (*), (/)

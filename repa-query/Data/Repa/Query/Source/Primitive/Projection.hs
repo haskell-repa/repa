@@ -10,7 +10,7 @@ where
 import Data.Repa.Query.Source.Builder           as S
 import Data.Repa.Query.Graph.Compounds          as G
 import Data.Repa.Query.Graph                    as G
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 
 
 ----------------------------------------------------------------------------------------------- Row

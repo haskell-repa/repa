@@ -70,7 +70,7 @@ import Data.Repa.Query.Source.Primitive.Operator
 import Data.Repa.Query.Source.Primitive.Projection
 import Data.Repa.Query.Source.Primitive.Scalar
 import Data.Repa.Query.Source.Primitive.Sources
-import Data.Repa.Bits.Date32                            as Date32
+import Data.Repa.Scalar.Date32                          as Date32
 import Data.Repa.Store.Format                           as F
 import qualified Prelude                                as P
 import Prelude   

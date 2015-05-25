@@ -18,7 +18,7 @@ import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Convert.Formats              as C
 
 import qualified Data.Repa.Query.Runtime.Primitive      as P
-import qualified Data.Repa.Product                      as P
+import qualified Data.Repa.Scalar.Product               as P
 
 
 ---------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 Name:           repa-tools
-Version:        4.1.0.1
+Version:        4.2.0.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -28,9 +28,9 @@ Executable repa-build
         aeson           >= 0.8.0  && < 0.9,
         aeson-pretty    >= 0.7.2  && < 0.8,
         buildbox        >= 2.1.6  && < 2.2,
-        repa-array      >= 4.1.0  && < 4.2,
-        repa-flow       >= 4.1.0  && < 4.2,
-        repa-query      >= 4.1.0  && < 4.2
+        repa-array      >= 4.2.0  && < 4.3,
+        repa-flow       >= 4.2.0  && < 4.3,
+        repa-query      >= 4.2.0  && < 4.3
 
   Main-is:              Main.hs
   HS-source-dirs:       tools/build
@@ -51,8 +51,8 @@ Executable repa-build
 Executable repa-fields
   Build-depends: 
         base            == 4.8.*,
-        repa-array      == 4.1.0.*,
-        repa-flow       == 4.1.0.*
+        repa-array      == 4.2.0.*,
+        repa-flow       == 4.2.0.*
 
   Main-is:              Main.hs
   HS-source-dirs:       tools/fields
@@ -73,8 +73,8 @@ Executable repa-sieve
         base            == 4.8.*,
         directory       == 1.2.*,
         filepath        == 1.4.*,
-        repa-array      == 4.1.0.*,
-        repa-flow       == 4.1.0.*
+        repa-array      == 4.2.0.*,
+        repa-flow       == 4.2.0.*
 
   Main-is:              Main.hs
   HS-source-dirs:       tools/sieve

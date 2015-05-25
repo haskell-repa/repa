@@ -82,14 +82,12 @@ import qualified Data.Repa.Flow.Auto                    as F
 import qualified Data.Repa.Flow.Auto.IO                 as F
 import qualified Data.Repa.Flow.Auto.Format             as F
 import qualified Data.Repa.Store.Flow                   as S
-import qualified Data.Repa.Convert.Default.Ascii        as C
 import qualified Data.Repa.Convert.Formats              as C    
 import qualified Data.Repa.Convert                      as C
-import qualified Data.Repa.Bits.Date32                  as B
-import qualified Data.Repa.Singleton.Nat                as R
+import qualified Data.Repa.Scalar.Date32                as B
+import qualified Data.Repa.Scalar.Singleton.Nat         as R
 import qualified System.FilePath                        as FilePath
-
-import Data.Repa.Product
+import Data.Repa.Scalar.Product
 
 
 -- Prelude ----------------------------------------------------------------------------------------
@@ -120,13 +118,13 @@ stringOfDate            :: B.Date32 -> P.String
 stringOfDate            = (\x -> let P.Just str = C.packToString (F.YYYYsMMsDD '-') x in str)
 
 yearOfDate              :: B.Date32 -> P.Int
-yearOfDate              = (\x -> P.fromIntegral (B.yearOfDate32  x))
+yearOfDate              = (\x -> P.fromIntegral (B.year  x))
 
 monthOfDate             :: B.Date32 -> P.Int
-monthOfDate             = (\x -> P.fromIntegral (B.monthOfDate32 x))
+monthOfDate             = (\x -> P.fromIntegral (B.month x))
 
 dayOfDate               :: B.Date32 -> P.Int
-dayOfDate               = (\x -> P.fromIntegral (B.dayOfDate32   x))
+dayOfDate               = (\x -> P.fromIntegral (B.day   x))
 
 
 -- Data.Repa.Flow.Auto ----------------------------------------------------------------------------

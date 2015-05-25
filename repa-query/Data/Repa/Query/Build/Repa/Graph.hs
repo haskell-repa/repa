@@ -13,7 +13,7 @@ import Data.Repa.Query.Graph                            as G
 import Language.Haskell.TH                              as H
 import qualified Data.Repa.Store.Format                 as Q
 import qualified Data.Repa.Query.Runtime.Primitive      as P
-import qualified Data.Repa.Product                      as P
+import qualified Data.Repa.Scalar.Product               as P
 
 
 -------------------------------------------------------------------
