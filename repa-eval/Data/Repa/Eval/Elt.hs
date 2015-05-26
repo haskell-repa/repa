@@ -1,7 +1,7 @@
 
 -- | Values that can be stored in Repa Arrays.
 module Data.Repa.Eval.Elt
-	(Elt (..))
+        (Elt (..))
 where
 import GHC.Prim
 import GHC.Exts
@@ -116,7 +116,7 @@ instance (Elt a) => GElt (K1 i a) where
 instance Elt Bool where
  touch b
   = IO (\state -> case touch# b state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = False
@@ -144,7 +144,7 @@ instance Elt Char where
 instance Elt Float where
  touch (F# f)
   = IO (\state -> case touch# f state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -157,7 +157,7 @@ instance Elt Float where
 instance Elt Double where
  touch (D# d)
   = IO (\state -> case touch# d state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -171,7 +171,7 @@ instance Elt Double where
 instance Elt Int where
  touch (I# i)
   = IO (\state -> case touch# i state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -184,7 +184,7 @@ instance Elt Int where
 instance Elt Int8 where
  touch (I8# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -197,7 +197,7 @@ instance Elt Int8 where
 instance Elt Int16 where
  touch (I16# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -210,7 +210,7 @@ instance Elt Int16 where
 instance Elt Int32 where
  touch (I32# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -223,7 +223,7 @@ instance Elt Int32 where
 instance Elt Int64 where
  touch (I64# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -237,7 +237,7 @@ instance Elt Int64 where
 instance Elt Word where
  touch (W# i)
   = IO (\state -> case touch# i state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -250,7 +250,7 @@ instance Elt Word where
 instance Elt Word8 where
  touch (W8# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -263,7 +263,7 @@ instance Elt Word8 where
 instance Elt Word16 where
  touch (W16# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -276,7 +276,7 @@ instance Elt Word16 where
 instance Elt Word32 where
  touch (W32# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -289,7 +289,7 @@ instance Elt Word32 where
 instance Elt Word64 where
  touch (W64# w)
   = IO (\state -> case touch# w state of
-			state' -> (# state', () #))
+                        state' -> (# state', () #))
  {-# INLINE touch #-}
 
  zero = 0
@@ -302,8 +302,8 @@ instance Elt Word64 where
 -- Tuple ----------------------------------------------------------------------
 instance (Elt a, Elt b) => Elt (a, b) where
  touch (a, b)
-  = do	touch a
-	touch b
+  = do  touch a
+        touch b
  {-# INLINE touch #-}
 
  zero = (zero, zero)
@@ -315,9 +315,9 @@ instance (Elt a, Elt b) => Elt (a, b) where
 
 instance (Elt a, Elt b, Elt c) => Elt (a, b, c) where
  touch (a, b, c)
-  = do	touch a
-	touch b
-	touch c
+  = do  touch a
+        touch b
+        touch c
  {-# INLINE touch #-}
 
  zero = (zero, zero, zero)
@@ -329,10 +329,10 @@ instance (Elt a, Elt b, Elt c) => Elt (a, b, c) where
 
 instance (Elt a, Elt b, Elt c, Elt d) => Elt (a, b, c, d) where
  touch (a, b, c, d)
-  = do	touch a
-	touch b
-	touch c
-	touch d
+  = do  touch a
+        touch b
+        touch c
+        touch d
  {-# INLINE touch #-}
 
  zero = (zero, zero, zero, zero)
@@ -344,11 +344,11 @@ instance (Elt a, Elt b, Elt c, Elt d) => Elt (a, b, c, d) where
 
 instance (Elt a, Elt b, Elt c, Elt d, Elt e) => Elt (a, b, c, d, e) where
  touch (a, b, c, d, e)
-  = do	touch a
-	touch b
-	touch c
-	touch d
-	touch e
+  = do  touch a
+        touch b
+        touch c
+        touch d
+        touch e
  {-# INLINE touch #-}
 
  zero = (zero, zero, zero, zero, zero)
@@ -360,12 +360,12 @@ instance (Elt a, Elt b, Elt c, Elt d, Elt e) => Elt (a, b, c, d, e) where
 
 instance (Elt a, Elt b, Elt c, Elt d, Elt e, Elt f) => Elt (a, b, c, d, e, f) where
  touch (a, b, c, d, e, f)
-  = do	touch a
-	touch b
-	touch c
-	touch d
-	touch e
-	touch f
+  = do  touch a
+        touch b
+        touch c
+        touch d
+        touch e
+        touch f
  {-# INLINE touch #-}
 
  zero = (zero, zero, zero, zero, zero, zero)
