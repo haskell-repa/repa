@@ -12,6 +12,8 @@ where
 import Data.Repa.Array.Material.Auto.Base
 import Data.Repa.Array.Material.Auto.InstFloat
 import Data.Repa.Array.Material.Auto.InstInt
+import Data.Repa.Array.Material.Auto.InstList
+import Data.Repa.Array.Material.Auto.InstMaybe
 import Data.Repa.Array.Material.Auto.InstWord
 import Data.Repa.Array.Material.Auto.InstDate32
 import Data.Repa.Array.Material.Auto.InstProduct

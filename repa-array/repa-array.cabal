@@ -1,5 +1,5 @@
 Name:           repa-array
-Version:        4.2.0.1
+Version:        4.2.0.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -34,7 +34,7 @@ Library
         repa-eval          == 4.0.0.*,
         repa-stream        == 4.1.0.*,
         repa-scalar        == 4.2.0.*,
-        repa-convert       == 4.2.1.*
+        repa-convert       == 4.2.0.*
 
 
   exposed-modules:
@@ -86,6 +86,7 @@ Library
         Data.Repa.Array.Material.Auto.InstFloat
         Data.Repa.Array.Material.Auto.InstInt
         Data.Repa.Array.Material.Auto.InstList
+        Data.Repa.Array.Material.Auto.InstMaybe
         Data.Repa.Array.Material.Auto.InstWord
         Data.Repa.Array.Material.Auto.InstDate32
         Data.Repa.Array.Material.Auto.InstProduct
