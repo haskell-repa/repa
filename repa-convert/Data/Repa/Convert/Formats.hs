@@ -28,6 +28,7 @@ module Data.Repa.Convert.Formats
         , IntAsc        (..)
         , IntAsc0       (..)
         , DoubleAsc     (..)
+        , DoubleFixedPack (..)
 
           -- ** ASCII dates
         , YYYYsMMsDD    (..)

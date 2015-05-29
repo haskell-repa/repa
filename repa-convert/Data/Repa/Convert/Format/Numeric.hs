@@ -1,8 +1,9 @@
 
 module Data.Repa.Convert.Format.Numeric
-        ( IntAsc    (..)
-        , IntAsc0   (..)
-        , DoubleAsc (..))
+        ( IntAsc                (..)
+        , IntAsc0               (..)
+        , DoubleAsc             (..)
+        , DoubleFixedPack       (..))
 where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Lists
@@ -99,7 +100,7 @@ instance Format DoubleAsc where
  minSize    _           = 1
  fixedSize  _           = Nothing
 
- -- Max length of a pretty-printed 64-bit double is 64 bytes.
+ -- Max length of a pretty-printed 64-bit double is 24 bytes.
  packedSize _ _         = Just 24
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
@@ -118,6 +119,49 @@ instance Packable DoubleAsc where
  {-# INLINE pack   #-}
 
  unpack DoubleAsc 
+  =  Unpacker $ \start end _stop fail eat
+  -> let !len = F.minusPtr end start in
+     if len > 0
+      then do
+        (v, o)  <- S.loadDouble start len
+        eat (F.plusPtr start o) v
+      else fail
+ {-# INLINE unpack #-}
+
+
+-------------------------------------------------------------------------------- DoubleFixedPack
+-- | Human-readable ASCII Double.
+-- 
+--   When packing we use a fixed number of zeros after the decimal
+--   point, though when unpacking we allow a greater precision.
+--
+data DoubleFixedPack    = DoubleFixedPack Int   deriving (Eq, Show)
+instance Format DoubleFixedPack where
+ type Value DoubleFixedPack = Double
+ fieldCount _           = 1
+ minSize    _           = 1
+ fixedSize  _           = Nothing
+
+ -- Max length of a pretty-printed 64-bit double is 24 bytes.
+ packedSize (DoubleFixedPack prec) _         
+                        = Just (24 + prec)
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
+
+
+instance Packable DoubleFixedPack where
+
+ pack   (DoubleFixedPack prec) v 
+  =  Packer $ \buf k
+  -> do (fptr, len)  <- S.storeDoubleFixed prec v
+        F.withForeignPtr fptr $ \ptr
+         -> F.copyBytes buf ptr len
+        k (F.plusPtr buf len)
+ {-# INLINE pack   #-}
+
+ unpack (DoubleFixedPack _)
   =  Unpacker $ \start end _stop fail eat
   -> let !len = F.minusPtr end start in
      if len > 0

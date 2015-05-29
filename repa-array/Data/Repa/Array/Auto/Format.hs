@@ -193,7 +193,7 @@ unpacksFixedFormat !format !arrBytes
 --   * If the value cannot be converted then this function just calls `error`.
 unpacksLinesFormat
         :: forall format
-        .  (Packable format, A.Target A.A (Value format))
+        .  (Show format, Packable format, A.Target A.A (Value format))
         => format                       -- ^ Format for each element.
         -> Array Word8                  -- ^ Packed binary data.
         -> Array (Value format)         -- ^ Unpacked elements.
@@ -213,7 +213,13 @@ unpacksLinesFormat format arr8
         let unpackRow :: AG.Array A.A Word8 -> Value format
             unpackRow arr
              = case unpackFormat format arr of
-                Nothing -> error ("repa-array.unpacksLinesFormat: cannot convert")
+                Nothing 
+                 -> error $ unlines
+                  [ "repa-array.unpacksLinesFormat: conversion failed"
+                  , "    format       = " ++ show format
+                  , "    row as Word8 = " ++ show (A.toList arr)
+                  , "    row as Char8 = " ++ show (map (chr . fromIntegral) $ A.toList arr) ]
+
                 Just v  -> v
             {-# INLINE unpackRow #-}
 
