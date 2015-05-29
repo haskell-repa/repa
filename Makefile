@@ -17,29 +17,40 @@ PACKAGES = \
 .PHONY : all
 all : 
 	@make packages
+	@make tools
+	@make examples
 
 
 # Build and install all the Cabal packages.
 .PHONY : packages
 packages :
-	@for package in ${PACKAGES} repa-examples repa-tools; do \
+	@for package in ${PACKAGES}; do \
 		if [ `ghc-pkg list $${package} --simple-output | wc -l` -gt 0 ]; then \
 			echo "* Skipping $${package}; already installed"; \
-		    	continue; \
+			continue; \
 		fi; \
 		cd $${package}; \
 		echo "* Building $${package}"; \
-		 	cabal clean && \
-		 	cabal configure && \
-		 	cabal build && \
-		 	cabal install --enable-documentation --force-reinstalls;\
+			cabal install --enable-documentation --force-reinstalls;\
 		if [ $$? -ne 0 ]; then \
-		    	echo "* Error in $${package}!"; \
-		    	break; \
+			echo "* Error in $${package}!"; \
+			break; \
 		fi; \
 		cd ..; \
 		echo; \
 	done;
+
+
+# Build the tools.
+.PHONY : tools
+tools :
+	@cd repa-tools; cabal install
+
+
+# Build the examples
+.PHONY : examples
+examples :
+	@cd repa-examples; cabal install
 
 
 # Unregister all the Cabal packages.
@@ -48,10 +59,10 @@ unregister :
 	@echo "* Unregistering packages"
 	@for package in ${PACKAGES}; do \
 		if [ `ghc-pkg list $${package} --simple-output | wc -l` -gt 0 ]; then \
-		  	echo "* Unregistering $${package}"; \
-		  	ghc-pkg unregister $${package} --force 2> /dev/null; \
-		  	if [ $$? -ne 0 ]; then  \
-		   		continue; \
+			echo "* Unregistering $${package}"; \
+			ghc-pkg unregister $${package} --force 2> /dev/null; \
+			if [ $$? -ne 0 ]; then  \
+				continue; \
 			fi; \
 		fi; \
 	done;
