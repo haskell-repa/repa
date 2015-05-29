@@ -190,7 +190,6 @@ w32 = fromIntegral
 {-# INLINE w32 #-}
 
 
-
 ------------------------------------------------------------------------------------------- Int32be
 -- | Big-endian 32-bit signed integer.
 data Int32be    = Int32be               deriving (Eq, Show)
@@ -325,8 +324,9 @@ instance Packable Float32be where
 
 -- | Bitwise cast of `Float` to `Word32`.
 --
---   The resulting `Word32` contains the representation of the `Float`, 
---   rather than it's value.
+--   The resulting `Word32` contains the binary representation of the
+--   `Float`, rather than the integral part of its value.
+--
 floatToWord32 :: Float -> Word32
 floatToWord32 d
  = Prim.unsafeInlineIO
@@ -370,8 +370,9 @@ instance Packable Float64be where
 
 -- | Bitwise cast of `Double` to `Word64`.
 --
---   The resulting `Word64` contains the representation of the `Double`, 
---   rather than it's value.
+--   The resulting `Word64` contains the binary representation of the
+--   `Double`, rather than the integral part of its value.
+--
 doubleToWord64 :: Double -> Word64
 doubleToWord64 d
  = Prim.unsafeInlineIO
@@ -389,5 +390,4 @@ word64ToDouble w
  do     S.poke (S.castPtr buf) w
         S.peek buf
 {-# INLINE word64ToDouble #-}
-
 

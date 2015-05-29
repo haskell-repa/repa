@@ -2,7 +2,7 @@
 module Data.Repa.Convert.Format.Lists 
         ( -- * ASCII Strings
           FixAsc (..)
-        , VarAsc (..)
+        , VarAsc (..), unpackAsc
         , VarString (..))
 where
 import Data.Repa.Convert.Format.Binary

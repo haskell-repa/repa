@@ -34,7 +34,7 @@ Library
         repa-eval          == 4.0.0.*,
         repa-stream        == 4.1.0.*,
         repa-scalar        == 4.2.0.*,
-        repa-convert       == 4.2.0.*
+        repa-convert       == 4.2.1.*
 
 
   exposed-modules:
@@ -85,6 +85,7 @@ Library
         Data.Repa.Array.Material.Auto.Base
         Data.Repa.Array.Material.Auto.InstFloat
         Data.Repa.Array.Material.Auto.InstInt
+        Data.Repa.Array.Material.Auto.InstList
         Data.Repa.Array.Material.Auto.InstWord
         Data.Repa.Array.Material.Auto.InstDate32
         Data.Repa.Array.Material.Auto.InstProduct

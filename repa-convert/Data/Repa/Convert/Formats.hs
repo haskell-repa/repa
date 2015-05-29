@@ -12,10 +12,16 @@ module Data.Repa.Convert.Formats
         , Sep           (..)
         , Tup           (..)
 
+          -- * Units
+        , UnitAsc       (..)
+
           -- * Strings
         , FixAsc        (..)
         , VarAsc        (..)
         , VarString     (..)
+
+          -- * Maybes
+        , MaybeAsc      (..)
 
           -- * Atomic values
           -- ** ASCII numeric
@@ -51,8 +57,10 @@ import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Fields  ()
 import Data.Repa.Convert.Format.Lists
+import Data.Repa.Convert.Format.Maybe
 import Data.Repa.Convert.Format.Numeric
-import Data.Repa.Convert.Format.Tup
 import Data.Repa.Convert.Format.Sep
+import Data.Repa.Convert.Format.Tup
+import Data.Repa.Convert.Format.Unit
 import Data.Repa.Scalar.Product
 

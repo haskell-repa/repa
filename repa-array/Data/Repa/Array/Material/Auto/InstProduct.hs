@@ -199,13 +199,16 @@ unprod (AArray_Prod a1 a2) = (a1, a2)
 
 ---------------------------------------------------------------------------------------------------
 pattern Prod1 n a1     
-        = AArray_Prod a1 (AArray_Unit n)
+        = AArray_Prod a1
+         (AArray_Unit n)
 
 pattern Prod2 n a1 a2
-        = AArray_Prod a1 (AArray_Prod a2 (AArray_Unit n))
+        = AArray_Prod a1 (AArray_Prod a2
+         (AArray_Unit n))
 
 pattern Prod3 n a1 a2 a3
-        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Unit n)))
+        = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3
+         (AArray_Unit n)))
 
 pattern Prod4 n a1 a2 a3 a4
         = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
@@ -213,15 +216,18 @@ pattern Prod4 n a1 a2 a3 a4
 
 pattern Prod5 n a1 a2 a3 a4 a5 
         = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
-         (AArray_Prod a5 ((AArray_Unit n))))))
+         (AArray_Prod a5
+         (AArray_Unit n)))))
 
 pattern Prod6 n a1 a2 a3 a4 a5 a6
         = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
-         (AArray_Prod a5 (AArray_Prod a6 (AArray_Unit n))))))
+         (AArray_Prod a5 (AArray_Prod a6
+         (AArray_Unit n))))))
 
 pattern Prod7 n a1 a2 a3 a4 a5 a6 a7
         = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
-         (AArray_Prod a5 (AArray_Prod a6 (AArray_Prod a7 (AArray_Unit n)))))))
+         (AArray_Prod a5 (AArray_Prod a6 (AArray_Prod a7
+         (AArray_Unit n)))))))
 
 pattern Prod8 n a1 a2 a3 a4 a5 a6 a7 a8
         = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
@@ -231,5 +237,6 @@ pattern Prod8 n a1 a2 a3 a4 a5 a6 a7 a8
 pattern Prod9 n a1 a2 a3 a4 a5 a6 a7 a8 a9
         = AArray_Prod a1 (AArray_Prod a2 (AArray_Prod a3 (AArray_Prod a4 
          (AArray_Prod a5 (AArray_Prod a6 (AArray_Prod a7 (AArray_Prod a8
-         (AArray_Prod a9 (AArray_Unit n)))))))))
+         (AArray_Prod a9 
+         (AArray_Unit n)))))))))
 

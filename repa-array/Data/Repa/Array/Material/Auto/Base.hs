@@ -18,6 +18,7 @@ import Data.Repa.Fusion.Unpack                  as F
 import Control.Monad
 #include "repa-array.h"
 
+
 -- | Arrays where the elements that are automatically layed out into some
 --   efficient runtime representation.
 --
@@ -297,77 +298,6 @@ instance Unpack (Buffer (T2 A A) (a, b)) t
 instance Eq (Array (T2 A A) (a, b))
       => Eq (Array A (a, b)) where
  (==) (AArray_T2 arr1) (AArray_T2 arr2) = arr1 == arr2
- {-# INLINE (==) #-}
-
-
------------------------------------------------------------------------------------------------ []
-instance Bulk A a => Bulk A [a] where
- data Array A [a]               = AArray_List !(Array B [a])
- layout (AArray_List arr)       = Auto (A.length arr)
- index  (AArray_List arr) ix    = A.index arr ix
- {-# INLINE_ARRAY layout #-}
- {-# INLINE_ARRAY index  #-}
-
-deriving instance Show a => Show (Array A [a])
-
-
-instance Bulk A a => Windowable A [a] where
- window st len (AArray_List arr) 
-  = AArray_List (window st len arr)
- {-# INLINE_ARRAY window #-}
-
-
-instance  Target A [a] where
- data Buffer A [a]
-  = ABuffer_List !(Buffer B [a])
-
- unsafeNewBuffer (Auto len)     
-  = liftM ABuffer_List $ unsafeNewBuffer (Boxed len)
- {-# INLINE_ARRAY unsafeNewBuffer #-}
-
- unsafeReadBuffer   (ABuffer_List arr) ix
-  = unsafeReadBuffer arr ix
- {-# INLINE_ARRAY unsafeReadBuffer #-}
-
- unsafeWriteBuffer  (ABuffer_List arr) ix x
-  = unsafeWriteBuffer arr ix x
- {-# INLINE_ARRAY unsafeWriteBuffer #-}
-
- unsafeGrowBuffer   (ABuffer_List arr) bump
-  = liftM ABuffer_List  $ unsafeGrowBuffer arr bump
- {-# INLINE_ARRAY unsafeGrowBuffer #-}
-
- unsafeFreezeBuffer (ABuffer_List arr)
-  = liftM AArray_List   $ unsafeFreezeBuffer arr 
- {-# INLINE_ARRAY unsafeFreezeBuffer #-}
-
- unsafeThawBuffer   (AArray_List arr)
-  = liftM ABuffer_List  $ unsafeThawBuffer  arr
- {-# INLINE_ARRAY unsafeThawBuffer #-}
-
- unsafeSliceBuffer st len (ABuffer_List buf)
-  = liftM ABuffer_List  $ unsafeSliceBuffer st len buf
- {-# INLINE_ARRAY unsafeSliceBuffer #-}
-
- touchBuffer (ABuffer_List buf)
-  = touchBuffer buf
- {-# INLINE_ARRAY touchBuffer #-}
-
- bufferLayout (ABuffer_List buf)
-  = Auto $ A.extent $ bufferLayout buf
- {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance Unpack (Buffer A [a]) (Buffer A [a]) where
- unpack buf   = buf
- repack _ buf = buf
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
-
-
-instance Eq a
-      => Eq (Array A [a]) where
- (==) (AArray_List arr1) (AArray_List arr2) = arr1 == arr2
  {-# INLINE (==) #-}
 
 
