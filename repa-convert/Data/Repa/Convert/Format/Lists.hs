@@ -31,10 +31,10 @@ instance Format FixAsc where
  minSize    (FixAsc len)        = len
  fixedSize  (FixAsc len)        = Just len
  packedSize (FixAsc len) _      = Just len
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable FixAsc where
@@ -76,10 +76,10 @@ instance Format (VarAsc)        where
  minSize    _                   = 0
  fixedSize  VarAsc              = Nothing
  packedSize VarAsc xs           = Just $ length xs
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable VarAsc where
@@ -94,7 +94,7 @@ instance Packable VarAsc where
    = Unpacker $ \start end stop _fail eat
    -> do (ptr, str)      <- unpackAsc start end stop
          eat ptr str
-  {-# INLINE unpack #-}
+  {-# NOINLINE unpack #-}
 
 
 -- | Unpack a ascii text from the given buffer.
@@ -118,7 +118,7 @@ unpackAsc start end stop
                  else do
                    let !ptr'  = S.plusPtr ptr 1
                    go ptr' ((chr $ fromIntegral w) : acc)
-{-# INLINE unpackAsc #-}
+{-# NOINLINE unpackAsc #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -132,10 +132,10 @@ instance Format VarString       where
  fixedSize  _                   = Nothing
  packedSize VarString xs        
   = Just $ length $ show xs     
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable VarString where
@@ -143,7 +143,7 @@ instance Packable VarString where
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  pack VarString xx
   =  pack VarAsc (show xx)
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack VarString
   =  Unpacker $ \start end _stop fail eat
@@ -151,7 +151,7 @@ instance Packable VarString where
         case r of
          Nothing            -> fail
          Just (start', str) -> eat start' str
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 -- | Unpack a string from the given buffer.
@@ -214,5 +214,5 @@ unpackString start end
 ---------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
-{-# INLINE w8  #-}
+{-# INLINE_INNER w8  #-}
 

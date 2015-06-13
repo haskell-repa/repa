@@ -112,6 +112,7 @@ packToList8 f x
                 return $ Just xs
 
  | otherwise    = Nothing
+{-# INLINE packToList8 #-}
 
 
 -- | Unpack a value from a list of `Word8`.
@@ -127,6 +128,7 @@ unpackFromList8 format xs
                 $ zip [0 .. len - 1] xs
         r <- unsafeRunUnpacker (unpack format) buf len (const False)
         return $ fmap fst r
+{-# INLINE unpackFromList8 #-}
 
 
 -- | Pack a value to a String.
@@ -135,6 +137,7 @@ packToString
         => format -> Value format -> Maybe String
 packToString f v
         = liftM (map (chr . fromIntegral)) $ packToList8 f v
+{-# INLINE packToString #-}
 
 
 -- | Unpack a value from a String.
@@ -143,6 +146,7 @@ unpackFromString
         => format -> String -> Maybe (Value format)
 unpackFromString f s
         = unpackFromList8 f $ map (fromIntegral . ord) s
+{-# INLINE unpackFromString #-}
 
 
 ---------------------------------------------------------------------------------------------------

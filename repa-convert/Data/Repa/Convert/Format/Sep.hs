@@ -31,17 +31,17 @@ instance Format (Sep ()) where
  minSize    (Sep _ _)    = 0
  fixedSize  (Sep _ _)    = return 0
  packedSize (Sep _ _) () = return 0
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable (Sep ()) where
  pack   _fmt _val        = mempty
  unpack _fmt             = return ()
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -72,10 +72,10 @@ instance ( Format f1, Format (Sep fs)
         ss      <-  packedSize (Sep c fs) xs
         let sSep =  if fieldCount (Sep c fs) == 0 then 0 else 1
         return  $ s1 + sSep + ss 
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_REVEAL minSize    #-}
+ {-# INLINE_REVEAL fieldCount #-}
+ {-# INLINE_REVEAL fixedSize  #-}
+ {-# INLINE_REVEAL packedSize #-}
 
 
 instance ( Packable f1, Packable (Sep fs)
@@ -88,7 +88,7 @@ instance ( Packable f1, Packable (Sep fs)
 
   | otherwise
   = pack f1 x1
- {-# INLINE pack #-}
+ {-# INLINE_REVEAL pack #-}
 
 
  unpack (Sep c (f1 :*: fs)) 
@@ -115,7 +115,7 @@ instance ( Packable f1, Packable (Sep fs)
      in  (fromUnpacker $ unpack f1)         start   end stop' fail $ \start_x  x
       -> (fromUnpacker $ unpack (Sep c fs)) start_x end stop' fail $ \start_xs xs
       -> eat start_xs (x :*: xs)
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ instance Format UnitAsc                 where
 instance Packable UnitAsc where
  pack   (UnitAsc s) ()    
   = pack (FixAsc (length s)) s
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack (UnitAsc str) 
   =  Unpacker $ \start end stop fail eat
@@ -35,5 +35,5 @@ instance Packable UnitAsc where
         if str == str'
          then eat ptr ()
          else fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 

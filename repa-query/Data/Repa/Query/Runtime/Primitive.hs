@@ -34,7 +34,6 @@ module Data.Repa.Query.Runtime.Primitive
           -- * From Data.Repa.Flow.Auto.IO
         , fromFiles
         , sourceLinesFormat
-        , sourceFixedFormat
         , sourceTableFormat
         , sourceFamilyKey
         , sourceFamilyColumn
@@ -179,8 +178,7 @@ groupsBy_i f ss
 
 -- Data.Repa.Flow.Auto.IO -------------------------------------------------------------------------
 fromFiles               = F.fromFiles
-sourceLinesFormat       = F.sourceLinesFormat
-sourceFixedFormat       = F.sourceFixedFormat
+sourceLinesFormat       = F.sourceFormatLn
 sourceTableFormat       = S.sourceTableFormat
 sourceFamilyKey         = S.sourceFamilyKey
 sourceFamilyColumn      = S.sourceFamilyColumn

@@ -24,10 +24,10 @@ instance Format YYYYsMMsDD where
  minSize    _           = 10
  fixedSize  _           = Just 10
  packedSize _ _         = Just 10
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable YYYYsMMsDD where
@@ -42,7 +42,7 @@ instance Packable YYYYsMMsDD where
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) dd
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack (YYYYsMMsDD s)
   =  Unpacker $ \start end _stop fail eat
@@ -52,7 +52,7 @@ instance Packable YYYYsMMsDD where
         case r of
          Just (d, o)    -> eat (F.plusPtr start o) d
          Nothing        -> fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ---------------------------------------------------------------------------------------- DDsMMsYYYY
@@ -64,10 +64,10 @@ instance Format DDsMMsYYYY where
  minSize    _           = 10
  fixedSize  _           = Just 10
  packedSize _ _         = Just 10
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable DDsMMsYYYY where
@@ -82,7 +82,7 @@ instance Packable DDsMMsYYYY where
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 4) yy
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack (DDsMMsYYYY s)
   =  Unpacker $ \start end _stop fail eat
@@ -92,12 +92,12 @@ instance Packable DDsMMsYYYY where
         case r of
          Just (d, o)    -> eat (F.plusPtr start o) d
          Nothing        -> fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
-{-# INLINE cw8 #-}
+{-# INLINE_INNER cw8 #-}
 
 

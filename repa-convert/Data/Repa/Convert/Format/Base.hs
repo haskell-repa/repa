@@ -71,11 +71,11 @@ data Packer
 instance Monoid Packer where
  mempty 
   = Packer $ \buf k -> k buf
- {-# INLINE mempty #-}
+ {-# INLINE_INNER mempty #-}
 
  mappend (Packer fa) (Packer fb)
   = Packer $ \buf0 k -> fa buf0 (\buf1 -> fb buf1 k)
- {-# INLINE mappend #-}
+ {-# INLINE_INNER mappend #-}
 
 
 -- | Pack data into the given buffer.
@@ -92,7 +92,7 @@ unsafeRunPacker
 
 unsafeRunPacker (Packer make) buf
         = make buf (\buf' -> return (Just buf'))
-{-# INLINE unsafeRunPacker #-}
+{-# INLINE_INNER unsafeRunPacker #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -125,26 +125,26 @@ instance Functor Unpacker where
   =  Unpacker $ \start end stop fail eat
   -> fx start end stop fail $ \start_x x 
   -> eat start_x (f x)
- {-# INLINE fmap #-}
+ {-# INLINE_INNER fmap #-}
 
 
 instance Applicative Unpacker where
  pure  x
   =  Unpacker $ \start _end _fail _stop eat
   -> eat start x
- {-# INLINE pure #-}
+ {-# INLINE_INNER pure #-}
 
  (<*>) (Unpacker ff) (Unpacker fx)
   =  Unpacker $ \start end stop fail eat
   -> ff start   end stop fail $ \start_f f
   -> fx start_f end stop fail $ \start_x x
   -> eat start_x (f x)
- {-# INLINE (<*>) #-}
+ {-# INLINE_INNER (<*>) #-}
 
 
 instance Monad Unpacker where
  return = pure
- {-# INLINE return #-}
+ {-# INLINE_INNER return #-}
 
  (>>=) (Unpacker fa) mkfb
   =  Unpacker $ \start end stop fail eat
@@ -152,7 +152,7 @@ instance Monad Unpacker where
   -> case mkfb x of
         Unpacker fb
          -> fb start_x end stop fail eat
- {-# INLINE (>>=) #-}
+ {-# INLINE_INNER (>>=) #-}
 
 
 -- | Unpack data from the given buffer.
@@ -179,7 +179,7 @@ unsafeRunUnpacker (Unpacker f) start len stop
                 (return ())
                 (\ptr x -> writeIORef ref (Just (x, ptr)))
         readIORef ref
-{-# INLINE unsafeRunUnpacker #-}
+{-# INLINE_INNER unsafeRunUnpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------

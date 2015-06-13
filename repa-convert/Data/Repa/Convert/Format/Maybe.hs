@@ -15,11 +15,9 @@ data MaybeAsc f = MaybeAsc String f      deriving (Eq, Show)
 instance Format f => Format (MaybeAsc f) where
  type Value (MaybeAsc f)   = Maybe (Value f)
  fieldCount _              = 1
- {-# INLINE fieldCount #-}
 
  minSize    (MaybeAsc s f) 
   = min (length s) (minSize f)
- {-# INLINE minSize    #-}
 
  fixedSize  (MaybeAsc s f)
   = case fixedSize f of
@@ -27,13 +25,16 @@ instance Format f => Format (MaybeAsc f) where
         Just sf -> if length s == sf 
                         then Just sf
                         else Nothing
- {-# INLINE fixedSize  #-}
 
  packedSize (MaybeAsc str f) mv
   = case mv of
         Nothing -> Just $ length str
         Just v  -> packedSize f v
- {-# INLINE packedSize #-}
+
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable f
@@ -42,7 +43,6 @@ instance Packable f
   = case mv of
         Nothing -> pack VarAsc str
         Just v  -> pack f      v
- {-# INLINE pack #-}
 
  unpack (MaybeAsc str f)
   =  Unpacker $ \start end stop fail eat
@@ -51,5 +51,7 @@ instance Packable f
          then eat ptr Nothing
          else (fromUnpacker $ unpack f) start end stop fail 
                $ \ptr' x -> eat ptr' (Just x)
- {-# INLINE unpack #-}
+
+ {-# INLINE_INNER pack #-}
+ {-# INLINE_INNER unpack #-}
 

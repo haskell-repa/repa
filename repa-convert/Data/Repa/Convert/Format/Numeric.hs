@@ -26,10 +26,10 @@ instance Format IntAsc where
 
  -- Max length of a pretty printed 64-bit Int is 20 bytes including sign.
  packedSize _ _         = Just 20               
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable IntAsc where
@@ -37,7 +37,7 @@ instance Packable IntAsc where
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  pack IntAsc v
   = pack VarAsc (show v)
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack IntAsc 
   =  Unpacker $ \start end _stop fail eat
@@ -49,7 +49,7 @@ instance Packable IntAsc where
            Just (n, o)  -> eat (F.plusPtr start o) n
            Nothing      -> fail
         else fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ------------------------------------------------------------------------------------------- IntAsc
@@ -63,10 +63,10 @@ instance Format IntAsc0 where
 
  -- Max length of a pretty printed 64-bit Int is 20 bytes including sign.
  packedSize (IntAsc0 n) _ = Just (n + 20)
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable IntAsc0 where
@@ -76,7 +76,7 @@ instance Packable IntAsc0 where
   = let s       = show v
         s'      = replicate (n - length s) '0' ++ s
     in  pack VarAsc s'
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack (IntAsc0 _)
   =  Unpacker $ \start end _stop fail eat
@@ -88,7 +88,7 @@ instance Packable IntAsc0 where
          Just (n, o)    -> eat (F.plusPtr start o) n
          Nothing        -> fail
       else fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ----------------------------------------------------------------------------------------- DoubleAsc
@@ -102,10 +102,10 @@ instance Format DoubleAsc where
 
  -- Max length of a pretty-printed 64-bit double is 24 bytes.
  packedSize _ _         = Just 24
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable DoubleAsc where
@@ -116,7 +116,7 @@ instance Packable DoubleAsc where
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
         k (F.plusPtr buf len)
- {-# INLINE pack   #-}
+ {-# INLINE_INNER pack   #-}
 
  unpack DoubleAsc 
   =  Unpacker $ \start end _stop fail eat
@@ -126,7 +126,7 @@ instance Packable DoubleAsc where
         (v, o)  <- S.loadDouble start len
         eat (F.plusPtr start o) v
       else fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 -------------------------------------------------------------------------------- DoubleFixedPack
@@ -145,10 +145,10 @@ instance Format DoubleFixedPack where
  -- Max length of a pretty-printed 64-bit double is 24 bytes.
  packedSize (DoubleFixedPack prec) _         
                         = Just (24 + prec)
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable DoubleFixedPack where
@@ -159,7 +159,7 @@ instance Packable DoubleFixedPack where
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
         k (F.plusPtr buf len)
- {-# INLINE pack   #-}
+ {-# INLINE_INNER pack   #-}
 
  unpack (DoubleFixedPack _)
   =  Unpacker $ \start end _stop fail eat
@@ -169,6 +169,6 @@ instance Packable DoubleFixedPack where
         (v, o)  <- S.loadDouble start len
         eat (F.plusPtr start o) v
       else fail
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 

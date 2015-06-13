@@ -96,6 +96,7 @@ year :: Date32 -> Int
 year date
  = case unpack date of
         (yy, _, _)      -> yy
+{-# INLINE year #-}
 
 
 -- | Take the month number of a `Date32`.
@@ -103,6 +104,7 @@ month :: Date32 -> Int
 month date
  = case unpack date of
         (_, mm, _)      -> mm
+{-# INLINE month #-}
 
 
 -- | Take the day number of a `Date32`.
@@ -110,6 +112,7 @@ day :: Date32 -> Int
 day date
  = case unpack date of
         (_, _, dd)      -> dd
+{-# INLINE day #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -203,7 +206,7 @@ loadYYYYsMMsDD !sep !buf (I# len_)
                 , I# (ix +# o))
 
          | otherwise    = return Nothing
-{-# INLINE loadYYYYsMMsDD #-}
+{-# NOINLINE loadYYYYsMMsDD #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -255,6 +258,6 @@ loadDDsMMsYYYY !sep !buf (I# len_)
                 , I# (ix +# o))
 
          | otherwise    = return Nothing
-{-# INLINE loadDDsMMsYYYY #-}
+{-# NOINLINE loadDDsMMsYYYY #-}
 
 

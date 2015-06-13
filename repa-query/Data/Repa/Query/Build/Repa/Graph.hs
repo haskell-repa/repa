@@ -69,7 +69,9 @@ bindOfSource ss
 
           -- Fixed length rows.
           | otherwise
-          -> do let hTable       = return (LitE (StringL path))
+          -> error "repa-query: bindOfSource finish me"
+{-
+                do let hTable       = return (LitE (StringL path))
                 let Just format' = expOfFieldsFormat (fields ++ [Q.FieldBox Q.Nil])
 
                 xRhs    
@@ -80,7 +82,7 @@ bindOfSource ss
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
-
+-}
 
         ---------------------------------------------------
         G.SourceTable _ path delim fields sOut

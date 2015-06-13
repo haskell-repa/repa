@@ -29,7 +29,7 @@ loadInt !ptr (I# len)
  = case loadInt# ptr len of
         (# 0#, _, _  #) -> return $ Nothing
         (# _,  n, ix #) -> return $ Just (I# n, I# ix)
-{-# INLINE loadInt #-}
+{-# NOINLINE loadInt #-}
 
 
 -- | Like `loadInt`, but via unboxed types.
@@ -114,7 +114,7 @@ loadIntWith# !get len
          | otherwise
          = (# 1#, n, ix #)
         {-# NOINLINE end #-}
-{-# INLINE loadIntWith# #-}
+{-# NOINLINE loadIntWith# #-}
 
 
 -- | Store an ASCII `Int`, allocating a new buffer.
@@ -122,6 +122,6 @@ storeInt :: Int -> IO (F.ForeignPtr Word8)
 storeInt i
  = case DC.toFixed 0 (fromIntegral i) of
         BS.PS p _ _     -> return p
-{-# INLINE storeInt #-}
+{-# NOINLINE storeInt #-}
 
 

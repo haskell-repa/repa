@@ -24,17 +24,17 @@ instance Format (Tup ()) where
  minSize    (Tup _)     = 0
  fixedSize  (Tup _)     = return 0
  packedSize (Tup _) ()  = return 0
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable (Tup ()) where
  pack   _fmt _val       = mempty
  unpack _fmt            = return ()
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -67,10 +67,10 @@ instance ( Format f1
         ss      <- packedSize (Sep ',' fs) xs
         let sSep = if fieldCount (Sep ',' fs) == 0 then 0 else 1
         return  $ 2 + s1 + sSep + ss 
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_REVEAL minSize    #-}
+ {-# INLINE_REVEAL fieldCount #-}
+ {-# INLINE_REVEAL fixedSize  #-}
+ {-# INLINE_REVEAL packedSize #-}
 
 
 instance ( Packable f1
@@ -83,15 +83,15 @@ instance ( Packable f1
         =  pack Word8be (cw8 '(')
         <> pack (Sep ',' fs) xs
         <> pack Word8be (cw8 ')')
- {-# INLINE pack #-}
+ {-# INLINE_REVEAL pack #-}
 
  -- TODO: finish tuple decoding.
  unpack = error "repa-convert.row unpack finish me"
- {-# INLINE unpack #-}
+ {-# NOINLINE unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
-{-# INLINE cw8 #-}
+{-# INLINE_INNER cw8 #-}
 

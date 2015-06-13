@@ -30,10 +30,10 @@ instance Format Word8be                 where
  minSize    _           = 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Word8be where
@@ -41,18 +41,18 @@ instance Packable Word8be where
   =  Packer $ \buf k
   -> do S.poke buf (fromIntegral x)
         k (S.plusPtr buf 1)
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack Word8be 
   =  Unpacker $ \start _end _stop _fail eat
   -> do x <- S.peek start
         eat (S.plusPtr start 1) (fromIntegral x)
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
-{-# INLINE w8  #-}
+{-# INLINE_INNER w8  #-}
 
 
 ------------------------------------------------------------------------------------------- Int8be
@@ -64,22 +64,22 @@ instance Format Int8be                  where
  minSize    _           = 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Int8be where
  pack    Int8be x       = pack Word8be (w8 x)
  unpack  Int8be         = fmap i8 (unpack Word8be)
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 i8  :: Integral a => a -> Int8
 i8 = fromIntegral
-{-# INLINE i8  #-}
+{-# INLINE_INNER i8  #-}
 
 
 ------------------------------------------------------------------------------------------ Word16be
@@ -91,10 +91,10 @@ instance Format Word16be                where
  minSize    _           = 2
  fixedSize  _           = Just 2
  packedSize _ _         = Just 2
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Word16be where
@@ -103,7 +103,7 @@ instance Packable Word16be where
   -> do S.poke        buf    (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
         S.pokeByteOff buf 1  (w8 ((w16 x .&. 0x000ff)))
         k (S.plusPtr buf 2)
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack Word16be 
   =  Unpacker $ \start _end _stop _fail eat
@@ -111,12 +111,12 @@ instance Packable Word16be where
         x1 :: Word8  <- S.peekByteOff start 1
         eat (S.plusPtr start 2)
             (w16 ((w16 x0 `shiftL` 8) .|. w16 x1))
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 w16 :: Integral a => a -> Word16
 w16 = fromIntegral
-{-# INLINE w16 #-}
+{-# INLINE_INNER w16 #-}
 
 
 ------------------------------------------------------------------------------------------- Int16be
@@ -128,22 +128,22 @@ instance Format Int16be                 where
  minSize    _           = 2
  fixedSize  _           = Just 2
  packedSize _ _         = Just 2
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Int16be where
  pack   Int16be x       = pack   Word16be (w16 x)
  unpack Int16be         = fmap i16 (unpack Word16be)
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 i16 :: Integral a => a -> Int16
 i16 = fromIntegral
-{-# INLINE i16 #-}
+{-# INLINE_INNER i16 #-}
 
 
 ------------------------------------------------------------------------------------------ Word32be
@@ -155,10 +155,10 @@ instance Format Word32be                where
  minSize    _           = 4
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Word32be where
@@ -169,7 +169,7 @@ instance Packable Word32be where
         S.pokeByteOff buf 2  (w8 ((w32 x .&. 0x00000ff00) `shiftR`  8))
         S.pokeByteOff buf 3  (w8 ((w32 x .&. 0x0000000ff)))
         k (S.plusPtr buf 4)
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack Word32be 
   =  Unpacker $ \start _end _fail _stop eat
@@ -182,12 +182,12 @@ instance Packable Word32be where
                  .|. (w32 x1 `shiftL` 16)
                  .|. (w32 x2 `shiftL`  8)
                  .|. (w32 x3)))
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 w32 :: Integral a => a -> Word32
 w32 = fromIntegral
-{-# INLINE w32 #-}
+{-# INLINE_INNER w32 #-}
 
 
 ------------------------------------------------------------------------------------------- Int32be
@@ -199,22 +199,22 @@ instance Format Int32be                 where
  minSize    _           = 4
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Int32be where
  pack   Int32be x       = pack   Word32be (w32 x)
  unpack Int32be         = fmap i32 (unpack Word32be)
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 i32 :: Integral a => a -> Int32
 i32 = fromIntegral
-{-# INLINE i32 #-}
+{-# INLINE_INNER i32 #-}
 
 
 ------------------------------------------------------------------------------------------ Word64be
@@ -226,10 +226,10 @@ instance Format Word64be                where
  minSize    _           = 8
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Word64be where
@@ -244,7 +244,7 @@ instance Packable Word64be where
         S.pokeByteOff buf 6  (w8 ((w64 x .&. 0x0000000000000ff00) `shiftR`  8))
         S.pokeByteOff buf 7  (w8 ((w64 x .&. 0x000000000000000ff)            ))
         k (S.plusPtr buf 8)
- {-# INLINE pack #-}
+ {-# INLINE_INNER pack #-}
 
  unpack Word64be 
   =  Unpacker $ \start _end _fail _stop eat
@@ -265,12 +265,12 @@ instance Packable Word64be where
                  .|. (w64 x5 `shiftL` 16)
                  .|. (w64 x6 `shiftL`  8)
                  .|. (w64 x7           )))
- {-# INLINE unpack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 w64 :: Integral a => a -> Word64
 w64 = fromIntegral
-{-# INLINE w64 #-}
+{-# INLINE_INNER w64 #-}
 
 
 ------------------------------------------------------------------------------------------- Int64be
@@ -282,22 +282,22 @@ instance Format Int64be                 where
  minSize    _           = 8
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Int64be where
  pack   Int64be x       = pack   Word64be (w64 x)
  unpack Int64be         = fmap i64 (unpack Word64be)
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 i64 :: Integral a => a -> Int64
 i64 = fromIntegral
-{-# INLINE i64 #-}
+{-# INLINE_INNER i64 #-}
 
 
 ----------------------------------------------------------------------------------------- Float32be
@@ -309,17 +309,17 @@ instance Format Float32be               where
  minSize    _           = 4
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Float32be where
  pack      Float32be x  = pack Word32be (floatToWord32 x)
  unpack    Float32be    = fmap word32ToFloat (unpack Word32be)
- {-# INLINE pack #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 -- | Bitwise cast of `Float` to `Word32`.
@@ -333,7 +333,7 @@ floatToWord32 d
  $ S.alloca $ \buf -> 
  do     S.poke (S.castPtr buf) d
         S.peek buf
-{-# INLINE floatToWord32 #-}
+{-# INLINE_INNER floatToWord32 #-}
 
 
 -- | Inverse of `doubleToFloat32`
@@ -343,7 +343,7 @@ word32ToFloat w
  $ S.alloca $ \buf ->
  do     S.poke (S.castPtr buf) w
         S.peek buf
-{-# INLINE word32ToFloat #-}
+{-# INLINE_INNER word32ToFloat #-}
 
 
 ----------------------------------------------------------------------------------------- Float64be
@@ -355,17 +355,17 @@ instance Format Float64be               where
  minSize    _           = 8
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable Float64be where
  pack      Float64be x  = pack Word64be (doubleToWord64 x)
  unpack    Float64be    = fmap word64ToDouble (unpack Word64be)
- {-# INLINE pack #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack #-}
+ {-# INLINE_INNER unpack #-}
 
 
 -- | Bitwise cast of `Double` to `Word64`.
@@ -379,7 +379,7 @@ doubleToWord64 d
  $ S.alloca $ \buf -> 
  do     S.poke (S.castPtr buf) d
         S.peek buf
-{-# INLINE doubleToWord64 #-}
+{-# INLINE_INNER doubleToWord64 #-}
 
 
 -- | Inverse of `doubleToWord64`
@@ -389,5 +389,5 @@ word64ToDouble w
  $ S.alloca $ \buf ->
  do     S.poke (S.castPtr buf) w
         S.peek buf
-{-# INLINE word64ToDouble #-}
+{-# INLINE_INNER word64ToDouble #-}
 

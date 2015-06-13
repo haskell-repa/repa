@@ -10,17 +10,17 @@ instance Format () where
  minSize    _   = 0
  fixedSize  _   = return 0
  packedSize _ _ = return 0
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance Packable () where
  pack   _       = mempty
  unpack _       = return ()
- {-# INLINE pack   #-} 
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-} 
+ {-# INLINE_INNER unpack #-}
 
 
 -- | Formatting fields.
@@ -46,8 +46,8 @@ instance (Format a, Format b)
         sb      <- packedSize fb xb
         return  $  sa + sb
 
- {-# INLINE minSize #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize #-}
+ {-# INLINE_INNER packedSize #-}
 

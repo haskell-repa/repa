@@ -19,10 +19,10 @@ instance Format (App ()) where
  minSize    (App ())    = 0
  fixedSize  (App ())    = return 0
  packedSize (App ()) () = return 0
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_INNER minSize    #-}
+ {-# INLINE_INNER fieldCount #-}
+ {-# INLINE_INNER fixedSize  #-}
+ {-# INLINE_INNER packedSize #-}
 
 
 instance ( Format f1, Format (App fs)
@@ -46,17 +46,17 @@ instance ( Format f1, Format (App fs)
   = do  s1      <- packedSize f1       x1
         ss      <- packedSize (App fs) xs
         return  $ s1 + ss
- {-# INLINE minSize    #-}
- {-# INLINE fieldCount #-}
- {-# INLINE fixedSize  #-}
- {-# INLINE packedSize #-}
+ {-# INLINE_REVEAL minSize    #-}
+ {-# INLINE_REVEAL fieldCount #-}
+ {-# INLINE_REVEAL fixedSize  #-}
+ {-# INLINE_REVEAL packedSize #-}
 
 
 instance Packable (App ()) where
  pack   _fmt _val       = mempty
  unpack _fmt            = return ()
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ {-# INLINE_INNER pack   #-}
+ {-# INLINE_INNER unpack #-}
 
 
 instance ( Packable f1, Packable (App fs)
@@ -70,6 +70,6 @@ instance ( Packable f1, Packable (App fs)
   = do  x1      <- unpack f1
         xs      <- unpack (App fs)
         return  (x1 :*: xs)
- {-# INLINE pack #-}
- {-# INLINE unpack #-}
+ {-# INLINE_REVEAL pack #-}
+ {-# INLINE_REVEAL unpack #-}
 
