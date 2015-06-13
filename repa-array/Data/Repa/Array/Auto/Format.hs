@@ -1,15 +1,17 @@
 
 module Data.Repa.Array.Auto.Format
         ( module Data.Repa.Convert.Format
+        , module Data.Repa.Convert.Formats
         
           -- * Packing
         , packFormat
-        , packsFixedFormat
+        , packsFormat
+        , packsFormatLn
 
           -- * Unpacking
         , unpackFormat
-        , unpacksFixedFormat
-        , unpacksLinesFormat)
+        , unpacksFormatLn
+        , unpacksFormatFixed)
 where
 import Data.Repa.Array.Auto.Base                        as A
 import Data.Repa.Array.Generic.Convert                  as A
@@ -21,6 +23,7 @@ import qualified Data.Repa.Array.Internals.Target       as A
 import qualified Data.Repa.Array.Internals.Bulk         as A
 import qualified Data.Repa.Convert.Format               as C
 import Data.Repa.Convert.Format
+import Data.Repa.Convert.Formats
 
 import Foreign.ForeignPtr
 import Foreign.Ptr
@@ -68,46 +71,61 @@ packFormat !format !v
 {-# INLINE_ARRAY packFormat #-}
 
 
--- | Pack an array of fixed-length elements to a buffer using the given format.
-packsFixedFormat
-        :: (C.Packable format, A.Bulk A.A (C.Value format))
-        => format                       -- ^ Fixed length format for each element.
-        -> Array (C.Value format)       -- ^ Source elements.
+-- | Pack an array of values into a buffer using the given format.
+--
+--   * The bytes representing each value are concatenated together with no delimitor.
+--
+packsFormat
+        :: (C.Packable format, Show format, A.Bulk A.A (Value format))
+        => format                       -- ^ Format for each value
+        -> Array (Value format)         -- ^ Source values.
         -> Maybe (Array Word8)          -- ^ Packed binary data.
 
-packsFixedFormat !format !arrElems
- | Just rowSize <- C.fixedSize format
- , lenElems     <- A.length arrElems
- , lenBytes     <- rowSize * lenElems
- 
- = unsafePerformIO
- $ do   
-        buf@(A.FBuffer mvec) :: A.Buffer A.F Word8
-                <- A.unsafeNewBuffer (A.Foreign lenBytes)
+packsFormat !format !arr
+ = let  
+        packRow v 
+         = case packFormat format v of
+            Nothing
+             -> error $ unlines
+             [ "repa-array.packsFormat: conversion failed"
+             , "    format       = " ++ show format ]
 
-        let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
+            Just arr8 -> arr8
+        {-# INLINE packRow #-}
 
-        withForeignPtr fptr $ \ptr_
-         -> do  
-                let loop !ixSrc !ptrDst
-                     | ixSrc >= lenElems
-                     = return $ Just ()
+   in   Just $ AG.concat A.A $ AG.mapS A.N packRow arr
+{-# INLINE_ARRAY packsFormat #-}
 
-                     | otherwise
-                     = do  let x        =  A.index arrElems ixSrc
-                           Just ptrDst' <- C.unsafeRunPacker (C.pack format x) ptrDst
-                           loop (ixSrc + 1) ptrDst'
 
-                let ptr = plusPtr ptr_ oStart
-                mFinal <- loop 0 ptr
+-- | Like `packsFormat`, but append a newline character after
+--   every packed element.
+--
+--   * If a value cannot be converted then this function just returns `error`.
+--
+packsFormatLn
+        :: (C.Packable format, Show format, A.Bulk A.A (Value format))
+        => format                       -- ^ Format for each value
+        -> Array (Value format)         -- ^ Source values.
+        -> Maybe (Array Word8)          -- ^ Packed binary data.
 
-                case mFinal of
-                 Nothing       -> return Nothing
-                 Just _        -> liftM (Just . A.convert) $ A.unsafeFreezeBuffer buf
+packsFormatLn !format !arr
+ = let  
+        !arrNL 
+         = A.fromList A.A [fromIntegral $ ord '\n']
 
- | otherwise
- = Nothing
-{-# INLINE_ARRAY packsFixedFormat #-}
+        packRow v 
+         = case packFormat format v of
+            Nothing
+             -> error $ unlines
+             [ "repa-array.packsFormat: conversion failed"
+             , "    format       = " ++ show format ]
+
+            Just arr8 -> AG.concat A.A $ A.fromList A.A [ arr8, arrNL ]
+        {-# INLINE packRow #-}
+
+   in   Just $ AG.concat A.A $ AG.mapS A.N packRow arr
+{-# INLINE_ARRAY packsFormatLn #-}
+
 
 
 ---------------------------------------------------------------------------------------------------
@@ -138,13 +156,13 @@ unpackFormat !format !arrBytes
 
 -- | Unpack an array of elements from a buffer
 --   using the given fixed length format.
-unpacksFixedFormat
+unpacksFormatFixed
         :: (Packable format, A.Target A.A (Value format))
         => format                         -- ^ Fixed length format for each element.
         -> Array Word8                    -- ^ Packed binary data.
         -> Maybe (Array (Value format))   -- ^ Unpacked elements.
 
-unpacksFixedFormat !format !arrBytes
+unpacksFormatFixed !format !arrBytes
  | lenBytes     <- A.length arrBytes
  , lenElems     <- fieldCount format
  = unsafePerformIO
@@ -182,7 +200,7 @@ unpacksFixedFormat !format !arrBytes
                  Just _         -> liftM Just $ A.unsafeFreezeBuffer buf
 
  | otherwise = Nothing
-{-# INLINE_ARRAY unpacksFixedFormat #-}
+{-# INLINE_ARRAY unpacksFormatFixed #-}
 
 
 -- | Unpack an array containing elements in some format separated
@@ -191,14 +209,14 @@ unpacksFixedFormat !format !arrBytes
 --   * Any '\r' characters in the array are filtered out before splitting
 --     it into lines.
 --   * If the value cannot be converted then this function just calls `error`.
-unpacksLinesFormat
+unpacksFormatLn
         :: forall format
         .  (Show format, Packable format, A.Target A.A (Value format))
         => format                       -- ^ Format for each element.
         -> Array Word8                  -- ^ Packed binary data.
         -> Array (Value format)         -- ^ Unpacked elements.
 
-unpacksLinesFormat format arr8
+unpacksFormatLn format arr8
  = do
         let !nl = fromIntegral $ ord '\n'
         let !nr = fromIntegral $ ord '\r'
@@ -224,5 +242,5 @@ unpacksLinesFormat format arr8
             {-# INLINE unpackRow #-}
 
         AG.mapS A.A (unpackRow . AG.convert A.A) rows8
-{-# INLINE unpacksLinesFormat #-}
+{-# INLINE_ARRAY unpacksFormatLn #-}
 
