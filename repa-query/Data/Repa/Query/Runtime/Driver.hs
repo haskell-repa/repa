@@ -20,6 +20,7 @@ import Data.Maybe
 import System.FilePath
 
 import qualified Data.Repa.Flow                         as F
+import qualified Data.Repa.Flow.Auto.IO                 as F
 import qualified Data.Repa.Flow.Generic                 as FG
 import qualified Data.Repa.Flow.Generic.IO              as FG
 

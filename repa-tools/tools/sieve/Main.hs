@@ -3,6 +3,7 @@
 -- the first field. See `Config.hs` for an example.
 import Config
 import Data.Repa.Flow                                   as F
+import Data.Repa.Flow.Auto.IO                           as F
 import Data.Repa.Array                                  as A
 import qualified Data.Repa.Flow.Generic                 as G
 import qualified Data.Repa.Flow.Generic.IO              as G

@@ -130,6 +130,7 @@ fromFiles' paths use
 {-# NOINLINE fromFiles' #-}
 
 
+-- From Dirs ------------------------------------------------------------------
 -- | Open all the files in a directory as separate buckets.
 --
 --   This operation may fail with the same exceptions as `getDirectoryContents`.
