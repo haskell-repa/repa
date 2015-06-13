@@ -123,8 +123,13 @@ module Data.Repa.Flow
         , drainP
 
         -- * Conversion
+        -- ** List conversion
         , fromList,             fromLists
         , toList1,              toLists1
+
+        -- ** Array conversion
+        , fromArray,            fromArrays
+        , toArray1,             toArrays1
 
         -- * Finalizers
         , finalize_i,           finalize_o
@@ -142,6 +147,9 @@ module Data.Repa.Flow
 
         -- | Higher arity zipWith functions.
         , module Data.Repa.Flow.Auto.ZipWith
+
+        -- ** Concatenation
+        , concat_i
 
         -- ** Connecting
         , dup_oo

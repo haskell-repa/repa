@@ -204,9 +204,9 @@ unpacksLinesFormat format arr8
         let !nr = fromIntegral $ ord '\r'
 
         let rows8 :: AG.Array A.N (AG.Array A.F Word8)
-                = A.trimEnds  (== nl)
-                $ A.segmentOn (== nl)
-                $ AG.filter A.F  (/= nr) arr8
+                = A.trimEnds    (== nl)
+                $ A.segmentOn   (== nl)
+                $ AG.filter A.F (/= nr) arr8
 
         -- TODO: if we had a mapM function we could write to a IORef to signal
         --       that something didn't convert.

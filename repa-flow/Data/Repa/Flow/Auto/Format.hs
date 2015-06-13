@@ -3,10 +3,18 @@ module Data.Repa.Flow.Auto.Format
         ( -- * Pre-defined data formats
           module Data.Repa.Convert.Formats
 
-          -- * Packing functions
-        , packFormat_i
-        , packFormatLn_i
-        , packAsciiLn_i
+          -- * Packing
+
+          -- ** Standard
+        , packFormat_i,         flatPackFormat_i
+          
+          -- ** With newlines
+        , packFormatLn_i,       flatPackFormatLn_i
+
+          -- ** Default ASCII format
+        , packAsciiLn_i,        flatPackAsciiLn_i
+
+          -- ** Keys and values
         , keyPackAsciiLn_i)
 where
 import Data.Word
@@ -20,6 +28,7 @@ import qualified Data.Repa.Flow.Generic                 as G
 #include "repa-flow.h"
 
 
+---------------------------------------------------------------------------------------------------
 -- | Pack elements into the given storage formats.
 packFormat_i
         :: (C.Packable format, Elem (Value format))
@@ -38,6 +47,16 @@ packFormat_i format ss
 {-# INLINE_FLOW packFormat_i #-}
 
 
+-- | Like `packFormat_i`, but return sources of flat bytes.
+flatPackFormat_i 
+        :: (C.Packable format, Elem (Value format))
+        => format -> Sources (Value format) -> IO (Sources Word8)
+flatPackFormat_i format ss 
+        = concat_i =<< packFormat_i format ss
+{-# INLINE_FLOW flatPackFormat_i #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Like `packFormat_i`, but also append a newline character
 --   after every packed element.
 packFormatLn_i
@@ -53,6 +72,16 @@ packFormatLn_i format ss
 {-# INLINE_FLOW packFormatLn_i #-}
 
 
+-- | Like `packFormatLn_i`, but return sources of flat bytes.
+flatPackFormatLn_i 
+        :: (C.Packable format, Elem (Value format))
+        => format -> Sources (Value format) -> IO (Sources Word8)
+flatPackFormatLn_i format ss
+        = concat_i =<< packFormatLn_i format ss
+{-# INLINE_FLOW flatPackFormatLn_i #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Like `packFormatLn_i`,
 --   but use a default, human-readable format to encode the values.
 packAsciiLn_i
@@ -70,6 +99,17 @@ packAsciiLn_i ss
                 proxy   = (error "repa-flow: packAscii_i proxy" :: a)
 {-# INLINE_FLOW packAsciiLn_i #-}
 
+
+-- | Like `packAsciiLn_i`, but return sources of flat bytes.
+flatPackAsciiLn_i
+        :: forall a 
+        . ( C.FormatAscii a, a ~ Value (C.FormatAscii' a)
+          , Elem a
+          , Packable (C.FormatAscii' a))
+        => Sources a -> IO (Sources Word8)  
+flatPackAsciiLn_i ss
+        = concat_i =<< packAsciiLn_i ss
+{-# INLINE_FLOW flatPackAsciiLn_i #-}
 
 
 ---------------------------------------------------------------------------------------------------

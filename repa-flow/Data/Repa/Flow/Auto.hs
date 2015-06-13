@@ -12,8 +12,13 @@ module Data.Repa.Flow.Auto
         , sinksArity
 
         -- * Conversion
+        -- ** List conversion
         , fromList,             fromLists
         , toList1,              toLists1
+
+        -- ** Array conversion
+        , fromArray,            fromArrays
+        , toArray1,             toArrays1
 
         -- * Evaluation
         , drainS
@@ -32,6 +37,9 @@ module Data.Repa.Flow.Auto
 
         -- | Higher arity zipWith functions.
         , module Data.Repa.Flow.Auto.ZipWith
+
+        -- ** Concatenation
+        , concat_i
 
         -- ** Connecting
         , dup_oo
@@ -193,6 +201,17 @@ zipWith_i
 zipWith_i f sa sb
         = C.szipWith_ii A (\_ a b -> f a b) sa sb
 {-# INLINE zipWith_i #-}
+
+
+-- Concatenation --------------------------------------------------------------
+-- | Concatenate a flow of arrays into a flow of the elements.
+concat_i
+        :: (Flow a, Build a at, Unpack (Array a) att)
+        => Sources (Array a)
+        -> IO (Sources a)
+concat_i ss
+        = G.map_i (A.concat A) ss
+{-# INLINE concat_i #-}
 
 
 -- Connecting -----------------------------------------------------------------
