@@ -38,9 +38,6 @@ module Data.Repa.Flow.Auto
         -- | Higher arity zipWith functions.
         , module Data.Repa.Flow.Auto.ZipWith
 
-        -- ** Concatenation
-        , concat_i
-
         -- ** Connecting
         , dup_oo
         , dup_io
@@ -57,6 +54,9 @@ module Data.Repa.Flow.Auto
 
         -- ** Splitting
         , head_i
+
+        -- ** Concatenation
+        , concat_i
 
         -- ** Selecting
         , select_i,             select_o
