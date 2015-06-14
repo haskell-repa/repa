@@ -13,6 +13,7 @@ import Data.Repa.Scalar.Date32                  (Date32)
 import qualified Data.Repa.Scalar.Date32        as Date32
 import qualified Foreign.Ptr                    as F
 import Prelude hiding (fail)
+#include "repa-convert.h"
 
 
 ---------------------------------------------------------------------------------------- YYYYsMMsDD

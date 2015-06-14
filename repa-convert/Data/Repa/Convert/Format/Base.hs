@@ -15,6 +15,8 @@ import Data.Word
 import Data.IORef
 import qualified Foreign.Ptr                    as S
 import Prelude  hiding (fail)
+#include "repa-convert.h"
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Relates a storage format to the Haskell type of the value

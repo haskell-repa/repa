@@ -5,6 +5,7 @@ where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Scalar.Product
 import Data.Monoid
+#include "repa-convert.h"
 
 
 -- | Append fields without separators.

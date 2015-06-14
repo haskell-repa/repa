@@ -2,6 +2,7 @@
 module Data.Repa.Convert.Format.Fields where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Scalar.Product
+#include "repa-convert.h"
 
 
 instance Format () where

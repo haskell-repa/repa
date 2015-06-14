@@ -45,6 +45,11 @@ Library
         Data.Repa.Convert.Format.Tup
         Data.Repa.Convert.Format.Unit
 
+  include-dirs:
+        include
+
+  install-includes:
+        repa-convert.h
 
   ghc-options:
         -Wall -fno-warn-missing-signatures

@@ -13,6 +13,7 @@ import qualified Foreign.ForeignPtr             as F
 import qualified Foreign.Marshal.Utils          as F
 import qualified Foreign.Ptr                    as F
 import Prelude hiding (fail)
+#include "repa-convert.h"
 
 
 ------------------------------------------------------------------------------------------- IntAsc

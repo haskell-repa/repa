@@ -8,9 +8,9 @@ import Data.Repa.Scalar.Product
 import Data.Monoid
 import Data.Word
 import Data.Char
-import qualified Foreign.Storable               as F
 import qualified Foreign.Ptr                    as F
 import Prelude hiding (fail)
+#include "repa-convert.h"
 
 
 -- | Separate fields with the given character.

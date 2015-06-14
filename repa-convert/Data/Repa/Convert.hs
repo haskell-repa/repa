@@ -80,6 +80,7 @@ import System.IO.Unsafe
 import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
 import qualified GHC.Ptr                        as S
+#include "repa-convert.h"
 
 
 ---------------------------------------------------------------------------------------------------

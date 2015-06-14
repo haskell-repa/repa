@@ -19,6 +19,7 @@ import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
 import qualified Foreign.Ptr                    as S
 import qualified Control.Monad.Primitive        as Prim
+#include "repa-convert.h"
 
 
 ------------------------------------------------------------------------------------------- Word8be

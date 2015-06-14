@@ -8,6 +8,7 @@ import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Tup
 import Data.Repa.Scalar.Date32                  (Date32)
 import Data.Repa.Scalar.Product
+#include "repa-convert.h"
 
 
 -- | Class of types that can be formatted in some default human readable

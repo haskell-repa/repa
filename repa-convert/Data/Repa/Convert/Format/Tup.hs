@@ -9,6 +9,7 @@ import Data.Repa.Scalar.Product
 import Data.Monoid
 import Data.Word
 import Data.Char
+#include "repa-convert.h"
 
 
 -- | Display fields as a tuple, like @(x,y,z)@.

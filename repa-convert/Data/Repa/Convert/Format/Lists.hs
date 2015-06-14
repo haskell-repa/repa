@@ -13,6 +13,7 @@ import Data.Char
 import qualified Foreign.Storable               as S
 import qualified Foreign.Ptr                    as S
 import Prelude hiding (fail)
+#include "repa-convert.h"
 
 
 ---------------------------------------------------------------------------------------------------
