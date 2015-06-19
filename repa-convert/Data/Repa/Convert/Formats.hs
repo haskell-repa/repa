@@ -15,7 +15,10 @@ module Data.Repa.Convert.Formats
           -- * Units
         , UnitAsc       (..)
 
-          -- * Strings
+          -- * Exact Strings
+        , ExactString   (..)
+
+          -- * Variable Strings
         , FixAsc        (..)
         , VarAsc        (..)
         , VarString     (..)
@@ -56,6 +59,7 @@ import Data.Repa.Convert.Format.Ascii
 import Data.Repa.Convert.Format.App
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Date32
+import Data.Repa.Convert.Format.Exact
 import Data.Repa.Convert.Format.Fields  ()
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Maybe
