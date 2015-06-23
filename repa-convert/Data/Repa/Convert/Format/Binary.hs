@@ -31,10 +31,10 @@ instance Format Word8be                 where
  minSize    _           = 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word8be where
@@ -53,7 +53,7 @@ instance Packable Word8be where
 
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
-{-# INLINE_INNER w8  #-}
+{-# INLINE w8  #-}
 
 
 ------------------------------------------------------------------------------------------- Int8be
@@ -65,10 +65,10 @@ instance Format Int8be                  where
  minSize    _           = 1
  fixedSize  _           = Just 1
  packedSize _ _         = Just 1
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int8be where
@@ -80,7 +80,7 @@ instance Packable Int8be where
 
 i8  :: Integral a => a -> Int8
 i8 = fromIntegral
-{-# INLINE_INNER i8  #-}
+{-# INLINE i8  #-}
 
 
 ------------------------------------------------------------------------------------------ Word16be
@@ -92,10 +92,10 @@ instance Format Word16be                where
  minSize    _           = 2
  fixedSize  _           = Just 2
  packedSize _ _         = Just 2
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word16be where
@@ -117,7 +117,7 @@ instance Packable Word16be where
 
 w16 :: Integral a => a -> Word16
 w16 = fromIntegral
-{-# INLINE_INNER w16 #-}
+{-# INLINE w16 #-}
 
 
 ------------------------------------------------------------------------------------------- Int16be
@@ -129,10 +129,10 @@ instance Format Int16be                 where
  minSize    _           = 2
  fixedSize  _           = Just 2
  packedSize _ _         = Just 2
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int16be where
@@ -144,7 +144,7 @@ instance Packable Int16be where
 
 i16 :: Integral a => a -> Int16
 i16 = fromIntegral
-{-# INLINE_INNER i16 #-}
+{-# INLINE i16 #-}
 
 
 ------------------------------------------------------------------------------------------ Word32be
@@ -156,10 +156,10 @@ instance Format Word32be                where
  minSize    _           = 4
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word32be where
@@ -188,7 +188,7 @@ instance Packable Word32be where
 
 w32 :: Integral a => a -> Word32
 w32 = fromIntegral
-{-# INLINE_INNER w32 #-}
+{-# INLINE w32 #-}
 
 
 ------------------------------------------------------------------------------------------- Int32be
@@ -200,10 +200,10 @@ instance Format Int32be                 where
  minSize    _           = 4
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int32be where
@@ -215,7 +215,7 @@ instance Packable Int32be where
 
 i32 :: Integral a => a -> Int32
 i32 = fromIntegral
-{-# INLINE_INNER i32 #-}
+{-# INLINE i32 #-}
 
 
 ------------------------------------------------------------------------------------------ Word64be
@@ -227,10 +227,10 @@ instance Format Word64be                where
  minSize    _           = 8
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Word64be where
@@ -271,7 +271,7 @@ instance Packable Word64be where
 
 w64 :: Integral a => a -> Word64
 w64 = fromIntegral
-{-# INLINE_INNER w64 #-}
+{-# INLINE w64 #-}
 
 
 ------------------------------------------------------------------------------------------- Int64be
@@ -283,10 +283,10 @@ instance Format Int64be                 where
  minSize    _           = 8
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Int64be where
@@ -298,7 +298,7 @@ instance Packable Int64be where
 
 i64 :: Integral a => a -> Int64
 i64 = fromIntegral
-{-# INLINE_INNER i64 #-}
+{-# INLINE i64 #-}
 
 
 ----------------------------------------------------------------------------------------- Float32be
@@ -310,10 +310,10 @@ instance Format Float32be               where
  minSize    _           = 4
  fixedSize  _           = Just 4
  packedSize _ _         = Just 4
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Float32be where
@@ -356,10 +356,10 @@ instance Format Float64be               where
  minSize    _           = 8
  fixedSize  _           = Just 8
  packedSize _ _         = Just 8
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable Float64be where

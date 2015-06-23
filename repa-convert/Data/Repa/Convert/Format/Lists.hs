@@ -32,10 +32,10 @@ instance Format FixAsc where
  minSize    (FixAsc len)        = len
  fixedSize  (FixAsc len)        = Just len
  packedSize (FixAsc len) _      = Just len
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable FixAsc where
@@ -74,13 +74,16 @@ data VarAsc = VarAsc            deriving (Eq, Show)
 instance Format (VarAsc)        where
  type Value VarAsc              = String
  fieldCount _                   = 1
+ {-# INLINE fieldCount #-}
+
  minSize    _                   = 0
+ {-# INLINE minSize    #-}
+
  fixedSize  VarAsc              = Nothing
+ {-# INLINE fixedSize  #-}
+
  packedSize VarAsc xs           = Just $ length xs
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# NOINLINE packedSize #-}
 
 
 instance Packable VarAsc where
@@ -129,14 +132,17 @@ data VarString = VarString      deriving (Eq, Show)
 instance Format VarString       where
  type Value VarString           = String
  fieldCount _                   = 1
+ {-# INLINE fieldCount #-}
+
  minSize    _                   = 2
+ {-# INLINE minSize #-}
+
  fixedSize  _                   = Nothing
+ {-# INLINE fixedSize #-}
+ 
  packedSize VarString xs        
   = Just $ length $ show xs     
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# NOINLINE packedSize #-}
 
 
 instance Packable VarString where
@@ -144,7 +150,7 @@ instance Packable VarString where
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  pack VarString xx
   =  pack VarAsc (show xx)
- {-# INLINE_INNER pack #-}
+ {-# NOINLINE pack #-}
 
  unpack VarString
   =  Unpacker $ \start end _stop fail eat
@@ -152,7 +158,7 @@ instance Packable VarString where
         case r of
          Nothing            -> fail
          Just (start', str) -> eat start' str
- {-# INLINE_INNER unpack #-}
+ {-# NOINLINE unpack #-}
 
 
 -- | Unpack a string from the given buffer.
@@ -215,5 +221,5 @@ unpackString start end
 ---------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
-{-# INLINE_INNER w8  #-}
+{-# INLINE w8  #-}
 

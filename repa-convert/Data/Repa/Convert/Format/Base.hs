@@ -26,6 +26,7 @@ class Format f where
  -- | Get the type of a value with this format.
  type Value f  
 
+
  -- | Yield the number of separate fields in this format.
  fieldCount :: f -> Int
 
@@ -73,11 +74,11 @@ data Packer
 instance Monoid Packer where
  mempty 
   = Packer $ \buf k -> k buf
- {-# INLINE_INNER mempty #-}
+ {-# INLINE mempty #-}
 
  mappend (Packer fa) (Packer fb)
   = Packer $ \buf0 k -> fa buf0 (\buf1 -> fb buf1 k)
- {-# INLINE_INNER mappend #-}
+ {-# INLINE mappend #-}
 
 
 -- | Pack data into the given buffer.
@@ -94,7 +95,7 @@ unsafeRunPacker
 
 unsafeRunPacker (Packer make) buf
         = make buf (\buf' -> return (Just buf'))
-{-# INLINE_INNER unsafeRunPacker #-}
+{-# INLINE unsafeRunPacker #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -127,26 +128,26 @@ instance Functor Unpacker where
   =  Unpacker $ \start end stop fail eat
   -> fx start end stop fail $ \start_x x 
   -> eat start_x (f x)
- {-# INLINE_INNER fmap #-}
+ {-# INLINE fmap #-}
 
 
 instance Applicative Unpacker where
  pure  x
   =  Unpacker $ \start _end _fail _stop eat
   -> eat start x
- {-# INLINE_INNER pure #-}
+ {-# INLINE pure #-}
 
  (<*>) (Unpacker ff) (Unpacker fx)
   =  Unpacker $ \start end stop fail eat
   -> ff start   end stop fail $ \start_f f
   -> fx start_f end stop fail $ \start_x x
   -> eat start_x (f x)
- {-# INLINE_INNER (<*>) #-}
+ {-# INLINE (<*>) #-}
 
 
 instance Monad Unpacker where
  return = pure
- {-# INLINE_INNER return #-}
+ {-# INLINE return #-}
 
  (>>=) (Unpacker fa) mkfb
   =  Unpacker $ \start end stop fail eat
@@ -154,7 +155,7 @@ instance Monad Unpacker where
   -> case mkfb x of
         Unpacker fb
          -> fb start_x end stop fail eat
- {-# INLINE_INNER (>>=) #-}
+ {-# INLINE (>>=) #-}
 
 
 -- | Unpack data from the given buffer.
@@ -181,7 +182,7 @@ unsafeRunUnpacker (Unpacker f) start len stop
                 (return ())
                 (\ptr x -> writeIORef ref (Just (x, ptr)))
         readIORef ref
-{-# INLINE_INNER unsafeRunUnpacker #-}
+{-# INLINE unsafeRunUnpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------

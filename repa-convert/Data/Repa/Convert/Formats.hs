@@ -9,7 +9,7 @@ module Data.Repa.Convert.Formats
 
           -- * Field Separators
         , App           (..)
-        , Sep           (..)
+        , Sep,  mkSep
         , Tup           (..)
 
           -- * Units

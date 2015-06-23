@@ -73,6 +73,7 @@ Library
         StandaloneDeriving
         ScopedTypeVariables
         MultiParamTypeClasses
+        FunctionalDependencies
         ForeignFunctionInterface
         ExistentialQuantification
         NoMonomorphismRestriction

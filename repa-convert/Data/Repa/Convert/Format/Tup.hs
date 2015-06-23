@@ -9,13 +9,13 @@ import Data.Repa.Scalar.Product
 import Data.Monoid
 import Data.Word
 import Data.Char
+import GHC.Exts
 #include "repa-convert.h"
 
 
 -- | Display fields as a tuple, like @(x,y,z)@.
 data Tup f
         = Tup f
-        deriving Show
 
 
 ---------------------------------------------------------------------------------------------------
@@ -25,20 +25,21 @@ instance Format (Tup ()) where
  minSize    (Tup _)     = 0
  fixedSize  (Tup _)     = return 0
  packedSize (Tup _) ()  = return 0
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable (Tup ()) where
  pack   _fmt _val       = mempty
  unpack _fmt            = return ()
- {-# INLINE_INNER pack   #-}
- {-# INLINE_INNER unpack #-}
+ {-# INLINE pack   #-}
+ {-# INLINE unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
+{-
 instance ( Format f1
          , Format (Tup fs)
          , Format (Sep fs)
@@ -54,19 +55,19 @@ instance ( Format f1
  minSize    (Tup (f1 :*: fs))
   = let !n      = fieldCount (Tup fs)
     in  2 + minSize f1
-          + (if n == 0 then 0 else 1) 
+          + zeroOrOne n 
           + minSize (Sep ',' fs)
 
  fixedSize  (Tup (f1 :*: fs))
   = do  s1      <- fixedSize f1
         ss      <- fixedSize (Sep ',' fs)
-        let sSep = if fieldCount (Sep ',' fs) == 0 then 0 else 1
+        let sSep = zeroOrOne (fieldCount (Sep ',' fs))
         return  $ 2 + s1 + sSep + ss
 
  packedSize (Tup (f1 :*: fs)) (x1 :*: xs)
   = do  s1      <- packedSize f1 x1
         ss      <- packedSize (Sep ',' fs) xs
-        let sSep = if fieldCount (Sep ',' fs) == 0 then 0 else 1
+        let sSep = zeroOrOne (fieldCount (Sep ',' fs))
         return  $ 2 + s1 + sSep + ss 
  {-# INLINE_REVEAL minSize    #-}
  {-# INLINE_REVEAL fieldCount #-}
@@ -84,15 +85,20 @@ instance ( Packable f1
         =  pack Word8be (cw8 '(')
         <> pack (Sep ',' fs) xs
         <> pack Word8be (cw8 ')')
- {-# INLINE_REVEAL pack #-}
+ {-# NOINLINE pack #-}
 
  -- TODO: finish tuple decoding.
  unpack = error "repa-convert.row unpack finish me"
  {-# NOINLINE unpack #-}
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
-{-# INLINE_INNER cw8 #-}
+{-# INLINE cw8 #-}
+
+
+zeroOrOne :: Int -> Int
+zeroOrOne (I# i) = I# (1# -# (0# ==# i))
+{-# INLINE zeroOrOne #-}
 

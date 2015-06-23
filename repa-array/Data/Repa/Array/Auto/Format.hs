@@ -87,8 +87,7 @@ packsFormat !format !arr
          = case packFormat format v of
             Nothing
              -> error $ unlines
-             [ "repa-array.packsFormat: conversion failed"
-             , "    format       = " ++ show format ]
+             [ "repa-array.packsFormat: conversion failed"]
 
             Just arr8 -> arr8
         {-# INLINE packRow #-}
@@ -103,7 +102,7 @@ packsFormat !format !arr
 --   * If a value cannot be converted then this function just returns `error`.
 --
 packsFormatLn
-        :: (C.Packable format, Show format, A.Bulk A.A (Value format))
+        :: (C.Packable format, A.Bulk A.A (Value format))
         => format                       -- ^ Format for each value
         -> Array (Value format)         -- ^ Source values.
         -> Maybe (Array Word8)          -- ^ Packed binary data.
@@ -117,8 +116,7 @@ packsFormatLn !format !arr
          = case packFormat format v of
             Nothing
              -> error $ unlines
-             [ "repa-array.packsFormat: conversion failed"
-             , "    format       = " ++ show format ]
+             [ "repa-array.packsFormat: conversion failed"]
 
             Just arr8 -> AG.concat A.A $ A.fromList A.A [ arr8, arrNL ]
         {-# INLINE packRow #-}
@@ -211,7 +209,7 @@ unpacksFormatFixed !format !arrBytes
 --   * If the value cannot be converted then this function just calls `error`.
 unpacksFormatLn
         :: forall format
-        .  (Show format, Packable format, A.Target A.A (Value format))
+        .  (Packable format, A.Target A.A (Value format))
         => format                       -- ^ Format for each element.
         -> Array Word8                  -- ^ Packed binary data.
         -> Array (Value format)         -- ^ Unpacked elements.
@@ -234,7 +232,6 @@ unpacksFormatLn format arr8
                 Nothing 
                  -> error $ unlines
                   [ "repa-array.unpacksLinesFormat: conversion failed"
-                  , "    format       = " ++ show format
                   , "    row as Word8 = " ++ show (A.toList arr)
                   , "    row as Char8 = " ++ show (map (chr . fromIntegral) $ A.toList arr) ]
 

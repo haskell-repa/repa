@@ -31,7 +31,7 @@ data Plain a
 instance FormatAscii () where
  type FormatAscii' ()     = ()
  formatAscii _            = ()
- {-# INLINE_REVEAL formatAscii #-}
+ {-# INLINE formatAscii #-}
 
 
 -- | Tuples are displayed with round parens and commas to separate
@@ -48,13 +48,13 @@ instance ( FormatAscii t1
         (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
         (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
     in  Tup (formatAscii x1_proxy  :*: formatAscii  (Plain xs_proxy))
- {-# INLINE_REVEAL formatAscii #-}
+ {-# NOINLINE formatAscii #-}
 
 
 instance FormatAscii (Plain ()) where
  type FormatAscii'   (Plain ())          = ()
  formatAscii         (Plain _)           = ()
- {-# INLINE_REVEAL formatAscii #-}
+ {-# INLINE formatAscii #-}
 
 
 instance (FormatAscii t1, FormatAscii (Plain ts))
@@ -67,21 +67,21 @@ instance (FormatAscii t1, FormatAscii (Plain ts))
         (x1_proxy :: t1)  = error "repa-convert: formatAscii proxy"
         (xs_proxy :: ts)  = error "repa-convert: formatAscii proxy"
     in  formatAscii  x1_proxy :*: formatAscii (Plain xs_proxy)
- {-# INLINE_REVEAL formatAscii #-}
+ {-# NOINLINE formatAscii #-}
  
  
 -- | Ints are formated in base-10.
 instance FormatAscii  Int where
  type FormatAscii' Int    = IntAsc
  formatAscii _            = IntAsc
- {-# INLINE_REVEAL formatAscii #-}
+ {-# INLINE formatAscii #-}
 
 
 -- | Doubles are formatted as base-10 decimal.
 instance FormatAscii  Double where
  type FormatAscii' Double = DoubleAsc
  formatAscii _            = DoubleAsc
- {-# INLINE_REVEAL formatAscii #-}
+ {-# INLINE formatAscii #-}
 
 
 -- | Strings are formatted with double quotes and back-slash escaping
@@ -89,12 +89,12 @@ instance FormatAscii  Double where
 instance FormatAscii  String where
  type FormatAscii' String = VarString
  formatAscii _            = VarString
- {-# INLINE_REVEAL formatAscii #-}
+ {-# INLINE formatAscii #-}
 
 
 -- | Dates are formatted as YYYY-MM-DD.
 instance FormatAscii  Date32 where
  type FormatAscii' Date32 = YYYYsMMsDD
  formatAscii _            = YYYYsMMsDD '-'
- {-# INLINE_REVEAL formatAscii #-}
+ {-# INLINE formatAscii #-}
 

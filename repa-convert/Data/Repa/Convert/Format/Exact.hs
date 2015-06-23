@@ -18,13 +18,16 @@ data ExactString
 instance Format ExactString where
  type Value ExactString          = ()
  fieldCount (ExactString _)      = 0
+ {-# INLINE   fieldCount #-}
+
  minSize    (ExactString str)    = length str
+ {-# NOINLINE minSize  #-}
+
  fixedSize  (ExactString str)    = return (length str)
+ {-# NOINLINE fixedSize #-}
+
  packedSize (ExactString str) () = return (length str)
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# NOINLINE packedSize #-}
 
 
 instance Packable ExactString where
@@ -59,5 +62,5 @@ instance Packable ExactString where
 ---------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
-{-# INLINE_INNER w8  #-}
+{-# INLINE w8  #-}
 

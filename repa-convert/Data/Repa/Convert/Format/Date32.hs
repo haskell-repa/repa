@@ -25,35 +25,35 @@ instance Format YYYYsMMsDD where
  minSize    _           = 10
  fixedSize  _           = Just 10
  packedSize _ _         = Just 10
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable YYYYsMMsDD where
 
- pack  (YYYYsMMsDD s) v 
-  | (yy', mm', dd')        <- Date32.unpack v
-  , yy  <- fromIntegral yy'
-  , mm  <- fromIntegral mm'
-  , dd  <- fromIntegral dd'
-  =        pack (IntAsc0 4) yy
+ pack  (YYYYsMMsDD s) v
+  = let (yy', mm', dd') = Date32.unpack v
+        yy      = fromIntegral yy'
+        mm      = fromIntegral mm'
+        dd      = fromIntegral dd'
+    in     pack (IntAsc0 4) yy
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) dd
- {-# INLINE_INNER pack #-}
+ {-# INLINE pack #-}
 
  unpack (YYYYsMMsDD s)
   =  Unpacker $ \start end _stop fail eat
   -> do
-        let !len = F.minusPtr end start
+        let len = F.minusPtr end start
         r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) start len
         case r of
          Just (d, o)    -> eat (F.plusPtr start o) d
          Nothing        -> fail
- {-# INLINE_INNER unpack #-}
+ {-# INLINE unpack #-}
 
 
 ---------------------------------------------------------------------------------------- DDsMMsYYYY
@@ -65,40 +65,40 @@ instance Format DDsMMsYYYY where
  minSize    _           = 10
  fixedSize  _           = Just 10
  packedSize _ _         = Just 10
- {-# INLINE_INNER minSize    #-}
- {-# INLINE_INNER fieldCount #-}
- {-# INLINE_INNER fixedSize  #-}
- {-# INLINE_INNER packedSize #-}
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable DDsMMsYYYY where
 
  pack   (DDsMMsYYYY s) v
-  | (yy', mm', dd')        <- Date32.unpack v
-  , yy  <- fromIntegral yy'
-  , mm  <- fromIntegral mm'
-  , dd  <- fromIntegral dd'
-  =        pack (IntAsc0 2) dd
+  = let (yy', mm', dd') = Date32.unpack v
+        yy      = fromIntegral yy'
+        mm      = fromIntegral mm'
+        dd      = fromIntegral dd'
+    in     pack (IntAsc0 2) dd
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 4) yy
- {-# INLINE_INNER pack #-}
+ {-# INLINE pack #-}
 
  unpack (DDsMMsYYYY s)
   =  Unpacker $ \start end _stop fail eat
   -> do
-        let !len = F.minusPtr end start
+        let len = F.minusPtr end start
         r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) start len
         case r of
          Just (d, o)    -> eat (F.plusPtr start o) d
          Nothing        -> fail
- {-# INLINE_INNER unpack #-}
+ {-# INLINE unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
-{-# INLINE_INNER cw8 #-}
+{-# INLINE cw8 #-}
 
 
