@@ -32,8 +32,8 @@ import Data.Word
 sourceTableFormat
         :: forall format
         .  ( Packable (Sep format), Target A (Value format)
-           , Value (Sep format) ~ Value format
-           , Show format)
+           , SepFormat format
+           , Value (Sep format) ~ Value format)
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action if we find an over-long line.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.
@@ -50,8 +50,9 @@ sourceTableFormat
         -- TODO: check directory exists.
         Just parts  <- listPartitions path
         ss          <- fromFiles parts 
-                    $  sourceLinesFormat nChunk aFailLong aFailConvert 
-                                (Sep c format)
+                    $  sourceLinesFormat 
+                                nChunk aFailLong aFailConvert 
+                                (mkSep c format)
 
         return ss
 
@@ -90,7 +91,7 @@ sourceFamilyKey
 
         ssShape <- fromFiles parts
                 $  sourceLinesFormat nChunk aFailLong aFailConvert 
-                        (Sep '\t' (format :*: IntAsc :*: ()))
+                        (mkSep '\t' (format :*: IntAsc :*: ()))
 
         ssKey   <-  F.replicates_i 
                 =<< F.map_i (\(v :*: c :*: ()) -> (c, v)) ssShape       -- TODO: chunkwise.

@@ -9,9 +9,9 @@ import Data.Repa.Convert.Format.Binary
 import Data.Monoid
 import Data.Char
 import Data.Word
+import GHC.Exts
 import Data.Repa.Scalar.Date32                  (Date32)
 import qualified Data.Repa.Scalar.Date32        as Date32
-import qualified Foreign.Ptr                    as F
 import Prelude hiding (fail)
 #include "repa-convert.h"
 
@@ -48,10 +48,10 @@ instance Packable YYYYsMMsDD where
  unpack (YYYYsMMsDD s)
   =  Unpacker $ \start end _stop fail eat
   -> do
-        let len = F.minusPtr end start
-        r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) start len
+        let len = I# (minusAddr# end start)
+        r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) (pw8 start) len
         case r of
-         Just (d, o)    -> eat (F.plusPtr start o) d
+         Just (d, I# o)    -> eat (plusAddr# start o) d
          Nothing        -> fail
  {-# INLINE unpack #-}
 
@@ -88,11 +88,11 @@ instance Packable DDsMMsYYYY where
  unpack (DDsMMsYYYY s)
   =  Unpacker $ \start end _stop fail eat
   -> do
-        let len = F.minusPtr end start
-        r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) start len
+        let len = I# (minusAddr# end start)
+        r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) (pw8 start) len
         case r of
-         Just (d, o)    -> eat (F.plusPtr start o) d
-         Nothing        -> fail
+         Just (d, I# o)    -> eat (plusAddr# start o) d
+         Nothing           -> fail
  {-# INLINE unpack #-}
 
 
@@ -100,5 +100,9 @@ instance Packable DDsMMsYYYY where
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
 {-# INLINE cw8 #-}
+
+pw8 :: Addr# -> Ptr Word8
+pw8 addr = Ptr addr
+{-# INLINE pw8 #-}
 
 

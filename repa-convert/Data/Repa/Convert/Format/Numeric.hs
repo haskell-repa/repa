@@ -7,6 +7,8 @@ module Data.Repa.Convert.Format.Numeric
 where
 import Data.Repa.Convert.Format.Base
 import Data.Repa.Convert.Format.Lists
+import GHC.Exts
+import Data.Word
 import qualified Data.Repa.Scalar.Int           as S
 import qualified Data.Repa.Scalar.Double        as S
 import qualified Foreign.ForeignPtr             as F
@@ -45,13 +47,13 @@ instance Packable IntAsc where
 
  unpack IntAsc 
   =  Unpacker $ \start end _stop fail eat
-  -> let !len = F.minusPtr end start in 
+  -> let !len = I# (minusAddr# end start) in 
      if len > 0
         then do
-          r       <- S.loadInt start len
+          r       <- S.loadInt (pw8 start) len
           case r of
-           Just (n, o)  -> eat (F.plusPtr start o) n
-           Nothing      -> fail
+           Just (n, I# o)  -> eat (plusAddr# start o) n
+           Nothing         -> fail
         else fail
  {-# NOINLINE unpack #-}
 
@@ -84,12 +86,12 @@ instance Packable IntAsc0 where
 
  unpack (IntAsc0 _)
   =  Unpacker $ \start end _stop fail eat
-  -> let !len = F.minusPtr end start in
+  -> let !len = I# (minusAddr# end start) in
      if len > 0
       then do
-        r       <- S.loadInt start len
+        r       <- S.loadInt (pw8 start) len
         case r of
-         Just (n, o)    -> eat (F.plusPtr start o) n
+         Just (n, I# o) -> eat (plusAddr# start o) n
          Nothing        -> fail
       else fail
  {-# NOINLINE unpack #-}
@@ -124,11 +126,11 @@ instance Packable DoubleAsc where
 
  unpack DoubleAsc 
   =  Unpacker $ \start end _stop fail eat
-  -> let !len = F.minusPtr end start in
+  -> let !len = I# (minusAddr# end start) in
      if len > 0
       then do
-        (v, o)  <- S.loadDouble start len
-        eat (F.plusPtr start o) v
+        (v, I# o)  <- S.loadDouble (pw8 start) len
+        eat (plusAddr# start o) v
       else fail
  {-# NOINLINE unpack #-}
 
@@ -167,12 +169,16 @@ instance Packable DoubleFixedPack where
 
  unpack (DoubleFixedPack _)
   =  Unpacker $ \start end _stop fail eat
-  -> let !len = F.minusPtr end start in
+  -> let !len = I# (minusAddr# end start) in
      if len > 0
       then do
-        (v, o)  <- S.loadDouble start len
-        eat (F.plusPtr start o) v
+        (v, I# o)  <- S.loadDouble (pw8 start) len
+        eat (plusAddr# start o) v
       else fail
  {-# NOINLINE unpack #-}
 
+
+pw8 :: Addr# -> Ptr Word8
+pw8 addr = Ptr addr
+{-# INLINE pw8 #-}
 

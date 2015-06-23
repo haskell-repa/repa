@@ -10,6 +10,7 @@ import Data.Repa.Convert.Format.Base
 import Data.Monoid
 import Data.Word
 import Data.Char
+import GHC.Exts
 import qualified Foreign.Storable               as S
 import qualified Foreign.Ptr                    as S
 import Prelude hiding (fail)
@@ -51,20 +52,20 @@ instance Packable FixAsc where
    = Packer $ \_ _ -> return Nothing
   {-# NOINLINE pack #-}
 
-  unpack (FixAsc len)
+  unpack (FixAsc len@(I# len'))
    =  Unpacker $ \start end _stop fail eat
    -> do 
-        let lenBuf = S.minusPtr end start
+        let lenBuf = I# (minusAddr# end start)
         if  lenBuf < len
          then fail
          else 
           do let load_unpackChar o
-                   = do x :: Word8 <- S.peekByteOff start o
+                   = do x :: Word8 <- S.peekByteOff (pw8 start) o
                         return $ chr $ fromIntegral x
                  {-# INLINE load_unpackChar #-}
 
              xs      <- mapM load_unpackChar [0 .. len - 1]
-             eat (S.plusPtr start len) xs
+             eat (plusAddr# start len') xs
   {-# NOINLINE unpack #-}
 
 
@@ -96,7 +97,7 @@ instance Packable VarAsc where
 
   unpack VarAsc 
    = Unpacker $ \start end stop _fail eat
-   -> do (ptr, str)      <- unpackAsc start end stop
+   -> do (Ptr ptr, str)      <- unpackAsc (pw8 start) (pw8 end) stop
          eat ptr str
   {-# NOINLINE unpack #-}
 
@@ -154,10 +155,10 @@ instance Packable VarString where
 
  unpack VarString
   =  Unpacker $ \start end _stop fail eat
-  -> do r       <- unpackString start end
+  -> do r       <- unpackString (pw8 start) (pw8 end)
         case r of
-         Nothing            -> fail
-         Just (start', str) -> eat start' str
+         Nothing                -> fail
+         Just (Ptr start', str) -> eat start' str
  {-# NOINLINE unpack #-}
 
 
@@ -222,4 +223,9 @@ unpackString start end
 w8  :: Integral a => a -> Word8
 w8 = fromIntegral
 {-# INLINE w8  #-}
+
+
+pw8 :: Addr# -> Ptr Word8
+pw8 addr = Ptr addr
+{-# INLINE pw8 #-}
 

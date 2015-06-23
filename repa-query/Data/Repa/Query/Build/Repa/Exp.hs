@@ -168,10 +168,11 @@ expOfDelimFields delim fields
          |  Just f'     <- expOfFieldFormat f
          -> Just f'
 
+{-
         (Q.LinesSep c,  (f:fs))
          |  Just ff'    <- expOfFieldFormats f fs
          -> Just [| P.Sep $(H.litE (H.charL c)) $ff' |]
-
+-}
         _ -> Nothing
 
 

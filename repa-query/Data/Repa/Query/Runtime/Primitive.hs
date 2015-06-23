@@ -50,8 +50,6 @@ module Data.Repa.Query.Runtime.Primitive
         , pattern LinesSep
 
           -- * From Data.Repa.Convert.Format
-        , pattern App
-        , pattern Sep
         , pattern Word8be,      pattern Int8be
         , pattern Word16be,     pattern Int16be
         , pattern Word32be,     pattern Int32be
@@ -198,9 +196,6 @@ pattern LinesSep c      = S.LinesSep c
 
 
 -- Data.Repa.Convert.Format -----------------------------------------------------------------------
-pattern App fs          = C.App fs
-pattern Sep s fs        = C.Sep s fs
-
 pattern Word8be         = C.Word8be
 pattern  Int8be         =  C.Int8be
 

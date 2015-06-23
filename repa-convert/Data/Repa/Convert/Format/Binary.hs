@@ -19,6 +19,7 @@ import qualified Foreign.Storable               as S
 import qualified Foreign.Marshal.Alloc          as S
 import qualified Foreign.Ptr                    as S
 import qualified Control.Monad.Primitive        as Prim
+import GHC.Exts
 #include "repa-convert.h"
 
 
@@ -46,8 +47,8 @@ instance Packable Word8be where
 
  unpack Word8be 
   =  Unpacker $ \start _end _stop _fail eat
-  -> do x <- S.peek start
-        eat (S.plusPtr start 1) (fromIntegral x)
+  -> do x <- S.peek (pw8 start)
+        eat (plusAddr# start 1#) (fromIntegral x)
  {-# INLINE_INNER unpack #-}
 
 
@@ -108,9 +109,9 @@ instance Packable Word16be where
 
  unpack Word16be 
   =  Unpacker $ \start _end _stop _fail eat
-  -> do x0 :: Word8  <- S.peek        start 
-        x1 :: Word8  <- S.peekByteOff start 1
-        eat (S.plusPtr start 2)
+  -> do x0 :: Word8  <- S.peek        (pw8 start)
+        x1 :: Word8  <- S.peekByteOff (pw8 start) 1
+        eat (plusAddr# start 2#)
             (w16 ((w16 x0 `shiftL` 8) .|. w16 x1))
  {-# INLINE_INNER unpack #-}
 
@@ -174,11 +175,11 @@ instance Packable Word32be where
 
  unpack Word32be 
   =  Unpacker $ \start _end _fail _stop eat
-  -> do x0 :: Word8  <- S.peek        start 
-        x1 :: Word8  <- S.peekByteOff start 1
-        x2 :: Word8  <- S.peekByteOff start 2
-        x3 :: Word8  <- S.peekByteOff start 3
-        eat (S.plusPtr start 4)
+  -> do x0 :: Word8  <- S.peek        (pw8 start) 
+        x1 :: Word8  <- S.peekByteOff (pw8 start) 1
+        x2 :: Word8  <- S.peekByteOff (pw8 start) 2
+        x3 :: Word8  <- S.peekByteOff (pw8 start) 3
+        eat (plusAddr# start 4#)
             (w32 (   (w32 x0 `shiftL` 24) 
                  .|. (w32 x1 `shiftL` 16)
                  .|. (w32 x2 `shiftL`  8)
@@ -249,15 +250,15 @@ instance Packable Word64be where
 
  unpack Word64be 
   =  Unpacker $ \start _end _fail _stop eat
-  -> do x0 :: Word8  <- S.peek        start 
-        x1 :: Word8  <- S.peekByteOff start 1
-        x2 :: Word8  <- S.peekByteOff start 2
-        x3 :: Word8  <- S.peekByteOff start 3
-        x4 :: Word8  <- S.peekByteOff start 4
-        x5 :: Word8  <- S.peekByteOff start 5
-        x6 :: Word8  <- S.peekByteOff start 6
-        x7 :: Word8  <- S.peekByteOff start 7
-        eat (S.plusPtr start 8)
+  -> do x0 :: Word8  <- S.peek        (pw8 start) 
+        x1 :: Word8  <- S.peekByteOff (pw8 start) 1
+        x2 :: Word8  <- S.peekByteOff (pw8 start) 2
+        x3 :: Word8  <- S.peekByteOff (pw8 start) 3
+        x4 :: Word8  <- S.peekByteOff (pw8 start) 4
+        x5 :: Word8  <- S.peekByteOff (pw8 start) 5
+        x6 :: Word8  <- S.peekByteOff (pw8 start) 6
+        x7 :: Word8  <- S.peekByteOff (pw8 start) 7
+        eat (plusAddr# start 8#)
             (w64 (   (w64 x0 `shiftL` 56) 
                  .|. (w64 x1 `shiftL` 48)
                  .|. (w64 x2 `shiftL` 40)
@@ -391,4 +392,10 @@ word64ToDouble w
  do     S.poke (S.castPtr buf) w
         S.peek buf
 {-# INLINE_INNER word64ToDouble #-}
+
+
+---------------------------------------------------------------------------------------------------
+pw8 :: Addr# -> Ptr Word8
+pw8 addr = Ptr addr
+{-# INLINE pw8 #-}
 

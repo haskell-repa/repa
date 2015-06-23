@@ -6,6 +6,8 @@ where
 import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Convert.Format.Base
+import GHC.Exts
+import Data.Word
 import Prelude hiding (fail)
 #include "repa-convert.h"
 
@@ -32,9 +34,14 @@ instance Packable UnitAsc where
 
  unpack (UnitAsc str) 
   =  Unpacker $ \start end stop fail eat
-  -> do (ptr, str')     <- unpackAsc start end stop
+  -> do (Ptr ptr, str')     <- unpackAsc (pw8 start) (pw8 end) stop
         if str == str'
          then eat ptr ()
          else fail
  {-# NOINLINE unpack #-}
 
+
+
+pw8 :: Addr# -> Ptr Word8
+pw8 addr = Ptr addr
+{-# INLINE pw8 #-}

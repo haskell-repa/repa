@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
-
+{-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-unused-matches #-}
 -- | Compilation of Repa queries to native code by 
 --   emitting a Haskell program using repa-flow and compiling it with GHC.
 module Data.Repa.Query.Build.Repa.Graph
@@ -34,6 +34,9 @@ bindOfSource ss
         ---------------------------------------------------
         G.SourceFile _ path delim fields sOut
 
+{- TODO: Sep has renamed to mkSep
+
+
          -- Variable length rows.
          | Q.LinesSep c <- delim                
          -> do  let hTable       = return (LitE (StringL path))
@@ -66,7 +69,7 @@ bindOfSource ss
 
                 pOut    <- H.varP (H.mkName sOut)
                 return (pOut, xRhs)
-
+-}
           -- Fixed length rows.
           | otherwise
           -> error "repa-query: bindOfSource finish me"

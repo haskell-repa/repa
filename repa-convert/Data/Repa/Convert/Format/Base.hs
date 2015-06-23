@@ -13,6 +13,7 @@ module Data.Repa.Convert.Format.Base
 where
 import Data.Word
 import Data.IORef
+import GHC.Exts
 import qualified Foreign.Ptr                    as S
 import Prelude  hiding (fail)
 #include "repa-convert.h"
@@ -114,11 +115,11 @@ data Unpacker a
      --
      fromUnpacker
         :: forall b
-        .  S.Ptr Word8          -- Start of buffer.
-        -> S.Ptr Word8          -- Pointer to first byte after end of buffer.
+        .  Addr#                -- Start of buffer.
+        -> Addr#                -- Pointer to first byte after end of buffer.
         -> (Word8 -> Bool)      -- Detect a field terminator.
         -> IO b                 -- Signal failure.
-        -> (S.Ptr Word8 -> a -> IO b)  -- Eat an unpacked value.
+        -> (Addr# -> a -> IO b) -- Eat an unpacked value.
         -> IO b
   }
 
@@ -174,13 +175,13 @@ unsafeRunUnpacker
                 -- ^ Unpacked result, and pointer to the byte after the last
                 --   one read.
 
-unsafeRunUnpacker (Unpacker f) start len stop
+unsafeRunUnpacker (Unpacker f) (Ptr start) (I# len) stop
  = do   ref     <- newIORef Nothing
         f       start 
-                (S.plusPtr start len)
+                (plusAddr# start len)
                 stop
                 (return ())
-                (\ptr x -> writeIORef ref (Just (x, ptr)))
+                (\addr' x -> writeIORef ref (Just (x, (Ptr addr'))))
         readIORef ref
 {-# INLINE unsafeRunUnpacker #-}
 

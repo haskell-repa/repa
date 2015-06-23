@@ -10,7 +10,6 @@ import Data.Monoid
 import Data.Word
 import Data.Char
 import GHC.Exts
-import qualified Foreign.Ptr                    as F
 import Prelude hiding (fail)
 #include "repa-convert.h"
 
@@ -33,6 +32,7 @@ data Sep f where
                 -> Sep (f :*: fs)
 
 
+-- | Precomputed information about this format.
 data SepMeta
         = SepMeta
         { -- | Length of this format, in fields.
@@ -55,6 +55,7 @@ class SepFormat f where
 instance SepFormat () where
  mkSep _ () = SepNil
  {-# INLINE mkSep #-}
+
 
 instance (Format f1, SepFormat fs)
       => SepFormat (f1 :*: fs) where
@@ -167,23 +168,49 @@ instance ( Packable f1
         <> pack sfs xs
  {-# INLINE pack #-}
 
+
  unpack (SepCons sm f1 sfs)
   = Unpacker $ \start end stop fail eat
   -> let 
          -- Length of data remaining in the input buffer.
-         len = F.minusPtr end start 
+         len = I# (minusAddr# end start)
 
          stop' x = w8 (ord (smSepChar sm)) == x || stop x
          {-# INLINE stop' #-}
 
      in if smMinSize sm <= len
          then  (fromUnpacker $ unpack f1)              start     end stop' fail $ \start_x1 x1
-            -> let start_x1' = F.plusPtr start_x1 1 
+            -> let start_x1' = plusAddr# start_x1 1#
                in  (fromUnpacker $ unpack sfs) start_x1' end stop' fail $ \start_xs xs
                 -> eat start_xs (x1 :*: xs)
          else fail
  {-# INLINE unpack #-}
 
+
+{- NOTE: Inlining the worker function as in the following avoids calling a
+         continuation for every fields, but it pushes compile time for > 20s
+         for examples with 10 - 12 fields 
+
+ unpack (SepCons sm f1 sfs)
+  = Unpacker 
+  $ let unpack_SepCons start end stop fail eat
+         = let 
+            -- Length of data remaining in the input buffer.
+            len = I# (minusAddr# end start)
+
+            stop' x = w8 (ord (smSepChar sm)) == x || stop x
+            {-# INLINE stop' #-}
+
+           in if smMinSize sm <= len
+               then  (fromUnpacker $ unpack f1)  start     end stop' fail $ \start_x1 x1
+                 -> let start_x1' = plusAddr# start_x1 1#
+                 in  (fromUnpacker $ unpack sfs) start_x1' end stop' fail $ \start_xs xs
+                  -> eat start_xs (x1 :*: xs)
+               else fail
+        {-# INLINE unpack_SepCons #-}
+   in unpack_SepCons 
+ {-# INLINE unpack #-}
+-}
 
 ---------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8
@@ -191,6 +218,7 @@ w8 = fromIntegral
 {-# INLINE w8  #-}
 
 
+-- | Branchless equality used to avoid compile-time explosion in size of core code.
 zeroOrOne :: Int -> Int
 zeroOrOne (I# i) = I# (1# -# (0# ==# i))
 {-# INLINE zeroOrOne #-}

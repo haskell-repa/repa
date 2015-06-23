@@ -18,7 +18,7 @@ import Data.Word
 --   converting each line to values with the given format.
 sourceLinesFormat
         :: forall format
-        .  (Packable format, Target A (Value format), Show format)
+        .  (Packable format, Target A (Value format))
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action if we find a line longer than the chunk length.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.
@@ -48,8 +48,9 @@ sourceLinesFormat nChunk aFailLong _aFailConvert format bs
             unpackRow arr
              = case A.unpackFormat format arr of
                  Nothing -> error ("no convert " ++ show arr)
-                                -- TODO: impl proper pull function
-                                -- so we can call aFailConvert if needed.
+                        -- TODO: impl proper pull function
+                        -- so we can call aFailConvert if needed.
+                        -- We shouldn't be throwing errors this deep in the library.
                  Just v  -> v
             {-# INLINE unpackRow #-}
 

@@ -133,8 +133,7 @@ sourceTSV
 --   converting each line to values with the given format.
 sourceFormatLn
         :: ( Packable format
-           , Target A (Value format)
-           , Show format)
+           , Target A (Value format))
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action when a line is too long.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a value.
