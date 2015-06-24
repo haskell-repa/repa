@@ -16,4 +16,7 @@ module Data.Repa.Convert.Format
         , Unpacker  (..)
         , unsafeRunUnpacker)
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
+import Data.Repa.Convert.Internal.Unpacker

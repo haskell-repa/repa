@@ -5,7 +5,10 @@ module Data.Repa.Convert.Format.Numeric
         , DoubleAsc             (..)
         , DoubleFixedPack       (..))
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Lists
 import GHC.Exts
 import Data.Word

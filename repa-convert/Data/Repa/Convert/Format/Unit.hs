@@ -3,9 +3,10 @@
 module Data.Repa.Convert.Format.Unit
         ( UnitAsc       (..))
 where
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Lists
-import Data.Repa.Convert.Format.Binary
-import Data.Repa.Convert.Format.Base
 import GHC.Exts
 import Data.Word
 import Prelude hiding (fail)

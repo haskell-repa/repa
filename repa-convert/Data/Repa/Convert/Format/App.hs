@@ -2,7 +2,8 @@
 module Data.Repa.Convert.Format.App
         (App (..))
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
 import Data.Repa.Scalar.Product
 import Data.Monoid
 #include "repa-convert.h"

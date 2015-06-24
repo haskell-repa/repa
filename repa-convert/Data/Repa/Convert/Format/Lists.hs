@@ -5,8 +5,11 @@ module Data.Repa.Convert.Format.Lists
         , VarAsc (..), unpackAsc
         , VarString (..))
 where
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Binary
-import Data.Repa.Convert.Format.Base
 import Data.Monoid
 import Data.Word
 import Data.Char

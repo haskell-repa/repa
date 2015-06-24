@@ -2,7 +2,10 @@
 module Data.Repa.Convert.Format.Exact
         (ExactString (..))
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Word
 import Data.Char
 import GHC.Exts
@@ -11,6 +14,7 @@ import qualified Foreign.Ptr            as S
 #include "repa-convert.h"
 
 
+-- Exactly match the given string.
 data ExactString 
         = ExactString String
         deriving Show

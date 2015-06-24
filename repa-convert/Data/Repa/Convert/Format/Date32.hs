@@ -3,7 +3,8 @@ module Data.Repa.Convert.Format.Date32
         ( YYYYsMMsDD (..)
         , DDsMMsYYYY (..))
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Binary
 import Data.Monoid

@@ -11,7 +11,10 @@ module Data.Repa.Convert.Format.Binary
         , Float32be (..)
         , Float64be (..))
 where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Bits                
 import Data.Int                                 as V
 import Data.Word                                as V

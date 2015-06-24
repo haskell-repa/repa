@@ -1,10 +1,13 @@
 
 module Data.Repa.Convert.Format.Sep
-        ( Sep
-        , SepFormat (..))
+        ( Sep       (..)
+        , SepFormat (..)
+        , SepMeta   (..))
 where
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Binary
-import Data.Repa.Convert.Format.Base
 import Data.Repa.Scalar.Product
 import Data.Monoid
 import Data.Word
@@ -147,7 +150,7 @@ instance ( Packable f1
  unpack (SepCons sm f1 sfs)
   =  Unpacker $ \start end stop fail eat
   -> let 
-         stop' x = w8 (ord (smSepChar sm)) == x || stop x
+         stop' x = w8 (ord (smSepChar sm)) == x || stop x     -- TODO: NO! keeps consing on tests
          {-# INLINE stop' #-}
 
      in  (fromUnpacker $ unpack f1)  start   end stop' fail $ \start_x  x

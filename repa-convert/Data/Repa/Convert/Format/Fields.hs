@@ -1,10 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.Repa.Convert.Format.Fields where
-import Data.Repa.Convert.Format.Base
+import Data.Repa.Convert.Internal.Format
+import Data.Repa.Convert.Internal.Packable
 import Data.Repa.Scalar.Product
 #include "repa-convert.h"
 
 
+---------------------------------------------------------------------------------------------------
 instance Format () where
  type Value () = ()
  fieldCount _   = 0
@@ -24,6 +26,7 @@ instance Packable () where
  {-# INLINE unpack #-}
 
 
+---------------------------------------------------------------------------------------------------
 -- | Formatting fields.
 instance (Format a, Format b) 
        => Format (a :*: b) where
@@ -50,3 +53,4 @@ instance (Format a, Format b)
         sb      <- packedSize fb xb
         return  $  sa + sb
  {-# NOINLINE packedSize #-}
+
