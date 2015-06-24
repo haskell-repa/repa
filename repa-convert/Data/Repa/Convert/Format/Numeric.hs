@@ -7,8 +7,6 @@ module Data.Repa.Convert.Format.Numeric
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Packer
-import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Lists
 import GHC.Exts
 import Data.Word
@@ -44,21 +42,20 @@ instance Format IntAsc where
 instance Packable IntAsc where
 
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- pack IntAsc v
-  = pack VarAsc (show v)
- {-# INLINE pack #-}
+ packer IntAsc v buf k
+  = packer VarAsc (show v) buf k
+ {-# INLINE packer #-}
 
- unpack IntAsc 
-  =  Unpacker $ \start end _stop fail eat
-  -> let !len = I# (minusAddr# end start) in 
-     if len > 0
-        then do
-          r       <- S.loadInt (pw8 start) len
-          case r of
-           Just (n, I# o)  -> eat (plusAddr# start o) n
-           Nothing         -> fail
-        else fail
- {-# INLINE unpack #-}
+ unpacker IntAsc start end _stop fail eat
+  = let !len = I# (minusAddr# end start) in 
+    if len > 0
+     then do
+       r       <- S.loadInt (pw8 start) len
+       case r of
+        Just (n, I# o)  -> eat (plusAddr# start o) n
+        Nothing         -> fail
+     else fail
+ {-# INLINE unpacker #-}
 
 
 ------------------------------------------------------------------------------------------- IntAsc
@@ -81,23 +78,22 @@ instance Format IntAsc0 where
 instance Packable IntAsc0 where
 
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- pack   (IntAsc0 n) v 
+ packer (IntAsc0 n) v start k
   = let s       = show v
         s'      = replicate (n - length s) '0' ++ s
-    in  pack VarAsc s'
- {-# INLINE pack #-}
+    in  packer VarAsc s' start k
+ {-# INLINE packer #-}
 
- unpack (IntAsc0 _)
-  =  Unpacker $ \start end _stop fail eat
-  -> let !len = I# (minusAddr# end start) in
-     if len > 0
-      then do
+ unpacker (IntAsc0 _) start end _stop fail eat
+  = let !len = I# (minusAddr# end start) in
+    if  len > 0
+     then do
         r       <- S.loadInt (pw8 start) len
         case r of
          Just (n, I# o) -> eat (plusAddr# start o) n
          Nothing        -> fail
-      else fail
- {-# INLINE unpack #-}
+     else fail
+ {-# INLINE unpacker #-}
 
 
 ----------------------------------------------------------------------------------------- DoubleAsc
@@ -119,23 +115,21 @@ instance Format DoubleAsc where
 
 instance Packable DoubleAsc where
 
- pack   DoubleAsc v 
-  =  Packer $ \buf k
-  -> do (fptr, len)  <- S.storeDoubleShortest v
+ packer  DoubleAsc v start k
+  = do  (fptr, len)  <- S.storeDoubleShortest v
         F.withForeignPtr fptr $ \ptr
-         -> F.copyBytes buf ptr len
-        k (F.plusPtr buf len)
- {-# INLINE pack   #-}
+         -> F.copyBytes start ptr len
+        k (F.plusPtr start len)
+ {-# INLINE packer   #-}
 
- unpack DoubleAsc 
-  =  Unpacker $ \start end _stop fail eat
-  -> let !len = I# (minusAddr# end start) in
-     if len > 0
+ unpacker DoubleAsc start end _stop fail eat
+  = let !len = I# (minusAddr# end start) in
+    if len > 0
       then do
         (v, I# o)  <- S.loadDouble (pw8 start) len
         eat (plusAddr# start o) v
       else fail
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 
 -------------------------------------------------------------------------------- DoubleFixedPack
@@ -162,23 +156,21 @@ instance Format DoubleFixedPack where
 
 instance Packable DoubleFixedPack where
 
- pack   (DoubleFixedPack prec) v 
-  =  Packer $ \buf k
-  -> do (fptr, len)  <- S.storeDoubleFixed prec v
+ packer   (DoubleFixedPack prec) v start k
+  = do  (fptr, len)  <- S.storeDoubleFixed prec v
         F.withForeignPtr fptr $ \ptr
-         -> F.copyBytes buf ptr len
-        k (F.plusPtr buf len)
- {-# INLINE pack   #-}
+         -> F.copyBytes start ptr len
+        k (F.plusPtr start len)
+ {-# INLINE packer #-}
 
- unpack (DoubleFixedPack _)
-  =  Unpacker $ \start end _stop fail eat
-  -> let !len = I# (minusAddr# end start) in
-     if len > 0
-      then do
-        (v, I# o)  <- S.loadDouble (pw8 start) len
-        eat (plusAddr# start o) v
-      else fail
- {-# INLINE unpack #-}
+ unpacker (DoubleFixedPack _) start end _stop fail eat
+  = let !len = I# (minusAddr# end start) in
+    if len > 0
+     then do
+       (v, I# o)  <- S.loadDouble (pw8 start) len
+       eat (plusAddr# start o) v
+     else fail
+ {-# INLINE unpacker #-}
 
 
 pw8 :: Addr# -> Ptr Word8

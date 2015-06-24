@@ -29,10 +29,14 @@ Library
   exposed-modules:
         Data.Repa.Convert.Format
         Data.Repa.Convert.Formats
-        Data.Repa.Convert.Unpacks
         Data.Repa.Convert
 
   other-modules:
+        Data.Repa.Convert.Internal.Format
+        Data.Repa.Convert.Internal.Packable
+        Data.Repa.Convert.Internal.Packer
+        Data.Repa.Convert.Internal.Unpacker        
+
         Data.Repa.Convert.Format.Ascii
         Data.Repa.Convert.Format.App
         Data.Repa.Convert.Format.Binary

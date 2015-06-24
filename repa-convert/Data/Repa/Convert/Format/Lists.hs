@@ -8,7 +8,6 @@ where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
 import Data.Repa.Convert.Internal.Packer
-import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Binary
 import Data.Monoid
 import Data.Word
@@ -55,9 +54,12 @@ instance Packable FixAsc where
    = Packer $ \_ _ -> return Nothing
   {-# NOINLINE pack #-}
 
-  unpack (FixAsc len@(I# len'))
-   =  Unpacker $ \start end _stop fail eat
-   -> do 
+  packer f v 
+   = fromPacker (pack f v)
+  {-# INLINE packer #-}
+
+  unpacker (FixAsc len@(I# len')) start end _stop fail eat
+   = do 
         let lenBuf = I# (minusAddr# end start)
         if  lenBuf < len
          then fail
@@ -69,7 +71,7 @@ instance Packable FixAsc where
 
              xs      <- mapM load_unpackChar [0 .. len - 1]
              eat (plusAddr# start len') xs
-  {-# NOINLINE unpack #-}
+  {-# INLINE unpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -98,11 +100,14 @@ instance Packable VarAsc where
         (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarAsc xs
   {-# NOINLINE pack #-}
 
-  unpack VarAsc 
-   = Unpacker $ \start end stop _fail eat
-   -> do (Ptr ptr, str)      <- unpackAsc (pw8 start) (pw8 end) stop
-         eat ptr str
-  {-# NOINLINE unpack #-}
+  packer f v 
+   = fromPacker (pack f v)
+  {-# INLINE packer #-}
+
+  unpacker VarAsc start end stop _fail eat
+   = do (Ptr ptr, str)      <- unpackAsc (pw8 start) (pw8 end) stop
+        eat ptr str
+  {-# INLINE unpack #-}
 
 
 -- | Unpack a ascii text from the given buffer.
@@ -152,14 +157,13 @@ instance Format VarString       where
 instance Packable VarString where
 
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- pack VarString xx
-  =  pack VarAsc (show xx)
- {-# NOINLINE pack #-}
+ packer     VarString xx        start k
+  =  packer VarAsc    (show xx) start k
+ {-# INLINE pack #-}
 
- unpack VarString
-  =  Unpacker $ \start end _stop fail eat
-  -> do unpackString (pw8 start) (pw8 end) fail eat
- {-# INLINE unpack #-}
+ unpacker   VarString start end _stop  fail eat
+  = unpackString (pw8 start) (pw8 end) fail eat
+ {-# INLINE unpacker #-}
 
 
 -- | Unpack a string from the given buffer.

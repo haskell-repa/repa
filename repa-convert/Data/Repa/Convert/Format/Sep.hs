@@ -6,7 +6,7 @@ module Data.Repa.Convert.Format.Sep
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Unpacker
+import Data.Repa.Convert.Internal.Packer
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Scalar.Product
 import Data.Monoid
@@ -90,9 +90,7 @@ instance (Format f1, SepFormat fs)
 
 ---------------------------------------------------------------------------------------------------
 instance Format (Sep ()) where
-
  type Value (Sep ())    = ()
-
  fieldCount SepNil      = 0
  minSize    SepNil      = 0
  fixedSize  SepNil      = return 0
@@ -104,10 +102,13 @@ instance Format (Sep ()) where
 
 
 instance Packable (Sep ()) where
- pack   _fmt _val        = mempty
- unpack _fmt             = return ()
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ packer   _fmt _val start k    
+  = k start
+ {-# INLINE packer #-}
+
+ unpacker _fmt start _end _stop _fail eat
+  = eat start ()
+ {-# INLINE unpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -143,77 +144,52 @@ instance ( Packable f1
          , Value (Sep ()) ~ Value ())
        => Packable (Sep (f1 :*: ())) where
 
- pack   (SepCons _ f1 _ ) (x1 :*: _)
-        = pack f1 x1
+ packer (SepCons _ f1 _ ) (x1 :*: _) start k
+        = packer f1 x1 start k
  {-# INLINE pack #-}
 
- unpack (SepCons sm f1 sfs)
-  =  Unpacker $ \start end stop fail eat
-  -> let 
-         stop' x = w8 (ord (smSepChar sm)) == x || stop x     -- TODO: NO! keeps consing on tests
-         {-# INLINE stop' #-}
+ unpacker (SepCons sm f1 sfs) start end stop fail eat
+  = do  let stop' x = w8 (ord (smSepChar sm)) == x || stop x
+            {-# INLINE stop' #-}
 
-     in  (fromUnpacker $ unpack f1)  start   end stop' fail $ \start_x  x
-      -> (fromUnpacker $ unpack sfs) start_x end stop' fail $ \start_xs xs
-      -> eat start_xs (x :*: xs)
- {-# INLINE unpack #-}
+        unpacker     f1  start    end stop' fail $ \start_x1 x1
+         -> unpacker sfs start_x1 end stop  fail $ \start_xs xs
+             -> eat start_xs (x1 :*: xs)
+ {-# INLINE unpacker #-}
 
 
+---------------------------------------------------------------------------------------------------
 instance ( Packable f1
          , Packable (Sep (f2 :*: fs))
          , Value    (Sep (f2 :*: fs)) ~ Value (f2 :*: fs)
          , Value    (Sep fs)          ~ Value fs)
       => Packable   (Sep (f1 :*: f2 :*: fs)) where
 
- pack   (SepCons sm f1 sfs) (x1 :*: xs)
+ pack (SepCons sm f1 sfs) (x1 :*: xs)
         =  pack f1  x1 
         <> pack Word8be (w8 $ ord $ smSepChar sm) 
         <> pack sfs xs
  {-# INLINE pack #-}
 
+ packer f v
+        = fromPacker $ pack f v
+ {-# INLINE packer #-}
 
- unpack (SepCons sm f1 sfs)
-  = Unpacker $ \start end stop fail eat
-  -> let 
-         -- Length of data remaining in the input buffer.
-         len = I# (minusAddr# end start)
+ unpacker (SepCons sm f1 sfs) start end stop fail eat
+  = do  -- Length of data remaining in the input buffer.
+        let len = I# (minusAddr# end start)
 
-         stop' x = w8 (ord (smSepChar sm)) == x || stop x
-         {-# INLINE stop' #-}
-
-     in if smMinSize sm <= len
-         then  (fromUnpacker $ unpack f1)      start     end stop' fail $ \start_x1 x1
-            -> let start_x1' = plusAddr# start_x1 1#
-               in  (fromUnpacker $ unpack sfs) start_x1' end stop' fail $ \start_xs xs
-                -> eat start_xs (x1 :*: xs)
-         else fail
- {-# INLINE unpack #-}
-
-
-{- NOTE: Inlining the worker function as in the following avoids calling a
-         continuation for every fields, but it pushes compile time for > 20s
-         for examples with 10 - 12 fields 
-
- unpack (SepCons sm f1 sfs)
-  = Unpacker 
-  $ let unpack_SepCons start end stop fail eat
-         = let 
-            -- Length of data remaining in the input buffer.
-            len = I# (minusAddr# end start)
-
-            stop' x = w8 (ord (smSepChar sm)) == x || stop x
+        let stop' x = w8 (ord (smSepChar sm)) == x || stop x
             {-# INLINE stop' #-}
 
-           in if smMinSize sm <= len
-               then  (fromUnpacker $ unpack f1)  start     end stop' fail $ \start_x1 x1
-                 -> let start_x1' = plusAddr# start_x1 1#
-                 in  (fromUnpacker $ unpack sfs) start_x1' end stop' fail $ \start_xs xs
-                  -> eat start_xs (x1 :*: xs)
-               else fail
-        {-# INLINE unpack_SepCons #-}
-   in unpack_SepCons 
- {-# INLINE unpack #-}
--}
+        if not (smMinSize sm <= len)
+         then fail
+         else do
+                unpacker     f1  start                   end stop' fail $ \start_x1 x1 
+                 -> unpacker sfs (plusAddr# start_x1 1#) end stop  fail $ \start_xs xs
+                     -> eat start_xs (x1 :*: xs)
+ {-# INLINE unpacker #-}
+
 
 ---------------------------------------------------------------------------------------------------
 w8  :: Integral a => a -> Word8

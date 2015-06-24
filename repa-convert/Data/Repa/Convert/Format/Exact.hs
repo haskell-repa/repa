@@ -4,8 +4,6 @@ module Data.Repa.Convert.Format.Exact
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Packer
-import Data.Repa.Convert.Internal.Unpacker
 import Data.Word
 import Data.Char
 import GHC.Exts
@@ -36,18 +34,15 @@ instance Format ExactString where
 
 
 instance Packable ExactString where
- pack (ExactString str) _       
-  =  Packer $ \buf k
-  -> do let !len = length str
+ packer (ExactString str) _ buf k
+  = do  let !len = length str
         mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
                 $ zip [0 .. len - 1] str
         k (S.plusPtr buf len)
  {-# NOINLINE pack #-}
 
- unpack (ExactString str)
-  =  Unpacker $ \start end _stop fails eat
-  -> do
-        let !len@(I# len') = length str
+ unpacker (ExactString str) start end _stop fails eat
+  = do  let !len@(I# len') = length str
         let !lenBuf        = I# (minusAddr# end start)
         if  lenBuf < len
          then fails

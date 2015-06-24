@@ -4,13 +4,13 @@ module Data.Repa.Convert.Format.Tup
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Format.Sep
-import Data.Repa.Convert.Format.Binary
-import Data.Repa.Scalar.Product
-import Data.Monoid
-import Data.Word
-import Data.Char
-import GHC.Exts
+-- import Data.Repa.Convert.Format.Sep
+-- import Data.Repa.Convert.Format.Binary
+-- import Data.Repa.Scalar.Product
+-- import Data.Monoid
+-- import Data.Word
+-- import Data.Char
+-- import GHC.Exts
 #include "repa-convert.h"
 
 
@@ -33,10 +33,13 @@ instance Format (Tup ()) where
 
 
 instance Packable (Tup ()) where
- pack   _fmt _val       = mempty
- unpack _fmt            = return ()
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ packer   _fmt _val start k 
+  = k start
+ {-# INLINE packer #-}
+
+ unpacker _fmt start _end _stop _fail eat
+  = eat start ()
+ {-# INLINE unpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -94,6 +97,7 @@ instance ( Packable f1
 -}
 
 ---------------------------------------------------------------------------------------------------
+{-
 cw8 :: Char -> Word8
 cw8 c = fromIntegral $ ord c
 {-# INLINE cw8 #-}
@@ -102,4 +106,4 @@ cw8 c = fromIntegral $ ord c
 zeroOrOne :: Int -> Int
 zeroOrOne (I# i) = I# (1# -# (0# ==# i))
 {-# INLINE zeroOrOne #-}
-
+-}

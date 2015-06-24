@@ -13,8 +13,6 @@ module Data.Repa.Convert.Format.Binary
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Packer
-import Data.Repa.Convert.Internal.Unpacker
 import Data.Bits                
 import Data.Int                                 as V
 import Data.Word                                as V
@@ -23,6 +21,7 @@ import qualified Foreign.Marshal.Alloc          as S
 import qualified Foreign.Ptr                    as S
 import qualified Control.Monad.Primitive        as Prim
 import GHC.Exts
+import Prelude hiding (fail)
 #include "repa-convert.h"
 
 
@@ -42,17 +41,15 @@ instance Format Word8be                 where
 
 
 instance Packable Word8be where
- pack   Word8be x 
-  =  Packer $ \buf k
-  -> do S.poke buf (fromIntegral x)
+ packer   _ x buf k
+  = do  S.poke buf (fromIntegral x)
         k (S.plusPtr buf 1)
- {-# INLINE_INNER pack #-}
+ {-# INLINE pack #-}
 
- unpack Word8be 
-  =  Unpacker $ \start _end _stop _fail eat
-  -> do x <- S.peek (pw8 start)
+ unpacker _ start _end _stop _fail eat
+  = do  x <- S.peek (pw8 start)
         eat (plusAddr# start 1#) (fromIntegral x)
- {-# INLINE_INNER unpack #-}
+ {-# INLINE unpack #-}
 
 
 w8  :: Integral a => a -> Word8
@@ -76,10 +73,14 @@ instance Format Int8be                  where
 
 
 instance Packable Int8be where
- pack    Int8be x       = pack Word8be (w8 x)
- unpack  Int8be         = fmap i8 (unpack Word8be)
- {-# INLINE_INNER pack   #-}
- {-# INLINE_INNER unpack #-}
+ packer      Int8be x buf k
+  = packer   Word8be (w8 x) buf k
+ {-# INLINE packer   #-}
+
+ unpacker    Int8be  start end stop fail eat    
+  = unpacker Word8be start end stop fail 
+  $ \addr v -> eat addr (i8 v)
+ {-# INLINE unpacker #-}
 
 
 i8  :: Integral a => a -> Int8
@@ -103,20 +104,18 @@ instance Format Word16be                where
 
 
 instance Packable Word16be where
- pack   Word16be x 
-  =  Packer $ \buf k
-  -> do S.poke        buf    (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
+ packer   Word16be x buf k
+  = do  S.poke        buf    (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
         S.pokeByteOff buf 1  (w8 ((w16 x .&. 0x000ff)))
         k (S.plusPtr buf 2)
- {-# INLINE_INNER pack #-}
+ {-# INLINE packer #-}
 
- unpack Word16be 
-  =  Unpacker $ \start _end _stop _fail eat
-  -> do x0 :: Word8  <- S.peek        (pw8 start)
+ unpacker Word16be start _end _stop _fail eat
+  = do  x0 :: Word8  <- S.peek        (pw8 start)
         x1 :: Word8  <- S.peekByteOff (pw8 start) 1
         eat (plusAddr# start 2#)
             (w16 ((w16 x0 `shiftL` 8) .|. w16 x1))
- {-# INLINE_INNER unpack #-}
+ {-# INLINE unpacker #-}
 
 
 w16 :: Integral a => a -> Word16
@@ -140,10 +139,14 @@ instance Format Int16be                 where
 
 
 instance Packable Int16be where
- pack   Int16be x       = pack   Word16be (w16 x)
- unpack Int16be         = fmap i16 (unpack Word16be)
- {-# INLINE_INNER pack   #-}
- {-# INLINE_INNER unpack #-}
+ packer      Int16be x buf k
+  = packer   Word16be (w16 x) buf k
+ {-# INLINE packer   #-}
+
+ unpacker    Int16be  start end stop fail eat
+  = unpacker Word16be start end stop fail
+  $ \addr v -> eat addr (i16 v)
+ {-# INLINE unpacker #-}
 
 
 i16 :: Integral a => a -> Int16
@@ -167,18 +170,16 @@ instance Format Word32be                where
 
 
 instance Packable Word32be where
- pack   Word32be x 
-  =  Packer $ \buf k
-  -> do S.poke        buf    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
+ packer Word32be x buf k
+  =  do S.poke        buf    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
         S.pokeByteOff buf 1  (w8 ((w32 x .&. 0x000ff0000) `shiftR` 16))
         S.pokeByteOff buf 2  (w8 ((w32 x .&. 0x00000ff00) `shiftR`  8))
         S.pokeByteOff buf 3  (w8 ((w32 x .&. 0x0000000ff)))
         k (S.plusPtr buf 4)
- {-# INLINE_INNER pack #-}
+ {-# INLINE packer #-}
 
- unpack Word32be 
-  =  Unpacker $ \start _end _fail _stop eat
-  -> do x0 :: Word8  <- S.peek        (pw8 start) 
+ unpacker Word32be start _end _fail _stop eat
+  = do  x0 :: Word8  <- S.peek        (pw8 start) 
         x1 :: Word8  <- S.peekByteOff (pw8 start) 1
         x2 :: Word8  <- S.peekByteOff (pw8 start) 2
         x3 :: Word8  <- S.peekByteOff (pw8 start) 3
@@ -187,7 +188,7 @@ instance Packable Word32be where
                  .|. (w32 x1 `shiftL` 16)
                  .|. (w32 x2 `shiftL`  8)
                  .|. (w32 x3)))
- {-# INLINE_INNER unpack #-}
+ {-# INLINE unpack #-}
 
 
 w32 :: Integral a => a -> Word32
@@ -211,10 +212,14 @@ instance Format Int32be                 where
 
 
 instance Packable Int32be where
- pack   Int32be x       = pack   Word32be (w32 x)
- unpack Int32be         = fmap i32 (unpack Word32be)
- {-# INLINE_INNER pack   #-}
- {-# INLINE_INNER unpack #-}
+ packer      Int32be x buf k
+  = packer   Word32be (w32 x) buf k
+ {-# INLINE packer #-}
+
+ unpacker    Int32be  start end stop fail eat
+  = unpacker Word32be start end stop fail
+  $ \addr v -> eat addr (i32 v)
+ {-# INLINE unpacker #-}
 
 
 i32 :: Integral a => a -> Int32
@@ -238,9 +243,8 @@ instance Format Word64be                where
 
 
 instance Packable Word64be where
- pack   Word64be x 
-  =  Packer $ \buf k
-  -> do S.poke        buf    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
+ packer Word64be x buf k
+  = do  S.poke        buf    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
         S.pokeByteOff buf 1  (w8 ((w64 x .&. 0x000ff000000000000) `shiftR` 48))
         S.pokeByteOff buf 2  (w8 ((w64 x .&. 0x00000ff0000000000) `shiftR` 40))
         S.pokeByteOff buf 3  (w8 ((w64 x .&. 0x0000000ff00000000) `shiftR` 32))
@@ -249,11 +253,10 @@ instance Packable Word64be where
         S.pokeByteOff buf 6  (w8 ((w64 x .&. 0x0000000000000ff00) `shiftR`  8))
         S.pokeByteOff buf 7  (w8 ((w64 x .&. 0x000000000000000ff)            ))
         k (S.plusPtr buf 8)
- {-# INLINE_INNER pack #-}
+ {-# INLINE packer #-}
 
- unpack Word64be 
-  =  Unpacker $ \start _end _fail _stop eat
-  -> do x0 :: Word8  <- S.peek        (pw8 start) 
+ unpacker Word64be start _end _fail _stop eat
+  = do  x0 :: Word8  <- S.peek        (pw8 start) 
         x1 :: Word8  <- S.peekByteOff (pw8 start) 1
         x2 :: Word8  <- S.peekByteOff (pw8 start) 2
         x3 :: Word8  <- S.peekByteOff (pw8 start) 3
@@ -270,7 +273,7 @@ instance Packable Word64be where
                  .|. (w64 x5 `shiftL` 16)
                  .|. (w64 x6 `shiftL`  8)
                  .|. (w64 x7           )))
- {-# INLINE_INNER unpack #-}
+ {-# INLINE unpacker #-}
 
 
 w64 :: Integral a => a -> Word64
@@ -294,10 +297,14 @@ instance Format Int64be                 where
 
 
 instance Packable Int64be where
- pack   Int64be x       = pack   Word64be (w64 x)
- unpack Int64be         = fmap i64 (unpack Word64be)
- {-# INLINE_INNER pack   #-}
- {-# INLINE_INNER unpack #-}
+ packer      Int64be x buf k  
+  = packer   Word64be (w64 x) buf k
+ {-# INLINE packer   #-}
+
+ unpacker    Int64be  start end stop fail eat
+  = unpacker Word64be start end stop fail 
+  $ \addr v -> eat addr (i64 v)
+ {-# INLINE unpacker #-}
 
 
 i64 :: Integral a => a -> Int64
@@ -321,10 +328,14 @@ instance Format Float32be               where
 
 
 instance Packable Float32be where
- pack      Float32be x  = pack Word32be (floatToWord32 x)
- unpack    Float32be    = fmap word32ToFloat (unpack Word32be)
- {-# INLINE_INNER pack #-}
- {-# INLINE_INNER unpack #-}
+ packer      Float32be x buf k
+  = packer   Word32be  (floatToWord32 x) buf k
+ {-# INLINE packer #-}
+
+ unpacker    Float32be start end stop fail eat
+  = unpacker Word32be  start end stop fail
+  $ \addr v -> eat addr (word32ToFloat v)
+ {-# INLINE unpacker #-}
 
 
 -- | Bitwise cast of `Float` to `Word32`.
@@ -338,7 +349,7 @@ floatToWord32 d
  $ S.alloca $ \buf -> 
  do     S.poke (S.castPtr buf) d
         S.peek buf
-{-# INLINE_INNER floatToWord32 #-}
+{-# INLINE floatToWord32 #-}
 
 
 -- | Inverse of `doubleToFloat32`
@@ -348,7 +359,7 @@ word32ToFloat w
  $ S.alloca $ \buf ->
  do     S.poke (S.castPtr buf) w
         S.peek buf
-{-# INLINE_INNER word32ToFloat #-}
+{-# INLINE word32ToFloat #-}
 
 
 ----------------------------------------------------------------------------------------- Float64be
@@ -367,10 +378,14 @@ instance Format Float64be               where
 
 
 instance Packable Float64be where
- pack      Float64be x  = pack Word64be (doubleToWord64 x)
- unpack    Float64be    = fmap word64ToDouble (unpack Word64be)
- {-# INLINE_INNER pack #-}
- {-# INLINE_INNER unpack #-}
+ packer      Float64be x buf k
+  = packer   Word64be (doubleToWord64 x) buf k
+ {-# INLINE packer #-}
+
+ unpacker    Float64be start end stop fail eat
+  = unpacker Word64be  start end stop fail
+  $ \addr v -> eat addr (word64ToDouble v)
+ {-# INLINE unpacker #-}
 
 
 -- | Bitwise cast of `Double` to `Word64`.
@@ -384,7 +399,7 @@ doubleToWord64 d
  $ S.alloca $ \buf -> 
  do     S.poke (S.castPtr buf) d
         S.peek buf
-{-# INLINE_INNER doubleToWord64 #-}
+{-# INLINE doubleToWord64 #-}
 
 
 -- | Inverse of `doubleToWord64`
@@ -394,7 +409,7 @@ word64ToDouble w
  $ S.alloca $ \buf ->
  do     S.poke (S.castPtr buf) w
         S.peek buf
-{-# INLINE_INNER word64ToDouble #-}
+{-# INLINE word64ToDouble #-}
 
 
 ---------------------------------------------------------------------------------------------------

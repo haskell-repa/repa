@@ -5,7 +5,6 @@ module Data.Repa.Convert.Format.Unit
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Lists
 import GHC.Exts
 import Data.Word
@@ -29,13 +28,12 @@ instance Format UnitAsc                 where
 
 
 instance Packable UnitAsc where
- pack   (UnitAsc s) ()    
-  = pack (FixAsc (length s)) s
+ packer    (UnitAsc s)         () start k
+  = packer (FixAsc (length s)) s  start k
  {-# NOINLINE pack #-}
 
- unpack (UnitAsc str) 
-  =  Unpacker $ \start end stop fail eat
-  -> do (Ptr ptr, str')     <- unpackAsc (pw8 start) (pw8 end) stop
+ unpacker  (UnitAsc str) start end stop fail eat
+  = do  (Ptr ptr, str') <- unpackAsc (pw8 start) (pw8 end) stop
         if str == str'
          then eat ptr ()
          else fail

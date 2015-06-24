@@ -7,6 +7,7 @@ import Data.IORef
 import Data.Word
 import qualified Foreign.Ptr            as F
 import GHC.Exts
+import Prelude hiding (fail)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -24,8 +25,7 @@ data Unpacker a
      --   action is invoked.
      --
      fromUnpacker
-        :: forall b
-        .  Addr#                 -- Start of buffer.
+        :: Addr#                 -- Start of buffer.
         -> Addr#                 -- Pointer to first byte after end of buffer.
         -> (Word8 -> Bool)       -- Detect a field terminator.
         -> IO ()                 -- Signal failure.

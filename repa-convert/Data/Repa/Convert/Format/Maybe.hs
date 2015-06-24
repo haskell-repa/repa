@@ -5,10 +5,7 @@ module Data.Repa.Convert.Format.Maybe
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Packer
-import Data.Repa.Convert.Internal.Unpacker
 import Data.Repa.Convert.Format.Lists
-import Data.Repa.Convert.Format.Binary
 import Data.Word
 import Data.IORef
 import GHC.Exts
@@ -63,28 +60,28 @@ fixedSize_MaybeAsc s r
 
 instance Packable f
       => Packable (MaybeAsc f) where
- pack  (MaybeAsc str f) mv
+
+ packer   (MaybeAsc str f) mv start k
   = case mv of
-        Nothing -> pack VarAsc str
-        Just v  -> pack f      v
+        Nothing -> packer VarAsc str start k
+        Just v  -> packer f      v   start k
  {-# NOINLINE pack #-}
 
- unpack (MaybeAsc str f)
-  =  Unpacker $ \start end stop fail eat
-  -> do (Ptr ptr, str') <- unpackAsc (pw8 start) (pw8 end) stop
+ unpacker (MaybeAsc str f) start end stop fail eat
+  = do  (Ptr ptr, str') <- unpackAsc (pw8 start) (pw8 end) stop
 
         ref             <- newIORef (error "repa-convert.unpack: undefined")
         let unpack_MaybeAsc
              = if str == str'
                 then writeIORef ref (Ptr ptr, Nothing)
-                else (fromUnpacker $ unpack f) start end stop fail 
+                else unpacker f start end stop fail 
                        $ \ptr' x -> writeIORef ref (Ptr ptr', Just x)
             {-# NOINLINE unpack_MaybeAsc #-}
         unpack_MaybeAsc
 
         (Ptr ptr', mx)  <- readIORef ref
         eat ptr' mx
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 
 pw8 :: Addr# -> Ptr Word8

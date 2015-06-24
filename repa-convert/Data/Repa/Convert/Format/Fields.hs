@@ -20,9 +20,12 @@ instance Format () where
 
 
 instance Packable () where
- pack   _       = mempty
- unpack _       = return ()
- {-# INLINE pack   #-} 
+ packer  _f _v buf k
+        = k buf
+ {-# INLINE packer #-}
+
+ unpacker _f start _end _stop _fail eat
+        = eat start ()
  {-# INLINE unpack #-}
 
 

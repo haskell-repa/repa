@@ -19,6 +19,7 @@ data Packer
         -> IO (Maybe (F.Ptr Word8))
   }
 
+
 instance Monoid Packer where
  mempty 
   = Packer $ \buf k -> k buf

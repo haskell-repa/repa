@@ -4,8 +4,10 @@ module Data.Repa.Convert.Format.App
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
 import Data.Repa.Scalar.Product
 import Data.Monoid
+import Prelude hiding (fail)
 #include "repa-convert.h"
 
 
@@ -53,10 +55,13 @@ instance ( Format f1, Format (App fs)
 
 
 instance Packable (App ()) where
- pack   _fmt _val       = mempty
- unpack _fmt            = return ()
- {-# INLINE pack   #-}
- {-# INLINE unpack #-}
+ packer _f _v buf k
+        = k buf
+ {-# INLINE packer #-}
+ 
+ unpacker _f start _end _stop _fail eat
+        = eat start ()
+ {-# INLINE unpacker #-}
 
 
 instance ( Packable f1, Packable (App fs)
@@ -67,10 +72,14 @@ instance ( Packable f1, Packable (App fs)
   =     pack f1 x1 <> pack (App fs) xs
  {-# NOINLINE pack #-}
 
- unpack  (App (f1 :*: fs))
-  = do  x1      <- unpack f1
-        xs      <- unpack (App fs)
-        return  (x1 :*: xs)
- {-# NOINLINE unpack #-}
+ packer  f v
+  = fromPacker $ pack f v
+ {-# INLINE packer #-}
+
+ unpacker  (App (f1 :*: fs)) start end stop fail eat
+  = unpacker     f1       start    end stop fail $ \start_x1 x1
+     -> unpacker (App fs) start_x1 end stop fail $ \start_xs xs
+         -> eat start_xs (x1 :*: xs) 
+ {-# INLINE unpack #-}
 
 

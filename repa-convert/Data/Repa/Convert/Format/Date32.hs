@@ -4,7 +4,7 @@ module Data.Repa.Convert.Format.Date32
         , DDsMMsYYYY (..))
 where
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Internal.Unpacker
+import Data.Repa.Convert.Internal.Packer
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Binary
 import Data.Monoid
@@ -46,10 +46,12 @@ instance Packable YYYYsMMsDD where
         <> pack (IntAsc0 2) dd
  {-# INLINE pack #-}
 
- unpack (YYYYsMMsDD s)
-  =  Unpacker $ \start end _stop fail eat
-  -> do
-        let len = I# (minusAddr# end start)
+ packer f v
+  = fromPacker (pack f v)
+ {-# INLINE packer #-}
+
+ unpacker (YYYYsMMsDD s) start end _stop fail eat
+  = do  let len = I# (minusAddr# end start)
         r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) (pw8 start) len
         case r of
          Just (d, I# o)    -> eat (plusAddr# start o) d
@@ -86,9 +88,12 @@ instance Packable DDsMMsYYYY where
         <> pack (IntAsc0 4) yy
  {-# INLINE pack #-}
 
- unpack (DDsMMsYYYY s)
-  =  Unpacker $ \start end _stop fail eat
-  -> do
+ packer f v
+  = fromPacker (pack f v)
+ {-# INLINE packer #-}
+
+ unpacker (DDsMMsYYYY s) start end _stop fail eat
+  = do
         let len = I# (minusAddr# end start)
         r       <- Date32.loadDDsMMsYYYY (fromIntegral $ ord s) (pw8 start) len
         case r of
