@@ -43,7 +43,7 @@ instance Packable IntAsc where
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  pack IntAsc v
   = pack VarAsc (show v)
- {-# NOINLINE pack #-}
+ {-# INLINE pack #-}
 
  unpack IntAsc 
   =  Unpacker $ \start end _stop fail eat
@@ -55,7 +55,7 @@ instance Packable IntAsc where
            Just (n, I# o)  -> eat (plusAddr# start o) n
            Nothing         -> fail
         else fail
- {-# NOINLINE unpack #-}
+ {-# INLINE unpack #-}
 
 
 ------------------------------------------------------------------------------------------- IntAsc
@@ -82,7 +82,7 @@ instance Packable IntAsc0 where
   = let s       = show v
         s'      = replicate (n - length s) '0' ++ s
     in  pack VarAsc s'
- {-# NOINLINE pack #-}
+ {-# INLINE pack #-}
 
  unpack (IntAsc0 _)
   =  Unpacker $ \start end _stop fail eat
@@ -94,7 +94,7 @@ instance Packable IntAsc0 where
          Just (n, I# o) -> eat (plusAddr# start o) n
          Nothing        -> fail
       else fail
- {-# NOINLINE unpack #-}
+ {-# INLINE unpack #-}
 
 
 ----------------------------------------------------------------------------------------- DoubleAsc
@@ -122,7 +122,7 @@ instance Packable DoubleAsc where
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
         k (F.plusPtr buf len)
- {-# NOINLINE pack   #-}
+ {-# INLINE pack   #-}
 
  unpack DoubleAsc 
   =  Unpacker $ \start end _stop fail eat
@@ -132,7 +132,7 @@ instance Packable DoubleAsc where
         (v, I# o)  <- S.loadDouble (pw8 start) len
         eat (plusAddr# start o) v
       else fail
- {-# NOINLINE unpack #-}
+ {-# INLINE unpack #-}
 
 
 -------------------------------------------------------------------------------- DoubleFixedPack
@@ -165,7 +165,7 @@ instance Packable DoubleFixedPack where
         F.withForeignPtr fptr $ \ptr
          -> F.copyBytes buf ptr len
         k (F.plusPtr buf len)
- {-# NOINLINE pack   #-}
+ {-# INLINE pack   #-}
 
  unpack (DoubleFixedPack _)
   =  Unpacker $ \start end _stop fail eat
@@ -175,7 +175,7 @@ instance Packable DoubleFixedPack where
         (v, I# o)  <- S.loadDouble (pw8 start) len
         eat (plusAddr# start o) v
       else fail
- {-# NOINLINE unpack #-}
+ {-# INLINE unpack #-}
 
 
 pw8 :: Addr# -> Ptr Word8

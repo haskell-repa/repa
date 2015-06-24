@@ -115,12 +115,12 @@ data Unpacker a
      --
      fromUnpacker
         :: forall b
-        .  Addr#                -- Start of buffer.
-        -> Addr#                -- Pointer to first byte after end of buffer.
-        -> (Word8 -> Bool)      -- Detect a field terminator.
-        -> IO b                 -- Signal failure.
-        -> (Addr# -> a -> IO b) -- Eat an unpacked value.
-        -> IO b
+        .  Addr#                 -- Start of buffer.
+        -> Addr#                 -- Pointer to first byte after end of buffer.
+        -> (Word8 -> Bool)       -- Detect a field terminator.
+        -> IO ()                 -- Signal failure.
+        -> (Addr# -> a -> IO ()) -- Eat an unpacked value.
+        -> IO ()
   }
 
 

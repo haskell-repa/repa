@@ -179,7 +179,7 @@ instance ( Packable f1
          {-# INLINE stop' #-}
 
      in if smMinSize sm <= len
-         then  (fromUnpacker $ unpack f1)              start     end stop' fail $ \start_x1 x1
+         then  (fromUnpacker $ unpack f1)      start     end stop' fail $ \start_x1 x1
             -> let start_x1' = plusAddr# start_x1 1#
                in  (fromUnpacker $ unpack sfs) start_x1' end stop' fail $ \start_xs xs
                 -> eat start_xs (x1 :*: xs)

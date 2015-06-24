@@ -155,44 +155,43 @@ instance Packable VarString where
 
  unpack VarString
   =  Unpacker $ \start end _stop fail eat
-  -> do r       <- unpackString (pw8 start) (pw8 end)
-        case r of
-         Nothing                -> fail
-         Just (Ptr start', str) -> eat start' str
- {-# NOINLINE unpack #-}
+  -> do unpackString (pw8 start) (pw8 end) fail eat
+ {-# INLINE unpack #-}
 
 
 -- | Unpack a string from the given buffer.
 unpackString 
-        :: S.Ptr Word8    -- ^ First byte in buffer.
-        -> S.Ptr Word8    -- ^ First byte after buffer.
-        -> IO (Maybe (S.Ptr Word8, [Char]))
+        :: S.Ptr Word8                  -- ^ First byte in buffer.
+        -> S.Ptr Word8                  -- ^ First byte after buffer.
+        -> IO ()                        -- ^ Signal failure.
+        -> (Addr# -> [Char] -> IO ())   -- ^ Eat an unpacked value.
+        -> IO ()
 
-unpackString start end
+unpackString start end fail eat
  = open start
  where
         -- Accept the open quotes.
         open !ptr
          | ptr >= end
-         = return $ Nothing
+         = fail
 
          | otherwise
          = do   w :: Word8  <- S.peek ptr
                 let !ptr'   =  S.plusPtr ptr 1 
                 case chr $ fromIntegral w of
                  '"'    -> go_body ptr' []
-                 _      -> return Nothing
+                 _      -> fail
 
         -- Handle the next character in the string.
-        go_body !ptr !acc
+        go_body !ptr@(Ptr addr) !acc
          | ptr >= end 
-         = return $ Just (ptr, reverse acc)
+         = eat addr (reverse acc)
 
          | otherwise
          = do   w :: Word8  <- S.peek ptr
-                let !ptr'   =  S.plusPtr ptr 1
+                let !ptr'@(Ptr addr')   =  S.plusPtr ptr 1
                 case chr $ fromIntegral w of
-                 '"'    -> return $ Just (ptr', reverse acc)
+                 '"'    -> eat addr' (reverse acc)
                  '\\'   -> go_escape ptr' acc
                  c      -> go_body   ptr' (c : acc)
 
@@ -200,7 +199,7 @@ unpackString start end
         -- The previous character was a '\\'
         go_escape !ptr !acc
          | ptr >= end
-         = return Nothing
+         = fail
 
          | otherwise
          = do   w :: Word8  <- S.peek ptr
@@ -215,7 +214,7 @@ unpackString start end
                  'v'    -> go_body ptr' ('\v' : acc)
                  '\\'   -> go_body ptr' ('\\' : acc)
                  '"'    -> go_body ptr' ('"'  : acc)
-                 _      -> return Nothing
+                 _      -> fail
 {-# NOINLINE unpackString #-}
 
 
