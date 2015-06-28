@@ -26,6 +26,7 @@ Library
         double-conversion == 2.0.*
 
   exposed-modules:
+        Data.Repa.Scalar.Box
         Data.Repa.Scalar.Date32
         Data.Repa.Scalar.Double
         Data.Repa.Scalar.Int
