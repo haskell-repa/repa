@@ -100,5 +100,5 @@ instance (Unpack (Buffer F Char)) t
 
 instance Eq (Array A Char) where
  (==) (AArray_Char arr1) (AArray_Char arr2) = arr1 == arr2
- {-# INLINE (==) #-}
+ {-# INLINE_ARRAY (==) #-}
 

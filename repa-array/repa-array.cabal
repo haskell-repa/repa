@@ -85,6 +85,7 @@ Library
 
         Data.Repa.Array.Material.Auto.Base
         Data.Repa.Array.Material.Auto.InstArray
+        Data.Repa.Array.Material.Auto.InstBox
         Data.Repa.Array.Material.Auto.InstChar
         Data.Repa.Array.Material.Auto.InstDate32
         Data.Repa.Array.Material.Auto.InstFloat

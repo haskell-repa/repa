@@ -16,7 +16,6 @@ import Control.Monad
 #include "repa-array.h"
 
 
------------------------------------------------------------------------------------------------ []
 instance Bulk A a => Bulk A (Maybe a) where
  data Array A (Maybe a)         = AArray_Maybe !(Array B (Maybe a))
  layout (AArray_Maybe arr)      = Auto (A.length arr)
@@ -45,7 +44,7 @@ instance  Target A (Maybe a) where
   = unsafeReadBuffer arr ix
  {-# INLINE_ARRAY unsafeReadBuffer #-}
 
- unsafeWriteBuffer  (ABuffer_Maybe arr) ix x
+ unsafeWriteBuffer  (ABuffer_Maybe arr) ix !x
   = unsafeWriteBuffer arr ix x
  {-# INLINE_ARRAY unsafeWriteBuffer #-}
 

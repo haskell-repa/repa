@@ -12,8 +12,8 @@ import qualified Data.Vector.Generic.Mutable    as GM
 --
 --   Useful as a default case when defining instances for polytypic 
 --   data types.
-data Box a
-        = Box !a
+newtype Box a
+        = Box a
         deriving (Eq, Show)
 
 
@@ -63,7 +63,7 @@ instance U.Unbox a
   {-# INLINE basicUnsafeRead  #-}
 
   basicUnsafeWrite (MV_Box _n as) i (Box a)
-   =    GM.basicUnsafeWrite as i a
+   = a `seq` GM.basicUnsafeWrite as i a
   {-# INLINE basicUnsafeWrite  #-}
 
   basicClear (MV_Box _n as)
