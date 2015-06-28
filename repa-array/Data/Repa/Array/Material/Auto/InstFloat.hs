@@ -26,9 +26,11 @@ deriving instance Show (Array A Float)
 
 instance Convert F Float A Float where
  convert arr = AArray_Float arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Float F Float where
  convert (AArray_Float arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Float where
  window st len (AArray_Float arr) 
@@ -96,9 +98,11 @@ deriving instance Show (Array A Double)
 
 instance Convert F Double A Double where
  convert arr = AArray_Double arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Double F Double where
  convert (AArray_Double arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Double where
  window st len (AArray_Double arr) 

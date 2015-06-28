@@ -35,9 +35,11 @@ deriving instance Show (Array A Word8)
 
 instance Convert F Word8 A Word8 where
  convert arr = AArray_Word8 arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Word8 F Word8 where
  convert (AArray_Word8 arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Word8 where
  window st len (AArray_Word8 arr) 

@@ -3,6 +3,7 @@
 module Data.Repa.Array.Material.Auto.InstProduct
 where
 import Data.Repa.Array.Material.Auto.Base       as A
+import Data.Repa.Array.Material.Auto.InstUnit   as A
 import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
@@ -40,8 +41,8 @@ deriving instance (Show (Array A a), Show (Array A b))
                 => Show (Array A (a :*: b))
 
 
-instance (Windowable A a, Windowable A b)
-      =>  Windowable A (a :*: b) where
+instance (A.Windowable A a, A.Windowable A b)
+      =>  A.Windowable A (a :*: b) where
  window st len (AArray_Prod arrA arrB) 
   = AArray_Prod (window st len arrA) (window st len arrB)
  {-# INLINE_ARRAY window #-}

@@ -84,13 +84,17 @@ Library
         Data.Repa.Array.Auto.Operator
 
         Data.Repa.Array.Material.Auto.Base
+        Data.Repa.Array.Material.Auto.InstArray
+        Data.Repa.Array.Material.Auto.InstChar
+        Data.Repa.Array.Material.Auto.InstDate32
         Data.Repa.Array.Material.Auto.InstFloat
         Data.Repa.Array.Material.Auto.InstInt
         Data.Repa.Array.Material.Auto.InstList
         Data.Repa.Array.Material.Auto.InstMaybe
-        Data.Repa.Array.Material.Auto.InstWord
-        Data.Repa.Array.Material.Auto.InstDate32
         Data.Repa.Array.Material.Auto.InstProduct
+        Data.Repa.Array.Material.Auto.InstTuple
+        Data.Repa.Array.Material.Auto.InstUnit
+        Data.Repa.Array.Material.Auto.InstWord
 
         Data.Repa.Array.Material.Foreign.Base
 

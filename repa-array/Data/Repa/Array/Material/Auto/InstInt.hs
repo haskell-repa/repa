@@ -28,9 +28,11 @@ deriving instance Show (Array A Int)
 
 instance Convert F Int A Int where
  convert arr = AArray_Int arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Int F Int where
  convert (AArray_Int arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Int where
  window st len (AArray_Int arr) 
@@ -98,9 +100,11 @@ deriving instance Show (Array A Int8)
 
 instance Convert F Int8 A Int8 where
  convert arr = AArray_Int8 arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Int8 F Int8 where
  convert (AArray_Int8 arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Int8 where
  window st len (AArray_Int8 arr) 
@@ -168,9 +172,11 @@ deriving instance Show (Array A Int16)
 
 instance Convert F Int16 A Int16 where
  convert arr = AArray_Int16 arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Int16 F Int16 where
  convert (AArray_Int16 arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Int16 where
  window st len (AArray_Int16 arr) 
@@ -238,9 +244,11 @@ deriving instance Show (Array A Int32)
 
 instance Convert F Int32 A Int32 where
  convert arr = AArray_Int32 arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Int32 F Int32 where
  convert (AArray_Int32 arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Int32 where
  window st len (AArray_Int32 arr) 
@@ -308,9 +316,11 @@ deriving instance Show (Array A Int64)
 
 instance Convert F Int64 A Int64 where
  convert arr = AArray_Int64 arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Convert A Int64 F Int64 where
  convert (AArray_Int64 arr) = arr
+ {-# INLINE_ARRAY convert #-}
 
 instance Windowable A Int64 where
  window st len (AArray_Int64 arr) 

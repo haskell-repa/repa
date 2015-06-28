@@ -4,10 +4,11 @@ module Data.Repa.Array.Material.Auto.InstDate32
         ( rangeDate32
         , prettyDate32 )
 where
-import qualified Data.Repa.Array.Generic.Target         as A
-import qualified Data.Repa.Array.Generic.Index          as A
+import Data.Repa.Array.Material.Auto.InstChar           ()
 import qualified Data.Repa.Array.Material.Auto.Base     as A
 import qualified Data.Repa.Array.Material.Foreign       as A
+import qualified Data.Repa.Array.Generic.Target         as A
+import qualified Data.Repa.Array.Generic.Index          as A
 import qualified Data.Repa.Array.Generic                as A
 import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Fusion.Unpack                as A
