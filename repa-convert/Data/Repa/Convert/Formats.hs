@@ -65,6 +65,7 @@ import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Maybe
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Sep
+import Data.Repa.Convert.Format.String
 import Data.Repa.Convert.Format.Tup
 import Data.Repa.Convert.Format.Unit
 import Data.Repa.Scalar.Product

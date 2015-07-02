@@ -3,7 +3,7 @@ module Data.Repa.Convert.Format.Ascii
         (FormatAscii (..))
 where
 import Data.Repa.Convert.Format.Numeric
-import Data.Repa.Convert.Format.Lists
+import Data.Repa.Convert.Format.String
 import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Tup
 import Data.Repa.Scalar.Date32                  (Date32)
