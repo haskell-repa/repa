@@ -3,13 +3,14 @@ module Data.Repa.Array.Internals.Bulk
         ( Bulk (..),    BulkI
         , (!)
         , length
+        , first,        last
         , toList
         , toLists
         , toListss)
 where
 import Data.Repa.Array.Internals.Shape
 import Data.Repa.Array.Internals.Layout
-import Prelude hiding (length)
+import Prelude hiding (length, last)
 #include "repa-array.h"
 
 
@@ -47,6 +48,26 @@ length  :: Bulk  l a
         => Array l a -> Int
 length !arr = size (extent (layout arr))
 {-# INLINE_ARRAY length #-}
+
+
+-- | O(1). Take the first element of an array, if there is one.
+first   :: BulkI  l a
+        => Array l a -> Maybe a
+first !arr
+ = if length arr >= 1
+        then Just $ index arr 0
+        else Nothing
+{-# INLINE first #-}
+
+
+-- O(1). Take the last element of an array, if there is one.
+last    :: BulkI  l a
+        => Array l a -> Maybe a
+last !arr
+ = if length arr >= 1
+        then Just $ index arr (length arr - 1)
+        else Nothing
+{-# INLINE last #-}
 
 
 -- Conversion -----------------------------------------------------------------

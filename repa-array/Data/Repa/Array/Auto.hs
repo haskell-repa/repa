@@ -7,7 +7,14 @@ module Data.Repa.Array.Auto
         , index
         , (!)
         , length
+        , first, last
         , head, init, tail
+
+        -- * Construction
+        , empty
+        , singleton
+        , generateMaybeS
+        , generateEitherS
 
         -- * Conversion
         , fromList
@@ -109,6 +116,8 @@ import Data.Repa.Array.Material.Auto.InstProduct
 import Prelude 
        hiding   ( map,  length, reverse, filter, concat, unlines, foldl
                 , sum,  product
-                , zip, unzip
-                , head, init, tail)
+                , zip,  unzip
+                , head, init, tail, last)
+
+
 

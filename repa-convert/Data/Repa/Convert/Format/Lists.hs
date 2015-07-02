@@ -81,6 +81,7 @@ instance Packable FixCharList where
 data VarCharList = VarCharList  deriving (Eq, Show)
 instance Format VarCharList     where
  type Value VarCharList         = String
+
  fieldCount _                   = 1
  {-# INLINE fieldCount #-}
 

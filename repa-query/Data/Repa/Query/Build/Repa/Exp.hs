@@ -236,10 +236,11 @@ expOfFieldFormat (Q.FieldBox field)
         Q.IntAsc        -> Just [| P.IntAsc    |]
         Q.DoubleAsc     -> Just [| P.DoubleAsc |]
 
-        Q.FixAsc len    -> Just [| P.FixAsc $(H.litE (H.integerL (fromIntegral len))) |]
-        Q.VarAsc        -> Just [| P.VarAsc    |]
-
-        _               -> Nothing
+{-
+        Q.FixCharList len -> Just [| P.FixCharList $(H.litE (H.integerL (fromIntegral len))) |]
+        Q.VarCharList     -> Just [| P.VarCharList    |]
+-}
+        _                 -> Nothing
 
 
 ---------------------------------------------------------------------------------------------------

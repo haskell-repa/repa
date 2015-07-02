@@ -5,10 +5,10 @@ import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Meta.Window              as A
-import Data.Repa.Array.Generic.Target           as A
 import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Bulk           as A
+import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Fusion.Unpack                  as A
 import Control.Monad
 #include "repa-array.h"

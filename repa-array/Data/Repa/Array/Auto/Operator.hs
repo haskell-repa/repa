@@ -12,7 +12,14 @@ module Data.Repa.Array.Auto.Operator
         , index
         , (!)
         , length
-        , head, tail, init
+        , first, last
+        , head,  tail, init
+
+        -- * Construction
+        , empty
+        , singleton
+        , generateMaybeS
+        , generateEitherS
 
         -- * Conversion
         , fromList
@@ -109,7 +116,7 @@ import qualified Data.Vector.Unboxed                    as U
 import Prelude 
        hiding   ( map,  length, reverse, filter, concat, unlines, foldl
                 , sum,  product, zip, unzip
-                , head, tail, init)
+                , head, tail, init, last)
 
 
 -- Basic ------------------------------------------------------------------------------------------
@@ -134,11 +141,21 @@ length = G.length
 {-# INLINE length #-}
 
 
--- | O(1). Take the head of an array, or `Nothing` if it's empty.
+-- | O(1). Take the first element of an array, or `Nothing` if it's empty.
+first   :: Elem a => Array a -> Maybe a
+first   = G.first
+{-# INLINE first #-}
+
+
+-- | O(1). Take the last element of an array, or `Nothing` if it's empty.
+last    :: Elem a => Array a -> Maybe a
+last    = G.last
+{-# INLINE last #-}
+
+
+-- | O(1). alias for `first`.
 head    :: Elem a => Array a -> Maybe a
-head arr   = if G.length arr < 1
-                then Nothing
-                else Just (arr `index` 0)
+head    = G.first
 {-# INLINE head #-}
 
 
@@ -152,6 +169,43 @@ tail    = A.tail
 init    :: Elem a => Array a -> Maybe (Array a)
 init    = A.init
 {-# INLINE init #-}
+
+
+-- Construction -----------------------------------------------------------------------------------
+-- | O(1). An empty array of the given layout.
+empty   :: Build a at
+        => Array a
+empty = G.empty A
+{-# INLINE empty #-}
+
+
+-- | O(1). Create a new empty array containing a single element.
+singleton 
+        :: Build a at
+        => a -> Array a
+singleton = G.singleton A
+{-# INLINE singleton #-}
+
+
+-- | Like `generateS` but use a function that produces Maybe an element.
+--   If any element returns `Nothing`, then `Nothing` for the whole array.
+generateMaybeS
+        :: Build a at
+        => Int -> (Int -> Maybe a) 
+        -> Maybe (Array a)
+generateMaybeS = G.generateMaybeS A
+{-# INLINE generateMaybeS #-}
+
+
+-- | Like `generateS` but use a function that produces Either some error
+--   or an element. If any element returns `Nothing`, then `Nothing` for
+--   the whole array.
+generateEitherS
+        :: Build a at
+        => Int -> (Int -> Either err a) 
+        -> Either err (Array a)
+generateEitherS = G.generateEitherS A
+{-# INLINE generateEitherS #-}
 
 
 -- Conversion -------------------------------------------------------------------------------------

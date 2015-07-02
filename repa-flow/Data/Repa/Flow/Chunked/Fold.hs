@@ -6,7 +6,6 @@ where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States                    as S
 import qualified Data.Repa.Flow.Generic         as G
-import qualified Data.Repa.Array.Generic.Target as A
 import qualified Data.Repa.Array.Generic.Index  as A
 import qualified Data.Repa.Array.Generic        as A
 #include "repa-flow.h"

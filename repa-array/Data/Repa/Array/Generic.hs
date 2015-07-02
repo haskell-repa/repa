@@ -19,6 +19,7 @@ module Data.Repa.Array.Generic
         , Bulk  (..),   BulkI
         , (!)
         , length
+        , first,        last
 
           -- * Array Computation
         , Load
@@ -26,6 +27,12 @@ module Data.Repa.Array.Generic
         , computeS,     computeIntoS
 
          -- * Operators
+         -- ** Construction
+        , empty
+        , singleton
+        , generateMaybeS
+        , generateEitherS
+
          -- ** Conversion
         , fromList,     fromListInto
         , toList
@@ -78,11 +85,11 @@ module Data.Repa.Array.Generic
         , Folds(..)
         , FoldsDict)
 where
-import Data.Repa.Array.Generic.Target                   as A
 import Data.Repa.Array.Generic.Load                     as A
 import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Meta                             as A
 import Data.Repa.Array.Internals.Bulk                   as A
+import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Operator.Concat        as A
 import Data.Repa.Array.Internals.Operator.Compact       as A
 import Data.Repa.Array.Internals.Operator.Filter        as A
@@ -97,7 +104,7 @@ import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import Control.Monad
 import Prelude  
        hiding   ( reverse, length, map, zipWith, concat, unlines
-                , foldl, sum, product
+                , foldl, sum, product, last
                 , filter)
 #include "repa-array.h"
 

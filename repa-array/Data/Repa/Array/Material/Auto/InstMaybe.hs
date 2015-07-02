@@ -11,7 +11,6 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
-import Data.Repa.Scalar.Option                  as S
 import Data.Repa.Fusion.Unpack                  as F
 import Control.Monad
 #include "repa-array.h"

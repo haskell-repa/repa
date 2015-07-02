@@ -86,7 +86,7 @@ instance Packable DDsMMsYYYY where
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 4) yy
- {-# INLINE pack #-}
+ {-# NOINLINE pack #-}
 
  packer f v
   = fromPacker (pack f v)

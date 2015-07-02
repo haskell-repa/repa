@@ -30,7 +30,14 @@ module Data.Repa.Array
         , index
         , (!)
         , length
-        , head, tail, init
+        , first, last
+        , head,  tail, init
+
+        -- * Construction
+        , empty
+        , singleton
+        , generateMaybeS
+        , generateEitherS
 
         -- * Conversion
         , fromList
@@ -133,6 +140,8 @@ import Data.Repa.Array.Auto
 import Prelude 
  hiding ( map, length, reverse, filter, concat, unlines, foldl
         , sum, product
-        , head, init, tail, zip, unzip)
+        , last
+        , head, init, tail
+        , zip, unzip)
 
 

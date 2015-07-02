@@ -1,7 +1,10 @@
 
 module Data.Repa.Array.Internals.Target
         ( Target (..),  TargetI
-        , fromList,     fromListInto)
+        , empty,        singleton
+        , fromList,     fromListInto
+        , generateMaybeS
+        , generateEitherS)
 where
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Internals.Bulk           as A
@@ -69,6 +72,30 @@ type TargetI l a  = (Target l a, Index l ~ Int)
 
 
 -------------------------------------------------------------------------------
+-- | O(1). An empty array of the given layout.
+empty   :: TargetI l a
+        => Name l -> Array l a
+empty nDst
+ = unsafePerformIO
+ $ do   let lDst = create nDst 0
+        buf     <- unsafeNewBuffer lDst
+        unsafeFreezeBuffer buf
+{-# INLINE empty #-}
+
+
+-- | O(1). Create a new empty array containing a single element.
+singleton 
+        :: TargetI l a
+        => Name l -> a -> Array l a
+singleton nDst x
+ = unsafePerformIO
+ $ do   let lDst = create nDst 0
+        buf     <- unsafeNewBuffer lDst
+        unsafeWriteBuffer  buf 0 x
+        unsafeFreezeBuffer buf
+{-# INLINE singleton #-}
+
+
 -- | O(length src). Construct a linear array from a list of elements.
 fromList :: TargetI l a
          => Name l -> [a] -> Array l a
@@ -94,9 +121,81 @@ fromListInto lDst xx
         if   len /= size (extent lDst)
          then return Nothing
          else do
-                buf     <- unsafeNewBuffer    lDst
+                !buf    <- unsafeNewBuffer    lDst
                 zipWithM_ (unsafeWriteBuffer  buf) [0..] xx
                 arr     <- unsafeFreezeBuffer buf
                 return $ Just arr
 {-# NOINLINE fromListInto #-}
+
+
+-------------------------------------------------------------------------------
+-- | Generate an array of the given length by applying a function to
+--   every index, sequentially. If any element returns `Nothing`,
+--   then `Nothing` for the whole array.
+generateMaybeS
+        :: TargetI l a
+        => Name l -> Int -> (Int -> Maybe a) 
+        -> Maybe (Array l a)
+
+generateMaybeS !nDst !len get
+ = unsafePerformIO
+ $ do
+        let lDst = create nDst len
+        !buf    <- unsafeNewBuffer lDst
+
+        let fill_generateMaybeS !ix
+             | ix >= len
+             = return ix
+
+             | otherwise
+             = case get ix of
+                Nothing 
+                 -> return ix
+
+                Just x  
+                 -> do  unsafeWriteBuffer buf ix $! x
+                        fill_generateMaybeS (ix + 1)
+            {-# INLINE fill_generateMaybeS #-}
+
+        !pos    <- fill_generateMaybeS 0
+        if pos < len
+         then return Nothing
+         else fmap Just $! unsafeFreezeBuffer buf
+{-# INLINE generateMaybeS #-}
+
+
+-- | Generate an array of the given length by applying a function to
+--   every index, sequentially. If any element returns `Left`, 
+--   then `Left` for the whole array.
+generateEitherS
+        :: TargetI l a
+        => Name l -> Int -> (Int -> Either err a) 
+        -> Either err (Array l a)
+
+generateEitherS !nDst !len get
+ = unsafePerformIO
+ $ do
+        let lDst = create nDst len
+        !buf    <- unsafeNewBuffer lDst
+
+        let fill_generateEitherS !ix
+             | ix >= len
+             = return Nothing
+
+             | otherwise
+             = case get ix of
+                Left err 
+                 -> return $ Just err
+
+                Right x  
+                 -> do  unsafeWriteBuffer buf ix $! x
+                        fill_generateEitherS (ix + 1)
+            {-# INLINE fill_generateEitherS #-}
+
+        !mErr   <- fill_generateEitherS 0
+        case mErr of
+         Just err       -> return $ Left err
+         Nothing        -> fmap Right $! unsafeFreezeBuffer buf
+{-# INLINE generateEitherS #-}
+
 

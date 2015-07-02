@@ -46,8 +46,8 @@ Library
 
         Data.Repa.Array.Generic.Convert
         Data.Repa.Array.Generic.Index
-        Data.Repa.Array.Generic.Load
         Data.Repa.Array.Generic.Slice
+        Data.Repa.Array.Generic.Load
         Data.Repa.Array.Generic.Target
         Data.Repa.Array.Generic
 

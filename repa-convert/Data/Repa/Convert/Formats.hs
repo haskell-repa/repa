@@ -22,9 +22,11 @@ module Data.Repa.Convert.Formats
         , FixCharList   (..)
         , VarCharList   (..)
         , VarString     (..)
+        , VarBytes      (..)
 
           -- * Maybes
-        , MaybeAsc      (..)
+        , MaybeChars    (..)
+        , MaybeBytes    (..)
 
           -- * Atomic values
           -- ** ASCII numeric
@@ -58,6 +60,7 @@ where
 import Data.Repa.Convert.Format.Ascii
 import Data.Repa.Convert.Format.App
 import Data.Repa.Convert.Format.Binary
+import Data.Repa.Convert.Format.Bytes
 import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Exact
 import Data.Repa.Convert.Format.Fields  ()

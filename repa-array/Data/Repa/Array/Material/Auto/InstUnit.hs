@@ -3,8 +3,8 @@ module Data.Repa.Array.Material.Auto.InstUnit where
 import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Meta.Window              as A
-import Data.Repa.Array.Generic.Target           as A
 import Data.Repa.Array.Internals.Bulk           as A
+import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Fusion.Unpack                  as A
 #include "repa-array.h"
 
