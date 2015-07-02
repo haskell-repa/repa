@@ -3,14 +3,17 @@ module Data.Repa.Array.Internals.Target
         ( Target (..),  TargetI
         , empty,        singleton
         , fromList,     fromListInto
-        , generateMaybeS
-        , generateEitherS)
+        , generateMaybeS,       mapMaybeS
+        , generateEitherS,      mapEitherS)
 where
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Internals.Bulk           as A
 import System.IO.Unsafe
 import Control.Monad
-import Prelude                                  as P
+
+import Prelude                                  hiding (length)
+import qualified Prelude                        as P
+#include "repa-array.h"
 
 
 -- Target ---------------------------------------------------------------------
@@ -80,7 +83,7 @@ empty nDst
  $ do   let lDst = create nDst 0
         buf     <- unsafeNewBuffer lDst
         unsafeFreezeBuffer buf
-{-# INLINE empty #-}
+{-# INLINE_ARRAY empty #-}
 
 
 -- | O(1). Create a new empty array containing a single element.
@@ -93,7 +96,7 @@ singleton nDst x
         buf     <- unsafeNewBuffer lDst
         unsafeWriteBuffer  buf 0 x
         unsafeFreezeBuffer buf
-{-# INLINE singleton #-}
+{-# INLINE_ARRAY singleton #-}
 
 
 -- | O(length src). Construct a linear array from a list of elements.
@@ -161,7 +164,25 @@ generateMaybeS !nDst !len get
         if pos < len
          then return Nothing
          else fmap Just $! unsafeFreezeBuffer buf
-{-# INLINE generateMaybeS #-}
+{-# INLINE_ARRAY generateMaybeS #-}
+
+
+-- | Apply a function to every element of an array, 
+--   if any application returns `Nothing`, then `Nothing` for the whole result.
+mapMaybeS 
+        :: (BulkI lSrc a, TargetI lDst b)
+        => Name lDst 
+        -> (a -> Maybe b) 
+        -> Array lSrc a
+        -> Maybe (Array lDst b)
+
+mapMaybeS !nDst f arr
+ = generateMaybeS nDst (length arr) get_maybeS
+ where  
+        get_maybeS ix
+         = f (index arr ix)
+        {-# INLINE get_maybeS #-}
+{-# INLINE_ARRAY mapMaybeS #-}
 
 
 -- | Generate an array of the given length by applying a function to
@@ -196,6 +217,26 @@ generateEitherS !nDst !len get
         case mErr of
          Just err       -> return $ Left err
          Nothing        -> fmap Right $! unsafeFreezeBuffer buf
-{-# INLINE generateEitherS #-}
+{-# INLINE_ARRAY generateEitherS #-}
+
+
+-- | Apply a function to every element of an array, 
+--   if any application returns `Left`, then `Left` for the whole result.
+mapEitherS 
+        :: (BulkI lSrc a, TargetI lDst b)
+        => Name lDst 
+        -> (a -> Either err b) 
+        -> Array lSrc a
+        -> Either err (Array lDst b)
+
+mapEitherS !nDst f arr
+ = generateEitherS nDst (length arr) get_eitherS
+ where  
+        get_eitherS ix
+         = f (index arr ix)
+        {-# INLINE get_eitherS #-}
+{-# INLINE_ARRAY mapEitherS #-}
+
+
 
 

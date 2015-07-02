@@ -13,8 +13,8 @@ module Data.Repa.Array.Auto
         -- * Construction
         , empty
         , singleton
-        , generateMaybeS
-        , generateEitherS
+        , generateMaybeS,  mapMaybeS
+        , generateEitherS, mapEitherS
 
         -- * Conversion
         , fromList

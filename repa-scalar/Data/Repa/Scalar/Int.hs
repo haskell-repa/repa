@@ -7,7 +7,8 @@ module Data.Repa.Scalar.Int
         , loadIntWith#
 
           -- * Storing
-        , storeInt)
+        , storeInt
+        , storeIntWith#)
 where
 import Data.Word
 import Data.Char
@@ -16,9 +17,10 @@ import qualified Data.ByteString.Internal               as BS
 import qualified Data.Double.Conversion.ByteString      as DC
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
+import qualified Foreign.Marshal.Alloc                  as F
 
 
--- Int --------------------------------------------------------------------------------------------
+-- Load -------------------------------------------------------------------------------------------
 -- | Load an ASCII `Int` from a foreign buffer,
 --   returning the value and number of characters read.
 loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
@@ -114,9 +116,10 @@ loadIntWith# !get len
          | otherwise
          = (# 1#, n, ix #)
         {-# NOINLINE end #-}
-{-# NOINLINE loadIntWith# #-}
+{-# INLINE loadIntWith# #-}
 
 
+---------------------------------------------------------------------------------------------------
 -- | Store an ASCII `Int`, allocating a new buffer.
 storeInt :: Int -> IO (F.ForeignPtr Word8)
 storeInt i
@@ -124,4 +127,51 @@ storeInt i
         BS.PS p _ _     -> return p
 {-# NOINLINE storeInt #-}
 
+
+storeIntWith#
+        :: (Int# -> Int# -> IO ())      -- ^ Function takes index, byte, writes it to destination.
+        -> Int#                         -- ^ Int to store.
+        -> (Int# -> IO b)               -- ^ Continuation to call with bytes written.
+        -> IO b
+
+storeIntWith# write val k
+ =  F.allocaBytes 32 $ \(buf :: Ptr Word8)
+ -> let 
+        -- Get starting magnitude.
+        !magStart
+         | 1#   <- val <# 0#    = 0# -# val
+         | otherwise            = val
+
+        -- Load digits into buffer.
+        digits !ix !mag
+         = do   F.pokeByteOff buf (I# ix) 
+                        (fromIntegral (I# (0x030# +# mag `remInt#` 10#)) :: Word8)
+                let  !ix'  = ix +# 1#
+                let  !mag' = mag `quotInt#` 10#
+                (case mag' ==# 0# of
+                  1#    -> sign   ix'
+                  _     -> digits ix' mag')
+
+        -- Load sign into buffer.
+        sign !ix
+         = case val <# 0# of
+            1# -> do F.pokeByteOff buf (I# ix) 
+                        (fromIntegral (I# 0x02d#) :: Word8)
+                     output (ix +# 1#) 0#
+            _  ->    output ix 0#
+
+        -- Read chars back from buffer to output them
+        -- in the correct order.
+        output len ix
+         | 1#   <- ix <# len
+         = do   x :: Word8  <- F.peekByteOff buf (I# ((len -# 1#) -# ix))
+                let !(I# i) = fromIntegral x
+                write ix i
+                output len (ix +# 1#)
+
+         | otherwise
+         = k len
+
+    in digits 0# magStart
+{-# INLINE storeIntWith# #-}
 

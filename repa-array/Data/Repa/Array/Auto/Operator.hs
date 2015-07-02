@@ -18,8 +18,8 @@ module Data.Repa.Array.Auto.Operator
         -- * Construction
         , empty
         , singleton
-        , generateMaybeS
-        , generateEitherS
+        , generateMaybeS,  mapMaybeS
+        , generateEitherS, mapEitherS
 
         -- * Conversion
         , fromList
@@ -197,6 +197,17 @@ generateMaybeS = G.generateMaybeS A
 {-# INLINE generateMaybeS #-}
 
 
+-- | Apply a function to every element of an array, 
+--   if any application returns `Nothing`, then `Nothing` for the whole result.
+mapMaybeS 
+        :: (Elem a, Build b bt)
+        => (a -> Maybe b) 
+        -> Array a
+        -> Maybe (Array b)
+mapMaybeS = G.mapMaybeS A
+{-# INLINE mapMaybeS #-}
+
+
 -- | Like `generateS` but use a function that produces Either some error
 --   or an element. If any element returns `Nothing`, then `Nothing` for
 --   the whole array.
@@ -206,6 +217,17 @@ generateEitherS
         -> Either err (Array a)
 generateEitherS = G.generateEitherS A
 {-# INLINE generateEitherS #-}
+
+
+-- | Apply a function to every element of an array, 
+--   if any application returns `Left`, then `Left` for the whole result.
+mapEitherS 
+        :: (Elem a, Build b bt)
+        => (a -> Either err b) 
+        -> Array a
+        -> Either err (Array b)
+mapEitherS = G.mapEitherS A
+{-# INLINE mapEitherS #-}
 
 
 -- Conversion -------------------------------------------------------------------------------------

@@ -30,8 +30,8 @@ module Data.Repa.Array.Generic
          -- ** Construction
         , empty
         , singleton
-        , generateMaybeS
-        , generateEitherS
+        , generateMaybeS,  mapMaybeS
+        , generateEitherS, mapEitherS
 
          -- ** Conversion
         , fromList,     fromListInto
