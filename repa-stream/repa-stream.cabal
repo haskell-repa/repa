@@ -22,11 +22,11 @@ Library
         base            == 4.8.*,
         vector          == 0.10.*,
         primitive       == 0.6.*,
-        mtl             == 2.2.*
+        mtl             == 2.2.*,
+        repa-scalar     == 4.2.0.*
 
   exposed-modules:
         Data.Repa.Chain
-        Data.Repa.Option
         Data.Repa.Stream
         Data.Repa.Vector.Generic
         Data.Repa.Vector.Unboxed

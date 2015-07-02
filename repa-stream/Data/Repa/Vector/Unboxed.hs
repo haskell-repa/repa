@@ -41,10 +41,10 @@ module Data.Repa.Vector.Unboxed
         , chainOfVector
         )
 where
-import Data.Repa.Option
 import Data.Vector.Unboxed                              (Unbox, Vector)
 import Data.Vector.Unboxed.Mutable                      (MVector)
 import Data.Repa.Chain                                  (Chain)
+import Data.Repa.Scalar.Option
 import qualified Data.Repa.Vector.Generic               as G
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U

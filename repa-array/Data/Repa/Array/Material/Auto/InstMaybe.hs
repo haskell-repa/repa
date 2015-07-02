@@ -11,16 +11,22 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
+import Data.Repa.Scalar.Option                  as S
 import Data.Repa.Fusion.Unpack                  as F
 import Control.Monad
 #include "repa-array.h"
 
 
 instance Bulk A a => Bulk A (Maybe a) where
- data Array A (Maybe a)         = AArray_Maybe !(Array B (Maybe a))
- layout (AArray_Maybe arr)      = Auto (A.length arr)
- index  (AArray_Maybe arr) ix   = A.index arr ix
+ data Array A (Maybe a)
+        = AArray_Maybe !(Array B (Maybe a))
+
+ layout (AArray_Maybe arr)
+        = Auto (A.length arr)
  {-# INLINE_ARRAY layout #-}
+
+ index  (AArray_Maybe arr) ix   
+  = A.index arr ix
  {-# INLINE_ARRAY index  #-}
 
 deriving instance Show a => Show (Array A (Maybe a))
@@ -44,8 +50,8 @@ instance  Target A (Maybe a) where
   = unsafeReadBuffer arr ix
  {-# INLINE_ARRAY unsafeReadBuffer #-}
 
- unsafeWriteBuffer  (ABuffer_Maybe arr) ix !x
-  = unsafeWriteBuffer arr ix x
+ unsafeWriteBuffer  (ABuffer_Maybe arr) ix !mx
+  = unsafeWriteBuffer arr ix mx
  {-# INLINE_ARRAY unsafeWriteBuffer #-}
 
  unsafeGrowBuffer   (ABuffer_Maybe arr) bump

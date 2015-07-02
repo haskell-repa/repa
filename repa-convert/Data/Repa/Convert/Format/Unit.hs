@@ -28,12 +28,12 @@ instance Format UnitAsc                 where
 
 
 instance Packable UnitAsc where
- packer    (UnitAsc s)         () start k
-  = packer (FixAsc (length s)) s  start k
- {-# NOINLINE pack #-}
+ packer    (UnitAsc s)              () start k
+  = packer (FixCharList (length s)) s  start k
+ {-# INLINE pack #-}
 
  unpacker  (UnitAsc str) start end stop fail eat
-  = do  (Ptr ptr, str') <- unpackAsc (pw8 start) (pw8 end) stop
+  = do  (Ptr ptr, str') <- unpackCharList (pw8 start) (pw8 end) stop
         if str == str'
          then eat ptr ()
          else fail

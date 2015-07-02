@@ -3,7 +3,7 @@ module Data.Repa.Stream.Pad
         (padForwardS)
 where
 import Data.Vector.Fusion.Stream.Monadic         (Stream(..), Step(..))
-import Data.Repa.Option
+import Data.Repa.Scalar.Option
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 

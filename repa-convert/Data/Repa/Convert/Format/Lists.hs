@@ -1,8 +1,8 @@
 
 module Data.Repa.Convert.Format.Lists 
         ( -- * ASCII Strings
-          FixAsc (..)
-        , VarAsc (..), unpackAsc
+          FixCharList (..)
+        , VarCharList (..), unpackCharList
         , VarString (..))
 where
 import Data.Repa.Convert.Internal.Format
@@ -20,7 +20,10 @@ import Prelude hiding (fail)
 
 
 ---------------------------------------------------------------------------------------------------
--- | Fixed length string.
+-- | Fixed length list of characters.
+--
+-- * When serialised, the \"string\" is not escaped, nor does it have
+--   surrounding quotes.
 --   
 -- * When packing, the length of the provided string must match
 --   the field width, else packing will fail.
@@ -28,22 +31,22 @@ import Prelude hiding (fail)
 -- * When unpacking, the length of the result will be as set
 --   by the field width.
 --
-data FixAsc     = FixAsc Int    deriving (Eq, Show)
-instance Format FixAsc where
- type Value (FixAsc)            = String
+data FixCharList                = FixCharList Int    deriving (Eq, Show)
+instance Format FixCharList where
+ type Value (FixCharList)       = String
  fieldCount _                   = 1
- minSize    (FixAsc len)        = len
- fixedSize  (FixAsc len)        = Just len
- packedSize (FixAsc len) _      = Just len
+ minSize    (FixCharList len)   = len
+ fixedSize  (FixCharList len)   = Just len
+ packedSize (FixCharList len) _ = Just len
  {-# INLINE minSize    #-}
  {-# INLINE fieldCount #-}
  {-# INLINE fixedSize  #-}
  {-# INLINE packedSize #-}
 
 
-instance Packable FixAsc where
+instance Packable FixCharList where
  
-  pack (FixAsc len) xs 
+  pack (FixCharList len) xs 
    |  length xs == len
    =  Packer $ \buf k
    -> do mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
@@ -58,7 +61,7 @@ instance Packable FixAsc where
    = fromPacker (pack f v)
   {-# INLINE packer #-}
 
-  unpacker (FixAsc len@(I# len')) start end _stop fail eat
+  unpacker (FixCharList len@(I# len')) start end _stop fail eat
    = do 
         let lenBuf = I# (minusAddr# end start)
         if  lenBuf < len
@@ -75,49 +78,49 @@ instance Packable FixAsc where
 
 
 ---------------------------------------------------------------------------------------------------
--- | Variable length raw string (with no quotes).
-data VarAsc = VarAsc            deriving (Eq, Show)
-instance Format (VarAsc)        where
- type Value VarAsc              = String
+-- | Like `FixCharList`, but a variable length string.
+data VarCharList = VarCharList  deriving (Eq, Show)
+instance Format VarCharList     where
+ type Value VarCharList         = String
  fieldCount _                   = 1
  {-# INLINE fieldCount #-}
 
  minSize    _                   = 0
  {-# INLINE minSize    #-}
 
- fixedSize  VarAsc              = Nothing
+ fixedSize  VarCharList         = Nothing
  {-# INLINE fixedSize  #-}
 
- packedSize VarAsc xs           = Just $ length xs
+ packedSize VarCharList xs      = Just $ length xs
  {-# NOINLINE packedSize #-}
 
 
-instance Packable VarAsc where
+instance Packable VarCharList where
 
-  pack VarAsc xx
+  pack VarCharList xx
    = case xx of
         []       -> mempty
-        (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarAsc xs
+        (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarCharList xs
   {-# NOINLINE pack #-}
 
   packer f v 
    = fromPacker (pack f v)
   {-# INLINE packer #-}
 
-  unpacker VarAsc start end stop _fail eat
-   = do (Ptr ptr, str)      <- unpackAsc (pw8 start) (pw8 end) stop
+  unpacker VarCharList start end stop _fail eat
+   = do (Ptr ptr, str)      <- unpackCharList (pw8 start) (pw8 end) stop
         eat ptr str
   {-# INLINE unpack #-}
 
 
 -- | Unpack a ascii text from the given buffer.
-unpackAsc
+unpackCharList
         :: S.Ptr Word8      -- ^ First byte in buffer.
         -> S.Ptr Word8      -- ^ First byte after buffer.
         -> (Word8 -> Bool)  -- ^ Detect field deliminator.
         -> IO (S.Ptr Word8, [Char])
 
-unpackAsc start end stop
+unpackCharList start end stop
  = go start []
  where  go !ptr !acc
          | ptr >= end
@@ -131,7 +134,7 @@ unpackAsc start end stop
                  else do
                    let !ptr'  = S.plusPtr ptr 1
                    go ptr' ((chr $ fromIntegral w) : acc)
-{-# NOINLINE unpackAsc #-}
+{-# NOINLINE unpackCharList #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -157,8 +160,8 @@ instance Format VarString       where
 instance Packable VarString where
 
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- packer     VarString xx        start k
-  =  packer VarAsc    (show xx) start k
+ packer     VarString xx          start k
+  =  packer VarCharList (show xx) start k
  {-# INLINE pack #-}
 
  unpacker   VarString start end _stop  fail eat

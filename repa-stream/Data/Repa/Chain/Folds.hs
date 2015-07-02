@@ -2,8 +2,8 @@
 module Data.Repa.Chain.Folds
         (foldsC, Folds (..))
 where
-import Data.Repa.Option
 import Data.Repa.Chain.Base
+import Data.Repa.Scalar.Option
 import Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 

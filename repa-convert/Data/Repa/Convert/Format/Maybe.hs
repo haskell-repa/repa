@@ -63,12 +63,12 @@ instance Packable f
 
  packer   (MaybeAsc str f) mv start k
   = case mv of
-        Nothing -> packer VarAsc str start k
-        Just v  -> packer f      v   start k
+        Nothing -> packer VarCharList str start k
+        Just v  -> packer f           v   start k
  {-# NOINLINE pack #-}
 
  unpacker (MaybeAsc str f) start end stop fail eat
-  = do  (Ptr ptr, str') <- unpackAsc (pw8 start) (pw8 end) stop
+  = do  (Ptr ptr, str') <- unpackCharList (pw8 start) (pw8 end) stop
 
         ref             <- newIORef (error "repa-convert.unpack: undefined")
         let unpack_MaybeAsc

@@ -58,7 +58,7 @@ import Data.Repa.Stream.Pad
 import Data.Repa.Stream.Ratchet
 import Data.Repa.Stream.Replicate
 import Data.Repa.Stream.Segment
-import Data.Repa.Option
+import Data.Repa.Scalar.Option
 import Data.IORef
 import System.IO.Unsafe
 import Control.Monad.ST

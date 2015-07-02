@@ -19,8 +19,8 @@ module Data.Repa.Convert.Formats
         , ExactString   (..)
 
           -- * Variable Strings
-        , FixAsc        (..)
-        , VarAsc        (..)
+        , FixCharList   (..)
+        , VarCharList   (..)
         , VarString     (..)
 
           -- * Maybes

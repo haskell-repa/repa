@@ -1,11 +1,7 @@
 
--- | Data types used during low-level fusion optimisations.
--- 
---   These types are synonyms for @Maybe (a, b)@, which are strict in the
---   components. They can be used to ensure that we do not suspend the
---   computation that produces these components in fused code.
---
-module Data.Repa.Option
+-- | Option types are synonyms for @Maybe a@, @Maybe (a, b)@ and so on, 
+--   which are strict in the components.
+module Data.Repa.Scalar.Option
         ( -- * Single component
           Option  (..)
         , fromOption,  toOption
@@ -16,7 +12,11 @@ module Data.Repa.Option
 
           -- * Three components
         , Option3 (..)
-        , fromOption3, toOption3)
+        , fromOption3, toOption3
+
+          -- * Four components
+        , Option4 (..)
+        , fromOption4, toOption4)
 where
 
 
@@ -25,7 +25,8 @@ where
 data Option a
         = Some !a
         | None 
-        deriving Show
+        deriving (Eq, Ord, Show)
+
 
 -- | Convert a `Maybe` to an `Option`.
 toOption :: Maybe a -> Option a
@@ -46,7 +47,7 @@ fromOption (Some x)     = Just x
 data Option2 a b
         = Some2 !a !b
         | None2 
-        deriving Show
+        deriving (Eq, Ord, Show)
 
 
 -- | Convert a `Maybe` to an `Option2`.
@@ -68,7 +69,7 @@ fromOption2 (Some2 x y)  = Just (x, y)
 data Option3 a b c
         = Some3 !a !b !c
         | None3 
-        deriving Show
+        deriving (Eq, Ord, Show)
 
 
 -- | Convert a `Maybe` to an `Option3`.
@@ -83,4 +84,26 @@ fromOption3 :: Option3 a b c -> Maybe (a, b, c)
 fromOption3 None3          = Nothing
 fromOption3 (Some3 x y z)  = Just (x, y, z)
 {-# INLINE fromOption3 #-}
+
+
+-------------------------------------------------------------------------------
+-- | A strict `Maybe` type with four parameters.
+data Option4 a b c d
+        = Some4 !a !b !c !d
+        | None4 
+        deriving (Eq, Ord, Show)
+
+
+-- | Convert a `Maybe` to an `Option4`.
+toOption4 :: Maybe (a, b, c, d) -> Option4 a b c d
+toOption4 Nothing                 = None4
+toOption4 (Just (x1, x2, x3, x4)) = Some4 x1 x2 x3 x4
+{-# INLINE toOption4 #-}
+
+
+-- | Convert an `Option2` to a `Maybe`.
+fromOption4 :: Option4 a b c d -> Maybe (a, b, c, d)
+fromOption4 None4                 = Nothing
+fromOption4 (Some4 x1 x2 x3 x4)   = Just (x1, x2, x3, x4)
+{-# INLINE fromOption4 #-}
 

@@ -6,7 +6,7 @@ where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
 import Data.Repa.Fusion.Unpack
-import Data.Repa.Option
+import Data.Repa.Scalar.Option
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Generic.Target           as A
 import Data.Repa.Array.Generic                  as A hiding (FoldsDict)

@@ -6,8 +6,8 @@ module Data.Repa.Chain.Weave
         , Move  (..), move
         , Option (..))
 where
-import Data.Repa.Option
 import Data.Repa.Chain.Base
+import Data.Repa.Scalar.Option
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 

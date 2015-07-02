@@ -26,12 +26,13 @@ Library
         double-conversion == 2.0.*
 
   exposed-modules:
+        Data.Repa.Scalar.Singleton.Nat
+        Data.Repa.Scalar.Singleton.Bool
         Data.Repa.Scalar.Box
         Data.Repa.Scalar.Date32
         Data.Repa.Scalar.Double
         Data.Repa.Scalar.Int
-        Data.Repa.Scalar.Singleton.Nat
-        Data.Repa.Scalar.Singleton.Bool
+        Data.Repa.Scalar.Option
         Data.Repa.Scalar.Product
 
   ghc-options:
