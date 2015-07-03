@@ -7,7 +7,6 @@ module Data.Repa.Convert.Format.Numeric
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Format.Lists
 import GHC.Exts
 import Data.Word
 import qualified Data.Repa.Scalar.Int           as S
@@ -41,19 +40,18 @@ instance Format IntAsc where
 
 instance Packable IntAsc where
 
- -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- packer IntAsc v buf k
-  = packer VarCharList (show v) buf k
+ packer IntAsc (I# v) pStart@(Ptr aStart) k
+  = do  len     <- S.storeInt# aStart v
+        k (F.plusPtr pStart len)
  {-# INLINE packer #-}
 
  unpacker IntAsc start end _stop fail eat
   = let !len = I# (minusAddr# end start) in 
     if len > 0
      then do
-       r       <- S.loadInt (pw8 start) len
-       case r of
-        Just (n, I# o)  -> eat (plusAddr# start o) n
-        Nothing         -> fail
+        S.loadInt (pw8 start) len 
+                fail 
+                (\val (I# off) -> eat (plusAddr# start off) val)
      else fail
  {-# INLINE unpacker #-}
 
@@ -77,21 +75,18 @@ instance Format IntAsc0 where
 
 instance Packable IntAsc0 where
 
- -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- packer (IntAsc0 n) v start k
-  = let s       = show v
-        s'      = replicate (n - length s) '0' ++ s
-    in  packer VarCharList s' start k
+ packer (IntAsc0 (I# pad)) (I# v) pStart@(Ptr aStart) k
+  = do  len     <- S.storeIntPad# aStart v pad
+        k (F.plusPtr pStart len)
  {-# INLINE packer #-}
 
  unpacker (IntAsc0 _) start end _stop fail eat
   = let !len = I# (minusAddr# end start) in
     if  len > 0
      then do
-        r       <- S.loadInt (pw8 start) len
-        case r of
-         Just (n, I# o) -> eat (plusAddr# start o) n
-         Nothing        -> fail
+        S.loadInt (pw8 start) len
+                fail
+                (\val (I# off) -> eat (plusAddr# start off) val)
      else fail
  {-# INLINE unpacker #-}
 

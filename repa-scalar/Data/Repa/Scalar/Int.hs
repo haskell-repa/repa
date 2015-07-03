@@ -11,13 +11,24 @@ module Data.Repa.Scalar.Int
         , loadIntWith#
 
           -- * Showing to strings
+          -- ** Unpadded
         , showInt
         , showIntToByteString
 
+          -- ** Padded
+        , showIntPad
+        , showIntPadToByteString
+
           -- * Storing to buffers
+          -- ** Unpadded
         , storeInt
         , storeInt#
-        , storeIntWith#)
+        , storeIntWith#
+
+          -- ** Padded
+        , storeIntPad
+        , storeIntPad#
+        , storeIntPadWith#)
 where
 import Data.Word
 import Data.Char
@@ -237,7 +248,6 @@ storeInt# addr val
         make _ len
          = return $ I# len
         {-# INLINE make #-}
- 
 
   in do
         storeIntWith# alloc write val make
@@ -311,4 +321,157 @@ storeIntWith# alloc write val k
         {-# INLINE output #-}
     in start
 {-# INLINE storeIntWith# #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Show an `Int`, allocating a new `String`.
+showIntPad :: Int -> Int -> String
+showIntPad i pad
+ = BS.unpack $ showIntPadToByteString i pad
+{-# INLINE showIntPad #-}
+
+
+-- | Show an `Int`, allocating a new `ByteString`.
+showIntPadToByteString :: Int -> Int -> BS.ByteString
+showIntPadToByteString (I# i) pad'
+ = unsafePerformIO
+ $ let  
+        !(I# pad)
+         = max 0 pad'
+
+        alloc len
+         = F.mallocBytes (I# len)
+        {-# INLINE alloc #-}
+
+        write  ptr ix val
+         = F.pokeByteOff ptr (I# ix) (fromIntegral (I# val) :: Word8)
+        {-# INLINE write #-}
+
+        make   ptr len
+         = do   fptr    <- F.newForeignPtr F.finalizerFree ptr
+                return  $  BS.PS fptr 0 (I# len)
+        {-# INLINE make #-}
+
+   in   storeIntPadWith# alloc write i pad make
+{-# NOINLINE showIntPadToByteString #-}
+
+
+-- | Store an ASCII `Int` into a buffer, producing the number of bytes written.
+storeIntPad
+        :: Ptr Word8                   -- ^ Pointer to output buffer.
+        -> Int                         -- ^ Int to store.
+        -> Int                         -- ^ Minimum number of digits.
+        -> IO Int                      -- ^ Number of bytes written.
+
+storeIntPad (Ptr addr) (I# val) (I# pad)
+ = storeIntPad# addr val pad
+{-# INLINE storeIntPad #-}
+
+
+-- | Store an ASCII `Int` into a buffer, producing the number of bytes written.
+--
+--   * This function is set to NOINLINE, so it can be safely called from
+--     multiple places in the program.
+--
+storeIntPad# 
+        :: Addr#                        -- ^ Address of output buffer.
+        -> Int#                         -- ^ Int to store.
+        -> Int#                         -- ^ Minimum number of digits.
+        -> IO Int                       -- ^ Number of bytes written.
+
+storeIntPad# addr val pad
+ = let
+        -- move along, nothing to see..
+        alloc _ 
+         = return $ Ptr addr
+        {-# INLINE alloc #-}
+
+        write _ ix byte
+         = F.pokeByteOff (Ptr addr) (I# ix) (fromIntegral (I# byte) :: Word8)
+        {-# INLINE write #-}
+
+        make _ len
+         = return $ I# len
+        {-# INLINE make #-}
+
+  in do
+        storeIntPadWith# alloc write val pad make
+{-# NOINLINE storeIntPad# #-}
+
+
+-- | Like `storeIntWith#`, but add leading zeros to the front of the integer
+--   to pad it out to at least the given number of digits.
+
+storeIntPadWith#
+        :: (Int# -> IO buf)             -- ^ Function to allocate a new output buffer,
+                                        --   given the length in bytes.
+        -> (buf -> Int# -> Int# -> IO ())      
+                                        -- ^ Function to write a byte to the buffer,
+                                        --   given the index and byte value.
+        -> Int#                         -- ^ Int to store.
+        -> Int#                         -- ^ Pad out result to achieve at this many digits.
+        -> (buf -> Int# -> IO b)        -- ^ Continuation for buffer and bytes written.
+        -> IO b
+
+storeIntPadWith# alloc write val pad k
+ =  F.allocaBytes (I# (32# +# pad)) $ \(buf :: Ptr Word8)
+ -> let 
+        -- Get starting magnitude.
+        !start
+         | 1#   <- val <# 0#    = digits (0# -# val) 0#
+         | otherwise            = digits val         0#
+        {-# INLINE start #-}
+
+        -- Load digits into buffer.
+        digits !mag !ix
+         = do   F.pokeByteOff buf (I# ix) 
+                        (fromIntegral (I# (0x030# +# mag `remInt#` 10#)) :: Word8)
+                let  !ix'  = ix +# 1#
+                let  !mag' = mag `quotInt#` 10#
+                (case mag' ==# 0# of
+                  1#    -> padder ix'
+                  _     -> digits mag' ix')
+        {-# NOINLINE digits #-}
+
+        -- Pad result out with zeros.
+        padder !ix
+         | 1#   <- ix >=# pad
+         = sign ix
+
+         | otherwise
+         = do   F.pokeByteOff buf (I# ix)
+                        (fromIntegral (I# 0x030#) :: Word8)
+                padder (ix +# 1#)
+
+        -- Load sign into buffer.
+        sign !ix
+         = case val <# 0# of
+            1# -> do F.pokeByteOff buf (I# ix) 
+                        (fromIntegral (I# 0x02d#) :: Word8)
+                     create (ix +# 1#)
+            _  ->    create ix
+        {-# INLINE sign #-}
+
+        -- Create a new output buffer, now that we know the length.
+        create len 
+         = do   out     <- alloc len
+                output len out 0#
+        {-# NOINLINE create #-}
+
+        -- Read chars back from buffer to output them
+        -- in the correct order.
+        output len out ix0
+         = go ix0
+         where  go ix
+                 | 1# <- ix <# len
+                 = do   x :: Word8  <- F.peekByteOff buf (I# ((len -# 1#) -# ix))
+                        let !(I# i) = fromIntegral x
+                        write out ix i
+                        go (ix +# 1#)
+
+                 | otherwise
+                 = k out len
+        {-# INLINE output #-}
+    in start
+{-# INLINE storeIntPadWith# #-}
 
