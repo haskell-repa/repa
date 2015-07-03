@@ -1,71 +1,126 @@
 
 -- | Loading and storing integers directly from/to memory buffers.
 module Data.Repa.Scalar.Int
-        ( -- * Loading
-          loadInt
+        ( -- * Reading / Loading
+          -- ** Reading from strings
+          readInt
+        , readIntFromByteString
+
+          -- ** Loading from buffers
+        , loadInt
         , loadInt#
         , loadIntWith#
 
-          -- * Storing
-        , storeInt
+          -- * Showing / Storing 
+          -- ** Showing to strings
+        , showInt
+        , showIntToByteString
+
+          -- ** Storing to buffers
         , storeIntWith#)
 where
 import Data.Word
 import Data.Char
 import GHC.Exts
+import qualified Data.ByteString.Char8                  as BS
 import qualified Data.ByteString.Internal               as BS
 import qualified Data.Double.Conversion.ByteString      as DC
+import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
+import System.IO.Unsafe                       
+
+-- Read/Load --------------------------------------------------------------------------------------
+-- | Read an `Int` from a `String`, or `Nothing` if this isn't one.
+readInt :: String -> Maybe Int
+readInt str
+        = readIntFromByteString $ BS.pack str
+{-# INLINE readInt #-}
 
 
--- Load -------------------------------------------------------------------------------------------
+-- | Read an `Int` from a `ByteString`, or `Nothing` if this isn't one.
+readIntFromByteString 
+        :: BS.ByteString -> Maybe Int
+
+readIntFromByteString (BS.PS fptr offset (I# len))
+ --   accursed ... may increase sharing of result,
+ --   but this is ok here as we're not allocating mutable object.
+ = BS.accursedUnutterablePerformIO      
+ $ F.withForeignPtr fptr
+ $ \ptr -> case loadInt# (F.plusPtr ptr offset) len of
+                (# 0#, _, _  #)         -> return Nothing
+                (# _ , n, ix #)  
+                 | 1# <- ix ==# len     -> return $ Just (I# n)
+                 | otherwise            -> return $ Nothing
+{-# INLINE readIntFromByteString #-}
+
+
 -- | Load an ASCII `Int` from a foreign buffer,
 --   returning the value and number of characters read.
 loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int                          -- ^ Length of buffer.
-        -> IO (Maybe (Int, Int))        -- ^ Int read, and length of digits.
+        -> b                            -- ^ On convert failure, return this value.
+        -> (Int -> Int -> b)            -- ^ On convert success, given int read and number of chars.
+        -> b
  
-loadInt !ptr (I# len)
+loadInt !ptr (I# len) fails eat
  = case loadInt# ptr len of
-        (# 0#, _, _  #) -> return $ Nothing
-        (# _,  n, ix #) -> return $ Just (I# n, I# ix)
-{-# NOINLINE loadInt #-}
+        (# 0#, _, _  #) -> fails
+        (# _,  n, ix #) -> eat (I# n) (I# ix)
+{-# INLINE loadInt #-}
 
 
--- | Like `loadInt`, but via unboxed types.
+-- | Load an `Int` from a buffer, producing an unboxed tuple describing
+--   the result.
 loadInt#
-        :: Ptr Word8                    -- ^ Buffer holding digits.
+        :: Ptr Word8                    -- ^ Buffer holding digits
         -> Int#                         -- ^ Length of buffer.
         -> (# Int#, Int#, Int# #)       -- ^ Convert success?, value, length read.
 
 loadInt# buf len
- = let peek8 ix
+ = let  peek8 ix
            -- accursed .. may increase sharing of the result value, 
            -- but this isn't a problem here because the result is not
            -- mutable, and will be unboxed by the simplifier anyway.
          = case BS.accursedUnutterablePerformIO (F.peekByteOff buf (I# ix)) of
                 (w8 :: Word8) -> case fromIntegral w8 of
                                         I# i    -> i
-       {-# INLINE peek8 #-}
+        {-# INLINE peek8 #-}
 
-   in  loadIntWith# peek8 len
+        fails 
+         = (0, 0, 0)
+        {-# INLINE fails #-}
+
+        eat value chars
+         = (I# 1#, I# value, I# chars)
+        {-# INLINE eat #-}
+
+   in  case loadIntWith# len peek8 fails eat of
+         (I# success, I# value, I# chars)  
+          -> (# success, value, chars #)
 {-# NOINLINE loadInt# #-}
+--  NOINLINE so we don't duplicate the code for loadIntWith# for every call.
 
 
--- | Like `loadInt#`, but use the given function to get characters
---   from the input buffer.
+-- | Primitive `Int` loading function.
+--
+--   * This function is set to `INLINE`, so you will get a new copy of it in the
+--     compiled program each time it is invoked. Consider providing an appropriate
+--     wrapper for your use case.
+--
 loadIntWith# 
-        :: (Int# -> Int#)               -- ^ Function to get a byte from the source.
-        -> Int#                         -- ^ Length of buffer
-        -> (# Int#, Int#, Int# #)       -- ^ Convert success?, value, length read.
+        :: Int#                         -- ^ Length of input buffer.
+        -> (Int# -> Int#)               -- ^ Function to get a byte from the source.
+        -> b                            -- ^ On convert failure, return this value.
+        -> (Int# -> Int# -> b)          -- ^ On convert success, given int read and number of chars.
+        -> b
 
-loadIntWith# !get len
+loadIntWith# !len get fails eat
  = start 0#
  where
         start !ix
-         | 1# <- ix >=# len = (# 0#, 0#, 0# #)
+         | 1# <- ix >=# len = doFails
          | otherwise        = sign ix
         {-# INLINE start #-}
 
@@ -100,78 +155,128 @@ loadIntWith# !get len
          -- We didn't find any digits, and there was no explicit sign.
          | 1# <- ix  ==# 0#
          , 1# <- neg ==# 0#
-         = (# 0#, 0#, 0# #)
+         = doFails
 
          -- We didn't find any digits, but there was an explicit sign.
          | 1# <- ix  ==# 1#
          , 1# <- neg /=# 0#
-         = (# 0#, 0#, 0# #)
+         = doFails
 
          -- Number was explicitly negated.
          | 1# <- neg ==# 1#                    
          , I# n'        <- negate (I# n)
-         = (# 1#, n', ix #)
+         = doEat n' ix
 
          -- Number was not negated.
          | otherwise
-         = (# 1#, n, ix #)
+         = doEat n ix
         {-# NOINLINE end #-}
+
+        doFails 
+         = fails
+        {-# NOINLINE doFails #-}
+
+        doEat  value len
+         = eat value len
+        {-# NOINLINE doEat #-}
 {-# INLINE loadIntWith# #-}
 
 
 ---------------------------------------------------------------------------------------------------
--- | Store an ASCII `Int`, allocating a new buffer.
-storeInt :: Int -> IO (F.ForeignPtr Word8)
-storeInt i
- = case DC.toFixed 0 (fromIntegral i) of
-        BS.PS p _ _     -> return p
-{-# NOINLINE storeInt #-}
+-- | Show an `Int`, allocating a new `String`.
+showInt :: Int -> String
+showInt i
+ = BS.unpack $ showIntToByteString i
+{-# INLINE showInt #-}
 
 
+-- | Show an `Int`, allocating a new `ByteString`.
+showIntToByteString :: Int -> BS.ByteString
+showIntToByteString (I# i)
+ = unsafePerformIO
+ $ let  
+        alloc len
+         = F.mallocBytes (I# len)
+        {-# INLINE alloc #-}
+
+        write  ptr ix val
+         = F.pokeByteOff ptr (I# ix) (fromIntegral (I# val) :: Word8)
+        {-# INLINE write #-}
+
+        make   ptr len
+         = do   fptr    <- F.newForeignPtr F.finalizerFree ptr
+                return  $  BS.PS fptr 0 (I# len)
+        {-# INLINE make #-}
+
+   in   storeIntWith# alloc write i make
+{-# NOINLINE showIntToByteString #-}
+
+
+-- | Primitive `Int` storing function.
+-- 
+--   * This function is set to `INLINE`, so you will get a new copy of it in the compiled
+--     program each time it is invoked. Consider providing an appropriate wrapper
+--     for your use case.
+--
 storeIntWith#
-        :: (Int# -> Int# -> IO ())      -- ^ Function takes index, byte, writes it to destination.
+        :: (Int# -> IO buf)             -- ^ Function to allocate a new output buffer,
+                                        --   given the length in bytes.
+        -> (buf -> Int# -> Int# -> IO ())      
+                                        -- ^ Function to write a byte to the buffer,
+                                        --   given the index and byte value.
         -> Int#                         -- ^ Int to store.
-        -> (Int# -> IO b)               -- ^ Continuation to call with bytes written.
+        -> (buf -> Int# -> IO b)        -- ^ Continuation for buffer and bytes written.
         -> IO b
 
-storeIntWith# write val k
+storeIntWith# alloc write val k
  =  F.allocaBytes 32 $ \(buf :: Ptr Word8)
  -> let 
         -- Get starting magnitude.
-        !magStart
-         | 1#   <- val <# 0#    = 0# -# val
-         | otherwise            = val
+        !start
+         | 1#   <- val <# 0#    = digits (0# -# val) 0#
+         | otherwise            = digits val         0#
+        {-# INLINE start #-}
 
         -- Load digits into buffer.
-        digits !ix !mag
+        digits !mag !ix
          = do   F.pokeByteOff buf (I# ix) 
                         (fromIntegral (I# (0x030# +# mag `remInt#` 10#)) :: Word8)
                 let  !ix'  = ix +# 1#
                 let  !mag' = mag `quotInt#` 10#
                 (case mag' ==# 0# of
                   1#    -> sign   ix'
-                  _     -> digits ix' mag')
+                  _     -> digits mag' ix')
+        {-# NOINLINE digits #-}
 
         -- Load sign into buffer.
         sign !ix
          = case val <# 0# of
             1# -> do F.pokeByteOff buf (I# ix) 
                         (fromIntegral (I# 0x02d#) :: Word8)
-                     output (ix +# 1#) 0#
-            _  ->    output ix 0#
+                     create (ix +# 1#)
+            _  ->    create ix
+        {-# INLINE sign #-}
+
+        -- Create a new output buffer, now that we know the length.
+        create len 
+         = do   out     <- alloc len
+                output len out 0#
+        {-# NOINLINE create #-}
 
         -- Read chars back from buffer to output them
         -- in the correct order.
-        output len ix
-         | 1#   <- ix <# len
-         = do   x :: Word8  <- F.peekByteOff buf (I# ((len -# 1#) -# ix))
-                let !(I# i) = fromIntegral x
-                write ix i
-                output len (ix +# 1#)
+        output len out ix0
+         = go ix0
+         where  go ix
+                 | 1# <- ix <# len
+                 = do   x :: Word8  <- F.peekByteOff buf (I# ((len -# 1#) -# ix))
+                        let !(I# i) = fromIntegral x
+                        write out ix i
+                        go (ix +# 1#)
 
-         | otherwise
-         = k len
-
-    in digits 0# magStart
+                 | otherwise
+                 = k out len
+        {-# INLINE output #-}
+    in start
 {-# INLINE storeIntWith# #-}
 

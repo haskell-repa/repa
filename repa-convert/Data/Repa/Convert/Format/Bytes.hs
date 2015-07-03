@@ -76,7 +76,8 @@ instance Packable VarBytes where
                  else checkLen (ix + 1)
         {-# INLINE checkLen #-}
 
-        copy len
+        -- Copy the desired bytes into a new buffer.
+        copy !len
          = do   mvec    <- UM.unsafeNew len
 
                 let go !ix

@@ -110,7 +110,7 @@ packsFormatLn
 packsFormatLn !format !arr
  = let  
         !arrNL 
-         = A.fromList A.A [fromIntegral $ ord '\n']
+         = A.fromList A.A [fromIntegral $ ord '\n']                     -- TODO: kill lists
 
         packRow v 
          = case packFormat format v of

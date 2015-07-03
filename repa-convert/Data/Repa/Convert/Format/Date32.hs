@@ -34,11 +34,11 @@ instance Format YYYYsMMsDD where
 
 instance Packable YYYYsMMsDD where
 
- pack  (YYYYsMMsDD s) v
+ pack  (YYYYsMMsDD s) !v
   = let (yy', mm', dd') = Date32.unpack v
-        yy      = fromIntegral yy'
-        mm      = fromIntegral mm'
-        dd      = fromIntegral dd'
+        !yy     = fromIntegral yy'
+        !mm     = fromIntegral mm'
+        !dd     = fromIntegral dd'
     in     pack (IntAsc0 4) yy
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) mm
@@ -54,7 +54,7 @@ instance Packable YYYYsMMsDD where
   = do  let len = I# (minusAddr# end start)
         r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) (pw8 start) len
         case r of
-         Just (d, I# o)    -> eat (plusAddr# start o) d
+         Just (d, I# o) -> eat (plusAddr# start o) d
          Nothing        -> fail
  {-# INLINE unpack #-}
 
@@ -76,17 +76,17 @@ instance Format DDsMMsYYYY where
 
 instance Packable DDsMMsYYYY where
 
- pack   (DDsMMsYYYY s) v
+ pack   (DDsMMsYYYY s) !v
   = let (yy', mm', dd') = Date32.unpack v
-        yy      = fromIntegral yy'
-        mm      = fromIntegral mm'
-        dd      = fromIntegral dd'
+        !yy     = fromIntegral yy'
+        !mm     = fromIntegral mm'
+        !dd     = fromIntegral dd'
     in     pack (IntAsc0 2) dd
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 2) mm
         <> pack Word8be     (cw8 s)
         <> pack (IntAsc0 4) yy
- {-# NOINLINE pack #-}
+ {-# INLINE pack #-}
 
  packer f v
   = fromPacker (pack f v)

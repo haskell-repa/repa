@@ -100,7 +100,8 @@ instance Packable VarCharList where
   pack VarCharList xx
    = case xx of
         []       -> mempty
-        (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarCharList xs
+        (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarCharList xs     
+                        -- TODO: will leak, can't elim <>
   {-# NOINLINE pack #-}
 
   packer f v 
