@@ -6,8 +6,7 @@ module Data.Repa.Array.Material.Auto
         , Buffer        (..)
 
         -- * Date utils
-        , rangeDate32
-        , prettyDate32)
+        , rangeDate32)
 where
 import Data.Repa.Array.Material.Auto.Base
 import Data.Repa.Array.Material.Auto.InstArray
