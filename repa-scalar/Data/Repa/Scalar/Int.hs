@@ -60,6 +60,8 @@ readIntFromByteString (BS.PS fptr offset len)
 
 -- | Load an ASCII `Int` from a foreign buffer,
 --   returning the value and number of characters read.
+--
+--   * The code 
 loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int                          -- ^ Length of buffer.
         -> b                            -- ^ On convert failure, return this value.
@@ -98,17 +100,7 @@ loadInt# addr len
                                         I# i    -> i
         {-# INLINE peek8 #-}
 
-        fails 
-         = (0, 0, 0)
-        {-# INLINE fails #-}
-
-        eat value chars
-         = (I# 1#, I# value, I# chars)
-        {-# INLINE eat #-}
-
-   in  case loadIntWith# len peek8 fails eat of
-         (I# success, I# value, I# chars)  
-          -> (# success, value, chars #)
+   in  loadIntWith# len peek8
 {-# NOINLINE loadInt# #-}
 
 
@@ -121,15 +113,13 @@ loadInt# addr len
 loadIntWith# 
         :: Int#                         -- ^ Length of input buffer.
         -> (Int# -> Int#)               -- ^ Function to get a byte from the source.
-        -> b                            -- ^ On convert failure, return this value.
-        -> (Int# -> Int# -> b)          -- ^ On convert success, given int read and number of chars.
-        -> b
+        -> (# Int#, Int#, Int# #)       -- ^ Convert success?, value, length read
 
-loadIntWith# !len get fails eat
+loadIntWith# !len get
  = start 0#
  where
         start !ix
-         | 1# <- ix >=# len = doFails
+         | 1# <- ix >=# len = (# 0#, 0#, 0# #)
          | otherwise        = sign ix
         {-# INLINE start #-}
 
@@ -164,30 +154,22 @@ loadIntWith# !len get fails eat
          -- We didn't find any digits, and there was no explicit sign.
          | 1# <- ix  ==# 0#
          , 1# <- neg ==# 0#
-         = doFails
+         = (# 0#, 0#, 0# #)
 
          -- We didn't find any digits, but there was an explicit sign.
          | 1# <- ix  ==# 1#
          , 1# <- neg /=# 0#
-         = doFails
+         = (# 0#, 0#, 0# #)
 
          -- Number was explicitly negated.
          | 1# <- neg ==# 1#                    
-         , I# n'        <- negate (I# n)
-         = doEat n' ix
+         , I# n' <- negate (I# n)
+         = (# 1#, n', ix #)
 
          -- Number was not negated.
          | otherwise
-         = doEat n ix
+         = (# 1#, n, ix #)
         {-# NOINLINE end #-}
-
-        doFails 
-         = fails
-        {-# NOINLINE doFails #-}
-
-        doEat  value ix
-         = eat value ix
-        {-# NOINLINE doEat #-}
 {-# INLINE loadIntWith# #-}
 
 
