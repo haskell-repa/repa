@@ -1,22 +1,22 @@
 
 -- | Loading and storing integers directly from/to memory buffers.
 module Data.Repa.Scalar.Int
-        ( -- * Reading / Loading
-          -- ** Reading from strings
+        ( -- * Reading from strings
           readInt
         , readIntFromByteString
 
-          -- ** Loading from buffers
+          -- * Loading from buffers
         , loadInt
         , loadInt#
         , loadIntWith#
 
-          -- * Showing / Storing 
-          -- ** Showing to strings
+          -- * Showing to strings
         , showInt
         , showIntToByteString
 
-          -- ** Storing to buffers
+          -- * Storing to buffers
+        , storeInt
+        , storeInt#
         , storeIntWith#)
 where
 import Data.Word
@@ -24,12 +24,12 @@ import Data.Char
 import GHC.Exts
 import qualified Data.ByteString.Char8                  as BS
 import qualified Data.ByteString.Internal               as BS
-import qualified Data.Double.Conversion.ByteString      as DC
 import qualified Foreign.Ptr                            as F
 import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Storable                       as F
 import qualified Foreign.Marshal.Alloc                  as F
 import System.IO.Unsafe                       
+
 
 -- Read/Load --------------------------------------------------------------------------------------
 -- | Read an `Int` from a `String`, or `Nothing` if this isn't one.
@@ -43,16 +43,18 @@ readInt str
 readIntFromByteString 
         :: BS.ByteString -> Maybe Int
 
-readIntFromByteString (BS.PS fptr offset (I# len))
+readIntFromByteString (BS.PS fptr offset len)
  --   accursed ... may increase sharing of result,
  --   but this is ok here as we're not allocating mutable object.
  = BS.accursedUnutterablePerformIO      
  $ F.withForeignPtr fptr
- $ \ptr -> case loadInt# (F.plusPtr ptr offset) len of
-                (# 0#, _, _  #)         -> return Nothing
-                (# _ , n, ix #)  
-                 | 1# <- ix ==# len     -> return $ Just (I# n)
-                 | otherwise            -> return $ Nothing
+ $ \ptr -> return 
+        $  loadInt (F.plusPtr ptr offset) len
+                Nothing
+                (\val n -> if n == len
+                                then Just val
+                                else Nothing)
+
 {-# INLINE readIntFromByteString #-}
 
 
@@ -64,22 +66,30 @@ loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
         -> (Int -> Int -> b)            -- ^ On convert success, given int read and number of chars.
         -> b
  
-loadInt !ptr (I# len) fails eat
- = case loadInt# ptr len of
+loadInt (Ptr addr) (I# len) fails eat
+ = case loadInt# addr len of
         (# 0#, _, _  #) -> fails
         (# _,  n, ix #) -> eat (I# n) (I# ix)
 {-# INLINE loadInt #-}
 
 
--- | Load an `Int` from a buffer, producing an unboxed tuple describing
---   the result.
+-- | Load an ASCII `Int` from a buffer,
+--   producing an unboxed tuple describing the result.
+--
+--   * This function is set to `NOINLINE`, so it can be safely called from 
+--     multiple places in the program.
+--
 loadInt#
-        :: Ptr Word8                    -- ^ Buffer holding digits
+        :: Addr#                        -- ^ Address of buffer holding digits
         -> Int#                         -- ^ Length of buffer.
         -> (# Int#, Int#, Int# #)       -- ^ Convert success?, value, length read.
 
-loadInt# buf len
- = let  peek8 ix
+loadInt# addr len
+ = let  
+        buf :: Ptr Word8 
+         = Ptr addr
+
+        peek8 ix
            -- accursed .. may increase sharing of the result value, 
            -- but this isn't a problem here because the result is not
            -- mutable, and will be unboxed by the simplifier anyway.
@@ -100,7 +110,6 @@ loadInt# buf len
          (I# success, I# value, I# chars)  
           -> (# success, value, chars #)
 {-# NOINLINE loadInt# #-}
---  NOINLINE so we don't duplicate the code for loadIntWith# for every call.
 
 
 -- | Primitive `Int` loading function.
@@ -176,8 +185,8 @@ loadIntWith# !len get fails eat
          = fails
         {-# NOINLINE doFails #-}
 
-        doEat  value len
-         = eat value len
+        doEat  value ix
+         = eat value ix
         {-# NOINLINE doEat #-}
 {-# INLINE loadIntWith# #-}
 
@@ -210,6 +219,47 @@ showIntToByteString (I# i)
 
    in   storeIntWith# alloc write i make
 {-# NOINLINE showIntToByteString #-}
+
+
+-- | Store an ASCII `Int` into a buffer, producing the number of bytes written.
+storeInt :: Ptr Word8                   -- ^ Pointer to output buffer.
+         -> Int                         -- ^ Int to store.
+         -> IO Int                      -- ^ Number of bytes written.
+
+storeInt (Ptr addr) (I# val)
+ = storeInt# addr val
+{-# INLINE storeInt #-}
+
+
+-- | Store an ASCII `Int` into a buffer, producing the number of bytes written.
+--
+--   * This function is set to NOINLINE, so it can be safely called from
+--     multiple places in the program.
+--
+storeInt# 
+        :: Addr#                        -- ^ Address of output buffer.
+        -> Int#                         -- ^ Int to store.
+        -> IO Int                       -- ^ Number of bytes written.
+
+storeInt# addr val
+ = let
+        -- move along, nothing to see..
+        alloc _ 
+         = return $ Ptr addr
+        {-# INLINE alloc #-}
+
+        write _ ix byte
+         = F.pokeByteOff (Ptr addr) (I# ix) (fromIntegral (I# byte) :: Word8)
+        {-# INLINE write #-}
+
+        make _ len
+         = return $ I# len
+        {-# INLINE make #-}
+ 
+
+  in do
+        storeIntWith# alloc write val make
+{-# NOINLINE storeInt# #-}
 
 
 -- | Primitive `Int` storing function.

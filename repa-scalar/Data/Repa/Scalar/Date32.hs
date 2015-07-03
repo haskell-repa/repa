@@ -168,7 +168,7 @@ loadYYYYsMMsDD
 loadYYYYsMMsDD !sep !buf (I# len_)
  = loadYear
  where  loadYear 
-         | (# 1#, yy, ix' #)     <- loadInt# buf len_
+         | (# 1#, yy, ix' #)    <- loadInt' buf len_
          = sep1 ix' yy
          | otherwise    = return Nothing
 
@@ -183,7 +183,7 @@ loadYYYYsMMsDD !sep !buf (I# len_)
 
         loadMonth ix yy
          |  1# <- ix <# len_    
-         , (# 1#, mm, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
+         , (# 1#, mm, o #)    <- loadInt' (buf `F.plusPtr` (I# ix)) len_
          = sep2 (ix +# o) yy mm
          | otherwise    = return Nothing
 
@@ -198,7 +198,7 @@ loadYYYYsMMsDD !sep !buf (I# len_)
 
         loadDay ix yy mm
          | 1# <- ix <# len_
-         , (# 1#, dd, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
+         , (# 1#, dd, o #)    <- loadInt' (buf `F.plusPtr` (I# ix)) len_
          = return 
          $ Just (pack   ( fromIntegral (I# yy)
                         , fromIntegral (I# mm)
@@ -220,7 +220,7 @@ loadDDsMMsYYYY
 loadDDsMMsYYYY !sep !buf (I# len_)
  = loadDay
  where  loadDay 
-         | (# 1#, dd, ix' #)     <- loadInt# buf len_
+         | (# 1#, dd, ix' #)     <- loadInt' buf len_
          = sep1 ix' dd
          | otherwise    = return Nothing
 
@@ -235,7 +235,7 @@ loadDDsMMsYYYY !sep !buf (I# len_)
 
         loadMonth ix dd
          | 1# <- ix <# len_    
-         , (# 1#, mm, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
+         , (# 1#, mm, o #)    <- loadInt' (buf `F.plusPtr` (I# ix)) len_
          = sep2 (ix +# o) dd mm
          | otherwise    = return Nothing
 
@@ -250,7 +250,7 @@ loadDDsMMsYYYY !sep !buf (I# len_)
 
         loadYear ix dd mm 
          | 1# <- ix <# len_
-         , (# 1#, yy, o #)    <- loadInt# (buf `F.plusPtr` (I# ix)) len_
+         , (# 1#, yy, o #)    <- loadInt' (buf `F.plusPtr` (I# ix)) len_
          = return 
          $ Just (pack   ( fromIntegral (I# yy)
                         , fromIntegral (I# mm)
@@ -261,3 +261,6 @@ loadDDsMMsYYYY !sep !buf (I# len_)
 {-# NOINLINE loadDDsMMsYYYY #-}
 
 
+loadInt' (Ptr addr) len
+ = loadInt# addr len
+{-# INLINE loadInt' #-}
