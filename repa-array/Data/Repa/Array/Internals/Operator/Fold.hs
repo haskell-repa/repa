@@ -1,7 +1,8 @@
 
 -- | Folding operations on arrays.
 module Data.Repa.Array.Internals.Operator.Fold
-        ( folds
+        ( -- * Segmented fold
+          folds
         , foldsWith
         , C.Folds(..), FoldsDict)
 where
@@ -11,9 +12,10 @@ import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Eval.Chain                     as A
 import Data.Repa.Fusion.Unpack                  as A
-import qualified Data.Repa.Chain                as C
 import Data.Repa.Scalar.Option
 import System.IO.Unsafe
+import qualified Data.Repa.Chain                as C
+import Prelude hiding (foldl)
 #include "repa-array.h"
 
 
@@ -45,7 +47,7 @@ folds   :: FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
 
 folds nGrp nRes f z vLens vVals
         = foldsWith nGrp nRes f z Nothing vLens vVals
-{-# INLINE folds #-}
+{-# INLINE_ARRAY folds #-}
 
 
 -- | Like `folds`, but take an initial state for the first segment.

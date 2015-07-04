@@ -1,15 +1,17 @@
 
 module Data.Repa.Array.Internals.Target
-        ( Target (..),  TargetI
-        , empty,        singleton
-        , fromList,     fromListInto
-        , generateMaybeS,       mapMaybeS
-        , generateEitherS,      mapEitherS)
+        ( Target (..),          TargetI
+        , empty,                singleton
+        , fromList,             fromListInto
+        , mapMaybeS,            mapEitherS
+        , generateMaybeS,       generateEitherS
+        , unfoldEitherOfLengthIO)
 where
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Internals.Bulk           as A
 import System.IO.Unsafe
 import Control.Monad
+import qualified Data.Vector.Fusion.Stream.Monadic      as S
 
 import Prelude                                  hiding (length)
 import qualified Prelude                        as P
@@ -132,6 +134,43 @@ fromListInto lDst xx
 
 
 -------------------------------------------------------------------------------
+-- | Apply a function to every element of an array, 
+--   if any application returns `Nothing`, then `Nothing` for the whole result.
+mapMaybeS 
+        :: (BulkI lSrc a, TargetI lDst b)
+        => Name lDst 
+        -> (a -> Maybe b) 
+        -> Array lSrc a
+        -> Maybe (Array lDst b)
+
+mapMaybeS !nDst f arr
+ = generateMaybeS nDst (length arr) get_maybeS
+ where  
+        get_maybeS ix
+         = f (index arr ix)
+        {-# INLINE get_maybeS #-}
+{-# INLINE_ARRAY mapMaybeS #-}
+
+
+-- | Apply a function to every element of an array, 
+--   if any application returns `Left`, then `Left` for the whole result.
+mapEitherS 
+        :: (BulkI lSrc a, TargetI lDst b)
+        => Name lDst 
+        -> (a -> Either err b) 
+        -> Array lSrc a
+        -> Either err (Array lDst b)
+
+mapEitherS !nDst f arr
+ = generateEitherS nDst (length arr) get_eitherS
+ where  
+        get_eitherS ix
+         = f (index arr ix)
+        {-# INLINE get_eitherS #-}
+{-# INLINE_ARRAY mapEitherS #-}
+
+
+-------------------------------------------------------------------------------
 -- | Generate an array of the given length by applying a function to
 --   every index, sequentially. If any element returns `Nothing`,
 --   then `Nothing` for the whole array.
@@ -165,24 +204,6 @@ generateMaybeS !nDst !len get
          then return Nothing
          else fmap Just $! unsafeFreezeBuffer buf
 {-# INLINE_ARRAY generateMaybeS #-}
-
-
--- | Apply a function to every element of an array, 
---   if any application returns `Nothing`, then `Nothing` for the whole result.
-mapMaybeS 
-        :: (BulkI lSrc a, TargetI lDst b)
-        => Name lDst 
-        -> (a -> Maybe b) 
-        -> Array lSrc a
-        -> Maybe (Array lDst b)
-
-mapMaybeS !nDst f arr
- = generateMaybeS nDst (length arr) get_maybeS
- where  
-        get_maybeS ix
-         = f (index arr ix)
-        {-# INLINE get_maybeS #-}
-{-# INLINE_ARRAY mapMaybeS #-}
 
 
 -- | Generate an array of the given length by applying a function to
@@ -220,23 +241,47 @@ generateEitherS !nDst !len get
 {-# INLINE_ARRAY generateEitherS #-}
 
 
--- | Apply a function to every element of an array, 
---   if any application returns `Left`, then `Left` for the whole result.
-mapEitherS 
-        :: (BulkI lSrc a, TargetI lDst b)
-        => Name lDst 
-        -> (a -> Either err b) 
-        -> Array lSrc a
-        -> Either err (Array lDst b)
+---------------------------------------------------------------------------------------------------
+-- | Unfold a new array using the given length and worker function.
+--
+--   This is like `generateEither`, except that an accumulator is 
+--   threaded sequentially through the elements.
+--
+unfoldEitherOfLengthIO
+        :: TargetI l a
+        => Name l                                       -- ^ Destination format.
+        -> Int                                          -- ^ Length of array.                
+        -> (Int -> acc -> IO (Either err (acc, a)))     -- ^ Worker function.
+        -> acc                                          -- ^ Starting accumluator
+        -> IO (Either err (acc, Array l a))
 
-mapEitherS !nDst f arr
- = generateEitherS nDst (length arr) get_eitherS
- where  
-        get_eitherS ix
-         = f (index arr ix)
-        {-# INLINE get_eitherS #-}
-{-# INLINE_ARRAY mapEitherS #-}
+unfoldEitherOfLengthIO nDst len get acc0
+ = do
+        let lDst  =  create nDst len
+        !buf      <- unsafeNewBuffer lDst
 
+        let fill_unfoldEither !sPEC !acc !ix
+             | ix >= len    
+             = return $ Right acc
 
+             | otherwise
+             = get ix acc >>= \r
+             -> case r of
+                 Left err 
+                  -> return $ Left err
 
+                 Right (acc', x)
+                  -> do  unsafeWriteBuffer buf ix $! x
+                         fill_unfoldEither sPEC acc' (ix + 1)
+            {-# INLINE_INNER fill_unfoldEither #-}
+
+        eErr <- fill_unfoldEither S.SPEC acc0 0
+        case eErr of
+         Left err       
+          ->    return  $ Left err
+
+         Right acc     
+          -> do arr     <- unsafeFreezeBuffer buf
+                return  $ Right (acc, arr)
+{-# INLINE_ARRAY unfoldEitherOfLengthIO #-}
 

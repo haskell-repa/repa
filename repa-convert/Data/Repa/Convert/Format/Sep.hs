@@ -29,9 +29,9 @@ import Prelude hiding (fail)
 data Sep f where
         SepNil  :: Sep ()
 
-        SepCons :: {-# UNPACK #-} !SepMeta      -- ^ Meta data about this format.
-                -> !f                           -- ^ Format of head field.
-                -> Sep fs                       -- ^ Spec for rest of fields.
+        SepCons :: {-# UNPACK #-} !SepMeta      -- Meta data about this format.
+                -> !f                           -- Format of head field.
+                -> Sep fs                       -- Spec for rest of fields.
                 -> Sep (f :*: fs)
 
 

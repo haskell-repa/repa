@@ -6,11 +6,9 @@ module Data.Repa.Convert.Format.Maybe
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Bytes
 import Data.Char
 import Data.Word
-import Data.IORef
 import GHC.Exts
 import Prelude hiding (fail)
 

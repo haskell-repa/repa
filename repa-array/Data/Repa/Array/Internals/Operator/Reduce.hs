@@ -24,7 +24,7 @@ foldl  :: (Bulk l b, Index l ~ Int)
         => (a -> b -> a) -> a -> Array l b -> a
 
 foldl f z arr
-        = S.foldl f z 
+        = S.foldl' f z 
         $ streamOfArray arr
 {-# INLINE_ARRAY foldl #-}
 

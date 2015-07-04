@@ -13,20 +13,21 @@ module Data.Repa.Array.Auto.Format
         , unpacksFormatLn
         , unpacksFormatFixed)
 where
-import Data.Repa.Array.Auto.Base                        as A
-import Data.Repa.Array.Generic.Convert                  as A
-import qualified Data.Repa.Array.Generic                as AG
-import qualified Data.Repa.Array.Material.Auto          as A
-import qualified Data.Repa.Array.Material.Foreign       as A
-import qualified Data.Repa.Array.Material.Nested        as A
-import qualified Data.Repa.Array.Internals.Target       as A
-import qualified Data.Repa.Array.Internals.Bulk         as A
-import qualified Data.Repa.Convert.Format               as C
+import Data.Repa.Array.Auto.Base                                as A
+import Data.Repa.Array.Generic.Convert                          as A
+import qualified Data.Repa.Array.Generic                        as AG
+import qualified Data.Repa.Array.Material.Auto                  as A
+import qualified Data.Repa.Array.Material.Foreign               as AF
+import qualified Data.Repa.Array.Internals.Target               as A
+import qualified Data.Repa.Array.Internals.Bulk                 as A
+import qualified Data.Repa.Array.Internals.Operator.Reduce      as A
+import qualified Data.Repa.Convert.Format                       as C
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
 
-import Foreign.ForeignPtr
-import Foreign.Ptr
+import Foreign.ForeignPtr                                       as F
+import Foreign.Storable                                         as F
+import Foreign.Ptr                                              as F
 
 import System.IO.Unsafe
 import Control.Monad
@@ -51,8 +52,8 @@ packFormat !format !v
  $ do   
         -- The 'lenBytes' we get above is an upper bound on the
         -- number of used by the serialised data.
-        buf@(A.FBuffer mvec) :: A.Buffer A.F Word8
-                <- A.unsafeNewBuffer (A.Foreign lenBytes)
+        buf@(AF.FBuffer mvec) :: A.Buffer AF.F Word8
+                <- A.unsafeNewBuffer (AF.Foreign lenBytes)
 
         let (fptr, oStart, _)   = SM.unsafeToForeignPtr mvec 
 
@@ -138,7 +139,7 @@ unpackFormat !format !arrBytes
  | lenBytes       <- A.length arrBytes
  = unsafePerformIO
  $ let  (oStart, _, fptr :: ForeignPtr Word8) 
-         = A.toForeignPtr $ A.convert arrBytes
+         = AF.toForeignPtr  $ A.convert arrBytes
    in   withForeignPtr fptr $ \ptr_
          -> do  r <- C.unsafeRunUnpacker 
                         (C.unpack format) 
@@ -166,7 +167,7 @@ unpacksFormatFixed !format !arrBytes
  = unsafePerformIO
  $ do   
         let (oStart, _, fptr :: ForeignPtr Word8) 
-                = A.toForeignPtr $ A.convert arrBytes
+                = AF.toForeignPtr $ A.convert arrBytes
 
         withForeignPtr fptr $ \ptr_
          -> do  buf        <- A.unsafeNewBuffer (A.Auto lenElems)
@@ -207,6 +208,7 @@ unpacksFormatFixed !format !arrBytes
 --   * Any '\r' characters in the array are filtered out before splitting
 --     it into lines.
 --   * If the value cannot be converted then this function just calls `error`.
+--
 unpacksFormatLn
         :: forall format
         .  (Packable format, A.Target A.A (Value format))
@@ -214,30 +216,80 @@ unpacksFormatLn
         -> Array Word8                  -- ^ Packed binary data.
         -> Array (Value format)         -- ^ Unpacked elements.
 
-unpacksFormatLn format arr8
- = do
-        let !nl = fromIntegral $ ord '\n'
-        let !nr = fromIntegral $ ord '\r'
+unpacksFormatLn format arrA8
+ = if A.length arrA8 == 0
+        then A.empty A.A
+        else case eResult of
+                Left err        -> error err
+                Right (_, arr)  -> arr
+ where
 
-        let rows8 :: AG.Array A.N (AG.Array A.F Word8)
-                = A.trimEnds    (== nl)
-                $ A.segmentOn   (== nl)
-                $ AG.filter A.F (/= nr) arr8
+        -- Count the number of lines(rows) in the array.
+        -- We assume that all rows are terminated by a newline character.
+        nLines 
+         = A.foldl (\n x -> if x == 0x0a then n + 1 else n)
+                   (0 :: Int) arrA8
 
-        -- TODO: if we had a mapM function we could write to a IORef to signal
-        --       that something didn't convert.
-        let unpackRow :: AG.Array A.A Word8 -> Value format
-            unpackRow arr
-             = case unpackFormat format arr of
-                Nothing 
-                 -> error $ unlines
-                  [ "repa-array.unpacksLinesFormat: conversion failed"
-                  , "    row as Word8 = " ++ show (A.toList arr)
-                  , "    row as Char8 = " ++ show (map (chr . fromIntegral) $ A.toList arr) ]
+        (offStart, lenBuffer, fptr :: F.ForeignPtr Word8)
+         = AF.toForeignPtr
+         $ AG.convert A.F arrA8
 
-                Just v  -> v
-            {-# INLINE unpackRow #-}
+        -- Proceed sequentially through the array,
+        -- unpacking each element as we go.
+        eResult
+         =  unsafePerformIO
+         $  F.withForeignPtr fptr $ \ptrBufStart
+         -> let !ptrStart = F.plusPtr ptrBufStart offStart
+                !ptrEnd   = F.plusPtr ptrStart    lenBuffer
+            in  flip (A.unfoldEitherOfLengthIO A.A nLines) ptrStart
+                $  \ixOut !ptrHere
+                -> do   
+                        -- Get a pointer to the next newline character,
+                        -- or just the character past the end of the buffer
+                        -- if there isn't a newline.
+                        let findLineEndIx !ptr
+                             | ptr >= ptrEnd    
+                             = return ptrEnd
 
-        AG.mapS A.A (unpackRow . AG.convert A.A) rows8
+                             | otherwise
+                             = do !byte  <- F.peek ptr
+                                  if byte == (0x0a :: Word8)
+                                   then return ptr
+                                   else findLineEndIx (F.plusPtr ptr 1)
+
+                        !ptrLine  <- findLineEndIx ptrHere
+
+                        -- The length of the current line.
+                        let !lenLine = F.minusPtr ptrLine ptrHere
+
+                        -- Try to unpack a row up to the end of the line.
+                        mResult  <- unsafeRunUnpacker (unpack format)
+                                        ptrHere lenLine (const False)
+
+                        case mResult of
+                         Nothing 
+                          -> return 
+                          $  Left $ unlines
+                                [ "repa-array.unpacksFormatLn: conversion failed"
+                                , "  total   lines     = " ++ show nLines
+                                , "  current line      = " ++ show ixOut
+                                , "  position in chunk = " ++ show (F.minusPtr ptrHere ptrStart)
+                                , "  remaining bytes   = " ++ show (F.minusPtr ptrEnd  ptrHere) ]
+
+                         Just (val, ptr') 
+                          -> do 
+                                -- Skip past new line and line return characters.
+                                let skipNewLines !ptr
+                                     | ptr >= ptrEnd
+                                     = return ptrEnd
+
+                                     | otherwise
+                                     = do byte <- F.peek ptr
+                                          if  byte == (0x0a :: Word8) 
+                                           || byte == (0x0d :: Word8)
+                                           then skipNewLines (F.plusPtr ptr 1)
+                                           else return ptr
+
+                                ptrSkip <- skipNewLines ptr'
+                                return $ Right (ptrSkip, val)
 {-# INLINE_ARRAY unpacksFormatLn #-}
-
