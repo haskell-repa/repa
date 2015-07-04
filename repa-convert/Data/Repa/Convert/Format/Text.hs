@@ -1,9 +1,11 @@
 
 module Data.Repa.Convert.Format.Text
-        (VarText (..))
+        ( VarText       (..)
+        , VarTextString (..))
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Format.String
 import Data.Text                                (Text)
 import Data.Word
 import GHC.Exts
@@ -20,20 +22,16 @@ import qualified Foreign.Ptr                    as F
 -- * When serialised, the \"string\" is not escaped, not does it have
 --   surrounding quotes. The UTF8 data is just copied into the result verbatim.
 --
-data VarText    = VarText       deriving (Eq, Show)
+data VarText                    = VarText       deriving (Eq, Show)
 instance Format VarText         where
  type Value VarText             = Text
-
  fieldCount _                   = 1
- {-# INLINE fieldCount #-}
-
  minSize    _                   = 0
- {-# INLINE minSize #-}
-
  fixedSize  VarText             = Nothing
- {-# INLINE fixedSize #-}
-
  packedSize VarText xs          = Just $ T.length xs
+ {-# INLINE fieldCount #-}
+ {-# INLINE minSize #-}
+ {-# INLINE fixedSize #-}
  {-# INLINE packedSize #-}
 
 
@@ -80,8 +78,43 @@ instance Packable VarText where
                 let !(Ptr start') = F.plusPtr (Ptr start) lenField
                 eat start' tt
         {-# INLINE copyField #-}
+ {-# INLINE unpacker #-}
 
 
+---------------------------------------------------------------------------------------------------
+-- | Variable length unicode strings.
+--
+-- * When serialised, the string is escaped and surrounded by double quotes.
+--
+data VarTextString              = VarTextString deriving (Eq, Show)
+instance Format VarTextString   where
+ type Value VarTextString       = Text
+ fieldCount _                   = 1
+ minSize    _                   = 2
+ fixedSize  VarTextString       = Nothing
+ packedSize VarTextString xs    = Just $ T.length xs
+ {-# INLINE fieldCount #-}
+ {-# INLINE minSize #-}
+ {-# INLINE fixedSize #-}
+ {-# INLINE packedSize #-}
+
+
+instance Packable VarTextString where
+ 
+ -- TODO: don't go via lists.
+ packer VarTextString tt buf k
+  = packer VarText (T.pack $ show $ T.unpack tt) buf k
+ {-# INLINE packer #-}
+
+ -- TODO: don't go via lists.
+ unpacker VarTextString start end stop _fail eat
+  = unpacker VarString start end stop _fail 
+  $ \start' val -> eat start' (T.pack val)
+ {-# INLINE unpacker #-}
+
+
+---------------------------------------------------------------------------------------------------
 pw8 :: Addr# -> Ptr Word8
 pw8 addr = Ptr addr
 {-# INLINE pw8 #-}
+

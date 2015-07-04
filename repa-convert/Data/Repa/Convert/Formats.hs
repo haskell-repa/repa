@@ -22,7 +22,10 @@ module Data.Repa.Convert.Formats
         , FixCharList   (..)
         , VarCharList   (..)
         , VarString     (..)
+
         , VarText       (..)
+        , VarTextString (..)
+
         , VarBytes      (..)
 
           -- * Maybes
