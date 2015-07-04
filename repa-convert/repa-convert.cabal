@@ -23,6 +23,7 @@ Library
         primitive         == 0.6.*,
         vector            == 0.10.*,
         bytestring        == 0.10.*,
+        text              == 1.2.*,
         double-conversion == 2.0.*,
         repa-scalar       == 4.2.0.*
 
@@ -49,6 +50,7 @@ Library
         Data.Repa.Convert.Format.Numeric
         Data.Repa.Convert.Format.Sep
         Data.Repa.Convert.Format.String
+        Data.Repa.Convert.Format.Text
         Data.Repa.Convert.Format.Tup
         Data.Repa.Convert.Format.Unit
 

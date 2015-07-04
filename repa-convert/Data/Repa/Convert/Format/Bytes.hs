@@ -1,7 +1,6 @@
 
 module Data.Repa.Convert.Format.Bytes
-        ( -- * Flat byte strings
-          VarBytes (..))
+        (VarBytes (..))
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
@@ -37,7 +36,7 @@ instance Format VarBytes        where
  {-# INLINE fixedSize #-}
 
  packedSize VarBytes xs         = Just $ U.length xs
- {-# NOINLINE packedSize #-}
+ {-# INLINE packedSize #-}
 
 
 instance Packable VarBytes where

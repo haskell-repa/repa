@@ -22,6 +22,7 @@ module Data.Repa.Convert.Formats
         , FixCharList   (..)
         , VarCharList   (..)
         , VarString     (..)
+        , VarText       (..)
         , VarBytes      (..)
 
           -- * Maybes
@@ -69,6 +70,7 @@ import Data.Repa.Convert.Format.Maybe
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Sep
 import Data.Repa.Convert.Format.String
+import Data.Repa.Convert.Format.Text
 import Data.Repa.Convert.Format.Tup
 import Data.Repa.Convert.Format.Unit
 import Data.Repa.Scalar.Product
