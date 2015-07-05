@@ -13,16 +13,18 @@ import Prelude hiding (fail)
 ---------------------------------------------------------------------------------------------------
 data Unpacker a
   =  Unpacker 
-  {  -- | Takes pointers to the first byte in the buffer, the first byte
-     --   after the buffer, and a special field terminating character. 
-     --   The field terminating character is used by variable length 
-     --   encodings where the length of the encoded data cannot be 
-     --   determined from the encoding itself.
+  {  -- | Takes pointers to the first byte in the buffer; the first byte
+     --   after the buffer; a predicate to detect a field terminator;
+     --   a failure action; and a continuation.
+     -- 
+     --   The field terminator is used by variable length encodings where
+     --   the length of the encoded data cannot be determined from the
+     --   encoding itself.
      --
      --   If a value can be successfully unpacked from the buffer then
      --   it is passed to the continuation, along with a pointer to the
-     --   byte after the last one that was read. If not, then the fail
-     --   action is invoked.
+     --   byte after the last one that was read. If not, then we invoke
+     --   the fail action.
      --
      fromUnpacker
         :: Addr#                 -- Start of buffer.

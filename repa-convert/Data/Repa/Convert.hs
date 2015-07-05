@@ -19,7 +19,7 @@
 -- @
 -- > import Data.Repa.Convert
 --
--- > let format   = Sep '|' (VarAsc :*: IntAsc :*: DoubleAsc :*: ())
+-- > let format   = mkSep '|' (VarChars :*: IntAsc :*: DoubleAsc :*: ())
 -- > let Just str = packToString format ("foo" :*: 66 :*: 93.42 :*: ())
 -- > str
 -- "foo|66|93.42"
@@ -62,14 +62,13 @@ module Data.Repa.Convert
         , unsafeRunUnpacker
 
           -- * Interfaces
-          -- ** Default Ascii
-        , packToAscii
-
           -- ** List Interface
         , packToList8,  unpackFromList8
 
           -- ** String Interface
         , packToString, unpackFromString)
+
+
 where
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
@@ -84,14 +83,22 @@ import qualified GHC.Ptr                        as S
 
 
 ---------------------------------------------------------------------------------------------------
--- | Pack a value to a list of `Word8` using the default Ascii format.
-packToAscii
-        :: ( FormatAscii a
-           , Value    (FormatAscii' a) ~ a
-           , Packable (FormatAscii' a))
-        => a -> Maybe String
-packToAscii a
-        = packToString (formatAscii a) a
+-- | Constrain the type of a value to match the given format.
+-- 
+--   The value itself is not used.
+--
+forFormat :: format -> Value format  -> Value format
+forFormat _ v = v
+{-# INLINE forFormat #-}
+
+
+-- | Constrain the type of some values to match the given format.
+--
+--   The value itself is not used.
+--
+listFormat :: format -> [Value format] -> [Value format]
+listFormat _ v = v
+{-# INLINE listFormat #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -132,7 +139,7 @@ unpackFromList8 format xs
 {-# INLINE unpackFromList8 #-}
 
 
--- | Pack a value to a String.
+-- | Pack a value to a (hated) Haskell `String`.
 packToString
         :: Packable format
         => format -> Value format -> Maybe String
@@ -141,7 +148,7 @@ packToString f v
 {-# INLINE packToString #-}
 
 
--- | Unpack a value from a String.
+-- | Unpack a value from a (hated) Haskell `String`.
 unpackFromString 
         :: Packable format
         => format -> String -> Maybe (Value format)
@@ -149,21 +156,3 @@ unpackFromString f s
         = unpackFromList8 f $ map (fromIntegral . ord) s
 {-# INLINE unpackFromString #-}
 
-
----------------------------------------------------------------------------------------------------
--- | Constrain the type of a value to match the given format.
--- 
---   The value itself is not used.
---
-forFormat :: format -> Value format  -> Value format
-forFormat _ v = v
-{-# INLINE forFormat #-}
-
-
--- | Constrain the type of some values to match the given format.
---
---   The value itself is not used.
---
-listFormat :: format -> [Value format] -> [Value format]
-listFormat _ v = v
-{-# INLINE listFormat #-}
