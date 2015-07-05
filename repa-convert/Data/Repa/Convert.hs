@@ -50,7 +50,21 @@ module Data.Repa.Convert
         , forFormat
         , listFormat
 
-          -- * Packing data
+          -- * High-level interface
+          -- ** for ByteStrings
+        , packToByteString
+        , unpackFromByteString
+
+          -- ** for Lists of Word8
+        , packToList8
+        , unpackFromList8
+
+          -- ** for Strings
+        , packToString
+        , unpackFromString
+
+          -- * Low-level interface
+          -- ** Packing data
         , Packable  (..)
 
           -- ** Packer monoid
@@ -59,26 +73,21 @@ module Data.Repa.Convert
 
           -- ** Unpacker monad
         , Unpacker (..)
-        , unsafeRunUnpacker
-
-          -- * Interfaces
-          -- ** List Interface
-        , packToList8,  unpackFromList8
-
-          -- ** String Interface
-        , packToString, unpackFromString)
-
-
+        , unsafeRunUnpacker)
 where
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
-import Data.Char
 import Data.Word
-import Control.Monad
 import System.IO.Unsafe
-import qualified Foreign.Storable               as S
-import qualified Foreign.Marshal.Alloc          as S
-import qualified GHC.Ptr                        as S
+import Data.IORef
+import Data.ByteString                          (ByteString)
+import qualified Data.ByteString.Internal       as BS
+import qualified Data.ByteString                as BS
+import qualified Data.ByteString.Char8          as BS8
+import qualified Foreign.ForeignPtr             as F
+import qualified Foreign.Marshal.Alloc          as F
+import qualified Foreign.Marshal.Utils          as F
+import qualified GHC.Ptr                        as F
 #include "repa-convert.h"
 
 
@@ -102,24 +111,92 @@ listFormat _ v = v
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Pack a value to a freshly allocated `ByteString`.
+packToByteString
+        :: Packable format
+        => format -> Value format -> Maybe ByteString
+
+packToByteString format value
+
+ -- The size returned by `packedSize` is an over-approximation.
+ --   As we don't want to waste space in the returned value, 
+ --   we pack the value to a stack allocated buffer, 
+ --   then copy it into a newly allocated ByteString when we know
+ --   how much space we actually need.
+ |  Just lenMax <- packedSize format value
+ =  unsafePerformIO
+ $  F.allocaBytes lenMax $ \buf
+ -> do
+        -- Pack the value into the on-stack buffer.
+        let !(F.Ptr addr) = buf
+        !ref    <- newIORef Nothing
+        packer format value addr
+                (return ())
+                (\buf' -> writeIORef ref (Just (F.Ptr buf')))
+        mEnd    <- readIORef ref
+
+        -- See if the packer worked.
+        case mEnd of
+         Just end
+          -> do -- Now work out how much space we actually used.
+                let !lenPacked = F.minusPtr end buf
+
+                -- Allocate a new buffer of the right size, 
+                -- and copy the data into it.
+                F.mallocForeignPtrBytes lenPacked >>= \fptr
+                 -> F.withForeignPtr fptr $ \ptr
+                 -> do  F.copyBytes ptr buf lenPacked
+                        return $ Just $ BS.PS fptr 0 lenPacked
+
+         Nothing
+          -> return Nothing
+
+ | otherwise
+ = Nothing
+{-# INLINE packToByteString #-}
+
+
+-- | Unpack a value from a `ByteString`.
+unpackFromByteString
+        :: Packable format
+        => format -> ByteString -> Maybe (Value format)
+
+unpackFromByteString format (BS.PS fptr offset len)
+ -- If the bytestring is too short to hold a value of the minimum
+ -- size then we're going to have a bad time.
+ | len < minSize format
+ = Nothing
+
+ -- Open up the bytestring and try to unpack its contents.
+ | otherwise
+ = unsafePerformIO
+ $ F.withForeignPtr fptr $ \ptr_
+ -> do  
+        let !(F.Ptr start) = F.plusPtr ptr_  offset
+        let !(F.Ptr end)   = F.plusPtr (F.Ptr start) len
+
+        !ref    <- newIORef Nothing
+        unpacker format start end 
+                (const False)
+                (return ())
+                (\done' value -> writeIORef ref $ Just (F.Ptr done', value))
+        mResult <- readIORef ref
+
+        return $ case mResult of
+         Nothing              -> Nothing
+         Just (done, value)
+          | done /= F.Ptr end -> Nothing
+          | otherwise         -> Just value
+{-# INLINE unpackFromByteString #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Pack a value to a list of `Word8`.
 packToList8 
         :: Packable format
         => format -> Value format -> Maybe [Word8]
-packToList8 f x
- | Just lenMax  <- packedSize f x
- = unsafePerformIO
- $ do   buf     <- S.mallocBytes lenMax
-        mResult <- unsafeRunPacker (pack f x) buf
-        case mResult of
-         Nothing      -> return Nothing
-         Just buf' 
-          -> do let lenUsed = S.minusPtr buf' buf
-                xs      <- mapM (S.peekByteOff buf) [0 .. lenUsed - 1]
-                S.free buf
-                return $ Just xs
-
- | otherwise    = Nothing
+packToList8 format value
+ = fmap BS.unpack $ packToByteString format value
 {-# INLINE packToList8 #-}
 
 
@@ -128,23 +205,18 @@ unpackFromList8
         :: Packable format
         => format -> [Word8] -> Maybe (Value format)
 
-unpackFromList8 format xs
- = unsafePerformIO
- $ do   let len = length xs
-        buf     <- S.mallocBytes len
-        mapM_ (\(o, x) -> S.pokeByteOff buf o x)
-                $ zip [0 .. len - 1] xs
-        r <- unsafeRunUnpacker (unpack format) buf len (const False)
-        return $ fmap fst r
+unpackFromList8 format ws
+ = unpackFromByteString format $ BS.pack ws
 {-# INLINE unpackFromList8 #-}
 
 
+---------------------------------------------------------------------------------------------------
 -- | Pack a value to a (hated) Haskell `String`.
 packToString
         :: Packable format
         => format -> Value format -> Maybe String
-packToString f v
-        = liftM (map (chr . fromIntegral)) $ packToList8 f v
+packToString format value
+ = fmap BS8.unpack $ packToByteString format value
 {-# INLINE packToString #-}
 
 
@@ -152,7 +224,7 @@ packToString f v
 unpackFromString 
         :: Packable format
         => format -> String -> Maybe (Value format)
-unpackFromString f s
-        = unpackFromList8 f $ map (fromIntegral . ord) s
+unpackFromString format ss
+ = unpackFromByteString format $ BS8.pack ss
 {-# INLINE unpackFromString #-}
 

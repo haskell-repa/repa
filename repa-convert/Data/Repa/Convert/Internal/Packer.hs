@@ -12,9 +12,13 @@ import qualified Foreign.Ptr    as F
 -- | Packer wraps a function that can write to a buffer.
 data Packer
   =  Packer
-  { -- | Takes start of buffer, packs data into it, and calls the 
-    --   continuation with a pointer to the byte just after the 
-    --   last one that was written.
+  { -- | Takes start of buffer; failure action; and a continuation.
+    -- 
+    --   We try to pack data into the given buffer.
+    --   If packing succeeds then we call the continuation with a pointer
+    --   to the next byte after the packed value,
+    --   otherwise we call the failure action.
+    --
     fromPacker
         :: Addr#                -- Start of buffer.
         -> IO ()                -- Signal failure.

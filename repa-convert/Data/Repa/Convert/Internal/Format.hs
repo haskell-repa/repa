@@ -32,12 +32,16 @@ class Format f where
  fixedSize  :: f -> Maybe Int
 
 
- -- | Yield the size of a value in the given format.
+ -- | Yield the maximum packed size of the value in this format.
+ --
+ --   If `fixedSize` returns a size then `packedSize` returns the same size.
+ --
+ --   For variable length formats, `packedSize` is an over-approximation.
+ --   We allow the actual packed value to use less space, as it may not be
+ --   possible to determine how much space it needs without actually packing it.
  --
  --   Yields `Nothing` when a collection of values is to be packed into a
  --   fixed length format, but the size of the collection does not match
  --   the format.
- --
- --   If `fixedSize` returns a size then `packedSize` returns the same size.
  --
  packedSize :: f -> Value f -> Maybe Int

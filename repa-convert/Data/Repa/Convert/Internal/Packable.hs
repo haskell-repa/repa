@@ -7,7 +7,6 @@ import Data.Repa.Convert.Internal.Packer
 import Data.Repa.Convert.Internal.Unpacker
 import Data.Word
 import GHC.Exts
-import qualified Foreign.Ptr            as F
 
 
 -- | Class of storage formats that can have values packed and unpacked

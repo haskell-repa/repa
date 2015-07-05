@@ -21,10 +21,10 @@ data Unpacker a
      --   the length of the encoded data cannot be determined from the
      --   encoding itself.
      --
-     --   If a value can be successfully unpacked from the buffer then
-     --   it is passed to the continuation, along with a pointer to the
-     --   byte after the last one that was read. If not, then we invoke
-     --   the fail action.
+     --   We try to unpack a value from the buffer.
+     --   If unpacking succeeds then call the continuation with a pointer
+     --   to the next byte after the unpacked value, and the value itself,
+     --   otherwise call the failure action.
      --
      fromUnpacker
         :: Addr#                 -- Start of buffer.

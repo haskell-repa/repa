@@ -12,7 +12,6 @@ module Data.Repa.Convert.Formats
         , Sep, SepFormat (..)
         , Tup           (..)
 
-
           -- * String Formats
           -- ** for Haskell Strings
         , FixChars      (..)
