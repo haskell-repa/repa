@@ -42,14 +42,10 @@ class Format   format
  -- | Low level packing function for the given format.
  packer   :: format                     -- ^ Data format.
           -> Value format               -- ^ Value to pack.
-          -> F.Ptr Word8                -- ^ Pointer to start of buffer.
-          -> (F.Ptr Word8 -> IO (Maybe (F.Ptr Word8)))
-                                        -- ^ Continuation that takes a pointer
-                                        --   to the next byte after the packed field.
-          -> IO (Maybe (F.Ptr Word8))   -- ^ Returns a pointer to the next byte after
-                                        --   the packed value, or `Nothing` if packing
-                                        --   was unsuccessful.
-
+          -> Addr#                      -- ^ Pointer to start of buffer.
+          -> IO ()                      -- ^ Signal failure.
+          -> (Addr# -> IO ())           -- ^ Accept the address after the packed field.
+          -> IO ()
 
  -- | Low level unpacking function for the given format.
  unpacker :: format                     -- ^ Data format.

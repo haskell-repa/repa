@@ -47,13 +47,14 @@ instance Packable FixChars where
  
   pack (FixChars len) xs 
    |  length xs == len
-   =  Packer $ \buf k
-   -> do mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
+   =  Packer $ \dst _fails eat
+   -> do mapM_ (\(o, x) -> S.pokeByteOff (Ptr dst) o (w8 $ ord x)) 
                 $ zip [0 .. len - 1] xs
-         k (S.plusPtr buf len)
+         let !(Ptr dst') = S.plusPtr (Ptr dst) len
+         eat dst'
 
    | otherwise
-   = Packer $ \_ _ -> return Nothing
+   = Packer $ \_ fails _ -> fails
   {-# NOINLINE pack #-}
 
   packer f v 

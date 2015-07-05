@@ -4,6 +4,8 @@ module Data.Repa.Convert.Internal.Packer
         , unsafeRunPacker)
 where
 import Data.Word
+import Data.IORef
+import GHC.Exts
 import qualified Foreign.Ptr    as F
 
 
@@ -14,19 +16,20 @@ data Packer
     --   continuation with a pointer to the byte just after the 
     --   last one that was written.
     fromPacker
-        ::  F.Ptr Word8 
-        -> (F.Ptr Word8 -> IO (Maybe (F.Ptr Word8)))
-        -> IO (Maybe (F.Ptr Word8))
+        :: Addr#                -- Start of buffer.
+        -> IO ()                -- Signal failure.
+        -> (Addr# -> IO ())     -- Accept the address after the packed value.
+        -> IO ()
   }
 
 
 instance Monoid Packer where
  mempty 
-  = Packer $ \buf k -> k buf
+  = Packer $ \buf _fail k -> k buf
  {-# INLINE mempty #-}
 
  mappend (Packer fa) (Packer fb)
-  = Packer $ \buf0 k -> fa buf0 (\buf1 -> fb buf1 k)
+  = Packer $ \buf0 fails k -> fa buf0 fails (\buf1 -> fb buf1 fails k)
  {-# INLINE mappend #-}
 
 
@@ -42,6 +45,12 @@ unsafeRunPacker
         -> IO (Maybe (F.Ptr Word8))
                         -- ^ Pointer to the byte after the last one written.
 
-unsafeRunPacker (Packer make) buf
-        = make buf (\buf' -> return (Just buf'))
+unsafeRunPacker (Packer make) (Ptr addr)
+ = do   ref     <- newIORef Nothing
+
+        make addr
+          (return ())
+          (\addr' -> writeIORef ref (Just (Ptr addr')))
+
+        readIORef ref
 {-# INLINE unsafeRunPacker #-}

@@ -40,9 +40,10 @@ instance Format IntAsc where
 
 instance Packable IntAsc where
 
- packer IntAsc (I# v) pStart@(Ptr aStart) k
-  = do  len     <- S.storeInt# aStart v
-        k (F.plusPtr pStart len)
+ packer IntAsc (I# v) dst _fails k
+  = do  len     <- S.storeInt# dst v
+        let !(Ptr dst') = F.plusPtr (Ptr dst) len
+        k dst'
  {-# INLINE packer #-}
 
  unpacker IntAsc start end _stop fail eat
@@ -76,9 +77,10 @@ instance Format IntAsc0 where
 
 instance Packable IntAsc0 where
 
- packer (IntAsc0 (I# pad)) (I# v) pStart@(Ptr aStart) k
-  = do  len     <- S.storeIntPad# aStart v pad
-        k (F.plusPtr pStart len)
+ packer (IntAsc0 (I# pad)) (I# v) dst _fails k
+  = do  len     <- S.storeIntPad# dst v pad
+        let !(Ptr dst') = F.plusPtr (Ptr dst) len
+        k dst'
  {-# INLINE packer #-}
 
  unpacker (IntAsc0 _) start end _stop fail eat
@@ -111,11 +113,12 @@ instance Format DoubleAsc where
 
 instance Packable DoubleAsc where
 
- packer  DoubleAsc v start k
+ packer  DoubleAsc v dst _fails k
   = do  (fptr, len)  <- S.storeDoubleShortest v
         F.withForeignPtr fptr $ \ptr
-         -> F.copyBytes start ptr len
-        k (F.plusPtr start len)
+         -> F.copyBytes (Ptr dst) ptr len
+        let !(Ptr dst') = F.plusPtr (Ptr dst) len
+        k dst'
  {-# INLINE packer   #-}
 
  unpacker DoubleAsc start end _stop fail eat
@@ -152,11 +155,12 @@ instance Format DoubleFixedPack where
 
 instance Packable DoubleFixedPack where
 
- packer   (DoubleFixedPack prec) v start k
+ packer   (DoubleFixedPack prec) v dst _fails k
   = do  (fptr, len)  <- S.storeDoubleFixed prec v
         F.withForeignPtr fptr $ \ptr
-         -> F.copyBytes start ptr len
-        k (F.plusPtr start len)
+         -> F.copyBytes (Ptr dst) ptr len
+        let !(Ptr dst') = F.plusPtr (Ptr dst) len
+        k dst'
  {-# INLINE packer #-}
 
  unpacker (DoubleFixedPack _) start end _stop fail eat

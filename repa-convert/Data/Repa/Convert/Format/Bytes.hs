@@ -34,7 +34,7 @@ instance Format VarBytes        where
 
 instance Packable VarBytes where
 
- packer VarBytes (BS.PS fptr start len) buf k
+ packer VarBytes (BS.PS fptr start len) dst _fails k
   = F.withForeignPtr fptr 
   $ \ptr_
   -> let        
@@ -44,11 +44,12 @@ instance Packable VarBytes where
         -- Copy bytes from the bytestring to the destination buffer.
         packer_VarBytes !ix
          | ix >= len
-         = k (F.plusPtr buf ix)
+         = let  !(Ptr dst') = F.plusPtr (Ptr dst) ix
+            in  k dst'
 
          | otherwise
          = do   !(x :: Word8) <- F.peekByteOff ptr ix
-                F.pokeByteOff buf ix x
+                F.pokeByteOff (Ptr dst) ix x
                 packer_VarBytes (ix + 1)
         {-# INLINE packer_VarBytes #-}
 

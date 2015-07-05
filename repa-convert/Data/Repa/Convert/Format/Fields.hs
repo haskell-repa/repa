@@ -20,8 +20,8 @@ instance Format () where
 
 
 instance Packable () where
- packer  _f _v buf k
-        = k buf
+ packer  _f _v dst _fails k
+        = k dst
  {-# INLINE packer #-}
 
  unpacker _f start _end _stop _fail eat

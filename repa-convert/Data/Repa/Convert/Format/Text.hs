@@ -34,17 +34,18 @@ instance Format VarText         where
 
 instance Packable VarText where
 
- packer   VarText tt buf k
+ packer   VarText tt dst _fails eat
   = T.withCStringLen tt
   $ \(ptr, len)
   -> let        
         packer_VarText !ix
          | ix >= len
-         = k (F.plusPtr buf ix)
+         = let  !(Ptr dst') = F.plusPtr (Ptr dst) ix
+           in   eat dst'
 
          | otherwise
          = do   !(x :: Word8)   <- F.peekByteOff ptr ix
-                F.pokeByteOff buf ix x
+                F.pokeByteOff (Ptr dst) ix x
                 packer_VarText (ix + 1)
         {-# INLINE packer_VarText #-}
 

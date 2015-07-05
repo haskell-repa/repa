@@ -5,9 +5,9 @@ module Data.Repa.Convert.Internal.Unpacker
 where
 import Data.IORef
 import Data.Word
-import qualified Foreign.Ptr            as F
 import GHC.Exts
 import Prelude hiding (fail)
+import qualified Foreign.Ptr            as F
 
 
 ---------------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ data Unpacker a
         -> Addr#                 -- Pointer to first byte after end of buffer.
         -> (Word8 -> Bool)       -- Detect a field terminator.
         -> IO ()                 -- Signal failure.
-        -> (Addr# -> a -> IO ()) -- Eat an unpacked value.
+        -> (Addr# -> a -> IO ()) -- Accept an unpacked value.
         -> IO ()
   }
 

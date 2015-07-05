@@ -34,11 +34,12 @@ instance Format ExactString where
 
 
 instance Packable ExactString where
- packer (ExactString str) _ buf k
+ packer (ExactString str) _ dst _fails k
   = do  let !len = length str
-        mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x))
+        mapM_ (\(o, x) -> S.pokeByteOff (Ptr dst) o (w8 $ ord x))
                 $ zip [0 .. len - 1] str
-        k (S.plusPtr buf len)
+        let !(Ptr dst') = S.plusPtr (Ptr dst) len
+        k dst'
  {-# NOINLINE pack #-}
 
  unpacker (ExactString str) start end _stop fails eat

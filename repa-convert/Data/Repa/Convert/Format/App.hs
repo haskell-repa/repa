@@ -55,11 +55,11 @@ instance ( Format f1, Format (App fs)
 
 
 instance Packable (App ()) where
- packer _f _v buf k
-        = k buf
+ packer _f _v start _fails eat
+        = eat start
  {-# INLINE packer #-}
  
- unpacker _f start _end _stop _fail eat
+ unpacker _f start _end _stop _fails eat
         = eat start ()
  {-# INLINE unpacker #-}
 

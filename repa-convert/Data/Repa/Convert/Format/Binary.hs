@@ -41,9 +41,10 @@ instance Format Word8be                 where
 
 
 instance Packable Word8be where
- packer   _ x buf k
-  = do  S.poke buf (fromIntegral x)
-        k (S.plusPtr buf 1)
+ packer   _ x dst _fails k
+  = do  S.poke (Ptr dst) (fromIntegral x :: Word8)
+        let !(Ptr dst') = S.plusPtr (Ptr dst) 1
+        k dst'
  {-# INLINE pack #-}
 
  unpacker _ start _end _stop _fail eat
@@ -104,10 +105,11 @@ instance Format Word16be                where
 
 
 instance Packable Word16be where
- packer   Word16be x buf k
-  = do  S.poke        buf    (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
-        S.pokeByteOff buf 1  (w8 ((w16 x .&. 0x000ff)))
-        k (S.plusPtr buf 2)
+ packer   Word16be x dst _fails k
+  = do  S.poke        (Ptr dst)    (w8 ((w16 x .&. 0x0ff00) `shiftR` 8))
+        S.pokeByteOff (Ptr dst) 1  (w8 ((w16 x .&. 0x000ff)))
+        let !(Ptr dst') = S.plusPtr (Ptr dst) 2
+        k dst'
  {-# INLINE packer #-}
 
  unpacker Word16be start _end _stop _fail eat
@@ -170,12 +172,13 @@ instance Format Word32be                where
 
 
 instance Packable Word32be where
- packer Word32be x buf k
-  =  do S.poke        buf    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
-        S.pokeByteOff buf 1  (w8 ((w32 x .&. 0x000ff0000) `shiftR` 16))
-        S.pokeByteOff buf 2  (w8 ((w32 x .&. 0x00000ff00) `shiftR`  8))
-        S.pokeByteOff buf 3  (w8 ((w32 x .&. 0x0000000ff)))
-        k (S.plusPtr buf 4)
+ packer Word32be x dst _fails k
+  =  do S.poke        (Ptr dst)    (w8 ((w32 x .&. 0x0ff000000) `shiftR` 24))
+        S.pokeByteOff (Ptr dst) 1  (w8 ((w32 x .&. 0x000ff0000) `shiftR` 16))
+        S.pokeByteOff (Ptr dst) 2  (w8 ((w32 x .&. 0x00000ff00) `shiftR`  8))
+        S.pokeByteOff (Ptr dst) 3  (w8 ((w32 x .&. 0x0000000ff)))
+        let !(Ptr dst') = S.plusPtr (Ptr dst) 4
+        k dst'
  {-# INLINE packer #-}
 
  unpacker Word32be start _end _fail _stop eat
@@ -243,16 +246,17 @@ instance Format Word64be                where
 
 
 instance Packable Word64be where
- packer Word64be x buf k
-  = do  S.poke        buf    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
-        S.pokeByteOff buf 1  (w8 ((w64 x .&. 0x000ff000000000000) `shiftR` 48))
-        S.pokeByteOff buf 2  (w8 ((w64 x .&. 0x00000ff0000000000) `shiftR` 40))
-        S.pokeByteOff buf 3  (w8 ((w64 x .&. 0x0000000ff00000000) `shiftR` 32))
-        S.pokeByteOff buf 4  (w8 ((w64 x .&. 0x000000000ff000000) `shiftR` 24))
-        S.pokeByteOff buf 5  (w8 ((w64 x .&. 0x00000000000ff0000) `shiftR` 16))
-        S.pokeByteOff buf 6  (w8 ((w64 x .&. 0x0000000000000ff00) `shiftR`  8))
-        S.pokeByteOff buf 7  (w8 ((w64 x .&. 0x000000000000000ff)            ))
-        k (S.plusPtr buf 8)
+ packer Word64be x dst _fails k
+  = do  S.poke        (Ptr dst)    (w8 ((w64 x .&. 0x0ff00000000000000) `shiftR` 56))
+        S.pokeByteOff (Ptr dst) 1  (w8 ((w64 x .&. 0x000ff000000000000) `shiftR` 48))
+        S.pokeByteOff (Ptr dst) 2  (w8 ((w64 x .&. 0x00000ff0000000000) `shiftR` 40))
+        S.pokeByteOff (Ptr dst) 3  (w8 ((w64 x .&. 0x0000000ff00000000) `shiftR` 32))
+        S.pokeByteOff (Ptr dst) 4  (w8 ((w64 x .&. 0x000000000ff000000) `shiftR` 24))
+        S.pokeByteOff (Ptr dst) 5  (w8 ((w64 x .&. 0x00000000000ff0000) `shiftR` 16))
+        S.pokeByteOff (Ptr dst) 6  (w8 ((w64 x .&. 0x0000000000000ff00) `shiftR`  8))
+        S.pokeByteOff (Ptr dst) 7  (w8 ((w64 x .&. 0x000000000000000ff)            ))
+        let !(Ptr dst') = S.plusPtr (Ptr dst) 8
+        k dst'
  {-# INLINE packer #-}
 
  unpacker Word64be start _end _fail _stop eat
@@ -378,8 +382,8 @@ instance Format Float64be               where
 
 
 instance Packable Float64be where
- packer      Float64be x buf k
-  = packer   Word64be (doubleToWord64 x) buf k
+ packer      Float64be x start fails eat
+  = packer   Word64be (doubleToWord64 x) start fails eat
  {-# INLINE packer #-}
 
  unpacker    Float64be start end stop fail eat

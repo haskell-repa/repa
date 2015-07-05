@@ -33,8 +33,8 @@ instance Format (Tup ()) where
 
 
 instance Packable (Tup ()) where
- packer   _fmt _val start k 
-  = k start
+ packer   _fmt _val dst _fails k 
+  = k dst
  {-# INLINE packer #-}
 
  unpacker _fmt start _end _stop _fail eat
