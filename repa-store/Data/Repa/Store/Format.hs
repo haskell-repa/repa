@@ -284,7 +284,7 @@ instance FieldFormat F.DoubleAsc where
  fieldFormat _    = DoubleAsc
 
 
-instance FieldFormat F.VarCharList where
+instance FieldFormat F.VarChars where
  fieldFormat _    = VarAsc
 
 

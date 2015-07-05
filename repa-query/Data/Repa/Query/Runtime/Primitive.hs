@@ -60,8 +60,8 @@ module Data.Repa.Query.Runtime.Primitive
         , pattern DDsMMsYYYY
         , pattern IntAsc
         , pattern DoubleAsc
-        , pattern FixCharList
-        , pattern VarCharList
+        , pattern FixChars
+        , pattern VarChars
 
         -- * From Data.Repa.Convert.Default.Ascii
         , formatAscii
@@ -217,8 +217,8 @@ pattern DDsMMsYYYY c    = C.DDsMMsYYYY c
 pattern IntAsc          = C.IntAsc
 pattern DoubleAsc       = C.DoubleAsc
 
-pattern FixCharList len = C.FixCharList len
-pattern VarCharList     = C.VarCharList
+pattern FixChars len    = C.FixChars len
+pattern VarChars        = C.VarChars
 
 
 -- Data.Repa.Convert.Default.Ascii ----------------------------------------------------------------
