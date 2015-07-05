@@ -34,8 +34,6 @@ instance FormatAscii () where
  {-# INLINE formatAscii #-}
 
 
--- | Tuples are displayed with round parens and commas to separate
---   the fields.
 instance ( FormatAscii t1
          , FormatAscii (Plain ts))
         => FormatAscii (t1 :*: ts) where

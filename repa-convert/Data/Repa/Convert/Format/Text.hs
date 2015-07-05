@@ -1,4 +1,5 @@
 
+-- | Conversions for "Data.Text" things.
 module Data.Repa.Convert.Format.Text
         ( VarText       (..)
         , VarTextString (..))
@@ -9,7 +10,6 @@ import Data.Repa.Convert.Format.String
 import Data.Text                                (Text)
 import Data.Word
 import GHC.Exts
-
 import qualified Data.Text.Foreign              as T
 import qualified Data.Text                      as T
 import qualified Foreign.Storable               as F

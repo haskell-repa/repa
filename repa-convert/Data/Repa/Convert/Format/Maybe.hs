@@ -1,5 +1,5 @@
 
--- | Maybe -like formats.
+-- | Conversions for "Data.Maybe" wrapped formats.
 module Data.Repa.Convert.Format.Maybe
         ( MaybeChars    (..)
         , MaybeBytes    (..))
@@ -7,23 +7,21 @@ where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
 import Data.Repa.Convert.Format.Bytes
-import Data.Char
 import Data.Word
 import GHC.Exts
-import Prelude hiding (fail)
-
-import qualified Foreign.Storable       as S
-import qualified Foreign.Ptr            as S
-import Data.Vector.Unboxed              (Vector)
-import qualified Data.Vector.Unboxed    as U
-
-
+import Prelude                                  hiding (fail)
+import Data.ByteString                          (ByteString)
+import qualified Data.ByteString.Char8          as BS
+import qualified Data.ByteString.Internal       as BS
+import qualified Foreign.Storable               as F
+import qualified Foreign.ForeignPtr             as F
+import qualified Foreign.Ptr                    as F
 #include "repa-convert.h"
 
 
 ------------------------------------------------------------------------------------- MaybeCharList
 -- | Maybe a raw list of characters, or something else.
-data MaybeChars f            = MaybeChars String f
+data MaybeChars f            = MaybeChars String f      deriving (Eq, Show)
 
 instance Format f => Format (MaybeChars f) where
  type Value (MaybeChars f)   
@@ -34,20 +32,19 @@ instance Format f => Format (MaybeChars f) where
  {-# INLINE fieldCount #-}
 
  minSize       (MaybeChars str f) 
-  = minSize    (MaybeBytes (vecOfString str) f)
+  = minSize    (MaybeBytes (BS.pack str) f)
 
  {-# INLINE minSize    #-}
 
  fixedSize     (MaybeChars str f)
-  = fixedSize  (MaybeBytes (vecOfString str) f)
+  = fixedSize  (MaybeBytes (BS.pack str) f)
  {-# INLINE fixedSize #-}
 
  packedSize    (MaybeChars str f) 
   = kk
-  where !vec     = vecOfString str
-
+  where !bs = BS.pack str
         kk mv
-         = packedSize (MaybeBytes vec f) mv
+         = packedSize (MaybeBytes bs f) mv
         {-# INLINE kk #-}
  {-# INLINE packedSize #-}
 
@@ -55,40 +52,31 @@ instance Format f => Format (MaybeChars f) where
 instance Packable f
       => Packable (MaybeChars f) where
 
- -- Convert the string to a Vector Word8 which has a better runtime representation.
+ -- Convert the Nothing string to a ByteString which has a better runtime representation.
  -- We do this before accepting the actual value, so the conversion happens only
  -- once, instead of when we pack every value.
  packer    (MaybeChars str f)
   = kk
-  where !vec     = vecOfString str
-
+  where !bs = BS.pack str
         kk x start k
-         = packer  (MaybeBytes vec f) x start k
+         = packer  (MaybeBytes bs f) x start k
         {-# INLINE kk #-}
  {-# INLINE packer #-}
 
- -- As avove, convert the string to a Vector Word8 which has a better runtime
+ -- As above, convert the Nothing string to a ByteString which has a better runtime
  -- representation.
  unpacker  (MaybeChars str f)
   = kk
-  where !vec     = vecOfString str
-
+  where !bs = BS.pack str
         kk start end stop fail eat
-         = unpacker (MaybeBytes vec f) start end stop fail eat
+         = unpacker (MaybeBytes bs f) start end stop fail eat
         {-# INLINE kk #-}
  {-# INLINE unpacker #-}
 
 
-vecOfString :: String -> Vector Word8
-vecOfString str
-        = U.map (fromIntegral . ord) 
-        $ U.fromList str
-{-# NOINLINE vecOfString #-}
-
-
------------------------------------------------------------------------------------- MaybeBytes
+---------------------------------------------------------------------------------------- MaybeBytes
 -- | Maybe a raw sequence of bytes, or something else.
-data MaybeBytes f           = MaybeBytes (Vector Word8) f
+data MaybeBytes f           = MaybeBytes ByteString f   deriving (Eq, Show)
 
 instance Format f => Format (MaybeBytes f) where
 
@@ -110,26 +98,30 @@ instance Format f => Format (MaybeBytes f) where
 
  packedSize (MaybeBytes str f) mv
   = case mv of
-        Nothing -> Just $ U.length str
+        Nothing -> Just $ BS.length str
         Just v  -> packedSize f v
  {-# NOINLINE packedSize #-}
+ --  NOINLINE to hide the case from the simplifier.
 
 
-minSize_MaybeBytes   :: Vector Word8 -> Int# -> Int#
+-- Minsize, hiding the case expression from the simplifier.
+minSize_MaybeBytes   :: ByteString -> Int# -> Int#
 minSize_MaybeBytes s i
- = case min (U.length s) (I# i) of
+ = case min (BS.length s) (I# i) of
         I# i' -> i'
 {-# NOINLINE minSize_MaybeBytes #-}
 
 
-fixedSize_MaybeBytes :: Vector Word8 -> Maybe Int -> Maybe Int
+-- Fixedsize, hiding the case expression from the simplifier.
+fixedSize_MaybeBytes :: ByteString -> Maybe Int -> Maybe Int
 fixedSize_MaybeBytes s r
  = case r of
         Nothing -> Nothing
-        Just sf -> if U.length s == sf 
+        Just sf -> if BS.length s == sf 
                         then Just sf
                         else Nothing
 {-# NOINLINE fixedSize_MaybeBytes #-}
+--  NOINLINE to hide the case from the simplifier.
 
 
 instance Packable f
@@ -140,51 +132,57 @@ instance Packable f
         Nothing -> packer VarBytes str start k
         Just v  -> packer f        v   start k
  {-# NOINLINE pack #-}
-  -- TODO we're need to NOINLINEing this so we don't duplicate the code for the continuation.
+  -- TODO we're NOINLINEing this so we don't duplicate the code for the continuation.
   --      It would be better to use an Either format and use that to express the branch.
 
- unpacker (MaybeBytes str f) start end stop fail eat
-  = do  
+ unpacker (MaybeBytes (BS.PS bsFptr bsStart bsLen) f) 
+          start end stop fail eat
+  = F.withForeignPtr bsFptr
+  $ \bsPtr_
+  -> let
         -- Length of the input buffer.
-        let !lenBuf     = S.minusPtr (pw8 end) (pw8 start)
+        !lenBuf = F.minusPtr (pw8 end) (pw8 start)
 
-        -- Length of the Nothing string.
-        let !lenMatch   = U.length str
+        -- Pointer to active bytes in Nothing string.
+        !bsPtr  = F.plusPtr bsPtr_ bsStart
 
         -- Check for the Nothing string,
-        -- if this is not it then unpack the inner format.
-        let checkNothing ix
+        --   We do an early exit, bailing out on the first byte that doesn't match.
+        --   If this isn't the Nothing string then we need to unpack the inner format.
+        checkNothing ix
 
-             -- Matched the complete Nothing string.
-             | ix >= lenMatch   
-             = do
-                let !(Ptr start')     = S.plusPtr (pw8 start) ix
+         -- Matched the complete Nothing string.
+         | ix >= bsLen
+         = do   -- Give the continuation the starting pointer for the next field.
+                let !(Ptr start') = F.plusPtr (pw8 start) ix
                 eatIt start' Nothing
 
-             -- Hit the end of the buffer before matching the Nothing string.
-             | ix >= lenBuf     
-             =  unpackInner
+         -- Hit the end of the buffer before matching the Nothing string.
+         | ix >= lenBuf     
+         = unpackInner
 
-             -- Check if the next byte is the next byte in the Nothing string.
-             | otherwise
-             = do  x    <- S.peekByteOff (pw8 start) ix
-                   if stop x 
-                    then unpackInner
-                    else if U.unsafeIndex str ix /= x
-                          then unpackInner
-                          else checkNothing (ix + 1)
+         -- Check if the next byte is the next byte in the Nothing string.
+         | otherwise
+         = do  x    <- F.peekByteOff (pw8 start) ix
+               if stop x 
+                then unpackInner
+                else do
+                        x'      <- F.peekByteOff bsPtr ix
+                        if x /= x'
+                         then unpackInner
+                         else checkNothing (ix + 1)
 
-            unpackInner 
-             = unpacker f start end stop fail 
-             $ \addr x -> eatIt addr (Just x)
-            {-# NOINLINE unpackInner #-}
+        unpackInner 
+         = unpacker f start end stop fail 
+         $ \addr x -> eatIt addr (Just x)
+        {-# NOINLINE unpackInner #-}
 
-            eatIt addr val
-                = eat addr val
-            {-# NOINLINE eatIt #-}
-            --  NOINLINE so we don't duplicate the continuation.
+        eatIt addr val
+         = eat addr val
+        {-# NOINLINE eatIt #-}
+        --  NOINLINE so we don't duplicate the continuation.
 
-        checkNothing 0
+     in checkNothing 0
  {-# INLINE unpacker #-}
 
 
