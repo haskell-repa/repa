@@ -149,7 +149,7 @@ instance Packable f
         -- Check for the Nothing string,
         --   We do an early exit, bailing out on the first byte that doesn't match.
         --   If this isn't the Nothing string then we need to unpack the inner format.
-        checkNothing ix
+        checkNothing !ix
 
          -- Matched the complete Nothing string.
          | ix >= bsLen
@@ -163,11 +163,11 @@ instance Packable f
 
          -- Check if the next byte is the next byte in the Nothing string.
          | otherwise
-         = do  x    <- F.peekByteOff (pw8 start) ix
+         = do  !x  <- F.peekByteOff (pw8 start) ix
                if stop x 
                 then unpackInner
                 else do
-                        x'      <- F.peekByteOff bsPtr ix
+                        !x'  <- F.peekByteOff bsPtr ix
                         if x /= x'
                          then unpackInner
                          else checkNothing (ix + 1)

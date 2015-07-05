@@ -20,6 +20,7 @@ import qualified Foreign.Ptr                    as S
 import Prelude hiding (fail)
 #include "repa-convert.h"
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Fixed length sequence of characters, represented as a (hated) Haskell `String`.
 --   

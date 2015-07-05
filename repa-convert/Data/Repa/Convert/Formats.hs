@@ -1,16 +1,15 @@
 
 -- | Pre-defined data formats.
 module Data.Repa.Convert.Formats
-        ( -- * Default Ascii Format
+        ( -- * Default
           FormatAscii(..)
+        
+        -- * Units
+        , UnitAsc       (..)
 
-          -- * Field Products
-        , (:*:)(..)
-
-          -- * Field Separators
-        , App           (..)
-        , Sep, SepFormat (..)
-        , Tup           (..)
+          -- * Maybes
+        , MaybeChars    (..)
+        , MaybeBytes    (..)
 
           -- * String Formats
           -- ** for Haskell Strings
@@ -26,15 +25,7 @@ module Data.Repa.Convert.Formats
           -- ** for Data.ByteString
         , VarBytes      (..)
 
-          -- * Maybes
-        , MaybeChars    (..)
-        , MaybeBytes    (..)
-
-
-          -- * Atomic values
-          -- * Units
-        , UnitAsc       (..)
-
+          -- * ASCII Atoms
           -- ** ASCII integers
         , IntAsc        (..)
         , IntAsc0       (..)
@@ -47,6 +38,7 @@ module Data.Repa.Convert.Formats
         , YYYYsMMsDD    (..)
         , DDsMMsYYYY    (..)
 
+          -- * Binary Atoms
           -- ** 8-bit binary
         , Word8be       (..)
         , Int8be        (..)
@@ -63,7 +55,15 @@ module Data.Repa.Convert.Formats
           -- ** 64-bit binary
         , Word64be      (..)
         , Int64be       (..)
-        , Float64be     (..))
+        , Float64be     (..)
+
+          -- * Compounds
+        , App           (..)
+        , Sep, SepFormat (..)
+        , Tup           (..)
+
+          -- * Products
+        , (:*:)(..))
 where
 import Data.Repa.Convert.Format.Ascii
 import Data.Repa.Convert.Format.App
