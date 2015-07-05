@@ -17,11 +17,8 @@ import qualified Foreign.Storable               as F
 import qualified Foreign.Ptr                    as F
 
 
--- | Variable length byte sequence.
+-- | Variable length sequence of bytes, represented as a `Data.ByteString`.
 --
--- * When serialised, the \"string\" is not escaped, nor does it have
---   surrounding quotes. The bytes are just copied into the result verbatim.
---   
 data VarBytes                   = VarBytes      deriving (Eq, Show)
 instance Format VarBytes        where
  type Value VarBytes            = ByteString

@@ -1,11 +1,16 @@
 
 module Data.Repa.Convert.Format.String
-        ( -- * ASCII Strings
-          VarString     (..))
+        ( -- * Haskell Strings
+          FixChars (..)
+        , VarChars (..)
+        , VarCharString (..)
+        , unpackCharList)
 where
-import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
+import Data.Repa.Convert.Internal.Packer
+import Data.Repa.Convert.Format.Binary
+import Data.Monoid
 import Data.Word
 import Data.Char
 import GHC.Exts
@@ -14,13 +19,131 @@ import qualified Foreign.Ptr                    as S
 import Prelude hiding (fail)
 #include "repa-convert.h"
 
+---------------------------------------------------------------------------------------------------
+-- | Fixed length sequence of characters, represented as a (hated) Haskell `String`.
+--   
+-- * The runtime performance of the Haskell `String` is atrocious.
+--   You really shouldn't be using them for large data sets.
+--
+-- * When packing, the length of the provided string must match the width
+--   of the format, else packing will fail.
+--
+-- * When unpacking, the length of the result will be the width of the format.
+--
+data FixChars                   = FixChars Int          deriving (Eq, Show)
+instance Format FixChars where
+ type Value (FixChars)          = String
+ fieldCount _                   = 1
+ minSize    (FixChars len)      = len
+ fixedSize  (FixChars len)      = Just len
+ packedSize (FixChars len) _    = Just len
+ {-# INLINE minSize    #-}
+ {-# INLINE fieldCount #-}
+ {-# INLINE fixedSize  #-}
+ {-# INLINE packedSize #-}
+
+
+instance Packable FixChars where
+ 
+  pack (FixChars len) xs 
+   |  length xs == len
+   =  Packer $ \buf k
+   -> do mapM_ (\(o, x) -> S.pokeByteOff buf o (w8 $ ord x)) 
+                $ zip [0 .. len - 1] xs
+         k (S.plusPtr buf len)
+
+   | otherwise
+   = Packer $ \_ _ -> return Nothing
+  {-# NOINLINE pack #-}
+
+  packer f v 
+   = fromPacker (pack f v)
+  {-# INLINE packer #-}
+
+  unpacker (FixChars len@(I# len')) start end _stop fail eat
+   = do 
+        let lenBuf = I# (minusAddr# end start)
+        if  lenBuf < len
+         then fail
+         else 
+          do let load_unpackChar o
+                   = do x :: Word8 <- S.peekByteOff (pw8 start) o
+                        return $ chr $ fromIntegral x
+                 {-# INLINE load_unpackChar #-}
+
+             xs      <- mapM load_unpackChar [0 .. len - 1]
+             eat (plusAddr# start len') xs
+  {-# INLINE unpacker #-}
+
 
 ---------------------------------------------------------------------------------------------------
--- | Variable length string in double quotes, 
---   and standard backslash encoding of special characters.
-data VarString = VarString      deriving (Eq, Show)
-instance Format VarString       where
- type Value VarString           = String
+-- | Like `FixChars`, but with a variable length.
+data VarChars = VarChars        deriving (Eq, Show)
+instance Format VarChars        where
+ type Value VarChars            = String
+
+ fieldCount _                   = 1
+ {-# INLINE fieldCount #-}
+
+ minSize    _                   = 0
+ {-# INLINE minSize    #-}
+
+ fixedSize  VarChars            = Nothing
+ {-# INLINE fixedSize  #-}
+
+ packedSize VarChars xs         = Just $ length xs
+ {-# NOINLINE packedSize #-}
+
+
+instance Packable VarChars where
+
+  pack VarChars xx
+   = case xx of
+        []       -> mempty
+        (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarChars xs     
+                                -- TODO: will leak, can't elim <>
+  {-# NOINLINE pack #-}
+
+  packer f v 
+   = fromPacker (pack f v)
+  {-# INLINE packer #-}
+
+  unpacker VarChars start end stop _fail eat
+   = do (Ptr ptr, str)      <- unpackCharList (pw8 start) (pw8 end) stop
+        eat ptr str
+  {-# INLINE unpack #-}
+
+
+-- | Unpack a ascii text from the given buffer.
+unpackCharList
+        :: S.Ptr Word8      -- ^ First byte in buffer.
+        -> S.Ptr Word8      -- ^ First byte after buffer.
+        -> (Word8 -> Bool)  -- ^ Detect field deliminator.
+        -> IO (S.Ptr Word8, [Char])
+
+unpackCharList start end stop
+ = go start []
+ where  go !ptr !acc
+         | ptr >= end
+         = return (ptr, reverse acc)
+
+         | otherwise
+         = do   w :: Word8 <- S.peek ptr
+                if stop w 
+                 then do
+                   return (ptr, reverse acc)
+                 else do
+                   let !ptr'  = S.plusPtr ptr 1
+                   go ptr' ((chr $ fromIntegral w) : acc)
+{-# NOINLINE unpackCharList #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Variable length string in double quotes,
+--   and standard backslash encoding of non-printable characters.
+data VarCharString = VarCharString      deriving (Eq, Show)
+instance Format VarCharString           where
+ type Value VarCharString       = String
  fieldCount _                   = 1
  {-# INLINE fieldCount #-}
 
@@ -30,24 +153,26 @@ instance Format VarString       where
  fixedSize  _                   = Nothing
  {-# INLINE fixedSize #-}
  
- packedSize VarString xs        
+ packedSize VarCharString xs        
   = Just $ length $ show xs     
  {-# NOINLINE packedSize #-}
 
 
-instance Packable VarString where
+instance Packable VarCharString where
 
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
- packer     VarString xx          start k
-  =  packer VarCharList (show xx) start k
+ packer     VarCharString xx          start k
+  =  packer VarChars (show xx) start k
  {-# INLINE pack #-}
 
- unpacker   VarString start end _stop  fail eat
+ unpacker   VarCharString start end _stop  fail eat
   = unpackString (pw8 start) (pw8 end) fail eat
  {-# INLINE unpacker #-}
 
 
 -- | Unpack a string from the given buffer.
+--   TODO: this isn't complete for all special characters, 
+--         check the Haskell encoding.
 unpackString 
         :: S.Ptr Word8                  -- ^ First byte in buffer.
         -> S.Ptr Word8                  -- ^ First byte after buffer.
@@ -107,6 +232,11 @@ unpackString start end fail eat
 
 
 ---------------------------------------------------------------------------------------------------
+w8  :: Integral a => a -> Word8
+w8 = fromIntegral
+{-# INLINE w8  #-}
+
+
 pw8 :: Addr# -> Ptr Word8
 pw8 addr = Ptr addr
 {-# INLINE pw8 #-}

@@ -12,7 +12,7 @@ import qualified Foreign.Ptr            as S
 #include "repa-convert.h"
 
 
--- Exactly match the given string.
+-- | Match this exact string.
 data ExactString 
         = ExactString String
         deriving Show

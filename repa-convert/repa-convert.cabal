@@ -45,7 +45,6 @@ Library
         Data.Repa.Convert.Format.Date32
         Data.Repa.Convert.Format.Exact
         Data.Repa.Convert.Format.Fields
-        Data.Repa.Convert.Format.Lists
         Data.Repa.Convert.Format.Maybe
         Data.Repa.Convert.Format.Numeric
         Data.Repa.Convert.Format.Sep

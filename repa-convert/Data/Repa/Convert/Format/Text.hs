@@ -17,10 +17,7 @@ import qualified Foreign.Ptr                    as F
 
 
 ---------------------------------------------------------------------------------------------------
--- | Variable length unicode text.
--- 
--- * When serialised, the \"string\" is not escaped, not does it have
---   surrounding quotes. The UTF8 data is just copied into the result verbatim.
+-- | Variable length unicode text, represented as a "Data.Text" thing.
 --
 data VarText                    = VarText       deriving (Eq, Show)
 instance Format VarText         where
@@ -82,10 +79,8 @@ instance Packable VarText where
 
 
 ---------------------------------------------------------------------------------------------------
--- | Variable length unicode strings.
---
--- * When serialised, the string is escaped and surrounded by double quotes.
---
+-- | Variable length string in double quotes,
+--   and standard backslash encoding of non-printable characters.
 data VarTextString              = VarTextString deriving (Eq, Show)
 instance Format VarTextString   where
  type Value VarTextString       = Text
@@ -108,7 +103,7 @@ instance Packable VarTextString where
 
  -- TODO: don't go via lists.
  unpacker VarTextString start end stop _fail eat
-  = unpacker VarString start end stop _fail 
+  = unpacker VarCharString start end stop _fail 
   $ \start' val -> eat start' (T.pack val)
  {-# INLINE unpacker #-}
 

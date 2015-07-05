@@ -85,8 +85,8 @@ instance FormatAscii  Double where
 -- | Strings are formatted with double quotes and back-slash escaping
 --   of special characters.
 instance FormatAscii  String where
- type FormatAscii' String = VarString
- formatAscii _            = VarString
+ type FormatAscii' String = VarCharString
+ formatAscii _            = VarCharString
  {-# INLINE formatAscii #-}
 
 

@@ -19,7 +19,7 @@ import qualified Foreign.Ptr                    as F
 #include "repa-convert.h"
 
 
-------------------------------------------------------------------------------------- MaybeCharList
+---------------------------------------------------------------------------------------- MaybeChars
 -- | Maybe a raw list of characters, or something else.
 data MaybeChars f            = MaybeChars String f      deriving (Eq, Show)
 

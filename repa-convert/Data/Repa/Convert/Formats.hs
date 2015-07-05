@@ -12,30 +12,35 @@ module Data.Repa.Convert.Formats
         , Sep, SepFormat (..)
         , Tup           (..)
 
-          -- * Units
-        , UnitAsc       (..)
 
-          -- * Exact Strings
+          -- * String Formats
+          -- ** for Haskell Strings
+        , FixChars      (..)
+        , VarChars      (..)
+        , VarCharString (..)
         , ExactString   (..)
 
-          -- * Variable Strings
-        , FixCharList   (..)
-        , VarCharList   (..)
-        , VarString     (..)
-
+          -- ** for Data.Text
         , VarText       (..)
         , VarTextString (..)
 
+          -- ** for Data.ByteString
         , VarBytes      (..)
 
           -- * Maybes
         , MaybeChars    (..)
         , MaybeBytes    (..)
 
+
           -- * Atomic values
-          -- ** ASCII numeric
+          -- * Units
+        , UnitAsc       (..)
+
+          -- ** ASCII integers
         , IntAsc        (..)
         , IntAsc0       (..)
+
+          -- ** ASCII doubles
         , DoubleAsc     (..)
         , DoubleFixedPack (..)
 
@@ -68,7 +73,6 @@ import Data.Repa.Convert.Format.Bytes
 import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Exact
 import Data.Repa.Convert.Format.Fields  ()
-import Data.Repa.Convert.Format.Lists
 import Data.Repa.Convert.Format.Maybe
 import Data.Repa.Convert.Format.Numeric
 import Data.Repa.Convert.Format.Sep

@@ -5,7 +5,7 @@ module Data.Repa.Convert.Format.Unit
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packable
-import Data.Repa.Convert.Format.Lists
+import Data.Repa.Convert.Format.String
 import GHC.Exts
 import Data.Word
 import Prelude hiding (fail)
@@ -29,7 +29,7 @@ instance Format UnitAsc                 where
 
 instance Packable UnitAsc where
  packer    (UnitAsc s)              () start k
-  = packer (FixCharList (length s)) s  start k
+  = packer (FixChars (length s)) s  start k
  {-# INLINE pack #-}
 
  unpacker  (UnitAsc str) start end stop fail eat

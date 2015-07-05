@@ -18,7 +18,7 @@ import Prelude hiding (fail)
 
 
 ---------------------------------------------------------------------------------------- YYYYsMMsDD
--- | Date32 in ASCII YYYYsMMsDD format.
+-- | Human readable ASCII date in YYYYsMMsDD format.
 data YYYYsMMsDD         = YYYYsMMsDD Char       deriving (Eq, Show)
 instance Format YYYYsMMsDD where
  type Value YYYYsMMsDD  = Date32
@@ -60,7 +60,7 @@ instance Packable YYYYsMMsDD where
 
 
 ---------------------------------------------------------------------------------------- DDsMMsYYYY
--- | Date32 in ASCII DDsMMsYYYY format.
+-- | Human readable ASCII date in DDsMMsYYYY format.
 data DDsMMsYYYY         = DDsMMsYYYY Char       deriving (Eq, Show)
 instance Format DDsMMsYYYY where
  type Value DDsMMsYYYY  = Date32

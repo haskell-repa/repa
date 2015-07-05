@@ -57,7 +57,8 @@ instance Packable IntAsc where
 
 
 ------------------------------------------------------------------------------------------- IntAsc
--- | Human-readable ASCII integer, with leading zeros.
+-- | Human-readable ASCII integer,
+--   using leading zeros to pad the encoding out to a fixed length.
 data IntAsc0    = IntAsc0 Int   deriving (Eq, Show)
 instance Format IntAsc0 where
  type Value IntAsc0     = Int
