@@ -43,7 +43,6 @@ Library
         Data.Repa.Convert.Format.Binary
         Data.Repa.Convert.Format.Bytes
         Data.Repa.Convert.Format.Date32
-        Data.Repa.Convert.Format.Exact
         Data.Repa.Convert.Format.Fields
         Data.Repa.Convert.Format.Maybe
         Data.Repa.Convert.Format.Numeric

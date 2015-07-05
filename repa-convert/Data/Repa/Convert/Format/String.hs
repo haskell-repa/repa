@@ -1,9 +1,10 @@
 
 module Data.Repa.Convert.Format.String
         ( -- * Haskell Strings
-          FixChars (..)
-        , VarChars (..)
+          FixChars      (..)
+        , VarChars      (..)
         , VarCharString (..)
+        , ExactChars    (..)
         , unpackCharList)
 where
 import Data.Repa.Convert.Internal.Format
@@ -230,6 +231,55 @@ unpackString start end fail eat
                  '"'    -> go_body ptr' ('"'  : acc)
                  _      -> fail
 {-# NOINLINE unpackString #-}
+
+
+---------------------------------------------------------------------------------------------------
+-- | Match an exact sequence of characters.
+data ExactChars
+        = ExactChars String
+        deriving Show
+
+
+instance Format ExactChars where
+ type Value ExactChars          = ()
+ fieldCount (ExactChars _)      = 0
+ {-# INLINE   fieldCount #-}
+
+ minSize    (ExactChars str)    = length str
+ {-# NOINLINE minSize  #-}
+
+ fixedSize  (ExactChars str)    = return (length str)
+ {-# NOINLINE fixedSize #-}
+
+ packedSize (ExactChars str) () = return (length str)
+ {-# NOINLINE packedSize #-}
+
+
+instance Packable ExactChars where
+ packer (ExactChars str) _ dst _fails k
+  = do  let !len = length str
+        mapM_ (\(o, x) -> S.pokeByteOff (Ptr dst) o (w8 $ ord x))
+                $ zip [0 .. len - 1] str
+        let !(Ptr dst') = S.plusPtr (Ptr dst) len
+        k dst'
+ {-# NOINLINE pack #-}
+
+ unpacker (ExactChars str) start end _stop fails eat
+  = do  let !len@(I# len') = length str
+        let !lenBuf        = I# (minusAddr# end start)
+        if  lenBuf < len
+         then fails
+         else do
+                let load_unpackChar o
+                      = do x :: Word8 <- S.peekByteOff (pw8 start) o
+                           return $ chr $ fromIntegral x
+                    {-# INLINE load_unpackChar #-}
+
+                xs      <- mapM load_unpackChar [0 .. len - 1]
+                if (xs == str)
+                 then eat (plusAddr# start len') ()
+                 else fails
+ {-# NOINLINE unpack #-}
 
 
 ---------------------------------------------------------------------------------------------------
