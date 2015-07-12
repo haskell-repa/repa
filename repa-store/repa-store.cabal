@@ -36,6 +36,8 @@ Library
         Data.Repa.Store.Object.Family
         Data.Repa.Store.Object
 
+        Data.Repa.Store.Prim.BiMap
+
         Data.Repa.Store.Format
         Data.Repa.Store.Flow
         Data.Repa.Store.Resolve
@@ -54,10 +56,12 @@ Library
 
   extensions:
         CPP
-        PatternGuards
-        OverloadedStrings
-        ExistentialQuantification
-        TypeOperators
-        StandaloneDeriving
-        FlexibleContexts
         GADTs
+        LambdaCase
+        BangPatterns
+        TypeOperators
+        PatternGuards
+        FlexibleContexts
+        OverloadedStrings
+        StandaloneDeriving
+        ExistentialQuantification
