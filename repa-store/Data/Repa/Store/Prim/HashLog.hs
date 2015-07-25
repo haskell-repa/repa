@@ -3,7 +3,7 @@ module Data.Repa.Store.Prim.HashLog
         ( HashLog
         , connect
         , append
-        , fold
+        , foldIO
         , ErrorHashLog (..))
 where
 import Data.ByteString.Char8            (ByteString)
@@ -15,6 +15,7 @@ import qualified Crypto.Hash.MD5        as MD5
 import qualified Data.ByteString.Char8  as BS
 import Prelude                          as P
 import Numeric
+
 
 -- | A hashed container format.
 --
@@ -71,12 +72,12 @@ append hl bs
 -- | Read all the elements from the log, 
 --      validate them,
 --      and fold them with the given function.
-fold    :: (ByteString -> b -> b) 
+foldIO  :: (ByteString -> b -> IO b) 
         -> b 
         -> HashLog 
         -> IO (Either ErrorHashLog b)
 
-fold work zero hl
+foldIO work zero hl
  = check
  where
         -- Length of an element header.
@@ -149,7 +150,7 @@ fold work zero hl
                 -- TODO: hash the element and check against the hash from the header.
 
                 -- Accumulate the element payload
-                let acc' = work bsElem acc
+                acc'    <- work bsElem acc
 
                 -- Discard the trailing newline
                 _       <- BS.hGet h 1

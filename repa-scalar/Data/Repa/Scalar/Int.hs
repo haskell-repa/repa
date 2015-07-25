@@ -57,7 +57,7 @@ readIntFromByteString
 readIntFromByteString (BS.PS fptr offset len)
  --   accursed ... may increase sharing of result,
  --   but this is ok here as we're not allocating mutable object.
- = BS.accursedUnutterablePerformIO      
+ = unsafePerformIO      
  $ F.withForeignPtr fptr
  $ \ptr -> return 
         $  loadInt (F.plusPtr ptr offset) len
