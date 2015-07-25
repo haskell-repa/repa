@@ -2,6 +2,8 @@
 module Data.Repa.Store.Prim.HashLog
         ( HashLog
         , connect
+        , lengthBytes
+        , lengthBytesHash
         , append
         , foldIO
         , ErrorHashLog (..))
@@ -34,10 +36,28 @@ connect path
         { hashLogPath   = path }
 
 
+-- | Get the length of the log, in bytes.
+lengthBytes :: HashLog -> IO (Either ErrorHashLog Integer)
+lengthBytes hl
+ = do   exists  <- System.doesFileExist (hashLogPath hl)
+        if exists
+         then do 
+                status <- Posix.getFileStatus (hashLogPath hl)
+                return $  Right $ fromIntegral $ Posix.fileSize status
+         else   return $  Left  $ ErrorHashLogFileNotFound (hashLogPath hl)
+
+
+-- | Get a hash of the length of the log, and the given salt
+lengthBytesHash :: HashLog -> ByteString -> IO (Either ErrorHashLog ByteString)
+lengthBytesHash hl bsSalt
+ = do   lenFile <- lengthBytes hl
+        return $ Right $ MD5.hash (bsSalt `BS.append` BS.pack (show lenFile))
+
+
 -- | Append a new value to the log.
 append :: HashLog -> ByteString -> IO (Maybe ErrorHashLog)
 append hl bs
- = let !lenData =BS.length bs
+ = let !lenData = BS.length bs
    in if lenData >= 2^(32 :: Integer)
        then return $ Just ErrorHashLogElemTooBig
        else do
@@ -66,7 +86,6 @@ append hl bs
          `BS.append` (BS.pack "\n")
 
         return $ Nothing
-
 
 
 -- | Read all the elements from the log, 
