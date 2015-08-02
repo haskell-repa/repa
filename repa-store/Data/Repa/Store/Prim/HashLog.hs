@@ -210,7 +210,7 @@ foldIO work zero hl
                                  lenElem bsLen bsHash
                  _ ->   return $ Left $ ErrorHashLogFileCorrupted path
 
-        loadElem !h !lenFile !posFile !acc !lenElem !bsLen !bsHash
+        loadElem !h !lenFile !posFile !acc !lenElem !_bsLen !_bsHash
          -- Check that the file is long enough to contain an element
          -- of the size that the header mentions.
          | remain <- lenFile - posFile
@@ -222,7 +222,7 @@ foldIO work zero hl
                 bsElem  <- BS.hGet h lenElem
 
                 -- Rehash the element to get the expected header.
-                let bsHeaderExpected 
+                let _bsHeaderExpected 
                         = headerForElem (fromIntegral posFile) bsElem
 
                 -- The expected header better match the real one.
