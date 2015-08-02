@@ -8,31 +8,60 @@ module Data.Repa.Store.Prim.HashLog
         , foldIO
         , ErrorHashLog (..))
 where
+import Data.Int
 import Data.ByteString.Char8            (ByteString)
 import Data.ByteString.Base16           as B16
-import qualified System.IO              as System
+import qualified System.Posix.Files     as System
+import qualified System.Posix.Types     as System
+import qualified System.FileLock        as System
 import qualified System.Directory       as System
-import qualified System.Posix.Files     as Posix
+import qualified System.IO              as System
 import qualified Crypto.Hash.MD5        as MD5
 import qualified Data.ByteString.Char8  as BS
 import Prelude                          as P
 import Numeric
 
 
--- | A hashed container format.
+-- | A simple hashed container format.
 --
---   Contains a sequence of values, along with the size of each value and
---   and a MD5 hash, stored as a human-readable file.
+--   * Contains a sequence of values, along with a header for each value
+--     that gives its size and the first few bytes of its MD5 hash.
+--
+--   * The hash of each element is computed when it is written,
+--     and re-validated when read, to ensure the file has not been corrupted.
+--
+--   * The size and hashes are encoded as ASCII text, so if
+--     the elements are also human readable then the whole file will be.
+--
+--   * The maximum size of each element is 4GB (2^32 bytes).
+--
+--   File format is like:
+--
+-- @
+-- LOG100000165a6d18123
+-- (element 1 text)
+-- LOG10000015444d13623
+-- (element 2 text)
+-- ...
+-- @
+--
+-- Each header line consists of the characters `LOG1`, followed by a hex encoded
+-- 8 byte element length, and the hex encoded first 8 bytes of the MD5 hash.
 --
 data HashLog
         = HashLog
         { hashLogPath   :: FilePath }
 
 
--- | Connect to an external `HashLog`.
-connect :: FilePath -> IO (Maybe HashLog)
+-- | Connect to a `HashLog`.
+--
+--   * No file handles or other scarce resources are held between accesses
+--     to the log, so the result does not need to be release when the file
+--     has finished being used.
+--
+connect :: FilePath -> IO (Either ErrorHashLog HashLog)
 connect path 
-        = return $ Just HashLog
+        = return $ Right HashLog
         { hashLogPath   = path }
 
 
@@ -42,47 +71,65 @@ lengthBytes hl
  = do   exists  <- System.doesFileExist (hashLogPath hl)
         if exists
          then do 
-                status <- Posix.getFileStatus (hashLogPath hl)
-                return $  Right $ fromIntegral $ Posix.fileSize status
+                status <- System.getFileStatus (hashLogPath hl)
+                return $  Right $ fromIntegral $ System.fileSize status
          else   return $  Left  $ ErrorHashLogFileNotFound (hashLogPath hl)
 
 
--- | Get a hash of the length of the log, and the given salt
+-- | Get a hash of the length of the log, including the given salt string.
 lengthBytesHash :: HashLog -> ByteString -> IO (Either ErrorHashLog ByteString)
 lengthBytesHash hl bsSalt
  = do   lenFile <- lengthBytes hl
         return $ Right $ MD5.hash (bsSalt `BS.append` BS.pack (show lenFile))
 
 
--- | Append a new value to the log.
-append :: HashLog -> ByteString -> IO (Maybe ErrorHashLog)
-append hl bs
- = let !lenData = BS.length bs
-   in if lenData >= 2^(32 :: Integer)
-       then return $ Just ErrorHashLogElemTooBig
-       else do
-        -- Get the current file length.
-        exists  <- System.doesFileExist (hashLogPath hl)
-        lenFile <- if exists
-                        then do status <- Posix.getFileStatus (hashLogPath hl)
-                                return $  Posix.fileSize status
-                        else return 0
+-- | Given the file position and element string, 
+--   produce the header for that element, including the trailing newline.
+headerForElem   :: Int64 -> ByteString -> ByteString
+headerForElem posFile bs
+ = let  
+        -- Hex encoded length
+        lenData         = BS.length bs
+        strLenData      = showHex lenData ""
+        bsLenDataPad    = BS.replicate (8 - P.length strLenData) '0' 
+                         `BS.append` BS.pack strLenData
 
-        -- Length of the data.
-        let strLenData   = showHex lenData ""
-        let bsLenDataPad = BS.replicate (8 - P.length strLenData) '0' 
-                          `BS.append` BS.pack strLenData
+        -- Hex encoded hash, we only take the first 8 bytes as we're
+        -- really just using it as a checksum.
+        bsHash          = MD5.hash (bs `BS.append` BS.pack (show posFile))
+        bsHash8         = BS.take 8 $ B16.encode bsHash
 
-        -- Hash the data.
-        let bsHash       = MD5.hash (bs `BS.append` BS.pack (show lenFile))
-        let bsHash8      = BS.take 8 $ B16.encode bsHash
-
-        BS.appendFile (hashLogPath hl)
-         $           (BS.pack "LOG1")
+   in   BS.pack "LOG1" 
          `BS.append` bsLenDataPad
          `BS.append` bsHash8
          `BS.append` (BS.pack "\n")
-         `BS.append` bs
+
+
+-- | Append a new value to the log.
+append :: HashLog -> ByteString -> IO (Maybe ErrorHashLog)
+append hl bsElem
+ | lenData <- BS.length bsElem
+ , lenData >= 2^(32 :: Integer)
+ = return $ Just $ ErrorHashLogElemTooBig
+
+ | otherwise
+ = -- Lock the log file, creating it if it's not present.
+   -- We can't have other processes appending to the file between us
+   -- taking it's length and writing the element hash.
+   System.withFileLock (hashLogPath hl) System.Exclusive
+    $ \_lock -> do
+        let path        = hashLogPath hl
+
+        -- Get the current length of the file, we use this to salt the
+        -- hash of the data so that we can detect if the order of elements
+        -- has been changed.
+        status  <- System.getFileStatus path
+        let System.COff lenFile 
+                        = System.fileSize status
+
+        BS.appendFile path
+         $  headerForElem lenFile bsElem
+         `BS.append` bsElem
          `BS.append` (BS.pack "\n")
 
         return $ Nothing
@@ -114,18 +161,25 @@ foldIO work zero hl
          = do   exists  <- System.doesFileExist path
                 if not exists
                  then return $ Left $ ErrorHashLogFileNotFound path
-                 else do
-                        status  <- Posix.getFileStatus path
-                        let len =  fromIntegral $ Posix.fileSize status
-                        h       <- System.openFile path System.ReadMode
-                        consume h len zero
+                 else begin
+
+        -- Lock the file before we start reading from it.
+        --   We can't have other processes writing to it while we read
+        --   off the current elements.
+        begin
+         = System.withFileLock path System.Shared
+         $ \_lock -> do
+                status  <- System.getFileStatus path
+                let len =  fromIntegral $ System.fileSize status
+                h       <- System.openFile path System.ReadMode
+                consume h len zero
 
         -- Try and consume a whole element.
         consume !h !lenFile !acc
          = do   posFile     <- System.hTell h
-                loadHead h lenFile (fromIntegral posFile) acc
+                consumeNext h lenFile (fromIntegral posFile) acc
 
-        loadHead !h !lenFile !posFile !acc
+        consumeNext !h !lenFile !posFile !acc
          -- If we're at the end of the file then we're done reading it.
          | remain <- lenFile - posFile
          , remain == 0  
@@ -145,17 +199,18 @@ foldIO work zero hl
 
                 let (bsLOG1', bs2)   = BS.splitAt 4 bsHeader
                 let (bsLen,   bs3)   = BS.splitAt 8 bs2
-                let (_bsHash, bsNL') = BS.splitAt 8 bs3
+                let (bsHash,  bsNL') = BS.splitAt 8 bs3
 
                 -- Try to read the element length.
                 case readHex (BS.unpack bsLen) of
                  [(lenElem, [])]
                   | bsLOG1' == bsLOG1
                   , bsNL'   == bsNL
-                   ->   loadElem h lenFile (posFile + lenHeader) acc lenElem
+                   ->   loadElem h lenFile (posFile + lenHeader) acc
+                                 lenElem bsLen bsHash
                  _ ->   return $ Left $ ErrorHashLogFileCorrupted path
 
-        loadElem !h !lenFile !posFile !acc !lenElem
+        loadElem !h !lenFile !posFile !acc !lenElem !bsLen !bsHash
          -- Check that the file is long enough to contain an element
          -- of the size that the header mentions.
          | remain <- lenFile - posFile
@@ -166,6 +221,11 @@ foldIO work zero hl
          = do   -- Read the element payload.
                 bsElem  <- BS.hGet h lenElem
 
+                -- Rehash the element to get the expected header.
+                let bsHeaderExpected 
+                        = headerForElem (fromIntegral posFile) bsElem
+
+                -- The expected header better match the real one.
                 -- TODO: hash the element and check against the hash from the header.
 
                 -- Accumulate the element payload
@@ -175,7 +235,7 @@ foldIO work zero hl
                 _       <- BS.hGet h 1
 
                 -- Eat some more elements.
-                loadHead h lenFile (posFile + lenElem + 1) acc' 
+                consumeNext h lenFile (posFile + lenElem + 1) acc' 
 
 
 -- | Hash log errors.
@@ -193,7 +253,7 @@ data ErrorHashLog
         | ErrorHashLogFileCorrupted FilePath
 
         -- | Provided element is too big to store in a HashLog.
-        --   The hard limit is 4GB per element.
+        --   The hard limit is 4GB (2^32 bytes) per element.
         | ErrorHashLogElemTooBig
         deriving (Eq, Show)
 
