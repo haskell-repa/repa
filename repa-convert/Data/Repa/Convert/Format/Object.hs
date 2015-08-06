@@ -36,6 +36,7 @@ data ObjectFields fields where
          :: {-# UNPACK #-} !ObjectMeta  -- Meta data about this format.
          -> !Text                       -- Name of head field
          -> !f                          -- Format of head field.
+         -> Maybe (Value f -> Bool)     -- Predicate to determine whether to keep feel value.
          -> ObjectFields fs             -- Spec for rest of fields.
          -> ObjectFields (f :*: fs)             
 
@@ -89,13 +90,14 @@ instance ObjectFormat () where
 
 
 instance ( Format f1
-         , ObjectFormat fs)
-      => ObjectFormat ((String, f1) :*: fs) where
+         , ObjectFormat fs
+         , vf1 ~ Value f1)
+      => ObjectFormat  ((String, f1, Maybe (vf1 -> Bool)) :*: fs) where
 
- type ObjectFormat' ((String, f1) :*: fs) 
+ type    ObjectFormat' ((String, f1, Maybe (vf1 -> Bool)) :*: fs) 
         = f1 :*: ObjectFormat' fs
 
- mkObjectFields ((label, f1) :*: fs) 
+ mkObjectFields ((label, f1, mKeep) :*: fs) 
   = case mkObjectFields fs of
         ObjectFieldsNil
          -> ObjectFieldsCons
@@ -107,9 +109,9 @@ instance ( Format f1
                         , omMinSize     = 5 + length label + minSize f1
 
                         , omFixedSize   = fmap (+ (5 + length label)) $ fixedSize f1 })
-                (T.pack label) f1 ObjectFieldsNil
+                (T.pack label) f1 mKeep ObjectFieldsNil
 
-        cc@(ObjectFieldsCons jm _ _ _)
+        cc@(ObjectFieldsCons jm _ _ _ _)
          -> ObjectFieldsCons
                 (ObjectMeta 
                         { omFieldCount  = 1 + omFieldCount jm
@@ -123,7 +125,7 @@ instance ( Format f1
                              = do s1    <- fixedSize f1
                                   ss    <- omFixedSize jm
                                   return $ s1 + 4 + ss })
-                (T.pack label) f1 cc
+                (T.pack label) f1 mKeep cc
  {-# INLINE mkObjectFields #-}
 
 
@@ -183,19 +185,19 @@ instance ( Format f1, Format (ObjectFields fs)
  type Value (ObjectFields (f1 :*: fs))
         = Value f1 :*: Value fs
 
- fieldCount (ObjectFieldsCons jm _l1 _f1 _jfs)
+ fieldCount (ObjectFieldsCons jm _l1 _f1 _keep _jfs)
   = omFieldCount jm
  {-# INLINE fieldCount #-}
 
- minSize    (ObjectFieldsCons jm _l1 _f1 _jfs)
+ minSize    (ObjectFieldsCons jm _l1 _f1 _keep _jfs)
   = omMinSize jm
  {-# INLINE minSize #-}
 
- fixedSize  (ObjectFieldsCons jm _l1 _f1 _jfs)
+ fixedSize  (ObjectFieldsCons jm _l1 _f1 _keep _jfs)
   = omFixedSize jm
  {-# INLINE fixedSize #-}
 
- packedSize (ObjectFieldsCons _jm _l1 f1 jfs) (x1 :*: xs)
+ packedSize (ObjectFieldsCons _jm _l1 f1 _keep jfs) (x1 :*: xs)
   = do  s1      <- packedSize f1  x1
         ss      <- packedSize jfs xs
         let sSep = zeroOrOne (fieldCount jfs)
@@ -225,7 +227,7 @@ instance ( Packable f1
          , Value    (ObjectFields ()) ~ Value ())
         => Packable (ObjectFields (f1 :*: ())) where
 
- pack   (ObjectFieldsCons _jm l1 f1 _jfs) (x1 :*: _)
+ pack   (ObjectFieldsCons _jm l1 f1 _keep _jfs) (x1 :*: _)
         =  pack VarCharString (T.unpack l1)
         <> pack Word8be (w8 $ ord ':')
         <> pack f1 x1
@@ -235,18 +237,30 @@ instance ( Packable f1
         = fromPacker $ pack f v
  {-# INLINE packer #-}
 
+
 instance ( Packable f1
          , Packable (ObjectFields (f2 :*: fs))
          , Value    (ObjectFields (f2 :*: fs)) ~ Value (f2 :*: fs)
          , Value    (ObjectFields fs)          ~ Value fs)
         => Packable (ObjectFields (f1 :*: f2 :*: fs)) where
 
- pack (ObjectFieldsCons _jm l1 f1 jfs) (x1 :*: xs)
+ -- Pack a field into the object, 
+ -- only keeping it if the keep flag is true.
+ pack (ObjectFieldsCons _jm l1 f1 mKeep jfs) (x1 :*: xs)
+  = case mKeep of
+        Just keep 
+         | keep x1      -> here
+        _               -> rest
+  where
+   here
         =   pack VarCharString (T.unpack l1)
         <>  pack Word8be (w8 $ ord ':')
         <>  pack f1 x1
         <>  pack Word8be (w8 $ ord ',')
-        <>  pack jfs xs
+        <>  rest
+
+   rest
+        =   pack jfs xs
  {-# INLINE pack #-}
 
  packer f v
