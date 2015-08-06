@@ -247,20 +247,19 @@ instance ( Packable f1
  -- Pack a field into the object, 
  -- only keeping it if the keep flag is true.
  pack (ObjectFieldsCons _jm l1 f1 mKeep jfs) (x1 :*: xs)
-  = case mKeep of
-        Just keep 
-         | keep x1      -> here
-        _               -> rest
+  = if (case mKeep of
+         Just keep -> keep x1 
+         _         -> True)
+     then here
+     else rest
   where
-   here
-        =   pack VarCharString (T.unpack l1)
+   here =   pack VarCharString (T.unpack l1)
         <>  pack Word8be (w8 $ ord ':')
         <>  pack f1 x1
         <>  pack Word8be (w8 $ ord ',')
         <>  rest
 
-   rest
-        =   pack jfs xs
+   rest =   pack jfs xs
  {-# INLINE pack #-}
 
  packer f v
