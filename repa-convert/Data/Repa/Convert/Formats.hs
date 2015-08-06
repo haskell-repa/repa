@@ -58,9 +58,17 @@ module Data.Repa.Convert.Formats
         , Float64be     (..)
 
           -- * Compounds
-        , App           (..)
-        , Sep, SepFormat (..)
-        , Tup           (..)
+          -- ** Appended fields
+        , App                   (..)
+
+          -- ** Tuples
+        , Tup                   (..)
+
+          -- ** Separated fields
+        , Sep,  SepFormat       (..)
+
+          -- ** Object with labeled fields
+        , Object, ObjectFormat (..), mkObject
 
           -- * Products
         , (:*:)(..))
@@ -73,6 +81,7 @@ import Data.Repa.Convert.Format.Date32
 import Data.Repa.Convert.Format.Fields  ()
 import Data.Repa.Convert.Format.Maybe
 import Data.Repa.Convert.Format.Numeric
+import Data.Repa.Convert.Format.Object
 import Data.Repa.Convert.Format.Sep
 import Data.Repa.Convert.Format.String
 import Data.Repa.Convert.Format.Text

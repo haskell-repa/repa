@@ -46,6 +46,7 @@ Library
         Data.Repa.Convert.Format.Fields
         Data.Repa.Convert.Format.Maybe
         Data.Repa.Convert.Format.Numeric
+        Data.Repa.Convert.Format.Object
         Data.Repa.Convert.Format.Sep
         Data.Repa.Convert.Format.String
         Data.Repa.Convert.Format.Text
