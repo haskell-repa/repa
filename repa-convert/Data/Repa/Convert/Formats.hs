@@ -68,7 +68,7 @@ module Data.Repa.Convert.Formats
         , Sep,  SepFormat       (..)
 
           -- ** Object with labeled fields
-        , Object, ObjectFormat (..), mkObject
+        , Object, ObjectFormat, Field (..), mkObject
 
           -- * Products
         , (:*:)(..))

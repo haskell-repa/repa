@@ -1,8 +1,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Convert.Format.Object
         ( Object        (..)
-        , ObjectFormat  (..)
-        , ObjectFields  (..)
+        , ObjectFormat
+        , ObjectFields
+        , Field         (..)
         , mkObject)
 where
 import Data.Repa.Convert.Internal.Format
@@ -57,14 +58,19 @@ data ObjectMeta
 ---------------------------------------------------------------------------------------------------
 -- | Make an object format with the given labeled fields. For example:
 --
--- @> let fmt = mkObject (("index", IntAsc) :*: ("message" :*: VarCharString \'-\') :*: ()))@
+-- @> let fmt =   mkObject 
+--          $   Field "index"   IntAsc                      Nothing
+--          :*: Field "message" (VarCharString \'-\')         Nothing 
+--          :*: Field "value"   (MaybeChars "NULL" DoubleAsc) (Just isJust)
+--          :*: ()
+-- @
 --
 -- Packing this produces:
 --
 -- @
--- > let Just str = packToString fmt (27 :*: "foo" :*: ())
+-- > let Just str = packToString fmt (27 :*: "foo" :*: Nothing :*: ())
 -- > putStrLn str
--- > {"value":27,"date":"foo"}
+-- > {"index":27,"message":"foo"}
 -- @ 
 --
 -- Note that the encodings that this format can generate are a superset of
@@ -89,15 +95,22 @@ instance ObjectFormat () where
  {-# INLINE mkObjectFields #-}
 
 
-instance ( Format f1
-         , ObjectFormat fs
-         , vf1 ~ Value f1)
-      => ObjectFormat  ((String, f1, Maybe (vf1 -> Bool)) :*: fs) where
+-- | A single field in an object.
+data Field f
+        = Field 
+        { fieldName     :: String
+        , fieldFormat   :: f
+        , fieldInclude  :: Maybe (Value f -> Bool) }
 
- type    ObjectFormat' ((String, f1, Maybe (vf1 -> Bool)) :*: fs) 
+
+instance ( Format f1
+         , ObjectFormat fs)
+      => ObjectFormat  (Field f1 :*: fs) where
+
+ type    ObjectFormat' (Field f1 :*: fs) 
         = f1 :*: ObjectFormat' fs
 
- mkObjectFields ((label, f1, mKeep) :*: fs) 
+ mkObjectFields (Field label f1 mKeep :*: fs) 
   = case mkObjectFields fs of
         ObjectFieldsNil
          -> ObjectFieldsCons
@@ -197,11 +210,12 @@ instance ( Format f1, Format (ObjectFields fs)
   = omFixedSize jm
  {-# INLINE fixedSize #-}
 
- packedSize (ObjectFieldsCons _jm _l1 f1 _keep jfs) (x1 :*: xs)
-  = do  s1      <- packedSize f1  x1
+ packedSize (ObjectFieldsCons _jm l1 f1 _keep jfs) (x1 :*: xs)
+  = do  sl      <- packedSize VarCharString (T.unpack l1)
+        s1      <- packedSize f1  x1
         ss      <- packedSize jfs xs
         let sSep = zeroOrOne (fieldCount jfs)
-        return  $ s1 + sSep * 4 + ss
+        return  $ sl + 1 + s1 + sSep + ss
  {-# INLINE packedSize #-}
 
 

@@ -253,7 +253,8 @@ unpacksFormatLn format arrA8
 
                              | otherwise
                              = do !byte  <- F.peek ptr
-                                  if byte == (0x0a :: Word8)
+                                  if  byte == (0x0a :: Word8) 
+                                   || byte == (0x0d :: Word8)
                                    then return ptr
                                    else findLineEndIx (F.plusPtr ptr 1)
 
