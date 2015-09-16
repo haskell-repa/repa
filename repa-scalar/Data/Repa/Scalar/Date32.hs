@@ -11,6 +11,7 @@ module Data.Repa.Scalar.Date32
 
         -- * Operators
         , next
+        , diffDays
 
         -- * Loading
         , loadYYYYsMMsDD
@@ -24,6 +25,7 @@ import Foreign.Storable
 import Foreign.Ptr
 import Control.Monad
 import Data.Repa.Scalar.Int
+import qualified Data.Time.Calendar     as Time
 import qualified Foreign.Ptr            as F
 import qualified Foreign.Storable       as F
 import Prelude                          as P
@@ -155,6 +157,16 @@ next' !date
  = case pack (yy', mm', dd') of
         Date32 (W32# w)  -> w
 {-# NOINLINE next' #-}
+
+
+-- | Take the number of days between two `Date32`s
+diffDays :: Date32 -> Date32 -> Integer
+diffDays date1 date2
+ | (y1, m1, d1)  <- unpack date1
+ , (y2, m2, d2)  <- unpack date2
+ = Time.diffDays
+        (Time.fromGregorian (fromIntegral y1) m1 d1)
+        (Time.fromGregorian (fromIntegral y2) m2 d2)
 
 
 ---------------------------------------------------------------------------------------------------

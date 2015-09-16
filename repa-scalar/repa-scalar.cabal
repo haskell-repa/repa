@@ -23,7 +23,8 @@ Library
         primitive         == 0.6.*,
         vector            == 0.10.*,
         bytestring        == 0.10.*,
-        double-conversion == 2.0.*
+        double-conversion == 2.0.*,
+        time              == 1.5.*
 
   exposed-modules:
         Data.Repa.Scalar.Singleton.Nat
