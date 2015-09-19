@@ -19,6 +19,7 @@ import qualified Foreign.ForeignPtr                     as F
 import qualified Foreign.Marshal.Alloc                  as F
 import qualified Foreign.Marshal.Utils                  as F
 import qualified System.IO                              as S
+import qualified System.FileLock                        as S
 import Prelude hiding (readFile, writeFile, appendFile)
 
 
@@ -26,11 +27,13 @@ import Prelude hiding (readFile, writeFile, appendFile)
 -- | Read an entire file as an array of bytes.
 readFile :: FilePath -> IO (Array Word8)
 readFile path
- = do   h       <- S.openFile path S.ReadMode
+ = S.withFileLock path S.Shared
+ $ \_lock -> do
+        h       <- S.openFile path S.ReadMode
         S.hSeek h S.SeekFromEnd  0
         len     <- S.hTell h
         S.hSeek h S.AbsoluteSeek 0
-        arr     <- hGetArray h (fromIntegral len)
+        !arr    <- hGetArray h (fromIntegral len)
         S.hClose h
         return arr
 {-# NOINLINE readFile #-}
@@ -39,7 +42,9 @@ readFile path
 -- | Write an array of bytes to a file.
 writeFile :: FilePath -> Array Word8 -> IO ()
 writeFile path arr
- = do   h       <- S.openFile path S.WriteMode
+ = S.withFileLock path S.Exclusive
+ $ \_lock -> do
+        h       <- S.openFile path S.WriteMode
         hPutArray h arr
         S.hClose h
 {-# NOINLINE writeFile #-}
@@ -48,7 +53,9 @@ writeFile path arr
 -- | Append an array of bytes to a file.
 appendFile :: FilePath -> Array Word8 -> IO ()
 appendFile path arr
- = do   h       <- S.openFile path S.AppendMode
+ = S.withFileLock path S.Exclusive
+ $ \_lock -> do
+        h       <- S.openFile path S.AppendMode
         hPutArray h arr
         S.hClose h
 {-# NOINLINE appendFile #-}

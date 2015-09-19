@@ -12,6 +12,7 @@ import qualified Data.Repa.Array.Material.Nested        as A
 import qualified Data.Repa.Array.Meta                   as A
 import qualified Data.Repa.Array.Generic                as A
 import qualified System.IO                              as S
+import qualified System.FileLock                        as S
 
 
 ---------------------------------------------------------------------------------------------------
@@ -22,8 +23,10 @@ getArrayFromXSV
         -> FilePath             -- ^ Source file handle.
         -> IO (Array (Array (Array Char)))
 
-getArrayFromXSV !cSep !filePath
- = do   h       <- S.openFile filePath S.ReadMode
+getArrayFromXSV !cSep !path
+ = S.withFileLock path S.Shared
+ $ \_lock -> do
+        h       <- S.openFile path S.ReadMode
         arr     <- hGetArrayFromXSV cSep h
         S.hClose h
         return arr
@@ -77,8 +80,10 @@ putArrayAsXSV
         -> Array (Array (Array Char))   -- ^ Array of row, field, character.
         -> IO ()
 
-putArrayAsXSV !cSep !filePath !arrChar
- = do   h       <- S.openFile filePath S.WriteMode
+putArrayAsXSV !cSep !path !arrChar
+ = S.withFileLock path S.Exclusive
+ $ \_lock -> do
+        h       <- S.openFile path S.WriteMode
         hPutArrayAsXSV cSep h arrChar
         S.hClose h
 
@@ -101,8 +106,8 @@ hPutArrayAsXSV !cSep !hOut !arrChar
         let !arrOut     
                 = A.mapS A.A (fromIntegral . ord) 
                 $ A.concat A.U 
-                $ A.mapS A.B (\arrFields
-                                -> A.concat A.U $ A.fromList A.B
+                $ A.mapS A.B (\  arrFields
+                              -> A.concat A.U $ A.fromList A.B
                                         [ A.intercalate A.U arrC arrFields, arrNL])
                 $ arrChar
 

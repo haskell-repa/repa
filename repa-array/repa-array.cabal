@@ -34,7 +34,9 @@ Library
         repa-eval          == 4.0.0.*,
         repa-stream        == 4.1.0.*,
         repa-scalar        == 4.2.0.*,
-        repa-convert       == 4.2.0.*
+        repa-convert       == 4.2.0.*,
+        filelock           >= 0.1.0 && < 0.2
+
 
 
   exposed-modules:
