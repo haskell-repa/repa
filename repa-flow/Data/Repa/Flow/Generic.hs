@@ -52,6 +52,10 @@ module Data.Repa.Flow.Generic
         , smap_i,       smap_o
         , szipWith_ii,  szipWith_io,    szipWith_oi
 
+          -- ** Processing
+        , process_i
+        , indexed_i
+
           -- ** Connecting
         , dup_oo,       dup_io,         dup_oi
         , connect_i
@@ -109,6 +113,7 @@ import Data.Repa.Flow.Generic.Base
 import Data.Repa.Flow.Generic.Connect
 import Data.Repa.Flow.Generic.List
 import Data.Repa.Flow.Generic.Map
+import Data.Repa.Flow.Generic.Process
 import Data.Repa.Flow.Generic.Operator
 import Data.Repa.Flow.Generic.Eval
 import Data.Repa.Flow.Generic.Array.Distribute
