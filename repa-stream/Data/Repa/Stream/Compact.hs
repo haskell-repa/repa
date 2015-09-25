@@ -15,7 +15,7 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --
 compactS
         :: Monad m
-        => (s -> a -> (Maybe b, s))     -- ^ Worker function.
+        => (s -> a -> (s, Maybe b))     -- ^ Worker function.
         -> s                            -- ^ Starting state
         -> Stream m a                   -- ^ Input elements.
         -> Stream m b
@@ -28,9 +28,8 @@ compactS f s0 (Stream istep si0 sz)
          -> case m of
                 Yield x si'         
                  -> case f s x of
-                        (Nothing, s')   -> return $ Skip    (si', s')
-                        (Just y,  s')   -> return $ Yield y (si', s')
-
+                        (s', Nothing)   -> return $ Skip    (si', s')
+                        (s', Just y)    -> return $ Yield y (si', s')
                 Skip si'                -> return $ Skip    (si', s)
                 Done                    -> return $ Done
         {-# INLINE_INNER ostep #-}
@@ -41,7 +40,7 @@ compactS f s0 (Stream istep si0 sz)
 --   initial state, and add the final state to the end of the output.
 compactInS
         :: Monad m
-        => (a -> a -> (Maybe a, a))     -- ^ Worker function.
+        => (a -> a -> (a, Maybe a))     -- ^ Worker function.
         -> Stream m a                   -- ^ Input elements.
         -> Stream m a
 
@@ -60,9 +59,8 @@ compactInS f (Stream istep si0 sz)
          -> case m of
                 Yield x si'     
                  -> case f s x of
-                        (Nothing, s')   -> return $ Skip    (si', Just s')
-                        (Just y,  s')   -> return $ Yield y (si', Just s')
-
+                        (s', Nothing)   -> return $ Skip    (si', Just s')
+                        (s', Just y)    -> return $ Yield y (si', Just s')
                 Skip si'                -> return $ Skip    (si', ms)
                 Done                    -> return $ Yield s (si,  Nothing)
         {-# INLINE_INNER ostep #-}

@@ -146,7 +146,7 @@ unstreamToMVector2_max nMax s0 step
 --   At each point we can chose to emit an element (or not)
 --
 compact :: (GV.Vector v a, GV.Vector v b)
-        => (s -> a -> (Maybe b, s))     -- ^ Worker function
+        => (s -> a -> (s, Maybe b))     -- ^ Worker function
         -> s                            -- ^ Starting state
         -> v a                          -- ^ Input vector
         -> v b
@@ -160,7 +160,7 @@ compact f s0 vec
 --   initial state, and add the final state to the end of the output.
 compactIn
         :: GV.Vector v a
-        => (a -> a -> (Maybe a, a))     -- ^ Worker function.
+        => (a -> a -> (a, Maybe a))     -- ^ Worker function.
         -> v a                          -- ^ Input elements.
         -> v a
 

@@ -620,7 +620,7 @@ mergeMaybe = G.mergeMaybe A
 --   At each point we can chose to emit an element (or not)
 --
 compact :: (Elem a, Build b bt)
-        => (s -> a -> (Maybe b, s))
+        => (s -> a -> (s, Maybe b))
         -> s
         -> Array a
         -> Array b
@@ -632,7 +632,7 @@ compact = G.compact A
 --   initial state, and add the final state to the end of the output.
 compactIn
         :: Build a at
-        => (a -> a -> (Maybe a, a))
+        => (a -> a -> (a, Maybe a))
         -> Array a
         -> Array a
 compactIn = G.compactIn A

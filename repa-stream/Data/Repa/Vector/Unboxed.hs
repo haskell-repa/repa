@@ -259,7 +259,7 @@ diceSep = G.diceSep
 --
 compact
         :: (Unbox a, Unbox b)
-        => (s -> a -> (Maybe b, s))     -- ^ Worker function
+        => (s -> a -> (s, Maybe b))     -- ^ Worker function
         -> s                            -- ^ Starting state
         -> Vector a                     -- ^ Input vector
         -> Vector b
@@ -272,7 +272,7 @@ compact = G.compact
 --   initial state, and add the final state to the end of the output.
 compactIn
         :: Unbox a
-        => (a -> a -> (Maybe a, a))     -- ^ Worker function.
+        => (a -> a -> (a, Maybe a))     -- ^ Worker function.
         -> Vector a                     -- ^ Input elements.
         -> Vector a
 

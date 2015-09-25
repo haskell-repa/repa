@@ -53,7 +53,8 @@ module Data.Repa.Flow.Generic
         , szipWith_ii,  szipWith_io,    szipWith_oi
 
           -- ** Processing
-        , process_i
+        , compact_i
+        , scan_i
         , indexed_i
 
           -- ** Connecting

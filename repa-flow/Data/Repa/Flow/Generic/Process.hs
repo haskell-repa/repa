@@ -1,7 +1,10 @@
 
 module Data.Repa.Flow.Generic.Process
         ( -- * Processing
-          process_i
+          compact_i
+
+          -- * Scanning
+        , scan_i
 
           -- * Indexed streams
         , indexed_i)
@@ -9,19 +12,19 @@ where
 import Data.Repa.Flow.Generic.Base
 
 
--- | Apply a co-recursive stream process to a bundle of sources.
+-- | Combination of 'fold' and 'filter'.
 --
---   The stepper function takes a state, and a value from the source,
---   and produces a new state and maybe a new value.
--- 
-process_i
+--   We walk over the stream start-to-end, maintaining an accumulator.
+--   At each point we can chose to emit an element, or not.
+--
+compact_i
         :: (Monad m, States i m)
         => (s -> a -> (s, Maybe b))
         -> s
         -> Sources i m a 
         -> m (Sources i m b)
 
-process_i f s0 (Sources n pullA)
+compact_i f s0 (Sources n pullA)
  = do
         refs    <- newRefs n s0
 
@@ -45,7 +48,25 @@ process_i f s0 (Sources n pullA)
             {-# INLINE pull_process #-}
 
         return $ Sources n pull_process
-{-# INLINE process_i #-}
+{-# INLINE compact_i #-}
+
+
+-- | Start-to-end scan over each stream in a bundle.
+scan_i 
+        :: (Monad m, States i m)
+        => (s -> a -> s)
+        -> s
+        -> Sources i m a
+        -> m (Sources i m s)
+
+scan_i f s0 ss
+ = compact_i work_scan s0 ss
+ where
+        work_scan s x 
+         = let s' = f s x
+           in  (s', Just s')
+        {-# INLINE work_scan #-}
+{-# INLINE scan_i #-}
 
 
 -- | For each stream in a bundle of sources, 
@@ -57,6 +78,10 @@ indexed_i
         -> m (Sources i m (Int, a))
 
 indexed_i ss
- = process_i (\s x -> (s + 1, Just (s, x))) 0 ss
+ = compact_i work_indexed 0 ss
+ where
+        work_indexed s x
+         = (s + 1, Just (s, x))
+        {-# INLINE work_indexed #-}
 {-# INLINE indexed_i #-}
 

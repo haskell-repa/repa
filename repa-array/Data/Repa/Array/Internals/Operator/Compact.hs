@@ -16,11 +16,12 @@ import Data.Repa.Stream                         as S
 -- | Combination of `fold` and `filter`. 
 --   
 --   We walk over the stream front to back, maintaining an accumulator.
---   At each point we can chose to emit an element (or not)
+--   At each point we can chose to emit an element (or not).
+--
 compact :: ( BulkI lSrc a, TargetI lDst b
            , Unpack (Buffer lDst b) t0)
         => Name lDst
-        -> (s -> a -> (Maybe b, s))
+        -> (s -> a -> (s, Maybe b))
         -> s
         -> Array lSrc a
         -> Array lDst b
@@ -34,11 +35,12 @@ compact nDst f s0 arr
 
 -- | Like `compact` but use the first value of the stream as the 
 --   initial state, and add the final state to the end of the output.
+--
 compactIn
         :: ( BulkI lSrc a, TargetI lDst a
            , Unpack (Buffer lDst a) t0)
         => Name lDst
-        -> (a -> a -> (Maybe a, a))
+        -> (a -> a -> (a, Maybe a))
         -> Array lSrc a
         -> Array lDst a
 
