@@ -23,6 +23,7 @@ module Data.Repa.Flow.Auto
         -- * Evaluation
         , drainS
         , drainP
+        , consumeS
 
         -- * Flow Operators
         -- ** Replicating
@@ -124,6 +125,14 @@ drainP   :: Sources a -> Sinks a -> IO ()
 drainP = G.drainP
 {-# INLINE drainP #-}
 
+
+-- | Pull all available values from the sources and pass them to the
+--   given action.
+--
+consumeS :: A.Bulk A a
+         => Sources a -> (Int -> a -> IO ()) -> IO ()
+consumeS = C.consumeS
+{-# INLINE consumeS #-}
 
 
 -- Finalizers -----------------------------------------------------------------

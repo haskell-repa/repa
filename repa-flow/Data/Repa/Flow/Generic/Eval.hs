@@ -1,7 +1,8 @@
 
 module Data.Repa.Flow.Generic.Eval
         ( drainS
-        , drainP)
+        , drainP
+        , consumeS)
 where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Eval.Gang                      as Eval
@@ -70,3 +71,30 @@ drainP (Sources nSources ipull) (Sinks nSinks opush oeject)
                 {-# INLINE eject_drain #-}
         {-# INLINE drainMe #-}
 {-# INLINE_FLOW drainP #-}
+
+
+-- | Pull all available values from the sources and pass them to the
+--   given action.
+consumeS :: (Next i, Monad m)
+         => (i -> a -> m ())
+         -> Sources i m a 
+         -> m ()
+consumeS eat (Sources nSources ipull)
+ = loop_consume first
+ where  
+        loop_consume !ix
+         = ipull ix eat_consume eject_consume
+         where  
+                eat_consume v
+                 = do eat ix v
+                      loop_consume ix
+                {-# INLINE eat_consume #-}
+
+                eject_consume 
+                 = do case next ix nSources of
+                        Nothing  -> return ()
+                        Just ix' -> loop_consume ix'
+                {-# INLINE eject_consume #-}
+        {-# INLINE loop_consume #-}
+{-# INLINE_FLOW consumeS #-}
+

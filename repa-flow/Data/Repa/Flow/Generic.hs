@@ -18,6 +18,7 @@ module Data.Repa.Flow.Generic
           -- * Evaluation
         , drainS
         , drainP
+        , consumeS
 
           -- * Conversion
         , fromList
