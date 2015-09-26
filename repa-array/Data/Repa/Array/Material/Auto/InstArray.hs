@@ -1,16 +1,24 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.Repa.Array.Material.Auto.InstArray where
+import Data.Repa.Array.Material.Auto.InstWord   as A
 import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Material.Nested          as A
+import Data.Repa.Array.Material.Foreign         as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Fusion.Unpack                  as A
+import qualified Data.Vector.Unboxed            as U
+import qualified Data.Vector                    as V
+import qualified Data.ByteString.Internal       as BS
+import qualified Data.Text.Encoding             as T
+import Data.Text                                (Text)
 import Control.Monad
+import Data.Word
 #include "repa-array.h"
 
 
@@ -43,6 +51,19 @@ instance Convert r1 a1 r2 a2
       => Convert A  (Array r1 a1) A (Array r2 a2) where
  convert (AArray_Array (NArray starts lens arr))
         = AArray_Array (NArray starts lens (convert arr))
+ {-# INLINE_ARRAY convert #-}
+
+
+instance Convert A (Array A Word8) B Text where
+ convert (AArray_Array (NArray starts lens (AArray_Word8 farrElems)))
+  = let (BS.PS pElems iElems _nElems) 
+                = toByteString farrElems
+    in  BArray  $ V.fromList 
+                $ zipWith 
+                        (\start len -> T.decodeUtf8 
+                                    $  BS.PS pElems (iElems + start) len)
+                        (U.toList starts)
+                        (U.toList lens)
  {-# INLINE_ARRAY convert #-}
 
 
