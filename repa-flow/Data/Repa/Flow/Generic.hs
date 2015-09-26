@@ -106,7 +106,7 @@ module Data.Repa.Flow.Generic
         , dshuffleBy_o
 
           -- ** Chunking
-        , chunk_i
+        , chunkOn_i
         , unchunk_i)
 where
 import Data.Repa.Flow.States

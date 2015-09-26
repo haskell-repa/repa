@@ -109,6 +109,7 @@ Library
         Data.Repa.Array.Internals.Operator.Merge
         Data.Repa.Array.Internals.Operator.Insert
         Data.Repa.Array.Internals.Operator.Partition
+        Data.Repa.Array.Internals.Operator.Process
         Data.Repa.Array.Internals.Operator.Reduce
         Data.Repa.Array.Internals.Operator.Replicate
         Data.Repa.Array.Internals.Operator.Filter

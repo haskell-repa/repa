@@ -28,6 +28,9 @@ module Data.Repa.Flow.Chunked
         , smap_i,       smap_o
         , szipWith_ii
 
+          -- ** Processing
+        , process_i
+
           -- ** Splitting
         , head_i
 
@@ -52,6 +55,7 @@ import Data.Repa.Flow.Chunked.Fold
 import Data.Repa.Flow.Chunked.Folds
 import Data.Repa.Flow.Chunked.Generic
 import Data.Repa.Flow.Chunked.Groups
+import Data.Repa.Flow.Chunked.Process
 import Data.Repa.Flow.Chunked.Replicate
 import Data.Repa.Flow.States
 import qualified Data.Repa.Flow.Generic         as G

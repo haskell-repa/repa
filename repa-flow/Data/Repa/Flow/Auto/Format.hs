@@ -136,4 +136,3 @@ keyPackAsciiLn_i ss
    in   G.map_i (A.map packElem) ss
 {-# INLINE_FLOW keyPackAsciiLn_i #-}
 
-

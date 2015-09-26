@@ -94,7 +94,7 @@ singleton
         => Name l -> a -> Array l a
 singleton nDst x
  = unsafePerformIO
- $ do   let lDst = create nDst 0
+ $ do   let lDst = create nDst 1
         buf     <- unsafeNewBuffer lDst
         unsafeWriteBuffer  buf 0 x
         unsafeFreezeBuffer buf

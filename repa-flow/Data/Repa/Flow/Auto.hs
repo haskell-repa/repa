@@ -35,6 +35,9 @@ module Data.Repa.Flow.Auto
         , map_i,                map_o
         , zipWith_i
 
+        -- ** Processing
+        , process_i
+
         -- | Higher arity zipWith functions.
         , module Data.Repa.Flow.Auto.ZipWith
 
@@ -201,6 +204,20 @@ zipWith_i
 zipWith_i f sa sb
         = C.szipWith_ii A (\_ a b -> f a b) sa sb
 {-# INLINE zipWith_i #-}
+
+
+-- Processing -----------------------------------------------------------------
+-- | Apply a generic stream process to a bundle of sources.
+process_i
+        :: ( Flow a, Flow b, Build b bt
+           , Unpack (Array b) bbt)
+        => (s -> a -> (s, Array b))     -- ^ Worker function.
+        -> s                            -- ^ Initial state.
+        ->     Sources a                -- ^ Input sources.
+        -> IO (Sources b)
+
+process_i = C.process_i
+{-# INLINE process_i #-}
 
 
 -- Concatenation --------------------------------------------------------------

@@ -1,6 +1,6 @@
 
 module Data.Repa.Flow.Generic.Array.Chunk
-        (chunk_i)
+        (chunkOn_i)
 where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array.Generic                  as A
@@ -9,19 +9,21 @@ import Data.Repa.Array.Generic.Target           as A
 #include "repa-flow.h"
 
 
--- | Take elements from a flow and pack them into chunks of the given
---   maximum length.
-chunk_i :: (Target lDst a, Index lDst ~ Int, States i IO)
+-- | Take elements from a flow and pack them into chunks.
+--   The chunks are limited to the given maximum length.
+--   A predicate can also be supplied to detect the last element in a chunk.
+chunkOn_i 
+        :: (States i IO, TargetI lDst a)
         => Name lDst                            -- ^ Layout for result chunks.
         -> Int                                  -- ^ Maximum chunk length.
+        -> (a -> Bool)                          -- ^ Detect the last element in a chunk.
         -> Sources i IO a                       -- ^ Element sources.
         -> IO (Sources i IO (Array lDst a))     -- ^ Chunk sources.
 
-chunk_i nDst !maxLen (Sources n pullX)
+chunkOn_i nDst !maxLen isEnd (Sources n pullX)
  = do
-        -- Refs for signalling how many elements we managed to read for
-        -- each chunk.
-        final  <- newRefs n Nothing
+        -- Refs for signalling how many elements we managed to read for each chunk.
+        final   <- newRefs n Nothing
 
         let pull_chunk i eat eject
              = do 
@@ -39,7 +41,12 @@ chunk_i nDst !maxLen (Sources n pullX)
                                 -- Write the next element to the chunk.
                                 eat_chunk x
                                  = do   unsafeWriteBuffer chunk ix x
-                                        loop_chunk (ix + 1)
+
+                                        -- Check if this element value signals the 
+                                        -- end of a chunk.
+                                        if isEnd x 
+                                         then writeRefs final i (Just $ ix + 1)
+                                         else loop_chunk (ix + 1)
         
                                 -- There are no more elements available from the soruce.
                                 eject_chunk
@@ -70,5 +77,5 @@ chunk_i nDst !maxLen (Sources n pullX)
             {-# INLINE pull_chunk #-}
 
         return $ Sources n pull_chunk
-{-# INLINE_FLOW chunk_i #-}
+{-# INLINE_FLOW chunkOn_i #-}
 

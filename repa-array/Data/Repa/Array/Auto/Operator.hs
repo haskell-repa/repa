@@ -87,6 +87,9 @@ module Data.Repa.Array.Auto.Operator
         , compact
         , compactIn
 
+        -- ** Processing
+        , process
+
         -- ** Grouping
         , groups
         , groupsWith
@@ -637,6 +640,18 @@ compactIn
         -> Array a
 compactIn = G.compactIn A
 {-# INLINE compactIn #-}
+
+
+-- | Apply a generic stream process to an array.
+process :: ( Build a at, Build b bt, Elem b
+           , F.Unpack (G.Array A.A b) t
+           , G.Target A.A b)
+        => (s -> a -> (s, Array b))     -- ^ Worker function
+        -> s                            -- ^ Initial state.
+        -> Array a                      -- ^ Input array.
+        -> (s, Array b)                 -- ^ Result state and array.
+process   = G.process A
+{-# INLINE process #-}
 
 
 -- Inserting --------------------------------------------------------------------------------------

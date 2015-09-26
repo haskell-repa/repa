@@ -80,6 +80,9 @@ module Data.Repa.Array.Auto
         , compact
         , compactIn
 
+        -- ** Processing
+        , process
+
         -- ** Grouping
         , groups
         , groupsWith

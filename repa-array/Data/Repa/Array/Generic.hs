@@ -52,6 +52,9 @@ module Data.Repa.Array.Generic
         , compact
         , compactIn
 
+          -- ** Processing
+        , process
+
           -- ** Filtering
         , filter
 
@@ -97,6 +100,7 @@ import Data.Repa.Array.Internals.Operator.Fold          as A
 import Data.Repa.Array.Internals.Operator.Group         as A
 import Data.Repa.Array.Internals.Operator.Insert        as A
 import Data.Repa.Array.Internals.Operator.Merge         as A
+import Data.Repa.Array.Internals.Operator.Process       as A
 import Data.Repa.Array.Internals.Operator.Reduce        as A
 import Data.Repa.Array.Internals.Operator.Replicate     as A
 import qualified Data.Repa.Array.Generic.Convert        as A
