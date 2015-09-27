@@ -14,6 +14,7 @@ import qualified Data.Repa.Array.Generic                as AG
 import qualified Data.Repa.Flow.Generic                 as G
 import qualified Data.Repa.Flow.Chunked                 as C
 import qualified Data.HashMap.Strict                    as HM
+import Data.Repa.Scalar.Option
 import Data.Word
 import Data.Char
 #include "repa-store.h"
@@ -39,6 +40,7 @@ consumeEscapeXSV sepField filePath ffail eat
         ss      <-  splitXSV (fromIntegral $ ord sepField)
                               (1024 * 1024)
                 =<< escapeQuoted
+                =<< normalizeNewlines
                 =<< F.fromFiles [filePath] F.sourceBytes
 
         hb       <- F.head_i 0 1 ss                
@@ -75,15 +77,13 @@ splitXSV sepField maxLen ss
         -- TODO: Check for over-long chunks and call aFail
 
         -- Escape the source data and chunk it on line boundaries.
-        sChunk   <-  G.chunkOn_i A.A maxLen (== 0x0a)                   -- end on newline.
+        sChunk   <-  G.chunkOn_i A.A maxLen (== 0x0a)
                  =<< G.unchunk_i ss
 
         -- Dice chunks into rows and fields.
-        sRows    <-  G.map_i (AG.convert A . A.diceSep sepField 0x0a    -- dice on newline.
-                                           . A.filter A (/= 0x0d))      -- drop carriage returns.
-                             sChunk
+        sRows    <-  G.map_i (AG.convert A . diceSep sepField 0x0a) sChunk
         return sRows
-{-# INLINE_FLOW splitXSV #-}
+{-# NOINLINE splitXSV #-}
 
 
 -- | Escape hard newlines and tab characters within quoted strings.
@@ -106,4 +106,34 @@ escapeQuoted ss
                 _       -> (s,     A.singleton A c)
 
    in   C.process_i step False ss
-{-# INLINE_FLOW escapeQuoted #-}
+{-# NOINLINE escapeQuoted #-}
+
+
+-- | Normalize the various newline conventions to use just a single newline character.
+normalizeNewlines :: Sources Word8 -> IO (Sources Word8)
+normalizeNewlines ss
+ = let  
+        -- previous char was LF
+        step (Some 0x0a) c
+         = case c of
+                -- Got LF+CR
+                0x0d    -> (None, A.empty A)
+                _       -> step None c
+
+        -- previous char was a CR
+        step (Some 0x0d) c
+         = case c of
+                -- Got a CR+LF
+                0x0a    -> (None, A.empty A)
+                _       -> step None c
+
+        step _ c
+         = case c of
+                0x0a    -> (Some 0x0a, A.singleton A 0x0a)
+                0x0d    -> (Some 0x0d, A.singleton A 0x0a)
+                _       -> (None,      A.singleton A c)
+
+   in   C.process_i step (None :: Option Word8) ss
+{-# NOINLINE normalizeNewlines #-}
+
+
