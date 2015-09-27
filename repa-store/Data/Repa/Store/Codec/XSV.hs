@@ -1,20 +1,62 @@
 
-module Data.Repa.Flow.Codec.XSV
-        ( splitXSV
+module Data.Repa.Store.Codec.XSV
+        ( consumeEscapeXSV
+        , splitXSV
         , escapeQuoted )
 where
-import Data.Repa.Flow.Auto.Base
+import Data.Repa.Flow.Auto                              as F
+import Data.Repa.Flow.Auto.IO                           as F
 import Data.Repa.Array.Generic                          as A
-import Data.Repa.Array.Material.Auto                    as A
 import Data.Repa.Array.Material                         as A
-import qualified Data.Repa.Array.Generic.Convert        as G
+import Data.HashMap.Strict                              (HashMap)
+import Data.Text                                        (Text)
+import qualified Data.Repa.Array.Generic                as AG
 import qualified Data.Repa.Flow.Generic                 as G
 import qualified Data.Repa.Flow.Chunked                 as C
+import qualified Data.HashMap.Strict                    as HM
 import Data.Word
 import Data.Char
-#include "repa-flow.h"
+#include "repa-store.h"
 
 
+---------------------------------------------------------------------------------------------------
+-- | Consume an XSV file with an IO action.
+--
+--   Along the way we also escape any hard newline or tab characters within
+--   double quoted strings. 
+--
+consumeEscapeXSV
+        :: Char         -- ^ Separating character.
+        -> FilePath     -- ^ File to consume.
+        -> IO ()        -- ^ Action to run if the file is empty.
+        -> (HashMap Text Int -> Array B Text -> IO ())
+                        -- ^ Function gets a hash of the header fields to their position,
+                        --   an array of all the fields for each row.
+        -> IO ()
+
+consumeEscapeXSV sepField filePath ffail eat 
+ = do   
+        ss      <-  splitXSV (fromIntegral $ ord sepField)
+                              (1024 * 1024)
+                =<< escapeQuoted
+                =<< F.fromFiles [filePath] F.sourceBytes
+
+        hb       <- F.head_i 0 1 ss                
+        case hb of
+         Just (fsHeader : _, ssBody)
+          -> do let (fieldNames :: HashMap Text Int)
+                        = HM.fromList
+                        $ zip   (AG.toList $ AG.convert B fsHeader)
+                                [0..]
+
+                F.consumeS ssBody 
+                 $ \_ row -> eat fieldNames (AG.convert B row)
+
+         _ -> ffail
+{-# INLINE_FLOW consumeEscapeXSV #-}
+
+
+---------------------------------------------------------------------------------------------------
 -- | Split an XSV file into rows of fields.
 --
 --   Fields are terminated by the provided separator, 
@@ -37,7 +79,7 @@ splitXSV sepField maxLen ss
                  =<< G.unchunk_i ss
 
         -- Dice chunks into rows and fields.
-        sRows    <-  G.map_i (G.convert    . A.diceSep sepField 0x0a    -- dice on newline.
+        sRows    <-  G.map_i (AG.convert A . A.diceSep sepField 0x0a    -- dice on newline.
                                            . A.filter A (/= 0x0d))      -- drop carriage returns.
                              sChunk
         return sRows

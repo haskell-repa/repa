@@ -34,6 +34,8 @@ Library
         repa-flow            >= 4.2.0  && < 4.3
 
   exposed-modules:
+        Data.Repa.Store.Codec.XSV
+
         Data.Repa.Store.Object.Table
         Data.Repa.Store.Object.Column
         Data.Repa.Store.Object.Dimension
@@ -69,4 +71,5 @@ Library
         FlexibleContexts
         OverloadedStrings
         StandaloneDeriving
+        ScopedTypeVariables
         ExistentialQuantification

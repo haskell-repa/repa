@@ -40,8 +40,6 @@ Library
         Data.Repa.Flow.Chunked
         Data.Repa.Flow.Chunked.IO
 
-        Data.Repa.Flow.Codec.XSV
-
         Data.Repa.Flow.Generic
         Data.Repa.Flow.Generic.Debug
         Data.Repa.Flow.Generic.IO
