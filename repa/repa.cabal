@@ -1,5 +1,5 @@
 Name:                repa
-Version:             3.4.0.1
+Version:             3.4.0.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -23,7 +23,7 @@ Library
   Build-Depends: 
         base                 == 4.8.*,
         template-haskell     == 2.10.*,
-        vector               == 0.10.*,
+        vector               == 0.11.*,
         ghc-prim             == 0.4.*,
         bytestring           == 0.10.*,
         QuickCheck           == 2.8.*
