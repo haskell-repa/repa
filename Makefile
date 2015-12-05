@@ -1,9 +1,6 @@
 
 PACKAGES = \
-	repa \
 	repa-eval \
-	repa-io \
-	repa-algorithms \
 	repa-scalar \
 	repa-stream \
 	repa-convert \
