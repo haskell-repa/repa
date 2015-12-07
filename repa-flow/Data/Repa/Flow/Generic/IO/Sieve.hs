@@ -4,14 +4,16 @@ module Data.Repa.Flow.Generic.IO.Sieve
 where
 import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array.Material         as A
-import Data.Repa.Array.Generic.Convert  as A
+import Data.Repa.Array.Generic          as A
 import Data.Repa.Array.Auto.IO          as A
 import Data.Sequence                    (Seq)
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Fold
 import qualified Data.HashTable.IO      as Hash
+import qualified System.Mem             as System
 import System.IO
 import Data.Word
+import Data.IORef
 #include "repa-flow.h"
 
 
@@ -34,11 +36,28 @@ sieve_o diag
         (ht :: Hash.CuckooHashTable FilePath (Seq (Array F Word8)))
          <- Hash.newSized 1024
 
+        refSize <- newIORef 0
+        let sizeLimit    = 100 * 1000000
+
         let flush_path (path, ss)
              = do h     <- openBinaryFile path AppendMode 
-                  mapM_ (hPutArray h . convert) $ Fold.toList ss
+                  mapM_ (hPutArray h . convert A) $ Fold.toList ss
                   Hash.delete ht path
                   hClose h
+
+        let flush_all 
+             = do Hash.mapM_ flush_path ht
+                  System.performMajorGC
+
+        let acc_size len
+             = do sizeCurrent  <- readIORef refSize
+                  if sizeCurrent + len > sizeLimit
+                   then do
+                        flush_all
+                        writeIORef refSize 0
+
+                   else do
+                        writeIORef refSize (sizeCurrent + len)
 
         let push_sieve _ e
              = case diag e of
@@ -54,24 +73,15 @@ sieve_o diag
                          -- so insert the element into the table.
                          Nothing
                           -> do Hash.insert ht path (Seq.singleton arr)
-                                return ()
+                                acc_size (A.length arr)
 
                          -- We already have data for this file.
-                         -- If we already have more than 100 chunks then flush them all,
-                         -- otherwise accumulate into the in-memory state.
-                         --
-                         -- TODO: batch by write size instead of number of chunks.
-                         -- TODO: also flush if the total size of the hash table 
-                         --       becomes too large.
                          Just ss
-                          | Seq.length ss > 100
-                          ->    flush_path (path, ss)
-
-                          | otherwise
-                          ->    Hash.insert ht path (ss Seq.|> arr)
+                          -> do Hash.insert ht path (ss Seq.|> arr)
+                                acc_size (A.length arr)
 
         let eject_sieve _ 
-             = Hash.mapM_ flush_path ht
+             = flush_all
 
         return  $ Sinks () push_sieve eject_sieve
 {-# INLINE sieve_o #-}
