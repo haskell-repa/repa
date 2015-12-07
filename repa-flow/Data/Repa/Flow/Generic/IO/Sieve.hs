@@ -63,7 +63,7 @@ sieve_o sizeLimit chunksLimit diag
 
                    else do
                         writeIORef refSize   (sizeCurrent + len)
-                        writeIORef refChunks (chunksLimit + 1)
+                        writeIORef refChunks (chunksCurrent + 1)
 
         let push_sieve _ e
              = case diag e of
