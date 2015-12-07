@@ -25,19 +25,21 @@ import Data.IORef
 --   To avoid this, we instead batch data in memory for each file until
 --   we have enough to warrant performing the IO operation.
 --
-sieve_o :: Int                  -- ^ Max amount of in-memory data.
+sieve_o :: Int                  -- ^ Max payload size of in-memory data.
+        -> Int                  -- ^ Max number of in-memory chunks.
         -> (a -> Maybe (FilePath, Array F Word8))   
                                 -- ^ Produce the desired file path and output
                                 --   record for this element, or `Nothing` if
                                 --   it should be discarded.
         -> IO (Sinks () IO a)
 
-sieve_o sizeLimit diag
+sieve_o sizeLimit chunksLimit diag
  = do
         (ht :: Hash.CuckooHashTable FilePath (Seq (Array F Word8)))
          <- Hash.newSized 1024
 
-        refSize <- newIORef 0
+        refSize   <- newIORef 0
+        refChunks <- newIORef 0
 
         let flush_path (path, ss)
              = do h     <- openBinaryFile path AppendMode 
@@ -49,15 +51,19 @@ sieve_o sizeLimit diag
              = do Hash.mapM_ flush_path ht
                   System.performMajorGC
 
-        let acc_size len
-             = do sizeCurrent  <- readIORef refSize
-                  if sizeCurrent + len > sizeLimit
+        let acc_size !len
+             = do !sizeCurrent    <- readIORef refSize
+                  !chunksCurrent  <- readIORef refChunks
+                  if  (sizeCurrent   + len) > sizeLimit
+                   || (chunksCurrent + 1)   > chunksLimit
                    then do
                         flush_all
-                        writeIORef refSize 0
+                        writeIORef refSize   0
+                        writeIORef refChunks 0
 
                    else do
-                        writeIORef refSize (sizeCurrent + len)
+                        writeIORef refSize   (sizeCurrent + len)
+                        writeIORef refChunks (chunksLimit + 1)
 
         let push_sieve _ e
              = case diag e of
