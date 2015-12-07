@@ -25,19 +25,19 @@ import Data.IORef
 --   To avoid this, we instead batch data in memory for each file until
 --   we have enough to warrant performing the IO operation.
 --
-sieve_o :: (a -> Maybe (FilePath, Array F Word8))   
+sieve_o :: Int                  -- ^ Max amount of in-memory data.
+        -> (a -> Maybe (FilePath, Array F Word8))   
                                 -- ^ Produce the desired file path and output
                                 --   record for this element, or `Nothing` if
                                 --   it should be discarded.
         -> IO (Sinks () IO a)
 
-sieve_o diag
+sieve_o sizeLimit diag
  = do
         (ht :: Hash.CuckooHashTable FilePath (Seq (Array F Word8)))
          <- Hash.newSized 1024
 
         refSize <- newIORef 0
-        let sizeLimit    = 100 * 1000000
 
         let flush_path (path, ss)
              = do h     <- openBinaryFile path AppendMode 
