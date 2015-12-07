@@ -49,7 +49,6 @@ sieve_o sizeLimit chunksLimit diag
 
         let flush_all 
              = do Hash.mapM_ flush_path ht
-                  System.performMajorGC
 
         let acc_size !len
              = do !sizeCurrent    <- readIORef refSize
@@ -87,7 +86,9 @@ sieve_o sizeLimit chunksLimit diag
                                 acc_size (A.length arr)
 
         let eject_sieve _ 
-             = flush_all
+             = do flush_all
+                  System.performMajorGC
+
 
         return  $ Sinks () push_sieve eject_sieve
 {-# INLINE sieve_o #-}
