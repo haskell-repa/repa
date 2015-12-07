@@ -6,14 +6,15 @@ import Data.Repa.Flow.Generic.Base
 import Data.Repa.Array.Material         as A
 import Data.Repa.Array.Generic          as A
 import Data.Repa.Array.Auto.IO          as A
-import Data.Sequence                    (Seq)
-import qualified Data.Sequence          as Seq
-import qualified Data.Foldable          as Fold
 import qualified Data.HashTable.IO      as Hash
 import qualified System.Mem             as System
 import System.IO
 import Data.Word
 import Data.IORef
+
+import qualified Data.Vector.Mutable    as M
+import qualified Data.Vector            as V
+
 #include "repa-flow.h"
 
 
@@ -35,15 +36,20 @@ sieve_o :: Int                  -- ^ Max payload size of in-memory data.
 
 sieve_o sizeLimit chunksLimit diag
  = do
-        (ht :: Hash.CuckooHashTable FilePath (Seq (Array F Word8)))
+        (ht :: Hash.CuckooHashTable FilePath (Int, M.IOVector (Array F Word8)))
          <- Hash.newSized 1024
 
-        refSize   <- newIORef 0
-        refChunks <- newIORef 0
+        !refSize   <- newIORef 0
+        !refChunks <- newIORef 0
 
-        let flush_path (path, ss)
-             = do h     <- openBinaryFile path AppendMode 
-                  mapM_ (hPutArray h . convert A) $ Fold.toList ss
+        let flush_path (path, (n, mvec))
+             = do 
+                  !vec   <- V.unsafeFreeze mvec
+                  !h     <- openBinaryFile path AppendMode 
+
+                  V.mapM_ (hPutArray h . convert A) 
+                        $ V.slice 0 n vec
+
                   Hash.delete ht path
                   hClose h
 
@@ -61,10 +67,12 @@ sieve_o sizeLimit chunksLimit diag
                         writeIORef refChunks 0
 
                    else do
-                        writeIORef refSize   (sizeCurrent + len)
-                        writeIORef refChunks (chunksCurrent + 1)
+                        let !sizeCurrent'   = sizeCurrent + len
+                        let !chunksCurrent' = chunksCurrent + 1
+                        writeIORef refSize   sizeCurrent'
+                        writeIORef refChunks chunksCurrent'
 
-        let push_sieve _ e
+        let push_sieve _ !e
              = case diag e of
                 -- Drop this element on the floor.
                 Nothing 
@@ -72,17 +80,26 @@ sieve_o sizeLimit chunksLimit diag
 
                 -- Accumulate a new chunk.
                 Just (path, arr)
-                 -> do  mElem   <- Hash.lookup ht path
+                 -> do  !mElem   <- Hash.lookup ht path
                         case mElem of
+
                          -- We haven't seen this file before, 
-                         -- so insert the element into the table.
+                         -- so create a new vector to hold the chunks.
                          Nothing
-                          -> do Hash.insert ht path (Seq.singleton arr)
+                          -> do !mvec    <- M.new 256
+                                M.write mvec 0 arr
+                                Hash.insert ht path (1, mvec)
                                 acc_size (A.length arr)
 
                          -- We already have data for this file.
-                         Just ss
-                          -> do Hash.insert ht path (ss Seq.|> arr)
+                         Just (n, mvec)
+                          -> do !mvec'  <- if n >= M.length mvec
+                                                then M.grow mvec (M.length mvec)
+                                                else return mvec
+
+                                M.write mvec' n arr
+                                let !n' = n + 1
+                                Hash.insert ht path (n', mvec')
                                 acc_size (A.length arr)
 
         let eject_sieve _ 
