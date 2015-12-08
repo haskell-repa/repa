@@ -124,7 +124,7 @@ execSieve makeSources target
                         =<< FG.funnel_i ss
 
                 let mkRow (k, arr) = Just (dirOut </> k, AG.convert AF.F arr)
-                oSieve  <- FG.sieve_o mkRow
+                oSieve  <- FG.sieve_o (10 * 1000000) 100000 mkRow
                 FG.drainS sRows oSieve
 
 
