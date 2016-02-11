@@ -73,20 +73,24 @@ sourceLinesFormatFromLazyByteString
         -> IO (Array A Word -> IO ())   -- ^ Action if we can't convert a row.
         -> format                       -- ^ Format of each line.
         -> BSL.ByteString               -- ^ Lazy byte string.
+        -> Int                          -- ^ Skip this many header lines at the start.
         -> IO (Sources Int IO (Array A (Value format)))
 
-sourceLinesFormatFromLazyByteString n _aFailConvert format bs0
+sourceLinesFormatFromLazyByteString n _aFailConvert format bs0 nSkip
  = do
         -- Rows are separated by new lines.
         let !nl  = fromIntegral $ ord '\n'
         let !nr  = fromIntegral $ ord '\r'
 
         -- Give a copy of the bytestring to each stream.
-        refs    <- newRefs n bs0
+        refsBS          <- newRefs n bs0
+        refsSkip        <- newRefs n nSkip
 
         let unpackRow arr
              = case A.unpackFormat format arr of
-                 Nothing -> error ("no convert " ++ show arr)
+                 Nothing -> error ("no convert " 
+                                        ++ (show $ map (chr . fromIntegral) 
+                                                 $ A.toList arr))
                         -- TODO: imlp proper pull function
                         -- so that we can call aFailConvert if needed.
                         -- We shouldn't be throwing errors this deep in the library.
@@ -94,17 +98,26 @@ sourceLinesFormatFromLazyByteString n _aFailConvert format bs0
             {-# INLINE unpackRow #-}
 
         let pull_fromString i eat eject
-             = do bs <- readRefs refs i
+             = do bs   <- readRefs refsBS   i
+                  skip <- readRefs refsSkip i
                   if BSL.null bs
                    then eject
-                   else do let (bsLine, bsRest) = BSL.break (== nl) bs
-                           writeRefs refs i bsRest
-                           eat $ A.singleton A.A
-                               $ unpackRow
-                               $ A.convert A.A
-                               $ A.fromByteString 
-                               $ BSL.toStrict 
-                               $ BSL.filter (/= nr) bsLine
+                   else do let (bsLine, bsRest) 
+                                = BSL.break (== nl) bs
+
+                           writeRefs refsBS i 
+                            $ BSL.dropWhile (== nl) bsRest
+
+                           if (skip >= 0)
+                             then do writeRefs refsSkip i (skip - 1)
+                                     pull_fromString i eat eject
+
+                             else eat $ A.singleton A.A
+                                      $ unpackRow
+                                      $ A.convert A.A
+                                      $ A.fromByteString 
+                                      $ BSL.toStrict 
+                                      $ BSL.filter (/= nr) bsLine
             {-# INLINE pull_fromString #-}
 
         return $ Sources n pull_fromString
