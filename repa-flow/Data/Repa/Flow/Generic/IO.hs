@@ -10,6 +10,8 @@ module Data.Repa.Flow.Generic.IO
         , sourceRecords
         , sourceLinesFormat
 
+        , sourceLinesFormatFromLazyByteString
+
           -- * Sinking
         , sinkBytes
         , sinkChars
