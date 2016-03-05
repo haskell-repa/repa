@@ -107,25 +107,24 @@ headerForElem posFile bs
 
 -- | Append a new value to the log.
 append :: HashLog -> ByteString -> IO (Maybe ErrorHashLog)
-append hl bsElem
+append (HashLog path) bsElem
  | lenData <- BS.length bsElem
  , lenData >= 2^(32 :: Integer)
- = return $ Just $ ErrorHashLogElemTooBig
+ = return $ Just $ ErrorHashLogElemTooBig path
 
  | otherwise
  = -- Lock the log file, creating it if it's not present.
    -- We can't have other processes appending to the file between us
    -- taking it's length and writing the element hash.
-   System.withFileLock (hashLogPath hl) System.Exclusive
+   System.withFileLock path System.Exclusive
     $ \_lock -> do
-        let path        = hashLogPath hl
-
         -- Get the current length of the file, we use this to salt the
         -- hash of the data so that we can detect if the order of elements
         -- has been changed.
         status  <- System.getFileStatus path
+
         let System.COff lenFile 
-                        = System.fileSize status
+                = System.fileSize status
 
         BS.appendFile path
          $  headerForElem lenFile bsElem
@@ -254,7 +253,7 @@ data ErrorHashLog
 
         -- | Provided element is too big to store in a HashLog.
         --   The hard limit is 4GB (2^32 bytes) per element.
-        | ErrorHashLogElemTooBig
+        | ErrorHashLogElemTooBig FilePath
         deriving (Eq, Show)
 
 
