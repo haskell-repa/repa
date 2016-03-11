@@ -106,7 +106,6 @@ instance Packable VarChars where
    = case xx of
         []       -> mempty
         (x : xs) -> pack Word8be (w8 $ ord x) <> pack VarChars xs     
-                                -- TODO: will leak, can't elim <>
   {-# NOINLINE pack #-}
 
   packer f v 
@@ -180,8 +179,10 @@ instance Unpackable VarCharString where
 
 
 -- | Unpack a string from the given buffer.
---   TODO: this isn't complete for all special characters, 
---         check the Haskell encoding.
+---
+--   We only handle the most common special character encodings.
+--   Is there a standard for which ones these are?
+--
 unpackString 
         :: S.Ptr Word8                  -- ^ First byte in buffer.
         -> S.Ptr Word8                  -- ^ First byte after buffer.

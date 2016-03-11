@@ -99,14 +99,14 @@ instance Format VarTextString   where
 
 instance Packable VarTextString where
  
- -- TODO: don't go via lists.
+ -- We go via lists here to get 'show's' expansion of special characters.
  packer VarTextString tt buf k
   = packer VarText (T.pack $ show $ T.unpack tt) buf k
  {-# INLINE packer #-}
 
 
 instance Unpackable VarTextString where
- -- TODO: don't go via lists.
+
  unpacker VarTextString start end stop _fail eat
   = unpacker VarCharString start end stop _fail 
   $ \start' val -> eat start' (T.pack val)
