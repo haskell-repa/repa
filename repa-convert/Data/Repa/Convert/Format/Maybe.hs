@@ -165,6 +165,13 @@ instance Unpackable f
                 let !(Ptr start') = F.plusPtr (pw8 start) ix
                 eatIt start' Nothing
 
+         -- Hit the end of the buffer and the Nothing string itself is empty,
+         -- which we count as detecting the Nothing string.
+         | bsLen == 0
+         , ix >= lenBuf
+         = do   let !(Ptr start') = F.plusPtr (pw8 start) ix
+                eatIt start' Nothing
+
          -- Hit the end of the buffer before matching the Nothing string.
          | ix >= lenBuf     
          = unpackInner
