@@ -8,7 +8,6 @@ import Data.Repa.Array.Generic          as A
 import Data.Repa.Array.Auto.IO          as A
 import qualified Data.HashTable.IO      as Hash
 import qualified System.Mem             as System
-import Control.Monad
 import System.IO
 import Data.Word
 import Data.IORef

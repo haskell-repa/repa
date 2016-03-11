@@ -130,7 +130,7 @@ packsFormatLn !format !arr
 ---------------------------------------------------------------------------------------------------
 -- | Unpack a value from a buffer using the given format.
 unpackFormat
-        :: C.Packable format
+        :: C.Unpackable format
         => format                       -- ^ Format for the value.
         -> Array Word8                  -- ^ Packed binary data.
         -> Maybe (C.Value format)       -- ^ Unpacked value.
@@ -156,7 +156,7 @@ unpackFormat !format !arrBytes
 -- | Unpack an array of elements from a buffer
 --   using the given fixed length format.
 unpacksFormatFixed
-        :: (Packable format, A.Target A.A (Value format))
+        :: (Unpackable format, A.Target A.A (Value format))
         => format                         -- ^ Fixed length format for each element.
         -> Array Word8                    -- ^ Packed binary data.
         -> Maybe (Array (Value format))   -- ^ Unpacked elements.
@@ -211,7 +211,7 @@ unpacksFormatFixed !format !arrBytes
 --
 unpacksFormatLn
         :: forall format
-        .  (Packable format, A.Target A.A (Value format))
+        .  (Unpackable format, A.Target A.A (Value format))
         => format                       -- ^ Format for each element.
         -> Array Word8                  -- ^ Packed binary data.
         -> Array (Value format)         -- ^ Unpacked elements.

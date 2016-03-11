@@ -31,7 +31,7 @@ import Data.Word
 -- | Source complete rows from a table.
 sourceTableFormat
         :: forall format
-        .  ( Packable (Sep format), Target A (Value format)
+        .  ( Unpackable (Sep format), Target A (Value format)
            , SepFormat format
            , Value (Sep format) ~ Value format)
         => Integer                      -- ^ Chunk length.
@@ -67,10 +67,10 @@ sourceTableFormat
 --   This uses replicates the shape information, yielding
 --   a flow of the same length as the associated columns.
 sourceFamilyKey
-        :: ( Packable format
+        :: ( Unpackable format
            , Bulk   A (Value format)
            , Target A (Value format)
-           , Packable (Sep (format :*: IntAsc :*: ()))
+           , Unpackable (Sep (format :*: IntAsc :*: ()))
            , Show format
            , Windowable A (Value format)
            , Unpack (Buffer A (Value format)) tf)
@@ -103,7 +103,7 @@ sourceFamilyKey
 --
 --   This produces the column 
 sourceFamilyColumn 
-        :: ( Packable format
+        :: ( Unpackable format
            , Target A (Value format)
            , Show format)
         => Integer

@@ -24,7 +24,7 @@ import Data.Word
 --   converting each line to values with the given format.
 sourceLinesFormat
         :: forall format
-        .  (Packable format, Target A (Value format))
+        .  (Unpackable format, Target A (Value format))
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action if we find a line longer than the chunk length.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.
@@ -68,7 +68,7 @@ sourceLinesFormat nChunk aFailLong _aFailConvert format bs
 --   in a chunk-wise manner,
 --   converting each line to values with the given format.
 sourceLinesFormatFromLazyByteString
-        :: (Packable format, Target A (Value format))
+        :: (Unpackable format, Target A (Value format))
         => Int                          -- ^ Number of streams in the result bundle.
         -> IO (Array A Word -> IO ())   -- ^ Action if we can't convert a row.
         -> format                       -- ^ Format of each line.

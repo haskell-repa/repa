@@ -132,7 +132,7 @@ sourceTSV
 -- | Read the lines of a text file,
 --   converting each line to values with the given format.
 sourceFormatLn
-        :: ( Packable format
+        :: ( Unpackable format
            , Target A (Value format))
         => Integer                      -- ^ Chunk length.
         -> IO ()                        -- ^ Action when a line is too long.
