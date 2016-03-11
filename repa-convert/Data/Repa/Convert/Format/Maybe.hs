@@ -63,6 +63,10 @@ instance Packable f
         {-# INLINE kk #-}
  {-# INLINE packer #-}
 
+
+instance Unpackable f
+      => Unpackable (MaybeChars f) where
+
  -- As above, convert the Nothing string to a ByteString which has a better runtime
  -- representation.
  unpacker  (MaybeChars str f)
@@ -134,6 +138,10 @@ instance Packable f
  {-# NOINLINE pack #-}
   -- TODO we're NOINLINEing this so we don't duplicate the code for the continuation.
   --      It would be better to use an Either format and use that to express the branch.
+
+
+instance Unpackable f
+      => Unpackable (MaybeBytes f) where
 
  unpacker (MaybeBytes (BS.PS bsFptr bsStart bsLen) f) 
           start end stop fail eat

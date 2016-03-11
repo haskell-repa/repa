@@ -106,6 +106,8 @@ instance Packable (Sep ()) where
   = k dst
  {-# INLINE packer #-}
 
+
+instance Unpackable (Sep ()) where
  unpacker _fmt start _end _stop _fail eat
   = eat start ()
  {-# INLINE unpacker #-}
@@ -148,6 +150,11 @@ instance ( Packable f1
         = packer f1 x1 start k
  {-# INLINE pack #-}
 
+
+instance ( Unpackable f1
+         , Value (Sep ()) ~ Value ())
+       => Unpackable (Sep (f1 :*: ())) where
+
  unpacker (SepCons sm f1 sfs) start end stop fail eat
   = do  let stop' x = w8 (ord (smSepChar sm)) == x || stop x
             {-# INLINE stop' #-}
@@ -174,6 +181,13 @@ instance ( Packable f1
  packer f v
         = fromPacker $ pack f v
  {-# INLINE packer #-}
+
+
+instance ( Unpackable f1
+         , Unpackable (Sep (f2 :*: fs))
+         , Value    (Sep (f2 :*: fs)) ~ Value (f2 :*: fs)
+         , Value    (Sep fs)          ~ Value fs)
+      => Unpackable   (Sep (f1 :*: f2 :*: fs)) where
 
  unpacker (SepCons sm f1 sfs) start end stop fail eat
   = do  -- Length of data remaining in the input buffer.

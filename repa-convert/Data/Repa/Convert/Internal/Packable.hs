@@ -1,6 +1,7 @@
 
 module Data.Repa.Convert.Internal.Packable
-        (Packable (..))
+        ( Packable      (..)
+        , Unpackable    (..))
 where
 import Data.Repa.Convert.Internal.Format
 import Data.Repa.Convert.Internal.Packer
@@ -29,6 +30,18 @@ class Format   format
  {-# INLINE pack #-}
 
 
+ -- | Low level packing function for the given format.
+ packer   :: format                     -- ^ Data format.
+          -> Value format               -- ^ Value to pack.
+          -> Addr#                      -- ^ Pointer to start of buffer.
+          -> IO ()                      -- ^ Signal failure.
+          -> (Addr# -> IO ())           -- ^ Accept the address after the packed field.
+          -> IO ()
+
+
+class Format format
+   => Unpackable format where
+
  -- | Unpack a value from a buffer using the given format.
  unpack :: format                       -- ^ Storage format.
         -> Unpacker (Value format)      -- ^ Unpacker for that format.
@@ -37,14 +50,6 @@ class Format   format
   = Unpacker (unpacker format)
  {-# INLINE unpack #-}
 
-
- -- | Low level packing function for the given format.
- packer   :: format                     -- ^ Data format.
-          -> Value format               -- ^ Value to pack.
-          -> Addr#                      -- ^ Pointer to start of buffer.
-          -> IO ()                      -- ^ Signal failure.
-          -> (Addr# -> IO ())           -- ^ Accept the address after the packed field.
-          -> IO ()
 
  -- | Low level unpacking function for the given format.
  unpacker :: format                     -- ^ Data format.

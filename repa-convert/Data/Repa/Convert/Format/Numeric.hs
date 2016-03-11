@@ -46,6 +46,9 @@ instance Packable IntAsc where
         k dst'
  {-# INLINE packer #-}
 
+
+instance Unpackable IntAsc where
+
  unpacker IntAsc start end _stop fail eat
   = let !len = I# (minusAddr# end start) in 
     if len > 0
@@ -82,6 +85,9 @@ instance Packable IntAsc0 where
         let !(Ptr dst') = F.plusPtr (Ptr dst) len
         k dst'
  {-# INLINE packer #-}
+
+
+instance Unpackable IntAsc0 where
 
  unpacker (IntAsc0 _) start end _stop fail eat
   = let !len = I# (minusAddr# end start) in
@@ -120,6 +126,9 @@ instance Packable DoubleAsc where
         let !(Ptr dst') = F.plusPtr (Ptr dst) len
         k dst'
  {-# INLINE packer   #-}
+
+
+instance Unpackable DoubleAsc where
 
  unpacker DoubleAsc start end _stop fail eat
   = let !len = I# (minusAddr# end start) in
@@ -162,6 +171,9 @@ instance Packable DoubleFixedPack where
         let !(Ptr dst') = F.plusPtr (Ptr dst) len
         k dst'
  {-# INLINE packer #-}
+
+
+instance Unpackable DoubleFixedPack where
 
  unpacker (DoubleFixedPack _) start end _stop fail eat
   = let !len = I# (minusAddr# end start) in

@@ -56,6 +56,8 @@ instance Packable VarBytes where
      in packer_VarBytes 0
 
 
+instance Unpackable VarBytes where
+
  unpacker VarBytes start end stop _fail eat
   = checkLen 0
   where

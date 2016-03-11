@@ -24,6 +24,9 @@ instance Packable () where
         = k dst
  {-# INLINE packer #-}
 
+
+instance Unpackable () where
+
  unpacker _f start _end _stop _fail eat
         = eat start ()
  {-# INLINE unpack #-}

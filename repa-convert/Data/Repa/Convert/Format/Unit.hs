@@ -32,6 +32,8 @@ instance Packable UnitAsc where
   = packer (FixChars (length s)) s  start k
  {-# INLINE pack #-}
 
+
+instance Unpackable UnitAsc where
  unpacker  (UnitAsc str) start end stop fail eat
   = do  (Ptr ptr, str') <- unpackCharList (pw8 start) (pw8 end) stop
         if str == str'

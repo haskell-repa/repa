@@ -186,6 +186,8 @@ instance Packable (ObjectFields ()) where
   = k dst
  {-# INLINE packer #-}
 
+
+instance Unpackable (ObjectFields ()) where
  unpacker _fmt start _end _stop _fail eat
   = eat start ()
  {-# INLINE unpacker #-}

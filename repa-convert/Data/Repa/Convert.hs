@@ -64,15 +64,14 @@ module Data.Repa.Convert
         , unpackFromString
 
           -- * Low-level interface
-          -- ** Packing data
+          -- * Packing data
         , Packable  (..)
-
-          -- ** Packer monoid
-        , Packer (..)
+        , Packer    (..)
         , unsafeRunPacker
 
-          -- ** Unpacker monad
-        , Unpacker (..)
+          -- * Unpacking data
+        , Unpackable (..)
+        , Unpacker   (..)
         , unsafeRunUnpacker)
 where
 import Data.Repa.Convert.Format
@@ -158,7 +157,7 @@ packToByteString format value
 
 -- | Unpack a value from a `ByteString`.
 unpackFromByteString
-        :: Packable format
+        :: Unpackable format
         => format -> ByteString -> Maybe (Value format)
 
 unpackFromByteString format (BS.PS fptr offset len)
@@ -202,7 +201,7 @@ packToList8 format value
 
 -- | Unpack a value from a list of `Word8`.
 unpackFromList8
-        :: Packable format
+        :: Unpackable format
         => format -> [Word8] -> Maybe (Value format)
 
 unpackFromList8 format ws
@@ -222,7 +221,7 @@ packToString format value
 
 -- | Unpack a value from a (hated) Haskell `String`.
 unpackFromString 
-        :: Packable format
+        :: Unpackable format
         => format -> String -> Maybe (Value format)
 unpackFromString format ss
  = unpackFromByteString format $ BS8.pack ss

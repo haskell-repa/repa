@@ -63,6 +63,8 @@ instance Packable FixChars where
    = fromPacker (pack f v)
   {-# INLINE packer #-}
 
+
+instance Unpackable FixChars where
   unpacker (FixChars len@(I# len')) start end _stop fail eat
    = do 
         let lenBuf = I# (minusAddr# end start)
@@ -111,6 +113,8 @@ instance Packable VarChars where
    = fromPacker (pack f v)
   {-# INLINE packer #-}
 
+
+instance Unpackable VarChars where
   unpacker VarChars start end stop _fail eat
    = do (Ptr ptr, str)      <- unpackCharList (pw8 start) (pw8 end) stop
         eat ptr str
@@ -168,6 +172,8 @@ instance Packable VarCharString where
   =  packer VarChars (show xx) start k
  {-# INLINE pack #-}
 
+
+instance Unpackable VarCharString where
  unpacker   VarCharString start end _stop  fail eat
   = unpackString (pw8 start) (pw8 end) fail eat
  {-# INLINE unpacker #-}
@@ -265,6 +271,8 @@ instance Packable ExactChars where
         k dst'
  {-# NOINLINE pack #-}
 
+
+instance Unpackable ExactChars where
  unpacker (ExactChars str) start end _stop fails eat
   = do  let !len@(I# len') = length str
         let !lenBuf        = I# (minusAddr# end start)
@@ -292,3 +300,4 @@ w8 = fromIntegral
 pw8 :: Addr# -> Ptr Word8
 pw8 addr = Ptr addr
 {-# INLINE pw8 #-}
+

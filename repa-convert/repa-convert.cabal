@@ -50,7 +50,6 @@ Library
         Data.Repa.Convert.Format.Sep
         Data.Repa.Convert.Format.String
         Data.Repa.Convert.Format.Text
-        Data.Repa.Convert.Format.Tup
         Data.Repa.Convert.Format.Unit
 
   include-dirs:

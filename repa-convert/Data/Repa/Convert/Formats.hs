@@ -61,9 +61,6 @@ module Data.Repa.Convert.Formats
           -- ** Appended fields
         , App                   (..)
 
-          -- ** Tuples
-        , Tup                   (..)
-
           -- ** Separated fields
         , Sep,  SepFormat       (..)
 
@@ -85,7 +82,6 @@ import Data.Repa.Convert.Format.Object
 import Data.Repa.Convert.Format.Sep
 import Data.Repa.Convert.Format.String
 import Data.Repa.Convert.Format.Text
-import Data.Repa.Convert.Format.Tup
 import Data.Repa.Convert.Format.Unit
 import Data.Repa.Scalar.Product
 

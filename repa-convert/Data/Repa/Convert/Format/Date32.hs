@@ -50,6 +50,10 @@ instance Packable YYYYsMMsDD where
   = fromPacker (pack f v)
  {-# INLINE packer #-}
 
+
+
+instance Unpackable YYYYsMMsDD where
+
  unpacker (YYYYsMMsDD s) start end _stop fail eat
   = do  let len = I# (minusAddr# end start)
         r       <- Date32.loadYYYYsMMsDD (fromIntegral $ ord s) (pw8 start) len
@@ -91,6 +95,10 @@ instance Packable DDsMMsYYYY where
  packer f v
   = fromPacker (pack f v)
  {-# INLINE packer #-}
+
+
+
+instance Unpackable DDsMMsYYYY where
 
  unpacker (DDsMMsYYYY s) start end _stop fail eat
   = do

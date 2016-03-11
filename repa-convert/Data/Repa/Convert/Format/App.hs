@@ -59,6 +59,8 @@ instance Packable (App ()) where
         = eat start
  {-# INLINE packer #-}
  
+
+instance Unpackable (App ()) where
  unpacker _f start _end _stop _fails eat
         = eat start ()
  {-# INLINE unpacker #-}
@@ -75,6 +77,11 @@ instance ( Packable f1, Packable (App fs)
  packer  f v
   = fromPacker $ pack f v
  {-# INLINE packer #-}
+
+
+instance ( Unpackable f1, Unpackable (App fs)
+         , Value (App fs) ~ Value fs)
+      => Unpackable (App (f1 :*: fs)) where
 
  unpacker  (App (f1 :*: fs)) start end stop fail eat
   = unpacker     f1       start    end stop fail $ \start_x1 x1

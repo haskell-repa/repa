@@ -7,13 +7,12 @@ module Data.Repa.Convert.Format
 
           -- * Packable
         , Packable  (..)
-
-          -- ** Packer
         , Packer    (..)
         , unsafeRunPacker
 
-          -- ** Unpacker
-        , Unpacker  (..)
+          -- ** Unpackable
+        , Unpackable (..)
+        , Unpacker   (..)
         , unsafeRunUnpacker)
 where
 import Data.Repa.Convert.Internal.Format

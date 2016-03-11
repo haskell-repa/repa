@@ -52,6 +52,8 @@ instance Packable VarText where
      in packer_VarText 0
  {-# INLINE packer #-}
 
+
+instance Unpackable VarText where
  unpacker VarText start end stop _fail eat
   = scanLen 0
   where
@@ -102,6 +104,8 @@ instance Packable VarTextString where
   = packer VarText (T.pack $ show $ T.unpack tt) buf k
  {-# INLINE packer #-}
 
+
+instance Unpackable VarTextString where
  -- TODO: don't go via lists.
  unpacker VarTextString start end stop _fail eat
   = unpacker VarCharString start end stop _fail 

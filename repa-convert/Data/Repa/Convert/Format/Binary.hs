@@ -47,6 +47,8 @@ instance Packable Word8be where
         k dst'
  {-# INLINE pack #-}
 
+
+instance Unpackable Word8be where
  unpacker _ start _end _stop _fail eat
   = do  x <- S.peek (pw8 start)
         eat (plusAddr# start 1#) (fromIntegral x)
@@ -78,6 +80,8 @@ instance Packable Int8be where
   = packer   Word8be (w8 x) buf k
  {-# INLINE packer   #-}
 
+
+instance Unpackable Int8be where
  unpacker    Int8be  start end stop fail eat    
   = unpacker Word8be start end stop fail 
   $ \addr v -> eat addr (i8 v)
@@ -112,6 +116,8 @@ instance Packable Word16be where
         k dst'
  {-# INLINE packer #-}
 
+
+instance Unpackable Word16be where
  unpacker Word16be start _end _stop _fail eat
   = do  x0 :: Word8  <- S.peek        (pw8 start)
         x1 :: Word8  <- S.peekByteOff (pw8 start) 1
@@ -145,6 +151,8 @@ instance Packable Int16be where
   = packer   Word16be (w16 x) buf k
  {-# INLINE packer   #-}
 
+
+instance Unpackable Int16be where
  unpacker    Int16be  start end stop fail eat
   = unpacker Word16be start end stop fail
   $ \addr v -> eat addr (i16 v)
@@ -181,6 +189,8 @@ instance Packable Word32be where
         k dst'
  {-# INLINE packer #-}
 
+
+instance Unpackable Word32be where
  unpacker Word32be start _end _fail _stop eat
   = do  x0 :: Word8  <- S.peek        (pw8 start) 
         x1 :: Word8  <- S.peekByteOff (pw8 start) 1
@@ -219,6 +229,8 @@ instance Packable Int32be where
   = packer   Word32be (w32 x) buf k
  {-# INLINE packer #-}
 
+
+instance Unpackable Int32be where
  unpacker    Int32be  start end stop fail eat
   = unpacker Word32be start end stop fail
   $ \addr v -> eat addr (i32 v)
@@ -259,6 +271,8 @@ instance Packable Word64be where
         k dst'
  {-# INLINE packer #-}
 
+
+instance Unpackable Word64be where
  unpacker Word64be start _end _fail _stop eat
   = do  x0 :: Word8  <- S.peek        (pw8 start) 
         x1 :: Word8  <- S.peekByteOff (pw8 start) 1
@@ -305,6 +319,8 @@ instance Packable Int64be where
   = packer   Word64be (w64 x) buf k
  {-# INLINE packer   #-}
 
+
+instance Unpackable Int64be where
  unpacker    Int64be  start end stop fail eat
   = unpacker Word64be start end stop fail 
   $ \addr v -> eat addr (i64 v)
@@ -336,6 +352,8 @@ instance Packable Float32be where
   = packer   Word32be  (floatToWord32 x) buf k
  {-# INLINE packer #-}
 
+
+instance Unpackable Float32be where
  unpacker    Float32be start end stop fail eat
   = unpacker Word32be  start end stop fail
   $ \addr v -> eat addr (word32ToFloat v)
@@ -386,6 +404,8 @@ instance Packable Float64be where
   = packer   Word64be (doubleToWord64 x) start fails eat
  {-# INLINE packer #-}
 
+
+instance Unpackable Float64be where
  unpacker    Float64be start end stop fail eat
   = unpacker Word64be  start end stop fail
   $ \addr v -> eat addr (word64ToDouble v)
