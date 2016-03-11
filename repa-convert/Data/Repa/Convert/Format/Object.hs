@@ -37,7 +37,7 @@ data ObjectFields fields where
          :: {-# UNPACK #-} !ObjectMeta  -- Meta data about this format.
          -> !Text                       -- Name of head field
          -> !f                          -- Format of head field.
-         -> Maybe (Value f -> Bool)     -- Predicate to determine whether to keep feel value.
+         -> Maybe (Value f -> Bool)     -- Predicate to determine whether to emit value.
          -> ObjectFields fs             -- Spec for rest of fields.
          -> ObjectFields (f :*: fs)             
 
