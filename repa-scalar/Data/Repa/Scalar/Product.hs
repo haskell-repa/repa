@@ -20,7 +20,7 @@ import qualified Data.Vector.Generic.Mutable    as M
 
 
 ---------------------------------------------------------------------------------------------------
--- | Strict product type, written infix.
+-- | A strict product type, written infix.
 data a :*: b    
         = !a :*: !b             
         deriving (Eq, Show)

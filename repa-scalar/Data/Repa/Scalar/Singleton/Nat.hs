@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 -- | Singleton-typed natural numbers and arithmetic.
 -- 
 --   Used for indexing into hetrogenous list types.

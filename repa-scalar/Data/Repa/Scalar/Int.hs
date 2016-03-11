@@ -72,7 +72,9 @@ readIntFromByteString (BS.PS fptr offset len)
 -- | Load an ASCII `Int` from a foreign buffer,
 --   returning the value and number of characters read.
 --
---   * The code 
+--   * This function is set to `INLINE`. It unboxes the pointer and
+--     integer then calls `loadInt#', which is `NOINLINE`.
+--
 loadInt :: Ptr Word8                    -- ^ Buffer holding digits.
         -> Int                          -- ^ Length of buffer.
         -> b                            -- ^ On convert failure, return this value.
@@ -215,6 +217,10 @@ showIntToByteString (I# i)
 
 
 -- | Store an ASCII `Int` into a buffer, producing the number of bytes written.
+-- 
+--   * This functon is set to `INLINE`. It unboxes the pointer and integer then
+--     calls `storeInt#` which is `NOINLINE`.
+--
 storeInt :: Ptr Word8                   -- ^ Pointer to output buffer.
          -> Int                         -- ^ Int to store.
          -> IO Int                      -- ^ Number of bytes written.
