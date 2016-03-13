@@ -6,6 +6,7 @@ module Data.Repa.Chain.Scan
         , groupsByC)
 where
 import Data.Repa.Chain.Base
+import Data.Repa.Scalar.Option
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
 
@@ -27,26 +28,26 @@ unfoldsC
         :: Monad m
         => (a -> k -> m (StepUnfold k b))       -- ^ Worker function.
         -> k                                    -- ^ Initial state for the unfold.
-        -> Chain m s               a            -- ^ Input elements.
-        -> Chain m (s, k, Maybe a) b            -- ^ Output elements.
+        -> Chain m s             a              -- ^ Input elements.
+        -> Chain m (s, k, Option a) b           -- ^ Output elements.
 
 unfoldsC f k0 (Chain _ s0 istep)
- = Chain S.Unknown (s0, k0, Nothing) ostep
+ = Chain S.Unknown (s0, k0, None) ostep
  where
-        ostep  (s1, k1, Nothing)
+        ostep  (s1, k1, None)
          =  istep s1 >>= \rs
          -> case rs of
-                Yield xa s2             -> return $ Skip     (s2, k1, Just xa)
-                Skip     s2             -> return $ Skip     (s2, k1, Nothing)
-                Done     s2             -> return $ Done     (s2, k1, Nothing)
+                Yield xa s2             -> return $ Skip     (s2, k1, Some xa)
+                Skip     s2             -> return $ Skip     (s2, k1, None)
+                Done     s2             -> return $ Done     (s2, k1, None)
 
-        ostep  (s1, k1, Just xa)
+        ostep  (s1, k1, Some xa)
          = f xa k1   >>= \kmb
          -> case kmb of
-                StepUnfoldGive xb k2    -> return $ Yield xb (s1, k2, Just xa)
-                StepUnfoldNext xb k2    -> return $ Yield xb (s1, k2, Nothing)  
-                StepUnfoldBump    k2    -> return $ Skip     (s1, k2, Just xa)
-                StepUnfoldFinish  k2    -> return $ Skip     (s1, k2, Nothing)
+                StepUnfoldGive xb k2    -> return $ Yield xb (s1, k2, Some xa)
+                StepUnfoldNext xb k2    -> return $ Yield xb (s1, k2, None)  
+                StepUnfoldBump    k2    -> return $ Skip     (s1, k2, Some xa)
+                StepUnfoldFinish  k2    -> return $ Skip     (s1, k2, None)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM unfoldsC #-}
 
