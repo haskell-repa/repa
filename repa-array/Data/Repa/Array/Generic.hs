@@ -55,6 +55,10 @@ module Data.Repa.Array.Generic
           -- ** Processing
         , process
 
+          -- ** Unfolding
+        , unfolds
+        , StepUnfold (..)
+
           -- ** Filtering
         , filter
 

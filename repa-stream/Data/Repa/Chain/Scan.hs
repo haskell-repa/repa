@@ -1,6 +1,7 @@
 
 module Data.Repa.Chain.Scan
-        ( unfoldsC
+        ( StepUnfold  (..)
+        , unfoldsC
         , scanMaybeC
         , groupsByC)
 where
@@ -24,10 +25,10 @@ import qualified Data.Vector.Fusion.Stream.Size  as S
 --
 unfoldsC
         :: Monad m
-        => (a -> k -> m (k, Maybe b))   -- ^ Worker function.
-        -> k                            -- ^ Initial state for the unfold.
-        -> Chain m s               a    -- ^ Input elements.
-        -> Chain m (s, k, Maybe a) b    -- ^ Output elements.
+        => (a -> k -> m (StepUnfold k b))       -- ^ Worker function.
+        -> k                                    -- ^ Initial state for the unfold.
+        -> Chain m s               a            -- ^ Input elements.
+        -> Chain m (s, k, Maybe a) b            -- ^ Output elements.
 
 unfoldsC f k0 (Chain _ s0 istep)
  = Chain S.Unknown (s0, k0, Nothing) ostep
@@ -35,18 +36,27 @@ unfoldsC f k0 (Chain _ s0 istep)
         ostep  (s1, k1, Nothing)
          =  istep s1 >>= \rs
          -> case rs of
-                Yield xa s2     -> return $ Skip  (s2, k1, Just xa)
-                Skip     s2     -> return $ Skip  (s2, k1, Nothing)
-                Done     s2     -> return $ Done  (s2, k1, Nothing)
+                Yield xa s2             -> return $ Skip     (s2, k1, Just xa)
+                Skip     s2             -> return $ Skip     (s2, k1, Nothing)
+                Done     s2             -> return $ Done     (s2, k1, Nothing)
 
         ostep  (s1, k1, Just xa)
          = f xa k1   >>= \kmb
          -> case kmb of
-                (k2, Nothing)   -> return $ Skip     (s1, k2, Nothing)
-                (k2, Just xb)   -> return $ Yield xb (s1, k2, Just xa)
+                StepUnfoldGive xb k2    -> return $ Yield xb (s1, k2, Just xa)
+                StepUnfoldNext xb k2    -> return $ Yield xb (s1, k2, Nothing)  
+                StepUnfoldBump    k2    -> return $ Skip     (s1, k2, Just xa)
+                StepUnfoldFinish  k2    -> return $ Skip     (s1, k2, Nothing)
         {-# INLINE_INNER ostep #-}
 {-# INLINE_STREAM unfoldsC #-}
 
+
+data StepUnfold s a
+        = StepUnfoldGive    a s
+        | StepUnfoldNext    a s
+        | StepUnfoldBump      s
+        | StepUnfoldFinish    s
+        deriving Show
 
 -------------------------------------------------------------------------------
 -- | Perform a left-to-right scan through an input vector, maintaining a state

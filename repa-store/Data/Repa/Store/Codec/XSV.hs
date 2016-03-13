@@ -89,23 +89,33 @@ splitXSV sepField maxLen ss
 -- | Escape hard newlines and tab characters within quoted strings.
 escapeQuoted :: Sources Word8 -> IO (Sources Word8)
 escapeQuoted ss
- = let  
-        anl     = A.fromList A $ map (fromIntegral . ord) "\\n"
-        atab    = A.fromList A $ map (fromIntegral . ord) "\\t"
-   
-        step s@False c
-         = case c of
-                0x22    -> (True,  A.singleton A c)     -- double quote
-                _       -> (s,     A.singleton A c)
+ = let     
+        cw8     :: Char -> Word8
+        cw8 x   = fromIntegral $ ord x
+        {-# INLINE cw8 #-}
 
-        step s@True c  
+        step c None
          = case c of
-                0x0a    -> (s,     anl)                 -- newline
-                0x09    -> (s,     atab)                -- tab
-                0x22    -> (False, A.singleton A c)     -- double quote
-                _       -> (s,     A.singleton A c)
+                0x22    -> StepUnfoldNext c (Some 0)            -- enter quoted string.
+                _       -> StepUnfoldNext c  None               -- character not quoted.
 
-   in   C.process_i step False ss
+        step c (Some (0 :: Int))
+         = case c of
+                0x0a    -> StepUnfoldGive (cw8 '\\') (Some 1)   -- newline
+                0x09    -> StepUnfoldGive (cw8 '\\') (Some 1)   -- tab character
+                0x22    -> StepUnfoldNext c           None      -- double quotes, end
+                _       -> StepUnfoldNext c          (Some 0)
+
+        step c (Some 1)
+         = case c of
+                0x0a    -> StepUnfoldNext (cw8 'n')  (Some 0)
+                0x09    -> StepUnfoldNext (cw8 't')  (Some 0)
+                _       -> StepUnfoldBump            (Some 0)
+
+        step _c s
+         = StepUnfoldFinish s
+
+   in   C.unfolds_i step None ss
 {-# NOINLINE escapeQuoted #-}
 
 

@@ -32,6 +32,10 @@ module Data.Repa.Flow.Chunked
           -- ** Processing
         , process_i
 
+          -- ** Unfolding
+        , unfolds_i
+        , StepUnfold    (..)
+
           -- ** Splitting
         , head_i
 

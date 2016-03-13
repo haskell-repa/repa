@@ -16,6 +16,7 @@ module Data.Repa.Chain
 
         -- * Unfolding
         , unfoldsC
+        , StepUnfold    (..)
 
         -- * Scanning
         , scanMaybeC
