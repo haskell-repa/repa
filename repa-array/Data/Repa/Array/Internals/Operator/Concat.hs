@@ -14,7 +14,6 @@ import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Generic.Load                     as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
-import qualified Data.Repa.Fusion.Unpack                as Fusion
 import qualified Data.Vector.Unboxed                    as U
 import qualified Data.Vector.Fusion.Stream.Monadic      as V
 import System.IO.Unsafe
@@ -27,8 +26,7 @@ import Prelude  hiding (reverse, length, map, zipWith, concat, unlines)
 type ConcatDict lOut lIn tIn lDst a
       = ( BulkI   lOut (Array lIn a)
         , BulkI   lIn a
-        , TargetI lDst a
-        , Fusion.Unpack (Array lIn a) tIn)
+        , TargetI lDst a)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -45,7 +43,7 @@ concat  :: ConcatDict lOut lIn tIn lDst a
         => Name  lDst                   -- ^ Layout for destination.
         -> Array lOut (Array lIn a)     -- ^ Arrays to concatenate.
         -> Array lDst a
-concat nDst vs
+concat !nDst !vs
  | A.length vs == 0
  = A.fromList nDst []
 
@@ -57,27 +55,40 @@ concat nDst vs
         !buf       <- unsafeGrowBuffer buf_ len
         let !iLenY = U.length lens
 
-        let loop_concat !iO !iY !row !iX !iLenX
-             | iX >= iLenX
-             = if iY >= iLenY - 1
-                then return ()
-                else let iY'    = iY + 1
-                         row'   = vs `index` iY'
-                         iLenX' = A.length row'
-                     in  loop_concat iO iY' row' 0 iLenX'
-
-             | otherwise
-             = do let x = row `index` iX
-                  unsafeWriteBuffer buf iO x
-                  loop_concat (iO + 1) iY row (iX + 1) iLenX
-            {-# INLINE_INNER loop_concat #-}
-
         let !row0   = vs `index` 0
         let !iLenX0 = A.length row0
-        loop_concat 0 0 row0 0 iLenX0
+        loop_concat vs row0 buf 0 0 0 iLenX0 iLenY
 
         unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concat #-}
+
+
+loop_concat 
+        :: ConcatDict lOut lIn tIn lDst a
+        => Array  lOut (Array lIn a)
+        -> Array  lIn a
+        -> Buffer lDst a
+        -> Int 
+        -> Int 
+        -> Int 
+        -> Int 
+        -> Int 
+        -> IO ()
+
+loop_concat !arr !row !buf !iO !iY !iX !iLenX !iLenY
+ | iX >= iLenX
+ = if iY >= iLenY - 1
+    then return ()
+    else let !iY'    = iY + 1
+             !row'   = arr `index` iY'
+             !iLenX' = A.length row'
+         in  loop_concat arr row' buf iO iY' 0 iLenX' iLenY
+
+ | otherwise
+ = do let x = row `index` iX
+      unsafeWriteBuffer buf iO x
+      loop_concat arr row buf (iO + 1) iY (iX + 1) iLenX iLenY
+{-# INLINE [0] loop_concat #-}
 
 
 ---------------------------------------------------------------------------------------------------
@@ -140,7 +151,7 @@ concatWith nDst !is !vs
 
                  -- Keep copying the source row.
                  | otherwise
-                 -> do  let !x = (Fusion.repack row0 row) `index` (I# iX)
+                 -> do  let !x = row `index` (I# iX)
                         unsafeWriteBuffer buf (I# iO) x
                         loop_concatWith sPEC 0# (iO +# 1#) iY row (iX +# 1#) iLenX iS
 
@@ -158,7 +169,7 @@ concatWith nDst !is !vs
                         let !iY'         = iY +# 1#
                         let !row'        = vs `index` (I# iY')
                         let !(I# iLenX') = A.length row'
-                        loop_concatWith sPEC 0# iO  iY' (Fusion.unpack row') 0# iLenX' 0#
+                        loop_concatWith sPEC 0# iO  iY' row' 0# iLenX' 0#
 
                  -- Keep copying from the separator array.
                  | otherwise
@@ -168,7 +179,7 @@ concatWith nDst !is !vs
 
         -- First row.
         let !(I# iLenX0) = A.length row0
-        loop_concatWith V.SPEC 0# 0# 0# (Fusion.unpack row0) 0# iLenX0 0#
+        loop_concatWith V.SPEC 0# 0# 0# row0 0# iLenX0 0#
         unsafeFreezeBuffer buf
 {-# INLINE_ARRAY concatWith #-}
 
@@ -246,11 +257,11 @@ intercalate nDst !is !vs
                  let !iY'         = iY +# 1#
                  let !row'        = vs `index` (I# iY')
                  let !(I# iLenX') = A.length row'
-                 loop_intercalate sPEC iO' iY' (Fusion.unpack row') 0# iLenX'
+                 loop_intercalate sPEC iO' iY' row' 0# iLenX'
 
              -- Keep copying a source element.
              | otherwise
-             = do let x = (Fusion.repack row0 row) `index` (I# iX)
+             = do let x = row `index` (I# iX)
                   unsafeWriteBuffer buf (I# iO) x
                   loop_intercalate sPEC (iO +# 1#) iY row (iX +# 1#) iLenX
             {-# INLINE_INNER loop_intercalate #-}
@@ -265,7 +276,7 @@ intercalate nDst !is !vs
             {-# INLINE_INNER loop_intercalate_inject #-}
 
         let !(I# iLenX0) = A.length row0
-        loop_intercalate V.SPEC 0# 0# (Fusion.unpack row0) 0# iLenX0
+        loop_intercalate V.SPEC 0# 0# row0 0# iLenX0
         unsafeFreezeBuffer buf
 {-# INLINE_ARRAY intercalate #-}
 

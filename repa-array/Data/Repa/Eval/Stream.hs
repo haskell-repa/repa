@@ -5,7 +5,6 @@ module Data.Repa.Eval.Stream
         , unstreamToArray
         , unstreamToArrayIO)
 where
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
@@ -33,7 +32,7 @@ streamOfArray vec
 -- | Compute the elements of a pure `Stream`,
 --   writing them into a new array `Array`.
 unstreamToArray
-        :: (Target l a, Unpack (Buffer l a) t)
+        :: Target l a
         => Name l -> S.Stream S.Id a -> Array l a
 
 unstreamToArray nDst s
@@ -46,7 +45,7 @@ unstreamToArray nDst s
 -- | Compute the elements of an `IO` `Stream`,
 --   writing them to a new `Array`.
 unstreamToArrayIO
-        :: (Target l a, Unpack (Buffer l a) t)
+        :: Target l a
         => Name l -> S.Stream IO a -> IO (Array l a)
 
 unstreamToArrayIO nDst (S.Stream step s0 sz)
@@ -84,9 +83,9 @@ unstreamToArrayIO nDst (S.Stream step s0 sz)
          = do   !vec0   <- unsafeNewBuffer  (create nDst zeroDim)
                 !vec1   <- unsafeGrowBuffer vec0 nStart
 
-                let go_unstreamIO_unknown !sPEC !uvec !i !n !s
-                     = go_unstreamIO_unknown1 (repack vec0 uvec) i n s
-                         (\vec' i' n' s' -> go_unstreamIO_unknown sPEC (unpack vec') i' n' s')
+                let go_unstreamIO_unknown !sPEC !vec !i !n !s
+                     = go_unstreamIO_unknown1 vec i n s
+                         (\vec' i' n' s' -> go_unstreamIO_unknown sPEC vec' i' n' s')
                          (\result        -> return result)
 
                     go_unstreamIO_unknown1 !vec !i !n !s cont done
@@ -110,6 +109,7 @@ unstreamToArrayIO nDst (S.Stream step s0 sz)
                                 arr  <- unsafeFreezeBuffer vec'
                                 done arr
 
-                go_unstreamIO_unknown S.SPEC (unpack vec1) 0 nStart s0
+                go_unstreamIO_unknown S.SPEC vec1 0 nStart s0
         {-# INLINE_INNER unstreamToArrayIO_unknown #-}
 {-# INLINE_STREAM unstreamToArrayIO #-}
+

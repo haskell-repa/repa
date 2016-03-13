@@ -92,7 +92,7 @@ instance Unpack (Array F a) (S.Vector a) where
 -- | Windowing Foreign arrays.
 instance Storable a => Windowable F a where
   window st len (FArray vec)
-         = FArray (S.slice st len vec)
+         = FArray (S.unsafeSlice st len vec)
   {-# INLINE_ARRAY window #-}
   {-# SPECIALIZE instance Windowable F Char    #-}
   {-# SPECIALIZE instance Windowable F Int     #-}

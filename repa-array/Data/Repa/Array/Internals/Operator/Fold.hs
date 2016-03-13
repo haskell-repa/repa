@@ -11,7 +11,6 @@ import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Eval.Chain                     as A
-import Data.Repa.Fusion.Unpack                  as A
 import Data.Repa.Scalar.Option
 import System.IO.Unsafe
 import qualified Data.Repa.Chain                as C
@@ -96,6 +95,4 @@ type FoldsDict lSeg lElt lGrp tGrp lRes tRes n a b
         , Bulk   lElt a
         , Target lGrp n
         , Target lRes b
-        , Index  lGrp ~ Index lRes
-        , Unpack (Buffer lGrp n) tGrp
-        , Unpack (Buffer lRes b) tRes)
+        , Index  lGrp ~ Index lRes)

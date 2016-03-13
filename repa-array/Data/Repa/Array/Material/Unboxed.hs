@@ -96,7 +96,7 @@ instance Unpack (Array U a) (U.Vector a) where
 -- | Windowing Unboxed arrays.
 instance U.Unbox a => Windowable U a where
  window st len (UArray vec)
-        = UArray (U.slice st len vec)
+        = UArray (U.unsafeSlice st len vec)
  {-# INLINE_ARRAY window #-}
  {-# SPECIALIZE instance Windowable U Int     #-}
  {-# SPECIALIZE instance Windowable U Float   #-}

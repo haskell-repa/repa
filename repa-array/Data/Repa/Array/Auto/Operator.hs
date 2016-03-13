@@ -504,11 +504,12 @@ unzip arr@(A.AArray_T2 arr')
 
 -- Sloshing ---------------------------------------------------------------------------------------
 -- | Concatenate nested arrays.
-concat  :: (Elem a, Build a at, F.Unpack (Array a) aat)
+concat  :: (Elem a, Build a at)
         => Array (Array a)      -- ^ Arrays to concatenate.
         -> Array a
-concat = G.concat A
-{-# INLINE concat #-}
+concat arr 
+        = (inline G.concat) A arr
+{-# INLINABLE concat #-}
 
 
 -- | O(len result) Concatenate the elements of some nested vector,

@@ -8,7 +8,6 @@ import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Chain                                  as C
 import Data.Repa.Eval.Chain                             as A
-import Data.Repa.Fusion.Unpack                          as A
 import Prelude                                          hiding (concat)
 #include "repa-array.h"
 
@@ -18,9 +17,7 @@ import Prelude                                          hiding (concat)
 process :: ( BulkI   lSrc a
            , BulkI   lDst b,    Bulk lDst (Array lDst b)
            , TargetI lDst b
-           , TargetI lDst (Array lDst b)
-           , Unpack  (Buffer lDst (Array lDst b)) tb
-           , Unpack  (Array lDst b) tbb)
+           , TargetI lDst (Array lDst b))
         => Name lDst                            -- ^ Name of destination layout.
         -> (s -> a -> (s, Array lDst b))        -- ^ Worker function.
         -> s                                    -- ^ Initial state.

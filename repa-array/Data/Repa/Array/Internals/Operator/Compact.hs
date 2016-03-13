@@ -8,7 +8,6 @@ import Data.Repa.Array.Internals.Layout                 as A
 import Data.Repa.Array.Internals.Target                 as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Eval.Stream                            as A
-import Data.Repa.Fusion.Unpack                          as A
 import Data.Repa.Stream                                 as S
 import Prelude                                          hiding (concat)
 #include "repa-array.h"
@@ -19,8 +18,7 @@ import Prelude                                          hiding (concat)
 --   We walk over the stream front to back, maintaining an accumulator.
 --   At each point we can chose to emit an element (or not).
 --
-compact :: ( BulkI lSrc a, TargetI lDst b
-           , Unpack (Buffer lDst b) t0)
+compact :: (BulkI lSrc a, TargetI lDst b)
         => Name lDst
         -> (s -> a -> (s, Maybe b))
         -> s
@@ -38,8 +36,7 @@ compact nDst f s0 arr
 --   initial state, and add the final state to the end of the output.
 --
 compactIn
-        :: ( BulkI lSrc a, TargetI lDst a
-           , Unpack (Buffer lDst a) t0)
+        :: (BulkI lSrc a, TargetI lDst a)
         => Name lDst
         -> (a -> a -> (a, Maybe a))
         -> Array lSrc a

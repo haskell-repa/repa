@@ -6,7 +6,6 @@ module Data.Repa.Eval.Chain
         , unchainToArrayIO)
 where
 import Data.Repa.Chain                 (Chain(..), Step(..))
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
@@ -49,7 +48,7 @@ liftChain (Chain sz s step)
 -- | Compute the elements of a pure `Chain`,
 --   writing them into a new array `Array`.
 unchainToArray
-        :: (Target l a, Unpack (Buffer l a) t)
+        :: Target l a
         => Name l -> Chain S.Id s a -> (Array l a, s)
 unchainToArray nDst c
         = unsafePerformIO
@@ -61,7 +60,7 @@ unchainToArray nDst c
 -- | Compute the elements of an `IO` `Chain`,
 --   writing them to a new `Array`.
 unchainToArrayIO
-        :: (Target l a, Unpack (Buffer l a) t)
+        :: Target l a
         => Name l -> Chain IO s a -> IO (Array l a, s)
 
 unchainToArrayIO nDst (Chain sz s0 step)
@@ -100,8 +99,8 @@ unchainToArrayIO nDst (Chain sz s0 step)
                 !vec1   <- unsafeGrowBuffer vec0 nStart
 
                 let go_unchainIO_unknown !sPEC !uvec !i !n !s
-                     = go_unchainIO_unknown1 (repack vec0 uvec) i n s
-                         (\vec' i' n' s' -> go_unchainIO_unknown sPEC (unpack vec') i' n' s')
+                     = go_unchainIO_unknown1 uvec i n s
+                         (\vec' i' n' s' -> go_unchainIO_unknown sPEC vec' i' n' s')
                          (\result        -> return result)
 
                     go_unchainIO_unknown1 !vec !i !n !s cont done
@@ -125,43 +124,7 @@ unchainToArrayIO nDst (Chain sz s0 step)
                                 arr  <- unsafeFreezeBuffer vec'
                                 done (arr, s')
 
-                go_unchainIO_unknown S.SPEC (unpack vec1) 0 nStart s0
+                go_unchainIO_unknown S.SPEC vec1 0 nStart s0
         {-# INLINE_INNER unchainToArrayIO_unknown #-}
 {-# INLINE_STREAM unchainToArrayIO #-}
 
-
-
-{-
-        -- This consuming function has been desugared so that the recursion
-        -- is via RealWorld, rather than using a function of type IO.
-        -- If the recursion is at IO then GHC tries to coerce to and from
-        -- IO at every recursive call, which messes up SpecConstr.
-          let go_unchainIO_unknown
-             :: Unpack (Buffer r a) t
-             => S.SPEC -> t -> Int -> Int -> s
-             -> State# RealWorld -> (# State# RealWorld, (Array r DIM1 a, s) #)
-
-              go_unchainIO_unknown !sPEC !uvec !i !n !s !w0
-               = case unIO (step s) w0 of
-                  (# w1, Yield e s' #)
-                   | (# w2,  (uvec', i', n') #)
-                     <- unIO (do (vec', n')
-                                  <- if i >= n
-                                      then do vec' <- unsafeGrowBuffer (repack vec0 uvec) n
-                                              return (vec', n + n)
-                                      else    return (repack vec0 uvec,  n)
-                                 unsafeWriteBuffer vec' i e
-                                 return (unpack vec', i + 1, n'))
-                             w1
-                   -> (go_unchainIO_unknown sPEC uvec' i' n' s') w2
-
-                 (# w1, Skip s' #)
-                  -> (go_unchainIO_unknown sPEC uvec  i  n  s') w1
-
-                 (# w1, Done s' #)
-                  -> (unIO $ do
-                       vec' <- unsafeSliceBuffer 0 i (repack vec0 uvec)
-                       arr  <- unsafeFreezeBuffer (Z :. i) vec'
-                       return (arr, s')) w1
-             {-# INLINE go_unchainIO_unknown #-}
--}

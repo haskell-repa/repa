@@ -9,7 +9,6 @@ import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Fusion.Unpack                  as A
 import Data.Repa.Eval.Chain                     as A
 import qualified Data.Repa.Chain                as C
 #include "repa-array.h"
@@ -75,8 +74,6 @@ type GroupsDict  lElt lGrp tGrp lLen tLen n
       = ( Bulk   lElt n
         , Target lGrp n
         , Target lLen Int
-        , Index  lGrp ~ Index lLen
-        , Unpack (Buffer lLen Int) tLen
-        , Unpack (Buffer lGrp n)   tGrp)
+        , Index  lGrp ~ Index lLen)
 
 

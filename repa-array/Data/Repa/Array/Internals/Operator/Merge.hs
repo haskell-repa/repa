@@ -9,7 +9,6 @@ import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Stream                         as S
 import Data.Repa.Eval.Stream                    as A
-import Data.Repa.Fusion.Unpack                  as A
 import qualified Data.Vector.Fusion.Stream      as S
 #include "repa-array.h"
 
@@ -17,8 +16,7 @@ import qualified Data.Vector.Fusion.Stream      as S
 -- | Merge two sorted key-value streams.
 merge   :: ( Ord k
            , BulkI l1 (k, a), BulkI l2 (k, b)
-           , TargetI lDst (k, c)
-           , Unpack (Buffer lDst (k, c)) t0)
+           , TargetI lDst (k, c))
         => Name lDst            -- ^ Name of destination layout.
         -> (k -> a -> b -> c)   -- ^ Combine two values with the same key.
         -> (k -> a -> c)        -- ^ Handle a left value without a right value.
@@ -40,8 +38,7 @@ merge nDst fBoth fLeft fRight arrA arrB
 mergeMaybe 
         :: ( Ord k
            , BulkI l1 (k, a), BulkI l2 (k, b)
-           , TargetI lDst (k, c)
-           , Unpack (Buffer lDst (k, c)) t0)
+           , TargetI lDst (k, c))
         => Name lDst
         -> (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
         -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.

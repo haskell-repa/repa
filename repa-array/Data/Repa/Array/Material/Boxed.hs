@@ -72,7 +72,7 @@ instance Eq a => Eq (Array B a) where
 -- | Boxed windows.
 instance Windowable B a where
  window st len (BArray vec)
-        = BArray (V.slice st len vec)
+        = BArray (V.unsafeSlice st len vec)
  {-# INLINE_ARRAY window #-}
 
 
