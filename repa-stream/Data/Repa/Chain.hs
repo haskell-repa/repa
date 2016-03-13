@@ -14,6 +14,9 @@ module Data.Repa.Chain
         -- * Folding
         , foldsC, Folds(..)
 
+        -- * Unfolding
+        , unfoldsC
+
         -- * Scanning
         , scanMaybeC
 

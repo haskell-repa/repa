@@ -1,11 +1,51 @@
 
 module Data.Repa.Chain.Scan
-        ( scanMaybeC
+        ( unfoldsC
+        , scanMaybeC
         , groupsByC)
 where
 import Data.Repa.Chain.Base
 import qualified Data.Vector.Fusion.Stream.Size  as S
 #include "repa-stream.h"
+
+
+-------------------------------------------------------------------------------
+-- | Segmented unfold.
+-- 
+--   The worker function takes the current element from the input stream 
+--   and current state. 
+--
+--   If the worker returns Just x then that output element will be placed
+--   in the output stream, and it will be called again with the same
+--   input elemenent and next state. 
+--
+--   If the worker returns Nothing then we advance to the next element
+--   of the input stream.
+--
+unfoldsC
+        :: Monad m
+        => (a -> k -> m (k, Maybe b))   -- ^ Worker function.
+        -> k                            -- ^ Initial state for the unfold.
+        -> Chain m s               a    -- ^ Input elements.
+        -> Chain m (s, k, Maybe a) b    -- ^ Output elements.
+
+unfoldsC f k0 (Chain _ s0 istep)
+ = Chain S.Unknown (s0, k0, Nothing) ostep
+ where
+        ostep  (s1, k1, Nothing)
+         =  istep s1 >>= \rs
+         -> case rs of
+                Yield xa s2     -> return $ Skip  (s2, k1, Just xa)
+                Skip     s2     -> return $ Skip  (s2, k1, Nothing)
+                Done     s2     -> return $ Done  (s2, k1, Nothing)
+
+        ostep  (s1, k1, Just xa)
+         = f xa k1   >>= \kmb
+         -> case kmb of
+                (k2, Nothing)   -> return $ Skip     (s1, k2, Nothing)
+                (k2, Just xb)   -> return $ Yield xb (s1, k2, Just xa)
+        {-# INLINE_INNER ostep #-}
+{-# INLINE_STREAM unfoldsC #-}
 
 
 -------------------------------------------------------------------------------
