@@ -10,7 +10,6 @@ import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Scalar.Singleton.Nat           as D
 import Data.Repa.Scalar.Product                 as D
-import Data.Repa.Fusion.Unpack                  as F
 import Control.Monad
 #include "repa-array.h"
 
@@ -100,18 +99,6 @@ instance (Target A a, Target A b)
  bufferLayout (ABuffer_Prod bufA _)
   =     bufferLayout bufA
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance ( Unpack (Buffer A a) tA
-         , Unpack (Buffer A b) tB)
-      =>   Unpack (Buffer A (a :*: b)) (tA, tB) where
- unpack (ABuffer_Prod bufA bufB)            
-        = (unpack bufA, unpack bufB)
-
- repack (ABuffer_Prod xA   xB) (bufA, bufB) 
-        = ABuffer_Prod (repack xA bufA) (repack xB bufB)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance (Eq (Array A a), Eq (Array A b))

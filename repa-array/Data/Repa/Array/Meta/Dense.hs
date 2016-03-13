@@ -14,7 +14,6 @@ import Data.Repa.Array.Meta.RowWise
 import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
-import Data.Repa.Fusion.Unpack
 import Control.Monad
 import Prelude                                  as P
 
@@ -126,15 +125,6 @@ instance (Layout l, Index r ~ Int, Target r a)
  {-# INLINE unsafeFreezeBuffer #-}
  {-# INLINE touchBuffer        #-}
  {-# INLINE bufferLayout       #-}
-
-
-instance Unpack (Buffer r a) tBuf
-      => Unpack (Buffer (E r l) a) (l, tBuf) where
-
- unpack (EBuffer l buf)             = (l, unpack buf)
- repack (EBuffer _ buf) (l, ubuf)   = EBuffer l (repack buf ubuf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 -------------------------------------------------------------------------------

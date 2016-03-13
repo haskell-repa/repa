@@ -10,7 +10,6 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
-import Data.Repa.Fusion.Unpack                  as F
 import Control.Monad
 #include "repa-array.h"
 
@@ -78,14 +77,6 @@ instance Target A Float where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer F Float)) t 
-      => (Unpack (Buffer A Float)) t where
- unpack (ABuffer_Float buf)   = unpack buf
- repack (ABuffer_Float x) buf = ABuffer_Float (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
-
-
 -------------------------------------------------------------------------------------------- Double
 instance Bulk A Double where
  data Array A Double             = AArray_Double !(Array F Double)
@@ -149,10 +140,3 @@ instance Target A Double where
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
 
-
-instance (Unpack (Buffer F Double)) t 
-      => (Unpack (Buffer A Double)) t where
- unpack (ABuffer_Double buf)   = unpack buf
- repack (ABuffer_Double x) buf = ABuffer_Double (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}

@@ -113,7 +113,6 @@ import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Array.Meta.Delayed           as A
 import qualified Data.Repa.Array.Meta.Delayed2          as A
 import qualified Data.Repa.Array.Internals.Bulk         as G
-import qualified Data.Repa.Fusion.Unpack                as F
 import qualified Data.Repa.Chain                        as C
 import qualified Data.Vector.Unboxed                    as U
 import Prelude 
@@ -176,7 +175,7 @@ init    = A.init
 
 -- Construction -----------------------------------------------------------------------------------
 -- | O(1). An empty array of the given layout.
-empty   :: Build a at
+empty   :: Build a
         => Array a
 empty = G.empty A
 {-# INLINE empty #-}
@@ -184,7 +183,7 @@ empty = G.empty A
 
 -- | O(1). Create a new empty array containing a single element.
 singleton 
-        :: Build a at
+        :: Build a
         => a -> Array a
 singleton = G.singleton A
 {-# INLINE singleton #-}
@@ -193,7 +192,7 @@ singleton = G.singleton A
 -- | Like `generateS` but use a function that produces Maybe an element.
 --   If any element returns `Nothing`, then `Nothing` for the whole array.
 generateMaybeS
-        :: Build a at
+        :: Build a
         => Int -> (Int -> Maybe a) 
         -> Maybe (Array a)
 generateMaybeS = G.generateMaybeS A
@@ -203,7 +202,7 @@ generateMaybeS = G.generateMaybeS A
 -- | Apply a function to every element of an array, 
 --   if any application returns `Nothing`, then `Nothing` for the whole result.
 mapMaybeS 
-        :: (Elem a, Build b bt)
+        :: (Elem a, Build b)
         => (a -> Maybe b) 
         -> Array a
         -> Maybe (Array b)
@@ -215,7 +214,7 @@ mapMaybeS = G.mapMaybeS A
 --   or an element. If any element returns `Nothing`, then `Nothing` for
 --   the whole array.
 generateEitherS
-        :: Build a at
+        :: Build a
         => Int -> (Int -> Either err a) 
         -> Either err (Array a)
 generateEitherS = G.generateEitherS A
@@ -225,7 +224,7 @@ generateEitherS = G.generateEitherS A
 -- | Apply a function to every element of an array, 
 --   if any application returns `Left`, then `Left` for the whole result.
 mapEitherS 
-        :: (Elem a, Build b bt)
+        :: (Elem a, Build b)
         => (a -> Either err b) 
         -> Array a
         -> Either err (Array b)
@@ -235,21 +234,21 @@ mapEitherS = G.mapEitherS A
 
 -- Conversion -------------------------------------------------------------------------------------
 -- | Convert a list to an array.
-fromList :: Build a at 
+fromList :: Build a 
          => [a] -> Array a
 fromList = G.fromList A
 {-# INLINE fromList #-}
 
 
 -- | Convert a nested list to an array.
-fromLists :: Build a at
+fromLists :: Build a
           => [[a]] -> Array (Array a)
 fromLists xs  = convert $! N.fromLists A xs
 {-# INLINE fromLists #-}
 
 
 -- | Convert a triply nested list to a triply nested array.
-fromListss :: Build a at
+fromListss :: Build a
            => [[[a]]] -> Array (Array (Array a))
 fromListss xs = convert $! N.fromListss A xs
 {-# INLINE fromListss #-}
@@ -283,7 +282,7 @@ toListss = G.toListss
 -- [10,9,8,7,6,5,4,3,2,1,0]
 -- @
 --
-reverse :: Build a at => Array a -> Array a
+reverse :: Build a => Array a -> Array a
 reverse arr = G.computeS A $! A.reverse arr
 {-# INLINE reverse #-}
 
@@ -291,7 +290,7 @@ reverse arr = G.computeS A $! A.reverse arr
 -- Replicating ------------------------------------------------------------------------------------
 -- | Segmented replicate.
 replicates 
-        :: (Elem a, Build a at)
+        :: (Elem a, Build a)
         => Array (Int, a) -> Array a
 
 replicates arr
@@ -301,7 +300,7 @@ replicates arr
 
 -- Mapping ----------------------------------------------------------------------------------------
 -- | Apply a function to all the elements of a list.
-map     :: (Elem a, Build b bt)
+map     :: (Elem a, Build b)
         => (a -> b) -> Array a -> Array b
 map f arr
  = G.computeS A $! A.map f arr
@@ -312,7 +311,7 @@ map f arr
 --
 --   If the arrays don't have the same length then `Nothing`.
 --
-map2    :: (Elem a, Elem b, Build c ct)
+map2    :: (Elem a, Elem b, Build c)
         => (a -> b -> c) -> Array a -> Array b -> Maybe (Array c)
 map2 f xs ys
  = liftM (G.computeS A) $! A.map2 f xs ys
@@ -378,7 +377,7 @@ std     = G.std
 --   prefix is correlated.
 --
 correlate 
-        :: ( Elem a, Floating a)
+        :: (Elem a, Floating a)
         => Array a -> Array a -> a
 correlate = G.correlate
 {-# INLINE correlate #-}
@@ -392,7 +391,7 @@ correlate = G.correlate
 --     vector of segment lengths or elements was too short relative to the
 --     other.
 --
-folds   :: (Elem a, Build n nt, Build b bt)
+folds   :: (Elem a, Build n, Build b)
         => (a -> b -> b)        -- ^ Worker function.
         -> b                    -- ^ Initial state when folding segments.
         -> Array (n, Int)       -- ^ Segment names and lengths.
@@ -407,7 +406,7 @@ folds f z lens vals
 -- | Like `folds`, but take an initial state for the first segment.
 --
 foldsWith
-        :: (Elem a, Build n nt, Build b bt)
+        :: (Elem a, Build n, Build b)
         => (a -> b -> b)         -- ^ Worker function.
         -> b                     -- ^ Initial state when folding segments.
         -> Maybe (n, Int, b)     -- ^ Name, length and initial state for first segment.
@@ -422,7 +421,7 @@ foldsWith f z start lens vals
 
 -- Filtering --------------------------------------------------------------------------------------
 -- | O(len src) Keep the elements of an array that match the given predicate.
-filter  :: Build a at
+filter  :: Build a
         => (a -> Bool) -> Array a -> Array a
 filter = G.filter A
 {-# INLINE filter #-}
@@ -504,7 +503,7 @@ unzip arr@(A.AArray_T2 arr')
 
 -- Sloshing ---------------------------------------------------------------------------------------
 -- | Concatenate nested arrays.
-concat  :: (Elem a, Build a at)
+concat  :: (Elem a, Build a)
         => Array (Array a)      -- ^ Arrays to concatenate.
         -> Array a
 concat arr 
@@ -515,7 +514,7 @@ concat arr
 -- | O(len result) Concatenate the elements of some nested vector,
 --   inserting a copy of the provided separator array between each element.
 concatWith
-        :: (Elem a, Build a at, F.Unpack (Array a) aat)
+        :: (Elem a, Build a)
         => Array a              -- ^ Separator array.
         -> Array (Array a)      -- ^ Arrays to concatenate.
         -> Array a
@@ -540,8 +539,7 @@ concats (A.AArray_Array (N.NArray starts1 lens1 (A.AArray_Array arr)))
 
 -- | O(len result) Perform a `concatWith`, adding a newline character to
 --   the end of each inner array.
-unlines :: F.Unpack (Array Char) aat
-        => Array (Array Char) -> Array Char
+unlines :: Array (Array Char) -> Array Char
 unlines = G.unlines A
 {-# INLINE unlines #-}
 
@@ -549,7 +547,7 @@ unlines = G.unlines A
 -- | O(len result) Insert a copy of the separator array between the elements of
 --   the second and concatenate the result.
 intercalate 
-        :: (Elem a, Build a at, F.Unpack (Array a) aat)
+        :: (Elem a, Build a)
         => Array a              -- ^ Separator array.
         -> Array (Array a)      -- ^ Arrays to concatenate.
         -> Array a
@@ -592,7 +590,7 @@ slice from len arr
 
 -- Merging ----------------------------------------------------------------------------------------
 -- | Merge two sorted key-value streams.
-merge   :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
+merge   :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c))
         => (k -> a -> b -> c)   -- ^ Combine two values with the same key.
         -> (k -> a -> c)        -- ^ Handle a left value without a right value.
         -> (k -> b -> c)        -- ^ Handle a right value without a left value.
@@ -606,7 +604,7 @@ merge = G.merge A
 -- | Like `merge`, but only produce the elements where the worker functions
 --   return `Just`.
 mergeMaybe 
-        :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c) ct)
+        :: (Ord k, Elem (k, a), Elem (k, b), Build (k, c))
         => (k -> a -> b -> Maybe c) -- ^ Combine two values with the same key.
         -> (k -> a -> Maybe c)      -- ^ Handle a left value without a right value.
         -> (k -> b -> Maybe c)      -- ^ Handle a right value without a left value.
@@ -623,7 +621,7 @@ mergeMaybe = G.mergeMaybe A
 --   We walk over the stream front to back, maintaining an accumulator.
 --   At each point we can chose to emit an element (or not)
 --
-compact :: (Elem a, Build b bt)
+compact :: (Elem a, Build b)
         => (s -> a -> (s, Maybe b))
         -> s
         -> Array a
@@ -635,7 +633,7 @@ compact = G.compact A
 -- | Like `compact` but use the first value of the stream as the 
 --   initial state, and add the final state to the end of the output.
 compactIn
-        :: Build a at
+        :: Build a
         => (a -> a -> (a, Maybe a))
         -> Array a
         -> Array a
@@ -644,8 +642,7 @@ compactIn = G.compactIn A
 
 
 -- | Apply a generic stream process to an array.
-process :: ( Build a at, Build b bt, Elem b
-           , F.Unpack (G.Array A.A b) t
+process :: ( Build a, Build b, Elem b
            , G.Target A.A b)
         => (s -> a -> (s, Array b))     -- ^ Worker function
         -> s                            -- ^ Initial state.
@@ -657,7 +654,7 @@ process   = G.process A
 
 -- Inserting --------------------------------------------------------------------------------------
 -- | Insert elements produced by the given function in to an array.
-insert  :: Build a at
+insert  :: Build a
         => (Int -> Maybe a) -> Array a -> Array a
 insert = G.insert A
 {-# INLINE insert #-}
@@ -742,7 +739,7 @@ diceSep xEndCol xEndRow arr
 -- Grouping ---------------------------------------------------------------------------------------
 -- | From a stream of values which has consecutive runs of idential values,
 --   produce a stream of the lengths of these runs.
-groups  :: (Eq a, Build a at)
+groups  :: (Eq a, Build a)
         => Array a              -- ^ Input elements.
         -> (Array (a, Int), Maybe (a, Int))
                                 -- ^ Completed and final segment lengths.
@@ -756,7 +753,7 @@ groups arr
 --   consecutive elements should be in the same group. 
 --   Also take an initial starting group and count.
 groupsWith
-        :: Build a at
+        :: Build a
         => (a -> a -> Bool)     -- ^ Comparison function.
         -> Maybe  (a, Int)      -- ^ Starting element and count.
         -> Array  a             -- ^ Input elements.

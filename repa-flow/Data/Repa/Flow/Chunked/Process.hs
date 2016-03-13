@@ -3,7 +3,6 @@ module Data.Repa.Flow.Chunked.Process
         ( process_i )
 where
 import Data.Repa.Flow.Chunked.Base
-import Data.Repa.Fusion.Unpack
 import qualified Data.Repa.Array.Generic        as A
 import qualified Data.Repa.Array.Generic.Index  as A
 import qualified Data.Repa.Array.Generic.Target as A
@@ -16,9 +15,7 @@ process_i
         :: ( G.States i m
            , A.BulkI   lSrc a
            , A.Bulk    lDst b, A.Bulk    lDst (A.Array lDst b)
-           , A.TargetI lDst b, A.TargetI lDst (A.Array lDst b)
-           , Unpack (A.Array  lDst b) tbb
-           , Unpack (A.Buffer lDst (A.Array lDst b)) tbbb)
+           , A.TargetI lDst b, A.TargetI lDst (A.Array lDst b))
         => (s -> a -> (s, A.Array lDst b))      -- ^ Worker function.
         -> s                                    -- ^ Initial state.
         ->    Sources i m lSrc a                -- ^ Input sources

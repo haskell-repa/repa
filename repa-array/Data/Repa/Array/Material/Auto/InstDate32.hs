@@ -10,7 +10,6 @@ import qualified Data.Repa.Array.Internals.Target       as A
 import qualified Data.Repa.Array.Generic.Index          as A
 import qualified Data.Repa.Array.Generic                as A
 import qualified Data.Repa.Array.Meta.Window            as A
-import qualified Data.Repa.Fusion.Unpack                as A
 import Data.Repa.Scalar.Date32
 import Control.Monad
 import Prelude                                          as P
@@ -72,14 +71,6 @@ instance A.Target A.A Date32 where
  bufferLayout (ABuffer_Date32 buf)
   = A.Auto $ A.extent $ A.bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance (A.Unpack (A.Buffer A.F Date32)) t 
-      => (A.Unpack (A.Buffer A.A Date32)) t where
- unpack (ABuffer_Date32 buf)   = A.unpack buf
- repack (ABuffer_Date32 x) buf = ABuffer_Date32 (A.repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 ---------------------------------------------------------------------------------------------------

@@ -7,15 +7,13 @@ import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Eval.Stream                    as A
-import Data.Repa.Fusion.Unpack                  as A
 import Data.Repa.Stream                         as S
 #include "repa-array.h"
 
 
 -- | Segmented replicate.
 replicates 
-        :: ( BulkI lSrc (Int, a), TargetI lDst a
-           , Unpack (Buffer lDst a) t)
+        :: (BulkI lSrc (Int, a), TargetI lDst a)
         => Name lDst
         -> Array lSrc (Int, a)
         -> Array lDst a

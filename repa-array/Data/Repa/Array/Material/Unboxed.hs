@@ -15,7 +15,6 @@ import Data.Repa.Array.Meta.Delayed                     as A
 import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
-import Data.Repa.Fusion.Unpack
 import Control.Monad
 import Data.Word
 import qualified Data.Vector.Unboxed                    as U
@@ -85,13 +84,6 @@ instance (UM.Unbox a, Eq a) => Eq (Array U a) where
  {-# INLINE_ARRAY (==) #-}
 
 
-instance Unpack (Array U a) (U.Vector a) where
- unpack (UArray vec)    = vec
- repack !_ !vec         = UArray vec
- {-# INLINE_ARRAY unpack #-}
- {-# INLINE_ARRAY repack #-}
-
-
 ---------------------------------------------------------------------------------------------------
 -- | Windowing Unboxed arrays.
 instance U.Unbox a => Windowable U a where
@@ -158,13 +150,6 @@ instance U.Unbox a => Target U a where
  {-# SPECIALIZE instance Target U Word16 #-}
  {-# SPECIALIZE instance Target U Word32 #-}
  {-# SPECIALIZE instance Target U Word64 #-}
-
-
-instance Unpack (Buffer U a) (UM.IOVector a) where
- unpack (UBuffer vec)  = vec `seq` vec
- repack !_ !vec        = UBuffer vec
- {-# INLINE_ARRAY unpack #-}
- {-# INLINE_ARRAY repack #-}
 
 
 ---------------------------------------------------------------------------------------------------

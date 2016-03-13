@@ -15,7 +15,6 @@ import Data.Repa.Array.Meta.Window                      as A
 import Data.Repa.Array.Generic.Index                    as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
-import Data.Repa.Fusion.Unpack
 import Data.Word
 import Control.Monad
 import qualified Data.Vector                            as V
@@ -126,13 +125,6 @@ instance Target B a where
  {-# SPECIALIZE instance Target B Word16 #-}
  {-# SPECIALIZE instance Target B Word32 #-}
  {-# SPECIALIZE instance Target B Word64 #-}
-
-
-instance Unpack (Buffer B a) (VM.IOVector a) where
- unpack (BBuffer vec) = vec
- repack _ vec         = BBuffer vec
- {-# INLINE_ARRAY unpack #-}
- {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------

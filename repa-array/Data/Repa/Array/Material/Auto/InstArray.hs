@@ -11,7 +11,6 @@ import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Fusion.Unpack                  as A
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector                    as V
 import qualified Data.ByteString.Internal       as BS
@@ -107,14 +106,6 @@ instance (Bulk l a, A.Target l a, Index l ~ Int)
  bufferLayout (ABuffer_Array buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance Unpack (Buffer N (Array l a)) t
-      => Unpack (Buffer A (Array l a)) t where
- unpack (ABuffer_Array buf)   = unpack buf
- repack (ABuffer_Array x) buf = ABuffer_Array (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance (Bulk A a, Windowable l a, Index l ~ Int)

@@ -17,8 +17,6 @@ import Data.Repa.Array.Generic.Index                            as A
 import Data.Repa.Array.Internals.Target                         as A
 import Data.Repa.Array.Internals.Bulk                           as A
 
-import Data.Repa.Fusion.Unpack
-
 import Foreign.ForeignPtr
 import Foreign.Storable
 
@@ -81,12 +79,6 @@ instance Storable a => Bulk F a where
 
 deriving instance (S.Storable a, Show a) => Show (Array F a)
 
-instance Unpack (Array F a) (S.Vector a) where
- unpack (FArray v) = v
- repack _ v        = FArray v
- {-# INLINE_ARRAY unpack #-}
- {-# INLINE_ARRAY repack #-}
-
 
 -------------------------------------------------------------------------------
 -- | Windowing Foreign arrays.
@@ -127,14 +119,6 @@ instance Storable a => Target F a where
   {-# INLINE unsafeSliceBuffer  #-}
   {-# INLINE touchBuffer        #-}
   {-# INLINE bufferLayout       #-}
-
-
--- | Unpack Foreign buffers
-instance Unpack (Buffer F a) (M.IOVector a) where
- unpack (FBuffer mv)  = mv
- repack _ mv          = FBuffer mv
- {-# INLINE_ARRAY unpack #-}
- {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------

@@ -116,11 +116,11 @@ flatPackAsciiLn_i ss
 -- | Like `packFormatLn_i`,
 --   but use a default, human-readable format to encode the values.
 keyPackAsciiLn_i
-        :: forall a k t
+        :: forall a k
         . ( C.FormatAscii a, a ~ Value (C.FormatAscii' a)
           , Elem a
           , Packable (C.FormatAscii' a)
-          , Elem k, Build k t)
+          , Elem k, Build k)
         => Sources (k, a)                       -- ^ Sources of values to be packed.
         -> IO (Sources (k, Array Word8))        -- ^ Packed data.
 

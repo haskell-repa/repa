@@ -21,7 +21,6 @@ import Data.Repa.Flow.IO.Bucket
 import Data.Repa.Flow.Generic.IO.Sieve          as F
 import Data.Repa.Flow.Generic.Map               as F
 import Data.Repa.Flow.Generic.Base              as F
-import Data.Repa.Fusion.Unpack                  as F
 import Data.Repa.Array.Material                 as A
 import Data.Repa.Array.Meta.Delayed             as A
 import Data.Repa.Array.Meta.Window              as A
@@ -163,7 +162,7 @@ sourceBytes len bs
 sinkLines 
         :: ( Bulk  l Bucket
            , BulkI l1 (Array l2 Char)
-           , BulkI l2 Char, Unpack (Array l2 Char) t2)
+           , BulkI l2 Char)
         => Name  l1             -- ^ Layout of chunks of lines.
         -> Name  l2             -- ^ Layout of lines.
         -> Array l Bucket       -- ^ Buckets.

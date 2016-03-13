@@ -40,7 +40,6 @@ import Data.Repa.Array.Material.Unboxed                 as A
 import Data.Repa.Array.Material.Foreign.Base            as A
 import Data.Repa.Array.Internals.Bulk                   as A
 import Data.Repa.Array.Internals.Target                 as A
-import Data.Repa.Fusion.Unpack                          as A
 import Data.Repa.Eval.Stream                            as A
 import Data.Repa.Stream                                 as S
 import qualified Data.Repa.Vector.Generic               as G
@@ -218,18 +217,6 @@ instance (Bulk l a, Target l a, Index l ~ Int)
         !arrElems <- unsafeFreezeBuffer bufElems
         return $ NArray starts lengths arrElems
   {-# INLINE_ARRAY unsafeFreezeBuffer #-}
-
---  unsafeThawBuffer   (NArray v)         
---      = FBuffer `liftM` S.unsafeThaw v
---  {-# INLINE unsafeThawBuffer   #-}
-
-
-instance Unpack (Buffer N (Array l a)) 
-                (VM.IOVector (Array l a)) where
- unpack (NBuffer mv)    = mv
- repack _ mv            = NBuffer mv
- {-# INLINE_ARRAY unpack #-}
- {-# INLINE_ARRAY repack #-}
 
 
 ---------------------------------------------------------------------------------------- Windowable

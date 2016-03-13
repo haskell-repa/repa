@@ -10,7 +10,6 @@ import Data.Repa.Array.Meta.Window
 import Data.Repa.Array.Generic.Index
 import Data.Repa.Array.Internals.Bulk
 import Data.Repa.Array.Internals.Target
-import Data.Repa.Fusion.Unpack
 import Control.Monad
 import Prelude                          hiding (zip, unzip)
 #include "repa-array.h"
@@ -139,16 +138,6 @@ instance ( Target l1 a, Target l2 b
 
  bufferLayout (T2Buffer buf1 buf2)
   = Tup2 (bufferLayout buf1) (bufferLayout buf2)
-
-instance (Unpack (Buffer r1 a) t1, Unpack (Buffer r2 b) t2)
-       => Unpack (Buffer (T2 r1 r2) (a, b)) (t1, t2) where
- unpack  (T2Buffer buf1 buf2)
-   = buf1 `seq` buf2 `seq` (unpack buf1, unpack buf2)
- {-# INLINE_ARRAY unpack #-}
-
- repack !(T2Buffer x1 x2) (buf1, buf2)
-   = buf1 `seq` buf2 `seq` (T2Buffer (repack x1 buf1) (repack x2 buf2))
- {-# INLINE_ARRAY repack #-}
 
 
 -------------------------------------------------------------------------------

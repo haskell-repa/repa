@@ -7,9 +7,6 @@ where
 import Data.Repa.Array.Material.Auto                    (A(..))
 import qualified Data.Repa.Array.Generic                as G
 import qualified Data.Repa.Array.Meta.Window            as A
-import qualified Data.Repa.Array.Internals.Target       as G
-import qualified Data.Repa.Fusion.Unpack                as F
-
 
 
 -- | Arrays of elements that are automatically layed out into some
@@ -32,7 +29,6 @@ type Elem  a
 
 -- | Class of elements where arrays of those elements can be constructed
 --   in arbitrary order.
-type Build a t
+type Build a
         = ( G.Bulk   A a
-          , G.Target A a
-          , F.Unpack (G.Buffer A a) t)
+          , G.Target A a)

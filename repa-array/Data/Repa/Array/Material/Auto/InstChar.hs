@@ -9,7 +9,6 @@ import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Fusion.Unpack                  as A
 import Control.Monad
 #include "repa-array.h"
 
@@ -39,14 +38,6 @@ instance Windowable A Char where
  window st len (AArray_Char arr) 
   = AArray_Char (window st len arr)
  {-# INLINE_ARRAY window #-}
-
-
-instance Unpack (Array F Char) t 
-      => Unpack (Array A Char) t where
- unpack (AArray_Char arr)   = unpack arr
- repack (AArray_Char x) arr = AArray_Char (repack x arr)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance Target A Char where
@@ -88,14 +79,6 @@ instance Target A Char where
  bufferLayout (ABuffer_Char buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance (Unpack (Buffer F Char)) t 
-      => (Unpack (Buffer A Char)) t where
- unpack (ABuffer_Char buf)   = unpack buf
- repack (ABuffer_Char x) buf = ABuffer_Char (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance Eq (Array A Char) where

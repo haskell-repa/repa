@@ -17,8 +17,6 @@ module Data.Repa.Flow.Auto.Base
 where
 import Data.Repa.Array.Auto
         hiding (fromList, fromLists)
-
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Material.Auto                    (A(..), Name(..))
 import qualified Data.Repa.Flow.Chunked                 as C
 import qualified Data.Repa.Flow.Generic                 as G
@@ -61,7 +59,7 @@ sinksArity = G.sinksArity
 --   * All elements are stuffed into a single chunk,
 --     and each stream is given the same chunk.
 --
-fromList :: Build a t
+fromList :: Build a
          => Int -> [a] -> IO (Sources a)
 fromList xs = C.fromList A xs
 {-# INLINE_FLOW fromList #-}
@@ -69,7 +67,7 @@ fromList xs = C.fromList A xs
 
 -- | Like `fromList` but take a list of lists.
 --   Each each of the inner lists is packed into a single chunk.
-fromLists :: Build a t
+fromLists :: Build a
           => Int -> [[a]] -> IO (Sources a)
 fromLists xss = C.fromLists A xss
 {-# INLINE_FLOW fromLists #-}
@@ -80,7 +78,7 @@ fromLists xss = C.fromLists A xss
 --   * If the index does not specify a valid stream then the result will
 --     be empty.
 --  
-toList1   :: Build a t
+toList1   :: Build a
           => Int -> Sources a -> IO [a]
 toList1 ix s  
  | ix < 0 || ix >= G.sourcesArity s 
@@ -96,7 +94,7 @@ toList1 ix s
 --   * If the index does not specify a valid stream then the result will 
 --     be empty.
 --
-toLists1  :: Build a t
+toLists1  :: Build a
           => Int -> Sources a -> IO [[a]]
 toLists1 ix s
  | ix < 0 || ix >= G.sourcesArity s 
@@ -114,7 +112,7 @@ toLists1 ix s
 --   * All elements are stuffed into a single chunk,
 --     and each stream is given the same chunk.
 --
-fromArray :: Build a t
+fromArray :: Build a
           => Int -> Array a -> IO (Sources a)
 fromArray n arr = G.fromList n [arr]
 {-# INLINE_FLOW fromArray #-}
@@ -122,7 +120,7 @@ fromArray n arr = G.fromList n [arr]
 
 -- | Like `fromArray` but take an array of arrays.
 --   Each of the inner arrays is packed into a single chunk.
-fromArrays :: (Elem a, Build a t)
+fromArrays :: (Elem a, Build a)
            => Int -> Array (Array a) -> IO (Sources a)
 fromArrays n arrs = G.fromList n (A.toList arrs)
 {-# INLINE_FLOW fromArrays #-}
@@ -133,7 +131,7 @@ fromArrays n arrs = G.fromList n (A.toList arrs)
 --   * If the index does not specify a valid stream then the result will
 --     be empty.
 --
-toArray1   :: (Elem a, Build a t, Unpack (Array a) att)
+toArray1   :: (Elem a, Build a)
            => Int -> Sources a -> IO (Array a)
 toArray1 ix ss
  | ix < 0 || ix >= G.sourcesArity ss
@@ -150,7 +148,7 @@ toArray1 ix ss
 --   * If the index does not specify a valid stream then the result will
 --     be empty.
 --
-toArrays1  :: (Elem a, Build a t, Unpack (Array a) att)
+toArrays1  :: (Elem a, Build a)
            => Int -> Sources a -> IO (Array (Array a))
 toArrays1 ix ss
  | ix < 0 || ix >= G.sourcesArity ss

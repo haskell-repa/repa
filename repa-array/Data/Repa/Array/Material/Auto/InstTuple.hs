@@ -9,7 +9,6 @@ import Data.Repa.Array.Generic.Convert          as A
 import Data.Repa.Array.Internals.Layout         as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Fusion.Unpack                  as A
 import Control.Monad
 #include "repa-array.h"
 
@@ -90,13 +89,6 @@ instance (Target A a, Target A b)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
 
-
-instance Unpack (Buffer (T2 A A) (a, b)) t
-      => Unpack (Buffer A (a, b)) t where
- unpack (ABuffer_T2 buf)   = unpack buf
- repack (ABuffer_T2 x) buf = ABuffer_T2 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance Eq (Array (T2 A A) (a, b))

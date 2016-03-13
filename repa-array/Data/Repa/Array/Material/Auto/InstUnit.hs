@@ -5,7 +5,6 @@ import Data.Repa.Array.Material.Boxed           as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
-import Data.Repa.Fusion.Unpack                  as A
 #include "repa-array.h"
 
 
@@ -22,13 +21,6 @@ deriving instance Show (Array A ())
 instance Windowable A () where
  window _st len' (AArray_Unit _len)
   = AArray_Unit len'
-
-
-instance Unpack (Array A ()) Int where
- unpack (AArray_Unit len)       = len
- repack (AArray_Unit _) len     = AArray_Unit len
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance Target A () where
@@ -71,9 +63,3 @@ instance Target A () where
   = Auto len
  {-# INLINE_ARRAY bufferLayout #-}
 
-
-instance (Unpack (Buffer A ())) Int where
- unpack   (ABuffer_Unit len) = len
- repack _ len                = ABuffer_Unit len
- {-# INLINE unpack #-}
- {-# INLINE repack #-}

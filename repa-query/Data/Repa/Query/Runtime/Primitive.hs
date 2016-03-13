@@ -148,7 +148,7 @@ mask_i                  = F.mask_i
 -- Segmented fold.
 -- TODO: do this chunkwise.
 folds_i
-        :: (F.FoldsDict n a b u1 u2 u3 u4, F.Flow n, F.Flow b)
+        :: (F.FoldsDict n a b, F.Flow n, F.Flow b)
         => (a -> b -> b)
         -> b
         -> F.Sources       (n :*: P.Int :*: ())
@@ -163,7 +163,7 @@ folds_i f z sNameLens sVals
 
 -- Group by.
 groupsBy_i 
-        :: (F.GroupsDict a u1 u2, F.Flow a)
+        :: (F.GroupsDict a, F.Flow a)
         => (a -> a -> P.Bool)
         -> F.Sources a
         -> P.IO (F.Sources (a :*: P.Int :*: ()))

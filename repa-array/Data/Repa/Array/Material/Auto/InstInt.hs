@@ -10,7 +10,6 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
-import Data.Repa.Fusion.Unpack                  as F
 import Data.Int
 import Control.Monad
 #include "repa-array.h"
@@ -80,14 +79,6 @@ instance Target A Int where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer F Int)) t 
-      => (Unpack (Buffer A Int)) t where
- unpack (ABuffer_Int buf)   = unpack buf
- repack (ABuffer_Int x) buf = ABuffer_Int (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
-
-
 --------------------------------------------------------------------------------------------- Int8
 instance Bulk A Int8 where
  data Array A Int8               = AArray_Int8 !(Array F Int8)
@@ -150,14 +141,6 @@ instance Target A Int8 where
  bufferLayout (ABuffer_Int8 buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance (Unpack (Buffer F Int8)) t 
-      => (Unpack (Buffer A Int8)) t where
- unpack (ABuffer_Int8 buf)   = unpack buf
- repack (ABuffer_Int8 x) buf = ABuffer_Int8 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 --------------------------------------------------------------------------------------------- Int16
@@ -224,14 +207,6 @@ instance Target A Int16 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer F Int16)) t 
-      => (Unpack (Buffer A Int16)) t where
- unpack (ABuffer_Int16 buf)   = unpack buf
- repack (ABuffer_Int16 x) buf = ABuffer_Int16 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
-
-
 --------------------------------------------------------------------------------------------- Int32
 instance Bulk A Int32 where
  data Array A Int32               = AArray_Int32 !(Array F Int32)
@@ -296,14 +271,6 @@ instance Target A Int32 where
  {-# INLINE_ARRAY bufferLayout #-}
 
 
-instance (Unpack (Buffer F Int32)) t 
-      => (Unpack (Buffer A Int32)) t where
- unpack (ABuffer_Int32 buf)   = unpack buf
- repack (ABuffer_Int32 x) buf = ABuffer_Int32 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
-
-
 --------------------------------------------------------------------------------------------- Int64
 instance Bulk A Int64 where
  data Array A Int64               = AArray_Int64 !(Array F Int64)
@@ -366,12 +333,4 @@ instance Target A Int64 where
  bufferLayout (ABuffer_Int64 buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance (Unpack (Buffer F Int64)) t 
-      => (Unpack (Buffer A Int64)) t where
- unpack (ABuffer_Int64 buf)   = unpack buf
- repack (ABuffer_Int64 x) buf = ABuffer_Int64 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 

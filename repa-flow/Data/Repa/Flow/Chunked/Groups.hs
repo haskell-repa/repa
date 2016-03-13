@@ -5,7 +5,6 @@ module Data.Repa.Flow.Chunked.Groups
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Generic                  as A  hiding (GroupsDict)
@@ -14,12 +13,10 @@ import qualified Data.Repa.Flow.Generic         as G
 
 
 -- | Dictionaries needed to perform a grouping.
-type GroupsDict  i m lVal lGrp tGrp lLen tLen a
+type GroupsDict  i m lVal lGrp lLen a
         = ( Flow i m lVal a, A.Index lVal ~ Int
           , TargetI  lGrp  a
-          , TargetI  lLen Int
-          , Unpack  (Buffer lGrp a)   tGrp
-          , Unpack  (Buffer lLen Int) tLen)
+          , TargetI  lLen Int)
 
 
 -- Grouping -------------------------------------------------------------------
@@ -32,7 +29,7 @@ type GroupsDict  i m lVal lGrp tGrp lLen tLen a
 -- @
 -- 
 groupsBy_i 
-        :: GroupsDict i m lVal lGrp tGrp lLen tLen a
+        :: GroupsDict i m lVal lGrp lLen a
         => Name lGrp             -- ^ Layout for group names.
         -> Name lLen             -- ^ Layout for group lengths.
         -> (a -> a -> Bool)      -- ^ Whether successive elements should be grouped.

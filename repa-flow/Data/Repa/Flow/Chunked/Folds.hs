@@ -5,7 +5,6 @@ module Data.Repa.Flow.Chunked.Folds
 where
 import Data.Repa.Flow.Chunked.Base
 import Data.Repa.Flow.States
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Scalar.Option
 import Data.Repa.Array.Generic.Index            as A
 import Data.Repa.Array.Generic                  as A hiding (FoldsDict)
@@ -16,7 +15,7 @@ import qualified Data.Repa.Flow.Generic         as G
 
 
 -- | Dictionaries needed to perform a segmented fold.
-type FoldsDict i m lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
+type FoldsDict i m lSeg lElt lGrp lRes n a b
         = ( States i m
           , Windowable lSeg (n, Int), Windowable lElt a
           , BulkI   lSeg (n, Int)
@@ -25,14 +24,12 @@ type FoldsDict i m lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
           , BulkI   lRes b
           , TargetI lElt a
           , TargetI lGrp n
-          , TargetI lRes b
-          , Unpack (Buffer lGrp n) tGrp
-          , Unpack (Buffer lRes b) tRes)
+          , TargetI lRes b)
 
 
 -- Folds ----------------------------------------------------------------------
 -- | Segmented fold over vectors of segment lengths and input values.
-folds_i :: FoldsDict i m lSeg tSeg lElt tElt lGrp tGrp lRes tRes n a b
+folds_i :: FoldsDict i m lSeg lElt lGrp lRes n a b
         => Name lGrp                 -- ^ Layout for group names.
         -> Name lRes                 -- ^ Layout for fold results.
         -> (a -> b -> b)             -- ^ Worker function.

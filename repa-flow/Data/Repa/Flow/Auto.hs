@@ -91,11 +91,9 @@ import Data.Repa.Array.Auto
         hiding (fromList, fromLists)
 
 import Data.Repa.Array.Material.Auto                    (A(..), Name(..))
-import Data.Repa.Fusion.Unpack                          as A
 import qualified Data.Repa.Array.Meta.Window            as A
 import qualified Data.Repa.Array.Material               as A
 import qualified Data.Repa.Array.Generic                as A
-import qualified Data.Repa.Array.Generic.Target         as A
 import qualified Data.Repa.Flow.Chunked                 as C hiding (next)
 import qualified Data.Repa.Flow.Generic                 as G hiding (next)
 import Control.Monad
@@ -182,7 +180,7 @@ finalize_o f k
 -- Replicating ----------------------------------------------------------------
 -- | Segmented replicate.
 replicates_i 
-        :: (Flow (Int, a), Build a at, Unpack (A.Buffer A a) att)
+        :: (Flow (Int, a), Build a)
         => Sources (Int, a)     -- ^ Source of segment lengths and values.
         -> IO (Sources a)       
 replicates_i = C.replicates_i A
@@ -191,14 +189,14 @@ replicates_i = C.replicates_i A
 
 -- Mapping --------------------------------------------------------------------
 -- | Apply a function to all elements pulled from some sources.
-map_i   :: (Flow a, Build b bt)
+map_i   :: (Flow a, Build b)
         => (a -> b) -> Sources a -> IO (Sources b)
 map_i f s = C.smap_i (\_ x -> f x) s
 {-# INLINE map_i #-}
 
 
 -- | Apply a function to all elements pushed to some sinks.
-map_o   :: (Flow a, Build b bt)
+map_o   :: (Flow a, Build b)
         => (a -> b) -> Sinks b   -> IO (Sinks a)
 map_o f s = C.smap_o (\_ x -> f x) s
 {-# INLINE map_o #-}
@@ -206,7 +204,7 @@ map_o f s = C.smap_o (\_ x -> f x) s
 
 -- | Combine corresponding elements of two sources with the given function.
 zipWith_i 
-        :: (Flow a, Flow b, Build c bt)
+        :: (Flow a, Flow b, Build c)
         => (a -> b -> c) 
         -> Sources a -> Sources b 
         -> IO (Sources c)
@@ -218,8 +216,7 @@ zipWith_i f sa sb
 -- Processing -----------------------------------------------------------------
 -- | Apply a generic stream process to a bundle of sources.
 process_i
-        :: ( Flow a, Flow b, Build b bt
-           , Unpack (Array b) bbt)
+        :: ( Flow a, Flow b, Build b)
         => (s -> a -> (s, Array b))     -- ^ Worker function.
         -> s                            -- ^ Initial state.
         ->     Sources a                -- ^ Input sources.
@@ -232,7 +229,7 @@ process_i = C.process_i
 -- Concatenation --------------------------------------------------------------
 -- | Concatenate a flow of arrays into a flow of the elements.
 concat_i
-        :: (Flow a, Build a at, Unpack (Array a) att)
+        :: (Flow a, Build a)
         => Sources (Array a)
         -> IO (Sources a)
 concat_i ss
@@ -374,7 +371,7 @@ head_i ix len s
 -- @
 --
 groups_i
-        :: (GroupsDict a u1 u2, Eq a)
+        :: (GroupsDict a, Eq a)
         => Sources a       -- ^ Input elements.
         -> IO (Sources (a, Int)) 
                                 -- ^ Starting element and length of groups.
@@ -386,7 +383,7 @@ groups_i s
 -- | Like `groupsBy`, but take a function to determine whether two consecutive
 --   values should be in the same group.
 groupsBy_i
-        :: GroupsDict a u1 u2
+        :: GroupsDict a
         => (a -> a -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
         -> Sources a       -- ^ Input elements.
@@ -399,15 +396,15 @@ groupsBy_i f s
 
 
 -- | Dictionaries needed to perform a grouping.
-type GroupsDict a u1 u2
-        = C.GroupsDict Int IO A A u1 A u2 a
+type GroupsDict a
+        = C.GroupsDict Int IO A A A a
 
 
 -- Folding --------------------------------------------------------------------
 -- | Fold all the elements of each stream in a bundle, one stream after the
 --   other, returning an array of fold results.
 foldlS
-        :: (Flow b, Build a at)
+        :: (Flow b, Build a)
         => (a -> b -> a)                -- ^ Combining funtion.
         -> a                            -- ^ Starting value.
         -> Sources b                    -- ^ Input elements to fold.
@@ -421,7 +418,7 @@ foldlS f z ss
 -- | Fold all the elements of each stream in a bundle, one stream after the
 --   other, returning an array of fold results.
 foldlAllS
-        :: (Flow b)
+        :: Flow b
         => (a -> b -> a)                -- ^ Combining funtion.
         -> a                            -- ^ Starting value.
         -> Sources b                    -- ^ Input elements to fold.
@@ -456,7 +453,7 @@ foldlAllS f z ss
 -- [(\'a\',10),(\'b\',600),(\'c\',1),(\'d\',1),(\'e\',1)]
 -- @
 --
-folds_i :: FoldsDict n a b u1 u2 u3 u4
+folds_i :: FoldsDict n a b
         => (a -> b -> b)          -- ^ Worker function.
         -> b                      -- ^ Initial state when folding each segment.
         -> Sources (n, Int)       -- ^ Segment lengths.
@@ -469,8 +466,8 @@ folds_i f z sLen sVal
 {-# INLINE folds_i #-}
 
 -- | Dictionaries needed to perform a segmented fold.
-type FoldsDict n a b u1 u2 u3 u4
-        = C.FoldsDict Int IO A u1 A u2 A u3 A u4 n a b
+type FoldsDict n a b
+        = C.FoldsDict Int IO A A A A n a b
 
 
 -- | Combination of `groupsBy_i` and `folds_i`. We determine the the segment
@@ -492,7 +489,7 @@ type FoldsDict n a b u1 u2 u3 u4
 -- @
 --
 foldGroupsBy_i
-        :: (FoldGroupsDict n a b u1 u2)
+        :: (FoldGroupsDict n a b)
         => (n -> n -> Bool)     -- ^ Fn to check if consecutive elements
                                 --   are in the same group.
         -> (a -> b -> b)        -- ^ Worker function for the fold.
@@ -507,10 +504,8 @@ foldGroupsBy_i pGroup f z sNames sVals
 {-# INLINE foldGroupsBy_i #-}
  
 
-type FoldGroupsDict  n a b u1 u2
+type FoldGroupsDict  n a b
       = ( A.BulkI    A n
         , A.Material A a
         , A.Material A n
-        , A.Material A b
-        , Unpack  (A.Buffer A n) u1
-        , Unpack  (A.Buffer A b) u2)
+        , A.Material A b)

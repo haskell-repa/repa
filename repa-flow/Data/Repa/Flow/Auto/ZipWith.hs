@@ -20,7 +20,7 @@ import qualified Data.Repa.Flow.Chunked                 as C hiding (next)
 --
 zipWith3_i 
         :: ( Flow a, Flow b, Flow c
-           , Build b bt, Build c ct, Build d dt)
+           , Build b, Build c, Build d)
         => (a -> b -> c -> d) 
         -> Sources a -> Sources b -> Sources c
         -> IO (Sources d)
@@ -36,8 +36,8 @@ zipWith3_i f sa sb sc
 --         The core code has probably had an unswitch explosion.
 --
 zipWith4_i 
-        :: ( Flow a, Flow b, Flow c, Flow d
-           , Build a at, Build b bt, Build c ct, Build d dt, Build e et)
+        :: ( Flow  a, Flow  b, Flow  c, Flow  d
+           , Build a, Build b, Build c, Build d, Build e)
         => (a -> b -> c -> d -> e) 
         -> Sources a -> Sources b -> Sources c -> Sources d
         -> IO (Sources e)
@@ -56,9 +56,9 @@ zipWith4_i f sa sb sc sd
 --         The core code has probably had an unswitch explosion.
 --
 zipWith5_i 
-        :: ( Flow a, Flow b, Flow c, Flow d, Flow e
-           , Build a at, Build b bt, Build c ct, Build d dt, Build e et
-           , Build f ft)
+        :: ( Flow  a, Flow  b, Flow  c, Flow  d, Flow  e
+           , Build a, Build b, Build c, Build d, Build e
+           , Build f)
         => (a -> b -> c -> d -> e -> f) 
         -> Sources a -> Sources b -> Sources c -> Sources d -> Sources e
         -> IO (Sources f)
@@ -78,9 +78,9 @@ zipWith5_i f sa sb sc sd se
 --         The core code has probably had an unswitch explosion.
 --
 zipWith6_i 
-        :: ( Flow a, Flow b, Flow c, Flow d, Flow e, Flow f
-           , Build a at, Build b bt, Build c ct, Build d dt, Build e et, Build f ft
-           , Build g gt)
+        :: ( Flow  a, Flow  b, Flow  c, Flow  d, Flow  e, Flow  f
+           , Build a, Build b, Build c, Build d, Build e, Build f
+           , Build g)
         => (a -> b -> c -> d -> e -> f -> g) 
         -> Sources a -> Sources b -> Sources c -> Sources d -> Sources e -> Sources f
         -> IO (Sources g)
@@ -100,9 +100,9 @@ zipWith6_i ff sa sb sc sd se sf
 --         The core code has probably had an unswitch explosion.
 --
 zipWith7_i 
-        :: ( Flow a, Flow b, Flow c, Flow d, Flow e, Flow f, Flow g
-           , Build a at, Build b bt, Build c ct, Build d dt, Build e et, Build f et, Build g gt
-           , Build h ht)
+        :: ( Flow  a, Flow  b, Flow  c, Flow  d, Flow  e, Flow  f, Flow  g
+           , Build a, Build b, Build c, Build d, Build e, Build f, Build g
+           , Build h)
         => (a -> b -> c -> d -> e -> f -> g -> h) 
         -> Sources a -> Sources b -> Sources c -> Sources d -> Sources e -> Sources f -> Sources g
         -> IO (Sources h)

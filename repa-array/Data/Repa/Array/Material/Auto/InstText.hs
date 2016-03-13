@@ -11,7 +11,6 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
-import Data.Repa.Fusion.Unpack                  as F
 import Control.Monad
 import Data.Text                                (Text)
 #include "repa-array.h"
@@ -75,13 +74,6 @@ instance  Target A Text where
  bufferLayout (ABuffer_Text buf)
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
-
-
-instance Unpack (Buffer A Text) (Buffer A Text) where
- unpack buf   = buf
- repack _ buf = buf
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 
 instance Eq (Array A Text) where

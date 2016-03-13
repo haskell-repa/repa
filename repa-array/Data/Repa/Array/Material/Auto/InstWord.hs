@@ -10,7 +10,6 @@ import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A
 import Data.Repa.Array.Internals.Layout         as A
-import Data.Repa.Fusion.Unpack                  as F
 import Data.Word
 import Control.Monad
 #include "repa-array.h"
@@ -24,12 +23,6 @@ instance Bulk A Word8 where
  {-# INLINE_ARRAY layout #-}
  {-# INLINE_ARRAY index  #-}
 
-instance (Unpack (Array F Word8)) t 
-      => (Unpack (Array A Word8)) t where
- unpack (AArray_Word8 buf)   = unpack buf
- repack (AArray_Word8 x) buf = AArray_Word8 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
 
 deriving instance Show (Array A Word8)
 
@@ -86,10 +79,3 @@ instance Target A Word8 where
   = Auto $ A.extent $ bufferLayout buf
  {-# INLINE_ARRAY bufferLayout #-}
 
-
-instance (Unpack (Buffer F Word8)) t 
-      => (Unpack (Buffer A Word8)) t where
- unpack (ABuffer_Word8 buf)   = unpack buf
- repack (ABuffer_Word8 x) buf = ABuffer_Word8 (repack x buf)
- {-# INLINE unpack #-}
- {-# INLINE repack #-}
