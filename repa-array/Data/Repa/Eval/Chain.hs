@@ -98,9 +98,9 @@ unchainToArrayIO nDst (Chain sz s0 step)
          = do   !vec0   <- unsafeNewBuffer  (create nDst zeroDim)
                 !vec1   <- unsafeGrowBuffer vec0 nStart
 
-                let go_unchainIO_unknown !sPEC !uvec !i !n !s
+                let go_unchainIO_unknown !uvec !i !n !s 
                      = go_unchainIO_unknown1 uvec i n s
-                         (\vec' i' n' s' -> go_unchainIO_unknown sPEC vec' i' n' s')
+                         (\vec' i' n' s' -> go_unchainIO_unknown vec' i' n' s')
                          (\result        -> return result)
 
                     go_unchainIO_unknown1 !vec !i !n !s cont done
@@ -124,7 +124,7 @@ unchainToArrayIO nDst (Chain sz s0 step)
                                 arr  <- unsafeFreezeBuffer vec'
                                 done (arr, s')
 
-                go_unchainIO_unknown S.SPEC vec1 0 nStart s0
+                go_unchainIO_unknown vec1 0 nStart s0
         {-# INLINE_INNER unchainToArrayIO_unknown #-}
 {-# INLINE_STREAM unchainToArrayIO #-}
 

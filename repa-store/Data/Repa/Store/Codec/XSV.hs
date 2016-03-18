@@ -124,26 +124,28 @@ normalizeNewlines :: Sources Word8 -> IO (Sources Word8)
 normalizeNewlines ss
  = let  
         -- previous char was LF
-        step (Some 0x0a) c
+        step c (Some 0x0a)
          = case c of
                 -- Got LF+CR
-                0x0d    -> (None, A.empty A)
-                _       -> step None c
+                0x0d    -> StepUnfoldBump     None
+                0x0a    -> StepUnfoldNext  c (Some c)
+                _       -> StepUnfoldNext  c  None
 
         -- previous char was a CR
-        step (Some 0x0d) c
+        step c (Some 0x0d)
          = case c of
                 -- Got a CR+LF
-                0x0a    -> (None, A.empty A)
-                _       -> step None c
+                0x0a    -> StepUnfoldBump     None
+                0x0d    -> StepUnfoldNext  c (Some c)
+                _       -> StepUnfoldNext  c  None
 
-        step _ c
+        step c _
          = case c of
-                0x0a    -> (Some 0x0a, A.singleton A 0x0a)
-                0x0d    -> (Some 0x0d, A.singleton A 0x0a)
-                _       -> (None,      A.singleton A c)
+                0x0a    -> StepUnfoldNext  c (Some c)
+                0x0d    -> StepUnfoldNext  c (Some c)
+                _       -> StepUnfoldNext  c  None
 
-   in   C.process_i step (None :: Option Word8) ss
+   in   C.unfolds_i step None ss
 {-# NOINLINE normalizeNewlines #-}
 
 
