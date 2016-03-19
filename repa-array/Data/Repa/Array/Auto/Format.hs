@@ -11,26 +11,27 @@ module Data.Repa.Array.Auto.Format
           -- * Unpacking
         , unpackFormat
         , unpacksFormatLn
-        , unpacksFormatFixed)
+        , UnpackableRow(..)
+        , A.Unpackables)
 where
-import Data.Repa.Array.Auto.Base                                as A
-import Data.Repa.Array.Generic.Convert                          as A
-import qualified Data.Repa.Array.Generic                        as AG
-import qualified Data.Repa.Array.Material.Auto                  as A
-import qualified Data.Repa.Array.Material.Foreign               as AF
-import qualified Data.Repa.Array.Internals.Target               as A
-import qualified Data.Repa.Array.Internals.Bulk                 as A
-import qualified Data.Repa.Array.Internals.Operator.Reduce      as A
-import qualified Data.Repa.Convert.Format                       as C
+import Data.Repa.Array.Auto.Base                                        as A
+import Data.Repa.Array.Generic.Convert                                  as A
+import qualified Data.Repa.Array.Generic                                as AG
+import qualified Data.Repa.Array.Material.Auto                          as A
+import qualified Data.Repa.Array.Material.Auto.Operator.Lines           as A
+import qualified Data.Repa.Array.Material.Auto.Operator.Unpackables     as A
+import qualified Data.Repa.Array.Material.Foreign                       as AF
+import qualified Data.Repa.Array.Internals.Target                       as A
+import qualified Data.Repa.Array.Internals.Layout                       as A
+import qualified Data.Repa.Array.Internals.Bulk                         as A
+import qualified Data.Repa.Convert.Format                               as C
 import Data.Repa.Convert.Format
 import Data.Repa.Convert.Formats
 
-import Foreign.ForeignPtr                                       as F
-import Foreign.Storable                                         as F
-import Foreign.Ptr                                              as F
+import Foreign.ForeignPtr                                               as F
+import Foreign.Ptr                                                      as F
 
 import System.IO.Unsafe
-import Control.Monad
 import Data.Word
 import Data.Char
 
@@ -153,144 +154,59 @@ unpackFormat !format !arrBytes
 {-# INLINE_ARRAY unpackFormat #-}
 
 
--- | Unpack an array of elements from a buffer
---   using the given fixed length format.
-unpacksFormatFixed
-        :: (Unpackable format, A.Target A.A (Value format))
-        => format                         -- ^ Fixed length format for each element.
-        -> Array Word8                    -- ^ Packed binary data.
-        -> Maybe (Array (Value format))   -- ^ Unpacked elements.
 
-unpacksFormatFixed !format !arrBytes
- | lenBytes     <- A.length arrBytes
- , lenElems     <- fieldCount format
- = unsafePerformIO
- $ do   
-        let (oStart, _, fptr :: ForeignPtr Word8) 
-                = AF.toForeignPtr $ A.convert arrBytes
-
-        withForeignPtr fptr $ \ptr_
-         -> do  buf        <- A.unsafeNewBuffer (A.Auto lenElems)
-
-                let !ptr     = plusPtr ptr_ oStart 
-                let !ptrEnd  = plusPtr ptr  lenBytes
-
-                let loop !ptrSrc !ixDst 
-                     | ptrSrc >= ptrEnd
-                     = return $ Just ptrSrc
-
-                     | otherwise
-                     = do r <- C.unsafeRunUnpacker
-                                 (C.unpack format)
-                                 ptrSrc 
-                                 (minusPtr ptrEnd ptrSrc)
-                                 (const False)
-
-                          case r of
-                           Just (value, ptrSrc') 
-                            -> do A.unsafeWriteBuffer buf ixDst value
-                                  loop ptrSrc' (ixDst + 1)
-
-                           Nothing -> return Nothing
-
-                mFinal <- loop ptr 0
-                case mFinal of
-                 Nothing        -> return Nothing
-                 Just _         -> liftM Just $ A.unsafeFreezeBuffer buf
-
- | otherwise = Nothing
-{-# INLINE_ARRAY unpacksFormatFixed #-}
-
-
--- | Unpack an array containing elements in some format separated
---   by newline ('\n') characters. 
--- 
---   * Any '\r' characters in the array are filtered out before splitting
---     it into lines.
---   * If the value cannot be converted then this function just calls `error`.
---
+-- | Unpack an encoded table of values from an array of bytes.
 unpacksFormatLn
-        :: forall format
-        .  (Unpackable format, A.Target A.A (Value format))
-        => format                       -- ^ Format for each element.
-        -> Array Word8                  -- ^ Packed binary data.
-        -> Array (Value format)         -- ^ Unpacked elements.
+        :: UnpackableRow format
+        => Sep format                   -- ^ Format of each row.
+        -> Array Word8                  -- ^ Source data.
+        -> Array (Value (Sep format))   -- ^ Array of rows.
 
-unpacksFormatLn format arrA8
- = if A.length arrA8 == 0
-        then A.empty A.A
-        else case eResult of
-                Left err        -> error err
-                Right (_, arr)  -> arr
- where
+unpacksFormatLn format arrSrc@(A.AArray_Word8 arrSrcF)
+  = unsafePerformIO
+  $ do  
+        -- Rows are separated by newline characters.
+        let !wSepRow    
+                = fromIntegral $ ord '\n'
 
-        -- Count the number of lines(rows) in the array.
-        -- We assume that all rows are terminated by a newline character.
-        nLines 
-         = A.foldl (\n x -> if x == 0x0a then n + 1 else n)
-                   (0 :: Int) arrA8
+        -- Determine the field separator character.
+        -- If the format is just () then we're only counting the 
+        -- number of lines in the table, so it doesn't matter
+        -- what we use for the field separator.
+        let !wSepField  
+                = case takeSepChar format of 
+                        Nothing -> fromIntegral $ ord ' '
+                        Just c  -> fromIntegral $ ord c
 
-        (offStart, lenBuffer, fptr :: F.ForeignPtr Word8)
-         = AF.toForeignPtr
-         $ AG.convert A.F arrA8
+        -- Scan through the input data to determine where the lines begin
+        -- and end.
+        let (ixsStarts, ixsEnds) 
+                =  A.findRowsStartEnd wSepRow arrSrc
 
-        -- Proceed sequentially through the array,
-        -- unpacking each element as we go.
-        eResult
-         =  unsafePerformIO
-         $  F.withForeignPtr fptr $ \ptrBufStart
-         -> let !ptrStart = F.plusPtr ptrBufStart offStart
-                !ptrEnd   = F.plusPtr ptrStart    lenBuffer
-            in  flip (A.unfoldEitherOfLengthIO A.A nLines) ptrStart
-                $  \ixOut !ptrHere
-                -> do   
-                        -- Get a pointer to the next newline character,
-                        -- or just the character past the end of the buffer
-                        -- if there isn't a newline.
-                        let findLineEndIx !ptr
-                             | ptr >= ptrEnd    
-                             = return ptrEnd
+        -- Allocate a buffer for the output data.
+        let len =  A.extent $ A.bufferLayout ixsStarts
+        buf     <- A.unsafeNewBuffer (A.Auto len)
 
-                             | otherwise
-                             = do !byte  <- F.peek ptr
-                                  if  byte == (0x0a :: Word8) 
-                                   || byte == (0x0d :: Word8)
-                                   then return ptr
-                                   else findLineEndIx (F.plusPtr ptr 1)
+        -- Unpack all the rows into the buffer.
+        mErr    <- A.unpacksToBuffer 
+                        format 
+                        wSepField 
+                        arrSrcF 
+                        ixsStarts ixsEnds buf
 
-                        !ptrLine  <- findLineEndIx ptrHere
+        case mErr of
+         Nothing        
+          ->  A.unsafeFreezeBuffer    buf
 
-                        -- The length of the current line.
-                        let !lenLine = F.minusPtr ptrLine ptrHere
+         -- TODO: return error.
+         Just err
+          -> error $ "unsafeFormatLn: parse error " ++ show err
+{-# INLINE unpacksFormatLn #-}
 
-                        -- Try to unpack a row up to the end of the line.
-                        mResult  <- unsafeRunUnpacker (unpack format)
-                                        ptrHere lenLine (const False)
 
-                        case mResult of
-                         Nothing 
-                          -> return 
-                          $  Left $ unlines
-                                [ "repa-array.unpacksFormatLn: conversion failed"
-                                , "  total   lines     = " ++ show nLines
-                                , "  current line      = " ++ show ixOut
-                                , "  position in chunk = " ++ show (F.minusPtr ptrHere ptrStart)
-                                , "  remaining bytes   = " ++ show (F.minusPtr ptrEnd  ptrHere) ]
+-- | Dictionaries needed to unpack a row of the given format.
+type UnpackableRow format
+        = ( SepFormat format
+          , A.Unpackables (Sep format)
+          , A.Target A.A  (Value (Sep format)))
 
-                         Just (val, ptr') 
-                          -> do 
-                                -- Skip past new line and line return characters.
-                                let skipNewLines !ptr
-                                     | ptr >= ptrEnd
-                                     = return ptrEnd
-
-                                     | otherwise
-                                     = do byte <- F.peek ptr
-                                          if  byte == (0x0a :: Word8) 
-                                           || byte == (0x0d :: Word8)
-                                           then skipNewLines (F.plusPtr ptr 1)
-                                           else return ptr
-
-                                ptrSkip <- skipNewLines ptr'
-                                return $ Right (ptrSkip, val)
-{-# INLINE_ARRAY unpacksFormatLn #-}

@@ -66,7 +66,7 @@ unsafeUnpacksToBuffer
         -> Buffer lStart Int            -- ^ Starting offsets for fields.
         -> Buffer lEnd   Int            -- ^ Ending   offsets of rows.
         -> Buffer lVal (Value format)   -- ^ Destination buffer for parsed fields.
-        -> IO (Maybe (Int, Int))
+        -> IO (Maybe (Int, Int))        -- ^ Nothing on successful parse.
 
 unsafeUnpacksToBuffer
         format cTerm src 

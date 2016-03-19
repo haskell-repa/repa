@@ -86,6 +86,8 @@ Library
         Data.Repa.Array.Auto.Base
         Data.Repa.Array.Auto.Operator
 
+        Data.Repa.Array.Material.Auto.Operator.Lines
+        Data.Repa.Array.Material.Auto.Operator.Unpackables
         Data.Repa.Array.Material.Auto.Base
         Data.Repa.Array.Material.Auto.InstArray
         Data.Repa.Array.Material.Auto.InstBox

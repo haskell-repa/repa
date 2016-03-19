@@ -53,11 +53,15 @@ data SepMeta
 
 ---------------------------------------------------------------------------------------------------
 class SepFormat f where
- mkSep :: Char -> f -> Sep f
+ mkSep          :: Char -> f -> Sep f
+ takeSepChar    :: Sep f -> Maybe Char
 
 instance SepFormat () where
  mkSep _ () = SepNil
  {-# INLINE mkSep #-}
+
+ takeSepChar _  = Nothing
+ {-# INLINE takeSepChar #-}
 
 
 instance (Format f1, SepFormat fs)
@@ -86,6 +90,10 @@ instance (Format f1, SepFormat fs)
                          , smSepChar     = c })
                 f1 sep
  {-# INLINE mkSep #-}
+
+ takeSepChar (SepCons sm _ _)
+  = Just $ smSepChar sm
+ {-# INLINE takeSepChar #-}
 
 
 ---------------------------------------------------------------------------------------------------
