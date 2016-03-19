@@ -51,6 +51,7 @@ Library
         Data.Repa.Array.Generic.Slice
         Data.Repa.Array.Generic.Load
         Data.Repa.Array.Generic.Target
+        Data.Repa.Array.Generic.Unpacks
         Data.Repa.Array.Generic
 
         Data.Repa.Array.Material.Auto

@@ -59,10 +59,11 @@ module Data.Repa.Convert.Formats
 
           -- * Compounds
           -- ** Appended fields
-        , App                   (..)
+        , App           (..)
 
           -- ** Separated fields
-        , Sep,  SepFormat       (..)
+        , Sep           (..)
+        , SepFormat     (..)
 
           -- ** Object with labeled fields
         , Object, ObjectFormat, Field (..), mkObject
