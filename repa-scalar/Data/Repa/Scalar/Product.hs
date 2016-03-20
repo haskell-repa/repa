@@ -3,15 +3,18 @@ module Data.Repa.Scalar.Product
         ( -- * Product type
           (:*:)         (..)
         , IsProdList    (..)
+        , IsKeyValues   (..)
 
           -- * Selecting
-        , Select (..)
+        , Select        (..)
 
           -- * Discarding
-        , Discard (..), Keep(..), Drop(..)
+        , Discard       (..)
+        , Keep          (..)
+        , Drop          (..)
 
           -- * Masking
-        , Mask    (..))
+        , Mask          (..))
 where
 import Data.Repa.Scalar.Singleton.Nat
 import qualified Data.Vector.Unboxed            as U
@@ -28,9 +31,9 @@ data a :*: b
 infixr :*:
 
 
+-- | Sequences of products that form a valid list, 
+--   using () for the nil value.
 class IsProdList p where
- -- | Check if a sequence of products forms a valid list, 
- --   using () for the nil value.
  --
  -- @
  -- isProdList (1 :*: 4 :*: 5)  ... no instance
@@ -44,10 +47,41 @@ instance IsProdList () where
  isProdList _ = True
  {-# INLINE isProdList #-}
 
-
 instance IsProdList fs => IsProdList (f :*: fs) where
  isProdList (_ :*: xs) = isProdList xs
  {-# INLINE isProdList #-}
+
+
+-- Key-value pairs---------------------------------------------------------------------------------
+-- | Sequences of products and tuples that form hetrogeneous key-value pairs.
+class IsKeyValues p where
+ type Keys   p 
+ type Values p 
+ keys   :: p -> [Keys p]
+ values :: p -> Values p
+
+instance IsKeyValues (k, v) where
+ type Keys   (k, v)     = k
+ type Values (k, v)     = v
+
+ keys   (k, _)          = [k]
+ {-# INLINE keys #-}
+
+ values (_, v)          = v
+ {-# INLINE values #-}
+
+
+instance (IsKeyValues p, IsKeyValues ps, Keys p ~ Keys ps)
+       => IsKeyValues (p :*: ps) where
+
+ type Keys   (p :*: ps) = Keys p
+ type Values (p :*: ps) = Values p :*: Values ps
+
+ keys   (p :*: ps)      = keys p   ++  keys ps
+ {-# INLINE keys #-}
+
+ values (p :*: ps)      = values p :*: values ps
+ {-# INLINE values #-}
 
 
 ---------------------------------------------------------------------------------------------------
