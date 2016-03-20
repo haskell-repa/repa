@@ -1,5 +1,9 @@
 
 -- | Loading and storing doubles directly from/to memory buffers.
+--
+--   * Calls out to foreign load and store functions written in C and C++,
+--     so performance should be alright.
+--
 module Data.Repa.Scalar.Double
         ( -- * Loading
           loadDouble
@@ -22,6 +26,9 @@ import qualified Foreign.Marshal.Utils                  as F
 -- Double -----------------------------------------------------------------------------------------
 -- | Load an ASCII `Double` from a foreign buffer
 --   returning the value and number of characters read.
+--
+--   * Calls out do the stdlib `strtod` function.
+--
 loadDouble 
         :: Ptr Word8            -- ^ Buffer holding ASCII representation.
         -> Int                  -- ^ Length of buffer.
@@ -56,6 +63,9 @@ foreign import ccall unsafe
 
 -- | Store an ASCII `Double`, yielding a freshly allocated buffer
 --   and its length.
+--
+--   * Calls out to the `double-conversion` library which is binding
+--     to a C++ implementation.
 --
 --   * The value is printed as either (sign)digits.digits,
 --     or in exponential format, depending on which is shorter.

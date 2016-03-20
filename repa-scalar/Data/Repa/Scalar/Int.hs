@@ -1,5 +1,10 @@
 
 -- | Loading and storing integers directly from/to memory buffers.
+--
+--   * The implementation uses native Haskell unboxed primitives. 
+--     There there should not be any significant performance penalty
+--     relative to the standard implementations in other languages (like C).
+--
 module Data.Repa.Scalar.Int
         ( -- * Reading from strings
           readInt

@@ -10,11 +10,11 @@ module Data.Repa.Scalar.Product
 
           -- * Discarding
         , Discard       (..)
-        , Keep          (..)
-        , Drop          (..)
 
           -- * Masking
-        , Mask          (..))
+        , Mask          (..)
+        , Keep          (..)
+        , Drop          (..))
 where
 import Data.Repa.Scalar.Singleton.Nat
 import qualified Data.Vector.Unboxed            as U
@@ -57,8 +57,13 @@ instance IsProdList fs => IsProdList (f :*: fs) where
 class IsKeyValues p where
  type Keys   p 
  type Values p 
+
+ -- | Get a cons-list of all the keys.
  keys   :: p -> [Keys p]
+
+ -- | Get a heterogeneous product-list of all the values.
  values :: p -> Values p
+
 
 instance IsKeyValues (k, v) where
  type Keys   (k, v)     = k
@@ -88,7 +93,7 @@ instance (IsKeyValues p, IsKeyValues ps, Keys p ~ Keys ps)
 class    IsProdList t
       => Select  (n :: N) t where
  type    Select'    n        t
- -- | Return just the given field in this tuple.
+ -- | Return the element with this index from a product list.
  select ::          Nat n -> t -> Select' n t
 
 
@@ -110,7 +115,7 @@ instance Select n ts
 class    IsProdList t 
       => Discard (n :: N) t where
  type    Discard'   n        t
- -- | Discard the given field in this tuple.
+ -- | Discard the element with this index from a product list.
  discard ::         Nat n -> t -> Discard' n t
 
 

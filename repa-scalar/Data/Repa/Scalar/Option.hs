@@ -1,6 +1,8 @@
 
--- | Option types are synonyms for @Maybe a@, @Maybe (a, b)@ and so on, 
---   which are strict in the components.
+-- | Option types are similar to @Maybe a@, @Maybe (a, b)@ and so on, 
+--   except they are directly unpacked into the constructor and are
+--   strict in each component.
+--
 module Data.Repa.Scalar.Option
         ( -- * Single component
           Option  (..)
