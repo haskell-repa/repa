@@ -71,7 +71,7 @@ install:
 
   - |
       if [ ${GHC} == head ]; then
-        travis_retry cabal install --only-dependencies ./repa ./repa-io ./repa-algorithms ./repa-examples
+        travis_retry cabal install --only-dependencies --allow-newer ./repa ./repa-io ./repa-algorithms ./repa-examples
       else
         travis_retry stack build --only-dependencies --no-terminal --no-haddock-deps -j2
       fi
@@ -79,7 +79,7 @@ install:
 script:
   - |
       if [ ${GHC} == head ]; then
-        cabal install ./repa ./repa-io ./repa-algorithms ./repa-examples
+        cabal install --allow-newer ./repa ./repa-io ./repa-algorithms ./repa-examples
       else
         stack build --no-terminal --haddock --no-haddock-deps
       fi
