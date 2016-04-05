@@ -1,0 +1,49 @@
+# vim: nospell
+language: minimal
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.stack
+
+matrix:
+  include:
+    - env: GHC=7.10.4 LLVM=3.5 CABAL=1.22
+      compiler: "GHC 7.10"
+      addons:
+        apt:
+          sources:
+            - hvr-ghc
+            - llvm-toolchain-precise-3.5
+            - ubuntu-toolchain-r-test
+          packages:
+            - ghc-7.10.4
+            - cabal-install-1.22
+            - happy-1.19.5
+            - alex-3.1.4
+            - llvm-3.5-dev
+            - libedit-dev
+            - gcc-4.8
+            - g++-4.8
+
+before_install:
+  - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.4/bin:/opt/happy/1.19.5/bin:/usr/lib/llvm-$LLVM/bin:$PATH
+
+  # Fetch stack
+  - mkdir $HOME/bin
+  - export PATH=$HOME/bin:$PATH
+  - travis_retry curl -L "https://www.stackage.org/stack/linux-x86_64" | gunzip | tar -x
+  - mv stack-*/stack $HOME/bin
+  - travis_retry stack setup
+  - travis_retry stack install hscolour
+
+install:
+  - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - stack --version
+  - opt --version; true
+  - llc --version; true
+  - travis_retry stack build --only-dependencies --no-terminal --no-haddock-deps -j2
+
+script:
+  - stack build --no-terminal --haddock --no-haddock-deps
+
