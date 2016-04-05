@@ -63,12 +63,11 @@ before_install:
   - travis_retry stack install hscolour
 
 install:
-  - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
   - stack --version
   - cabal --version
   - opt --version; true
   - llc --version; true
-
   - |
       if [ ${GHC} == head ]; then
         travis_retry cabal install --only-dependencies --allow-newer ./repa ./repa-io ./repa-algorithms ./repa-examples
