@@ -24,39 +24,41 @@ Flag llvm
 
 
 Executable repa-canny
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph  -fno-liberate-case
+        -Odph
+        -fno-liberate-case
  if flag(llvm)
   ghc-options:
         -fllvm -optlo-O3
 
 
 Executable repa-mmult
-  Build-depends: 
-        base                 == 4.8.*,
-        random               == 1.1.*,
-        repa                 == 3.4.0.*,
-        repa-io              == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , random               == 1.1.*
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
+      , repa-io              == 3.4.0.*
 
   Main-is: examples/MMult/src-repa/Main.hs
   other-modules: Solver
   hs-source-dirs: examples/MMult/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
@@ -65,39 +67,41 @@ Executable repa-mmult
 
 
 Executable repa-laplace
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-io              == 3.4.0.*,
-        template-haskell     == 2.10.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-io              == 3.4.0.*
+      , template-haskell
 
   Main-is: examples/Laplace/src-repa/Main.hs
   other-modules: SolverGet SolverStencil
   hs-source-dirs: examples/Laplace/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
  if flag(llvm)
   ghc-options:
         -fllvm -optlo-O3
 
 
 Executable repa-fft2d
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*,
-        repa-io              == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
+      , repa-io              == 3.4.0.*
 
   Main-is: examples/FFT/FFT2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/FFT2d/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
@@ -106,19 +110,20 @@ Executable repa-fft2d
 
 
 Executable repa-fft2d-highpass
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*,
-        repa-io              == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
+      , repa-io              == 3.4.0.*
 
   Main-is: examples/FFT/HighPass2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass2d/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
@@ -127,18 +132,19 @@ Executable repa-fft2d-highpass
 
 
 Executable repa-fft3d-highpass
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
 
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
@@ -147,17 +153,17 @@ Executable repa-fft3d-highpass
 
 
 Executable repa-blur
-  Build-depends: 
-        base                 == 4.8.*,
-        vector               == 0.11.*,
-        repa                 == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
+      , vector               == 0.11.*
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
         -Odph -fno-liberate-case
         -funfolding-use-threshold100
@@ -168,19 +174,20 @@ Executable repa-blur
 
 
 Executable repa-sobel
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-algorithms      == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-algorithms      == 3.4.0.*
 
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
   hs-source-dirs: examples/Sobel/src-repa .
   ghc-options:
-        -rtsopts 
-        -threaded 
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
@@ -189,17 +196,18 @@ Executable repa-sobel
 
 
 Executable repa-volume
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        repa-io              == 3.4.0.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , repa-io              == 3.4.0.*
 
   Main-is: examples/Volume/Main.hs
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
@@ -208,22 +216,22 @@ Executable repa-volume
 
 
 Executable repa-unit-test
-  Build-depends: 
-        base                 == 4.8.*,
-        repa                 == 3.4.0.*,
-        QuickCheck           == 2.8.*
+  Build-depends:
+        base                 >= 4.8 && < 4.10
+      , repa                 == 3.4.0.*
+      , QuickCheck           == 2.8.*
 
   Main-is: examples/UnitTesting/UnitTesting.hs
   hs-source-dirs: examples/UnitTesting .
-  ghc-options: 
-        -rtsopts 
-        -threaded 
+  ghc-options:
+        -rtsopts
+        -threaded
         -eventlog
-        -Odph -fno-liberate-case
+        -Odph
+        -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
  if flag(llvm)
   ghc-options:
         -fllvm -optlo-O3
-
 
