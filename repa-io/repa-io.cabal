@@ -17,14 +17,14 @@ Synopsis:
         Read and write Repa arrays in various formats.
 
 Library
-  Build-Depends: 
-        base                 == 4.8.*,
-        vector               == 0.11.*,
-        binary               == 0.7.*,
-        old-time             == 1.1.*,
-        bytestring           == 0.10.*,
-        repa                 == 3.4.*,
-        bmp                  == 1.2.*
+  Build-Depends:
+        base                 >= 4.8 && < 4.10
+      , binary               >= 0.7 && < 0.9
+      , bmp                  == 1.2.*
+      , bytestring           == 0.10.*
+      , old-time             == 1.1.*
+      , repa                 == 3.4.*
+      , vector               == 0.11.*
 
   ghc-options:
         -O2 -Wall -fno-warn-missing-signatures
@@ -35,6 +35,6 @@ Library
         Data.Array.Repa.IO.Matrix
         Data.Array.Repa.IO.Timing
         Data.Array.Repa.IO.Vector
-      
+
   Other-modules:
         Data.Array.Repa.IO.Internals.Text
