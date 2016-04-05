@@ -17,20 +17,25 @@ Synopsis:
         Algorithms using the Repa array library.
 
 Library
-  Build-Depends: 
-        base                 == 4.8.*,
-        vector               == 0.11.*,
-        repa                 == 3.4.0.*
+  Build-Depends:
+        base                 >= 4.8 && < 4.10
+      , vector               == 0.11.*
+      , repa                 == 3.4.0.*
 
   ghc-options:
-        -Wall -fno-warn-missing-signatures
+        -Wall
         -Odph
+        -fno-warn-missing-signatures
         -fno-liberate-case
         -fsimplifier-phases=4
         -funfolding-use-threshold=1000
         -funfolding-keeness-factor=1000
         -funbox-strict-fields
-        -fcpr-off
+
+  if impl(ghc >= 8.0)
+    ghc-options: -fno-cpr-anal
+  else
+    ghc-options: -fcpr-off
 
   extensions:
         NoMonomorphismRestriction
