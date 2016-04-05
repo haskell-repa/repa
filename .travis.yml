@@ -26,10 +26,35 @@ matrix:
             - gcc-4.8
             - g++-4.8
 
+    - env: GHC=head LLVM=3.7 CABAL=1.24
+      compiler: "GHC HEAD"
+      addons:
+        apt:
+          sources:
+            - hvr-ghc
+            - llvm-toolchain-precise-3.7
+            - ubuntu-toolchain-r-test
+          packages:
+            - ghc-head
+            - cabal-install-1.24
+            - happy-1.19.5
+            - alex-3.1.4
+            - llvm-3.7-dev
+            - libedit-dev
+            - gcc-4.8
+            - g++-4.8
+
+  allow_failures:
+    - env: GHC=head LLVM=3.7 CABAL=1.24
+
 before_install:
   - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.4/bin:/opt/happy/1.19.5/bin:/usr/lib/llvm-$LLVM/bin:$PATH
 
-  # Fetch stack
+  # cabal
+  - travis_retry cabal update
+  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+
+  # stack
   - mkdir $HOME/bin
   - export PATH=$HOME/bin:$PATH
   - travis_retry curl -L "https://www.stackage.org/stack/linux-x86_64" | gunzip | tar -x
@@ -40,10 +65,20 @@ before_install:
 install:
   - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
   - stack --version
+  - cabal --version
   - opt --version; true
   - llc --version; true
-  - travis_retry stack build --only-dependencies --no-terminal --no-haddock-deps -j2
+
+  - | if [ ${GHC} == head ]; then
+        travis_retry cabal install --only-dependencies repa repa-io repa-algorithms repa-examples
+      else
+        travis_retry stack build --only-dependencies --no-terminal --no-haddock-deps -j2
+      fi
 
 script:
-  - stack build --no-terminal --haddock --no-haddock-deps
+  - | if [ ${GHC} == head ]; then
+        cabal install repa repa-io repa-algorithms repa-examples
+      else
+        stack build --no-terminal --haddock --no-haddock-deps
+      fi
 
