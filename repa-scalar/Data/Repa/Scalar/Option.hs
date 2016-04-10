@@ -44,6 +44,12 @@ fromOption (Some x)     = Just x
 {-# INLINE fromOption #-}
 
 
+instance Functor Option where
+ fmap _ None     = None
+ fmap f (Some x) = Some (f x)
+ {-# INLINE fmap #-}
+
+
 -------------------------------------------------------------------------------
 -- | A strict `Maybe` type, with two parameters.
 data Option2 a b
@@ -64,6 +70,12 @@ fromOption2 :: Option2 a b -> Maybe (a, b)
 fromOption2 None2        = Nothing
 fromOption2 (Some2 x y)  = Just (x, y)
 {-# INLINE fromOption2 #-}
+
+
+instance Functor (Option2 a) where
+ fmap _ None2       = None2
+ fmap f (Some2 x y) = Some2 x (f y)
+ {-# INLINE fmap #-}
 
 
 -------------------------------------------------------------------------------
@@ -88,6 +100,12 @@ fromOption3 (Some3 x y z)  = Just (x, y, z)
 {-# INLINE fromOption3 #-}
 
 
+instance Functor (Option3 a b) where
+ fmap _ None3         = None3
+ fmap f (Some3 x y z) = Some3 x y (f z)
+ {-# INLINE fmap #-}
+
+
 -------------------------------------------------------------------------------
 -- | A strict `Maybe` type with four parameters.
 data Option4 a b c d
@@ -108,4 +126,10 @@ fromOption4 :: Option4 a b c d -> Maybe (a, b, c, d)
 fromOption4 None4                 = Nothing
 fromOption4 (Some4 x1 x2 x3 x4)   = Just (x1, x2, x3, x4)
 {-# INLINE fromOption4 #-}
+
+
+instance Functor (Option4 a b c) where
+ fmap _ None4           = None4
+ fmap f (Some4 x y z a) = Some4 x y z (f a)
+ {-# INLINE fmap #-}
 
