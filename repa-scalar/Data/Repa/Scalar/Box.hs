@@ -1,11 +1,13 @@
 
 module Data.Repa.Scalar.Box
-        ( Box           (..))
+        ( Box           (..)
+        , box, unbox)
 where
 import qualified Data.Vector                    as V
 import qualified Data.Vector.Unboxed            as U
 import qualified Data.Vector.Generic            as G
 import qualified Data.Vector.Generic.Mutable    as GM
+
 
 
 -- | Strict, boxed wrapper for a value.
@@ -15,6 +17,23 @@ import qualified Data.Vector.Generic.Mutable    as GM
 newtype Box a
         = Box a
         deriving (Eq, Show)
+
+
+-- | Put a value in a box.
+box   :: a -> Box a
+box !x = Box x
+{-# INLINE box #-}
+
+
+-- | Take the value from the box.
+unbox :: Box a -> a
+unbox (Box x) = x
+{-# INLINE unbox #-}
+
+
+instance Functor Box where
+ fmap f (Box x) = Box (f x)
+ {-# INLINE fmap #-}
 
 
 -- Unboxed ----------------------------------------------------------------------------------------
@@ -33,8 +52,7 @@ data instance U.MVector s (Box a)
         !(V.MVector s a)
 
 
-instance U.Unbox a
-      => GM.MVector U.MVector (Box a) where
+instance GM.MVector U.MVector (Box a) where
 
   basicLength (MV_Box n _as) = n
   {-# INLINE basicLength  #-}
@@ -88,8 +106,7 @@ instance U.Unbox a
   {-# INLINE basicUnsafeGrow  #-}
 
 
-instance U.Unbox a
-      => G.Vector U.Vector (Box a) where
+instance G.Vector U.Vector (Box a) where
 
   basicUnsafeFreeze (MV_Box n as)
    = do as' <- G.basicUnsafeFreeze as

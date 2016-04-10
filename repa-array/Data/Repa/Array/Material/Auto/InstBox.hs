@@ -12,7 +12,7 @@ import Control.Monad
 #include "repa-array.h"
 
 
-instance Bulk A a => Bulk A (Box a) where
+instance Bulk B a => Bulk A (Box a) where
  data Array A (Box a)           = AArray_Box !(Array B a)
  layout (AArray_Box arr)        = Auto (A.length arr)
  index  (AArray_Box arr) !ix    = Box  (A.index arr ix)
@@ -22,13 +22,13 @@ instance Bulk A a => Bulk A (Box a) where
 deriving instance Show a => Show (Array A (Box a))
 
 
-instance Bulk A a => Windowable A (Box a) where
+instance Bulk B a => Windowable A (Box a) where
  window st len (AArray_Box arr) 
   = AArray_Box (window st len arr)
  {-# INLINE_ARRAY window #-}
 
 
-instance  Target A (Box a) where
+instance  Target B a => Target A (Box a) where
  data Buffer A (Box a)
   = ABuffer_Box !(Buffer B a)
 

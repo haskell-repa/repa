@@ -1,5 +1,5 @@
 Name:           repa-array
-Version:        4.2.1.1
+Version:        4.2.2.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -32,9 +32,9 @@ Library
         double-conversion  == 2.0.*,
         text               == 1.2.*,
         repa-eval          == 4.0.0.*,
-        repa-stream        == 4.2.0.*,
-        repa-scalar        == 4.2.0.*,
-        repa-convert       == 4.2.1.*,
+        repa-stream        == 4.2.2.*,
+        repa-scalar        == 4.2.2.*,
+        repa-convert       == 4.2.2.*,
         filelock           >= 0.1.0 && < 0.2
 
 

@@ -11,7 +11,7 @@ module Data.Repa.Array.Auto.Format
           -- * Unpacking
         , unpackFormat
         , unpacksFormatLn
-        , UnpackableRow(..)
+        , UnpackableRow
         , A.Unpackables)
 where
 import Data.Repa.Array.Auto.Base                                        as A
