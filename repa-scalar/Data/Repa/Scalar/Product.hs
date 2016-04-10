@@ -30,6 +30,9 @@ data a :*: b
 
 infixr :*:
 
+instance Functor ((:*:) a) where
+ fmap f ((:*:) x y) = (:*:) x (f y)
+
 
 -- | Sequences of products that form a valid list, 
 --   using () for the nil value.
