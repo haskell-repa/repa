@@ -135,7 +135,7 @@ instance Packable f
   = case mv of
         Nothing -> packer VarBytes str start k
         Just v  -> packer f        v   start k
- {-# NOINLINE pack #-}
+ {-# NOINLINE packer #-}
   -- We're NOINLINEing this so we don't duplicate the code for the continuation.
   -- It would be better to use an Either format and use that to express the branch.
 

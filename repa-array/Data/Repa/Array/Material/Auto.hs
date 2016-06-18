@@ -22,4 +22,3 @@ import Data.Repa.Array.Material.Auto.InstTuple
 import Data.Repa.Array.Material.Auto.InstText
 import Data.Repa.Array.Material.Auto.InstUnit
 import Data.Repa.Array.Material.Auto.InstWord
-import Data.Repa.Array.Internals.Target

@@ -18,7 +18,7 @@ import Data.Repa.Flow.Generic.Base
 --   At each point we can chose to emit an element, or not.
 --
 compact_i
-        :: (Monad m, States i m)
+        :: States i m
         => (s -> a -> (s, Maybe b))
         -> s
         -> Sources i m a 
@@ -52,8 +52,7 @@ compact_i f s0 (Sources n pullA)
 
 
 -- | Start-to-end scan over each stream in a bundle.
-scan_i 
-        :: (Monad m, States i m)
+scan_i  :: States i m
         => (s -> a -> s)
         -> s
         -> Sources i m a
@@ -73,7 +72,7 @@ scan_i f s0 ss
 --   associated the element with their corresponding position in the stream.
 -- 
 indexed_i
-        :: (Monad m, States i m)
+        :: States i m
         => Sources i m a
         -> m (Sources i m (Int, a))
 

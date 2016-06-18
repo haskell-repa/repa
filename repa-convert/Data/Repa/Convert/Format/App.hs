@@ -87,6 +87,6 @@ instance ( Unpackable f1, Unpackable (App fs)
   = unpacker     f1       start    end stop fail $ \start_x1 x1
      -> unpacker (App fs) start_x1 end stop fail $ \start_xs xs
          -> eat start_xs (x1 :*: xs) 
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 

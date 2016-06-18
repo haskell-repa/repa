@@ -23,7 +23,7 @@ import Prelude                                  as P
 --   Given two argument sinks, yield a result sink.
 --   Pushing to the result sink causes the same element to be pushed to both
 --   argument sinks. 
-dup_oo  :: (Ord i, States i m)
+dup_oo  :: (States i m)
         => Sinks i m a -> Sinks i m a -> m (Sinks i m a)
 dup_oo (Sinks n1 push1 eject1) (Sinks n2 push2 eject2)
  = return $ Sinks (min n1 n2) push_dup eject_dup

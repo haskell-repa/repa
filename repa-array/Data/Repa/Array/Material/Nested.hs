@@ -354,7 +354,7 @@ segment pStart pEnd !elems
 -- @
 --
 segmentOn 
-        :: (BulkI l a, Eq a, U.Unbox a)
+        :: (BulkI l a, U.Unbox a)
         => (a -> Bool)          -- ^ Detect the end of a segment.
         -> Array l a            -- ^ Vector to segment.
         -> Array N (Array l a)
@@ -403,7 +403,7 @@ dice pStart1 pEnd1 pStart2 pEnd2 !arr
 -- | O(len src). Given field and row terminating values, 
 --   split an array into rows and fields.
 --
-diceSep  :: (BulkI l a, Windowable l a, U.Unbox a, Eq a)
+diceSep  :: (BulkI l a, Eq a)
         => a            -- ^ Terminating element for inner segments.
         -> a            -- ^ Terminating element for outer segments.
         -> Array l a    -- ^ Vector to dice.

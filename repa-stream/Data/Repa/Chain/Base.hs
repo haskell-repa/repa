@@ -48,9 +48,7 @@ liftChain (Chain sz s step)
 
 
 -- | Resume a chain computation from a previous state.
-resumeChain  
-        :: Monad m 
-        => s -> Chain m s a -> Chain m s a
+resumeChain :: s -> Chain m s a -> Chain m s a
 resumeChain s' (Chain sz _s step)
  = Chain sz s' step
 {-# INLINE_STREAM resumeChain #-}

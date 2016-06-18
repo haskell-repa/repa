@@ -147,8 +147,7 @@ instance ( Target l1 a, Target l2 b
 --   different extents. The extent of the result is the intersection
 --   of the extents of the two argument arrays.
 --
-tup2    :: (Bulk l1 a, Bulk l2 b, Index l1 ~ Index l2)
-        => Array l1 a -> Array l2 b
+tup2    :: Array l1 a -> Array l2 b
         -> Array (T2 l1 l2) (a, b)
 tup2 arr1 arr2
         = T2Array arr1 arr2

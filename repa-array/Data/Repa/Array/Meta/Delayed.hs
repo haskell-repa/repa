@@ -108,8 +108,7 @@ fromFunction l f
 
 -- | Produce the extent of an array, and a function to retrieve an
 --   arbitrary element.
-toFunction  :: Bulk  l a
-            => Array (D l) a -> (l, Index l -> a)
+toFunction  :: Array (D l) a -> (l, Index l -> a)
 toFunction (ADelayed l f) = (l, f)
 {-# INLINE_ARRAY toFunction #-}
 

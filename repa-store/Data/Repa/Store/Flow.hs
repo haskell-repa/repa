@@ -11,7 +11,6 @@ module Data.Repa.Store.Flow
         , module Data.Repa.Convert.Formats)
 where
 import System.FilePath
-import Data.Repa.Fusion.Unpack
 import Data.Repa.Store.Partitions
 import Data.Repa.Array.Generic.Target
 import Data.Repa.Convert.Formats
@@ -68,12 +67,9 @@ sourceTableFormat
 --   a flow of the same length as the associated columns.
 sourceFamilyKey
         :: ( Unpackable format
-           , Bulk   A (Value format)
            , Target A (Value format)
            , Unpackable (Sep (format :*: IntAsc :*: ()))
-           , Show format
-           , Windowable A (Value format)
-           , Unpack (Buffer A (Value format)) tf)
+           , Windowable A (Value format))
         => Integer
         -> IO ()                        -- ^ Action if we find an over-long line.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convet a row.
@@ -104,8 +100,7 @@ sourceFamilyKey
 --   This produces the column 
 sourceFamilyColumn 
         :: ( Unpackable format
-           , Target A (Value format)
-           , Show format)
+           , Target A (Value format))
         => Integer
         -> IO ()                        -- ^ Action if we find an over-long line.
         -> IO (Array A Word8 -> IO ())  -- ^ Action if we can't convert a row.

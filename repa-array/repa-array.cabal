@@ -1,5 +1,5 @@
 Name:           repa-array
-Version:        4.2.2.1
+Version:        4.2.3.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -24,17 +24,17 @@ source-repository head
 
 Library
   build-Depends: 
-        base               == 4.8.*,
+        base               == 4.9.*,
         primitive          == 0.6.*,
         vector             == 0.10.*,
         bytestring         == 0.10.*,
         mtl                == 2.2.*,
         double-conversion  == 2.0.*,
         text               == 1.2.*,
-        repa-eval          == 4.0.0.*,
-        repa-stream        == 4.2.2.*,
-        repa-scalar        == 4.2.2.*,
-        repa-convert       == 4.2.2.*,
+        repa-eval          == 4.2.3.*,
+        repa-stream        == 4.2.3.*,
+        repa-scalar        == 4.2.3.*,
+        repa-convert       == 4.2.3.*,
         filelock           >= 0.1.0 && < 0.2
 
 
@@ -131,7 +131,9 @@ Library
         repa-array.h
 
   ghc-options:
-        -Wall -fno-warn-missing-signatures
+        -Wall 
+        -fno-warn-missing-signatures
+        -fno-warn-missing-pattern-synonym-signatures
         -O2
 
   extensions:

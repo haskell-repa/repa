@@ -154,15 +154,13 @@ instance U.Unbox a => Target U a where
 
 ---------------------------------------------------------------------------------------------------
 -- | O(1). Wrap an unboxed vector as an array.
-fromUnboxed :: U.Unbox a
-            => U.Vector a -> Array U a
+fromUnboxed :: U.Vector a -> Array U a
 fromUnboxed vec = UArray vec
 {-# INLINE_ARRAY fromUnboxed #-}
 
 
 -- | O(1). Unwrap an unboxed vector from an array.
-toUnboxed   :: U.Unbox a
-            => Array U a -> U.Vector a
+toUnboxed   :: Array U a -> U.Vector a
 toUnboxed (UArray vec) = vec
 {-# INLINE_ARRAY toUnboxed #-}
 

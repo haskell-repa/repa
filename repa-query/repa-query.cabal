@@ -1,5 +1,5 @@
 Name:           repa-query
-Version:        4.2.0.0
+Version:        4.2.3.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -15,7 +15,7 @@ Synopsis:       Data-parallel data flows.
 
 Library
   build-Depends: 
-        base                 == 4.8.*,
+        base                 == 4.9.*,
         mtl                  == 2.2.1,
         text                 == 1.2.*,
 
@@ -26,15 +26,15 @@ Library
         bytestring           >= 0.10.6 && < 0.11, 
         unordered-containers >= 0.2.5  && < 0.3,
         containers           >= 0.5.6  && < 0.6,
-        template-haskell     >= 2.10.0 && < 2.11,
+        template-haskell     >= 2.11.0 && < 2.12,
         buildbox             >= 2.1.6  && < 2.2,
         filepath             >= 1.4.0  && < 1.5,
         process              >= 1.2.3  && < 1.3,
-        repa-scalar          >= 4.2.0  && < 4.3,
-        repa-array           >= 4.2.0  && < 4.3,
-        repa-flow            >= 4.2.0  && < 4.3,
-        repa-convert         >= 4.2.0  && < 4.3,
-        repa-store           >= 4.2.0  && < 4.3
+        repa-scalar          >= 4.2.3  && < 4.4,
+        repa-array           >= 4.2.3  && < 4.3,
+        repa-flow            >= 4.2.3  && < 4.3,
+        repa-convert         >= 4.2.3  && < 4.3,
+        repa-store           >= 4.2.3  && < 4.3
 
 
   exposed-modules:

@@ -271,7 +271,6 @@ insert fNew vec
 -------------------------------------------------------------------------------
 -- | Merge two pre-sorted key-value streams.
 merge   :: ( Ord k
-           , GV.Vector v k
            , GV.Vector v (k, a)
            , GV.Vector v (k, b)
            , GV.Vector v (k, c))
@@ -294,7 +293,6 @@ merge fBoth fLeft fRight vA vB
 --   return `Just`.
 mergeMaybe 
         :: ( Ord k
-           , GV.Vector v k
            , GV.Vector v (k, a)
            , GV.Vector v (k, b)
            , GV.Vector v (k, c))

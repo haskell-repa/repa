@@ -156,7 +156,7 @@ instance ( Packable f1
 
  packer (SepCons _ f1 _ ) (x1 :*: _) start k
         = packer f1 x1 start k
- {-# INLINE pack #-}
+ {-# INLINE packer #-}
 
 
 instance ( Unpackable f1

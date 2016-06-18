@@ -1,6 +1,6 @@
 
 module Data.Repa.Array.Auto
-        ( Array
+        ( Data.Repa.Array.Auto.Operator.Array
         , Elem, Build
 
         -- * Basics

@@ -642,8 +642,7 @@ compactIn = G.compactIn A
 
 
 -- | Apply a generic stream process to an array.
-process :: ( Build a, Build b, Elem b
-           , G.Target A.A b)
+process :: ( Build a, Build b, Elem b)
         => (s -> a -> (s, Array b))     -- ^ Worker function
         -> s                            -- ^ Initial state.
         -> Array a                      -- ^ Input array.
@@ -686,7 +685,7 @@ segment pStart pEnd elems
 --
 --   The result segments do not include the terminator.
 segmentOn 
-        :: (Elem a, Eq a, U.Unbox a)
+        :: (Elem a, U.Unbox a)
         => (a -> Bool)  -- ^ Detect the end of a segment.
         -> Array a      -- ^ Array to segment.
         -> Array (Array a)
@@ -719,7 +718,7 @@ dice pStart1 pEnd1 pStart2 pEnd2 arr
 -- | O(len src). Given field and row terminating values, 
 --   split an array into rows and fields.
 --
-diceSep :: (Elem a, Eq a, U.Unbox a)
+diceSep :: (Elem a, Eq a)
         => a            -- ^ Terminating element for inner segments.
         -> a            -- ^ Terminating element for outer segments.
         -> Array a      -- ^ Vector to dice.

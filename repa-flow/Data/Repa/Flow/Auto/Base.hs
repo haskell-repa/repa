@@ -112,15 +112,14 @@ toLists1 ix s
 --   * All elements are stuffed into a single chunk,
 --     and each stream is given the same chunk.
 --
-fromArray :: Build a
-          => Int -> Array a -> IO (Sources a)
+fromArray :: Int -> Array a -> IO (Sources a)
 fromArray n arr = G.fromList n [arr]
 {-# INLINE_FLOW fromArray #-}
 
 
 -- | Like `fromArray` but take an array of arrays.
 --   Each of the inner arrays is packed into a single chunk.
-fromArrays :: (Elem a, Build a)
+fromArrays :: Elem a
            => Int -> Array (Array a) -> IO (Sources a)
 fromArrays n arrs = G.fromList n (A.toList arrs)
 {-# INLINE_FLOW fromArrays #-}

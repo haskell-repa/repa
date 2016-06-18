@@ -30,7 +30,7 @@ instance Format UnitAsc                 where
 instance Packable UnitAsc where
  packer    (UnitAsc s)              () start k
   = packer (FixChars (length s)) s  start k
- {-# INLINE pack #-}
+ {-# INLINE packer #-}
 
 
 instance Unpackable UnitAsc where
@@ -39,7 +39,7 @@ instance Unpackable UnitAsc where
         if str == str'
          then eat ptr ()
          else fail
- {-# NOINLINE unpack #-}
+ {-# NOINLINE unpacker #-}
 
 
 

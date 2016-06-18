@@ -29,7 +29,7 @@ smap_o f s0 = G.smap_o (\i c -> A.computeS name $ A.map (f i) c) s0
 
 -- | Combine the elements of two flows with the given function.
 szipWith_ii 
-        :: ( Ord i, States i m
+        :: ( States i m
            , BulkI   lSrc1 a, BulkI lSrc2 b
            , TargetI lDst c
            , Windowable lSrc1 a, Windowable lSrc2 b)

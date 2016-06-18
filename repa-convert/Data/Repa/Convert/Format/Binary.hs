@@ -45,14 +45,14 @@ instance Packable Word8be where
   = do  S.poke (Ptr dst) (fromIntegral x :: Word8)
         let !(Ptr dst') = S.plusPtr (Ptr dst) 1
         k dst'
- {-# INLINE pack #-}
+ {-# INLINE packer #-}
 
 
 instance Unpackable Word8be where
  unpacker _ start _end _stop _fail eat
   = do  x <- S.peek (pw8 start)
         eat (plusAddr# start 1#) (fromIntegral x)
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 
 w8  :: Integral a => a -> Word8
@@ -201,7 +201,7 @@ instance Unpackable Word32be where
                  .|. (w32 x1 `shiftL` 16)
                  .|. (w32 x2 `shiftL`  8)
                  .|. (w32 x3)))
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 
 w32 :: Integral a => a -> Word32

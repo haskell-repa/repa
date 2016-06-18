@@ -1,5 +1,5 @@
 Name:           repa-flow
-Version:        4.2.2.1
+Version:        4.2.3.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -15,7 +15,7 @@ Synopsis:       Data-parallel data flows.
 
 Library
   build-Depends: 
-        base                    == 4.8.*,
+        base                    == 4.9.*,
         directory               == 1.2.*,
         filepath                == 1.4.*,
         vector                  == 0.10.*,
@@ -24,11 +24,11 @@ Library
         containers              == 0.5.*,
         hashtables              == 1.2.1.*,
         text                    == 1.2.*,
-        repa-eval               == 4.0.0.*,
-        repa-stream             == 4.2.2.*,
-        repa-scalar             == 4.2.2.*,
-        repa-convert            == 4.2.2.*,
-        repa-array              == 4.2.2.*
+        repa-eval               == 4.2.3.*,
+        repa-stream             == 4.2.3.*,
+        repa-scalar             == 4.2.3.*,
+        repa-convert            == 4.2.3.*,
+        repa-array              == 4.2.3.*
 
   exposed-modules:
         Data.Repa.Flow.Auto
@@ -94,10 +94,8 @@ Library
         repa-flow.h
 
   ghc-options:
-        -threaded
         -Wall -fno-warn-missing-signatures
         -O2
-        -fcpr-off
 
   extensions:
         CPP

@@ -187,7 +187,7 @@ sinkLines = G.sinkLines A A
 -- @
 --
 sinkFormatLn
-        :: (Packable format, Bulk A (Value format), Show format)
+        :: (Packable format, Bulk A (Value format))
         => format                       -- ^ Binary format for each value.
         -> IO ()                        -- ^ Action when a value cannot be serialized.
         -> Array B Bucket               -- ^ Output buckets.

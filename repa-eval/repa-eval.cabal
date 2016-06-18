@@ -1,5 +1,5 @@
 Name:           repa-eval
-Version:        4.0.0.2
+Version:        4.2.3.1
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -19,8 +19,8 @@ source-repository head
 
 Library
   Build-Depends: 
-        base            == 4.8.*,
-        ghc-prim        == 0.4.*
+        base            == 4.9.*,
+        ghc-prim        == 0.5.*
 
   Exposed-modules:
         Data.Repa.Eval.Elt

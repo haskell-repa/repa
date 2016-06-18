@@ -109,8 +109,7 @@ process loops threshLow threshHigh arrInput
 
 -- | Wrapper to time each stage of the algorithm.
 timeStage
-        :: (Shape sh, Unbox a)
-        => Int
+        :: Int
         -> String 
         -> IO (Array U sh a)
         -> IO (Array U sh a)

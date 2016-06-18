@@ -127,7 +127,7 @@ instance States Int IO where
  {-# INLINE writeRefs #-}
 
 
-instance States Int m => States () m  where
+instance (Monad m, States Int m) => States () m  where
 
  data Refs () m a               = URefs !(Refs Int m a)
 

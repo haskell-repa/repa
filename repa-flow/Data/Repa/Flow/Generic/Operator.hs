@@ -177,9 +177,8 @@ head_i len s0 i
 -- 
 --   Example: groups [4, 4, 4, 3, 3, 1, 1, 1, 4] = [3, 2, 3, 1]
 --
-groups_i 
-        :: (Ord i, Monad m, Eq a)
-        => Sources i m a -> m (Sources i m Int)
+groups_i :: (Monad m, Eq a)
+         => Sources i m a -> m (Sources i m Int)
 
 groups_i (Sources n pullV)
  = return $ Sources n pull_n

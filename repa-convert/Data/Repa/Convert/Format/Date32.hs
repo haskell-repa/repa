@@ -60,7 +60,7 @@ instance Unpackable YYYYsMMsDD where
         case r of
          Just (d, I# o) -> eat (plusAddr# start o) d
          Nothing        -> fail
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 
 ---------------------------------------------------------------------------------------- DDsMMsYYYY
@@ -107,7 +107,7 @@ instance Unpackable DDsMMsYYYY where
         case r of
          Just (d, I# o)    -> eat (plusAddr# start o) d
          Nothing           -> fail
- {-# INLINE unpack #-}
+ {-# INLINE unpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------

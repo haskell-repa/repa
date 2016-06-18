@@ -4,7 +4,6 @@ module Data.Repa.Array.Material.Auto.InstProduct
 where
 import Data.Repa.Array.Material.Auto.Base       as A
 import Data.Repa.Array.Material.Auto.InstUnit   as A
-import Data.Repa.Array.Meta.Tuple               as A
 import Data.Repa.Array.Meta.Window              as A
 import Data.Repa.Array.Internals.Bulk           as A
 import Data.Repa.Array.Internals.Target         as A

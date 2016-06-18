@@ -117,7 +117,7 @@ instance Unpackable VarChars where
   unpacker VarChars start end stop _fail eat
    = do (Ptr ptr, str)      <- unpackCharList (pw8 start) (pw8 end) stop
         eat ptr str
-  {-# INLINE unpack #-}
+  {-# INLINE unpacker #-}
 
 
 -- | Unpack a ascii text from the given buffer.
@@ -169,7 +169,7 @@ instance Packable VarCharString where
  -- ISSUE #43: Avoid intermediate lists when packing Ints and Strings.
  packer     VarCharString xx          start k
   =  packer VarChars (show xx) start k
- {-# INLINE pack #-}
+ {-# INLINE packer #-}
 
 
 instance Unpackable VarCharString where
@@ -270,7 +270,7 @@ instance Packable ExactChars where
                 $ zip [0 .. len - 1] str
         let !(Ptr dst') = S.plusPtr (Ptr dst) len
         k dst'
- {-# NOINLINE pack #-}
+ {-# NOINLINE packer #-}
 
 
 instance Unpackable ExactChars where
@@ -289,7 +289,7 @@ instance Unpackable ExactChars where
                 if (xs == str)
                  then eat (plusAddr# start len') ()
                  else fails
- {-# NOINLINE unpack #-}
+ {-# NOINLINE unpacker #-}
 
 
 ---------------------------------------------------------------------------------------------------

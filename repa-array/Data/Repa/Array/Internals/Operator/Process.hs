@@ -47,7 +47,6 @@ process nDst f s0 arr
 -- | Apply a generic stream process to an array.
 --
 unfolds :: ( BulkI   lSrc a
-           , BulkI   lDst b
            , TargetI lDst b)
         => Name lDst                            -- ^ Name of destination layout.
         -> (a -> s -> (StepUnfold s b))         -- ^ Worker function.
