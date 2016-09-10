@@ -15,7 +15,7 @@ import Debug.Trace
 --   and evaluation should be interleaved between the processors.
 data I r1
 
-instance Source r1 a => Source (I r1) a where
+instance Source r1 sh a => Source (I r1) sh a where
  data Array (I r1) sh a
         = AInterleave !(Array r1 sh a)
 

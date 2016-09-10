@@ -74,7 +74,7 @@ instance (Shape a, CoArbitrary a)
        => CoArbitrary (a :. Int) where
   coarbitrary (a :. b) = coarbitrary a . coarbitrary b
 
-instance (CoArbitrary sh, CoArbitrary a, Source r a, Shape sh) 
+instance (CoArbitrary sh, CoArbitrary a, Source r sh a)
        => CoArbitrary (Array r sh a) where
   coarbitrary arr 
         = (coarbitrary . extent $ arr) . (coarbitrary . toList $ arr)

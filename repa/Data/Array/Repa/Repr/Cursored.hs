@@ -26,7 +26,7 @@ data C
 
 
 -- | Compute elements of a cursored array.
-instance Source C a where
+instance Shape sh => Source C sh a where
 
  data Array C sh a
         = forall cursor. ACursored

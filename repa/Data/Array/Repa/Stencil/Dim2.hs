@@ -41,7 +41,7 @@ type PC5 = P C (P (S D) (P (S D) (P (S D) (P (S D) X))))
 -- Wrappers -------------------------------------------------------------------
 -- | Like `mapStencil2` but with the parameters flipped.
 forStencil2
-        :: Source r a
+        :: Source r DIM2 a
         => Boundary a
         -> Array  r DIM2 a
         -> Stencil  DIM2 a
@@ -55,7 +55,7 @@ forStencil2 boundary arr stencil
 -------------------------------------------------------------------------------
 -- | Apply a stencil to every element of a 2D array.
 mapStencil2
-        :: Source r a
+        :: Source r DIM2 a
         => Boundary a           -- ^ How to handle the boundary of the array.
         -> Stencil DIM2 a       -- ^ Stencil to apply.
         -> Array r DIM2 a               -- ^ Array to apply stencil to.
@@ -128,7 +128,7 @@ mapStencil2 boundary stencil@(StencilStatic sExtent _zero _load) arr
 
 
 unsafeAppStencilCursor2
-        :: Source r a
+        :: Source r DIM2 a
         => (DIM2 -> Cursor -> Cursor)
         -> Stencil DIM2 a
         -> Array r DIM2 a
@@ -164,7 +164,7 @@ unsafeAppStencilCursor2 shift
 -- | Like above, but treat elements outside the array has having a constant value.
 unsafeAppStencilCursor2_const
         :: forall r a
-        .  Source r a
+        .  Source r DIM2 a
         => (DIM2 -> DIM2 -> DIM2)
         -> Stencil DIM2 a
         -> a
@@ -214,7 +214,7 @@ unsafeAppStencilCursor2_const shift
 -- | Like above, but clamp out of bounds array values to the closest real value.
 unsafeAppStencilCursor2_clamp
         :: forall r a
-        .  Source r a
+        .  Source r DIM2 a
         => (DIM2 -> DIM2 -> DIM2)
         -> Stencil DIM2 a
         -> Array r DIM2 a

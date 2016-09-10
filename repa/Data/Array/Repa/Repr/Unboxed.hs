@@ -28,7 +28,7 @@ import Prelude hiding (zip, zip3, unzip, unzip3)
 data U
 
 -- | Read elements from an unboxed vector array.
-instance U.Unbox a => Source U a where
+instance (U.Unbox a, Shape sh) => Source U sh a where
  data Array U sh a
         = AUnboxed !sh !(U.Vector a)
 
@@ -58,8 +58,8 @@ deriving instance (Read sh, Read e, U.Unbox e)
 
 -- Fill -----------------------------------------------------------------------
 -- | Filling of unboxed vector arrays.
-instance U.Unbox e => Target U e where
- data MVec U e 
+instance (U.Unbox e, Shape sh) => Target U sh e where
+ data MVec U sh e 
   = UMVec (UM.IOVector e)
 
  newMVec n

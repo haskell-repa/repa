@@ -22,7 +22,7 @@ import GHC.Exts
 data D
 
 -- | Compute elements of a delayed array.
-instance Source D a where
+instance Shape sh => Source D sh a where
  data Array D sh a
         = ADelayed  
                 !sh 
@@ -99,7 +99,7 @@ fromFunction sh f
 -- | O(1). Produce the extent of an array, and a function to retrieve an
 --   arbitrary element.
 toFunction 
-        :: (Shape sh, Source r1 a)
+        :: Source r1 sh a
         => Array r1 sh a -> (sh, sh -> a)
 toFunction arr
  = case delay arr of
@@ -112,7 +112,7 @@ toFunction arr
 --   indices to elements, so consumers don't need to worry about
 --   what the previous representation was.
 --
-delay   :: Shape sh => Source r e
+delay   :: Source r sh e
         => Array r sh e -> Array D sh e
 delay arr = ADelayed (extent arr) (unsafeIndex arr)
 {-# INLINE delay #-}
