@@ -62,7 +62,7 @@ import System.IO.Unsafe
 --
 computeP 
         :: ( Load r1 sh e
-           , Target r2 e, Source r2 e, Monad m)
+           , Target r2 sh e, Source r2 sh e, Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 computeP arr = now $ suspendedComputeP arr
 {-# INLINE [4] computeP #-}
@@ -70,7 +70,7 @@ computeP arr = now $ suspendedComputeP arr
 
 -- | Sequential computation of array elements.
 computeS 
-        :: (Load r1 sh e, Target r2 e)
+        :: (Load r1 sh e, Target r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 computeS arr1
  = arr1 `deepSeqArray` 
@@ -93,7 +93,7 @@ computeS arr1
 --   that each array is fully evaluated before continuing.
 --
 suspendedComputeP 
-        :: (Load r1 sh e, Target r2 e)
+        :: (Load r1 sh e, Target r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 suspendedComputeP arr1
  = arr1 `deepSeqArray` 
@@ -110,8 +110,8 @@ suspendedComputeP arr1
 -- 
 --   * You can use it to copy manifest arrays between representations.
 --
-copyP  :: ( Source r1 e, Source r2 e
-          , Load D sh e, Target r2 e
+copyP  :: ( Source r1 sh e, Source r2 sh e
+          , Load D sh e, Target r2 sh e
           , Monad m)
         => Array r1 sh e -> m (Array r2 sh e)
 copyP arr = now $ suspendedCopyP arr
@@ -119,8 +119,8 @@ copyP arr = now $ suspendedCopyP arr
 
 
 -- | Sequential copying of arrays.
-copyS   :: ( Source r1 e
-           , Load D sh e, Target r2 e)
+copyS   :: ( Source r1 sh e
+           , Load D sh e, Target r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 copyS arr1  = computeS $ delay arr1
 {-# INLINE [4] copyS #-}
@@ -128,8 +128,8 @@ copyS arr1  = computeS $ delay arr1
 
 -- | Suspended parallel copy of array elements.
 suspendedCopyP   
-        :: ( Source r1 e
-           , Load D sh e, Target r2 e)
+        :: ( Source r1 sh e
+           , Load D sh e, Target r2 sh e)
         => Array r1 sh e -> Array r2 sh e
 suspendedCopyP arr1  = suspendedComputeP $ delay arr1
 {-# INLINE [4] suspendedCopyP #-}
@@ -146,7 +146,7 @@ suspendedCopyP arr1  = suspendedComputeP $ delay arr1
 --     ...
 -- @
 --
-now     :: (Shape sh, Source r e, Monad m)
+now     :: (Shape sh, Source r sh e, Monad m)
         => Array r sh e -> m (Array r sh e)
 now arr
  = do   arr `deepSeqArray` return ()

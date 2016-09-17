@@ -24,8 +24,8 @@ import Prelude                          hiding ((++))
 -- @
 --
 interleave2
-        :: ( Shape sh
-           , Source r1 a, Source r2 a)
+        :: ( Eq sh
+           , Source r1 (sh :. Int) a, Source r2 (sh :. Int) a)
         => Array r1 (sh :. Int) a
         -> Array r2 (sh :. Int) a
         -> Array D  (sh :. Int) a
@@ -51,8 +51,8 @@ interleave2 arr1 arr2
 
 -- | Interleave the elements of three arrays.
 interleave3
-        :: ( Shape sh
-           , Source r1 a, Source r2 a, Source r3 a)
+        :: ( Eq sh
+           , Source r1 (sh :. Int) a, Source r2 (sh :. Int) a, Source r3 (sh :. Int) a)
         => Array r1 (sh :. Int) a
         -> Array r2 (sh :. Int) a
         -> Array r3 (sh :. Int) a
@@ -81,8 +81,9 @@ interleave3 arr1 arr2 arr3
 
 -- | Interleave the elements of four arrays.
 interleave4
-        :: ( Shape sh
-           , Source r1 a, Source r2 a, Source r3 a, Source r4 a)
+        :: ( Eq sh
+           , Source r1 (sh :. Int) a, Source r2 (sh :. Int) a
+           , Source r3 (sh :. Int) a, Source r4 (sh :. Int) a)
         => Array r1 (sh :. Int) a
         -> Array r2 (sh :. Int) a
         -> Array r3 (sh :. Int) a

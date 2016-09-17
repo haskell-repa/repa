@@ -12,7 +12,7 @@ import Data.Array.Repa.Shape
 --   in parallel on the gang. This avoids the associated scheduling overhead.
 data S r1
 
-instance Source r1 a => Source (S r1) a where
+instance Source r1 sh a => Source (S r1) sh a where
  data Array (S r1) sh a
         = ASmall !(Array r1 sh a)
 

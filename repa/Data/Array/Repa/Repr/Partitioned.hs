@@ -36,7 +36,7 @@ inRange (Range _ _ p) ix
 
 -- Repr -----------------------------------------------------------------------
 -- | Read elements from a partitioned array.
-instance (Source r1 e, Source r2 e) => Source (P r1 r2) e where
+instance (Source r1 sh e, Source r2 sh e) => Source (P r1 r2) sh e where
  data Array (P r1 r2) sh e
         = APart !sh                          -- size of the whole array
                 !(Range sh) !(Array r1 sh e) -- if in range use this array

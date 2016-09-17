@@ -73,7 +73,7 @@ clampToBorder2 (_ :. yLen :. xLen) (sh :. j :. i)
 --   The border must be the same width on all sides.
 --
 makeBordered2
-        :: (Source r1 a, Source r2 a)
+        :: (Source r1 DIM2 a, Source r2 DIM2 a)
         => DIM2                 -- ^ Extent of array.
         -> Int                  -- ^ Width of border.
         -> Array r1 DIM2 a      -- ^ Array for internal elements.

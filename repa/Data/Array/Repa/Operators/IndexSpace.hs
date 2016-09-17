@@ -24,8 +24,8 @@ stage   = "Data.Array.Repa.Operators.IndexSpace"
 -- Index space transformations ------------------------------------------------
 -- | Impose a new shape on the elements of an array.
 --   The new extent must be the same size as the original, else `error`.
-reshape :: ( Shape sh1, Shape sh2
-           , Source r1 e)
+reshape :: ( Shape sh2
+           , Source r1 sh1 e)
         => sh2
         -> Array r1 sh1 e
         -> Array D  sh2 e
@@ -43,8 +43,7 @@ reshape sh2 arr
 
 -- | Append two arrays.
 append, (++)
-        :: ( Shape sh
-           , Source r1 e, Source r2 e)
+        :: (Source r1 (sh :. Int) e, Source r2 (sh :. Int) e)
         => Array r1 (sh :. Int) e
         -> Array r2 (sh :. Int) e
         -> Array D  (sh :. Int) e
@@ -70,7 +69,7 @@ append arr1 arr2
 -- | Transpose the lowest two dimensions of an array.
 --      Transposing an array twice yields the original.
 transpose
-        :: (Shape sh, Source r e)
+        :: (Source r (sh :. Int :. Int) e)
         => Array  r (sh :. Int :. Int) e
         -> Array  D (sh :. Int :. Int) e
 
@@ -82,7 +81,7 @@ transpose arr
 
 
 -- | Extract a sub-range of elements from an array.
-extract :: (Shape sh, Source r e)
+extract :: (Source r sh e)
         => sh                   -- ^ Starting index.
         -> sh                   -- ^ Size of result.
         -> Array r sh e 
@@ -95,8 +94,8 @@ extract start sz arr
 -- | Backwards permutation of an array's elements.
 backpermute, unsafeBackpermute
         :: forall r sh1 sh2 e
-        .  ( Shape sh1, Shape sh2
-           , Source r e)
+        .  ( Shape sh2
+           , Source r sh1 e)
         => sh2                  -- ^ Extent of result array.
         -> (sh2 -> sh1)         -- ^ Function mapping each index in the result array
                                 --      to an index of the source array.
@@ -117,8 +116,7 @@ unsafeBackpermute newExtent perm arr
 --      from the default array (@arrDft@)
 backpermuteDft, unsafeBackpermuteDft
         :: forall r1 r2 sh1 sh2 e
-        .  ( Shape sh1,   Shape sh2
-           , Source r1 e, Source r2 e)
+        .  (Source r1 sh1 e, Source r2 sh2 e)
         => Array r2 sh2 e       -- ^ Default values (@arrDft@)
         -> (sh2 -> Maybe sh1)   -- ^ Function mapping each index in the result array
                                 --      to an index in the source array.
@@ -153,7 +151,7 @@ extend, unsafeExtend
         :: ( Slice sl
            , Shape (SliceShape sl)
            , Shape (FullShape sl)
-           , Source r e)
+           , Source r (SliceShape sl) e)
         => sl
         -> Array r (SliceShape sl) e
         -> Array D (FullShape sl)  e
@@ -188,7 +186,7 @@ slice, unsafeSlice
         :: ( Slice sl
            , Shape (FullShape sl)
            , Shape (SliceShape sl)
-           , Source r e)
+           , Source r (FullShape sl) e)
         => Array r (FullShape sl) e
         -> sl
         -> Array D (SliceShape sl) e

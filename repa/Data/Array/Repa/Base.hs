@@ -8,18 +8,17 @@ import Data.Array.Repa.Shape
 
 -- Source -----------------------------------------------------------------------
 -- | Class of array representations that we can read elements from.
-class Source r e where
+class Shape sh => Source r sh e where
  -- Arrays with a representation tag, shape, and element type.
  --   Use one of the type tags like `D`, `U` and so on for @r@, 
  --   one of `DIM1`, `DIM2` ... for @sh@.
  data Array r sh e
 
  -- | O(1). Take the extent (size) of an array.
- extent :: Shape sh => Array r sh e -> sh
+ extent :: Array r sh e -> sh
 
  -- | O(1). Shape polymorphic indexing.
- index, unsafeIndex 
-        :: Shape sh => Array r sh e -> sh -> e
+ index, unsafeIndex :: Array r sh e -> sh -> e
 
  {-# INLINE index #-}
  index arr ix           = arr `linearIndex`       toIndex (extent arr) ix
@@ -28,25 +27,22 @@ class Source r e where
  unsafeIndex arr ix     = arr `unsafeLinearIndex` toIndex (extent arr) ix
 
  -- | O(1). Linear indexing into underlying, row-major, array representation.
- linearIndex, unsafeLinearIndex
-        :: Shape sh => Array r sh e -> Int -> e
+ linearIndex, unsafeLinearIndex :: Array r sh e -> Int -> e
 
  {-# INLINE unsafeLinearIndex #-}
  unsafeLinearIndex      = linearIndex
 
  -- | Ensure an array's data structure is fully evaluated.
- deepSeqArray 
-        :: Shape sh =>Array r sh e -> b -> b
+ deepSeqArray :: Array r sh e -> b -> b
 
 
 -- | O(1). Alias for `index`
-(!) :: Shape sh => Source r e => Array r sh e -> sh -> e
+(!) :: Source r sh e => Array r sh e -> sh -> e
 (!) = index
 
 
 -- | O(n). Convert an array to a list.
-toList  :: Shape sh => Source r e
-        => Array r sh e -> [e]
+toList  :: Source r sh e => Array r sh e -> [e]
 {-# INLINE toList #-}
 toList arr 
  = go 0 
@@ -90,8 +86,7 @@ toList arr
 --  If you're not sure, then just follow the example code above.
 --   
 deepSeqArrays 
-        :: Shape sh => Source r e
-        => [Array r sh e] -> b -> b
+        :: Source r sh e => [Array r sh e] -> b -> b
 {-# INLINE deepSeqArrays #-}
 deepSeqArrays arrs x
  = case arrs of

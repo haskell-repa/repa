@@ -19,7 +19,7 @@ import qualified Foreign.ForeignPtr.Unsafe      as Unsafe
 data F
 
 -- | Read elements from a foreign buffer.
-instance Storable a => Source F a where
+instance (Storable a, Shape sh) => Source F sh a where
  data Array F sh a
         = AForeignPtr !sh !Int !(ForeignPtr a)
 
@@ -50,8 +50,8 @@ instance Storable a => Source F a where
 
 -- Load -----------------------------------------------------------------------
 -- | Filling foreign buffers.
-instance Storable e => Target F e where
- data MVec F e 
+instance (Storable e, Shape sh) => Target F sh e where
+ data MVec F sh e 
   = FPVec !Int !(ForeignPtr e)
 
  newMVec n

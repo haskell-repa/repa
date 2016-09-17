@@ -21,7 +21,7 @@ import Control.Monad
 data V
         
 -- | Read elements from a boxed vector array.
-instance Source V a where
+instance Shape sh => Source V sh a where
  data Array V sh a
         = AVector !sh !(V.Vector a)
 
@@ -51,8 +51,8 @@ deriving instance (Read sh, Read e)
 
 -- Fill -----------------------------------------------------------------------
 -- | Filling of boxed vector arrays.
-instance Target V e where
- data MVec V e 
+instance Shape sh => Target V sh e where
+ data MVec V sh e 
   = MVector (VM.IOVector e)
 
  newMVec n
