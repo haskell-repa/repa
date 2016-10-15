@@ -47,8 +47,7 @@ deriving instance Read sh
 -- Conversions ----------------------------------------------------------------
 -- | O(1). Wrap a `ByteString` as an array.
 fromByteString
-        :: Shape sh
-        => sh -> ByteString -> Array B sh Word8
+        :: sh -> ByteString -> Array B sh Word8
 fromByteString sh bs
         = AByteString sh bs
 {-# INLINE fromByteString #-}

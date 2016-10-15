@@ -3,15 +3,15 @@ module Data.Array.Repa.Eval.Reduction
         ( foldS,    foldP
         , foldAllS, foldAllP)
 where
-import Data.Array.Repa.Eval.Elt
 import Data.Array.Repa.Eval.Gang
 import qualified Data.Vector.Unboxed            as V
 import qualified Data.Vector.Unboxed.Mutable    as M
 import GHC.Base                                 ( quotInt, divInt )
 import GHC.Exts
 
+
 -- | Sequential reduction of a multidimensional array along the innermost dimension.
-foldS :: (Elt a, V.Unbox a)
+foldS :: V.Unbox a
       => M.IOVector a   -- ^ vector to write elements into
       -> (Int# -> a)    -- ^ function to get an element from the given index
       -> (a -> a -> a)  -- ^ binary associative combination function
@@ -38,7 +38,7 @@ foldS !vec get c !r !n
 -- | Parallel reduction of a multidimensional array along the innermost dimension.
 --   Each output value is computed by a single thread, with the output values
 --   distributed evenly amongst the available threads.
-foldP :: (Elt a, V.Unbox a)
+foldP :: V.Unbox a
       => M.IOVector a   -- ^ vector to write elements into
       -> (Int -> a)     -- ^ function to get an element from the given index
       -> (a -> a -> a)  -- ^ binary associative combination operator 
@@ -78,8 +78,7 @@ foldP vec f c !r (I# n)
 
 
 -- | Sequential reduction of all the elements in an array.
-foldAllS :: (Elt a, V.Unbox a)
-         => (Int# -> a)         -- ^ function to get an element from the given index
+foldAllS :: (Int# -> a)         -- ^ function to get an element from the given index
          -> (a -> a -> a)       -- ^ binary associative combining function
          -> a                   -- ^ starting value
          -> Int#                -- ^ number of elements
@@ -99,7 +98,7 @@ foldAllS f c !r !len
 --   computes a fold1 on its chunk of the data, and the seed element is only
 --   applied in the final reduction step.
 --
-foldAllP :: (Elt a, V.Unbox a)
+foldAllP :: V.Unbox a
          => (Int -> a)          -- ^ function to get an element from the given index
          -> (a -> a -> a)       -- ^ binary associative combining function
          -> a                   -- ^ starting value

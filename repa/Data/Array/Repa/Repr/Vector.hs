@@ -83,7 +83,7 @@ instance Target V e where
 --   * This is an alias for `compute` with a more specific type.
 --
 computeVectorS
-        :: (Shape sh, Load r1 sh e)
+        :: Load r1 sh e
         => Array r1 sh e -> Array V sh e
 computeVectorS   = computeS
 {-# INLINE computeVectorS #-}
@@ -91,7 +91,7 @@ computeVectorS   = computeS
 
 -- | Parallel computation of array elements.
 computeVectorP
-        :: (Shape sh, Load r1 sh e, Monad m)
+        :: (Load r1 sh e, Monad m)
         => Array r1 sh e -> m (Array V sh e)
 computeVectorP   = computeP
 {-# INLINE computeVectorP #-}
@@ -107,16 +107,14 @@ fromListVector  = fromList
 
 
 -- | O(1). Wrap a boxed vector as an array.
-fromVector
-        :: Shape sh
-        => sh -> V.Vector e -> Array V sh e
+fromVector :: sh -> V.Vector e -> Array V sh e
 fromVector sh vec
         = AVector sh vec
 {-# INLINE fromVector #-}
 
 
 -- | O(1). Unpack a boxed vector from an array.
-toVector :: Array V sh e -> V.Vector e
+toVector   :: Array V sh e -> V.Vector e
 toVector (AVector _ vec)
         = vec
 {-# INLINE toVector #-}

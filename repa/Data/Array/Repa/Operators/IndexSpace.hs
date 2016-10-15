@@ -95,7 +95,7 @@ extract start sz arr
 -- | Backwards permutation of an array's elements.
 backpermute, unsafeBackpermute
         :: forall r sh1 sh2 e
-        .  ( Shape sh1, Shape sh2
+        .  ( Shape sh1
            , Source r e)
         => sh2                  -- ^ Extent of result array.
         -> (sh2 -> sh1)         -- ^ Function mapping each index in the result array
@@ -152,7 +152,6 @@ unsafeBackpermuteDft arrDft fnIndex arrSrc
 extend, unsafeExtend
         :: ( Slice sl
            , Shape (SliceShape sl)
-           , Shape (FullShape sl)
            , Source r e)
         => sl
         -> Array r (SliceShape sl) e
@@ -187,7 +186,6 @@ unsafeExtend sl arr
 slice, unsafeSlice
         :: ( Slice sl
            , Shape (FullShape sl)
-           , Shape (SliceShape sl)
            , Source r e)
         => Array r (FullShape sl) e
         -> sl

@@ -15,7 +15,7 @@ import Prelude hiding (traverse)
 traverse, unsafeTraverse
         :: forall r sh sh' a b
         .  ( Source r a
-           , Shape sh, Shape sh')
+           , Shape  sh)
         => Array r sh a                 -- ^ Source array.
         -> (sh  -> sh')                 -- ^ Function to produce the extent of the result.
         -> ((sh -> a) -> sh' -> b)      -- ^ Function to produce elements of the result.
@@ -35,7 +35,7 @@ unsafeTraverse arr transExtent newElem
 traverse2, unsafeTraverse2
         :: forall r1 r2 sh sh' sh'' a b c
         .  ( Source r1 a, Source r2 b
-           , Shape sh, Shape sh', Shape sh'')
+           , Shape sh, Shape sh')
         => Array r1 sh  a               -- ^ First source array.
         -> Array r2 sh' b               -- ^ Second source array.
         -> (sh -> sh' -> sh'')          -- ^ Function to produce the extent of the result.
@@ -62,7 +62,7 @@ traverse3, unsafeTraverse3
                   sh1 sh2 sh3 sh4
                   a   b   c   d
         .  ( Source r1 a, Source r2 b, Source r3 c
-           , Shape sh1,   Shape sh2,   Shape sh3,   Shape sh4)
+           , Shape sh1,   Shape sh2,   Shape sh3)
         => Array r1 sh1 a
         -> Array r2 sh2 b
         -> Array r3 sh3 c
@@ -89,7 +89,7 @@ traverse4, unsafeTraverse4
                   sh1 sh2 sh3 sh4 sh5
                   a   b   c   d   e
         .  ( Source r1 a, Source r2 b, Source r3 c, Source r4 d
-           , Shape sh1, Shape sh2, Shape sh3, Shape sh4, Shape sh5)
+           , Shape sh1, Shape sh2, Shape sh3, Shape sh4)
         => Array r1 sh1 a
         -> Array r2 sh2 b
         -> Array r3 sh3 c

@@ -38,7 +38,8 @@ instance Arbitrary Z where
 
 -- Note: this is a shape that is "sized", and then random array for a given
 -- shape is generated.
-instance (Shape a, Arbitrary a) => Arbitrary (a :. Int) where
+instance Arbitrary a 
+      => Arbitrary (a :. Int) where
  arbitrary 
         = sized (\n -> do 
                 b       <- choose (1, n)
@@ -70,7 +71,7 @@ instance (Arbitrary sh, Arbitrary a, Shape sh)
 instance CoArbitrary Z where
   coarbitrary _ = id 
 
-instance (Shape a, CoArbitrary a) 
+instance (CoArbitrary a) 
        => CoArbitrary (a :. Int) where
   coarbitrary (a :. b) = coarbitrary a . coarbitrary b
 

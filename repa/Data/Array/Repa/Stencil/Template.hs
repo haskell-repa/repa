@@ -63,8 +63,8 @@ parseStencil2 str
    in   makeStencil2' sizeX sizeY
          $ filter (\(_, _, v) -> v /= 0)
          $ [ (fromIntegral y, fromIntegral x, fromIntegral v)
-                | y     <- [minX, minX + 1 .. maxX]
-                , x     <- [minY, minY + 1 .. maxY]
+                | y     <- [minX, minX + (1 :: Integer) .. maxX]
+                , x     <- [minY, minY + (1 :: Integer) .. maxY]
                 | v     <- coeffs ]
 
 

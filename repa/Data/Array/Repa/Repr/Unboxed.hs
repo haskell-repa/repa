@@ -90,8 +90,7 @@ instance U.Unbox e => Target U e where
 --   * This is an alias for `computeS` with a more specific type.
 --
 computeUnboxedS
-        :: ( Shape sh
-           , Load r1 sh e, U.Unbox e)
+        :: (Load r1 sh e, U.Unbox e)
         => Array r1 sh e -> Array U sh e
 computeUnboxedS = computeS
 {-# INLINE computeUnboxedS #-}
@@ -102,8 +101,7 @@ computeUnboxedS = computeS
 --   * This is an alias for `computeP` with a more specific type.
 --
 computeUnboxedP
-        :: ( Shape sh
-           , Load r1 sh e, Monad m, U.Unbox e)
+        :: (Load r1 sh e, Monad m, U.Unbox e)
         => Array r1 sh e -> m (Array U sh e)
 computeUnboxedP = computeP
 {-# INLINE computeUnboxedP #-}
@@ -121,18 +119,14 @@ fromListUnboxed = R.fromList
 
 
 -- | O(1). Wrap an unboxed vector as an array.
-fromUnboxed
-        :: (Shape sh, U.Unbox e)
-        => sh -> U.Vector e -> Array U sh e
+fromUnboxed :: sh -> U.Vector e -> Array U sh e
 fromUnboxed sh vec
         = AUnboxed sh vec
 {-# INLINE fromUnboxed #-}
 
 
 -- | O(1). Unpack an unboxed vector from an array.
-toUnboxed
-        :: U.Unbox e
-        => Array U sh e -> U.Vector e
+toUnboxed :: Array U sh e -> U.Vector e
 toUnboxed (AUnboxed _ vec)
         = vec
 {-# INLINE toUnboxed #-}
