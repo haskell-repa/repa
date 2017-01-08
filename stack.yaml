@@ -10,8 +10,7 @@ packages:
 - 'repa-examples'
 
 # Packages to be pulled from upstream that are not in the resolver
-extra-deps:
-  - bmp-1.2.6.3
+extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 flags: {}
