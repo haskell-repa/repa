@@ -19,7 +19,7 @@ Synopsis:
 Library
   Build-Depends:
         base                 >= 4.8 && < 4.10
-      , vector               == 0.11.*
+      , vector               >= 0.11 && < 0.13
       , repa                 == 3.4.1.*
 
   ghc-options:

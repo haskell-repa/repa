@@ -1,7 +1,7 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
 # vim: nospell
 
-resolver: nightly-2016-09-01
+resolver: lts-7.15
 
 packages:
 - 'repa'
