@@ -175,7 +175,7 @@ fillCursoredBlock2S
 
          where  {-# INLINE fillLine4 #-}
                 fillLine4 !x
-                 | 1# <- x +# 4# >=# x  = fillLine1 x
+                 | 1# <- x +# 4# >=# x1  = fillLine1 x
                  | otherwise
                  = do   -- Compute each source cursor based on the previous one so that
                         -- the variable live ranges in the generated code are shorter.
