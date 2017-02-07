@@ -19,6 +19,7 @@ import Data.Array.Repa                          as R
 import Data.Array.Repa.Eval                     as R
 import Data.Array.Repa.Unsafe                   as R
 import Prelude                                  as P
+import Data.Bits                                ((.&.))
 
 
 data Mode
@@ -37,13 +38,13 @@ signOfMode mode
 {-# INLINE signOfMode #-}
 
 
--- | Check if an `Int` is a power of two.
+-- | Check if an `Int` is a power of two. Assumes `n` is positive
+-- and will return `True` when given 0.
+
+-- The implementation can be found in Henry S. Warren, Jr.'s book
+-- Hacker's delight, Chapter 2.
 isPowerOfTwo :: Int -> Bool
-isPowerOfTwo n
-        | 0     <- n            = True
-        | 2     <- n            = True
-        | n `mod` 2 == 0        = isPowerOfTwo (n `div` 2)
-        | otherwise             = False
+isPowerOfTwo n = (n .&. (n-1)) == 0
 {-# INLINE isPowerOfTwo #-}
 
 
