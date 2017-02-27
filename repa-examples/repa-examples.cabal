@@ -1,5 +1,5 @@
 Name:                repa-examples
-Version:             3.4.1.1
+Version:             3.4.1.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -157,7 +157,7 @@ Executable repa-blur
         base                 >= 4.8 && < 4.10
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
-      , vector               == 0.11.*
+      , vector               >= 0.11 && < 0.13
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
@@ -234,4 +234,3 @@ Executable repa-unit-test
  if flag(llvm)
   ghc-options:
         -fllvm -optlo-O3
-
