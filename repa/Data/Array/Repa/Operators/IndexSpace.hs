@@ -54,8 +54,8 @@ append arr1 arr2
  where
         (_ :. n)        = extent arr1
 
-        fnExtent (sh :. i) (_  :. j)
-                = sh :. (i + j)
+        fnExtent (sh1 :. i) (sh2  :. j)
+                = intersectDim sh1 sh2 :. (i + j)
 
         fnElem f1 f2 (sh :. i)
                 | i < n         = f1 (sh :. i)
