@@ -94,4 +94,5 @@ Library
         Data.Array.Repa.Stencil.Template
         Data.Array.Repa.Stencil.Partition
         Data.Array.Repa.Base
-        
+
+-- vim: nospell

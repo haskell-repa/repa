@@ -157,7 +157,7 @@ Executable repa-blur
         base                 >= 4.8 && < 4.10
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
-      , vector               == 0.11.*
+      , vector               >= 0.11 && < 0.13
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
@@ -219,7 +219,7 @@ Executable repa-unit-test
   Build-depends:
         base                 >= 4.8 && < 4.10
       , repa                 == 3.4.1.*
-      , QuickCheck           == 2.8.*
+      , QuickCheck           >= 2.8 && < 2.11
 
   Main-is: examples/UnitTesting/UnitTesting.hs
   hs-source-dirs: examples/UnitTesting .
@@ -235,3 +235,4 @@ Executable repa-unit-test
   ghc-options:
         -fllvm -optlo-O3
 
+-- vim: nospell
