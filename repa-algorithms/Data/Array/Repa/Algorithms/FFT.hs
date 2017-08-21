@@ -14,12 +14,14 @@ module Data.Array.Repa.Algorithms.FFT
         , fft2dP
         , fft1dP)
 where
+
 import Data.Array.Repa.Algorithms.Complex
 import Data.Array.Repa                          as R
 import Data.Array.Repa.Eval                     as R
 import Data.Array.Repa.Unsafe                   as R
-import Prelude                                  as P
+
 import Data.Bits                                ((.&.))
+import Prelude                                  as P
 
 
 data Mode
@@ -43,6 +45,8 @@ signOfMode mode
 -- The implementation can be found in Henry S. Warren, Jr.'s book
 -- Hacker's delight, Chapter 2.
 isPowerOfTwo :: Int -> Bool
+isPowerOfTwo 0 = True
+isPowerOfTwo 1 = False
 isPowerOfTwo n = (n .&. (n-1)) == 0
 {-# INLINE isPowerOfTwo #-}
 
