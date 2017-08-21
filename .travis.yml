@@ -77,7 +77,6 @@ install:
   - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
   - cabal --version
   - stack --version
-  - c2hs --version
   - llc --version; true
   - opt --version; true
   - |
