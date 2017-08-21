@@ -5,6 +5,7 @@
 #
 language: generic
 dist: trusty
+sudo: required  # not really, but these instances have more memory
 
 cache:
   timeout: 600
