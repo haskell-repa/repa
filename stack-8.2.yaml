@@ -1,0 +1,49 @@
+# For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
+# vim: nospell
+
+resolver: ghc-8.2
+
+packages:
+- 'repa'
+- 'repa-io'
+- 'repa-algorithms'
+- 'repa-examples'
+
+# Packages to be pulled from upstream that are not in the resolver
+extra-deps:
+- 'bmp-1.2.6.3'
+- 'old-locale-1.0.0.7'
+- 'old-time-1.1.0.3'
+- 'primitive-0.6.2.0'
+- 'QuickCheck-2.10.0.1'
+- 'random-1.1'
+- 'tf-random-0.5'
+- 'vector-0.12.0.1'
+
+# Override default flag values for local packages and extra-deps
+flags: {}
+
+# Extra global and per-package GHC options
+ghc-options:
+  '*': -fdiagnostics-color=always
+
+# Extra package databases containing global packages
+extra-package-dbs: []
+
+# Control whether we use the GHC we find on the path
+# system-ghc: true
+
+# Require a specific version of stack, using version ranges
+# require-stack-version: -any # Default
+# require-stack-version: >= 1.0.0
+
+# Override the architecture used by stack, especially useful on Windows
+# arch: i386
+# arch: x86_64
+
+# Extra directories used by stack for building
+# extra-include-dirs: [/path/to/dir]
+# extra-lib-dirs: [/path/to/dir]
+
+# Allow a newer minor version of GHC than the snapshot specifies
+# compiler-check: newer-minor
