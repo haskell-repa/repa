@@ -44,5 +44,7 @@ prop_addV4D = arrayAdditionV
  
 prop_addV5D :: DIM5 -> Property
 prop_addV5D = arrayAdditionV
+
+return []
  
 main = $quickCheckAll
