@@ -18,13 +18,13 @@ Synopsis:
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.10
+        base                 >= 4.8 && < 4.11
       , binary               >= 0.7 && < 0.9
       , bmp                  == 1.2.*
       , bytestring           == 0.10.*
       , old-time             == 1.1.*
       , repa                 == 3.4.*
-      , vector               == 0.11.*
+      , vector               >= 0.11 && < 0.13
 
   ghc-options:
         -O2 -Wall -fno-warn-missing-signatures
@@ -38,3 +38,5 @@ Library
 
   Other-modules:
         Data.Array.Repa.IO.Internals.Text
+
+-- vim: nospell

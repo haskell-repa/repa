@@ -56,7 +56,7 @@ mmultP arr brr
    do   trr      <- transpose2P brr
         let (Z :. h1  :. _)  = extent arr
         let (Z :. _   :. w2) = extent brr
-        computeP 
+        trr `deepSeqArray` computeP 
          $ fromFunction (Z :. h1 :. w2)
          $ \ix   -> R.sumAllS 
                   $ R.zipWith (*)
