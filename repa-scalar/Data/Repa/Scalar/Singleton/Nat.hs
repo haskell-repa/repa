@@ -2,7 +2,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Singleton-typed natural numbers and arithmetic.
--- 
+--
 --   Used for indexing into hetrogenous list types.
 --
 module Data.Repa.Scalar.Singleton.Nat
@@ -38,7 +38,7 @@ class Add x y where
  add  :: Nat x -> Nat y -> Nat (AddR x y)
 
 instance Add Z x where
- type AddR Z y   = y
+ type AddR Z x   = x
  add Zero y      = y
  {-# INLINE add #-}
 
@@ -55,10 +55,10 @@ class Mul x y where
  mul  :: Nat x -> Nat y -> Nat (MulR x y)
 
 instance Mul Z x where
- type MulR  Z       y = Z
+ type MulR  Z       x = Z
  mul        Zero    _ = Zero
 
-instance (Mul x y, Add (MulR x y) y) 
+instance (Mul x y, Add (MulR x y) y)
        => Mul (S x) y where
  type MulR (S x)    y = AddR (MulR x y) y
  mul       (Succ x) y = add  (mul  x y) y

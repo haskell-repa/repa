@@ -1,5 +1,5 @@
 Name:           repa-scalar
-Version:        4.2.3.1
+Version:        4.2.3.2
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -18,10 +18,10 @@ source-repository head
   location: https://github.com/DDCSF/repa.git
 
 Library
-  build-Depends: 
-        base              == 4.9.*,
-        primitive         == 0.6.*,
-        vector            == 0.10.*,
+  build-Depends:
+        base              >= 4.9  && < 4.11,
+        primitive         >= 0.6  && < 0.8,
+        vector            >= 0.10 && < 0.13,
         bytestring        == 0.10.*,
         double-conversion == 2.0.*,
         time              == 1.6.*
