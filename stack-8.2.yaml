@@ -1,7 +1,7 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
 # vim: nospell
 
-resolver: ghc-8.2
+resolver: lts-11.0
 
 packages:
 - 'repa'
@@ -10,25 +10,16 @@ packages:
 - 'repa-examples'
 
 # Packages to be pulled from upstream that are not in the resolver
-extra-deps:
-- 'bmp-1.2.6.3'
-- 'old-locale-1.0.0.7'
-- 'old-time-1.1.0.3'
-- 'primitive-0.6.2.0'
-- 'QuickCheck-2.10.0.1'
-- 'random-1.1'
-- 'tf-random-0.5'
-- 'vector-0.12.0.1'
+# extra-deps: []
 
 # Override default flag values for local packages and extra-deps
-flags: {}
+# flags: {}
 
 # Extra global and per-package GHC options
-ghc-options:
-  '*': -fdiagnostics-color=always
+# ghc-options: {}
 
 # Extra package databases containing global packages
-extra-package-dbs: []
+# extra-package-dbs: []
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
