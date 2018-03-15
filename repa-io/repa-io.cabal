@@ -18,7 +18,7 @@ Synopsis:
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , binary               >= 0.7 && < 0.9
       , bmp                  == 1.2.*
       , bytestring           == 0.10.*

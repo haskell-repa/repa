@@ -25,7 +25,7 @@ Flag llvm
 
 Executable repa-canny
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
 
@@ -44,7 +44,7 @@ Executable repa-canny
 
 Executable repa-mmult
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , random               == 1.1.*
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
@@ -68,7 +68,7 @@ Executable repa-mmult
 
 Executable repa-laplace
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-io              == 3.4.1.*
       , template-haskell
@@ -89,7 +89,7 @@ Executable repa-laplace
 
 Executable repa-fft2d
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
       , repa-io              == 3.4.1.*
@@ -111,7 +111,7 @@ Executable repa-fft2d
 
 Executable repa-fft2d-highpass
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
       , repa-io              == 3.4.1.*
@@ -133,7 +133,7 @@ Executable repa-fft2d-highpass
 
 Executable repa-fft3d-highpass
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
 
@@ -154,7 +154,7 @@ Executable repa-fft3d-highpass
 
 Executable repa-blur
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
       , vector               >= 0.11 && < 0.13
@@ -175,7 +175,7 @@ Executable repa-blur
 
 Executable repa-sobel
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-algorithms      == 3.4.1.*
 
@@ -197,7 +197,7 @@ Executable repa-sobel
 
 Executable repa-volume
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , repa-io              == 3.4.1.*
 
@@ -217,7 +217,7 @@ Executable repa-volume
 
 Executable repa-unit-test
   Build-depends:
-        base                 >= 4.8 && < 4.11
+        base                 >= 4.8 && < 4.12
       , repa                 == 3.4.1.*
       , QuickCheck           >= 2.8 && < 2.11
 
