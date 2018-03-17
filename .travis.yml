@@ -3,15 +3,14 @@
 # Basic template to test with GHC=[7.8, 7.10, 8.0].
 # Caches the 'stack' build directory to speed subsequent compilations.
 #
-language: generic
+language: minimal
 dist: trusty
 sudo: required  # not really, but these instances have more memory
 
 cache:
   timeout: 600
   directories:
-    - $HOME/.stack
-    - $HOME/llvm
+    - $HOME/.stack/snapshots
     - .stack-work/install
 
 before_cache:
