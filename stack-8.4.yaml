@@ -15,7 +15,7 @@ extra-deps:
 - 'old-locale-1.0.0.7'
 - 'old-time-1.1.0.3'
 - 'primitive-0.6.3.0'
-- 'QuickCheck-2.10.1'
+- 'QuickCheck-2.11.3'
 - 'random-1.1'
 - 'tf-random-0.5'
 - 'vector-0.12.0.1'
