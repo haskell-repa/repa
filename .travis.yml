@@ -15,6 +15,7 @@ cache:
 
 before_cache:
   - rm -vrf $(stack path --local-install-root)/bin
+  - rm -rf  $(stack path --local-install-root)/doc
 
 addons:
   apt:
