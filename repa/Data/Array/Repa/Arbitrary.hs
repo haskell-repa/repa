@@ -42,9 +42,10 @@ instance Arbitrary a
       => Arbitrary (a :. Int) where
  arbitrary 
         = sized (\n -> do 
-                b       <- choose (1, n)
-                let dimLimit :: Int = ceiling (fromIntegral n / fromIntegral b :: Double)
-                a       <- resize dimLimit arbitrary
+                b <- if n == 0
+                         then return 1
+                         else choose (1, n)
+                a <- resize ((n + b - 1) `div` b) arbitrary
                 -- each dimension should be at least 1-wide
                 return $ a :. b)
 
