@@ -18,19 +18,20 @@ Synopsis:
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.12
+        base                 >= 4.8 && < 4.13
       , vector               >= 0.11 && < 0.13
       , repa                 == 3.4.1.*
 
   ghc-options:
         -Wall
-        -Odph
-        -fno-warn-missing-signatures
-        -fno-liberate-case
+        -O2
+        -fmax-simplifier-iterations=20
         -fsimplifier-phases=4
-        -funfolding-use-threshold=1000
-        -funfolding-keeness-factor=1000
         -funbox-strict-fields
+        -fno-liberate-case
+        -fno-warn-missing-signatures
+        -funfolding-keeness-factor=1000
+        -funfolding-use-threshold=1000
 
   if impl(ghc >= 8.0)
     ghc-options: -fno-cpr-anal
