@@ -238,7 +238,7 @@ Executable repa-unit-test
   Build-depends:
         base                 >= 4.8 && < 4.13
       , repa                 == 3.4.1.*
-      , QuickCheck           >= 2.8 && < 2.12
+      , QuickCheck           >= 2.8 && < 2.13
 
   Main-is: examples/UnitTesting/UnitTesting.hs
   hs-source-dirs: examples/UnitTesting .

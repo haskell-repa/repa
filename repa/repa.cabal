@@ -26,7 +26,7 @@ Library
       , ghc-prim
       , vector               >= 0.11 && < 0.13
       , bytestring           == 0.10.*
-      , QuickCheck           >= 2.8 && < 2.12
+      , QuickCheck           >= 2.8 && < 2.13
 
   ghc-options:
         -Wall
