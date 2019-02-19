@@ -118,18 +118,14 @@ transpose2S arr
 -- | Get the trace of a (square) 2D matrix, in parallel.
 trace2P :: Monad m => Array U DIM2 Double -> m Double
 trace2P x
- = sumAllP $ slice y (Z :. (0 :: Int) :. All)
+ = sumAllP $ unsafeBackpermute (Z :. (min nRows nColumns)) (\(Z :. i) -> (Z :. i :. i)) x
  where
-    y               =  unsafeBackpermute dim f x
-    f (Z :. i :. j) = Z :. (i + j) `mod` nRows:. j
-    dim@(Z :. nRows :. _) = extent x
+    (Z :. nRows :. nColumns) = extent x
 
 
 -- | Get the trace of a (square) 2D matrix, sequentially.
 trace2S :: Array U DIM2 Double -> Double
 trace2S x
- = sumAllS $ slice y (Z :. (0 :: Int) :. All)
+ = sumAllS $ unsafeBackpermute (Z :. (min nRows nColumns)) (\(Z :. i) -> (Z :. i :. i)) x
  where
-    y               =  unsafeBackpermute dim f x
-    f (Z :. i :. j) = Z :. (i + j) `mod` nRows:. j
-    dim@(Z :. nRows :. _) = extent x
+    (Z :. nRows :. nColumns) = extent x
