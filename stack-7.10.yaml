@@ -4,10 +4,10 @@
 resolver: lts-6.35
 
 packages:
-- 'repa'
-- 'repa-io'
-- 'repa-algorithms'
-- 'repa-examples'
+- repa
+- repa-io
+- repa-algorithms
+- repa-examples
 
 # Packages to be pulled from upstream that are not in the resolver
 # extra-deps: []

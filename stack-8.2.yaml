@@ -1,13 +1,13 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
 # vim: nospell
 
-resolver: lts-11.0
+resolver: lts-11.22
 
 packages:
-- 'repa'
-- 'repa-io'
-- 'repa-algorithms'
-- 'repa-examples'
+- repa
+- repa-io
+- repa-algorithms
+- repa-examples
 
 # Packages to be pulled from upstream that are not in the resolver
 # extra-deps: []
