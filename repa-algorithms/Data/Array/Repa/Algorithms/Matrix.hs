@@ -117,25 +117,15 @@ transpose2S arr
 -- Trace ------------------------------------------------------------------------
 -- | Get the trace of a (square) 2D matrix, in parallel.
 trace2P :: Monad m => Array U DIM2 Double -> m Double
-trace2P x 
- = liftM (safeHead . toList) $ sumP $ slice y (Z :. (0 :: Int) :. All)
+trace2P x
+ = sumAllP $ unsafeBackpermute (Z :. (min nRows nColumns)) (\(Z :. i) -> (Z :. i :. i)) x
  where
-    safeHead []     = error "repa-algorithms: trace2P empty list"
-    safeHead (x':_) = x'
-
-    y               = unsafeBackpermute (extent x) f x
-    f (Z :. i :. j) = Z :. (i - j) `mod` nRows:. j
-    Z :. nRows :. _nCols = extent x
+    (Z :. nRows :. nColumns) = extent x
 
 
 -- | Get the trace of a (square) 2D matrix, sequentially.
 trace2S :: Array U DIM2 Double -> Double
-trace2S x 
- = safeHead $ toList $ sumS $ slice y (Z :. (0 :: Int) :. All)
+trace2S x
+ = sumAllS $ unsafeBackpermute (Z :. (min nRows nColumns)) (\(Z :. i) -> (Z :. i :. i)) x
  where
-    safeHead []     = error "repa-algorithms: trace2S empty list"
-    safeHead (x':_) = x'
-
-    y               =  unsafeBackpermute (extent x) f x
-    f (Z :. i :. j) = Z :. (i - j) `mod` nRows:. j
-    Z :. nRows :. _nCols = extent x
+    (Z :. nRows :. nColumns) = extent x

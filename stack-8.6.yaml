@@ -1,7 +1,7 @@
-# For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration.html
+# For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 # vim: nospell
 
-resolver: lts-11.22
+resolver: lts-13.20
 
 packages:
 - repa
@@ -9,7 +9,6 @@ packages:
 - repa-algorithms
 - repa-examples
 
-# Packages to be pulled from upstream that are not in the resolver
 # extra-deps: []
 
 # Override default flag values for local packages and extra-deps
@@ -26,7 +25,7 @@ packages:
 
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default
-# require-stack-version: >= 1.0.0
+# require-stack-version: >= 0.1.4.0
 
 # Override the architecture used by stack, especially useful on Windows
 # arch: i386
@@ -36,5 +35,3 @@ packages:
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
 
-# Allow a newer minor version of GHC than the snapshot specifies
-# compiler-check: newer-minor
