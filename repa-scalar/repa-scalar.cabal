@@ -1,5 +1,5 @@
 Name:           repa-scalar
-Version:        4.2.3.2
+Version:        4.2.3.3
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -19,12 +19,12 @@ source-repository head
 
 Library
   build-Depends:
-        base              >= 4.9  && < 4.11,
+        base              >= 4.9  && < 4.13,
         primitive         >= 0.6  && < 0.8,
         vector            >= 0.10 && < 0.13,
+        time              >= 1.6  && < 1.9,
         bytestring        == 0.10.*,
-        double-conversion == 2.0.*,
-        time              == 1.6.*
+        double-conversion == 2.0.*
 
   exposed-modules:
         Data.Repa.Scalar.Singleton.Nat
@@ -39,7 +39,6 @@ Library
   ghc-options:
         -Wall -fno-warn-missing-signatures
         -O2
-
 
   extensions:
         GADTs
