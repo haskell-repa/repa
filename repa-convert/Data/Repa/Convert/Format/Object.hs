@@ -12,7 +12,6 @@ import Data.Repa.Convert.Internal.Packer
 import Data.Repa.Convert.Format.String
 import Data.Repa.Convert.Format.Binary
 import Data.Repa.Scalar.Product
-import Data.Monoid
 import Data.Word
 import Data.Char
 import GHC.Exts
@@ -30,16 +29,16 @@ data Object fields where
 -- | Resents the fields of a JSON object.
 data ObjectFields fields where
 
-        ObjectFieldsNil  
+        ObjectFieldsNil
          :: ObjectFields ()
 
-        ObjectFieldsCons 
+        ObjectFieldsCons
          :: {-# UNPACK #-} !ObjectMeta  -- Meta data about this format.
          -> !Text                       -- Name of head field
          -> !f                          -- Format of head field.
          -> Maybe (Value f -> Bool)     -- Predicate to determine whether to emit value.
          -> ObjectFields fs             -- Spec for rest of fields.
-         -> ObjectFields (f :*: fs)             
+         -> ObjectFields (f :*: fs)
 
 
 -- | Precomputed information about this format.
@@ -58,9 +57,9 @@ data ObjectMeta
 ---------------------------------------------------------------------------------------------------
 -- | Make an object format with the given labeled fields. For example:
 --
--- @> let fmt =   mkObject 
+-- @> let fmt =   mkObject
 --          $   Field "index"   IntAsc                      Nothing
---          :*: Field "message" (VarCharString \'-\')         Nothing 
+--          :*: Field "message" (VarCharString \'-\')         Nothing
 --          :*: Field "value"   (MaybeChars "NULL" DoubleAsc) (Just isJust)
 --          :*: ()
 -- @
@@ -71,14 +70,14 @@ data ObjectMeta
 -- > let Just str = packToString fmt (27 :*: "foo" :*: Nothing :*: ())
 -- > putStrLn str
 -- > {"index":27,"message":"foo"}
--- @ 
+-- @
 --
 -- Note that the encodings that this format can generate are a superset of
 -- the JavaScript Object Notation (JSON). With the Repa format, the fields
 -- of an object can directly encode dates and other values, wheras in JSON
 -- these values must be represented by strings.
 --
-mkObject :: ObjectFormat f 
+mkObject :: ObjectFormat f
          => f -> Object (ObjectFormat' f)
 
 mkObject f = Object (mkObjectFields f)
@@ -97,7 +96,7 @@ instance ObjectFormat () where
 
 -- | A single field in an object.
 data Field f
-        = Field 
+        = Field
         { fieldName     :: String
         , fieldFormat   :: f
         , fieldInclude  :: Maybe (Value f -> Bool) }
@@ -107,14 +106,14 @@ instance ( Format f1
          , ObjectFormat fs)
       => ObjectFormat  (Field f1 :*: fs) where
 
- type    ObjectFormat' (Field f1 :*: fs) 
+ type    ObjectFormat' (Field f1 :*: fs)
         = f1 :*: ObjectFormat' fs
 
- mkObjectFields (Field label f1 mKeep :*: fs) 
+ mkObjectFields (Field label f1 mKeep :*: fs)
   = case mkObjectFields fs of
         ObjectFieldsNil
          -> ObjectFieldsCons
-                (ObjectMeta 
+                (ObjectMeta
                         { omFieldCount  = 1
 
                           -- Smallest JSON object looks like:
@@ -126,7 +125,7 @@ instance ( Format f1
 
         cc@(ObjectFieldsCons jm _ _ _ _)
          -> ObjectFieldsCons
-                (ObjectMeta 
+                (ObjectMeta
                         { omFieldCount  = 1 + omFieldCount jm
 
                           -- Adding a new field makes the object look like:
@@ -146,18 +145,18 @@ instance ( Format f1
 instance ( Format (ObjectFields fs)
          , Value  (ObjectFields fs) ~ Value fs)
       => Format (Object fs) where
- type Value (Object fs)   
+ type Value (Object fs)
         = Value fs
 
- fieldCount (Object _)   
+ fieldCount (Object _)
   = 1
  {-# INLINE fieldCount #-}
 
- minSize    (Object fs)   
+ minSize    (Object fs)
   = 2 + minSize fs
  {-# INLINE minSize #-}
 
- fixedSize  (Object fs)   
+ fixedSize  (Object fs)
   = do  sz      <- fixedSize fs
         return  (2 + sz)
  {-# INLINE fixedSize #-}
@@ -226,7 +225,7 @@ instance ( Format   (Object f)
          , Value    (ObjectFields f) ~ Value f
          , Packable (ObjectFields f))
         => Packable (Object f) where
- 
+
  pack (Object fs) xs
         =  pack Word8be (w8 $ ord '{')
         <> pack fs xs
@@ -260,11 +259,11 @@ instance ( Packable f1
          , Value    (ObjectFields fs)          ~ Value fs)
         => Packable (ObjectFields (f1 :*: f2 :*: fs)) where
 
- -- Pack a field into the object, 
+ -- Pack a field into the object,
  -- only keeping it if the keep flag is true.
  pack (ObjectFieldsCons _jm l1 f1 mKeep jfs) (x1 :*: xs)
   = if (case mKeep of
-         Just keep -> keep x1 
+         Just keep -> keep x1
          _         -> True)
      then here
      else rest

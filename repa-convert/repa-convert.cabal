@@ -1,5 +1,5 @@
 Name:           repa-convert
-Version:        4.2.3.1
+Version:        4.2.3.2
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
@@ -18,10 +18,10 @@ source-repository head
   location: https://github.com/DDCSF/repa.git
 
 Library
-  build-Depends: 
-        base              == 4.9.*,
+  build-Depends:
+        base              == 4.12.*,
         primitive         == 0.6.*,
-        vector            == 0.10.*,
+        vector            == 0.12.*,
         bytestring        == 0.10.*,
         text              == 1.2.*,
         double-conversion == 2.0.*,
@@ -36,7 +36,7 @@ Library
         Data.Repa.Convert.Internal.Format
         Data.Repa.Convert.Internal.Packable
         Data.Repa.Convert.Internal.Packer
-        Data.Repa.Convert.Internal.Unpacker        
+        Data.Repa.Convert.Internal.Unpacker
 
         Data.Repa.Convert.Format.Ascii
         Data.Repa.Convert.Format.App

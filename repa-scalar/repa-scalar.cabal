@@ -15,7 +15,7 @@ Synopsis:       Scalar data types and conversions.
 
 source-repository head
   type:     git
-  location: https://github.com/DDCSF/repa.git
+  location: https://github.com/haskell-repa/repa.git
 
 Library
   build-Depends:

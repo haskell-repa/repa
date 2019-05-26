@@ -13,7 +13,7 @@ import qualified Foreign.Ptr    as F
 data Packer
   =  Packer
   { -- | Takes start of buffer; failure action; and a continuation.
-    -- 
+    --
     --   We try to pack data into the given buffer.
     --   If packing succeeds then we call the continuation with a pointer
     --   to the next byte after the packed value,
@@ -26,9 +26,12 @@ data Packer
         -> IO ()
   }
 
+instance Semigroup Packer where
+ (<>) = mappend
+
 
 instance Monoid Packer where
- mempty 
+ mempty
   = Packer $ \buf _fail k -> k buf
  {-# INLINE mempty #-}
 
@@ -38,12 +41,12 @@ instance Monoid Packer where
 
 
 -- | Pack data into the given buffer.
---   
+--
 --   PRECONDITION: The buffer needs to be big enough to hold the packed data,
 --   otherwise you'll corrupt the heap (bad). Use `packedSize` to work out
 --   how big it needs to be.
 --
-unsafeRunPacker 
+unsafeRunPacker
         :: Packer       -- ^ Packer to run.
         -> F.Ptr Word8  -- ^ Start of buffer.
         -> IO (Maybe (F.Ptr Word8))
