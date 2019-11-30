@@ -1,4 +1,4 @@
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE CPP, MagicHash #-}
 --   This is specialised for stencils up to 7x7.
 --   Due to limitations in the GHC optimiser, using larger stencils doesn't
 --   work, and will yield `error` at runtime. We can probably increase the
@@ -12,10 +12,12 @@
 --
 module Data.Array.Repa.Stencil.Dim2
         ( -- * Stencil creation
-          makeStencil2, stencil2
-
+          makeStencil2,
+#ifndef REPA_NO_TH
+          stencil2,
+#endif
           -- * Stencil operators
-        , PC5, mapStencil2, forStencil2)
+          PC5, mapStencil2, forStencil2)
 where
 import Data.Array.Repa.Base
 import Data.Array.Repa.Index
@@ -26,7 +28,9 @@ import Data.Array.Repa.Repr.Partitioned
 import Data.Array.Repa.Repr.HintSmall
 import Data.Array.Repa.Repr.Undefined
 import Data.Array.Repa.Stencil.Base
+#ifndef REPA_NO_TH
 import Data.Array.Repa.Stencil.Template
+#endif
 import Data.Array.Repa.Stencil.Partition
 import GHC.Exts
 
