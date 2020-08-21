@@ -4,8 +4,8 @@
 -- | Generic stencil based convolutions. 
 -- 
 --   If your stencil fits within a 7x7 tile and is known at compile-time then using
---   then using the built-in stencil support provided by the main Repa package will
---   be 5-10x faster. 
+--   the built-in stencil support provided by the main Repa package will be
+--   5-10x faster. 
 -- 
 --   If you have a larger stencil, the coefficients are not statically known, 
 --   or need more complex boundary handling than provided by the built-in functions,
