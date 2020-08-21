@@ -19,9 +19,13 @@ Description:
 Synopsis:
         High performance, regular, shape polymorphic parallel arrays.
 
+Flag no-template-haskell
+  Default: False
+  Description: Disable Template Haskell
+
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.13
+        base                 >= 4.8 && < 4.14
       , template-haskell
       , ghc-prim
       , vector               >= 0.11 && < 0.13
@@ -41,6 +45,9 @@ Library
   else
     ghc-options: -fcpr-off
 
+  if flag(no-template-haskell)
+    cpp-options: -DREPA_NO_TH
+
   extensions:
         NoMonomorphismRestriction
         ExplicitForAll
@@ -54,6 +61,13 @@ Library
         ScopedTypeVariables
         PatternGuards
         ExistentialQuantification
+
+  other-extensions:
+        CPP
+
+  if !flag(no-template-haskell)
+    other-extensions:
+        TemplateHaskell
 
   Exposed-modules:
         Data.Array.Repa.Eval.Gang
@@ -94,8 +108,11 @@ Library
         Data.Array.Repa.Eval.Reduction
         Data.Array.Repa.Eval.Selection
         Data.Array.Repa.Stencil.Base
-        Data.Array.Repa.Stencil.Template
         Data.Array.Repa.Stencil.Partition
         Data.Array.Repa.Base
+
+  if !flag(no-template-haskell)
+    Other-modules:
+        Data.Array.Repa.Stencil.Template
 
 -- vim: nospell
