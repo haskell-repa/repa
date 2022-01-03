@@ -1,5 +1,5 @@
 Name:                repa-algorithms
-Version:             3.4.1.3
+Version:             3.4.1.4
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
@@ -18,7 +18,7 @@ Synopsis:
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.14
+        base                 >= 4.8 && < 4.15
       , vector               >= 0.11 && < 0.13
       , repa                 == 3.4.1.*
 

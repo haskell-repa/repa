@@ -19,10 +19,10 @@ source-repository head
 
 Library
   build-Depends:
-        base              >= 4.9  && < 4.13,
-        primitive         >= 0.6  && < 0.8,
-        vector            >= 0.10 && < 0.13,
-        time              >= 1.6  && < 1.9,
+        base              >= 4.9  && < 4.15,
+        primitive         >= 0.6,
+        vector            >= 0.10,
+        time              >= 1.6,
         bytestring        == 0.10.*,
         double-conversion == 2.0.*
 
