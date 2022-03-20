@@ -1,11 +1,11 @@
 Name:                repa-io
-Version:             3.4.1.1
+Version:             3.4.1.2
 License:             BSD3
 License-file:        LICENSE
 Author:              The DPH Team
 Maintainer:          Ben Lippmeier <benl@ouroborus.net>
 Build-Type:          Simple
-Cabal-Version:       >=1.6
+Cabal-Version:       >=1.10
 Stability:           experimental
 Category:            Data Structures
 Homepage:            http://repa.ouroborus.net
@@ -18,10 +18,10 @@ Synopsis:
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.14
+        base                 >= 4.8 && < 5
       , binary               >= 0.7 && < 0.9
       , bmp                  == 1.2.*
-      , bytestring           == 0.10.*
+      , bytestring           >= 0.10 && < 0.12
       , old-time             == 1.1.*
       , repa                 == 3.4.*
       , vector               >= 0.11 && < 0.13
@@ -30,6 +30,9 @@ Library
         -O2
         -Wall
         -fno-warn-missing-signatures
+
+  default-language:
+        Haskell2010
 
   Exposed-modules:
         Data.Array.Repa.IO.Binary
