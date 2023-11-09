@@ -5,7 +5,6 @@ module Data.Array.Repa.Eval.Elt
         (Elt (..))
 where
 import GHC.Prim
-import GHC.Exts
 import GHC.Types
 import GHC.Word
 import GHC.Int
@@ -125,7 +124,7 @@ instance Elt Bool where
 -- Floating -------------------------------------------------------------------
 instance Elt Float where
  {-# INLINE touch #-}
- touch (F# f)
+ touch f
   = IO (\state -> case touch# f state of
                         state' -> (# state', () #))
 
@@ -138,7 +137,7 @@ instance Elt Float where
 
 instance Elt Double where
  {-# INLINE touch #-}
- touch (D# d)
+ touch d
   = IO (\state -> case touch# d state of
                         state' -> (# state', () #))
 
@@ -152,7 +151,7 @@ instance Elt Double where
 -- Int ------------------------------------------------------------------------
 instance Elt Int where
  {-# INLINE touch #-}
- touch (I# i)
+ touch i
   = IO (\state -> case touch# i state of
                         state' -> (# state', () #))
 
@@ -164,7 +163,7 @@ instance Elt Int where
 
 instance Elt Int8 where
  {-# INLINE touch #-}
- touch (I8# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -177,7 +176,7 @@ instance Elt Int8 where
 
 instance Elt Int16 where
  {-# INLINE touch #-}
- touch (I16# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -190,7 +189,7 @@ instance Elt Int16 where
 
 instance Elt Int32 where
  {-# INLINE touch #-}
- touch (I32# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -203,7 +202,7 @@ instance Elt Int32 where
 
 instance Elt Int64 where
  {-# INLINE touch #-}
- touch (I64# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -217,7 +216,7 @@ instance Elt Int64 where
 -- Word -----------------------------------------------------------------------
 instance Elt Word where
  {-# INLINE touch #-}
- touch (W# i)
+ touch i
   = IO (\state -> case touch# i state of
                         state' -> (# state', () #))
 
@@ -230,7 +229,7 @@ instance Elt Word where
 
 instance Elt Word8 where
  {-# INLINE touch #-}
- touch (W8# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -243,7 +242,7 @@ instance Elt Word8 where
 
 instance Elt Word16 where
  {-# INLINE touch #-}
- touch (W16# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -256,7 +255,7 @@ instance Elt Word16 where
 
 instance Elt Word32 where
  {-# INLINE touch #-}
- touch (W32# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
@@ -269,7 +268,7 @@ instance Elt Word32 where
 
 instance Elt Word64 where
  {-# INLINE touch #-}
- touch (W64# w)
+ touch w
   = IO (\state -> case touch# w state of
                         state' -> (# state', () #))
 
