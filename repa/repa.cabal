@@ -5,7 +5,7 @@ License-file:        LICENSE
 Author:              The DPH Team
 Maintainer:          Ben Lippmeier <benl@ouroborus.net>
 Build-Type:          Simple
-Cabal-Version:       >=1.6
+Cabal-Version:       >=1.10
 Stability:           experimental
 Category:            Data Structures
 Homepage:            http://repa.ouroborus.net
@@ -25,11 +25,11 @@ Flag no-template-haskell
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , template-haskell
       , ghc-prim
-      , vector               >= 0.11 && < 0.13
-      , bytestring           >= 0.10 && < 0.12
+      , vector               >= 0.11 && < 0.14
+      , bytestring           >= 0.10 && < 0.13
       , QuickCheck           >= 2.8  && < 2.16
 
   ghc-options:

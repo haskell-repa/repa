@@ -5,7 +5,7 @@ License-file:        LICENSE
 Author:              The DPH Team
 Maintainer:          Ben Lippmeier <benl@ouroborus.net>
 Build-Type:          Simple
-Cabal-Version:       >=1.6
+Cabal-Version:       >=1.10
 Stability:           experimental
 Category:            Data Structures
 Homepage:            http://repa.ouroborus.net
@@ -25,9 +25,11 @@ Flag llvm
 
 Executable repa-canny
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
+      , repa-io              >= 3.4 && < 3.5
+      , vector
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
@@ -46,7 +48,7 @@ Executable repa-canny
 
 Executable repa-mmult
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , random               == 1.1.*
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
@@ -72,8 +74,9 @@ Executable repa-mmult
 
 Executable repa-laplace
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
+      , repa-algorithms      >= 3.4 && < 3.5
       , repa-io              >= 3.4 && < 3.5
       , template-haskell
 
@@ -95,7 +98,7 @@ Executable repa-laplace
 
 Executable repa-fft2d
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
       , repa-io              >= 3.4 && < 3.5
@@ -119,7 +122,7 @@ Executable repa-fft2d
 
 Executable repa-fft2d-highpass
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
       , repa-io              >= 3.4 && < 3.5
@@ -143,9 +146,10 @@ Executable repa-fft2d-highpass
 
 Executable repa-fft3d-highpass
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
+      , repa-io              >= 3.4 && < 3.5
 
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
@@ -166,10 +170,11 @@ Executable repa-fft3d-highpass
 
 Executable repa-blur
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
-      , vector               >= 0.11 && < 0.13
+      , repa-io              >= 3.4 && < 3.5
+      , vector               >= 0.11 && < 0.14
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
@@ -190,9 +195,10 @@ Executable repa-blur
 
 Executable repa-sobel
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , repa-algorithms      >= 3.4 && < 3.5
+      , repa-io              >= 3.4 && < 3.5
 
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
@@ -214,8 +220,9 @@ Executable repa-sobel
 
 Executable repa-volume
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
+      , repa-algorithms      >= 3.4 && < 3.5
       , repa-io              >= 3.4 && < 3.5
 
   Main-is: examples/Volume/Main.hs
@@ -236,7 +243,7 @@ Executable repa-volume
 
 Executable repa-unit-test
   Build-depends:
-        base                 >= 4.8 && < 4.17
+        base                 >= 4.8 && < 4.21
       , repa                 >= 3.4 && < 3.5
       , QuickCheck           >= 2.8 && < 2.16
 
