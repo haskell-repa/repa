@@ -18,13 +18,13 @@ Synopsis:
 
 Library
   Build-Depends:
-        base                 >= 4.8 && < 5
+        base                 >= 4.8 && < 4.21
       , binary               >= 0.7 && < 0.9
-      , bmp                  == 1.2.*
-      , bytestring           >= 0.10 && < 0.12
+      , bmp                  >= 1.2 && <1.3
+      , bytestring           >= 0.10 && < 0.13
       , old-time             == 1.1.*
-      , repa                 == 3.4.*
-      , vector               >= 0.11 && < 0.13
+      , repa                 >= 3.4 && <3.5
+      , vector               >= 0.11 && < 0.14
 
   ghc-options:
         -O2
