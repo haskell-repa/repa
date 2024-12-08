@@ -20,7 +20,7 @@ Library
   Build-Depends:
         base                 >= 4.8 && < 5
       , vector               >= 0.11 && < 0.13
-      , repa                 == 3.4.1.*
+      , repa                 >= 3.4 && <3.5
 
   ghc-options:
         -Wall

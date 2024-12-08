@@ -1,0 +1,22 @@
+packages: repa/repa.cabal
+          repa-algorithms/repa-algorithms.cabal
+          repa-examples/repa-examples.cabal
+          repa-io/repa-io.cabal
+       
+       -- Packages below are ignored until they can be updated
+       -- to support newer GHCs
+       -- repa-convert/repa-convert.cabal
+       -- repa-eval/repa-eval.cabal
+       -- repa-scalar/repa-scalar.cabal
+       -- repa-stream/repa-stream.cabal
+
+       -- We ignore some packages which depend on repa-array rather than repa
+       -- repa-array/repa-array.cabal
+       -- repa-flow/repa-flow.cabal
+       -- repa-query/repa-query.cabal
+       -- repa-tools/repa-tools.cabal
+       -- repa-store/repa-store.cabal
+       -- repa-machine/repa-machine.cabal
+
+
+minimize-conflict-set: true
