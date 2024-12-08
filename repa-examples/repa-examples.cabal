@@ -33,6 +33,7 @@ Executable repa-canny
 
   Main-is: examples/Canny/src-repa/Main.hs
   hs-source-dirs: examples/Canny/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -41,8 +42,8 @@ Executable repa-canny
         -fmax-simplifier-iterations=20
         -fsimplifier-phases=3
         -fno-liberate-case
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -57,6 +58,7 @@ Executable repa-mmult
   Main-is: examples/MMult/src-repa/Main.hs
   other-modules: Solver
   hs-source-dirs: examples/MMult/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -67,8 +69,8 @@ Executable repa-mmult
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -83,6 +85,7 @@ Executable repa-laplace
   Main-is: examples/Laplace/src-repa/Main.hs
   other-modules: SolverGet SolverStencil
   hs-source-dirs: examples/Laplace/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -91,8 +94,8 @@ Executable repa-laplace
         -fmax-simplifier-iterations=20
         -fsimplifier-phases=3
         -fno-liberate-case
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -105,6 +108,7 @@ Executable repa-fft2d
 
   Main-is: examples/FFT/FFT2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/FFT2d/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -115,8 +119,8 @@ Executable repa-fft2d
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -129,6 +133,7 @@ Executable repa-fft2d-highpass
 
   Main-is: examples/FFT/HighPass2d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass2d/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -139,8 +144,8 @@ Executable repa-fft2d-highpass
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -153,6 +158,7 @@ Executable repa-fft3d-highpass
 
   Main-is: examples/FFT/HighPass3d/src-repa/Main.hs
   hs-source-dirs: examples/FFT/HighPass3d/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -163,8 +169,8 @@ Executable repa-fft3d-highpass
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -178,6 +184,7 @@ Executable repa-blur
 
   Main-is: examples/Blur/src-repa/Main.hs
   hs-source-dirs: examples/Blur/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -188,8 +195,8 @@ Executable repa-blur
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -203,6 +210,7 @@ Executable repa-sobel
   Main-is: examples/Sobel/src-repa/Main.hs
   other-modules: Solver
   hs-source-dirs: examples/Sobel/src-repa .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -213,8 +221,8 @@ Executable repa-sobel
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -226,6 +234,7 @@ Executable repa-volume
       , repa-io              >= 3.4 && < 3.5
 
   Main-is: examples/Volume/Main.hs
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -236,8 +245,8 @@ Executable repa-volume
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 
@@ -249,6 +258,7 @@ Executable repa-unit-test
 
   Main-is: examples/UnitTesting/UnitTesting.hs
   hs-source-dirs: examples/UnitTesting .
+  default-language: Haskell2010
   ghc-options:
         -rtsopts
         -threaded
@@ -259,8 +269,8 @@ Executable repa-unit-test
         -fno-liberate-case
         -funfolding-use-threshold100
         -funfolding-keeness-factor100
- if flag(llvm)
-  ghc-options:
+  if flag(llvm)
+    ghc-options:
         -fllvm -optlo-O3
 
 -- vim: nospell

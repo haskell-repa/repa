@@ -48,7 +48,9 @@ Library
   if flag(no-template-haskell)
     cpp-options: -DREPA_NO_TH
 
-  extensions:
+  default-language: Haskell2010
+
+  default-extensions:
         NoMonomorphismRestriction
         ExplicitForAll
         EmptyDataDecls
