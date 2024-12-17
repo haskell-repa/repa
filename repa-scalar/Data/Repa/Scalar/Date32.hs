@@ -1,4 +1,4 @@
-
+{-# LANGUAGE CPP #-}
 module Data.Repa.Scalar.Date32
         ( Date32
 
@@ -128,7 +128,13 @@ next (Date32 (W32# date))
           = Date32 (W32# (next' date))
 {-# INLINE next #-}
 
+-- Word32# used to wrap a Word# rather than Word32#
+-- before base 4.16 (i.e. GHC 9.0 and older)
+#if MIN_VERSION_base(4,16,0)
+next' :: Word32# -> Word32#
+#else
 next' :: Word# -> Word#
+#endif
 next' !date
  | (yy,  mm, dd) <- unpack (Date32 (W32# date))
  , (yy', mm', dd') 

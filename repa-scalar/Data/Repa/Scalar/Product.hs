@@ -223,6 +223,11 @@ instance (U.Unbox a, U.Unbox b)
         return $ MV_Prod n_ as bs
   {-# INLINE basicUnsafeNew  #-}
 
+  basicInitialize (MV_Prod _ _as _bs)
+      = do M.basicInitialize _as
+           M.basicInitialize _bs 
+  {-# INLINE basicInitialize  #-}
+
   basicUnsafeReplicate n_ (a :*: b)
    = do as <- M.basicUnsafeReplicate n_ a
         bs <- M.basicUnsafeReplicate n_ b

@@ -70,6 +70,10 @@ instance GM.MVector U.MVector (Box a) where
         return $ MV_Box n as
   {-# INLINE basicUnsafeNew  #-}
 
+  basicInitialize (MV_Box _n as)
+   = GM.basicInitialize as
+  {-# INLINE basicInitialize  #-}
+
   basicUnsafeReplicate n (Box a)
    = do as <- GM.basicUnsafeReplicate n a
         return $ MV_Box n as
