@@ -4,6 +4,7 @@ packages: repa/repa.cabal
           repa-io/repa-io.cabal
        
           repa-scalar/repa-scalar.cabal
+          repa-eval/repa-eval.cabal
        -- Packages below are ignored until they can be updated
        -- to support newer GHCs
        -- repa-convert/repa-convert.cabal

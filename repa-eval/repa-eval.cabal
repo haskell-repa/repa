@@ -1,11 +1,11 @@
 Name:           repa-eval
-Version:        4.2.3.1
+Version:        4.2.4.0
 License:        BSD3
 License-file:   LICENSE
 Author:         The Repa Development Team
 Maintainer:     Ben Lippmeier <benl@ouroborus.net>
 Build-Type:     Simple
-Cabal-Version:  >=1.6
+Cabal-Version:  >=1.10
 Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
@@ -19,14 +19,14 @@ source-repository head
 
 Library
   Build-Depends: 
-        base            == 4.9.*,
-        ghc-prim        == 0.5.*
-
+        base            >= 4.9 && <4.22
   Exposed-modules:
         Data.Repa.Eval.Elt
         Data.Repa.Eval.Gang
         Data.Repa.Eval.Generic.Seq
         Data.Repa.Eval.Generic.Par
+  
+  Default-Language: Haskell2010
 
   Other-modules:
         Data.Repa.Eval.Generic.Seq.Chunked
@@ -42,7 +42,7 @@ Library
         -Wall -fno-warn-missing-signatures
         -O2
 
-  extensions:
+  default-extensions:
         NoMonomorphismRestriction
         BangPatterns
         MagicHash
