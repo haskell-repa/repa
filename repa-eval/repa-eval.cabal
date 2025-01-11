@@ -15,7 +15,7 @@ Synopsis:       Low-level parallel operators on bulk random-accessble arrays.
 
 source-repository head
   type:     git
-  location: https://github.com/DDCSF/repa.git
+  location: https://github.com/haskell-repa/repa.git
 
 Library
   Build-Depends: 

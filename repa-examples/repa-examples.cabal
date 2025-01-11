@@ -16,6 +16,10 @@ Description:
 Synopsis:
         Examples using the Repa array library.
 
+source-repository head
+  type:     git
+  location: https://github.com/haskell-repa/repa.git
+
 Flag llvm
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.

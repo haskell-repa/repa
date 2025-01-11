@@ -16,7 +16,7 @@ Synopsis:       General purpose tools written with the Repa library.
 
 Source-repository head
   Type:     git
-  Location: https://github.com/DDCSF/repa.git
+  Location: https://github.com/haskell-repa/repa.git
 
 
 Executable repa-build

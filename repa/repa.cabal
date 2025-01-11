@@ -19,6 +19,10 @@ Description:
 Synopsis:
         High performance, regular, shape polymorphic parallel arrays.
 
+source-repository head
+  type:     git
+  location: https://github.com/haskell-repa/repa.git
+
 Flag no-template-haskell
   Default: False
   Description: Disable Template Haskell

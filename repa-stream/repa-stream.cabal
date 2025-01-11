@@ -5,7 +5,6 @@ License-file:   LICENSE
 Author:         The Repa Development Team
 Maintainer:     Ben Lippmeier <benl@ouroborus.net>
 Build-Type:     Simple
-Cabal-Version:  >=1.6
 Stability:      experimental
 Category:       Data Structures
 Homepage:       http://repa.ouroborus.net
@@ -15,7 +14,7 @@ Synopsis:       Stream functions not present in the vector library.
 
 source-repository head
   type:     git
-  location: https://github.com/DDCSF/repa.git
+  location: https://github.com/haskell-repa/repa.git
 
 Library
   build-Depends: 

@@ -16,6 +16,10 @@ Description:
 Synopsis:
         Algorithms using the Repa array library.
 
+source-repository head
+  type:     git
+  location: https://github.com/haskell-repa/repa.git
+
 Library
   Build-Depends:
         base                 >= 4.8 && < 4.21

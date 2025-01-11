@@ -15,7 +15,7 @@ Synopsis:       Packing and unpacking flat tables.
 
 source-repository head
   type:     git
-  location: https://github.com/DDCSF/repa.git
+  location: https://github.com/haskell-repa/repa.git
 
 Library
   default-language:       Haskell2010

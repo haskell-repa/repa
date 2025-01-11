@@ -13,6 +13,10 @@ Bug-reports:    repa@ouroborus.net
 Description:    Data-parallel data flows.
 Synopsis:       Data-parallel data flows.
 
+source-repository head
+  type:     git
+  location: https://github.com/haskell-repa/repa.git
+
 Library
   build-Depends: 
         base                    == 4.9.*,
