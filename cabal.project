@@ -5,10 +5,9 @@ packages: repa/repa.cabal
        
           repa-scalar/repa-scalar.cabal
           repa-eval/repa-eval.cabal
+          repa-convert/repa-convert.cabal
        -- Packages below are ignored until they can be updated
        -- to support newer GHCs
-       -- repa-convert/repa-convert.cabal
-       -- repa-eval/repa-eval.cabal
        
        -- repa-stream/repa-stream.cabal
 
